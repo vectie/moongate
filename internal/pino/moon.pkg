@@ -1,0 +1,14 @@
+import {
+  "moonbitlang/async/fs",
+  "vectie/hij/internal/pathx",
+  "moonbitlang/async/io",
+  "vectie/hij/internal/os",
+  "vectie/hij/internal/spawn",
+  "moonbitlang/async",
+  "moonbitlang/async/os_error",
+  "vectie/hij/internal/errno",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/core/json",
+}

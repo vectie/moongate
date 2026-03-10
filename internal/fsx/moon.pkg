@@ -1,0 +1,21 @@
+import {
+  "moonbitlang/async/fs",
+  "vectie/hij/internal/pathx",
+  "moonbitlang/async/io",
+  "vectie/hij/internal/errno",
+  "vectie/hij/internal/os",
+  "moonbitlang/async/os_error",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/core/json",
+  "moonbitlang/core/test",
+}
+
+import {
+  "moonbitlang/async",
+  "vectie/hij/internal/spawn",
+  "moonbitlang/async/process",
+} for "test"
+
+options(
+  "native-stub": [ "stat.c", "mkdtemp.c", "readlink.c", "lock.c", "truncate.c" ],
+)

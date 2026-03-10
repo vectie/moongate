@@ -1,6 +1,15 @@
-// import {
-//   "vectie/hij" @lib,
-// }
+import {
+  "vectie/hij",
+  "vectie/hij/internal/os",
+  "vectie/hij/internal/pino",
+  "vectie/hij/internal/httpx",
+  "vectie/hij/internal/httpx/status",
+  "vectie/hij/internal/hosts",
+  "vectie/hij/oauth/codex",
+  "moonbitlang/core/strconv",
+  "moonbitlang/async",
+  "moonbitlang/async/http",
+}
 
 options(
   "is-main": true,

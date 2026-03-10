@@ -1,0 +1,16 @@
+import {
+  "moonbitlang/async/http",
+  "moonbitlang/async/io",
+  "moonbitlang/async/socket",
+  "vectie/hij/internal/httpx/status",
+  "vectie/hij/internal/httpx/reason",
+  "vectie/hij/internal/pathx",
+  "vectie/hij/internal/fsx",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/core/json",
+  "moonbitlang/core/test",
+}
+
+import {
+  "moonbitlang/async",
+} for "test"

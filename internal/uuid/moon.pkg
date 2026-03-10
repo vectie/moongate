@@ -1,0 +1,8 @@
+import {
+  "moonbitlang/core/json",
+  "moonbitlang/core/random",
+}
+
+import {
+  "vectie/hij/internal/rand",
+} for "test"

@@ -1,0 +1,15 @@
+import {
+  "moonbitlang/async/process",
+  "moonbitlang/async/io",
+  "vectie/hij/internal/errno",
+  "moonbitlang/async/aqueue",
+  "moonbitlang/async",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/core/json",
+  "moonbitlang/core/test",
+  "vectie/hij/clock",
+}
+
+options(
+  "native-stub": [ "spawn.c" ],
+)
