@@ -388,6 +388,32 @@ test "top level ccs provider command names build command alias paths" {
       "/add_custom_endpoint?app=codex&providerId=custom&url=https%3A%2F%2Fbackup.example.com%2Fv1",
     ),
   )
+  assert_eq(
+    provider_live_ids_path("opencode"),
+    "/get_opencode_live_provider_ids",
+  )
+  assert_eq(
+    provider_import_live_path("openclaw"),
+    "/import_openclaw_providers_from_live",
+  )
+  assert_eq(
+    universal_provider_id_path(
+      ["moonstat", "sync_universal_provider", "--id", "u 1"],
+      "/sync_universal_provider",
+    ),
+    Some("/sync_universal_provider?id=u%201"),
+  )
+  assert_eq(
+    universal_provider_upsert_path([
+      "moonstat", "provider", "universal", "upsert", "--id", "u 1", "--name", "Universal One",
+      "--provider-type", "openai-compatible", "--apps", "claude,codex", "--base-url",
+      "https://api.example.com/v1", "--api-key", "sk-test", "--codex-model", "gpt-5",
+      "--reasoning-effort", "medium",
+    ]),
+    Some(
+      "/upsert_universal_provider?id=u%201&name=Universal%20One&providerType=openai-compatible&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&apps=claude%2Ccodex&codexModel=gpt-5&reasoningEffort=medium",
+    ),
+  )
 }
 
 ///|

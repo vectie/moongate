@@ -177,6 +177,41 @@ test "provider command helpers parse ccs sort and endpoint test payloads" {
 }
 
 ///|
+test "universal provider helper builds ccs provider shape from query args" {
+  guard universal_provider_from_request(
+      "/upsert_universal_provider?id=u%201&name=Universal+One&providerType=openai-compatible&apps=claude,codex&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&codexModel=gpt-5&reasoningEffort=medium",
+      None,
+    )
+    is Some(provider) else {
+    fail("expected provider")
+  }
+  json_inspect(provider, content={
+    "id": "u 1",
+    "name": "Universal One",
+    "providerType": "openai-compatible",
+    "apps": { "claude": true, "codex": true, "gemini": false },
+    "models": { "codex": { "model": "gpt-5", "reasoningEffort": "medium" } },
+    "baseUrl": "https://api.example.com/v1",
+    "apiKey": "sk-test",
+  })
+  guard universal_provider_from_request(
+      "/upsert_universal_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("wrapped"),
+            "name": Json::string("Wrapped"),
+          }.to_json(),
+        }.to_json(),
+      ),
+    )
+    is Some(wrapped_provider) else {
+    fail("expected wrapped provider")
+  }
+  json_inspect(wrapped_provider, content={ "id": "wrapped", "name": "Wrapped" })
+}
+
+///|
 test "usage query helpers parse ccs request log parameters" {
   let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&end_date=20"
   assert_eq(usage_query_int(path, "page"), Some(2))

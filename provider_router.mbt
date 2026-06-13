@@ -532,6 +532,7 @@ pub fn ProviderSelection::is_ok(self : ProviderSelection) -> Bool {
 pub struct ProviderRouter {
   providers : Map[String, Map[String, ProviderRouteTarget]]
   current_provider_ids : Map[String, String]
+  priv universal_providers : Map[String, Json]
   priv provider_sort_indices : Map[String, Map[String, Int]]
   custom_endpoints : Map[String, Map[String, Map[String, CustomEndpoint]]]
   failover_queues : Map[String, Array[String]]
@@ -548,6 +549,7 @@ pub fn ProviderRouter::new(
   {
     providers: Map([], capacity=0),
     current_provider_ids: Map([], capacity=0),
+    universal_providers: Map([], capacity=0),
     provider_sort_indices: Map([], capacity=0),
     custom_endpoints: Map([], capacity=0),
     failover_queues: Map([], capacity=0),
@@ -733,6 +735,185 @@ fn ProviderRouter::read_live_provider_settings(
     return Json::object({})
   }
   provider.settings_config.unwrap_or(Json::object({}))
+}
+
+///|
+fn ProviderRouter::live_provider_ids_json(
+  self : ProviderRouter,
+  app_type : String,
+) -> Json {
+  let ids = self.stream_check_provider_ids(app_type, false)
+  Json::array(ids.map(fn(id) { Json::string(id) }))
+}
+
+///|
+fn ProviderRouter::import_live_providers(
+  self : ProviderRouter,
+  app_type : String,
+) -> Int {
+  self.stream_check_provider_ids(app_type, false).length()
+}
+
+///|
+fn ProviderRouter::universal_providers_json(self : ProviderRouter) -> Json {
+  let obj : Map[String, Json] = {}
+  let ids : Array[String] = []
+  for id in self.universal_providers.keys() {
+    ids.push(id)
+  }
+  ids.sort()
+  for id in ids {
+    guard self.universal_providers.get(id) is Some(provider) else { continue }
+    obj[id] = provider
+  }
+  Json::object(obj)
+}
+
+///|
+fn ProviderRouter::universal_provider_json(
+  self : ProviderRouter,
+  id : String,
+) -> Json {
+  self.universal_providers.get(id).unwrap_or(Json::null())
+}
+
+///|
+fn ProviderRouter::upsert_universal_provider(
+  self : ProviderRouter,
+  provider : Json,
+) -> Bool {
+  guard provider is Object(obj) else { return false }
+  guard json_string_from_map(obj, "id") is Some(id) && !id.trim().is_empty() else {
+    return false
+  }
+  self.universal_providers.set(id.trim().to_owned(), provider)
+  true
+}
+
+///|
+fn ProviderRouter::delete_universal_provider(
+  self : ProviderRouter,
+  id : String,
+) -> Bool {
+  let existed = self.universal_providers.get(id) is Some(_)
+  self.universal_providers.remove(id)
+  for app_type in ["claude", "codex", "gemini"] {
+    ignore(
+      self.delete_provider(app_type, universal_app_provider_id(app_type, id)),
+    )
+  }
+  existed
+}
+
+///|
+fn ProviderRouter::sync_universal_provider(
+  self : ProviderRouter,
+  id : String,
+) -> Bool {
+  guard self.universal_providers.get(id) is Some(provider) else { return false }
+  guard provider is Object(obj) else { return false }
+  for app_type in ["claude", "codex", "gemini"] {
+    if universal_provider_app_enabled(obj, app_type) {
+      self.upsert_provider(universal_provider_route_target(obj, app_type, id))
+    } else {
+      ignore(
+        self.delete_provider(app_type, universal_app_provider_id(app_type, id)),
+      )
+    }
+  }
+  true
+}
+
+///|
+fn universal_provider_route_target(
+  obj : Map[String, Json],
+  app_type : String,
+  id : String,
+) -> ProviderRouteTarget {
+  let provider_id = universal_app_provider_id(app_type, id)
+  let provider_name = json_string_from_map(obj, "name").unwrap_or(id)
+  let provider_type = json_string_from_map(obj, "providerType")
+  let base_url = json_string_from_map(obj, "baseUrl")
+  let api_key = json_string_from_map(obj, "apiKey")
+  let settings_config = universal_provider_settings_config(obj, app_type)
+  ProviderRouteTarget::new(
+    app_type~,
+    provider_id~,
+    provider_name~,
+    provider_type~,
+    api_format=Some(universal_provider_api_format(app_type)),
+    base_url~,
+    api_key~,
+    settings_config=Some(settings_config),
+  )
+}
+
+///|
+fn universal_app_provider_id(app_type : String, id : String) -> String {
+  "\{universal_provider_app_slug(app_type)}-\{id}"
+}
+
+///|
+fn universal_provider_app_slug(app_type : String) -> String {
+  match app_type {
+    "claude" => "universal-claude"
+    "codex" => "universal-codex"
+    "gemini" => "universal-gemini"
+    _ => "universal-\{app_type}"
+  }
+}
+
+///|
+fn universal_provider_api_format(app_type : String) -> String {
+  match app_type {
+    "claude" => "anthropic"
+    "codex" => "openai_responses"
+    "gemini" => "gemini_native"
+    _ => app_type
+  }
+}
+
+///|
+fn universal_provider_app_enabled(
+  obj : Map[String, Json],
+  app_type : String,
+) -> Bool {
+  guard obj.get("apps") is Some(Object(apps)) else { return false }
+  match apps.get(app_type) {
+    Some(true) => true
+    Some(false) => false
+    _ => false
+  }
+}
+
+///|
+fn universal_provider_settings_config(
+  obj : Map[String, Json],
+  app_type : String,
+) -> Json {
+  let settings : Map[String, Json] = {}
+  match json_string_from_map(obj, "baseUrl") {
+    Some(base_url) => settings["baseUrl"] = Json::string(base_url)
+    None => ()
+  }
+  match json_string_from_map(obj, "apiKey") {
+    Some(api_key) => settings["apiKey"] = Json::string(api_key)
+    None => ()
+  }
+  match json_string_from_map(obj, "providerType") {
+    Some(provider_type) =>
+      settings["providerType"] = Json::string(provider_type)
+    None => ()
+  }
+  match obj.get("models") {
+    Some(Object(models)) =>
+      match models.get(app_type) {
+        Some(model_config) => settings["models"] = model_config
+        None => ()
+      }
+    _ => ()
+  }
+  Json::object(settings)
 }
 
 ///|

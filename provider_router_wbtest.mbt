@@ -594,3 +594,57 @@ test "provider router mirrors ccs live settings and sort updates" {
   assert_eq(provider_b["sortIndex"], Json::number(0.0))
   json_inspect(router.read_live_provider_settings("missing"), content={})
 }
+
+///|
+test "provider router syncs universal providers into app providers" {
+  let router = ProviderRouter::new()
+  assert_true(
+    router.upsert_universal_provider(
+      {
+        "id": Json::string("u1"),
+        "name": Json::string("Universal One"),
+        "providerType": Json::string("openai-compatible"),
+        "apps": {
+          "claude": Json::boolean(true),
+          "codex": Json::boolean(true),
+          "gemini": Json::boolean(false),
+        }.to_json(),
+        "baseUrl": Json::string("https://api.example.com/v1"),
+        "apiKey": Json::string("sk-u1"),
+        "models": {
+          "codex": {
+            "model": Json::string("gpt-5"),
+            "reasoningEffort": Json::string("medium"),
+          }.to_json(),
+        }.to_json(),
+      }.to_json(),
+    ),
+  )
+  guard router.universal_provider_json("u1") is Object(universal) else {
+    fail("expected universal provider")
+  }
+  assert_eq(universal["name"], Json::string("Universal One"))
+  assert_true(router.sync_universal_provider("u1"))
+  json_inspect(router.live_provider_ids_json("codex"), content=[
+    "universal-codex-u1",
+  ])
+  guard router.providers_ccs_json("codex") is Object(codex_providers) else {
+    fail("expected codex providers")
+  }
+  guard codex_providers["universal-codex-u1"] is Object(codex_provider) else {
+    fail("expected synced codex provider")
+  }
+  assert_eq(codex_provider["name"], Json::string("Universal One"))
+  guard codex_provider["settingsConfig"] is Object(settings) else {
+    fail("expected settings config")
+  }
+  assert_eq(settings["apiKey"], Json::string("sk-u1"))
+  guard settings["models"] is Object(codex_models) else {
+    fail("expected codex models")
+  }
+  assert_eq(codex_models["model"], Json::string("gpt-5"))
+  assert_eq(router.import_live_providers("codex"), 1)
+  assert_true(router.delete_universal_provider("u1"))
+  json_inspect(router.universal_providers_json(), content={})
+  json_inspect(router.live_provider_ids_json("codex"), content=[])
+}

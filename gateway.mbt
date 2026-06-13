@@ -747,6 +747,50 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/read_live_provider_settings", (r, w) => {
     self.handle_read_live_provider_settings(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_opencode_live_provider_ids", (
+    _,
+    w,
+  ) => self.handle_get_live_provider_ids(w, "opencode"))
+  router.add_handler(@httpx.Method::Get, "/get_openclaw_live_provider_ids", (
+    _,
+    w,
+  ) => self.handle_get_live_provider_ids(w, "openclaw"))
+  router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider_ids", (_, w) => {
+    self.handle_get_live_provider_ids(w, "hermes")
+  })
+  router.add_handler(
+    @httpx.Method::Post,
+    "/import_opencode_providers_from_live",
+    (_, w) => self.handle_import_live_providers(w, "opencode"),
+  )
+  router.add_handler(
+    @httpx.Method::Post,
+    "/import_openclaw_providers_from_live",
+    (_, w) => self.handle_import_live_providers(w, "openclaw"),
+  )
+  router.add_handler(
+    @httpx.Method::Post,
+    "/import_hermes_providers_from_live",
+    (_, w) => self.handle_import_live_providers(w, "hermes"),
+  )
+  router.add_handler(@httpx.Method::Get, "/get_universal_providers", (_, w) => {
+    self.handle_get_universal_providers(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_universal_provider", (r, w) => {
+    self.handle_get_universal_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/upsert_universal_provider", (r, w) => {
+    self.handle_upsert_universal_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/delete_universal_provider", (r, w) => {
+    self.handle_delete_universal_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/delete_universal_provider", (r, w) => {
+    self.handle_delete_universal_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/sync_universal_provider", (r, w) => {
+    self.handle_sync_universal_provider(r, w)
+  })
   router.add_handler(@httpx.Method::Post, "/test_api_endpoints", (r, w) => {
     self.handle_test_api_endpoints(r, w)
   })
@@ -3793,6 +3837,102 @@ async fn Gateway::handle_read_live_provider_settings(
 }
 
 ///|
+async fn Gateway::handle_get_live_provider_ids(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+  app_type : String,
+) -> Unit {
+  write_usage_json(w, self.provider_router.live_provider_ids_json(app_type))
+}
+
+///|
+async fn Gateway::handle_import_live_providers(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+  app_type : String,
+) -> Unit {
+  write_usage_json(
+    w,
+    Json::number(
+      self.provider_router.import_live_providers(app_type).to_double(),
+    ),
+  )
+}
+
+///|
+async fn Gateway::handle_get_universal_providers(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.provider_router.universal_providers_json())
+}
+
+///|
+async fn Gateway::handle_get_universal_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_id_from_request(r.path, body) is Some(id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  write_usage_json(w, self.provider_router.universal_provider_json(id))
+}
+
+///|
+async fn Gateway::handle_upsert_universal_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard universal_provider_from_request(r.path, body) is Some(provider) else {
+    write_usage_bad_request(w, "invalid_universal_provider")
+    return
+  }
+  write_usage_json(
+    w,
+    Json::boolean(self.provider_router.upsert_universal_provider(provider)),
+  )
+}
+
+///|
+async fn Gateway::handle_delete_universal_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_id_from_request(r.path, body) is Some(id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  write_usage_json(
+    w,
+    Json::boolean(self.provider_router.delete_universal_provider(id)),
+  )
+}
+
+///|
+async fn Gateway::handle_sync_universal_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_id_from_request(r.path, body) is Some(id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  write_usage_json(
+    w,
+    Json::boolean(self.provider_router.sync_universal_provider(id)),
+  )
+}
+
+///|
 async fn Gateway::handle_test_api_endpoints(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4810,6 +4950,110 @@ fn provider_settings_config_from_body(body : Json?) -> Json? {
         None => None
       }
   }
+}
+
+///|
+fn universal_provider_from_request(path : StringView, body : Json?) -> Json? {
+  match provider_body_payload(body) {
+    Some(Object(obj)) =>
+      if json_string_from_map(obj, "id") is Some(id) && !id.trim().is_empty() {
+        return Some(Json::object(obj))
+      }
+    _ => ()
+  }
+  guard provider_id_from_request(path, body) is Some(id) &&
+    !id.trim().is_empty() else {
+    return None
+  }
+  let provider : Map[String, Json] = {
+    "id": Json::string(id.trim().to_owned()),
+    "name": Json::string(
+      provider_string_from_request(path, body, ["name"]).unwrap_or(id),
+    ),
+    "providerType": Json::string(
+      provider_string_from_request(path, body, ["providerType", "provider_type"]).unwrap_or(
+        "custom",
+      ),
+    ),
+    "apps": universal_provider_apps_from_request(path, body),
+    "models": universal_provider_models_from_request(path, body),
+  }
+  match provider_string_from_request(path, body, ["baseUrl", "base_url"]) {
+    Some(value) => provider["baseUrl"] = Json::string(value)
+    None => ()
+  }
+  match provider_string_from_request(path, body, ["apiKey", "api_key"]) {
+    Some(value) => provider["apiKey"] = Json::string(value)
+    None => ()
+  }
+  Some(Json::object(provider))
+}
+
+///|
+fn universal_provider_apps_from_request(
+  path : StringView,
+  body : Json?,
+) -> Json {
+  let apps_value = provider_string_from_request(path, body, [
+    "apps", "app", "appType", "app_type",
+  ]).unwrap_or("claude,codex,gemini")
+  let enabled = universal_provider_enabled_apps(apps_value)
+  {
+    "claude": Json::boolean(enabled.contains("claude")),
+    "codex": Json::boolean(enabled.contains("codex")),
+    "gemini": Json::boolean(enabled.contains("gemini")),
+  }.to_json()
+}
+
+///|
+fn universal_provider_enabled_apps(apps_value : String) -> Array[String] {
+  let enabled : Array[String] = []
+  for raw in apps_value.split(",") {
+    let app = raw.trim().to_lower().to_owned()
+    if app == "all" {
+      return ["claude", "codex", "gemini"]
+    }
+    if (app == "claude" || app == "codex" || app == "gemini") &&
+      !enabled.contains(app) {
+      enabled.push(app)
+    }
+  }
+  enabled
+}
+
+///|
+fn universal_provider_models_from_request(
+  path : StringView,
+  body : Json?,
+) -> Json {
+  let models : Map[String, Json] = {}
+  match
+    provider_string_from_request(path, body, ["claudeModel", "claude_model"]) {
+    Some(model) => models["claude"] = { "model": Json::string(model) }.to_json()
+    None => ()
+  }
+  let codex : Map[String, Json] = {}
+  match
+    provider_string_from_request(path, body, ["codexModel", "codex_model"]) {
+    Some(model) => codex["model"] = Json::string(model)
+    None => ()
+  }
+  match
+    provider_string_from_request(path, body, [
+      "reasoningEffort", "reasoning_effort",
+    ]) {
+    Some(value) => codex["reasoningEffort"] = Json::string(value)
+    None => ()
+  }
+  if !codex.is_empty() {
+    models["codex"] = Json::object(codex)
+  }
+  match
+    provider_string_from_request(path, body, ["geminiModel", "gemini_model"]) {
+    Some(model) => models["gemini"] = { "model": Json::string(model) }.to_json()
+    None => ()
+  }
+  Json::object(models)
 }
 
 ///|

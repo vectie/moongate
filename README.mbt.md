@@ -126,6 +126,17 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `DELETE /remove_provider_from_live_config?app=codex&id=custom`
 - `POST /switch_provider?app=codex&id=custom`
 - `GET /read_live_provider_settings?app=codex`
+- `GET /get_opencode_live_provider_ids`
+- `GET /get_openclaw_live_provider_ids`
+- `GET /get_hermes_live_provider_ids`
+- `POST /import_opencode_providers_from_live`
+- `POST /import_openclaw_providers_from_live`
+- `POST /import_hermes_providers_from_live`
+- `GET /get_universal_providers`
+- `GET /get_universal_provider?id=custom`
+- `POST /upsert_universal_provider?id=custom&name=Custom&apps=claude,codex`
+- `DELETE|POST /delete_universal_provider?id=custom`
+- `POST /sync_universal_provider?id=custom`
 - `GET|POST /test_api_endpoints?urls=https://api.example.com/v1`
 - `POST /update_providers_sort_order?app=codex&id=custom&sortIndex=0`
 - `GET /get_custom_endpoints?app=codex&providerId=custom`
@@ -218,7 +229,16 @@ The `/get_providers`,
 `/switch_provider` mirror ccs provider CRUD/current-provider command shapes
 against that same standalone provider router state. `/read_live_provider_settings`,
 `/test_api_endpoints`, and `/update_providers_sort_order` mirror the ccs live
-settings, endpoint latency result, and `sortIndex` command shapes. `/get_custom_endpoints`,
+settings, endpoint latency result, and `sortIndex` command shapes.
+`/get_opencode_live_provider_ids`, `/get_openclaw_live_provider_ids`,
+`/get_hermes_live_provider_ids`, and the matching `import_*_from_live`
+commands expose the same suite-facing provider import/ID command surface against
+Moonstat's standalone provider router state. `/get_universal_providers`,
+`/get_universal_provider`, `/upsert_universal_provider`,
+`/delete_universal_provider`, and `/sync_universal_provider` preserve the ccs
+universal-provider JSON shape and can sync enabled Claude/Codex/Gemini apps into
+concrete router providers named `universal-claude-*`, `universal-codex-*`, and
+`universal-gemini-*`. `/get_custom_endpoints`,
 `/add_custom_endpoint`, `/remove_custom_endpoint`, and `/update_endpoint_last_used`
 mirror ccs provider custom endpoint metadata, including URL normalization,
 newest-first listing, and best-effort last-used updates.

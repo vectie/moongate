@@ -106,6 +106,34 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["switch_provider", ..] | ["switch-provider", ..] => switch_provider(arr)
     ["read_live_provider_settings", ..] | ["read-live-provider-settings", ..] =>
       check_live_provider_settings(arr)
+    ["get_opencode_live_provider_ids", ..]
+    | ["get-opencode-live-provider-ids", ..] =>
+      check_named_live_provider_ids(arr, "opencode")
+    ["get_openclaw_live_provider_ids", ..]
+    | ["get-openclaw-live-provider-ids", ..] =>
+      check_named_live_provider_ids(arr, "openclaw")
+    ["get_hermes_live_provider_ids", ..]
+    | ["get-hermes-live-provider-ids", ..] =>
+      check_named_live_provider_ids(arr, "hermes")
+    ["import_opencode_providers_from_live", ..]
+    | ["import-opencode-providers-from-live", ..] =>
+      import_named_live_providers(arr, "opencode")
+    ["import_openclaw_providers_from_live", ..]
+    | ["import-openclaw-providers-from-live", ..] =>
+      import_named_live_providers(arr, "openclaw")
+    ["import_hermes_providers_from_live", ..]
+    | ["import-hermes-providers-from-live", ..] =>
+      import_named_live_providers(arr, "hermes")
+    ["get_universal_providers", ..] | ["get-universal-providers", ..] =>
+      check_universal_providers(arr)
+    ["get_universal_provider", ..] | ["get-universal-provider", ..] =>
+      check_universal_provider(arr)
+    ["upsert_universal_provider", ..] | ["upsert-universal-provider", ..] =>
+      upsert_universal_provider(arr)
+    ["delete_universal_provider", ..] | ["delete-universal-provider", ..] =>
+      delete_universal_provider(arr)
+    ["sync_universal_provider", ..] | ["sync-universal-provider", ..] =>
+      sync_universal_provider(arr)
     ["test_api_endpoints", ..] | ["test-api-endpoints", ..] =>
       test_api_endpoints(arr)
     ["update_providers_sort_order", ..] | ["update-providers-sort-order", ..] =>
@@ -234,6 +262,20 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       switch_provider(arr)
     ["provider", "live-settings", ..] | ["providers", "live-settings", ..] =>
       check_live_provider_settings(arr)
+    ["provider", "live-ids", ..] | ["providers", "live-ids", ..] =>
+      check_provider_live_ids(arr)
+    ["provider", "import-live", ..] | ["providers", "import-live", ..] =>
+      import_provider_live(arr)
+    ["provider", "universal", "list", ..]
+    | ["providers", "universal", "list", ..] => check_universal_providers(arr)
+    ["provider", "universal", "get", ..]
+    | ["providers", "universal", "get", ..] => check_universal_provider(arr)
+    ["provider", "universal", "upsert", ..]
+    | ["providers", "universal", "upsert", ..] => upsert_universal_provider(arr)
+    ["provider", "universal", "delete", ..]
+    | ["providers", "universal", "delete", ..] => delete_universal_provider(arr)
+    ["provider", "universal", "sync", ..]
+    | ["providers", "universal", "sync", ..] => sync_universal_provider(arr)
     ["provider", "test-endpoints", ..] | ["providers", "test-endpoints", ..] =>
       test_api_endpoints(arr)
     ["provider", "sort-order", "set", ..]
@@ -910,6 +952,92 @@ async fn check_live_provider_settings(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_named_live_provider_ids(
+  args : Array[String],
+  app_type : String,
+) -> Unit {
+  check_json_endpoint(args, provider_live_ids_path(app_type), "Provider")
+}
+
+///|
+async fn import_named_live_providers(
+  args : Array[String],
+  app_type : String,
+) -> Unit {
+  check_json_post_endpoint(
+    args,
+    provider_import_live_path(app_type),
+    "Provider",
+  )
+}
+
+///|
+async fn check_provider_live_ids(args : Array[String]) -> Unit {
+  check_json_endpoint(
+    args,
+    provider_live_ids_path(provider_app_arg(args)),
+    "Provider",
+  )
+}
+
+///|
+async fn import_provider_live(args : Array[String]) -> Unit {
+  check_json_post_endpoint(
+    args,
+    provider_import_live_path(provider_app_arg(args)),
+    "Provider",
+  )
+}
+
+///|
+async fn check_universal_providers(args : Array[String]) -> Unit {
+  check_json_endpoint(args, "/get_universal_providers", "Provider")
+}
+
+///|
+async fn check_universal_provider(args : Array[String]) -> Unit {
+  guard universal_provider_id_path(args, "/get_universal_provider")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_endpoint(args, path, "Provider")
+}
+
+///|
+async fn upsert_universal_provider(args : Array[String]) -> Unit {
+  guard universal_provider_upsert_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required universal provider args: --id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
+async fn delete_universal_provider(args : Array[String]) -> Unit {
+  guard universal_provider_id_path(args, "/delete_universal_provider")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_delete_endpoint(args, path, "Provider")
+}
+
+///|
+async fn sync_universal_provider(args : Array[String]) -> Unit {
+  guard universal_provider_id_path(args, "/sync_universal_provider")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
 async fn test_api_endpoints(args : Array[String]) -> Unit {
   guard provider_test_endpoints_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1038,6 +1166,75 @@ fn provider_id_path(args : Array[String], path : String) -> String? {
   Some(
     "\{path}?app=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}",
   )
+}
+
+///|
+fn provider_live_ids_path(app_type : String) -> String {
+  match app_type {
+    "opencode" => "/get_opencode_live_provider_ids"
+    "openclaw" => "/get_openclaw_live_provider_ids"
+    "hermes" => "/get_hermes_live_provider_ids"
+    _ => "/get_providers?app=\{cli_url_encode(app_type)}"
+  }
+}
+
+///|
+fn provider_import_live_path(app_type : String) -> String {
+  match app_type {
+    "opencode" => "/import_opencode_providers_from_live"
+    "openclaw" => "/import_openclaw_providers_from_live"
+    "hermes" => "/import_hermes_providers_from_live"
+    _ => "/get_providers?app=\{cli_url_encode(app_type)}"
+  }
+}
+
+///|
+fn universal_provider_id_path(args : Array[String], path : String) -> String? {
+  guard provider_id_arg(args) is Some(provider_id) else { return None }
+  Some("\{path}?id=\{cli_url_encode(provider_id)}")
+}
+
+///|
+fn universal_provider_upsert_path(args : Array[String]) -> String? {
+  guard provider_id_arg(args) is Some(provider_id) else { return None }
+  let name = parse_string_arg(args, "--name").unwrap_or(provider_id)
+  let query : Array[String] = [
+    cli_query_pair("id", provider_id),
+    cli_query_pair("name", name),
+  ]
+  match parse_string_arg_any(args, "--provider-type", "--providerType") {
+    Some(value) => query.push(cli_query_pair("providerType", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--base-url", "--baseUrl") {
+    Some(value) => query.push(cli_query_pair("baseUrl", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--api-key", "--apiKey") {
+    Some(value) => query.push(cli_query_pair("apiKey", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--apps") {
+    Some(value) => query.push(cli_query_pair("apps", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--claude-model", "--claudeModel") {
+    Some(value) => query.push(cli_query_pair("claudeModel", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--codex-model", "--codexModel") {
+    Some(value) => query.push(cli_query_pair("codexModel", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--gemini-model", "--geminiModel") {
+    Some(value) => query.push(cli_query_pair("geminiModel", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--reasoning-effort", "--reasoningEffort") {
+    Some(value) => query.push(cli_query_pair("reasoningEffort", value))
+    None => ()
+  }
+  Some("/upsert_universal_provider?\{query.join("&")}")
 }
 
 ///|
