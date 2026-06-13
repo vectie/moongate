@@ -518,6 +518,54 @@ async test "gateway applies ccs provider cost multiplier to request log" {
 }
 
 ///|
+async test "gateway ignores invalid ccs provider cost multiplier" {
+  let gateway = Gateway::new(port=0)
+  gateway.pricing_overrides.set("test-model", ModelPricing::{
+    model_id: "test-model",
+    display_name: "Test Model",
+    input_cost_per_million: "1.0",
+    output_cost_per_million: "0",
+    cache_read_cost_per_million: "0",
+    cache_creation_cost_per_million: "0",
+  })
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="invalid-cost",
+    provider_name="Invalid Cost Provider",
+    settings_config=Some(
+      @json.parse(
+        (
+          #|{
+          #|  "meta": { "costMultiplier": "not-a-number" }
+          #|}
+        ),
+      ),
+    ),
+  )
+  gateway.stats.record_inbound(10)
+  assert_true(
+    gateway.activate_provider_target(
+      "claude",
+      provider,
+      bypass_circuit_breaker=true,
+    ),
+  )
+  gateway.stats.record_request_context("claude", "test-model")
+  gateway.record_success_usage(
+    TokenUsage::new(
+      input_tokens=1000,
+      output_tokens=0,
+      model=Some("test-model"),
+    ),
+    64,
+  )
+  assert_eq(gateway.stats.request_logs.length(), 1)
+  let log = gateway.stats.request_logs[0]
+  assert_eq(log.cost_multiplier, "1.0")
+  assert_eq(log.total_cost_usd, "0.001")
+}
+
+///|
 async test "gateway records billable ccs stream usage once" {
   let gateway = Gateway::new(port=0)
   gateway.stats.record_inbound(10)

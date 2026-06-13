@@ -1844,7 +1844,7 @@ fn provider_cost_multiplier(provider : ProviderRouteTarget) -> String {
     Object(obj) => {
       match
         json_string_from_map_any(obj, ["costMultiplier", "cost_multiplier"]) {
-        Some(value) if !value.trim().is_empty() =>
+        Some(value) if usage_non_negative_decimal(value) =>
           return value.trim().to_owned()
         _ => ()
       }
@@ -1852,7 +1852,8 @@ fn provider_cost_multiplier(provider : ProviderRouteTarget) -> String {
         Some(Object(meta)) =>
           match
             json_string_from_map_any(meta, ["costMultiplier", "cost_multiplier"]) {
-            Some(value) if !value.trim().is_empty() => value.trim().to_owned()
+            Some(value) if usage_non_negative_decimal(value) =>
+              value.trim().to_owned()
             _ => "1.0"
           }
         _ => "1.0"
