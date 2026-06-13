@@ -243,15 +243,15 @@ async fn sync_session_usage(args : Array[String]) -> Unit {
 fn usage_trends_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--start-date") {
-    Some(value) => query.push("start_date=\{value}")
+    Some(value) => query.push(cli_query_pair("start_date", value))
     None => ()
   }
   match parse_string_arg(args, "--end-date") {
-    Some(value) => query.push("end_date=\{value}")
+    Some(value) => query.push(cli_query_pair("end_date", value))
     None => ()
   }
   match parse_string_arg(args, "--app-type") {
-    Some(value) => query.push("app_type=\{value}")
+    Some(value) => query.push(cli_query_pair("app_type", value))
     None => ()
   }
   if query.is_empty() {
@@ -265,19 +265,19 @@ fn usage_trends_path(args : Array[String]) -> String {
 fn usage_limits_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--provider-id") {
-    Some(value) => query.push("provider_id=\{value}")
+    Some(value) => query.push(cli_query_pair("provider_id", value))
     None => ()
   }
   match parse_string_arg(args, "--app-type") {
-    Some(value) => query.push("app_type=\{value}")
+    Some(value) => query.push(cli_query_pair("app_type", value))
     None => ()
   }
   match parse_string_arg(args, "--daily-limit-usd") {
-    Some(value) => query.push("daily_limit_usd=\{value}")
+    Some(value) => query.push(cli_query_pair("daily_limit_usd", value))
     None => ()
   }
   match parse_string_arg(args, "--monthly-limit-usd") {
-    Some(value) => query.push("monthly_limit_usd=\{value}")
+    Some(value) => query.push(cli_query_pair("monthly_limit_usd", value))
     None => ()
   }
   if query.is_empty() {
@@ -291,23 +291,23 @@ fn usage_limits_path(args : Array[String]) -> String {
 fn usage_sync_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--projects-dir") {
-    Some(value) => query.push("projects_dir=\{value}")
+    Some(value) => query.push(cli_query_pair("projects_dir", value))
     None => ()
   }
   match parse_string_arg(args, "--codex-dir") {
-    Some(value) => query.push("codex_dir=\{value}")
+    Some(value) => query.push(cli_query_pair("codex_dir", value))
     None => ()
   }
   match parse_string_arg(args, "--gemini-dir") {
-    Some(value) => query.push("gemini_dir=\{value}")
+    Some(value) => query.push(cli_query_pair("gemini_dir", value))
     None => ()
   }
   match parse_string_arg(args, "--opencode-export-path") {
-    Some(value) => query.push("opencode_export_path=\{value}")
+    Some(value) => query.push(cli_query_pair("opencode_export_path", value))
     None => ()
   }
   match parse_string_arg(args, "--opencode-db-path") {
-    Some(value) => query.push("opencode_db_path=\{value}")
+    Some(value) => query.push(cli_query_pair("opencode_db_path", value))
     None => ()
   }
   if query.is_empty() {
@@ -338,9 +338,15 @@ fn usage_pricing_update_path(args : Array[String]) -> String? {
     is Some(cache_creation_cost) else {
     return None
   }
-  Some(
-    "/usage/model-pricing?model_id=\{model_id}&display_name=\{display_name}&input_cost=\{input_cost}&output_cost=\{output_cost}&cache_read_cost=\{cache_read_cost}&cache_creation_cost=\{cache_creation_cost}",
-  )
+  let query = [
+    cli_query_pair("model_id", model_id),
+    cli_query_pair("display_name", display_name),
+    cli_query_pair("input_cost", input_cost),
+    cli_query_pair("output_cost", output_cost),
+    cli_query_pair("cache_read_cost", cache_read_cost),
+    cli_query_pair("cache_creation_cost", cache_creation_cost),
+  ].join("&")
+  Some("/usage/model-pricing?\{query}")
 }
 
 ///|
@@ -348,7 +354,7 @@ fn usage_pricing_delete_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--model-id") is Some(model_id) else {
     return None
   }
-  Some("/usage/model-pricing?model_id=\{model_id}")
+  Some("/usage/model-pricing?\{cli_query_pair("model_id", model_id)}")
 }
 
 ///|
@@ -705,6 +711,41 @@ fn parse_string_arg(args : Array[String], name : String) -> String? {
     i = i + 1
   }
   None
+}
+
+///|
+fn cli_query_pair(key : String, value : String) -> String {
+  "\{cli_url_encode(key)}=\{cli_url_encode(value)}"
+}
+
+///|
+fn cli_url_encode(value : String) -> String {
+  let builder = StringBuilder::new()
+  for ch in value {
+    match ch {
+      'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' =>
+        builder.write_char(ch)
+      _ => {
+        let bytes = @encoding/utf8.encode(ch.to_string())
+        for byte in bytes {
+          let hex = byte.to_int()
+          builder.write_char('%')
+          builder.write_char(cli_hex_digit((hex >> 4) & 0xF))
+          builder.write_char(cli_hex_digit(hex & 0xF))
+        }
+      }
+    }
+  }
+  builder.to_string()
+}
+
+///|
+fn cli_hex_digit(n : Int) -> Char {
+  if n < 10 {
+    ('0'.to_int() + n).unsafe_to_char()
+  } else {
+    ('A'.to_int() + n - 10).unsafe_to_char()
+  }
 }
 
 ///|
