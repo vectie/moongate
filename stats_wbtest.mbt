@@ -432,6 +432,138 @@ test "usage aggregate lists match ccs route payloads" {
 }
 
 ///|
+test "usage aggregates deduplicate ccs session imports against proxy logs" {
+  let stats = TrafficStats::new()
+  let session_log = RequestLog::new(
+    request_id="codex_session:session-1:0",
+    provider_id="_codex_session",
+    app_type="codex",
+    model="gpt-5",
+    usage=TokenUsage::new(
+      input_tokens=100,
+      output_tokens=10,
+      cache_read_tokens=40,
+      cache_creation_tokens=0,
+    ),
+    total_cost_usd="0.009999",
+    status_code=200,
+    created_at=1000,
+    data_source="codex_session",
+  )
+  let proxy_log = RequestLog::new(
+    request_id="req-proxy",
+    provider_id="codex-oauth",
+    provider_name=Some("Codex OAuth"),
+    app_type="codex",
+    model="unknown",
+    usage=TokenUsage::new(
+      input_tokens=100,
+      output_tokens=10,
+      cache_read_tokens=40,
+      cache_creation_tokens=5,
+    ),
+    total_cost_usd="0.000100",
+    status_code=200,
+    latency_ms=30,
+    created_at=1300,
+    data_source="proxy",
+  )
+  stats.record_request_log(session_log)
+  stats.record_request_log(proxy_log)
+  assert_eq(stats.request_logs.length(), 2)
+  assert_false(stats.request_log_is_effective(session_log))
+  assert_true(stats.request_log_is_effective(proxy_log))
+
+  json_inspect(stats.usage_logs_json(limit=10), content={
+    "data": [proxy_log.to_json()],
+    "total": 1,
+    "limit": 10,
+    "source": "memory",
+    "table": "proxy_request_logs",
+  })
+
+  let summary = stats.usage_summary_json()
+  guard summary is Object(summary_obj) else { fail("expected summary object") }
+  assert_eq(summary_obj["totalRequests"], Json::number(1.0))
+  assert_eq(summary_obj["totalCost"], Json::string("0.000100"))
+  assert_eq(summary_obj["totalInputTokens"], Json::number(60.0))
+  assert_eq(summary_obj["totalOutputTokens"], Json::number(10.0))
+  assert_eq(summary_obj["totalCacheCreationTokens"], Json::number(5.0))
+  assert_eq(summary_obj["totalCacheReadTokens"], Json::number(40.0))
+  assert_eq(summary_obj["successRate"], Json::number(100.0))
+  assert_eq(summary_obj["realTotalTokens"], Json::number(115.0))
+  guard summary_obj["cacheHitRate"] is Number(cache_hit_rate, ..) else {
+    fail("expected cache hit rate")
+  }
+  assert_true(cache_hit_rate > 0.380 && cache_hit_rate < 0.382)
+
+  json_inspect(stats.usage_data_sources_json(), content=[
+    { "dataSource": "proxy", "requestCount": 1, "totalCostUsd": "0.000100" },
+  ])
+  json_inspect(stats.provider_stats_json(), content=[
+    {
+      "providerId": "codex-oauth",
+      "providerName": "Codex OAuth",
+      "requestCount": 1,
+      "totalTokens": 70,
+      "totalCost": "0.000100",
+      "successRate": 100,
+      "avgLatencyMs": 30,
+    },
+  ])
+  json_inspect(stats.model_stats_json(), content=[
+    {
+      "model": "unknown",
+      "requestCount": 1,
+      "totalTokens": 70,
+      "totalCost": "0.000100",
+      "avgCostPerRequest": "0.000100",
+    },
+  ])
+
+  let trends = stats.usage_trends_json(
+    start_ts=Some(0),
+    end_ts=Some(3600),
+    app_type=Some("codex"),
+  )
+  guard trends is Array(trend_rows) else { fail("expected trends array") }
+  assert_eq(trend_rows.length(), 1)
+  guard trend_rows[0] is Object(trend) else { fail("expected trend bucket") }
+  assert_eq(trend["requestCount"], Json::number(1.0))
+  assert_eq(trend["totalCost"], Json::string("0.000100"))
+  assert_eq(trend["totalTokens"], Json::number(70.0))
+
+  json_inspect(
+    stats.provider_limit_status_json(
+      "_codex_session",
+      "codex",
+      now_ts=Some(1300),
+    ),
+    content={
+      "providerId": "_codex_session",
+      "dailyUsage": "0.000000",
+      "dailyLimit": null,
+      "dailyExceeded": false,
+      "monthlyUsage": "0.000000",
+      "monthlyLimit": null,
+      "monthlyExceeded": false,
+    },
+  )
+  json_inspect(
+    stats.provider_limit_status_json("codex-oauth", "codex", now_ts=Some(1300)),
+    content={
+      "providerId": "codex-oauth",
+      "dailyUsage": "0.000100",
+      "dailyLimit": null,
+      "dailyExceeded": false,
+      "monthlyUsage": "0.000100",
+      "monthlyLimit": null,
+      "monthlyExceeded": false,
+    },
+  )
+}
+
+///|
 test "usage trends use ccs hourly buckets for short ranges" {
   let stats = TrafficStats::new()
   stats.record_request_log(

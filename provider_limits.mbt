@@ -92,7 +92,8 @@ fn TrafficStats::provider_daily_usage_nano(
   let today = trend_local_day_index(now_ts)
   let mut total = 0L
   for log in self.request_logs {
-    if log.provider_id == provider_id &&
+    if self.request_log_is_effective(log) &&
+      log.provider_id == provider_id &&
       log.app_type == app_type &&
       trend_local_day_index(log.created_at) == today {
       total += request_log_total_cost_nano(log)
@@ -111,7 +112,8 @@ fn TrafficStats::provider_monthly_usage_nano(
   let month = provider_limit_month_key(now_ts)
   let mut total = 0L
   for log in self.request_logs {
-    if log.provider_id == provider_id &&
+    if self.request_log_is_effective(log) &&
+      log.provider_id == provider_id &&
       log.app_type == app_type &&
       provider_limit_month_key(log.created_at) == month {
       total += request_log_total_cost_nano(log)

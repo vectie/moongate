@@ -128,7 +128,8 @@ fn TrafficStats::hourly_usage_trends_json(
     )
   }
   for log in self.request_logs {
-    if !request_log_matches_trend(log, start_ts, end_ts, app_type) {
+    if !self.request_log_is_effective(log) ||
+      !request_log_matches_trend(log, start_ts, end_ts, app_type) {
       continue
     }
     let mut bucket_index = (log.created_at - start_ts) / TREND_HOUR_SECONDS
@@ -162,7 +163,8 @@ fn TrafficStats::daily_usage_trends_json(
     )
   }
   for log in self.request_logs {
-    if !request_log_matches_trend(log, start_ts, end_ts, app_type) {
+    if !self.request_log_is_effective(log) ||
+      !request_log_matches_trend(log, start_ts, end_ts, app_type) {
       continue
     }
     let bucket_index = trend_local_day_index(log.created_at) - start_day

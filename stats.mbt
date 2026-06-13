@@ -454,12 +454,18 @@ pub fn TrafficStats::request_logs_json(
   self : TrafficStats,
   limit? : Int = 100,
 ) -> Json {
+  let effective_logs : Array[RequestLog] = []
+  for log in self.request_logs {
+    if self.request_log_is_effective(log) {
+      effective_logs.push(log)
+    }
+  }
   let logs : Array[Json] = []
-  let len = self.request_logs.length()
+  let len = effective_logs.length()
   let bounded_limit = if limit < 0 { 0 } else { limit }
   let start = max_int(len - bounded_limit, 0)
   for i in start..<len {
-    logs.push(self.request_logs[i].to_json())
+    logs.push(effective_logs[i].to_json())
   }
   Json::array(logs)
 }
@@ -471,7 +477,7 @@ pub fn TrafficStats::usage_logs_json(
 ) -> Json {
   {
     "data": self.request_logs_json(limit~),
-    "total": Json::number(self.request_logs.length().to_double()),
+    "total": Json::number(self.effective_request_log_count().to_double()),
     "limit": Json::number((if limit < 0 { 0 } else { limit }).to_double()),
     "source": Json::string(
       if self.storage_dir is Some(_) {
@@ -491,7 +497,8 @@ pub fn TrafficStats::usage_summary_json(
 ) -> Json {
   let acc = UsageSummaryAccumulator::new()
   for log in self.request_logs {
-    if request_log_matches_app(log, app_type) {
+    if self.request_log_is_effective(log) &&
+      request_log_matches_app(log, app_type) {
       acc.add(log)
     }
   }
@@ -502,6 +509,9 @@ pub fn TrafficStats::usage_summary_json(
 pub fn TrafficStats::usage_summary_by_app_json(self : TrafficStats) -> Json {
   let summaries : Map[String, UsageSummaryAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
+    if !self.request_log_is_effective(log) {
+      continue
+    }
     let acc = summaries
       .get(log.app_type)
       .unwrap_or(UsageSummaryAccumulator::new())
@@ -542,7 +552,8 @@ pub fn TrafficStats::provider_stats_json(
 ) -> Json {
   let stats : Map[String, ProviderStatsAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
-    if !request_log_matches_app(log, app_type) {
+    if !self.request_log_is_effective(log) ||
+      !request_log_matches_app(log, app_type) {
       continue
     }
     let key = "\{log.provider_id}|\{log.app_type}"
@@ -573,7 +584,8 @@ pub fn TrafficStats::model_stats_json(
 ) -> Json {
   let stats : Map[String, ModelStatsAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
-    if !request_log_matches_app(log, app_type) {
+    if !self.request_log_is_effective(log) ||
+      !request_log_matches_app(log, app_type) {
       continue
     }
     let model = request_log_pricing_model(log)
@@ -601,11 +613,10 @@ pub fn TrafficStats::model_stats_json(
 pub fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
   let sources : Map[String, DataSourceStatsAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
-    let data_source = if log.data_source.is_empty() {
-      "proxy"
-    } else {
-      log.data_source
+    if !self.request_log_is_effective(log) {
+      continue
     }
+    let data_source = request_log_data_source(log)
     let acc = sources
       .get(data_source)
       .unwrap_or(DataSourceStatsAccumulator::new(data_source))
@@ -905,6 +916,85 @@ fn request_log_matches_app(log : RequestLog, app_type : String?) -> Bool {
     Some(filter) if !filter.is_empty() => log.app_type == filter
     _ => true
   }
+}
+
+///|
+fn TrafficStats::effective_request_log_count(self : TrafficStats) -> Int {
+  let mut count = 0
+  for log in self.request_logs {
+    if self.request_log_is_effective(log) {
+      count += 1
+    }
+  }
+  count
+}
+
+///|
+fn TrafficStats::request_log_is_effective(
+  self : TrafficStats,
+  log : RequestLog,
+) -> Bool {
+  let source = request_log_data_source(log)
+  if !request_log_is_session_import_source(source) {
+    return true
+  }
+  for proxy in self.request_logs {
+    if request_logs_match_proxy_dedup(proxy, log, source) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn request_log_data_source(log : RequestLog) -> String {
+  if log.data_source.is_empty() {
+    "proxy"
+  } else {
+    log.data_source
+  }
+}
+
+///|
+fn request_log_is_session_import_source(source : String) -> Bool {
+  source == "session_log" ||
+  source == "codex_session" ||
+  source == "gemini_session" ||
+  source == "opencode_session"
+}
+
+///|
+fn request_log_allows_missing_cache_creation(
+  source : String,
+  session : RequestLog,
+) -> Bool {
+  session.cache_creation_tokens == 0 &&
+  (
+    source == "codex_session" ||
+    source == "gemini_session" ||
+    source == "opencode_session"
+  )
+}
+
+///|
+fn request_logs_match_proxy_dedup(
+  proxy : RequestLog,
+  session : RequestLog,
+  session_source : String,
+) -> Bool {
+  let cache_creation_matches = proxy.cache_creation_tokens ==
+    session.cache_creation_tokens ||
+    request_log_allows_missing_cache_creation(session_source, session)
+  request_log_data_source(proxy) == "proxy" &&
+  request_log_is_success(proxy) &&
+  proxy.app_type == session.app_type &&
+  session_models_match(proxy.model, session.model) &&
+  proxy.input_tokens == session.input_tokens &&
+  proxy.output_tokens == session.output_tokens &&
+  proxy.cache_read_tokens == session.cache_read_tokens &&
+  cache_creation_matches &&
+  session_abs_int(proxy.created_at - session.created_at) <=
+  SESSION_PROXY_DEDUP_WINDOW_SECONDS
 }
 
 ///|
