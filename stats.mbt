@@ -470,6 +470,440 @@ pub fn TrafficStats::usage_logs_json(
 }
 
 ///|
+pub fn TrafficStats::usage_summary_json(
+  self : TrafficStats,
+  app_type? : String? = None,
+) -> Json {
+  let acc = UsageSummaryAccumulator::new()
+  for log in self.request_logs {
+    if request_log_matches_app(log, app_type) {
+      acc.add(log)
+    }
+  }
+  acc.to_json()
+}
+
+///|
+pub fn TrafficStats::usage_summary_by_app_json(self : TrafficStats) -> Json {
+  let summaries : Map[String, UsageSummaryAccumulator] = Map([], capacity=0)
+  for log in self.request_logs {
+    let acc = summaries
+      .get(log.app_type)
+      .unwrap_or(UsageSummaryAccumulator::new())
+    acc.add(log)
+    summaries.set(log.app_type, acc)
+  }
+  let rows : Array[UsageSummaryByAppRow] = []
+  for app_type in summaries.keys() {
+    guard summaries.get(app_type) is Some(summary) else { continue }
+    rows.push({
+      app_type,
+      real_total_tokens: summary.real_total_tokens(),
+      summary,
+    })
+  }
+  rows.sort_by(fn(left, right) {
+    let token_order = right.real_total_tokens.compare(left.real_total_tokens)
+    if token_order != 0 {
+      token_order
+    } else {
+      left.app_type.compare(right.app_type)
+    }
+  })
+  Json::array(
+    rows.map(fn(row) {
+      {
+        "appType": Json::string(row.app_type),
+        "summary": row.summary.to_json(),
+      }.to_json()
+    }),
+  )
+}
+
+///|
+pub fn TrafficStats::provider_stats_json(
+  self : TrafficStats,
+  app_type? : String? = None,
+) -> Json {
+  let stats : Map[String, ProviderStatsAccumulator] = Map([], capacity=0)
+  for log in self.request_logs {
+    if !request_log_matches_app(log, app_type) {
+      continue
+    }
+    let key = "\{log.provider_id}|\{log.app_type}"
+    let acc = stats.get(key).unwrap_or(ProviderStatsAccumulator::new(log))
+    acc.add(log)
+    stats.set(key, acc)
+  }
+  let rows : Array[ProviderStatsAccumulator] = []
+  for key in stats.keys() {
+    guard stats.get(key) is Some(acc) else { continue }
+    rows.push(acc)
+  }
+  rows.sort_by(fn(left, right) {
+    let cost_order = right.total_cost_nano.compare(left.total_cost_nano)
+    if cost_order != 0 {
+      cost_order
+    } else {
+      left.provider_id.compare(right.provider_id)
+    }
+  })
+  Json::array(rows.map(fn(acc) { acc.to_json() }))
+}
+
+///|
+pub fn TrafficStats::model_stats_json(
+  self : TrafficStats,
+  app_type? : String? = None,
+) -> Json {
+  let stats : Map[String, ModelStatsAccumulator] = Map([], capacity=0)
+  for log in self.request_logs {
+    if !request_log_matches_app(log, app_type) {
+      continue
+    }
+    let model = request_log_pricing_model(log)
+    let acc = stats.get(model).unwrap_or(ModelStatsAccumulator::new(model))
+    acc.add(log)
+    stats.set(model, acc)
+  }
+  let rows : Array[ModelStatsAccumulator] = []
+  for model in stats.keys() {
+    guard stats.get(model) is Some(acc) else { continue }
+    rows.push(acc)
+  }
+  rows.sort_by(fn(left, right) {
+    let cost_order = right.total_cost_nano.compare(left.total_cost_nano)
+    if cost_order != 0 {
+      cost_order
+    } else {
+      left.model.compare(right.model)
+    }
+  })
+  Json::array(rows.map(fn(acc) { acc.to_json() }))
+}
+
+///|
+pub fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
+  let sources : Map[String, DataSourceStatsAccumulator] = Map([], capacity=0)
+  for log in self.request_logs {
+    let data_source = if log.data_source.is_empty() {
+      "proxy"
+    } else {
+      log.data_source
+    }
+    let acc = sources
+      .get(data_source)
+      .unwrap_or(DataSourceStatsAccumulator::new(data_source))
+    acc.add(log)
+    sources.set(data_source, acc)
+  }
+  let rows : Array[DataSourceStatsAccumulator] = []
+  for source in sources.keys() {
+    guard sources.get(source) is Some(acc) else { continue }
+    rows.push(acc)
+  }
+  rows.sort_by(fn(left, right) {
+    let count_order = right.request_count.compare(left.request_count)
+    if count_order != 0 {
+      count_order
+    } else {
+      left.data_source.compare(right.data_source)
+    }
+  })
+  Json::array(rows.map(fn(acc) { acc.to_json() }))
+}
+
+///|
+priv struct UsageSummaryAccumulator {
+  mut total_requests : Int
+  mut success_count : Int
+  mut total_input_tokens : Int
+  mut total_output_tokens : Int
+  mut total_cache_creation_tokens : Int
+  mut total_cache_read_tokens : Int
+  mut total_cost_nano : Int64
+}
+
+///|
+priv struct UsageSummaryByAppRow {
+  app_type : String
+  real_total_tokens : Int
+  summary : UsageSummaryAccumulator
+}
+
+///|
+priv struct ProviderStatsAccumulator {
+  provider_id : String
+  provider_name : String
+  mut request_count : Int
+  mut success_count : Int
+  mut total_tokens : Int
+  mut total_cost_nano : Int64
+  mut total_latency_ms : Int
+}
+
+///|
+priv struct ModelStatsAccumulator {
+  model : String
+  mut request_count : Int
+  mut total_tokens : Int
+  mut total_cost_nano : Int64
+}
+
+///|
+priv struct DataSourceStatsAccumulator {
+  data_source : String
+  mut request_count : Int
+  mut total_cost_nano : Int64
+}
+
+///|
+fn UsageSummaryAccumulator::new() -> UsageSummaryAccumulator {
+  {
+    total_requests: 0,
+    success_count: 0,
+    total_input_tokens: 0,
+    total_output_tokens: 0,
+    total_cache_creation_tokens: 0,
+    total_cache_read_tokens: 0,
+    total_cost_nano: 0L,
+  }
+}
+
+///|
+fn UsageSummaryAccumulator::add(
+  self : UsageSummaryAccumulator,
+  log : RequestLog,
+) -> Unit {
+  self.total_requests += 1
+  if request_log_is_success(log) {
+    self.success_count += 1
+  }
+  self.total_input_tokens += request_log_fresh_input_tokens(log)
+  self.total_output_tokens += log.output_tokens
+  self.total_cache_creation_tokens += log.cache_creation_tokens
+  self.total_cache_read_tokens += log.cache_read_tokens
+  self.total_cost_nano += request_log_total_cost_nano(log)
+}
+
+///|
+fn UsageSummaryAccumulator::real_total_tokens(
+  self : UsageSummaryAccumulator,
+) -> Int {
+  self.total_input_tokens +
+  self.total_output_tokens +
+  self.total_cache_creation_tokens +
+  self.total_cache_read_tokens
+}
+
+///|
+fn UsageSummaryAccumulator::success_rate(
+  self : UsageSummaryAccumulator,
+) -> Double {
+  if self.total_requests == 0 {
+    0.0
+  } else {
+    self.success_count.to_double() * 100.0 / self.total_requests.to_double()
+  }
+}
+
+///|
+fn UsageSummaryAccumulator::cache_hit_rate(
+  self : UsageSummaryAccumulator,
+) -> Double {
+  let denominator = self.total_input_tokens +
+    self.total_cache_creation_tokens +
+    self.total_cache_read_tokens
+  if denominator == 0 {
+    0.0
+  } else {
+    self.total_cache_read_tokens.to_double() / denominator.to_double()
+  }
+}
+
+///|
+fn UsageSummaryAccumulator::to_json(self : UsageSummaryAccumulator) -> Json {
+  {
+    "totalRequests": Json::number(self.total_requests.to_double()),
+    "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
+    "totalInputTokens": Json::number(self.total_input_tokens.to_double()),
+    "totalOutputTokens": Json::number(self.total_output_tokens.to_double()),
+    "totalCacheCreationTokens": Json::number(
+      self.total_cache_creation_tokens.to_double(),
+    ),
+    "totalCacheReadTokens": Json::number(
+      self.total_cache_read_tokens.to_double(),
+    ),
+    "successRate": Json::number(self.success_rate()),
+    "realTotalTokens": Json::number(self.real_total_tokens().to_double()),
+    "cacheHitRate": Json::number(self.cache_hit_rate()),
+  }.to_json()
+}
+
+///|
+fn ProviderStatsAccumulator::new(log : RequestLog) -> ProviderStatsAccumulator {
+  {
+    provider_id: log.provider_id,
+    provider_name: log.provider_name.unwrap_or(log.provider_id),
+    request_count: 0,
+    success_count: 0,
+    total_tokens: 0,
+    total_cost_nano: 0L,
+    total_latency_ms: 0,
+  }
+}
+
+///|
+fn ProviderStatsAccumulator::add(
+  self : ProviderStatsAccumulator,
+  log : RequestLog,
+) -> Unit {
+  self.request_count += 1
+  if request_log_is_success(log) {
+    self.success_count += 1
+  }
+  self.total_tokens += request_log_fresh_input_tokens(log) + log.output_tokens
+  self.total_cost_nano += request_log_total_cost_nano(log)
+  self.total_latency_ms += log.latency_ms
+}
+
+///|
+fn ProviderStatsAccumulator::success_rate(
+  self : ProviderStatsAccumulator,
+) -> Double {
+  if self.request_count == 0 {
+    0.0
+  } else {
+    self.success_count.to_double() * 100.0 / self.request_count.to_double()
+  }
+}
+
+///|
+fn ProviderStatsAccumulator::avg_latency_ms(
+  self : ProviderStatsAccumulator,
+) -> Double {
+  if self.request_count == 0 {
+    0.0
+  } else {
+    self.total_latency_ms.to_double() / self.request_count.to_double()
+  }
+}
+
+///|
+fn ProviderStatsAccumulator::to_json(self : ProviderStatsAccumulator) -> Json {
+  {
+    "providerId": Json::string(self.provider_id),
+    "providerName": Json::string(self.provider_name),
+    "requestCount": Json::number(self.request_count.to_double()),
+    "totalTokens": Json::number(self.total_tokens.to_double()),
+    "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
+    "successRate": Json::number(self.success_rate()),
+    "avgLatencyMs": Json::number(self.avg_latency_ms()),
+  }.to_json()
+}
+
+///|
+fn ModelStatsAccumulator::new(model : String) -> ModelStatsAccumulator {
+  { model, request_count: 0, total_tokens: 0, total_cost_nano: 0L }
+}
+
+///|
+fn ModelStatsAccumulator::add(
+  self : ModelStatsAccumulator,
+  log : RequestLog,
+) -> Unit {
+  self.request_count += 1
+  self.total_tokens += request_log_fresh_input_tokens(log) + log.output_tokens
+  self.total_cost_nano += request_log_total_cost_nano(log)
+}
+
+///|
+fn ModelStatsAccumulator::avg_cost_per_request(
+  self : ModelStatsAccumulator,
+) -> String {
+  if self.request_count == 0 {
+    "0.000000"
+  } else {
+    format_nano_usd_fixed_6(
+      divide_rounded(self.total_cost_nano, self.request_count.to_int64()),
+    )
+  }
+}
+
+///|
+fn ModelStatsAccumulator::to_json(self : ModelStatsAccumulator) -> Json {
+  {
+    "model": Json::string(self.model),
+    "requestCount": Json::number(self.request_count.to_double()),
+    "totalTokens": Json::number(self.total_tokens.to_double()),
+    "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
+    "avgCostPerRequest": Json::string(self.avg_cost_per_request()),
+  }.to_json()
+}
+
+///|
+fn DataSourceStatsAccumulator::new(
+  data_source : String,
+) -> DataSourceStatsAccumulator {
+  { data_source, request_count: 0, total_cost_nano: 0L }
+}
+
+///|
+fn DataSourceStatsAccumulator::add(
+  self : DataSourceStatsAccumulator,
+  log : RequestLog,
+) -> Unit {
+  self.request_count += 1
+  self.total_cost_nano += request_log_total_cost_nano(log)
+}
+
+///|
+fn DataSourceStatsAccumulator::to_json(
+  self : DataSourceStatsAccumulator,
+) -> Json {
+  {
+    "dataSource": Json::string(self.data_source),
+    "requestCount": Json::number(self.request_count.to_double()),
+    "totalCostUsd": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
+  }.to_json()
+}
+
+///|
+fn request_log_matches_app(log : RequestLog, app_type : String?) -> Bool {
+  match app_type {
+    Some(filter) if !filter.is_empty() => log.app_type == filter
+    _ => true
+  }
+}
+
+///|
+fn request_log_is_success(log : RequestLog) -> Bool {
+  log.status_code >= 200 && log.status_code < 300
+}
+
+///|
+fn request_log_fresh_input_tokens(log : RequestLog) -> Int {
+  if log.app_type == "codex" || log.app_type == "gemini" {
+    max_int(log.input_tokens - log.cache_read_tokens, 0)
+  } else {
+    log.input_tokens
+  }
+}
+
+///|
+fn request_log_total_cost_nano(log : RequestLog) -> Int64 {
+  parse_decimal_scaled(log.total_cost_usd, NANO_USD_SCALE)
+}
+
+///|
+fn request_log_pricing_model(log : RequestLog) -> String {
+  match log.pricing_model {
+    Some(model) if !model.is_empty() => model
+    _ => log.model
+  }
+}
+
+///|
 fn TrafficStats::finish_request(self : TrafficStats) -> Unit {
   if self.active_connections > 0 {
     self.active_connections -= 1

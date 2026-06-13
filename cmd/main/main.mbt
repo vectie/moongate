@@ -21,6 +21,12 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
+    ["usage", "summary", ..] => check_usage_endpoint(arr, "/usage/summary")
+    ["usage", "apps", ..] => check_usage_endpoint(arr, "/usage/summary/by-app")
+    ["usage", "providers", ..] =>
+      check_usage_endpoint(arr, "/usage/provider-stats")
+    ["usage", "models", ..] => check_usage_endpoint(arr, "/usage/model-stats")
+    ["usage", "sources", ..] => check_usage_endpoint(arr, "/usage/data-sources")
     ["help"] | ["--help"] | ["-h"] => print_help()
     ["version"] | ["--version"] | ["-v"] => println("moonstat v0.1.0")
     _ => print_help()
@@ -63,6 +69,11 @@ fn print_help() -> Unit {
   println("  status      Check reroute and gateway status")
   println("  stats       Show gateway traffic statistics")
   println("  usage logs  Show ccs-style recent proxy_request_logs")
+  println("  usage summary    Show ccs-style usage summary")
+  println("  usage apps       Show ccs-style usage summary by app")
+  println("  usage providers  Show ccs-style provider statistics")
+  println("  usage models     Show ccs-style model statistics")
+  println("  usage sources    Show ccs-style data source breakdown")
   println("  login       Login to OpenAI Codex OAuth")
   println("  health      Check gateway health")
   println("  version     Show version")
@@ -96,6 +107,7 @@ fn print_help() -> Unit {
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat usage logs            # Show recent request logs")
+  println("  moonstat usage summary         # Show aggregate token/cost usage")
   println("  moonstat uninstall             # Remove hosts reroute")
 }
 
@@ -167,12 +179,17 @@ async fn check_stats(args : Array[String]) -> Unit {
 
 ///|
 async fn check_usage_logs(args : Array[String]) -> Unit {
+  check_usage_endpoint(args, "/usage/logs")
+}
+
+///|
+async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
   try {
     let client = @http.Client::new(url, headers={})
     defer client.close()
-    let response = client.get("/usage/logs")
+    let response = client.get(path)
     if response.code == 200 {
       let body = client.read_all().text()
       println(body)

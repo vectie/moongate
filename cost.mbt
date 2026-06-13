@@ -616,6 +616,17 @@ fn format_nano_usd(nano : Int64) -> String {
 }
 
 ///|
+fn format_nano_usd_fixed_6(nano : Int64) -> String {
+  let negative = nano < 0L
+  let absolute = if negative { 0L - nano } else { nano }
+  let micro = divide_rounded(absolute, 1000L)
+  let whole = micro / 1_000_000L
+  let fraction = micro % 1_000_000L
+  let sign = if negative { "-" } else { "" }
+  "\{sign}\{whole}.\{left_pad_zeroes(fraction.to_string(), 6)}"
+}
+
+///|
 fn left_pad_zeroes(value : String, width : Int) -> String {
   if value.length() >= width {
     return value

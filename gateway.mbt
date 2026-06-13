@@ -124,6 +124,21 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/usage/logs", (_, w) => {
     self.handle_usage_logs(w)
   })
+  router.add_handler(@httpx.Method::Get, "/usage/summary", (_, w) => {
+    self.handle_usage_summary(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/usage/summary/by-app", (_, w) => {
+    self.handle_usage_summary_by_app(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/usage/provider-stats", (_, w) => {
+    self.handle_usage_provider_stats(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/usage/model-stats", (_, w) => {
+    self.handle_usage_model_stats(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/usage/data-sources", (_, w) => {
+    self.handle_usage_data_sources(w)
+  })
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
     self.handle_models(w)
   })
@@ -981,6 +996,54 @@ async fn Gateway::handle_usage_logs(
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(self.stats.usage_logs_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+async fn Gateway::handle_usage_summary(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.stats.usage_summary_json())
+}
+
+///|
+async fn Gateway::handle_usage_summary_by_app(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.stats.usage_summary_by_app_json())
+}
+
+///|
+async fn Gateway::handle_usage_provider_stats(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.stats.provider_stats_json())
+}
+
+///|
+async fn Gateway::handle_usage_model_stats(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.stats.model_stats_json())
+}
+
+///|
+async fn Gateway::handle_usage_data_sources(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.stats.usage_data_sources_json())
+}
+
+///|
+async fn write_usage_json(w : @httpx.ResponseWriter, body : Json) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(body.stringify(indent=2))
   w.flush()
 }
 

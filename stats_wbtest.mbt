@@ -223,3 +223,187 @@ test "traffic stats keeps request log retention bounded" {
   assert_eq(stats.request_logs[0].request_id, "req-5")
   assert_eq(stats.request_logs[499].request_id, "req-504")
 }
+
+///|
+test "usage summary aggregates ccs token and cost semantics" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-codex",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5",
+      pricing_model=Some("gpt-5"),
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=10,
+        cache_read_tokens=40,
+      ),
+      total_cost_usd="0.000100",
+      status_code=200,
+      latency_ms=30,
+      data_source="proxy",
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-claude",
+      provider_id="anthropic",
+      provider_name=Some("Anthropic"),
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      pricing_model=Some("claude-sonnet-4-6"),
+      usage=TokenUsage::new(
+        input_tokens=50,
+        output_tokens=5,
+        cache_read_tokens=20,
+        cache_creation_tokens=10,
+      ),
+      total_cost_usd="0.000200",
+      status_code=500,
+      latency_ms=70,
+      data_source="session",
+    ),
+  )
+  let summary = stats.usage_summary_json()
+  guard summary is Object(obj) else { fail("expected summary object") }
+  assert_eq(obj["totalRequests"], Json::number(2.0))
+  assert_eq(obj["totalCost"], Json::string("0.000300"))
+  assert_eq(obj["totalInputTokens"], Json::number(110.0))
+  assert_eq(obj["totalOutputTokens"], Json::number(15.0))
+  assert_eq(obj["totalCacheCreationTokens"], Json::number(10.0))
+  assert_eq(obj["totalCacheReadTokens"], Json::number(60.0))
+  assert_eq(obj["successRate"], Json::number(50.0))
+  assert_eq(obj["realTotalTokens"], Json::number(195.0))
+  guard obj["cacheHitRate"] is Number(cache_hit_rate, ..) else {
+    fail("expected cache hit rate")
+  }
+  assert_true(cache_hit_rate > 0.333 && cache_hit_rate < 0.334)
+
+  json_inspect(stats.usage_summary_json(app_type=Some("codex")), content={
+    "totalRequests": 1,
+    "totalCost": "0.000100",
+    "totalInputTokens": 60,
+    "totalOutputTokens": 10,
+    "totalCacheCreationTokens": 0,
+    "totalCacheReadTokens": 40,
+    "successRate": 100,
+    "realTotalTokens": 110,
+    "cacheHitRate": 0.4,
+  })
+}
+
+///|
+test "usage aggregate lists match ccs route payloads" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-codex",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5",
+      pricing_model=Some("gpt-5"),
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=10,
+        cache_read_tokens=40,
+      ),
+      total_cost_usd="0.000100",
+      status_code=200,
+      latency_ms=30,
+      data_source="proxy",
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-claude",
+      provider_id="anthropic",
+      provider_name=Some("Anthropic"),
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      pricing_model=Some("claude-sonnet-4-6"),
+      usage=TokenUsage::new(
+        input_tokens=50,
+        output_tokens=5,
+        cache_read_tokens=20,
+        cache_creation_tokens=10,
+      ),
+      total_cost_usd="0.000200",
+      status_code=500,
+      latency_ms=70,
+      data_source="session",
+    ),
+  )
+  json_inspect(stats.usage_summary_by_app_json(), content=[
+    {
+      "appType": "codex",
+      "summary": {
+        "totalRequests": 1,
+        "totalCost": "0.000100",
+        "totalInputTokens": 60,
+        "totalOutputTokens": 10,
+        "totalCacheCreationTokens": 0,
+        "totalCacheReadTokens": 40,
+        "successRate": 100,
+        "realTotalTokens": 110,
+        "cacheHitRate": 0.4,
+      },
+    },
+    {
+      "appType": "claude",
+      "summary": {
+        "totalRequests": 1,
+        "totalCost": "0.000200",
+        "totalInputTokens": 50,
+        "totalOutputTokens": 5,
+        "totalCacheCreationTokens": 10,
+        "totalCacheReadTokens": 20,
+        "successRate": 0,
+        "realTotalTokens": 85,
+        "cacheHitRate": 0.25,
+      },
+    },
+  ])
+  json_inspect(stats.provider_stats_json(), content=[
+    {
+      "providerId": "anthropic",
+      "providerName": "Anthropic",
+      "requestCount": 1,
+      "totalTokens": 55,
+      "totalCost": "0.000200",
+      "successRate": 0,
+      "avgLatencyMs": 70,
+    },
+    {
+      "providerId": "codex-oauth",
+      "providerName": "Codex OAuth",
+      "requestCount": 1,
+      "totalTokens": 70,
+      "totalCost": "0.000100",
+      "successRate": 100,
+      "avgLatencyMs": 30,
+    },
+  ])
+  json_inspect(stats.model_stats_json(), content=[
+    {
+      "model": "claude-sonnet-4-6",
+      "requestCount": 1,
+      "totalTokens": 55,
+      "totalCost": "0.000200",
+      "avgCostPerRequest": "0.000200",
+    },
+    {
+      "model": "gpt-5",
+      "requestCount": 1,
+      "totalTokens": 70,
+      "totalCost": "0.000100",
+      "avgCostPerRequest": "0.000100",
+    },
+  ])
+  json_inspect(stats.usage_data_sources_json(), content=[
+    { "dataSource": "proxy", "requestCount": 1, "totalCostUsd": "0.000100" },
+    { "dataSource": "session", "requestCount": 1, "totalCostUsd": "0.000200" },
+  ])
+}

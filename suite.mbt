@@ -28,6 +28,21 @@ pub fn moonstat_suite_manifest_json(
     "usage_logs_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/logs",
     ),
+    "usage_summary_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/summary",
+    ),
+    "usage_summary_by_app_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/summary/by-app",
+    ),
+    "usage_provider_stats_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/provider-stats",
+    ),
+    "usage_model_stats_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/model-stats",
+    ),
+    "usage_data_sources_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/data-sources",
+    ),
     "models_url": Json::string("\{moonstat_openai_base_url(host, port)}/models"),
     "routes": Json::array(
       moonstat_suite_routes().map(fn(route) { Json::string(route) }),
@@ -52,6 +67,11 @@ pub fn moonstat_suite_manifest_json(
       "status": Json::string("moonstat status"),
       "stats": Json::string("moonstat stats"),
       "usage_logs": Json::string("moonstat usage logs"),
+      "usage_summary": Json::string("moonstat usage summary"),
+      "usage_apps": Json::string("moonstat usage apps"),
+      "usage_providers": Json::string("moonstat usage providers"),
+      "usage_models": Json::string("moonstat usage models"),
+      "usage_sources": Json::string("moonstat usage sources"),
       "codex_install": Json::string(
         "moonstat codex install --port \{port} --model \{model}",
       ),
@@ -80,6 +100,21 @@ pub fn moonstat_suite_status_json(
     "stats_url": Json::string("\{moonstat_base_url(host, port)}/stats"),
     "usage_logs_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/logs",
+    ),
+    "usage_summary_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/summary",
+    ),
+    "usage_summary_by_app_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/summary/by-app",
+    ),
+    "usage_provider_stats_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/provider-stats",
+    ),
+    "usage_model_stats_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/model-stats",
+    ),
+    "usage_data_sources_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/data-sources",
     ),
     "openai_base_url": Json::string(moonstat_openai_base_url(host, port)),
     "anthropic_base_url": Json::string(moonstat_base_url(host, port)),
@@ -154,12 +189,13 @@ fn suite_app_json(id : String, role : String, usage : String) -> Json {
 fn moonstat_suite_routes() -> Array[String] {
   [
     "GET /health", "GET /status", "GET /stats", "GET /usage/logs", "GET /models",
-    "GET /v1/models", "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude/v1/messages",
-    "POST /claude-desktop/v1/messages", "POST /responses", "POST /v1/responses",
-    "POST /v1/v1/responses", "POST /codex/v1/responses", "POST /responses/compact",
-    "POST /v1/responses/compact", "POST /v1/v1/responses/compact", "POST /codex/v1/responses/compact",
-    "POST /chat/completions", "POST /v1/chat/completions", "POST /v1/v1/chat/completions",
-    "POST /codex/v1/chat/completions", "GET|POST /v1beta/*path", "GET|POST /gemini/v1beta/*path",
-    "GET|POST /gemini/v1/*path",
+    "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
+    "GET /usage/model-stats", "GET /usage/data-sources", "GET /v1/models", "GET /claude-desktop/v1/models",
+    "POST /v1/messages", "POST /claude/v1/messages", "POST /claude-desktop/v1/messages",
+    "POST /responses", "POST /v1/responses", "POST /v1/v1/responses", "POST /codex/v1/responses",
+    "POST /responses/compact", "POST /v1/responses/compact", "POST /v1/v1/responses/compact",
+    "POST /codex/v1/responses/compact", "POST /chat/completions", "POST /v1/chat/completions",
+    "POST /v1/v1/chat/completions", "POST /codex/v1/chat/completions", "GET|POST /v1beta/*path",
+    "GET|POST /gemini/v1beta/*path", "GET|POST /gemini/v1/*path",
   ]
 }
