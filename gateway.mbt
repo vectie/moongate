@@ -2814,11 +2814,27 @@ async fn Gateway::handle_messages(
           )
           if stream {
             self.handle_streaming_request(
-              anthropic_request, json, model, active_provider, session_id, w,
+              anthropic_request,
+              json,
+              model,
+              active_provider,
+              app_type,
+              self.selected_provider_chain(app_type),
+              [],
+              session_id,
+              w,
             )
           } else {
             self.handle_non_streaming_request(
-              anthropic_request, json, model, active_provider, session_id, w,
+              anthropic_request,
+              json,
+              model,
+              active_provider,
+              app_type,
+              self.selected_provider_chain(app_type),
+              [],
+              session_id,
+              w,
             )
           }
         }
@@ -2845,12 +2861,28 @@ fn Gateway::upstream_claude_model(
 }
 
 ///|
+fn Gateway::selected_provider_chain(
+  self : Gateway,
+  app_type : String,
+) -> Array[ProviderRouteTarget] {
+  let selection = self.provider_router.select_providers(app_type)
+  if selection.is_ok() {
+    selection.providers
+  } else {
+    []
+  }
+}
+
+///|
 async fn Gateway::forward_non_streaming_claude_compatible_request(
   self : Gateway,
   request : AnthropicRequest,
   request_json : Json,
   upstream_model : String,
   provider : ProviderRouteTarget,
+  app_type : String,
+  providers : Array[ProviderRouteTarget],
+  attempted_provider_ids : Array[String],
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -2887,6 +2919,28 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     ) {
     Err(error) => {
       let error_body = "{\"error\":{\"message\":\"Claude upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
+      if !providers.is_empty() {
+        let next = self.activate_next_provider_after_upstream_status(
+          app_type,
+          providers,
+          attempted_provider_ids,
+          @status.BadGateway,
+        )
+        if next is Some(provider) {
+          self.handle_non_streaming_request(
+            request,
+            request_json,
+            self.upstream_claude_model(request.model, Some(provider)),
+            Some(provider),
+            app_type,
+            providers,
+            attempted_provider_ids,
+            session_id,
+            w,
+          )
+          return
+        }
+      }
       self.record_upstream_error_status(error_body.length(), @status.BadGateway)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
@@ -2918,6 +2972,28 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         w.write_header(response.code)
         w.write(anthropic_response.stringify())
       } else {
+        if !providers.is_empty() {
+          let next = self.activate_next_provider_after_upstream_status(
+            app_type,
+            providers,
+            attempted_provider_ids,
+            response.code,
+          )
+          if next is Some(provider) {
+            self.handle_non_streaming_request(
+              request,
+              request_json,
+              self.upstream_claude_model(request.model, Some(provider)),
+              Some(provider),
+              app_type,
+              providers,
+              attempted_provider_ids,
+              session_id,
+              w,
+            )
+            return
+          }
+        }
         self.record_upstream_error_status(response_body.length(), response.code)
         w.header().set("Content-Type", "application/json")
         w.write_header(response.code)
@@ -3087,13 +3163,17 @@ async fn Gateway::handle_non_streaming_request(
   request_json : Json,
   model : String,
   active_provider : ProviderRouteTarget?,
+  app_type : String,
+  providers : Array[ProviderRouteTarget],
+  attempted_provider_ids : Array[String],
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match active_provider {
     Some(provider) if provider.can_use_claude_compatible_upstream() => {
       self.forward_non_streaming_claude_compatible_request(
-        request, request_json, model, provider, session_id, w,
+        request, request_json, model, provider, app_type, providers, attempted_provider_ids,
+        session_id, w,
       )
       return
     }
@@ -3127,7 +3207,8 @@ async fn Gateway::handle_non_streaming_request(
           self.credentials = Some(new_creds)
           self.logger.info("Credentials refreshed, retrying request")
           self.handle_non_streaming_request(
-            request, request_json, model, active_provider, session_id, w,
+            request, request_json, model, active_provider, app_type, providers, attempted_provider_ids,
+            session_id, w,
           )
           return
         }
@@ -3173,6 +3254,9 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   request_json : Json,
   upstream_model : String,
   provider : ProviderRouteTarget,
+  app_type : String,
+  providers : Array[ProviderRouteTarget],
+  attempted_provider_ids : Array[String],
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3219,6 +3303,28 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   let response = client.post(path, outbound)
   if response.code != 200 {
     let error_body = client.read_all().text()
+    if !providers.is_empty() {
+      let next = self.activate_next_provider_after_upstream_status(
+        app_type,
+        providers,
+        attempted_provider_ids,
+        response.code,
+      )
+      if next is Some(provider) {
+        self.handle_streaming_request(
+          request,
+          request_json,
+          self.upstream_claude_model(request.model, Some(provider)),
+          Some(provider),
+          app_type,
+          providers,
+          attempted_provider_ids,
+          session_id,
+          w,
+        )
+        return
+      }
+    }
     self.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
@@ -3832,13 +3938,17 @@ async fn Gateway::handle_streaming_request(
   request_json : Json,
   model : String,
   active_provider : ProviderRouteTarget?,
+  app_type : String,
+  providers : Array[ProviderRouteTarget],
+  attempted_provider_ids : Array[String],
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match active_provider {
     Some(provider) if provider.can_use_claude_compatible_upstream() => {
       self.forward_streaming_claude_compatible_request(
-        request, request_json, model, provider, session_id, w,
+        request, request_json, model, provider, app_type, providers, attempted_provider_ids,
+        session_id, w,
       )
       return
     }
@@ -3872,7 +3982,8 @@ async fn Gateway::handle_streaming_request(
           self.credentials = Some(new_creds)
           self.logger.info("Credentials refreshed, retrying request")
           self.handle_streaming_request(
-            request, request_json, model, active_provider, session_id, w,
+            request, request_json, model, active_provider, app_type, providers, attempted_provider_ids,
+            session_id, w,
           )
           return
         }
