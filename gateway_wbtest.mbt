@@ -600,6 +600,18 @@ test "usage pricing query helpers parse and validate ccs pricing update" {
 }
 
 ///|
+test "usage request detail id accepts ccs get_request_detail query" {
+  assert_eq(
+    usage_request_detail_id("/get_request_detail?requestId=session%3Amsg%2F1"),
+    "session:msg/1",
+  )
+  assert_eq(
+    usage_request_detail_id("/get_request_detail?request_id=req_123"),
+    "req_123",
+  )
+}
+
+///|
 test "usage pricing store rows use ccs field names" {
   let row = model_pricing_store_json(
     mp("test-model", "Test Model", "1", "2", "0.1", "0"),

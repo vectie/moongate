@@ -116,6 +116,32 @@ test "usage detail path encodes ccs request ids" {
 }
 
 ///|
+test "usage aliases build same paths as ccs command names" {
+  let args = [
+    "moonstat", "usage", "get-usage-summary", "--startDate", "10", "--endDate", "20",
+    "--appType", "codex",
+  ]
+  assert_eq(
+    usage_filtered_path(args, "/usage/summary", app_filter=true),
+    "/usage/summary?start_date=10&end_date=20&app_type=codex",
+  )
+  assert_eq(
+    usage_logs_path([
+      "moonstat", "usage", "get-request-logs", "--page", "1", "--pageSize", "50",
+      "--appType", "claude",
+    ]),
+    "/usage/logs?app_type=claude&page=1&pageSize=50",
+  )
+  assert_eq(
+    usage_limits_path([
+      "moonstat", "usage", "check-provider-limits", "--provider-id", "p1", "--app-type",
+      "codex",
+    ]),
+    "/usage/provider-limits?provider_id=p1&app_type=codex",
+  )
+}
+
+///|
 test "proxy config setter paths encode ccs command arguments" {
   assert_eq(
     proxy_global_config_update_path(

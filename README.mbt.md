@@ -112,6 +112,13 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /usage/model-pricing`
 - `DELETE /usage/model-pricing`
 - `GET /usage/request-detail/{request_id}`
+- CCS command-name aliases: `GET /get_usage_summary`,
+  `GET /get_usage_summary_by_app`, `GET /get_usage_trends`,
+  `GET /get_provider_stats`, `GET /get_model_stats`, `GET /get_request_logs`,
+  `GET /get_request_detail?requestId=...`, `GET /get_model_pricing`,
+  `POST /update_model_pricing`, `DELETE /delete_model_pricing`,
+  `GET /check_provider_limits`, `POST /sync_session_usage`, and
+  `GET /get_usage_data_sources`.
 - `GET /models`
 - `GET /v1/models`
 - `GET /claude-desktop/v1/models`
