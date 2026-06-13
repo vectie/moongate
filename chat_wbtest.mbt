@@ -184,6 +184,171 @@ test "codex responses request converts to chat completion request" {
 }
 
 ///|
+test "codex responses custom and tool search calls convert to chat tools" {
+  let body = chat_parse_json_for_test(
+    (
+      #|{
+      #|  "model": "gpt-5",
+      #|  "input": [
+      #|    {
+      #|      "type": "custom_tool_call",
+      #|      "call_id": "call_custom",
+      #|      "name": "apply_patch",
+      #|      "input": "*** Begin Patch"
+      #|    },
+      #|    {
+      #|      "type": "tool_search_call",
+      #|      "call_id": "call_search",
+      #|      "arguments": { "query": "browser", "limit": 3 }
+      #|    },
+      #|    {
+      #|      "type": "custom_tool_call_output",
+      #|      "call_id": "call_custom",
+      #|      "output": "ok"
+      #|    },
+      #|    {
+      #|      "type": "tool_search_output",
+      #|      "call_id": "call_search",
+      #|      "tools": [{ "type": "custom", "name": "loaded_tool" }]
+      #|    }
+      #|  ],
+      #|  "tools": [
+      #|    { "type": "custom", "name": "apply_patch" },
+      #|    { "type": "tool_search" }
+      #|  ]
+      #|}
+    ),
+  )
+  let chat = codex_responses_request_to_openai_chat_completion(
+    body, "fallback-model",
+  ).unwrap()
+  guard chat is Object(obj) else { fail("expected object") }
+  guard obj["tools"] is Array(tools) else { fail("expected tools") }
+  guard tools[0] is Object(custom_tool) else { fail("expected custom tool") }
+  guard custom_tool["function"] is Object(custom_fn) else {
+    fail("expected custom function")
+  }
+  assert_eq(custom_fn["name"], Json::string("apply_patch"))
+  guard custom_fn["parameters"] is Object(parameters) else {
+    fail("expected params")
+  }
+  guard parameters["properties"] is Object(properties) else {
+    fail("expected properties")
+  }
+  assert_true(properties.get("input") is Some(Object(_)))
+  guard tools[1] is Object(search_tool) else { fail("expected search tool") }
+  guard search_tool["function"] is Object(search_fn) else {
+    fail("expected search function")
+  }
+  assert_eq(search_fn["name"], Json::string("tool_search"))
+  guard obj["messages"] is Array(messages) else { fail("expected messages") }
+  guard messages[0] is Object(assistant) else { fail("expected assistant") }
+  guard assistant["tool_calls"] is Array(tool_calls) else {
+    fail("expected tool calls")
+  }
+  guard tool_calls[0] is Object(custom_call) else {
+    fail("expected custom call")
+  }
+  guard custom_call["function"] is Object(custom_call_fn) else {
+    fail("expected custom call function")
+  }
+  assert_eq(custom_call_fn["name"], Json::string("apply_patch"))
+  assert_eq(
+    custom_call_fn["arguments"],
+    Json::string("{\"input\":\"*** Begin Patch\"}"),
+  )
+  guard tool_calls[1] is Object(search_call) else {
+    fail("expected search call")
+  }
+  guard search_call["function"] is Object(search_call_fn) else {
+    fail("expected search call function")
+  }
+  assert_eq(search_call_fn["name"], Json::string("tool_search"))
+  assert_eq(
+    search_call_fn["arguments"],
+    Json::string("{\"limit\":3,\"query\":\"browser\"}"),
+  )
+  guard messages[1] is Object(custom_output) else {
+    fail("expected custom output")
+  }
+  assert_eq(custom_output["role"], Json::string("tool"))
+  assert_eq(custom_output["tool_call_id"], Json::string("call_custom"))
+  guard custom_output["content"] is String(custom_content) else {
+    fail("expected custom output content")
+  }
+  assert_true(custom_content.contains("\"type\":\"custom_tool_call_output\""))
+  guard messages[2] is Object(search_output) else {
+    fail("expected search output")
+  }
+  guard search_output["content"] is String(search_content) else {
+    fail("expected search output content")
+  }
+  assert_true(search_content.contains("\"type\":\"tool_search_output\""))
+}
+
+///|
+test "chat completion response restores custom and tool search calls with request context" {
+  let request = chat_parse_json_for_test(
+    (
+      #|{
+      #|  "model": "gpt-5",
+      #|  "tools": [
+      #|    { "type": "custom", "name": "apply_patch" },
+      #|    { "type": "tool_search" }
+      #|  ]
+      #|}
+    ),
+  )
+  let body = chat_parse_json_for_test(
+    (
+      #|{
+      #|  "id": "chatcmpl_1",
+      #|  "model": "deepseek-chat",
+      #|  "choices": [{
+      #|    "message": {
+      #|      "role": "assistant",
+      #|      "content": null,
+      #|      "tool_calls": [{
+      #|        "id": "call_custom",
+      #|        "type": "function",
+      #|        "function": {
+      #|          "name": "apply_patch",
+      #|          "arguments": "{ \"input\": \"*** Begin Patch\" }"
+      #|        }
+      #|      }, {
+      #|        "id": "call_search",
+      #|        "type": "function",
+      #|        "function": {
+      #|          "name": "tool_search",
+      #|          "arguments": "{ \"query\": \"browser\" }"
+      #|        }
+      #|      }]
+      #|    },
+      #|    "finish_reason": "tool_calls"
+      #|  }]
+      #|}
+    ),
+  )
+  let response = openai_chat_completion_to_codex_response_with_request(
+    body, "fallback", request,
+  )
+  guard response is Object(obj) else { fail("expected object") }
+  guard obj["output"] is Array(output) else { fail("expected output") }
+  guard output[0] is Object(custom_call) else { fail("expected custom call") }
+  assert_eq(custom_call["type"], Json::string("custom_tool_call"))
+  assert_eq(custom_call["call_id"], Json::string("call_custom"))
+  assert_eq(custom_call["name"], Json::string("apply_patch"))
+  assert_eq(custom_call["input"], Json::string("*** Begin Patch"))
+  guard output[1] is Object(search_call) else { fail("expected search call") }
+  assert_eq(search_call["type"], Json::string("tool_search_call"))
+  assert_eq(search_call["call_id"], Json::string("call_search"))
+  guard search_call["arguments"] is Object(arguments) else {
+    fail("expected search arguments")
+  }
+  assert_eq(arguments["query"], Json::string("browser"))
+}
+
+///|
 test "codex responses content parts convert to chat content" {
   let text_only = chat_parse_json_for_test(
     (

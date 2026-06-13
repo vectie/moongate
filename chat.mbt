@@ -5,6 +5,167 @@ priv struct ChatCompletionOutput {
 }
 
 ///|
+priv struct CodexChatToolSpec {
+  kind : String
+  name : String
+  ns_name : String?
+}
+
+///|
+priv struct CodexChatToolContext {
+  specs : Map[String, CodexChatToolSpec]
+}
+
+///|
+const TOOL_SEARCH_PROXY_NAME = "tool_search"
+
+///|
+const CUSTOM_TOOL_INPUT_FIELD = "input"
+
+///|
+const CUSTOM_TOOL_INPUT_DESCRIPTION = "Raw string input for the original custom tool. Preserve formatting exactly and follow the original tool definition embedded in the description."
+
+///|
+const CUSTOM_TOOL_PRESERVED_METADATA_HEADING = "Original tool definition:"
+
+///|
+fn codex_chat_empty_tool_context() -> CodexChatToolContext {
+  { specs: {} }
+}
+
+///|
+fn codex_chat_tool_context_lookup(
+  context : CodexChatToolContext,
+  chat_name : String,
+) -> CodexChatToolSpec? {
+  context.specs.get(chat_name)
+}
+
+///|
+fn codex_chat_tool_context_from_responses_request(
+  body : Json,
+) -> CodexChatToolContext {
+  let context = codex_chat_empty_tool_context()
+  guard body is Object(obj) else { return context }
+  if obj.get("tools") is Some(Array(tools)) {
+    for tool in tools {
+      add_codex_response_tool_to_chat_context(tool, context, None)
+    }
+  }
+  match obj.get("input") {
+    Some(input) =>
+      collect_tool_search_output_tools_for_chat_context(input, context)
+    None => ()
+  }
+  context
+}
+
+///|
+fn add_codex_response_tool_to_chat_context(
+  tool : Json,
+  context : CodexChatToolContext,
+  ns_name : String?,
+) -> Unit {
+  match tool {
+    String(name) =>
+      add_chat_tool_spec(context, name, { kind: "custom", name, ns_name: None })
+    Object(tool_obj) =>
+      match json_string_from_map(tool_obj, "type") {
+        Some("function") => {
+          let name = codex_response_tool_name(tool_obj)
+          if name.trim().is_empty() {
+            return
+          }
+          let chat_name = codex_chat_name_for_response_function(
+            name, ns_name, context,
+          )
+          add_chat_tool_spec(context, chat_name, {
+            kind: if ns_name is Some(_) {
+              "namespace"
+            } else {
+              "function"
+            },
+            name,
+            ns_name,
+          })
+        }
+        Some("custom") => {
+          let name = codex_response_tool_name(tool_obj)
+          add_chat_tool_spec(context, name, {
+            kind: "custom",
+            name,
+            ns_name: None,
+          })
+        }
+        Some("tool_search") =>
+          add_chat_tool_spec(context, TOOL_SEARCH_PROXY_NAME, {
+            kind: "tool_search",
+            name: TOOL_SEARCH_PROXY_NAME,
+            ns_name: None,
+          })
+        Some("namespace") => {
+          let child_ns_name = json_string_from_map(tool_obj, "name")
+          if tool_obj.get("tools") is Some(Array(children)) {
+            for child in children {
+              add_codex_response_tool_to_chat_context(
+                child, context, child_ns_name,
+              )
+            }
+          }
+          if tool_obj.get("children") is Some(Array(children)) {
+            for child in children {
+              add_codex_response_tool_to_chat_context(
+                child, context, child_ns_name,
+              )
+            }
+          }
+        }
+        _ => ()
+      }
+    _ => ()
+  }
+}
+
+///|
+fn add_chat_tool_spec(
+  context : CodexChatToolContext,
+  chat_name : String,
+  spec : CodexChatToolSpec,
+) -> Unit {
+  if chat_name.trim().is_empty() {
+    return
+  }
+  if context.specs.get(chat_name) is None {
+    context.specs[chat_name] = spec
+  }
+}
+
+///|
+fn collect_tool_search_output_tools_for_chat_context(
+  value : Json,
+  context : CodexChatToolContext,
+) -> Unit {
+  match value {
+    Array(items) =>
+      for item in items {
+        collect_tool_search_output_tools_for_chat_context(item, context)
+      }
+    Object(obj) => {
+      if obj.get("type") is Some(String("tool_search_output")) &&
+        obj.get("tools") is Some(Array(tools)) {
+        for tool in tools {
+          add_codex_response_tool_to_chat_context(tool, context, None)
+        }
+      }
+      for item in obj.values() {
+        collect_tool_search_output_tools_for_chat_context(item, context)
+      }
+    }
+    _ => ()
+  }
+}
+
+///|
 fn openai_chat_model(body : Json) -> String? {
   guard body is Object(obj) else { return None }
   match obj.get("model") {
@@ -67,6 +228,7 @@ fn codex_responses_request_to_openai_chat_completion(
   fallback_model : String,
 ) -> Json? {
   guard body is Object(obj) else { return None }
+  let tool_context = codex_chat_tool_context_from_responses_request(body)
   let messages : Array[Json] = []
   match json_string_from_map(obj, "instructions") {
     Some(instructions) if !instructions.trim().is_empty() =>
@@ -81,6 +243,7 @@ fn codex_responses_request_to_openai_chat_completion(
   append_codex_responses_input_as_openai_chat_messages(
     obj.get("input"),
     messages,
+    tool_context,
   )
   let result : Map[String, Json] = {
     "model": Json::string(
@@ -97,9 +260,11 @@ fn codex_responses_request_to_openai_chat_completion(
       result[key] = value
     }
   }
-  append_codex_responses_tools_as_openai_chat_tools(obj, result)
+  append_codex_responses_tools_as_openai_chat_tools(obj, result, tool_context)
   if obj.get("tool_choice") is Some(value) {
-    result["tool_choice"] = codex_tool_choice_to_openai_chat(value)
+    result["tool_choice"] = codex_tool_choice_to_openai_chat(
+      value, tool_context,
+    )
   }
   Some(Json::object(result))
 }
@@ -108,6 +273,7 @@ fn codex_responses_request_to_openai_chat_completion(
 fn append_codex_responses_input_as_openai_chat_messages(
   input : Json?,
   messages : Array[Json],
+  tool_context : CodexChatToolContext,
 ) -> Unit {
   let pending_tool_calls : Array[Json] = []
   let flush_pending_tool_calls = fn() {
@@ -138,7 +304,9 @@ fn append_codex_responses_input_as_openai_chat_messages(
     guard item is Object(item_obj) else { continue }
     match json_string_from_map(item_obj, "type") {
       Some(type_) if codex_chat_is_call_item_type(type_) =>
-        pending_tool_calls.push(openai_chat_tool_call_from_codex_item(item_obj))
+        pending_tool_calls.push(
+          openai_chat_tool_call_from_codex_item(item_obj, tool_context),
+        )
       Some(type_) if codex_chat_is_call_output_item_type(type_) => {
         flush_pending_tool_calls()
         messages.push(openai_chat_tool_message_from_codex_output(item_obj))
@@ -275,7 +443,21 @@ fn codex_responses_input_file_to_chat_file(part : Map[String, Json]) -> Json? {
 }
 
 ///|
-fn openai_chat_tool_call_from_codex_item(item : Map[String, Json]) -> Json {
+fn openai_chat_tool_call_from_codex_item(
+  item : Map[String, Json],
+  tool_context : CodexChatToolContext,
+) -> Json {
+  let item_type = json_string_from_map(item, "type").unwrap_or("function_call")
+  let name = match item_type {
+    "tool_search_call" => TOOL_SEARCH_PROXY_NAME
+    "function_call" =>
+      codex_chat_name_for_response_function(
+        json_string_from_map(item, "name").unwrap_or("tool"),
+        json_string_from_map(item, "namespace"),
+        tool_context,
+      )
+    _ => json_string_from_map(item, "name").unwrap_or("tool")
+  }
   Json::object({
     "id": Json::string(
       codex_chat_response_item_call_id(Json::object(item)).unwrap_or(
@@ -284,7 +466,7 @@ fn openai_chat_tool_call_from_codex_item(item : Map[String, Json]) -> Json {
     ),
     "type": Json::string("function"),
     "function": Json::object({
-      "name": Json::string(json_string_from_map(item, "name").unwrap_or("tool")),
+      "name": Json::string(name),
       "arguments": Json::string(codex_responses_call_arguments(item)),
     }),
   })
@@ -292,6 +474,15 @@ fn openai_chat_tool_call_from_codex_item(item : Map[String, Json]) -> Json {
 
 ///|
 fn codex_responses_call_arguments(item : Map[String, Json]) -> String {
+  if json_string_from_map(item, "type") is Some("tool_search_call") {
+    return canonicalize_tool_arguments(item.get("arguments"))
+  }
+  if json_string_from_map(item, "type") is Some("custom_tool_call") {
+    let input = item.get("input").unwrap_or(Json::string(""))
+    let args : Map[String, Json] = {}
+    args[CUSTOM_TOOL_INPUT_FIELD] = input
+    return canonical_json_string(Json::object(args))
+  }
   match item.get("arguments") {
     Some(String(args)) => args
     Some(value) => canonicalize_tool_arguments(Some(value))
@@ -318,6 +509,11 @@ fn openai_chat_tool_message_from_codex_output(item : Map[String, Json]) -> Json 
 
 ///|
 fn codex_responses_tool_output_text(item : Map[String, Json]) -> String {
+  match json_string_from_map(item, "type") {
+    Some("custom_tool_call_output") | Some("tool_search_output") =>
+      return canonical_json_string(Json::object(item))
+    _ => ()
+  }
   match item.get("output") {
     Some(String(text)) => text
     Some(value) => value.stringify()
@@ -334,26 +530,16 @@ fn codex_responses_tool_output_text(item : Map[String, Json]) -> String {
 fn append_codex_responses_tools_as_openai_chat_tools(
   source : Map[String, Json],
   target : Map[String, Json],
+  tool_context : CodexChatToolContext,
 ) -> Unit {
   guard source.get("tools") is Some(Array(tools)) else { return }
   let converted : Array[Json] = []
   for tool in tools {
-    guard tool is Object(tool_obj) else { continue }
-    let name = json_string_from_map(tool_obj, "name").unwrap_or("")
-    if name.trim().is_empty() {
-      continue
-    }
-    converted.push(
-      Json::object({
-        "type": Json::string("function"),
-        "function": Json::object({
-          "name": Json::string(name),
-          "description": tool_obj.get("description").unwrap_or(Json::string("")),
-          "parameters": tool_obj
-          .get("parameters")
-          .unwrap_or(tool_obj.get("input_schema").unwrap_or(Json::object({}))),
-        }),
-      }),
+    append_codex_response_tool_as_openai_chat_tool(
+      tool,
+      converted,
+      tool_context,
+      None,
     )
   }
   if !converted.is_empty() {
@@ -362,12 +548,212 @@ fn append_codex_responses_tools_as_openai_chat_tools(
 }
 
 ///|
-fn codex_tool_choice_to_openai_chat(choice : Json) -> Json {
+fn append_codex_response_tool_as_openai_chat_tool(
+  tool : Json,
+  converted : Array[Json],
+  tool_context : CodexChatToolContext,
+  ns_name : String?,
+) -> Unit {
+  match tool {
+    String(name) =>
+      append_codex_custom_tool_as_openai_chat_tool(
+        name,
+        Json::string(name),
+        converted,
+      )
+    Object(tool_obj) =>
+      match json_string_from_map(tool_obj, "type") {
+        Some("function") => {
+          let original_name = codex_response_tool_name(tool_obj)
+          if original_name.trim().is_empty() {
+            return
+          }
+          let chat_name = codex_chat_name_for_response_function(
+            original_name, ns_name, tool_context,
+          )
+          append_codex_function_tool_as_openai_chat_tool(
+            tool_obj, chat_name, converted,
+          )
+        }
+        Some("custom") =>
+          append_codex_custom_tool_as_openai_chat_tool(
+            codex_response_tool_name(tool_obj),
+            Json::object(tool_obj),
+            converted,
+          )
+        Some("tool_search") => append_tool_search_as_openai_chat_tool(converted)
+        Some("namespace") =>
+          if tool_obj.get("tools") is Some(Array(children)) {
+            let child_ns_name = json_string_from_map(tool_obj, "name")
+            for child in children {
+              append_codex_response_tool_as_openai_chat_tool(
+                child, converted, tool_context, child_ns_name,
+              )
+            }
+          } else if tool_obj.get("children") is Some(Array(children)) {
+            let child_ns_name = json_string_from_map(tool_obj, "name")
+            for child in children {
+              append_codex_response_tool_as_openai_chat_tool(
+                child, converted, tool_context, child_ns_name,
+              )
+            }
+          }
+        _ => ()
+      }
+    _ => ()
+  }
+}
+
+///|
+fn append_codex_function_tool_as_openai_chat_tool(
+  tool_obj : Map[String, Json],
+  chat_name : String,
+  converted : Array[Json],
+) -> Unit {
+  if chat_name.trim().is_empty() {
+    return
+  }
+  let function : Map[String, Json] = {
+    "name": Json::string(chat_name),
+    "description": tool_obj.get("description").unwrap_or(Json::string("")),
+    "parameters": tool_obj
+    .get("parameters")
+    .unwrap_or(tool_obj.get("input_schema").unwrap_or(Json::object({}))),
+  }
+  if tool_obj.get("strict") is Some(strict) {
+    function["strict"] = strict
+  }
+  converted.push(
+    Json::object({
+      "type": Json::string("function"),
+      "function": Json::object(function),
+    }),
+  )
+}
+
+///|
+fn append_codex_custom_tool_as_openai_chat_tool(
+  name : String,
+  definition : Json,
+  converted : Array[Json],
+) -> Unit {
+  if name.trim().is_empty() {
+    return
+  }
+  let properties : Map[String, Json] = {}
+  properties[CUSTOM_TOOL_INPUT_FIELD] = Json::object({
+    "type": Json::string("string"),
+    "description": Json::string(CUSTOM_TOOL_INPUT_DESCRIPTION),
+  })
+  let parameters : Map[String, Json] = {
+    "type": Json::string("object"),
+    "properties": Json::object(properties),
+    "required": Json::array([Json::string(CUSTOM_TOOL_INPUT_FIELD)]),
+  }
+  converted.push(
+    Json::object({
+      "type": Json::string("function"),
+      "function": Json::object({
+        "name": Json::string(name),
+        "description": Json::string(
+          "\{CUSTOM_TOOL_PRESERVED_METADATA_HEADING}\n```json\n\{canonical_json_string(definition)}\n```",
+        ),
+        "parameters": Json::object(parameters),
+      }),
+    }),
+  )
+}
+
+///|
+fn append_tool_search_as_openai_chat_tool(converted : Array[Json]) -> Unit {
+  converted.push(
+    Json::object({
+      "type": Json::string("function"),
+      "function": Json::object({
+        "name": Json::string(TOOL_SEARCH_PROXY_NAME),
+        "description": Json::string(
+          "Search and load Codex tools, plugins, connectors, and MCP namespaces for the current task.",
+        ),
+        "parameters": Json::object({
+          "type": Json::string("object"),
+          "properties": Json::object({
+            "query": Json::object({
+              "type": Json::string("string"),
+              "description": Json::string(
+                "Search query for tools or connectors to load.",
+              ),
+            }),
+            "limit": Json::object({
+              "type": Json::string("integer"),
+              "description": Json::string(
+                "Maximum number of tool groups to return.",
+              ),
+            }),
+          }),
+          "required": Json::array([Json::string("query")]),
+        }),
+      }),
+    }),
+  )
+}
+
+///|
+fn codex_response_tool_name(tool : Map[String, Json]) -> String {
+  match tool.get("function") {
+    Some(Object(function)) =>
+      json_string_from_map(function, "name").unwrap_or("")
+    _ => json_string_from_map(tool, "name").unwrap_or("")
+  }
+}
+
+///|
+fn codex_chat_name_for_response_function(
+  name : String,
+  ns_name : String?,
+  tool_context : CodexChatToolContext,
+) -> String {
+  match ns_name {
+    Some(ns) if !ns.is_empty() => {
+      let direct = "\{ns}__\{name}"
+      match codex_chat_tool_context_lookup(tool_context, direct) {
+        Some(_) => direct
+        None => direct
+      }
+    }
+    _ => name
+  }
+}
+
+///|
+fn codex_tool_choice_to_openai_chat(
+  choice : Json,
+  tool_context : CodexChatToolContext,
+) -> Json {
   match choice {
     String("auto") | String("none") | String("required") => choice
     Object(obj) =>
       if obj.get("type") is Some(String("function")) ||
         obj.get("type") is Some(String("tool")) {
+        Json::object({
+          "type": Json::string("function"),
+          "function": Json::object({
+            "name": Json::string(
+              codex_chat_name_for_response_function(
+                json_string_from_map(obj, "name").unwrap_or(""),
+                json_string_from_map(obj, "namespace"),
+                tool_context,
+              ),
+            ),
+          }),
+        })
+      } else if obj.get("type") is Some(String("tool_search")) {
+        Json::object({
+          "type": Json::string("function"),
+          "function": Json::object({
+            "name": Json::string(TOOL_SEARCH_PROXY_NAME),
+          }),
+        })
+      } else if obj.get("type") is Some(String("custom")) {
         Json::object({
           "type": Json::string("function"),
           "function": Json::object({
@@ -388,6 +774,32 @@ fn openai_chat_completion_to_codex_response(
   body : Json,
   fallback_model : String,
 ) -> Json {
+  openai_chat_completion_to_codex_response_with_context(
+    body,
+    fallback_model,
+    codex_chat_empty_tool_context(),
+  )
+}
+
+///|
+fn openai_chat_completion_to_codex_response_with_request(
+  body : Json,
+  fallback_model : String,
+  original_request : Json,
+) -> Json {
+  openai_chat_completion_to_codex_response_with_context(
+    body,
+    fallback_model,
+    codex_chat_tool_context_from_responses_request(original_request),
+  )
+}
+
+///|
+fn openai_chat_completion_to_codex_response_with_context(
+  body : Json,
+  fallback_model : String,
+  tool_context : CodexChatToolContext,
+) -> Json {
   let response_id = openai_chat_completion_id(body).unwrap_or(
     generate_chat_completion_id(),
   )
@@ -405,7 +817,7 @@ fn openai_chat_completion_to_codex_response(
   if obj.get("choices") is Some(Array(choices)) &&
     choices.get(0) is Some(Object(choice)) &&
     choice.get("message") is Some(Object(message)) {
-    append_openai_chat_message_as_codex_output(message, output)
+    append_openai_chat_message_as_codex_output(message, output, tool_context)
   }
   codex_response_from_output(
     response_id,
@@ -419,6 +831,7 @@ fn openai_chat_completion_to_codex_response(
 fn append_openai_chat_message_as_codex_output(
   message : Map[String, Json],
   output : Array[Json],
+  tool_context : CodexChatToolContext,
 ) -> Unit {
   match json_string_from_map(message, "content") {
     Some(text) if !text.is_empty() =>
@@ -439,32 +852,68 @@ fn append_openai_chat_message_as_codex_output(
   if message.get("tool_calls") is Some(Array(tool_calls)) {
     for tool_call in tool_calls {
       guard tool_call is Object(tool_call_obj) else { continue }
-      output.push(codex_function_call_from_openai_tool_call(tool_call_obj))
+      output.push(
+        codex_call_item_from_openai_tool_call(tool_call_obj, tool_context),
+      )
     }
   }
 }
 
 ///|
-fn codex_function_call_from_openai_tool_call(
+fn codex_call_item_from_openai_tool_call(
   tool_call : Map[String, Json],
+  tool_context : CodexChatToolContext,
 ) -> Json {
   let function = match tool_call.get("function") {
     Some(Object(function)) => function
     _ => {}
   }
-  let item : Map[String, Json] = {
-    "type": Json::string("function_call"),
-    "call_id": Json::string(
-      json_string_from_map(tool_call, "id").unwrap_or(
-        generate_chat_completion_id(),
-      ),
-    ),
-    "name": Json::string(
-      json_string_from_map(function, "name").unwrap_or("tool"),
-    ),
-    "arguments": Json::string(
-      canonicalize_tool_arguments(function.get("arguments")),
-    ),
+  let chat_name = json_string_from_map(function, "name").unwrap_or("tool")
+  let arguments = canonicalize_tool_arguments(function.get("arguments"))
+  let call_id = json_string_from_map(tool_call, "id").unwrap_or(
+    generate_chat_completion_id(),
+  )
+  let item : Map[String, Json] = match
+    codex_chat_tool_context_lookup(tool_context, chat_name) {
+    Some(spec) if spec.kind == "custom" =>
+      {
+        "id": Json::string("ctc_\{call_id}"),
+        "type": Json::string("custom_tool_call"),
+        "status": Json::string("completed"),
+        "call_id": Json::string(call_id),
+        "name": Json::string(spec.name),
+        "input": Json::string(custom_tool_input_from_chat_arguments(arguments)),
+      }
+    Some(spec) if spec.kind == "tool_search" =>
+      {
+        "type": Json::string("tool_search_call"),
+        "status": Json::string("completed"),
+        "execution": Json::string("client"),
+        "call_id": Json::string(call_id),
+        "arguments": parse_tool_arguments_object(arguments),
+      }
+    Some(spec) => {
+      let result : Map[String, Json] = {
+        "type": Json::string("function_call"),
+        "call_id": Json::string(call_id),
+        "name": Json::string(spec.name),
+        "arguments": Json::string(arguments),
+        "status": Json::string("completed"),
+        "id": Json::string("fc_\{call_id}"),
+      }
+      match spec.ns_name {
+        Some(ns) if !ns.is_empty() => result["namespace"] = Json::string(ns)
+        _ => ()
+      }
+      result
+    }
+    None =>
+      {
+        "type": Json::string("function_call"),
+        "call_id": Json::string(call_id),
+        "name": Json::string(chat_name),
+        "arguments": Json::string(arguments),
+      }
   }
   match json_string_from_map(tool_call, "reasoning_content") {
     Some(reasoning) if !reasoning.is_empty() =>
@@ -472,6 +921,33 @@ fn codex_function_call_from_openai_tool_call(
     _ => ()
   }
   Json::object(item)
+}
+
+///|
+fn parse_tool_arguments_object(arguments : String) -> Json {
+  if arguments.trim().is_empty() {
+    return Json::object({})
+  }
+  let parsed = @json.parse(arguments) catch {
+    _ => return Json::object({ "query": Json::string(arguments) })
+  }
+  match parsed {
+    Object(_) => parsed
+    _ => Json::object({ "query": Json::string(arguments) })
+  }
+}
+
+///|
+fn custom_tool_input_from_chat_arguments(arguments : String) -> String {
+  if arguments.trim().is_empty() {
+    return ""
+  }
+  let parsed = @json.parse(arguments) catch { _ => return arguments }
+  match parsed {
+    Object(obj) =>
+      json_string_from_map(obj, CUSTOM_TOOL_INPUT_FIELD).unwrap_or(arguments)
+    _ => arguments
+  }
 }
 
 ///|

@@ -1078,9 +1078,10 @@ async fn Gateway::forward_non_streaming_codex_response(
                 _ => body
               } noraise {
                 chat_response =>
-                  openai_chat_completion_to_codex_response(
+                  openai_chat_completion_to_codex_response_with_request(
                     chat_response,
                     codex_request_model(request, self.model),
+                    outbound_request,
                   ).stringify()
               }
               (response, converted)
