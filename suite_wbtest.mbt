@@ -94,6 +94,50 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("ANY /gemini/v1/*path")))
   guard obj["apps"] is Array(apps) else { fail("expected apps") }
   assert_eq(apps.length(), 4)
+  guard obj["suite_integrations"] is Object(integrations) else {
+    fail("expected suite integrations")
+  }
+  guard integrations["moonclaw"] is Object(moonclaw) else {
+    fail("expected moonclaw integration")
+  }
+  assert_eq(
+    moonclaw["openai_base_url"],
+    Json::string("http://127.0.0.1:15721/v1"),
+  )
+  assert_eq(
+    moonclaw["anthropic_base_url"],
+    Json::string("http://127.0.0.1:15721"),
+  )
+  guard moonclaw["env"] is Object(moonclaw_env) else {
+    fail("expected moonclaw env")
+  }
+  assert_eq(
+    moonclaw_env["OPENAI_BASE_URL"],
+    Json::string("http://127.0.0.1:15721/v1"),
+  )
+  guard integrations["moonbook"] is Object(moonbook) else {
+    fail("expected moonbook integration")
+  }
+  assert_eq(
+    moonbook["usage_request_logs_file"],
+    Json::string(
+      @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
+    ),
+  )
+  guard integrations["moontown"] is Object(moontown) else {
+    fail("expected moontown integration")
+  }
+  assert_eq(
+    moontown["usage_provider_limits_url"],
+    Json::string("http://127.0.0.1:15721/usage/provider-limits"),
+  )
+  guard integrations["moondesk"] is Object(moondesk) else {
+    fail("expected moondesk integration")
+  }
+  assert_eq(
+    moondesk["claude_desktop_base_url"],
+    Json::string("http://127.0.0.1:15721/claude-desktop/v1"),
+  )
   guard obj["commands"] is Object(commands) else { fail("expected commands") }
   assert_eq(commands["start"], Json::string("moonstat start --port 15721"))
   assert_eq(
@@ -166,6 +210,16 @@ async test "suite status writes discovery file" {
       fail("expected capabilities")
     }
     assert_true(capabilities.contains(Json::string("session-usage-sync")))
+    guard obj["suite_integrations"] is Object(integrations) else {
+      fail("expected suite integrations")
+    }
+    guard integrations["moondesk"] is Object(moondesk) else {
+      fail("expected moondesk integration")
+    }
+    assert_eq(
+      moondesk["models_url"],
+      Json::string("http://127.0.0.1:17000/v1/models"),
+    )
     guard obj["commands"] is Object(commands) else { fail("expected commands") }
     assert_eq(commands["start"], Json::string("moonstat start --port 17000"))
     assert_eq(

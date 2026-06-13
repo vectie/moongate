@@ -94,6 +94,7 @@ pub fn moonstat_suite_manifest_json(
         "moondesk", "operator-shell", "Read the suite status file and display gateway health, model catalog, and traffic counters.",
       ),
     ]),
+    "suite_integrations": moonstat_suite_integrations_json(host, port, model),
     "commands": moonstat_suite_commands_json(port, model),
     "cli": moonstat_suite_commands_json(port, model),
   }.to_json()
@@ -166,6 +167,7 @@ pub fn moonstat_suite_status_json(
     ),
     "usage_opencode_db_file": Json::string(default_opencode_db_path()),
     "usage_opencode_export_file": Json::string(default_opencode_export_path()),
+    "suite_integrations": moonstat_suite_integrations_json(host, port, model),
     "openai_base_url": Json::string(moonstat_openai_base_url(host, port)),
     "anthropic_base_url": Json::string(moonstat_base_url(host, port)),
     "claude_desktop_base_url": Json::string(
@@ -232,6 +234,65 @@ fn suite_app_json(id : String, role : String, usage : String) -> Json {
     "id": Json::string(id),
     "role": Json::string(role),
     "usage": Json::string(usage),
+  })
+}
+
+///|
+fn moonstat_suite_integrations_json(
+  host : String,
+  port : Int,
+  model : String,
+) -> Json {
+  let base_url = moonstat_base_url(host, port)
+  let openai_base_url = moonstat_openai_base_url(host, port)
+  let anthropic_base_url = base_url
+  let claude_desktop_base_url = moonstat_claude_desktop_base_url(host, port)
+  Json::object({
+    "moonclaw": Json::object({
+      "role": Json::string("agent-provider-edge"),
+      "openai_base_url": Json::string(openai_base_url),
+      "anthropic_base_url": Json::string(anthropic_base_url),
+      "default_model": Json::string(model),
+      "health_url": Json::string("\{base_url}/health"),
+      "usage_summary_url": Json::string("\{base_url}/usage/summary"),
+      "usage_logs_url": Json::string("\{base_url}/usage/logs"),
+      "env": Json::object({
+        "OPENAI_BASE_URL": Json::string(openai_base_url),
+        "ANTHROPIC_BASE_URL": Json::string(anthropic_base_url),
+      }),
+    }),
+    "moonbook": Json::object({
+      "role": Json::string("durable-usage-output"),
+      "usage_summary_url": Json::string("\{base_url}/usage/summary"),
+      "usage_logs_url": Json::string("\{base_url}/usage/logs"),
+      "usage_trends_url": Json::string("\{base_url}/usage/trends"),
+      "usage_data_sources_url": Json::string("\{base_url}/usage/data-sources"),
+      "usage_request_logs_file": Json::string(
+        @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
+      ),
+      "usage_model_pricing_file": Json::string(
+        @pathx.join(default_moonstat_stats_dir(), MOONSTAT_MODEL_PRICING_FILE),
+      ),
+    }),
+    "moontown": Json::object({
+      "role": Json::string("scheduler-network-watch"),
+      "health_url": Json::string("\{base_url}/health"),
+      "status_url": Json::string("\{base_url}/status"),
+      "stats_url": Json::string("\{base_url}/stats"),
+      "usage_provider_limits_url": Json::string(
+        "\{base_url}/usage/provider-limits",
+      ),
+      "suite_status_file": Json::string(default_moonstat_suite_status_path()),
+    }),
+    "moondesk": Json::object({
+      "role": Json::string("operator-dashboard"),
+      "suite_status_file": Json::string(default_moonstat_suite_status_path()),
+      "health_url": Json::string("\{base_url}/health"),
+      "status_url": Json::string("\{base_url}/status"),
+      "stats_url": Json::string("\{base_url}/stats"),
+      "models_url": Json::string("\{openai_base_url}/models"),
+      "claude_desktop_base_url": Json::string(claude_desktop_base_url),
+    }),
   })
 }
 

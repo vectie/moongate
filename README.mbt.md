@@ -58,7 +58,16 @@ moon run cmd/main -- suite write-status
 MoonBook, Moontown, Moondesk, or any other local probe. They expose the
 gateway URLs, status file, capabilities, and command map needed by suite
 launchers. `suite write-status` writes the same status contract to
-`~/.moonstat/suite-status.json` by default.
+`~/.moonstat/suite-status.json` by default. The contract also includes a
+machine-readable `suite_integrations` object:
+
+- MoonClaw gets local OpenAI/Anthropic base URLs, default model, health URL, and
+  env names.
+- MoonBook gets usage summary/log/trend/data-source URLs plus the durable usage
+  log and pricing files.
+- Moontown gets health/status/stats and provider-limit probe URLs.
+- Moondesk gets the status file, health/status/stats, model catalog, and Claude
+  Desktop gateway base URL.
 
 ## Proxy Surface
 
