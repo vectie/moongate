@@ -417,3 +417,33 @@ test "gateway activation skips occupied half open provider in failover chain" {
   assert_eq(gateway.stats.current_provider_id, Some("codex-alt"))
   assert_false(gateway.stats.current_request_used_half_open_permit)
 }
+
+///|
+test "gateway activation can exclude already attempted failover providers" {
+  let gateway = Gateway::new(port=0)
+  let providers = [
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="primary",
+      provider_name="Primary",
+    ),
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="fallback",
+      provider_name="Fallback",
+    ),
+  ]
+  for provider in providers {
+    gateway.provider_router.upsert_provider(provider)
+  }
+  let selected = gateway.activate_first_available_provider_excluding(
+    "codex",
+    providers,
+    ["primary"],
+  )
+  guard selected is Some(provider) else {
+    fail("expected unattempted fallback provider")
+  }
+  assert_eq(provider.provider_id, "fallback")
+  assert_eq(gateway.stats.current_provider_id, Some("fallback"))
+}

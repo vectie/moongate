@@ -83,7 +83,20 @@ fn Gateway::activate_first_available_provider(
   app_type : String,
   providers : Array[ProviderRouteTarget],
 ) -> ProviderRouteTarget? {
+  self.activate_first_available_provider_excluding(app_type, providers, [])
+}
+
+///|
+fn Gateway::activate_first_available_provider_excluding(
+  self : Gateway,
+  app_type : String,
+  providers : Array[ProviderRouteTarget],
+  attempted_provider_ids : Array[String],
+) -> ProviderRouteTarget? {
   for provider in providers {
+    if attempted_provider_ids.contains(provider.provider_id) {
+      continue
+    }
     if self.activate_provider_target(app_type, provider) {
       return Some(provider)
     }
