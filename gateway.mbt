@@ -4776,10 +4776,22 @@ fn replace_images_for_text_only_model(
     Some(false) => return replace_image_blocks_with_marker(Json::object(obj))
     None => ()
   }
+  if !provider_media_heuristic_enabled(provider) {
+    return { body: Json::object(obj), count: 0 }
+  }
   if !known_text_only_model(model) {
     return { body: Json::object(obj), count: 0 }
   }
   replace_image_blocks_with_marker(Json::object(obj))
+}
+
+///|
+fn provider_media_heuristic_enabled(provider : ProviderRouteTarget?) -> Bool {
+  guard provider is Some(provider) else { return true }
+  guard provider.settings_config is Some(Object(settings)) else { return true }
+  json_bool_from_map_any(settings, [
+    "requestMediaHeuristic", "request_media_heuristic",
+  ]).unwrap_or(true)
 }
 
 ///|
