@@ -702,42 +702,70 @@ async fn Gateway::forward_non_streaming_chat_completion(
     w.flush()
     return
   }
-  let client = self.codex_client(creds, accept="application/json", session_id~)
-  defer client.close()
-  let response = client.post("/backend-api/codex/responses", request)
-  let response_body = client.read_all().text()
-  if response.code != 200 {
-    self.record_upstream_error_status(response_body.length(), response.code)
+  let selection = self.provider_router.select_providers("codex")
+  let providers = if selection.is_ok() { selection.providers } else { [] }
+  let attempted_provider_ids : Array[String] = []
+  for ;; {
+    let client = self.codex_client(
+      creds,
+      accept="application/json",
+      session_id~,
+    )
+    let response = client.post("/backend-api/codex/responses", request)
+    let response_body = client.read_all().text()
+    client.close()
+    if response.code == 200 {
+      let parsed : Result[Json, Error] = try? @json.parse(response_body)
+      match parsed {
+        Ok(json) => {
+          let usage = token_usage_from_codex_response_auto(json).unwrap_or(
+            TokenUsage::empty(),
+          )
+          let chat_response = codex_response_to_openai_chat_completion(
+            json, response_model,
+          )
+          let chat_response_body = chat_response.stringify()
+          self.record_success_usage(usage, chat_response_body.length())
+          w.header().set("Content-Type", "application/json")
+          w.write_header(@status.Ok)
+          w.write(chat_response_body)
+        }
+        Err(_) => {
+          self.record_internal_error()
+          w.header().set("Content-Type", "application/json")
+          w.write_header(@status.InternalServerError)
+          w.write(
+            "{\"error\":{\"message\":\"Failed to parse Codex response\",\"type\":\"server_error\"}}",
+          )
+        }
+      }
+      w.flush()
+      return
+    }
+    if !providers.is_empty() {
+      let next = self.activate_next_provider_after_upstream_status(
+        "codex",
+        providers,
+        attempted_provider_ids,
+        response.code,
+      )
+      if next is Some(_) {
+        continue
+      }
+      self.stats.record_upstream_error_status(
+        response_body.length(),
+        response.code,
+      )
+      self.stats.save_persistent_store()
+    } else {
+      self.record_upstream_error_status(response_body.length(), response.code)
+    }
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(response_body)
     w.flush()
     return
   }
-  let parsed : Result[Json, Error] = try? @json.parse(response_body)
-  match parsed {
-    Ok(json) => {
-      let usage = token_usage_from_codex_response_auto(json).unwrap_or(
-        TokenUsage::empty(),
-      )
-      let chat_response = codex_response_to_openai_chat_completion(
-        json, response_model,
-      )
-      self.record_success_usage(usage, chat_response.stringify().length())
-      w.header().set("Content-Type", "application/json")
-      w.write_header(@status.Ok)
-      w.write(chat_response.stringify())
-    }
-    Err(_) => {
-      self.record_internal_error()
-      w.header().set("Content-Type", "application/json")
-      w.write_header(@status.InternalServerError)
-      w.write(
-        "{\"error\":{\"message\":\"Failed to parse Codex response\",\"type\":\"server_error\"}}",
-      )
-    }
-  }
-  w.flush()
 }
 
 ///|

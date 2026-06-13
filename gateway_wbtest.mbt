@@ -580,6 +580,69 @@ test "gateway retryable final provider remains active for final upstream error" 
 }
 
 ///|
+test "gateway nonretryable upstream status does not activate failover provider" {
+  let gateway = Gateway::new(port=0)
+  gateway.provider_router.update_all_configs({
+    failure_threshold: 1,
+    success_threshold: 2,
+    timeout_seconds: 60,
+    error_rate_threshold: 0.6,
+    min_requests: 10,
+  })
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-alt",
+      provider_name="Codex Alt",
+    ),
+  )
+  gateway.provider_router.set_failover_queue("codex", [
+    "codex-oauth", "codex-alt",
+  ])
+  gateway.provider_router.set_auto_failover("codex", true)
+  let selection = gateway.provider_router.select_providers("codex", now_ms=1000)
+  assert_true(selection.is_ok())
+  assert_true(selection.providers.length() == 2)
+
+  gateway.stats.record_inbound(10)
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  let selected = gateway.activate_first_available_provider(
+    "codex",
+    selection.providers,
+  )
+  guard selected is Some(provider) else { fail("expected provider") }
+  assert_true(provider.provider_id == "codex-oauth")
+
+  let attempted : Array[String] = []
+  let next = gateway.activate_next_provider_after_upstream_status(
+    "codex",
+    selection.providers,
+    attempted,
+    400,
+  )
+  assert_true(next is None)
+  assert_true(attempted.length() == 1)
+  assert_true(attempted[0] == "codex-oauth")
+  guard gateway.stats.current_provider_id is Some(current_provider_id) else {
+    fail("expected current provider id")
+  }
+  assert_true(current_provider_id == "codex-oauth")
+  guard gateway.provider_router.get_circuit_breaker_stats(
+      "codex-oauth", "codex",
+    )
+    is Some(stats) else {
+    fail("expected circuit stats")
+  }
+  assert_true(stats.state == Closed)
+  assert_true(stats.total_requests == 0)
+  assert_true(stats.failed_requests == 0)
+}
+
+///|
 test "gateway activation bypasses circuit breaker for single provider" {
   let gateway = Gateway::new(port=0)
   gateway.provider_router.update_all_configs({
