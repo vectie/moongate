@@ -177,6 +177,7 @@ async fn Gateway::handle_codex_responses(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
+  self.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -211,6 +212,7 @@ async fn Gateway::handle_chat_completions(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
+  self.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -258,6 +260,7 @@ async fn Gateway::handle_gemini(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
+  self.stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
   let request_json : Json = if body_str.is_empty() {
     Json::null()
   } else {
@@ -726,14 +729,7 @@ async fn Gateway::handle_status(
   w.write_header(@status.Ok)
   w.write(
     self.stats
-    .status_json(
-      self.host,
-      self.port,
-      self.uptime_seconds(),
-      "Codex OAuth",
-      "codex-oauth",
-      "Codex",
-    )
+    .status_json(self.host, self.port, self.uptime_seconds())
     .stringify(indent=2),
   )
   w.flush()
@@ -842,6 +838,12 @@ async fn Gateway::handle_messages(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
+  let app_type = if r.path.has_prefix("/claude-desktop") {
+    "claude-desktop"
+  } else {
+    "claude"
+  }
+  self.stats.set_active_target(app_type, "codex-oauth", "Codex OAuth")
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {

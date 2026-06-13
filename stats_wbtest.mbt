@@ -39,10 +39,9 @@ test "traffic status json matches ccs proxy status shape" {
   let stats = TrafficStats::new()
   stats.record_inbound(10)
   stats.record_bad_request()
+  stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
   stats.last_request_at = Some("test-timestamp")
-  let status = stats.status_json(
-    "127.0.0.1", 15721, 3, "Codex OAuth", "codex-oauth", "Codex",
-  )
+  let status = stats.status_json("127.0.0.1", 15721, 3)
   json_inspect(status, content={
     "running": true,
     "address": "127.0.0.1",
@@ -60,10 +59,35 @@ test "traffic status json matches ccs proxy status shape" {
     "failover_count": 0,
     "active_targets": [
       {
-        "app_type": "Codex",
+        "app_type": "codex",
         "provider_id": "codex-oauth",
         "provider_name": "Codex OAuth",
       },
     ],
   })
+}
+
+///|
+test "traffic status tracks ccs active targets by app type" {
+  let stats = TrafficStats::new()
+  stats.set_active_target("claude", "codex-oauth", "Codex OAuth")
+  stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
+  stats.set_active_target("gemini", "gemini-api-key-2", "Gemini API Key 2")
+  guard stats.active_targets.get("claude") is Some(claude) else {
+    fail("expected claude active target")
+  }
+  guard stats.active_targets.get("gemini") is Some(gemini) else {
+    fail("expected gemini active target")
+  }
+  json_inspect(active_target_json(claude), content={
+    "app_type": "claude",
+    "provider_id": "codex-oauth",
+    "provider_name": "Codex OAuth",
+  })
+  json_inspect(active_target_json(gemini), content={
+    "app_type": "gemini",
+    "provider_id": "gemini-api-key-2",
+    "provider_name": "Gemini API Key 2",
+  })
+  assert_eq(stats.failover_count, 1)
 }

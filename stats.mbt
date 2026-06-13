@@ -16,8 +16,19 @@ pub struct TrafficStats {
   mut cache_creation_tokens : Int
   mut request_bytes : Int
   mut response_bytes : Int
+  mut current_provider : String?
+  mut current_provider_id : String?
+  mut failover_count : Int
+  active_targets : Map[String, ActiveTarget]
   mut last_request_at : String?
   mut last_error : String?
+}
+
+///|
+pub struct ActiveTarget {
+  app_type : String
+  provider_id : String
+  provider_name : String
 }
 
 ///|
@@ -39,9 +50,34 @@ pub fn TrafficStats::new() -> TrafficStats {
     cache_creation_tokens: 0,
     request_bytes: 0,
     response_bytes: 0,
+    current_provider: None,
+    current_provider_id: None,
+    failover_count: 0,
+    active_targets: Map([], capacity=0),
     last_request_at: None,
     last_error: None,
   }
+}
+
+///|
+pub fn TrafficStats::set_active_target(
+  self : TrafficStats,
+  app_type : String,
+  provider_id : String,
+  provider_name : String,
+) -> Unit {
+  match self.active_targets.get(app_type) {
+    Some(target) if target.provider_id != provider_id =>
+      self.failover_count += 1
+    _ => ()
+  }
+  self.current_provider = Some(provider_name)
+  self.current_provider_id = Some(provider_id)
+  self.active_targets.set(app_type, ActiveTarget::{
+    app_type,
+    provider_id,
+    provider_name,
+  })
 }
 
 ///|
@@ -200,9 +236,6 @@ pub fn TrafficStats::status_json(
   address : String,
   port : Int,
   uptime_seconds : Int,
-  current_provider : String,
-  current_provider_id : String,
-  app_type : String,
 ) -> Json {
   {
     "running": Json::boolean(true),
@@ -214,26 +247,29 @@ pub fn TrafficStats::status_json(
     "failed_requests": Json::number(self.failed_responses.to_double()),
     "success_rate": Json::number(self.success_rate()),
     "uptime_seconds": Json::number(uptime_seconds.to_double()),
-    "current_provider": Json::string(current_provider),
-    "current_provider_id": Json::string(current_provider_id),
+    "current_provider": optional_string_json(self.current_provider),
+    "current_provider_id": optional_string_json(self.current_provider_id),
     "last_request_at": optional_string_json(self.last_request_at),
     "last_error": optional_string_json(self.last_error),
-    "failover_count": Json::number(0.0),
-    "active_targets": Json::array([
-      active_target_json(app_type, current_provider_id, current_provider),
-    ]),
+    "failover_count": Json::number(self.failover_count.to_double()),
+    "active_targets": active_targets_json(self.active_targets),
   }.to_json()
 }
 
 ///|
-fn active_target_json(
-  app_type : String,
-  provider_id : String,
-  provider_name : String,
-) -> Json {
+fn active_target_json(target : ActiveTarget) -> Json {
   {
-    "app_type": Json::string(app_type),
-    "provider_id": Json::string(provider_id),
-    "provider_name": Json::string(provider_name),
+    "app_type": Json::string(target.app_type),
+    "provider_id": Json::string(target.provider_id),
+    "provider_name": Json::string(target.provider_name),
   }.to_json()
+}
+
+///|
+fn active_targets_json(targets : Map[String, ActiveTarget]) -> Json {
+  let values : Array[Json] = []
+  for target in targets.values() {
+    values.push(active_target_json(target))
+  }
+  Json::array(values)
 }
