@@ -6442,9 +6442,13 @@ priv struct ResponsesStreamState {
   mut message_id : String?
   mut model : String
   mut has_sent_message_start : Bool
+  mut has_tool_use : Bool
   mut next_content_index : Int
   mut current_text_index : Int?
+  mut last_tool_index : Int?
   open_indices : Array[Int]
+  tool_index_by_item_id : Map[String, Int]
+  tool_name_by_index : Map[Int, String]
 }
 
 ///|
@@ -6453,9 +6457,13 @@ fn ResponsesStreamState::new(model : String) -> ResponsesStreamState {
     message_id: None,
     model,
     has_sent_message_start: false,
+    has_tool_use: false,
     next_content_index: 0,
     current_text_index: None,
+    last_tool_index: None,
     open_indices: [],
+    tool_index_by_item_id: {},
+    tool_name_by_index: {},
   }
 }
 
@@ -6501,12 +6509,17 @@ fn ResponsesStreamState::push_event(
     }
     "response.output_text.done" | "response.refusal.done" =>
       self.close_current_text_block(events)
+    "response.output_item.added" => self.push_output_item_added(obj, events)
+    "response.function_call_arguments.delta" =>
+      self.push_function_call_arguments_delta(obj, events)
+    "response.function_call_arguments.done" =>
+      self.finish_function_call_arguments(obj, events)
     "response.completed" => {
       self.close_current_text_block(events)
       self.close_open_blocks(events)
-      if convert_stream_event(event_type, obj, self.model) is Some(event) {
-        events.push(event)
-      }
+      events.push(
+        responses_stream_completed_event(obj, self.model, self.has_tool_use),
+      )
     }
     _ =>
       if convert_stream_event(event_type, obj, self.model) is Some(event) {
@@ -6538,6 +6551,142 @@ fn ResponsesStreamState::ensure_message_start(
     }).stringify(),
   })
   self.has_sent_message_start = true
+}
+
+///|
+fn ResponsesStreamState::push_output_item_added(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+  events : Array[StreamEvent],
+) -> Unit {
+  guard obj.get("item") is Some(Object(item)) else { return }
+  guard json_string_from_map(item, "type") == Some("function_call") else {
+    return
+  }
+  self.has_tool_use = true
+  self.close_current_text_block(events)
+  self.ensure_message_start(events)
+  let index = self.next_content_index
+  self.next_content_index += 1
+  self.last_tool_index = Some(index)
+  match responses_stream_item_id(obj, item) {
+    Some(item_id) => self.tool_index_by_item_id[item_id] = index
+    None => ()
+  }
+  let name = json_string_from_map(item, "name").unwrap_or("")
+  self.tool_name_by_index[index] = name
+  if !self.open_indices.contains(index) {
+    self.open_indices.push(index)
+    events.push(
+      anthropic_tool_block_start_event(
+        index,
+        json_string_from_map(item, "call_id").unwrap_or(""),
+        name,
+      ),
+    )
+  }
+}
+
+///|
+fn ResponsesStreamState::push_function_call_arguments_delta(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+  events : Array[StreamEvent],
+) -> Unit {
+  let delta = match obj.get("delta") {
+    Some(String(delta)) => delta
+    _ => return
+  }
+  self.has_tool_use = true
+  let index = self.tool_index_from_event(obj)
+  self.ensure_tool_block(index, obj, events)
+  events.push(anthropic_tool_input_delta_event(index, delta))
+}
+
+///|
+fn ResponsesStreamState::finish_function_call_arguments(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+  events : Array[StreamEvent],
+) -> Unit {
+  guard self.last_tool_index is Some(_) ||
+    obj.get("item_id") is Some(_) ||
+    obj.get("output_index") is Some(_) else {
+    return
+  }
+  let index = self.tool_index_from_event(obj)
+  self.close_open_block(events, index)
+  match json_string_from_map(obj, "item_id") {
+    Some(item_id) => self.tool_index_by_item_id.remove(item_id)
+    None => ()
+  }
+  self.tool_name_by_index.remove(index)
+}
+
+///|
+fn ResponsesStreamState::tool_index_from_event(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+) -> Int {
+  match json_string_from_map(obj, "item_id") {
+    Some(item_id) =>
+      match self.tool_index_by_item_id.get(item_id) {
+        Some(index) => return index
+        None => ()
+      }
+    None => ()
+  }
+  match json_int(obj, "output_index") {
+    Some(output_index) => {
+      let key = "out:\{output_index}"
+      match self.tool_index_by_item_id.get(key) {
+        Some(index) => return index
+        None => ()
+      }
+    }
+    None => ()
+  }
+  match self.last_tool_index {
+    Some(index) => index
+    None => {
+      let index = self.next_content_index
+      self.next_content_index += 1
+      self.last_tool_index = Some(index)
+      match json_string_from_map(obj, "item_id") {
+        Some(item_id) => self.tool_index_by_item_id[item_id] = index
+        None => ()
+      }
+      index
+    }
+  }
+}
+
+///|
+fn ResponsesStreamState::ensure_tool_block(
+  self : ResponsesStreamState,
+  index : Int,
+  obj : Map[String, Json],
+  events : Array[StreamEvent],
+) -> Unit {
+  self.ensure_message_start(events)
+  if self.open_indices.contains(index) {
+    return
+  }
+  self.open_indices.push(index)
+  let name = match self.tool_name_by_index.get(index) {
+    Some(name) => name
+    None => json_string_from_map(obj, "name").unwrap_or("")
+  }
+  self.tool_name_by_index[index] = name
+  events.push(
+    anthropic_tool_block_start_event(
+      index,
+      json_string_from_map(obj, "call_id").unwrap_or(
+        json_string_from_map(obj, "item_id").unwrap_or(""),
+      ),
+      name,
+    ),
+  )
 }
 
 ///|
@@ -6598,6 +6747,25 @@ fn ResponsesStreamState::close_open_blocks(
   while !self.open_indices.is_empty() {
     let index = self.open_indices.remove(0)
     events.push(anthropic_content_block_stop_event(index))
+  }
+}
+
+///|
+fn responses_stream_item_id(
+  obj : Map[String, Json],
+  item : Map[String, Json],
+) -> String? {
+  match json_string_from_map(item, "id") {
+    Some(id) => Some(id)
+    None =>
+      match json_string_from_map(obj, "item_id") {
+        Some(item_id) => Some(item_id)
+        None =>
+          match json_int(obj, "output_index") {
+            Some(output_index) => Some("out:\{output_index}")
+            None => None
+          }
+      }
   }
 }
 
@@ -6689,26 +6857,32 @@ fn convert_stream_event(
       }
       None
     }
-    "response.completed" => {
-      let response_obj = responses_stream_response_object(obj)
-      let usage = responses_stream_anthropic_usage_json(response_obj)
-      let stop_reason = responses_stream_stop_reason_json(
-        json_string_from_map(response_obj, "status"),
-        responses_stream_response_has_tool_use(response_obj),
-        responses_stream_incomplete_reason(response_obj),
-      )
-      let event_data : Map[String, Json] = {
-        "type": Json::string("message_delta"),
-        "delta": { "stop_reason": stop_reason, "stop_sequence": Json::null() }.to_json(),
-        "usage": usage,
-      }
-      Some({
-        event_type: "message_delta",
-        data: event_data.to_json().stringify(),
-      })
-    }
+    "response.completed" =>
+      Some(responses_stream_completed_event(obj, model, false))
     _ => None
   }
+}
+
+///|
+fn responses_stream_completed_event(
+  obj : Map[String, Json],
+  _model : String,
+  has_streamed_tool_use : Bool,
+) -> StreamEvent {
+  let response_obj = responses_stream_response_object(obj)
+  let usage = responses_stream_anthropic_usage_json(response_obj)
+  let stop_reason = responses_stream_stop_reason_json(
+    json_string_from_map(response_obj, "status"),
+    has_streamed_tool_use ||
+    responses_stream_response_has_tool_use(response_obj),
+    responses_stream_incomplete_reason(response_obj),
+  )
+  let event_data : Map[String, Json] = {
+    "type": Json::string("message_delta"),
+    "delta": { "stop_reason": stop_reason, "stop_sequence": Json::null() }.to_json(),
+    "usage": usage,
+  }
+  { event_type: "message_delta", data: event_data.to_json().stringify() }
 }
 
 ///|

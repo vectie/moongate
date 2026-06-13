@@ -1597,6 +1597,76 @@ test "ccs responses stream state closes dangling text on completed" {
 }
 
 ///|
+test "ccs responses stream state emits function call argument deltas" {
+  let state = ResponsesStreamState::new("gpt-5.4")
+  let added_block =
+    #|event: response.output_item.added
+    #|data: {"type":"response.output_item.added","item_id":"fc_1","output_index":0,"item":{"id":"fc_1","type":"function_call","call_id":"call_1","name":"lookup"}}
+    #|
+  let (_, _, added_events) = codex_stream_events_from_sse_block(
+    added_block, state,
+  )
+  assert_eq(added_events.length(), 2)
+  assert_eq(added_events[0].event_type, "message_start")
+  assert_eq(added_events[1].event_type, "content_block_start")
+  let start_data = @json.parse(added_events[1].data) catch {
+    _ => fail("expected start json")
+  }
+  guard start_data is Object(start_obj) else { fail("expected object") }
+  assert_eq(start_obj["index"], Json::number(0.0))
+  guard start_obj["content_block"] is Object(block_obj) else {
+    fail("expected content block")
+  }
+  assert_eq(block_obj["type"], Json::string("tool_use"))
+  assert_eq(block_obj["id"], Json::string("call_1"))
+  assert_eq(block_obj["name"], Json::string("lookup"))
+
+  let delta_block =
+    #|event: response.function_call_arguments.delta
+    #|data: {"type":"response.function_call_arguments.delta","item_id":"fc_1","delta":"{\"q\":\"moon\""}
+    #|
+  let (_, _, delta_events) = codex_stream_events_from_sse_block(
+    delta_block, state,
+  )
+  assert_eq(delta_events.length(), 1)
+  assert_eq(delta_events[0].event_type, "content_block_delta")
+  let delta_data = @json.parse(delta_events[0].data) catch {
+    _ => fail("expected delta json")
+  }
+  guard delta_data is Object(delta_obj) else { fail("expected object") }
+  guard delta_obj["delta"] is Object(delta) else { fail("expected delta") }
+  assert_eq(delta["type"], Json::string("input_json_delta"))
+  assert_eq(delta["partial_json"], Json::string("{\"q\":\"moon\""))
+
+  let done_block =
+    #|event: response.function_call_arguments.done
+    #|data: {"type":"response.function_call_arguments.done","item_id":"fc_1","arguments":"{\"q\":\"moon\"}"}
+    #|
+  let (_, _, done_events) = codex_stream_events_from_sse_block(
+    done_block, state,
+  )
+  assert_eq(done_events.length(), 1)
+  assert_eq(done_events[0].event_type, "content_block_stop")
+
+  let completed_block =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_tool","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":6,"output_tokens":2}}}
+    #|
+  let (_, _, finish_events) = codex_stream_events_from_sse_block(
+    completed_block, state,
+  )
+  assert_eq(finish_events.length(), 1)
+  let finish_data = @json.parse(finish_events[0].data) catch {
+    _ => fail("expected finish json")
+  }
+  guard finish_data is Object(finish_obj) else { fail("expected object") }
+  guard finish_obj["delta"] is Object(finish_delta) else {
+    fail("expected delta")
+  }
+  assert_eq(finish_delta["stop_reason"], Json::string("tool_use"))
+}
+
+///|
 test "ccs responses sse parser ignores truncated trailing block" {
   let sse =
     #|event: response.completed
