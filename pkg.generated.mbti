@@ -464,6 +464,7 @@ pub struct TrafficStats {
   mut current_request_model : String?
   mut current_request_session_id : String?
   mut current_request_provider_type : String?
+  mut current_request_cost_multiplier : String
   mut current_request_is_streaming : Bool
   mut current_request_used_half_open_permit : Bool
 }
@@ -492,7 +493,7 @@ pub fn TrafficStats::record_upstream_error_status(Self, Int, Int) -> Unit
 pub fn TrafficStats::request_detail_json(Self, String) -> Json?
 pub fn TrafficStats::request_logs_json(Self, limit? : Int) -> Json
 pub async fn TrafficStats::save_persistent_store(Self) -> Unit
-pub fn TrafficStats::set_active_target(Self, String, String, String) -> Unit
+pub fn TrafficStats::set_active_target(Self, String, String, String, cost_multiplier? : String) -> Unit
 pub fn TrafficStats::set_provider_limits(Self, String, String, daily_limit_usd? : String?, monthly_limit_usd? : String?) -> Unit
 pub fn TrafficStats::status_json(Self, String, Int, Int, provider_routes? : Json?) -> Json
 pub async fn TrafficStats::sync_claude_session_logs(Self, projects_dir? : String) -> SessionSyncResult

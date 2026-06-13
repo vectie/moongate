@@ -172,6 +172,7 @@ fn Gateway::activate_provider_target(
     app_type,
     provider.provider_id,
     provider.provider_name,
+    cost_multiplier=provider_cost_multiplier(provider),
   )
   true
 }
@@ -1834,6 +1835,31 @@ fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
       ]),
     ),
   )
+}
+
+///|
+fn provider_cost_multiplier(provider : ProviderRouteTarget) -> String {
+  guard provider.settings_config is Some(settings) else { return "1.0" }
+  match settings {
+    Object(obj) => {
+      match
+        json_string_from_map_any(obj, ["costMultiplier", "cost_multiplier"]) {
+        Some(value) if !value.trim().is_empty() =>
+          return value.trim().to_owned()
+        _ => ()
+      }
+      match obj.get("meta") {
+        Some(Object(meta)) =>
+          match
+            json_string_from_map_any(meta, ["costMultiplier", "cost_multiplier"]) {
+            Some(value) if !value.trim().is_empty() => value.trim().to_owned()
+            _ => "1.0"
+          }
+        _ => "1.0"
+      }
+    }
+    _ => "1.0"
+  }
 }
 
 ///|
@@ -3838,6 +3864,20 @@ fn explicit_image_support(entry : Json) -> Bool? {
     Some(input) => input_modalities_support_image(input)
     None => None
   }
+}
+
+///|
+fn json_string_from_map_any(
+  obj : Map[String, Json],
+  keys : Array[String],
+) -> String? {
+  for key in keys {
+    match json_string_from_map(obj, key) {
+      Some(value) => return Some(value)
+      None => ()
+    }
+  }
+  None
 }
 
 ///|
