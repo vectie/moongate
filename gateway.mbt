@@ -62,6 +62,30 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/claude-desktop/v1/messages", (r, w) => {
     self.handle_messages(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/responses", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/v1/responses", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/v1/v1/responses", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/codex/v1/responses", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/responses/compact", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/v1/responses/compact", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/v1/v1/responses/compact", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/codex/v1/responses/compact", (r, w) => {
+    self.handle_codex_responses(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/participant/register", (_, w) => {
     self.handle_register_page(w)
   })
@@ -119,6 +143,167 @@ async fn Gateway::handle_health(
   }
   w.write(response.to_json().stringify())
   w.flush()
+}
+
+///|
+async fn Gateway::handle_codex_responses(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = r.body.read_all()
+  let body_str = body.text()
+  self.stats.record_inbound(body_str.length())
+  let json_result : Result[Json, Error] = try? @json.parse(body_str)
+  match json_result {
+    Err(_) => {
+      self.stats.record_bad_request()
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.BadRequest)
+      w.write(
+        "{\"error\":{\"message\":\"Invalid JSON\",\"type\":\"invalid_request_error\"}}",
+      )
+      w.flush()
+      return
+    }
+    Ok(json) => {
+      let stream = json_bool_field(json, "stream").unwrap_or(false)
+      self.stats.record_stream_mode(stream)
+      let request = normalize_codex_oauth_request(json)
+      if stream {
+        self.forward_streaming_codex_response(request, w)
+      } else {
+        self.forward_non_streaming_codex_response(request, w)
+      }
+    }
+  }
+}
+
+///|
+async fn Gateway::forward_non_streaming_codex_response(
+  self : Gateway,
+  request : Json,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard self.credentials is Some(creds) else {
+    self.stats.record_unauthorized()
+    w.header().set("Content-Type", "application/json")
+    w.write_header(@status.Unauthorized)
+    w.write(
+      "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
+    )
+    w.flush()
+    return
+  }
+  let client = self.codex_client(creds, accept="application/json")
+  defer client.close()
+  let response = client.post("/backend-api/codex/responses", request)
+  let response_body = client.read_all().text()
+  if response.code != 200 {
+    self.stats.record_upstream_error(response_body.length())
+    w.header().set("Content-Type", "application/json")
+    w.write_header(response.code)
+    w.write(response_body)
+    w.flush()
+    return
+  }
+  let usage = try {
+    let json = @json.parse(response_body)
+    token_usage_from_codex_response_auto(json).unwrap_or(TokenUsage::empty())
+  } catch {
+    _ => TokenUsage::empty()
+  }
+  self.stats.record_success_usage(usage, response_body.length())
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(response_body)
+  w.flush()
+}
+
+///|
+async fn Gateway::forward_streaming_codex_response(
+  self : Gateway,
+  request : Json,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard self.credentials is Some(creds) else {
+    self.stats.record_unauthorized()
+    w.header().set("Content-Type", "application/json")
+    w.write_header(@status.Unauthorized)
+    w.write(
+      "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
+    )
+    w.flush()
+    return
+  }
+  let client = self.codex_client(creds, accept="text/event-stream")
+  defer client.close()
+  let response = client.post("/backend-api/codex/responses", request)
+  if response.code != 200 {
+    let error_body = client.read_all().text()
+    self.stats.record_upstream_error(error_body.length())
+    w.header().set("Content-Type", "application/json")
+    w.write_header(response.code)
+    w.write(error_body)
+    w.flush()
+    return
+  }
+  w.header().set("Content-Type", "text/event-stream")
+  w.header().set("Cache-Control", "no-cache")
+  w.header().set("Connection", "keep-alive")
+  w.write_header(@status.Ok)
+  let mut response_bytes = 0
+  while client.read_until("\n") is Some(line) {
+    response_bytes += line.length() + 1
+    w.write(line)
+    w.write("\n")
+    w.flush()
+  }
+  self.stats.record_success(0, 0, response_bytes)
+  w.flush()
+}
+
+///|
+async fn Gateway::codex_client(
+  self : Gateway,
+  creds : @codex.Credentials,
+  accept~ : String,
+) -> @http.Client {
+  let _ = self
+  @http.Client::new("https://chatgpt.com", headers={
+    "Authorization": "Bearer \{creds.accessToken}",
+    "ChatGPT-Account-ID": creds.accountId,
+    "Content-Type": "application/json",
+    "Accept": accept,
+    "originator": "moonstat_gateway",
+    "User-Agent": "moonstat/1.0.0",
+  })
+}
+
+///|
+fn normalize_codex_oauth_request(json : Json) -> Json {
+  guard json is Object(obj) else { return json }
+  obj["store"] = Json::boolean(false)
+  if obj.get("instructions") is None {
+    obj["instructions"] = Json::string("")
+  }
+  if obj.get("tools") is None {
+    obj["tools"] = Json::array([])
+  }
+  if obj.get("parallel_tool_calls") is None {
+    obj["parallel_tool_calls"] = Json::boolean(false)
+  }
+  Json::object(obj)
+}
+
+///|
+fn json_bool_field(json : Json, key : String) -> Bool? {
+  guard json is Object(obj) else { return None }
+  match obj.get(key) {
+    Some(true) => Some(true)
+    Some(false) => Some(false)
+    _ => None
+  }
 }
 
 ///|
