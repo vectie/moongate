@@ -3,6 +3,8 @@ import {
   "vectie/moonstat/internal/claude_desktop",
   "moonbitlang/core/json",
   "moonbitlang/core/random",
+  "moonbitlang/core/string",
+  "moonbitlang/x/time",
   "moonbitlang/async",
   "moonbitlang/async/http",
   "moonbitlang/async/io",

@@ -23,6 +23,7 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["usage", "logs", ..] => check_usage_logs(arr)
     ["usage", "summary", ..] => check_usage_endpoint(arr, "/usage/summary")
     ["usage", "apps", ..] => check_usage_endpoint(arr, "/usage/summary/by-app")
+    ["usage", "trends", ..] => check_usage_trends(arr)
     ["usage", "providers", ..] =>
       check_usage_endpoint(arr, "/usage/provider-stats")
     ["usage", "models", ..] => check_usage_endpoint(arr, "/usage/model-stats")
@@ -74,6 +75,7 @@ fn print_help() -> Unit {
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage summary    Show ccs-style usage summary")
   println("  usage apps       Show ccs-style usage summary by app")
+  println("  usage trends     Show ccs-style hourly/daily usage trends")
   println("  usage providers  Show ccs-style provider statistics")
   println("  usage models     Show ccs-style model statistics")
   println("  usage sources    Show ccs-style data source breakdown")
@@ -113,6 +115,7 @@ fn print_help() -> Unit {
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat usage logs            # Show recent request logs")
   println("  moonstat usage summary         # Show aggregate token/cost usage")
+  println("  moonstat usage trends --start-date 0 --end-date 86400")
   println("  moonstat usage detail --request-id req_x")
   println("  moonstat uninstall             # Remove hosts reroute")
 }
@@ -186,6 +189,33 @@ async fn check_stats(args : Array[String]) -> Unit {
 ///|
 async fn check_usage_logs(args : Array[String]) -> Unit {
   check_usage_endpoint(args, "/usage/logs")
+}
+
+///|
+async fn check_usage_trends(args : Array[String]) -> Unit {
+  check_usage_endpoint(args, usage_trends_path(args))
+}
+
+///|
+fn usage_trends_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg(args, "--start-date") {
+    Some(value) => query.push("start_date=\{value}")
+    None => ()
+  }
+  match parse_string_arg(args, "--end-date") {
+    Some(value) => query.push("end_date=\{value}")
+    None => ()
+  }
+  match parse_string_arg(args, "--app-type") {
+    Some(value) => query.push("app_type=\{value}")
+    None => ()
+  }
+  if query.is_empty() {
+    "/usage/trends"
+  } else {
+    "/usage/trends?\{query.join("&")}"
+  }
 }
 
 ///|

@@ -46,6 +46,21 @@ test "usage request detail route extracts ccs request id" {
 }
 
 ///|
+test "usage query helpers parse ccs trend parameters" {
+  let path = "/usage/trends?start_date=10&endDate=20&app_type=codex"
+  assert_eq(usage_query_int_any(path, "start_date", "startDate"), Some(10))
+  assert_eq(usage_query_int_any(path, "end_date", "endDate"), Some(20))
+  assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
+  assert_eq(usage_query_value(path, "missing"), None)
+  assert_eq(
+    usage_query_int_any(
+      "/usage/trends?start_date=bad", "start_date", "startDate",
+    ),
+    None,
+  )
+}
+
+///|
 test "codex responses endpoints preserve request query" {
   assert_eq(
     codex_backend_responses_endpoint(

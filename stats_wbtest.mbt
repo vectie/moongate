@@ -430,3 +430,129 @@ test "usage aggregate lists match ccs route payloads" {
     { "dataSource": "session", "requestCount": 1, "totalCostUsd": "0.000200" },
   ])
 }
+
+///|
+test "usage trends use ccs hourly buckets for short ranges" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-codex",
+      provider_id="codex-oauth",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=10,
+        cache_read_tokens=40,
+      ),
+      total_cost_usd="0.000100",
+      status_code=200,
+      created_at=100,
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-claude",
+      provider_id="anthropic",
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      usage=TokenUsage::new(
+        input_tokens=50,
+        output_tokens=5,
+        cache_read_tokens=20,
+        cache_creation_tokens=10,
+      ),
+      total_cost_usd="0.000200",
+      status_code=200,
+      created_at=3700,
+    ),
+  )
+  let trends = stats.usage_trends_json(start_ts=Some(0), end_ts=Some(7200))
+  guard trends is Array(rows) else { fail("expected trends array") }
+  assert_eq(rows.length(), 2)
+  guard rows[0] is Object(first) else { fail("expected first trend bucket") }
+  assert_eq(first["date"], Json::string(trend_timestamp_rfc3339(0)))
+  assert_eq(first["requestCount"], Json::number(1.0))
+  assert_eq(first["totalCost"], Json::string("0.000100"))
+  assert_eq(first["totalTokens"], Json::number(70.0))
+  assert_eq(first["totalInputTokens"], Json::number(60.0))
+  assert_eq(first["totalOutputTokens"], Json::number(10.0))
+  assert_eq(first["totalCacheCreationTokens"], Json::number(0.0))
+  assert_eq(first["totalCacheReadTokens"], Json::number(40.0))
+  guard rows[1] is Object(second) else { fail("expected second trend bucket") }
+  assert_eq(second["date"], Json::string(trend_timestamp_rfc3339(3600)))
+  assert_eq(second["requestCount"], Json::number(1.0))
+  assert_eq(second["totalCost"], Json::string("0.000200"))
+  assert_eq(second["totalTokens"], Json::number(55.0))
+  assert_eq(second["totalInputTokens"], Json::number(50.0))
+  assert_eq(second["totalOutputTokens"], Json::number(5.0))
+  assert_eq(second["totalCacheCreationTokens"], Json::number(10.0))
+  assert_eq(second["totalCacheReadTokens"], Json::number(20.0))
+}
+
+///|
+test "usage trends use local daily buckets for long ranges" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-day-zero",
+      provider_id="codex-oauth",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=10,
+        cache_read_tokens=40,
+      ),
+      total_cost_usd="0.000100",
+      status_code=200,
+      created_at=100,
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-day-one",
+      provider_id="codex-oauth",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(input_tokens=10, output_tokens=5),
+      total_cost_usd="0.000300",
+      status_code=200,
+      created_at=TREND_DAY_SECONDS + 100,
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-ignored",
+      provider_id="anthropic",
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      usage=TokenUsage::new(input_tokens=1000, output_tokens=1000),
+      total_cost_usd="9.000000",
+      status_code=200,
+      created_at=100,
+    ),
+  )
+  let trends = stats.usage_trends_json(
+    start_ts=Some(0),
+    end_ts=Some(TREND_DAY_SECONDS * 2),
+    app_type=Some("codex"),
+  )
+  guard trends is Array(rows) else { fail("expected trends array") }
+  assert_eq(rows.length(), 3)
+  guard rows[0] is Object(day_zero) else { fail("expected day zero bucket") }
+  assert_eq(
+    day_zero["date"],
+    Json::string(trend_timestamp_rfc3339(trend_local_day_start_ts(0))),
+  )
+  assert_eq(day_zero["requestCount"], Json::number(1.0))
+  assert_eq(day_zero["totalCost"], Json::string("0.000100"))
+  assert_eq(day_zero["totalTokens"], Json::number(70.0))
+  guard rows[1] is Object(day_one) else { fail("expected day one bucket") }
+  assert_eq(day_one["requestCount"], Json::number(1.0))
+  assert_eq(day_one["totalCost"], Json::string("0.000300"))
+  assert_eq(day_one["totalTokens"], Json::number(15.0))
+  guard rows[2] is Object(day_two) else { fail("expected day two bucket") }
+  assert_eq(day_two["requestCount"], Json::number(0.0))
+  assert_eq(day_two["totalCost"], Json::string("0.000000"))
+}

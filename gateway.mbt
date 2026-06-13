@@ -130,6 +130,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/usage/summary/by-app", (_, w) => {
     self.handle_usage_summary_by_app(w)
   })
+  router.add_handler(@httpx.Method::Get, "/usage/trends", (r, w) => {
+    self.handle_usage_trends(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/usage/provider-stats", (_, w) => {
     self.handle_usage_provider_stats(w)
   })
@@ -1022,6 +1025,21 @@ async fn Gateway::handle_usage_summary_by_app(
 }
 
 ///|
+async fn Gateway::handle_usage_trends(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let start_ts = usage_query_int_any(r.path, "start_date", "startDate")
+  let end_ts = usage_query_int_any(r.path, "end_date", "endDate")
+  let app_type = usage_query_value_any(r.path, "app_type", "appType")
+  write_usage_json(
+    w,
+    self.stats.usage_trends_json(start_ts~, end_ts~, app_type~),
+  )
+}
+
+///|
 async fn Gateway::handle_usage_provider_stats(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1094,6 +1112,55 @@ fn usage_request_detail_id(path : String) -> String {
   } else {
     path
   }
+}
+
+///|
+fn usage_query_value_any(
+  path : StringView,
+  left_key : String,
+  right_key : String,
+) -> String? {
+  match usage_query_value(path, left_key) {
+    Some(value) => Some(value)
+    None => usage_query_value(path, right_key)
+  }
+}
+
+///|
+fn usage_query_int_any(
+  path : StringView,
+  left_key : String,
+  right_key : String,
+) -> Int? {
+  match usage_query_value_any(path, left_key, right_key) {
+    Some(value) =>
+      try @string.parse_int(value, base=10) catch {
+        _ => None
+      } noraise {
+        parsed => Some(parsed)
+      }
+    None => None
+  }
+}
+
+///|
+fn usage_query_value(path : StringView, key : String) -> String? {
+  let text = path.to_owned()
+  guard text.find("?") is Some(question_index) else { return None }
+  let query = text[question_index + 1:]
+  for pair_view in query.split("&") {
+    let pair = pair_view.to_owned()
+    guard pair.find("=") is Some(equal_index) else { continue }
+    let pair_key = pair[:equal_index].to_owned()
+    if pair_key == key {
+      let value = pair[equal_index + 1:].to_owned()
+      if value.is_empty() {
+        return None
+      }
+      return Some(value)
+    }
+  }
+  None
 }
 
 ///|

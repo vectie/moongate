@@ -20,11 +20,16 @@ test "suite manifest publishes moonstat service contract" {
     obj["usage_summary_url"],
     Json::string("http://127.0.0.1:15721/usage/summary"),
   )
+  assert_eq(
+    obj["usage_trends_url"],
+    Json::string("http://127.0.0.1:15721/usage/trends"),
+  )
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   assert_true(routes.contains(Json::string("GET /stats")))
   assert_true(routes.contains(Json::string("GET /usage/logs")))
   assert_true(routes.contains(Json::string("GET /usage/summary")))
   assert_true(routes.contains(Json::string("GET /usage/summary/by-app")))
+  assert_true(routes.contains(Json::string("GET /usage/trends")))
   assert_true(routes.contains(Json::string("GET /usage/provider-stats")))
   assert_true(routes.contains(Json::string("GET /usage/model-stats")))
   assert_true(routes.contains(Json::string("GET /usage/data-sources")))
@@ -56,6 +61,10 @@ async test "suite status writes discovery file" {
     assert_eq(
       obj["usage_summary_url"],
       Json::string("http://127.0.0.1:17000/usage/summary"),
+    )
+    assert_eq(
+      obj["usage_trends_url"],
+      Json::string("http://127.0.0.1:17000/usage/trends"),
     )
     guard obj["manifest"] is Object(manifest) else {
       fail("expected manifest object")
