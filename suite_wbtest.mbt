@@ -60,6 +60,7 @@ test "suite manifest publishes moonstat service contract" {
     Json::string(default_opencode_db_path()),
   )
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
+  assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /stats")))
   assert_true(routes.contains(Json::string("GET /usage/logs")))
   assert_true(routes.contains(Json::string("GET /usage/summary")))
@@ -77,6 +78,7 @@ test "suite manifest publishes moonstat service contract" {
     routes.contains(Json::string("GET /usage/request-detail/{request_id}")),
   )
   assert_true(routes.contains(Json::string("POST /v1/messages")))
+  assert_true(routes.contains(Json::string("POST /login")))
   guard obj["apps"] is Array(apps) else { fail("expected apps") }
   assert_eq(apps.length(), 4)
 }

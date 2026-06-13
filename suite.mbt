@@ -251,8 +251,8 @@ fn suite_app_json(id : String, role : String, usage : String) -> Json {
 ///|
 fn moonstat_suite_routes() -> Array[String] {
   [
-    "GET /health", "GET /status", "GET /stats", "GET /usage/logs", "GET /models",
-    "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
+    "GET /participant/register", "GET /health", "GET /status", "GET /stats", "GET /usage/logs",
+    "GET /models", "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
     "GET /usage/trends", "GET /usage/provider-limits", "GET /usage/model-stats",
     "GET /usage/data-sources", "POST /usage/sync-session", "GET /usage/model-pricing",
     "POST /usage/model-pricing", "DELETE /usage/model-pricing", "GET /usage/request-detail/{request_id}",
@@ -261,7 +261,7 @@ fn moonstat_suite_routes() -> Array[String] {
     "POST /v1/v1/responses", "POST /codex/v1/responses", "POST /responses/compact",
     "POST /v1/responses/compact", "POST /v1/v1/responses/compact", "POST /codex/v1/responses/compact",
     "POST /chat/completions", "POST /v1/chat/completions", "POST /v1/v1/chat/completions",
-    "POST /codex/v1/chat/completions", "GET|POST /v1beta/*path", "GET|POST /gemini/v1beta/*path",
+    "POST /codex/v1/chat/completions", "POST /login", "GET|POST /v1beta/*path", "GET|POST /gemini/v1beta/*path",
     "GET|POST /gemini/v1/*path",
   ]
 }
