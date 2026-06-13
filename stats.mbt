@@ -590,7 +590,7 @@ pub fn TrafficStats::request_logs_json(
   let bounded_limit = if limit < 0 { 0 } else { limit }
   let start = max_int(len - bounded_limit, 0)
   for i in start..<len {
-    logs.push(effective_logs[i].to_json())
+    logs.push(effective_logs[i].to_ccs_request_log_detail_json())
   }
   Json::array(logs)
 }

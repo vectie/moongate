@@ -195,7 +195,7 @@ test "traffic stats writes request logs from request context" {
   assert_eq(log.provider_type, Some("codex"))
   assert_false(log.is_streaming)
   json_inspect(stats.usage_logs_json(limit=1), content={
-    "data": [log.to_json()],
+    "data": [log.to_ccs_request_log_detail_json()],
     "total": 1,
     "limit": 1,
     "source": "memory",
@@ -824,7 +824,7 @@ test "usage aggregates deduplicate ccs session imports against proxy logs" {
   assert_true(stats.request_log_is_effective(proxy_log))
 
   json_inspect(stats.usage_logs_json(limit=10), content={
-    "data": [proxy_log.to_json()],
+    "data": [proxy_log.to_ccs_request_log_detail_json()],
     "total": 1,
     "limit": 10,
     "source": "memory",
