@@ -24,6 +24,8 @@ pub fn setenv(StringView, StringView, overwrite? : Bool) -> Unit raise
 
 pub fn tmpdir() -> String raise
 
+pub fn unix_seconds() -> Int
+
 pub fn unsetenv(StringView) -> Unit raise
 
 // Errors

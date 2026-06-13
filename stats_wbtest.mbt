@@ -268,6 +268,27 @@ test "traffic stats keeps request log retention bounded" {
 }
 
 ///|
+test "request log default created_at uses ccs unix seconds" {
+  let before = @os.unix_seconds()
+  let log = RequestLog::new(
+    request_id="req-time",
+    provider_id="provider",
+    app_type="codex",
+    model="gpt-5",
+    usage=TokenUsage::empty(),
+    status_code=200,
+  )
+  let after = @os.unix_seconds()
+  assert_true(log.created_at >= before)
+  assert_true(log.created_at <= after)
+  assert_true(log.created_at > 1_700_000_000)
+  guard log.to_ccs_request_log_detail_json() is Object(obj) else {
+    fail("expected request log object")
+  }
+  assert_eq(obj["createdAt"], Json::number(log.created_at.to_double()))
+}
+
+///|
 test "usage logs paginated json matches ccs filters and ordering" {
   let stats = TrafficStats::new()
   stats.record_request_log(

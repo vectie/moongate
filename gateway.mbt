@@ -981,7 +981,7 @@ async fn Gateway::forward_streaming_chat_completion(
         w.header().set("Connection", "keep-alive")
         w.write_header(@status.Ok)
         let id = generate_chat_completion_id()
-        let created = @async.now().to_int() / 1000
+        let created = @os.unix_seconds()
         let stream_events : Array[Json] = []
         w.write(
           "data: \{openai_chat_role_chunk(id, response_model, created).stringify()}\n\n",

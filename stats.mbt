@@ -56,7 +56,7 @@ pub fn RequestLog::new(
   total_cost_usd? : String = "0",
   is_streaming? : Bool = false,
   cost_multiplier? : String = "1.0",
-  created_at? : Int = @async.now().to_int() / 1000,
+  created_at? : Int = @os.unix_seconds(),
   data_source? : String = "proxy",
 ) -> RequestLog {
   {

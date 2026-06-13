@@ -108,7 +108,7 @@ fn normalize_trend_range(start_ts : Int?, end_ts : Int?) -> TrendRange {
 
 ///|
 fn trend_now_seconds() -> Int {
-  @async.now().to_int() / 1000
+  @os.unix_seconds()
 }
 
 ///|

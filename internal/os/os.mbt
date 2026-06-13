@@ -186,6 +186,14 @@ pub fn[X] exit(code : Int) -> X {
 }
 
 ///|
+extern "c" fn os_unix_seconds() -> Int64 = "moonbit_moonclaw_os_unix_seconds"
+
+///|
+pub fn unix_seconds() -> Int {
+  os_unix_seconds().to_int()
+}
+
+///|
 #borrow(buf)
 extern "c" fn os_executable(buf : FixedArray[Byte]) -> Int = "moonbit_moonclaw_os_executable"
 

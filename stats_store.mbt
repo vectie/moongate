@@ -126,7 +126,7 @@ async fn TrafficStats::save_session_sync_state_to_store(
         "filePath": Json::string(file_path),
         "lastModified": Json::number(state.last_modified.to_double()),
         "lastLineOffset": Json::number(state.last_line_offset.to_double()),
-        "lastSyncedAt": Json::number((@async.now().to_int() / 1000).to_double()),
+        "lastSyncedAt": Json::number(@os.unix_seconds().to_double()),
       }
       .to_json()
       .stringify(),

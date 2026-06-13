@@ -110,6 +110,16 @@ moonbit_moonclaw_os_exit(int32_t code) {
 }
 
 MOONBIT_FFI_EXPORT
+int64_t
+moonbit_moonclaw_os_unix_seconds(void) {
+  struct timeval tv;
+  if (gettimeofday(&tv, NULL) != 0) {
+    return 0;
+  }
+  return (int64_t)tv.tv_sec;
+}
+
+MOONBIT_FFI_EXPORT
 int32_t
 moonbit_moonclaw_os_executable(moonbit_bytes_t buf) {
 #if defined(__APPLE__)

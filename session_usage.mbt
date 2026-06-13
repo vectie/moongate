@@ -1535,7 +1535,7 @@ fn opencode_timestamp_seconds(timestamp_ms : Int64) -> Int {
   if timestamp_ms > 0L {
     (timestamp_ms / 1000L).to_int()
   } else {
-    @async.now().to_int() / 1000
+    @os.unix_seconds()
   }
 }
 
@@ -1543,10 +1543,8 @@ fn opencode_timestamp_seconds(timestamp_ms : Int64) -> Int {
 fn session_timestamp_seconds(timestamp : String?) -> Int {
   match timestamp {
     Some(value) =>
-      parse_session_timestamp_seconds(value).unwrap_or(
-        @async.now().to_int() / 1000,
-      )
-    None => @async.now().to_int() / 1000
+      parse_session_timestamp_seconds(value).unwrap_or(@os.unix_seconds())
+    None => @os.unix_seconds()
   }
 }
 

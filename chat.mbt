@@ -1200,7 +1200,7 @@ fn codex_response_to_openai_chat_completion(
       codex_response_id(body).unwrap_or(generate_chat_completion_id()),
     ),
     "object": Json::string("chat.completion"),
-    "created": Json::number((@async.now().to_int() / 1000).to_double()),
+    "created": Json::number(@os.unix_seconds().to_double()),
     "model": Json::string(model),
     "choices": Json::array([
       Json::object({
@@ -1323,7 +1323,7 @@ fn ChatToCodexResponsesStreamState::new_with_context(
     completed: false,
     response_id: "resp_moonstat",
     model,
-    created_at: @async.now().to_int() / 1000,
+    created_at: @os.unix_seconds(),
     next_output_index: 0,
     text_output_index: None,
     text_item_id: "",
