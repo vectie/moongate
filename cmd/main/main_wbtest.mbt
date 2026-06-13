@@ -393,6 +393,20 @@ test "top level ccs provider command names build command alias paths" {
     "/get_opencode_live_provider_ids",
   )
   assert_eq(
+    provider_live_provider_path(
+      ["moonstat", "get_openclaw_live_provider", "--providerId", "open claw"],
+      "openclaw",
+    ),
+    Some("/get_openclaw_live_provider?providerId=open%20claw"),
+  )
+  assert_eq(
+    provider_live_provider_path(
+      ["moonstat", "get_hermes_live_provider", "--id", "hermes/a"],
+      "hermes",
+    ),
+    Some("/get_hermes_live_provider?providerId=hermes%2Fa"),
+  )
+  assert_eq(
     provider_import_live_path("openclaw"),
     "/import_openclaw_providers_from_live",
   )

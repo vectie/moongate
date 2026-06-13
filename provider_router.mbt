@@ -747,6 +747,18 @@ fn ProviderRouter::live_provider_ids_json(
 }
 
 ///|
+fn ProviderRouter::live_provider_json(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+) -> Json {
+  match self.provider_by_id(app_type, provider_id) {
+    Some(provider) => provider.settings_config.unwrap_or(provider.to_json())
+    None => Json::null()
+  }
+}
+
+///|
 fn ProviderRouter::import_live_providers(
   self : ProviderRouter,
   app_type : String,

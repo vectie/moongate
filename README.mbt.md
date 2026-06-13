@@ -128,7 +128,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /read_live_provider_settings?app=codex`
 - `GET /get_opencode_live_provider_ids`
 - `GET /get_openclaw_live_provider_ids`
+- `GET /get_openclaw_live_provider?providerId=custom`
+- `GET /scan_openclaw_config_health`
 - `GET /get_hermes_live_provider_ids`
+- `GET /get_hermes_live_provider?providerId=custom`
 - `POST /import_opencode_providers_from_live`
 - `POST /import_openclaw_providers_from_live`
 - `POST /import_hermes_providers_from_live`
@@ -231,9 +234,12 @@ against that same standalone provider router state. `/read_live_provider_setting
 `/test_api_endpoints`, and `/update_providers_sort_order` mirror the ccs live
 settings, endpoint latency result, and `sortIndex` command shapes.
 `/get_opencode_live_provider_ids`, `/get_openclaw_live_provider_ids`,
-`/get_hermes_live_provider_ids`, and the matching `import_*_from_live`
-commands expose the same suite-facing provider import/ID command surface against
-Moonstat's standalone provider router state. `/get_universal_providers`,
+`/get_hermes_live_provider_ids`, `/get_openclaw_live_provider`,
+`/get_hermes_live_provider`, `/scan_openclaw_config_health`, and the matching
+`import_*_from_live` commands expose the same suite-facing provider command
+surface against Moonstat's standalone provider router state. The standalone
+OpenClaw health scan returns an empty warning list because Moonstat does not own
+OpenClaw's live config file. `/get_universal_providers`,
 `/get_universal_provider`, `/upsert_universal_provider`,
 `/delete_universal_provider`, and `/sync_universal_provider` preserve the ccs
 universal-provider JSON shape and can sync enabled Claude/Codex/Gemini apps into

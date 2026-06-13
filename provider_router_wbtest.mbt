@@ -575,6 +575,11 @@ test "provider router mirrors ccs live settings and sort updates" {
     "apiKey": "sk-a",
     "baseUrl": "https://a.example.com/v1",
   })
+  json_inspect(router.live_provider_json("codex", "a"), content={
+    "apiKey": "sk-a",
+    "baseUrl": "https://a.example.com/v1",
+  })
+  assert_eq(router.live_provider_json("codex", "missing"), Json::null())
   assert_true(
     router.update_providers_sort_order("codex", [
       { id: "b", sort_index: 0 },

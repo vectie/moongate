@@ -112,9 +112,15 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["get_openclaw_live_provider_ids", ..]
     | ["get-openclaw-live-provider-ids", ..] =>
       check_named_live_provider_ids(arr, "openclaw")
+    ["get_openclaw_live_provider", ..] | ["get-openclaw-live-provider", ..] =>
+      check_named_live_provider(arr, "openclaw")
+    ["scan_openclaw_config_health", ..] | ["scan-openclaw-config-health", ..] =>
+      check_usage_endpoint(arr, "/scan_openclaw_config_health")
     ["get_hermes_live_provider_ids", ..]
     | ["get-hermes-live-provider-ids", ..] =>
       check_named_live_provider_ids(arr, "hermes")
+    ["get_hermes_live_provider", ..] | ["get-hermes-live-provider", ..] =>
+      check_named_live_provider(arr, "hermes")
     ["import_opencode_providers_from_live", ..]
     | ["import-opencode-providers-from-live", ..] =>
       import_named_live_providers(arr, "opencode")
@@ -264,6 +270,8 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_live_provider_settings(arr)
     ["provider", "live-ids", ..] | ["providers", "live-ids", ..] =>
       check_provider_live_ids(arr)
+    ["provider", "live-get", ..] | ["providers", "live-get", ..] =>
+      check_provider_live_provider(arr)
     ["provider", "import-live", ..] | ["providers", "import-live", ..] =>
       import_provider_live(arr)
     ["provider", "universal", "list", ..]
@@ -960,6 +968,19 @@ async fn check_named_live_provider_ids(
 }
 
 ///|
+async fn check_named_live_provider(
+  args : Array[String],
+  app_type : String,
+) -> Unit {
+  guard provider_live_provider_path(args, app_type) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_endpoint(args, path, "Provider")
+}
+
+///|
 async fn import_named_live_providers(
   args : Array[String],
   app_type : String,
@@ -978,6 +999,16 @@ async fn check_provider_live_ids(args : Array[String]) -> Unit {
     provider_live_ids_path(provider_app_arg(args)),
     "Provider",
   )
+}
+
+///|
+async fn check_provider_live_provider(args : Array[String]) -> Unit {
+  guard provider_live_provider_path(args, provider_app_arg(args)) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_endpoint(args, path, "Provider")
 }
 
 ///|
@@ -1176,6 +1207,20 @@ fn provider_live_ids_path(app_type : String) -> String {
     "hermes" => "/get_hermes_live_provider_ids"
     _ => "/get_providers?app=\{cli_url_encode(app_type)}"
   }
+}
+
+///|
+fn provider_live_provider_path(
+  args : Array[String],
+  app_type : String,
+) -> String? {
+  guard provider_id_arg(args) is Some(provider_id) else { return None }
+  let path = match app_type {
+    "openclaw" => "/get_openclaw_live_provider"
+    "hermes" => "/get_hermes_live_provider"
+    _ => "/get_providers"
+  }
+  Some("\{path}?providerId=\{cli_url_encode(provider_id)}")
 }
 
 ///|

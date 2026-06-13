@@ -755,8 +755,17 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     _,
     w,
   ) => self.handle_get_live_provider_ids(w, "openclaw"))
+  router.add_handler(@httpx.Method::Get, "/get_openclaw_live_provider", (r, w) => {
+    self.handle_get_live_provider(r, w, "openclaw")
+  })
+  router.add_handler(@httpx.Method::Get, "/scan_openclaw_config_health", (_, w) => {
+    self.handle_scan_openclaw_config_health(w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider_ids", (_, w) => {
     self.handle_get_live_provider_ids(w, "hermes")
+  })
+  router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider", (r, w) => {
+    self.handle_get_live_provider(r, w, "hermes")
   })
   router.add_handler(
     @httpx.Method::Post,
@@ -3843,6 +3852,33 @@ async fn Gateway::handle_get_live_provider_ids(
   app_type : String,
 ) -> Unit {
   write_usage_json(w, self.provider_router.live_provider_ids_json(app_type))
+}
+
+///|
+async fn Gateway::handle_get_live_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+  app_type : String,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  write_usage_json(
+    w,
+    self.provider_router.live_provider_json(app_type, provider_id),
+  )
+}
+
+///|
+async fn Gateway::handle_scan_openclaw_config_health(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, Json::array([]))
 }
 
 ///|
