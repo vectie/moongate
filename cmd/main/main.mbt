@@ -390,6 +390,8 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_subscription_quota(arr)
     ["get_codex_oauth_quota", ..] | ["get-codex-oauth-quota", ..] =>
       check_codex_oauth_quota(arr)
+    ["get_codex_oauth_models", ..] | ["get-codex-oauth-models", ..] =>
+      check_codex_oauth_models(arr)
     ["get_coding_plan_quota", ..] | ["get-coding-plan-quota", ..] =>
       check_coding_plan_quota(arr)
     ["testUsageScript", ..]
@@ -644,6 +646,8 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["usage", "get-subscription-quota", ..] => check_subscription_quota(arr)
     ["usage", "codex-oauth-quota", ..] => check_codex_oauth_quota(arr)
     ["usage", "get-codex-oauth-quota", ..] => check_codex_oauth_quota(arr)
+    ["usage", "codex-oauth-models", ..] => check_codex_oauth_models(arr)
+    ["usage", "get-codex-oauth-models", ..] => check_codex_oauth_models(arr)
     ["usage", "coding-plan", ..] => check_coding_plan_quota(arr)
     ["usage", "get-coding-plan-quota", ..] => check_coding_plan_quota(arr)
     ["usage", "test-usage-script", ..] => test_usage_script(arr)
@@ -830,6 +834,7 @@ fn print_help() -> Unit {
   println("  usage quota      Alias for ccs get_subscription_quota")
   println("  usage coding-plan Alias for ccs get_coding_plan_quota")
   println("  usage codex-oauth-quota Alias for ccs get_codex_oauth_quota")
+  println("  usage codex-oauth-models Alias for ccs get_codex_oauth_models")
   println("  usage test-usage-script     Alias for ccs testUsageScript")
   println("  usage pricing    Show ccs-style editable model pricing")
   println("  usage get-model-pricing  Alias for ccs get_model_pricing")
@@ -2841,6 +2846,11 @@ async fn check_codex_oauth_quota(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_codex_oauth_models(args : Array[String]) -> Unit {
+  check_usage_endpoint(args, codex_oauth_models_path(args))
+}
+
+///|
 async fn check_coding_plan_quota(args : Array[String]) -> Unit {
   guard coding_plan_quota_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -3057,6 +3067,16 @@ fn codex_oauth_quota_path(args : Array[String]) -> String {
     None => ()
   }
   cli_path_with_query("/get_codex_oauth_quota", query)
+}
+
+///|
+fn codex_oauth_models_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--account-id", "--accountId") {
+    Some(value) => query.push(cli_query_pair("accountId", value))
+    None => ()
+  }
+  cli_path_with_query("/get_codex_oauth_models", query)
 }
 
 ///|

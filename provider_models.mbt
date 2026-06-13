@@ -2,6 +2,9 @@
 const MODEL_FETCH_ERROR_BODY_MAX_CHARS = 512
 
 ///|
+const CODEX_OAUTH_MODELS_URL = "https://chatgpt.com/backend-api/codex/models?client_version=0.1.0"
+
+///|
 pub struct FetchedModel {
   id : String
   owned_by : String?
@@ -21,6 +24,42 @@ pub fn FetchedModel::to_json(self : FetchedModel) -> Json {
 ///|
 pub fn fetched_models_to_json(models : Array[FetchedModel]) -> Json {
   Json::array(models.map(fn(model) { model.to_json() }))
+}
+
+///|
+pub async fn fetch_codex_oauth_models_with_token(
+  token : String,
+  account_id : String,
+) -> Result[Array[FetchedModel], String] {
+  if token.trim().is_empty() {
+    return Err(
+      "Codex OAuth token unavailable: access_token is empty or missing",
+    )
+  }
+  if account_id.trim().is_empty() {
+    return Err("No ChatGPT account available")
+  }
+  let target = match models_url_target(CODEX_OAUTH_MODELS_URL) {
+    Ok(target) => target
+    Err(err) => return Err(err)
+  }
+  let headers : Map[String, String] = {
+    "Authorization": "Bearer \{token}",
+    "Accept": "application/json",
+    "originator": "cc-switch",
+    "chatgpt-account-id": account_id,
+  }
+  let client = @http.Client::new(target.origin, headers~)
+  defer client.close()
+  let response = client.get(target.path) catch {
+    err => return Err("Request failed: \{err}")
+  }
+  let body = client.read_all().text()
+  if response.code is (200..=299) {
+    parse_codex_oauth_models_response_body(body)
+  } else {
+    Err("HTTP \{response.code}: \{truncate_model_fetch_error_body(body)}")
+  }
 }
 
 ///|
@@ -217,6 +256,130 @@ fn parse_model_entry(entry : Json) -> Result[FetchedModel, String] {
     _ => return Err("Failed to parse response: owned_by must be a string")
   }
   Ok({ id, owned_by })
+}
+
+///|
+fn parse_codex_oauth_models_response_body(
+  body : String,
+) -> Result[Array[FetchedModel], String] {
+  let parsed = @json.parse(body) catch {
+    err => return Err("Failed to parse response: \{err}")
+  }
+  Ok(parse_codex_oauth_models_response(parsed))
+}
+
+///|
+fn parse_codex_oauth_models_response(value : Json) -> Array[FetchedModel] {
+  let models : Array[FetchedModel] = []
+  match value {
+    Array(entries) =>
+      for entry in entries {
+        push_codex_oauth_model_entry(models, entry, None)
+      }
+    Object(obj) => {
+      match first_codex_oauth_models_array(obj) {
+        Some(entries) =>
+          for entry in entries {
+            push_codex_oauth_model_entry(models, entry, None)
+          }
+        None => ()
+      }
+      match obj.get("models") {
+        Some(Object(model_map)) =>
+          for key in model_map.keys() {
+            match model_map.get(key) {
+              Some(entry) =>
+                push_codex_oauth_model_entry(models, entry, Some(key))
+              None => ()
+            }
+          }
+        _ => ()
+      }
+    }
+    _ => ()
+  }
+  models.sort_by(fn(left, right) { ascii_lex_compare(left.id, right.id) })
+  dedupe_fetched_models_by_id(models)
+}
+
+///|
+fn first_codex_oauth_models_array(obj : Map[String, Json]) -> Array[Json]? {
+  for key in ["data", "models", "items"] {
+    match obj.get(key) {
+      Some(Array(entries)) => return Some(entries)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+fn push_codex_oauth_model_entry(
+  models : Array[FetchedModel],
+  entry : Json,
+  fallback_id : String?,
+) -> Unit {
+  match entry {
+    String(value) => {
+      let id = value.trim().to_owned()
+      if !id.is_empty() {
+        models.push({ id, owned_by: Some("Codex") })
+      }
+    }
+    Object(obj) => {
+      let id = match
+        json_string_from_map_any(obj, ["slug", "id", "model", "name"]) {
+        Some(value) => Some(value)
+        None =>
+          match fallback_id {
+            Some(value) => Some(value.trim().to_owned())
+            None => None
+          }
+      }
+      match id {
+        Some(id) if !id.is_empty() => {
+          let owned_by = match
+            json_string_from_map_any(obj, [
+              "owned_by", "ownedBy", "provider", "vendor", "category", "owner",
+            ]) {
+            Some(value) => Some(value)
+            None => Some("Codex")
+          }
+          models.push({ id, owned_by })
+        }
+        _ => ()
+      }
+    }
+    _ =>
+      match fallback_id {
+        Some(value) => {
+          let id = value.trim().to_owned()
+          if !id.is_empty() {
+            models.push({ id, owned_by: Some("Codex") })
+          }
+        }
+        None => ()
+      }
+  }
+}
+
+///|
+fn dedupe_fetched_models_by_id(
+  models : Array[FetchedModel],
+) -> Array[FetchedModel] {
+  let unique : Array[FetchedModel] = []
+  for model in models {
+    let mut seen = false
+    for existing in unique {
+      if existing.id == model.id {
+        seen = true
+      }
+    }
+    if !seen {
+      unique.push(model)
+    }
+  }
+  unique
 }
 
 ///|

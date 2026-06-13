@@ -843,6 +843,20 @@ test "top level ccs codex oauth quota command builds quota path" {
 }
 
 ///|
+test "top level ccs codex oauth models command builds models path" {
+  assert_eq(
+    codex_oauth_models_path([
+      "moonstat", "get_codex_oauth_models", "--account-id", "acct 1",
+    ]),
+    "/get_codex_oauth_models?accountId=acct%201",
+  )
+  assert_eq(
+    codex_oauth_models_path(["moonstat", "usage", "codex-oauth-models"]),
+    "/get_codex_oauth_models",
+  )
+}
+
+///|
 test "top level ccs coding plan command builds quota path" {
   assert_eq(
     coding_plan_quota_path([

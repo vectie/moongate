@@ -208,6 +208,28 @@ async fn ccs_get_codex_oauth_quota(account_id : String?) -> SubscriptionQuota {
 }
 
 ///|
+async fn ccs_get_codex_oauth_models(
+  account_id : String?,
+) -> Result[Array[FetchedModel], String] {
+  let creds = ccs_read_codex_credentials()
+  let id = match ccs_resolve_codex_oauth_account(account_id, creds.account_id) {
+    Some(value) if !value.trim().is_empty() => value
+    _ => return Err("No ChatGPT account available")
+  }
+  match creds.status {
+    NotFound => Err(creds.message.unwrap_or("No ChatGPT account available"))
+    ParseError =>
+      Err(creds.message.unwrap_or("Failed to parse Codex auth JSON"))
+    Expired | Valid =>
+      match creds.token {
+        Some(token) => fetch_codex_oauth_models_with_token(token, id)
+        None =>
+          Err("Codex OAuth token unavailable: access_token is empty or missing")
+      }
+  }
+}
+
+///|
 fn ccs_resolve_codex_oauth_account(
   explicit : String?,
   fallback : String?,

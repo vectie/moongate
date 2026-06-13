@@ -48,6 +48,8 @@ pub fn default_opencode_dir() -> String
 
 pub fn default_opencode_export_path() -> String
 
+pub async fn fetch_codex_oauth_models_with_token(String, String) -> Result[Array[FetchedModel], String]
+
 pub async fn fetch_models(String, String, Bool, String?, String?) -> Result[Array[FetchedModel], String]
 
 pub fn fetched_models_to_json(Array[FetchedModel]) -> Json

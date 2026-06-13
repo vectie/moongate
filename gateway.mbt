@@ -1253,6 +1253,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/get_codex_oauth_quota", (r, w) => {
     self.handle_get_codex_oauth_quota(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_codex_oauth_models", (r, w) => {
+    self.handle_get_codex_oauth_models(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_codex_oauth_models", (r, w) => {
+    self.handle_get_codex_oauth_models(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_coding_plan_quota", (r, w) => {
     self.handle_get_coding_plan_quota(r, w)
   })
@@ -7115,6 +7121,23 @@ async fn Gateway::handle_get_codex_oauth_quota(
   let quota = ccs_get_codex_oauth_quota(account_id)
   self.usage_cache.put_subscription(quota.tool, quota)
   write_usage_json(w, quota.to_json())
+}
+
+///|
+async fn Gateway::handle_get_codex_oauth_models(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let account_id = proxy_string_request(r.path, body, [
+    "accountId", "account_id", "account",
+  ])
+  match ccs_get_codex_oauth_models(account_id) {
+    Ok(models) => write_usage_json(w, fetched_models_to_json(models))
+    Err(error) => write_usage_bad_request(w, error)
+  }
 }
 
 ///|

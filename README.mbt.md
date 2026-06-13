@@ -44,6 +44,7 @@ logic and returns the same frontend wire shape, `[{ "id": "...", "ownedBy":
 ```sh
 moon run cmd/main -- models fetch --base-url https://api.example.com --api-key sk-...
 moon run cmd/main -- fetch_models_for_config --base-url https://api.example.com --api-key sk-...
+moon run cmd/main -- get_codex_oauth_models --account-id acct_...
 moon run cmd/main -- models candidates --base-url https://api.deepseek.com/anthropic
 ```
 
@@ -255,6 +256,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET|POST /get_balance?baseUrl=https://api.deepseek.com&apiKey=...`
 - `GET|POST /get_subscription_quota?tool=codex`
 - `GET|POST /get_codex_oauth_quota?accountId=...`
+- `GET|POST /get_codex_oauth_models?accountId=...`
 - `GET|POST /get_coding_plan_quota?baseUrl=https://api.kimi.com/coding/v1&apiKey=...`
 - `POST /testUsageScript?providerId=codex-oauth&app=codex`
 - `POST /stream_check_provider?appType=codex&providerId=codex-oauth`
@@ -407,9 +409,12 @@ CCS `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
 `MOONSTAT_GEMINI_OAUTH_CLIENT_ID` and `MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET`
 (or the `GEMINI_OAUTH_*` / `GEMINI_CLI_OAUTH_*` aliases) at runtime.
 `/get_codex_oauth_quota` mirrors the CCS Codex OAuth quota command over the
-same WHAM usage protocol. `/get_coding_plan_quota` mirrors the CCS coding-plan
-quota command for Kimi, Zhipu CN/EN, MiniMax CN/EN, and ZenMux-compatible quota
-URLs, returning the same `SubscriptionQuota` tier names and fields.
+same WHAM usage protocol. `/get_codex_oauth_models` mirrors the CCS Codex OAuth
+model-list command against `chatgpt.com/backend-api/codex/models`, returning the
+same fetched model array shape as provider model fetch. `/get_coding_plan_quota`
+mirrors the CCS coding-plan quota command for Kimi, Zhipu CN/EN, MiniMax CN/EN,
+and ZenMux-compatible quota URLs, returning the same `SubscriptionQuota` tier
+names and fields.
 
 Claude Desktop gateway routes are open by default for standalone local use. Set
 `MOONSTAT_CLAUDE_DESKTOP_TOKEN` or `CLAUDE_DESKTOP_GATEWAY_TOKEN` to require

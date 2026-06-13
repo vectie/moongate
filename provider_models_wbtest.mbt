@@ -289,6 +289,46 @@ test "provider models JSON uses ccs frontend field names" {
 }
 
 ///|
+test "parse codex oauth models accepts ccs response shapes" {
+  assert_fetched_model_ids(
+    parse_codex_oauth_models_response({
+      "data": [
+        { "id": "gpt-5.4", "owned_by": "openai" },
+        { "id": "gpt-5.4-mini", "ownedBy": "openai" },
+      ],
+    }),
+    ["gpt-5.4", "gpt-5.4-mini"],
+  )
+  assert_fetched_model_ids(
+    parse_codex_oauth_models_response({
+      "models": [
+        { "slug": "gpt-5.3-codex", "display_name": "GPT-5.3 Codex" },
+        "gpt-5.5",
+      ],
+    }),
+    ["gpt-5.3-codex", "gpt-5.5"],
+  )
+  assert_fetched_model_ids(
+    parse_codex_oauth_models_response({
+      "models": {
+        "gpt-5.4": { "display_name": "GPT-5.4" },
+        "gpt-5.5": { "slug": "gpt-5.5" },
+      },
+    }),
+    ["gpt-5.4", "gpt-5.5"],
+  )
+}
+
+///|
+test "parse codex oauth models deduplicates ids" {
+  let models = parse_codex_oauth_models_response({
+    "data": [{ "id": "gpt-5.4" }, { "model": "gpt-5.4" }],
+  })
+  assert_fetched_model_ids(models, ["gpt-5.4"])
+  assert_true(models[0].owned_by == Some("Codex"))
+}
+
+///|
 test "parse provider models response allows missing owned by" {
   let models = parse_models_response_body(
     (
