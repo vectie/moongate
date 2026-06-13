@@ -155,6 +155,41 @@ fn Gateway::release_provider_permit_neutral(self : Gateway) -> Unit {
 }
 
 ///|
+#warnings("-unused_value")
+fn Gateway::activate_next_provider_after_upstream_status(
+  self : Gateway,
+  app_type : String,
+  providers : Array[ProviderRouteTarget],
+  attempted_provider_ids : Array[String],
+  status_code : Int,
+) -> ProviderRouteTarget? {
+  guard self.stats.current_provider_id is Some(provider_id) else { return None }
+  if !attempted_provider_ids.contains(provider_id) {
+    attempted_provider_ids.push(provider_id)
+  }
+  if ccs_upstream_status_retryable(status_code) {
+    self.provider_router.record_result(
+      provider_id,
+      app_type,
+      self.stats.current_request_used_half_open_permit,
+      false,
+    )
+    self.stats.last_error = Some("upstream_error")
+    self.activate_first_available_provider_excluding(
+      app_type, providers, attempted_provider_ids,
+    )
+  } else {
+    self.provider_router.release_permit_neutral(
+      provider_id,
+      app_type,
+      self.stats.current_request_used_half_open_permit,
+    )
+    self.stats.last_error = Some("upstream_error")
+    None
+  }
+}
+
+///|
 fn ccs_upstream_status_retryable(status_code : Int) -> Bool {
   match status_code {
     400 | 405 | 406 | 413 | 414 | 415 | 422 | 501 => false
