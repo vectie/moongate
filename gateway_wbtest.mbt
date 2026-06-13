@@ -1339,6 +1339,53 @@ test "ccs media retry replacement is unconditional" {
 }
 
 ///|
+test "ccs media retry handles streaming upstream bodies" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "claude-sonnet-4-6",
+      #|  "max_tokens": 128,
+      #|  "messages": [
+      #|    {
+      #|      "role": "user",
+      #|      "content": [
+      #|        {
+      #|          "type": "image_url",
+      #|          "image_url": { "url": "data:image/png;base64,AAAA" }
+      #|        }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  let upstream = prepare_upstream_request_body(
+    claude_stream_request_json_for_upstream(body, "kimi/kimi-k2.6"),
+  )
+  guard upstream is Object(obj) else { fail("expected object") }
+  assert_eq(obj["stream"], Json::boolean(true))
+  assert_true(contains_image_blocks(upstream))
+  assert_true(
+    ccs_media_retry_should_trigger(
+      400, "{\"error\":{\"message\":\"This model does not support image input\"}}",
+      upstream,
+    ),
+  )
+
+  let retry_body = replace_image_blocks_with_marker(upstream)
+  guard retry_body.body is Object(retry_obj) else { fail("expected retry") }
+  assert_eq(retry_obj["stream"], Json::boolean(true))
+  guard retry_obj["messages"] is Array(messages) else {
+    fail("expected messages")
+  }
+  guard messages[0] is Object(message) else { fail("expected message") }
+  guard message["content"] is Array(content) else { fail("expected content") }
+  guard content[0] is Object(marker) else { fail("expected marker") }
+  assert_eq(marker["type"], Json::string("text"))
+  assert_eq(marker["text"], Json::string("[Unsupported Image]"))
+}
+
+///|
 test "openai chat completion converts to anthropic response" {
   let body = @json.parse(
     (

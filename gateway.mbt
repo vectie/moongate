@@ -3454,22 +3454,9 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     old="__MODEL__",
     new=normalize_gemini_model_id(upstream_model),
   )
-  let outbound = if claude_api_format_needs_transform(api_format) {
-    transform_claude_request_for_api_format(
-      upstream_body,
-      api_format,
-      session_id~,
-      explicit_prompt_cache_key=provider.prompt_cache_key,
-      is_codex_oauth=provider.provider_type == Some("codex_oauth"),
-      codex_fast_mode=provider.codex_fast_mode,
-      gemini_shadow_turns=self.gemini_shadow.session_turns(
-        provider.provider_id,
-        session_id,
-      ),
-    )
-  } else {
-    upstream_body
-  }
+  let outbound = self.claude_provider_outbound_body(
+    provider, upstream_body, api_format, session_id,
+  )
   let base_url = provider.base_url.unwrap()
   let api_key = provider.api_key.unwrap()
   let url = claude_compatible_provider_url(
@@ -3491,6 +3478,70 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   let response = client.post(path, outbound)
   if response.code != 200 {
     let error_body = client.read_all().text()
+    if ccs_media_retry_should_trigger(response.code, error_body, upstream_body) {
+      let retry_body = replace_image_blocks_with_marker(upstream_body)
+      if retry_body.count > 0 {
+        let retry_outbound = self.claude_provider_outbound_body(
+          provider,
+          retry_body.body,
+          api_format,
+          session_id,
+        )
+        let retry_client = @http.Client::new(
+          origin,
+          headers=claude_compatible_provider_headers(
+            api_key,
+            api_format,
+            accept="text/event-stream",
+          ),
+        )
+        defer retry_client.close()
+        let retry_response = retry_client.post(path, retry_outbound)
+        if retry_response.code == 200 {
+          self.forward_successful_claude_compatible_stream(
+            retry_client,
+            request.model,
+            api_format,
+            provider.provider_id,
+            session_id,
+            w,
+          )
+          return
+        }
+        let retry_error_body = retry_client.read_all().text()
+        if !providers.is_empty() {
+          let next = self.activate_next_provider_after_upstream_status(
+            app_type,
+            providers,
+            attempted_provider_ids,
+            retry_response.code,
+          )
+          if next is Some(provider) {
+            self.handle_streaming_request(
+              request,
+              request_json,
+              self.upstream_claude_model(request.model, Some(provider)),
+              Some(provider),
+              app_type,
+              providers,
+              attempted_provider_ids,
+              session_id,
+              w,
+            )
+            return
+          }
+        }
+        self.record_upstream_error_status(
+          retry_error_body.length(),
+          retry_response.code,
+        )
+        w.header().set("Content-Type", "application/json")
+        w.write_header(retry_response.code)
+        w.write(retry_error_body)
+        w.flush()
+        return
+      }
+    }
     if !providers.is_empty() {
       let next = self.activate_next_provider_after_upstream_status(
         app_type,
@@ -3520,6 +3571,26 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     w.flush()
     return
   }
+  self.forward_successful_claude_compatible_stream(
+    client,
+    request.model,
+    api_format,
+    provider.provider_id,
+    session_id,
+    w,
+  )
+}
+
+///|
+async fn Gateway::forward_successful_claude_compatible_stream(
+  self : Gateway,
+  client : @http.Client,
+  request_model : String,
+  api_format : String,
+  provider_id : String,
+  session_id : String?,
+  w : @httpx.ResponseWriter,
+) -> Unit {
   w.header().set("Content-Type", "text/event-stream")
   w.header().set("Cache-Control", "no-cache")
   w.header().set("Connection", "keep-alive")
@@ -3535,11 +3606,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     )
   } else if api_format == "gemini_native" {
     self.forward_gemini_native_sse_as_anthropic(
-      client,
-      stream_events,
-      provider.provider_id,
-      session_id,
-      w,
+      client, stream_events, provider_id, session_id, w,
     )
     self.record_success_stream_usage(
       token_usage_from_gemini_stream_chunks(stream_events),
@@ -3547,7 +3614,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       record_provider=false,
     )
   } else if api_format == "openai_responses" {
-    let reader = CodexStreamReader::new(client, request.model)
+    let reader = CodexStreamReader::new(client, request_model)
     while reader.read() is Some(event) {
       w.write("event: \{event.event_type}\n")
       w.write("data: \{event.data}\n\n")
