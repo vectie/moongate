@@ -2639,11 +2639,16 @@ async fn write_usage_bad_request(
 ///|
 fn usage_request_detail_id(path : String) -> String {
   let prefix = "/usage/request-detail/"
-  if path.has_prefix(prefix) {
+  let raw = if path.has_prefix(prefix) {
     path[prefix.length():].to_owned()
   } else {
     path
   }
+  let without_query = match raw.find("?") {
+    Some(question_index) => raw[:question_index].to_owned()
+    None => raw
+  }
+  usage_url_decode(without_query[:])
 }
 
 ///|
@@ -2696,9 +2701,9 @@ fn usage_query_value(path : StringView, key : String) -> String? {
   for pair_view in query.split("&") {
     let pair = pair_view.to_owned()
     guard pair.find("=") is Some(equal_index) else { continue }
-    let pair_key = pair[:equal_index].to_owned()
+    let pair_key = usage_url_decode(pair[:equal_index])
     if pair_key == key {
-      let value = pair[equal_index + 1:].to_owned()
+      let value = usage_url_decode(pair[equal_index + 1:])
       if value.is_empty() {
         return None
       }
@@ -2706,6 +2711,43 @@ fn usage_query_value(path : StringView, key : String) -> String? {
     }
   }
   None
+}
+
+///|
+fn usage_url_decode(value : StringView) -> String {
+  let builder = StringBuilder::new()
+  let chars = value.to_array()
+  let mut i = 0
+  while i < chars.length() {
+    let ch = chars[i]
+    if ch == '%' && i + 2 < chars.length() {
+      match (usage_hex_value(chars[i + 1]), usage_hex_value(chars[i + 2])) {
+        (Some(high), Some(low)) => {
+          builder.write_char(((high << 4) | low).unsafe_to_char())
+          i += 3
+          continue
+        }
+        _ => ()
+      }
+    } else if ch == '+' {
+      builder.write_char(' ')
+      i += 1
+      continue
+    }
+    builder.write_char(ch)
+    i += 1
+  }
+  builder.to_string()
+}
+
+///|
+fn usage_hex_value(ch : Char) -> Int? {
+  match ch {
+    '0'..='9' => Some(ch.to_int() - '0'.to_int())
+    'A'..='F' => Some(ch.to_int() - 'A'.to_int() + 10)
+    'a'..='f' => Some(ch.to_int() - 'a'.to_int() + 10)
+    _ => None
+  }
 }
 
 ///|

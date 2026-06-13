@@ -43,6 +43,10 @@ test "codex compact responses keep compact backend endpoint" {
 test "usage request detail route extracts ccs request id" {
   assert_eq(usage_request_detail_id("/usage/request-detail/req_123"), "req_123")
   assert_eq(usage_request_detail_id("req_123"), "req_123")
+  assert_eq(
+    usage_request_detail_id("/usage/request-detail/session%3Amsg_1?ignored=1"),
+    "session:msg_1",
+  )
 }
 
 ///|
@@ -80,15 +84,18 @@ test "usage query helpers parse ccs provider limit parameters" {
 
 ///|
 test "usage query helpers parse ccs request log parameters" {
-  let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=OAuth&model=gpt&statusCode=200&startDate=10&end_date=20"
+  let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&end_date=20"
   assert_eq(usage_query_int(path, "page"), Some(2))
   assert_eq(usage_query_int_any(path, "page_size", "pageSize"), Some(25))
   assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
   assert_eq(
     usage_query_value_any(path, "provider_name", "providerName"),
-    Some("OAuth"),
+    Some("Codex OAuth"),
   )
-  assert_eq(usage_query_value(path, "model"), Some("gpt"))
+  assert_eq(
+    usage_query_value(path, "model"),
+    Some("anthropic/claude-sonnet-4.5"),
+  )
   assert_eq(usage_query_int_any(path, "status_code", "statusCode"), Some(200))
   assert_eq(usage_query_int_any(path, "start_date", "startDate"), Some(10))
   assert_eq(usage_query_int_any(path, "end_date", "endDate"), Some(20))
@@ -101,7 +108,7 @@ test "usage pricing query helpers parse and validate ccs pricing update" {
     fail("expected pricing")
   }
   assert_eq(pricing.model_id, "test-model")
-  assert_eq(pricing.display_name, "Test%20Model")
+  assert_eq(pricing.display_name, "Test Model")
   assert_eq(pricing.input_cost_per_million, "1.25")
   assert_eq(pricing.output_cost_per_million, "2")
   assert_eq(pricing.cache_read_cost_per_million, "0.10")
