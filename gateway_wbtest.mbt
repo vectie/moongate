@@ -1536,6 +1536,67 @@ test "ccs responses stream parser maps completed function output to tool use" {
 }
 
 ///|
+test "ccs responses stream state starts text block before text delta" {
+  let state = ResponsesStreamState::new("gpt-5.4")
+  let block =
+    #|event: response.output_text.delta
+    #|data: {"type":"response.output_text.delta","delta":"hello"}
+    #|
+  let (done, parsed, events) = codex_stream_events_from_sse_block(block, state)
+  assert_false(done)
+  assert_true(parsed is Some(_))
+  assert_eq(events.length(), 3)
+  assert_eq(events[0].event_type, "message_start")
+  assert_eq(events[1].event_type, "content_block_start")
+  assert_eq(events[2].event_type, "content_block_delta")
+  let start_data = @json.parse(events[1].data) catch {
+    _ => fail("expected start json")
+  }
+  guard start_data is Object(start_obj) else { fail("expected object") }
+  assert_eq(start_obj["index"], Json::number(0.0))
+  guard start_obj["content_block"] is Object(block_obj) else {
+    fail("expected content block")
+  }
+  assert_eq(block_obj["type"], Json::string("text"))
+  let delta_data = @json.parse(events[2].data) catch {
+    _ => fail("expected delta json")
+  }
+  guard delta_data is Object(delta_obj) else { fail("expected object") }
+  guard delta_obj["delta"] is Object(delta) else { fail("expected delta") }
+  assert_eq(delta["text"], Json::string("hello"))
+}
+
+///|
+test "ccs responses stream state closes dangling text on completed" {
+  let state = ResponsesStreamState::new("gpt-5.4")
+  let text_block =
+    #|event: response.output_text.delta
+    #|data: {"type":"response.output_text.delta","delta":"hello"}
+    #|
+  let (_, _, first_events) = codex_stream_events_from_sse_block(
+    text_block, state,
+  )
+  assert_eq(first_events.length(), 3)
+  let completed_block =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_done","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":6,"output_tokens":2}}}
+    #|
+  let (done, parsed, finish_events) = codex_stream_events_from_sse_block(
+    completed_block, state,
+  )
+  assert_false(done)
+  assert_true(parsed is Some(_))
+  assert_eq(finish_events.length(), 2)
+  assert_eq(finish_events[0].event_type, "content_block_stop")
+  assert_eq(finish_events[1].event_type, "message_delta")
+  let stop_data = @json.parse(finish_events[0].data) catch {
+    _ => fail("expected stop json")
+  }
+  guard stop_data is Object(stop_obj) else { fail("expected object") }
+  assert_eq(stop_obj["index"], Json::number(0.0))
+}
+
+///|
 test "ccs responses sse parser ignores truncated trailing block" {
   let sse =
     #|event: response.completed

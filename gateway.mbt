@@ -6296,6 +6296,8 @@ priv struct CodexStreamReader {
   reader : &@io.Reader
   model : String
   events : Array[Json]
+  pending_events : Array[StreamEvent]
+  responses_state : ResponsesStreamState
   mut partial_block : String
 }
 
@@ -6304,12 +6306,22 @@ fn CodexStreamReader::new(
   reader : &@io.Reader,
   model : String,
 ) -> CodexStreamReader {
-  CodexStreamReader::{ reader, model, events: [], partial_block: "" }
+  CodexStreamReader::{
+    reader,
+    model,
+    events: [],
+    pending_events: [],
+    responses_state: ResponsesStreamState::new(model),
+    partial_block: "",
+  }
 }
 
 ///|
 async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
   for ;; {
+    if !self.pending_events.is_empty() {
+      return Some(self.pending_events.remove(0))
+    }
     match self.reader.read_until("\n") {
       Some(line) => {
         self.partial_block += line
@@ -6321,9 +6333,9 @@ async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
     }
     let block = self.partial_block
     self.partial_block = ""
-    let (done, json, event) = codex_stream_event_from_sse_block(
+    let (done, json, events) = codex_stream_events_from_sse_block(
       block,
-      self.model,
+      self.responses_state,
     )
     if done {
       return None
@@ -6331,8 +6343,11 @@ async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
     if json is Some(parsed) {
       self.events.push(parsed)
     }
-    if event is Some(event) {
-      return Some(event)
+    for event in events {
+      self.pending_events.push(event)
+    }
+    if !self.pending_events.is_empty() {
+      return Some(self.pending_events.remove(0))
     }
   }
 }
@@ -6376,11 +6391,213 @@ fn codex_stream_event_from_sse_block(
 }
 
 ///|
+fn codex_stream_events_from_sse_block(
+  block : String,
+  state : ResponsesStreamState,
+) -> (Bool, Json?, Array[StreamEvent]) {
+  if block.trim().is_empty() {
+    return (false, None, [])
+  }
+  let mut event_name = ""
+  let data_lines : Array[String] = []
+  for line_view in block.split("\n") {
+    let line = line_view.to_owned().trim().to_owned()
+    match strip_sse_field(line, "event") {
+      Some(event) => event_name = event.trim().to_owned()
+      None =>
+        match strip_sse_field(line, "data") {
+          Some(data) => data_lines.push(data)
+          None => ()
+        }
+    }
+  }
+  if data_lines.is_empty() {
+    return (false, None, [])
+  }
+  let data = data_lines.join("\n")
+  if data.trim() == "[DONE]" {
+    return (true, None, [])
+  }
+  let parsed = @json.parse(data) catch { _ => return (false, None, []) }
+  guard parsed is Object(obj) else { return (false, Some(parsed), []) }
+  let actual_event_name = if event_name.is_empty() {
+    json_string_from_map(obj, "type").unwrap_or("")
+  } else {
+    event_name
+  }
+  (false, Some(parsed), state.push_event(actual_event_name, obj))
+}
+
+///|
 fn push_sse_json_event(events : Array[Json], data : String) -> Unit {
   let json_result : Result[Json, Error] = try? @json.parse(data)
   match json_result {
     Ok(json) => events.push(json)
     Err(_) => ()
+  }
+}
+
+///|
+priv struct ResponsesStreamState {
+  mut message_id : String?
+  mut model : String
+  mut has_sent_message_start : Bool
+  mut next_content_index : Int
+  mut current_text_index : Int?
+  open_indices : Array[Int]
+}
+
+///|
+fn ResponsesStreamState::new(model : String) -> ResponsesStreamState {
+  {
+    message_id: None,
+    model,
+    has_sent_message_start: false,
+    next_content_index: 0,
+    current_text_index: None,
+    open_indices: [],
+  }
+}
+
+///|
+fn ResponsesStreamState::push_event(
+  self : ResponsesStreamState,
+  event_type : String,
+  obj : Map[String, Json],
+) -> Array[StreamEvent] {
+  let events : Array[StreamEvent] = []
+  match event_type {
+    "response.created" => {
+      let response_obj = responses_stream_response_object(obj)
+      self.message_id = json_string_from_map(response_obj, "id")
+      self.model = json_string_from_map(response_obj, "model").unwrap_or(
+        self.model,
+      )
+      if convert_stream_event(event_type, obj, self.model) is Some(event) {
+        events.push(event)
+        self.has_sent_message_start = true
+      }
+    }
+    "response.content_part.added" =>
+      match obj.get("part") {
+        Some(Object(part)) =>
+          match json_string_from_map(part, "type") {
+            Some("output_text") | Some("refusal") =>
+              ignore(self.ensure_text_block(events))
+            _ => ()
+          }
+        _ => ()
+      }
+    "response.output_text.delta" | "response.refusal.delta" => {
+      let delta = match obj.get("delta") {
+        Some(String(text)) => text
+        _ => return events
+      }
+      self.ensure_message_start(events)
+      let index = self.ensure_text_block(events)
+      events.push(
+        anthropic_content_block_delta_event(index, "text_delta", "text", delta),
+      )
+    }
+    "response.output_text.done" | "response.refusal.done" =>
+      self.close_current_text_block(events)
+    "response.completed" => {
+      self.close_current_text_block(events)
+      self.close_open_blocks(events)
+      if convert_stream_event(event_type, obj, self.model) is Some(event) {
+        events.push(event)
+      }
+    }
+    _ =>
+      if convert_stream_event(event_type, obj, self.model) is Some(event) {
+        events.push(event)
+      }
+  }
+  events
+}
+
+///|
+fn ResponsesStreamState::ensure_message_start(
+  self : ResponsesStreamState,
+  events : Array[StreamEvent],
+) -> Unit {
+  if self.has_sent_message_start {
+    return
+  }
+  events.push({
+    event_type: "message_start",
+    data: Json::object({
+      "type": Json::string("message_start"),
+      "message": Json::object({
+        "id": Json::string(self.message_id.unwrap_or("")),
+        "type": Json::string("message"),
+        "role": Json::string("assistant"),
+        "model": Json::string(self.model),
+        "usage": openai_chat_zero_usage_json(),
+      }),
+    }).stringify(),
+  })
+  self.has_sent_message_start = true
+}
+
+///|
+fn ResponsesStreamState::ensure_text_block(
+  self : ResponsesStreamState,
+  events : Array[StreamEvent],
+) -> Int {
+  self.ensure_message_start(events)
+  match self.current_text_index {
+    Some(index) => index
+    None => {
+      let index = self.next_content_index
+      self.next_content_index += 1
+      self.current_text_index = Some(index)
+      if !self.open_indices.contains(index) {
+        self.open_indices.push(index)
+        events.push(anthropic_content_block_start_event(index, "text"))
+      }
+      index
+    }
+  }
+}
+
+///|
+fn ResponsesStreamState::close_current_text_block(
+  self : ResponsesStreamState,
+  events : Array[StreamEvent],
+) -> Unit {
+  match self.current_text_index {
+    Some(index) => {
+      self.current_text_index = None
+      self.close_open_block(events, index)
+    }
+    None => ()
+  }
+}
+
+///|
+fn ResponsesStreamState::close_open_block(
+  self : ResponsesStreamState,
+  events : Array[StreamEvent],
+  index : Int,
+) -> Unit {
+  for position in 0..<self.open_indices.length() {
+    if self.open_indices[position] == index {
+      ignore(self.open_indices.remove(position))
+      events.push(anthropic_content_block_stop_event(index))
+      return
+    }
+  }
+}
+
+///|
+fn ResponsesStreamState::close_open_blocks(
+  self : ResponsesStreamState,
+  events : Array[StreamEvent],
+) -> Unit {
+  while !self.open_indices.is_empty() {
+    let index = self.open_indices.remove(0)
+    events.push(anthropic_content_block_stop_event(index))
   }
 }
 
