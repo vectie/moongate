@@ -186,31 +186,40 @@ fn append_anthropic_block_as_gemini_part(
       if !id.is_empty() && !name.is_empty() {
         tool_names_by_id[id] = name
       }
-      parts.push(
-        Json::object({
-          "functionCall": Json::object({
-            "id": Json::string(id),
-            "name": Json::string(name),
-            "args": block_obj.get("input").unwrap_or(Json::object({})),
-          }),
+      let function_call : Map[String, Json] = {
+        "name": Json::string(name),
+        "args": block_obj.get("input").unwrap_or(Json::object({})),
+      }
+      if !id.is_empty() && !is_gemini_synthesized_tool_call_id(id) {
+        function_call["id"] = Json::string(id)
+      }
+      parts.push(Json::object({ "functionCall": Json::object(function_call) }))
+    }
+    Some("tool_result") => {
+      let function_response : Map[String, Json] = {
+        "name": Json::string(
+          gemini_tool_result_name(block_obj, tool_names_by_id),
+        ),
+        "response": Json::object({
+          "content": block_obj.get("content").unwrap_or(Json::string("")),
         }),
+      }
+      match json_string_from_map(block_obj, "tool_use_id") {
+        Some(id) if !id.is_empty() && !is_gemini_synthesized_tool_call_id(id) =>
+          function_response["id"] = Json::string(id)
+        _ => ()
+      }
+      parts.push(
+        Json::object({ "functionResponse": Json::object(function_response) }),
       )
     }
-    Some("tool_result") =>
-      parts.push(
-        Json::object({
-          "functionResponse": Json::object({
-            "name": Json::string(
-              gemini_tool_result_name(block_obj, tool_names_by_id),
-            ),
-            "response": Json::object({
-              "content": block_obj.get("content").unwrap_or(Json::string("")),
-            }),
-          }),
-        }),
-      )
     _ => ()
   }
+}
+
+///|
+fn is_gemini_synthesized_tool_call_id(id : String) -> Bool {
+  id.has_prefix("gemini_synth_")
 }
 
 ///|

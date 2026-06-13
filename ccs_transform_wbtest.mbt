@@ -285,9 +285,71 @@ test "ccs gemini native transform resolves tool result names" {
     parts[0],
     Json::object({
       "functionResponse": Json::object({
+        "id": Json::string("toolu_lookup"),
         "name": Json::string("lookup"),
         "response": Json::object({ "content": Json::string("found") }),
       }),
     }),
   )
+}
+
+///|
+test "ccs gemini native transform strips synthesized tool ids" {
+  let synth = "gemini_synth_0"
+  let body = Json::object({
+    "messages": Json::array([
+      Json::object({
+        "role": Json::string("assistant"),
+        "content": Json::array([
+          Json::object({
+            "type": Json::string("tool_use"),
+            "id": Json::string(synth),
+            "name": Json::string("lookup"),
+            "input": Json::object({ "q": Json::string("moon") }),
+          }),
+        ]),
+      }),
+      Json::object({
+        "role": Json::string("user"),
+        "content": Json::array([
+          Json::object({
+            "type": Json::string("tool_result"),
+            "tool_use_id": Json::string(synth),
+            "content": Json::string("found"),
+          }),
+        ]),
+      }),
+    ]),
+  })
+  let transformed = transform_claude_request_for_api_format(
+    body, "gemini_native",
+  )
+  guard transformed is Object(obj) else { fail("expected object") }
+  guard obj["contents"] is Array(contents) else { fail("expected contents") }
+  guard contents[0] is Object(model_message) else {
+    fail("expected model message")
+  }
+  guard model_message["parts"] is Array(model_parts) else {
+    fail("expected model parts")
+  }
+  guard model_parts[0] is Object(model_part) else {
+    fail("expected model part")
+  }
+  guard model_part["functionCall"] is Object(function_call) else {
+    fail("expected functionCall")
+  }
+  assert_true(function_call.get("id") is None)
+  assert_eq(function_call["name"], Json::string("lookup"))
+  guard contents[1] is Object(user_message) else {
+    fail("expected user message")
+  }
+  guard user_message["parts"] is Array(user_parts) else {
+    fail("expected user parts")
+  }
+  guard user_parts[0] is Object(user_part) else { fail("expected user part") }
+  guard user_part["functionResponse"] is Object(function_response) else {
+    fail("expected functionResponse")
+  }
+  assert_true(function_response.get("id") is None)
+  assert_eq(function_response["name"], Json::string("lookup"))
 }
