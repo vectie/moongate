@@ -1597,6 +1597,91 @@ test "ccs responses stream state closes dangling text on completed" {
 }
 
 ///|
+test "ccs responses stream state merges keyed text parts" {
+  let state = ResponsesStreamState::new("gpt-5.4")
+  let first_added =
+    #|event: response.content_part.added
+    #|data: {"type":"response.content_part.added","part":{"type":"output_text","text":""},"output_index":0,"content_index":0}
+    #|
+  let (_, _, first_added_events) = codex_stream_events_from_sse_block(
+    first_added, state,
+  )
+  assert_eq(first_added_events.length(), 2)
+  assert_eq(first_added_events[0].event_type, "message_start")
+  assert_eq(first_added_events[1].event_type, "content_block_start")
+
+  let first_delta =
+    #|event: response.output_text.delta
+    #|data: {"type":"response.output_text.delta","delta":"你","output_index":0,"content_index":0}
+    #|
+  let (_, _, first_delta_events) = codex_stream_events_from_sse_block(
+    first_delta, state,
+  )
+  assert_eq(first_delta_events.length(), 1)
+
+  let first_done =
+    #|event: response.content_part.done
+    #|data: {"type":"response.content_part.done","output_index":0,"content_index":0}
+    #|
+  let (_, _, first_done_events) = codex_stream_events_from_sse_block(
+    first_done, state,
+  )
+  assert_eq(first_done_events.length(), 0)
+
+  let second_added =
+    #|event: response.content_part.added
+    #|data: {"type":"response.content_part.added","part":{"type":"output_text","text":""},"output_index":0,"content_index":1}
+    #|
+  let (_, _, second_added_events) = codex_stream_events_from_sse_block(
+    second_added, state,
+  )
+  assert_eq(second_added_events.length(), 0)
+
+  let second_delta =
+    #|event: response.output_text.delta
+    #|data: {"type":"response.output_text.delta","delta":"好","output_index":0,"content_index":1}
+    #|
+  let (_, _, second_delta_events) = codex_stream_events_from_sse_block(
+    second_delta, state,
+  )
+  assert_eq(second_delta_events.length(), 1)
+
+  let text_done =
+    #|event: response.output_text.done
+    #|data: {"type":"response.output_text.done","output_index":0,"content_index":1}
+    #|
+  let (_, _, text_done_events) = codex_stream_events_from_sse_block(
+    text_done, state,
+  )
+  assert_eq(text_done_events.length(), 1)
+  assert_eq(text_done_events[0].event_type, "content_block_stop")
+}
+
+///|
+test "ccs responses stream state closes keyed text without current index" {
+  let state = ResponsesStreamState::new("gpt-5.4")
+  let added =
+    #|event: response.content_part.added
+    #|data: {"type":"response.content_part.added","part":{"type":"refusal","text":""},"item_id":"msg_1","content_index":0}
+    #|
+  let (_, _, added_events) = codex_stream_events_from_sse_block(added, state)
+  assert_eq(added_events.length(), 2)
+  state.current_text_index = None
+  let done =
+    #|event: response.refusal.done
+    #|data: {"type":"response.refusal.done","item_id":"msg_1","content_index":0}
+    #|
+  let (_, _, done_events) = codex_stream_events_from_sse_block(done, state)
+  assert_eq(done_events.length(), 1)
+  assert_eq(done_events[0].event_type, "content_block_stop")
+  let stop_data = @json.parse(done_events[0].data) catch {
+    _ => fail("expected stop json")
+  }
+  guard stop_data is Object(stop_obj) else { fail("expected object") }
+  assert_eq(stop_obj["index"], Json::number(0.0))
+}
+
+///|
 test "ccs responses stream state emits reasoning thinking blocks" {
   let state = ResponsesStreamState::new("o3")
   let reasoning_block =

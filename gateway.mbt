@@ -6446,8 +6446,10 @@ priv struct ResponsesStreamState {
   mut next_content_index : Int
   mut current_text_index : Int?
   mut current_thinking_index : Int?
+  mut fallback_open_index : Int?
   mut last_tool_index : Int?
   open_indices : Array[Int]
+  index_by_key : Map[String, Int]
   tool_index_by_item_id : Map[String, Int]
   tool_name_by_index : Map[Int, String]
   tool_args_by_index : Map[Int, String]
@@ -6463,8 +6465,10 @@ fn ResponsesStreamState::new(model : String) -> ResponsesStreamState {
     next_content_index: 0,
     current_text_index: None,
     current_thinking_index: None,
+    fallback_open_index: None,
     last_tool_index: None,
     open_indices: [],
+    index_by_key: {},
     tool_index_by_item_id: {},
     tool_name_by_index: {},
     tool_args_by_index: {},
@@ -6495,7 +6499,7 @@ fn ResponsesStreamState::push_event(
         Some(Object(part)) =>
           match json_string_from_map(part, "type") {
             Some("output_text") | Some("refusal") =>
-              ignore(self.ensure_text_block(events))
+              ignore(self.ensure_text_block(obj, events))
             _ => ()
           }
         _ => ()
@@ -6506,7 +6510,7 @@ fn ResponsesStreamState::push_event(
         _ => return events
       }
       self.ensure_message_start(events)
-      let index = self.ensure_text_block(events)
+      let index = self.ensure_text_block(obj, events)
       events.push(
         anthropic_content_block_delta_event(index, "text_delta", "text", delta),
       )
@@ -6522,7 +6526,7 @@ fn ResponsesStreamState::push_event(
       }
       self.ensure_message_start(events)
       self.close_current_text_block(events)
-      let index = self.ensure_thinking_block(events)
+      let index = self.ensure_thinking_block(obj, events)
       events.push(
         anthropic_content_block_delta_event(
           index, "thinking_delta", "thinking", delta,
@@ -6530,8 +6534,9 @@ fn ResponsesStreamState::push_event(
       )
     }
     "response.output_text.done" | "response.refusal.done" =>
-      self.close_current_text_block(events)
-    "response.reasoning.done" => self.close_current_thinking_block(events)
+      self.close_text_block_from_event(obj, events)
+    "response.reasoning.done" =>
+      self.close_thinking_block_from_event(obj, events)
     "response.output_item.added" => self.push_output_item_added(obj, events)
     "response.function_call_arguments.delta" =>
       self.push_function_call_arguments_delta(obj, events)
@@ -6749,14 +6754,14 @@ fn ResponsesStreamState::ensure_tool_block(
 ///|
 fn ResponsesStreamState::ensure_text_block(
   self : ResponsesStreamState,
+  obj : Map[String, Json],
   events : Array[StreamEvent],
 ) -> Int {
   self.ensure_message_start(events)
   match self.current_text_index {
     Some(index) => index
     None => {
-      let index = self.next_content_index
-      self.next_content_index += 1
+      let index = self.resolve_content_index(obj)
       self.current_text_index = Some(index)
       if !self.open_indices.contains(index) {
         self.open_indices.push(index)
@@ -6770,14 +6775,14 @@ fn ResponsesStreamState::ensure_text_block(
 ///|
 fn ResponsesStreamState::ensure_thinking_block(
   self : ResponsesStreamState,
+  obj : Map[String, Json],
   events : Array[StreamEvent],
 ) -> Int {
   self.ensure_message_start(events)
   match self.current_thinking_index {
     Some(index) => index
     None => {
-      let index = self.next_content_index
-      self.next_content_index += 1
+      let index = self.resolve_content_index(obj)
       self.current_thinking_index = Some(index)
       if !self.open_indices.contains(index) {
         self.open_indices.push(index)
@@ -6785,6 +6790,35 @@ fn ResponsesStreamState::ensure_thinking_block(
       }
       index
     }
+  }
+}
+
+///|
+fn ResponsesStreamState::resolve_content_index(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+) -> Int {
+  match responses_stream_content_part_key(obj) {
+    Some(key) =>
+      match self.index_by_key.get(key) {
+        Some(index) => index
+        None => {
+          let index = self.next_content_index
+          self.next_content_index += 1
+          self.index_by_key[key] = index
+          index
+        }
+      }
+    None =>
+      match self.fallback_open_index {
+        Some(index) => index
+        None => {
+          let index = self.next_content_index
+          self.next_content_index += 1
+          self.fallback_open_index = Some(index)
+          index
+        }
+      }
   }
 }
 
@@ -6797,6 +6831,29 @@ fn ResponsesStreamState::close_current_text_block(
     Some(index) => {
       self.current_text_index = None
       self.close_open_block(events, index)
+      self.clear_fallback_if_index(index)
+    }
+    None => ()
+  }
+}
+
+///|
+fn ResponsesStreamState::close_text_block_from_event(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+  events : Array[StreamEvent],
+) -> Unit {
+  let index = match self.current_text_index {
+    Some(index) => {
+      self.current_text_index = None
+      Some(index)
+    }
+    None => self.content_index_from_event(obj)
+  }
+  match index {
+    Some(index) => {
+      self.close_open_block(events, index)
+      self.clear_fallback_if_index(index)
     }
     None => ()
   }
@@ -6811,8 +6868,56 @@ fn ResponsesStreamState::close_current_thinking_block(
     Some(index) => {
       self.current_thinking_index = None
       self.close_open_block(events, index)
+      self.clear_fallback_if_index(index)
     }
     None => ()
+  }
+}
+
+///|
+fn ResponsesStreamState::close_thinking_block_from_event(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+  events : Array[StreamEvent],
+) -> Unit {
+  let index = match self.current_thinking_index {
+    Some(index) => {
+      self.current_thinking_index = None
+      Some(index)
+    }
+    None => self.content_index_from_event(obj)
+  }
+  match index {
+    Some(index) => {
+      self.close_open_block(events, index)
+      self.clear_fallback_if_index(index)
+    }
+    None => ()
+  }
+}
+
+///|
+fn ResponsesStreamState::content_index_from_event(
+  self : ResponsesStreamState,
+  obj : Map[String, Json],
+) -> Int? {
+  match responses_stream_content_part_key(obj) {
+    Some(key) =>
+      match self.index_by_key.get(key) {
+        Some(index) => Some(index)
+        None => self.fallback_open_index
+      }
+    None => self.fallback_open_index
+  }
+}
+
+///|
+fn ResponsesStreamState::clear_fallback_if_index(
+  self : ResponsesStreamState,
+  index : Int,
+) -> Unit {
+  if self.fallback_open_index == Some(index) {
+    self.fallback_open_index = None
   }
 }
 
@@ -6839,6 +6944,21 @@ fn ResponsesStreamState::close_open_blocks(
   while !self.open_indices.is_empty() {
     let index = self.open_indices.remove(0)
     events.push(anthropic_content_block_stop_event(index))
+  }
+  self.fallback_open_index = None
+}
+
+///|
+fn responses_stream_content_part_key(obj : Map[String, Json]) -> String? {
+  match (json_string_from_map(obj, "item_id"), json_int(obj, "content_index")) {
+    (Some(item_id), Some(content_index)) =>
+      Some("part:\{item_id}:\{content_index}")
+    _ =>
+      match (json_int(obj, "output_index"), json_int(obj, "content_index")) {
+        (Some(output_index), Some(content_index)) =>
+          Some("part:out:\{output_index}:\{content_index}")
+        _ => None
+      }
   }
 }
 
