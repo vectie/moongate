@@ -188,7 +188,7 @@ pub fn TrafficStats::record_success(Self, Int, Int, Int) -> Unit
 pub fn TrafficStats::record_success_usage(Self, TokenUsage, Int) -> Unit
 pub fn TrafficStats::record_unauthorized(Self) -> Unit
 pub fn TrafficStats::record_upstream_error(Self, Int) -> Unit
-pub fn TrafficStats::status_json(Self, String, Int, Int, String, String) -> Json
+pub fn TrafficStats::status_json(Self, String, Int, Int, String, String, String) -> Json
 pub fn TrafficStats::to_json(Self) -> Json
 
 // Type aliases

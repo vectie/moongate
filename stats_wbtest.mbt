@@ -40,7 +40,9 @@ test "traffic status json matches ccs proxy status shape" {
   stats.record_inbound(10)
   stats.record_bad_request()
   stats.last_request_at = Some("test-timestamp")
-  let status = stats.status_json("127.0.0.1", 15721, 3, "codex", "codex-oauth")
+  let status = stats.status_json(
+    "127.0.0.1", 15721, 3, "Codex OAuth", "codex-oauth", "Codex",
+  )
   json_inspect(status, content={
     "running": true,
     "address": "127.0.0.1",
@@ -51,11 +53,17 @@ test "traffic status json matches ccs proxy status shape" {
     "failed_requests": 1,
     "success_rate": 0,
     "uptime_seconds": 3,
-    "current_provider": "codex",
+    "current_provider": "Codex OAuth",
     "current_provider_id": "codex-oauth",
     "last_request_at": "test-timestamp",
     "last_error": "bad_request",
     "failover_count": 0,
-    "active_targets": ["codex-oauth"],
+    "active_targets": [
+      {
+        "app_type": "Codex",
+        "provider_id": "codex-oauth",
+        "provider_name": "Codex OAuth",
+      },
+    ],
   })
 }

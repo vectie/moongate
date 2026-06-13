@@ -730,8 +730,9 @@ async fn Gateway::handle_status(
       self.host,
       self.port,
       self.uptime_seconds(),
-      "codex",
+      "Codex OAuth",
       "codex-oauth",
+      "Codex",
     )
     .stringify(indent=2),
   )

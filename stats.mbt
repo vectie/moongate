@@ -202,6 +202,7 @@ pub fn TrafficStats::status_json(
   uptime_seconds : Int,
   current_provider : String,
   current_provider_id : String,
+  app_type : String,
 ) -> Json {
   {
     "running": Json::boolean(true),
@@ -218,6 +219,21 @@ pub fn TrafficStats::status_json(
     "last_request_at": optional_string_json(self.last_request_at),
     "last_error": optional_string_json(self.last_error),
     "failover_count": Json::number(0.0),
-    "active_targets": Json::array([Json::string(current_provider_id)]),
+    "active_targets": Json::array([
+      active_target_json(app_type, current_provider_id, current_provider),
+    ]),
+  }.to_json()
+}
+
+///|
+fn active_target_json(
+  app_type : String,
+  provider_id : String,
+  provider_name : String,
+) -> Json {
+  {
+    "app_type": Json::string(app_type),
+    "provider_id": Json::string(provider_id),
+    "provider_name": Json::string(provider_name),
   }.to_json()
 }
