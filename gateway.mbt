@@ -103,6 +103,25 @@ fn Gateway::record_provider_result(self : Gateway, success : Bool) -> Unit {
 }
 
 ///|
+fn Gateway::release_provider_permit_neutral(self : Gateway) -> Unit {
+  guard self.stats.current_request_app_type is Some(app_type) else { return }
+  guard self.stats.current_provider_id is Some(provider_id) else { return }
+  self.provider_router.release_permit_neutral(
+    provider_id,
+    app_type,
+    self.stats.current_request_used_half_open_permit,
+  )
+}
+
+///|
+fn ccs_upstream_status_retryable(status_code : Int) -> Bool {
+  match status_code {
+    400 | 405 | 406 | 413 | 414 | 415 | 422 | 501 => false
+    _ => true
+  }
+}
+
+///|
 pub fn Gateway::host(self : Gateway) -> String {
   self.host
 }
@@ -114,12 +133,14 @@ pub fn Gateway::port(self : Gateway) -> Int {
 
 ///|
 async fn Gateway::record_bad_request(self : Gateway) -> Unit {
+  self.release_provider_permit_neutral()
   self.stats.record_bad_request()
   self.stats.save_persistent_store()
 }
 
 ///|
 async fn Gateway::record_unauthorized(self : Gateway) -> Unit {
+  self.release_provider_permit_neutral()
   self.stats.record_unauthorized()
   self.stats.save_persistent_store()
 }
@@ -130,13 +151,18 @@ async fn Gateway::record_upstream_error_status(
   response_bytes : Int,
   status_code : Int,
 ) -> Unit {
-  self.record_provider_result(false)
+  if ccs_upstream_status_retryable(status_code) {
+    self.record_provider_result(false)
+  } else {
+    self.release_provider_permit_neutral()
+  }
   self.stats.record_upstream_error_status(response_bytes, status_code)
   self.stats.save_persistent_store()
 }
 
 ///|
 async fn Gateway::record_internal_error(self : Gateway) -> Unit {
+  self.release_provider_permit_neutral()
   self.stats.record_internal_error()
   self.stats.save_persistent_store()
 }

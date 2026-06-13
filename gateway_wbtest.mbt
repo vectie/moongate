@@ -317,3 +317,60 @@ test "gateway records upstream failures into provider router before finish" {
   assert_eq(stats.total_requests, 1)
   assert_eq(stats.failed_requests, 1)
 }
+
+///|
+test "ccs upstream status retryability matches client error bucket" {
+  assert_false(ccs_upstream_status_retryable(400))
+  assert_false(ccs_upstream_status_retryable(422))
+  assert_false(ccs_upstream_status_retryable(501))
+  assert_true(ccs_upstream_status_retryable(401))
+  assert_true(ccs_upstream_status_retryable(429))
+  assert_true(ccs_upstream_status_retryable(502))
+}
+
+///|
+async test "gateway nonretryable upstream errors release half open permit" {
+  let gateway = Gateway::new(port=0)
+  gateway.provider_router.update_all_configs({
+    failure_threshold: 1,
+    success_threshold: 2,
+    timeout_seconds: 0,
+    error_rate_threshold: 0.6,
+    min_requests: 10,
+  })
+
+  gateway.stats.record_inbound(10)
+  let _ = gateway.activate_provider("codex")
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  gateway.record_provider_result(false)
+  gateway.stats.record_upstream_error_status(0, 502)
+
+  gateway.stats.record_inbound(10)
+  let _ = gateway.activate_provider("codex")
+  assert_true(gateway.stats.current_request_used_half_open_permit)
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  gateway.record_upstream_error_status(0, 400)
+
+  guard gateway.provider_router.get_circuit_breaker_stats(
+      "codex-oauth", "codex",
+    )
+    is Some(stats) else {
+    fail("expected circuit stats")
+  }
+  assert_true(stats.state == HalfOpen)
+  assert_eq(stats.total_requests, 1)
+  assert_eq(stats.failed_requests, 1)
+
+  gateway.stats.record_inbound(10)
+  let third = gateway.activate_provider("codex")
+  assert_true(third is Some(_))
+  assert_true(gateway.stats.current_request_used_half_open_permit)
+}
