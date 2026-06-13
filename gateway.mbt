@@ -38,6 +38,55 @@ pub fn Gateway::port(self : Gateway) -> Int {
 }
 
 ///|
+async fn Gateway::record_bad_request(self : Gateway) -> Unit {
+  self.stats.record_bad_request()
+  self.stats.save_persistent_store()
+}
+
+///|
+async fn Gateway::record_unauthorized(self : Gateway) -> Unit {
+  self.stats.record_unauthorized()
+  self.stats.save_persistent_store()
+}
+
+///|
+async fn Gateway::record_upstream_error_status(
+  self : Gateway,
+  response_bytes : Int,
+  status_code : Int,
+) -> Unit {
+  self.stats.record_upstream_error_status(response_bytes, status_code)
+  self.stats.save_persistent_store()
+}
+
+///|
+async fn Gateway::record_internal_error(self : Gateway) -> Unit {
+  self.stats.record_internal_error()
+  self.stats.save_persistent_store()
+}
+
+///|
+async fn Gateway::record_success(
+  self : Gateway,
+  input_tokens : Int,
+  output_tokens : Int,
+  response_bytes : Int,
+) -> Unit {
+  self.stats.record_success(input_tokens, output_tokens, response_bytes)
+  self.stats.save_persistent_store()
+}
+
+///|
+async fn Gateway::record_success_usage(
+  self : Gateway,
+  usage : TokenUsage,
+  response_bytes : Int,
+) -> Unit {
+  self.stats.record_success_usage(usage, response_bytes)
+  self.stats.save_persistent_store()
+}
+
+///|
 pub async fn Gateway::start(self : Gateway) -> Unit {
   self.logger.info(
     "Starting Anthropic -> Codex OAuth Gateway on \{self.host}:\{self.port}",
@@ -221,7 +270,7 @@ async fn Gateway::handle_codex_responses(
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
-      self.stats.record_bad_request()
+      self.record_bad_request()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write(
@@ -274,7 +323,7 @@ async fn Gateway::handle_chat_completions(
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
-      self.stats.record_bad_request()
+      self.record_bad_request()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write(
@@ -296,7 +345,7 @@ async fn Gateway::handle_chat_completions(
       )
       let request = openai_chat_to_codex_response_request(json, self.model)
       guard request is Some(codex_request) else {
-        self.stats.record_bad_request()
+        self.record_bad_request()
         w.header().set("Content-Type", "application/json")
         w.write_header(@status.BadRequest)
         w.write(
@@ -338,7 +387,7 @@ async fn Gateway::handle_gemini(
   } else {
     @json.parse(body_str) catch {
       _ => {
-        self.stats.record_bad_request()
+        self.record_bad_request()
         w.header().set("Content-Type", "application/json")
         w.write_header(@status.BadRequest)
         w.write(
@@ -361,7 +410,7 @@ async fn Gateway::handle_gemini(
   let url = match gemini_proxy_url(endpoint) {
     Some(url) => url
     None => {
-      self.stats.record_unauthorized()
+      self.record_unauthorized()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.Unauthorized)
       w.write(
@@ -375,7 +424,7 @@ async fn Gateway::handle_gemini(
     @httpx.Method::Get => self.forward_gemini_get(url, w)
     @httpx.Method::Post => self.forward_gemini_post(url, request_json, w)
     _ => {
-      self.stats.record_bad_request()
+      self.record_bad_request()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.MethodNotAllowed)
       w.write(
@@ -395,7 +444,7 @@ async fn Gateway::forward_gemini_get(
   let result = try? @http.get(url)
   match result {
     Err(error) => {
-      self.stats.record_upstream_error_status(0, @status.BadGateway)
+      self.record_upstream_error_status(0, @status.BadGateway)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(
@@ -405,15 +454,9 @@ async fn Gateway::forward_gemini_get(
     Ok((response, data)) => {
       let response_body = data.text()
       if response.code is (200..=299) {
-        self.stats.record_success_usage(
-          TokenUsage::empty(),
-          response_body.length(),
-        )
+        self.record_success_usage(TokenUsage::empty(), response_body.length())
       } else {
-        self.stats.record_upstream_error_status(
-          response_body.length(),
-          response.code,
-        )
+        self.record_upstream_error_status(response_body.length(), response.code)
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -435,7 +478,7 @@ async fn Gateway::forward_gemini_post(
   })
   match result {
     Err(error) => {
-      self.stats.record_upstream_error_status(0, @status.BadGateway)
+      self.record_upstream_error_status(0, @status.BadGateway)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(
@@ -450,12 +493,9 @@ async fn Gateway::forward_gemini_post(
         ) catch {
           _ => TokenUsage::empty()
         }
-        self.stats.record_success_usage(usage, response_body.length())
+        self.record_success_usage(usage, response_body.length())
       } else {
-        self.stats.record_upstream_error_status(
-          response_body.length(),
-          response.code,
-        )
+        self.record_upstream_error_status(response_body.length(), response.code)
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -474,7 +514,7 @@ async fn Gateway::forward_non_streaming_chat_completion(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
-    self.stats.record_unauthorized()
+    self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write(
@@ -488,10 +528,7 @@ async fn Gateway::forward_non_streaming_chat_completion(
   let response = client.post("/backend-api/codex/responses", request)
   let response_body = client.read_all().text()
   if response.code != 200 {
-    self.stats.record_upstream_error_status(
-      response_body.length(),
-      response.code,
-    )
+    self.record_upstream_error_status(response_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(response_body)
@@ -507,13 +544,13 @@ async fn Gateway::forward_non_streaming_chat_completion(
       let chat_response = codex_response_to_openai_chat_completion(
         json, response_model,
       )
-      self.stats.record_success_usage(usage, chat_response.stringify().length())
+      self.record_success_usage(usage, chat_response.stringify().length())
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.Ok)
       w.write(chat_response.stringify())
     }
     Err(_) => {
-      self.stats.record_internal_error()
+      self.record_internal_error()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.InternalServerError)
       w.write(
@@ -533,7 +570,7 @@ async fn Gateway::forward_streaming_chat_completion(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
-    self.stats.record_unauthorized()
+    self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write(
@@ -547,7 +584,7 @@ async fn Gateway::forward_streaming_chat_completion(
   let response = client.post("/backend-api/codex/responses", request)
   if response.code != 200 {
     let error_body = client.read_all().text()
-    self.stats.record_upstream_error_status(error_body.length(), response.code)
+    self.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(error_body)
@@ -581,7 +618,7 @@ async fn Gateway::forward_streaming_chat_completion(
       w.flush()
     }
   }
-  self.stats.record_success(0, 0, response_bytes)
+  self.record_success(0, 0, response_bytes)
   w.write("data: [DONE]\n\n")
   w.flush()
 }
@@ -595,7 +632,7 @@ async fn Gateway::forward_non_streaming_codex_response(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
-    self.stats.record_unauthorized()
+    self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write(
@@ -609,10 +646,7 @@ async fn Gateway::forward_non_streaming_codex_response(
   let response = client.post(endpoint, request)
   let response_body = client.read_all().text()
   if response.code != 200 {
-    self.stats.record_upstream_error_status(
-      response_body.length(),
-      response.code,
-    )
+    self.record_upstream_error_status(response_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(response_body)
@@ -625,7 +659,7 @@ async fn Gateway::forward_non_streaming_codex_response(
   } catch {
     _ => TokenUsage::empty()
   }
-  self.stats.record_success_usage(usage, response_body.length())
+  self.record_success_usage(usage, response_body.length())
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(response_body)
@@ -641,7 +675,7 @@ async fn Gateway::forward_streaming_codex_response(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
-    self.stats.record_unauthorized()
+    self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write(
@@ -655,7 +689,7 @@ async fn Gateway::forward_streaming_codex_response(
   let response = client.post(endpoint, request)
   if response.code != 200 {
     let error_body = client.read_all().text()
-    self.stats.record_upstream_error_status(error_body.length(), response.code)
+    self.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(error_body)
@@ -673,7 +707,7 @@ async fn Gateway::forward_streaming_codex_response(
     w.write("\n")
     w.flush()
   }
-  self.stats.record_success(0, 0, response_bytes)
+  self.record_success(0, 0, response_bytes)
   w.flush()
 }
 
@@ -1297,7 +1331,7 @@ async fn Gateway::validate_claude_desktop_gateway_auth(
       if claude_desktop_authorization_valid(r.headers, expected) {
         true
       } else {
-        self.stats.record_unauthorized()
+        self.record_unauthorized()
         write_auth_error(w, "Claude Desktop gateway token invalid or missing")
         false
       }
@@ -1528,7 +1562,7 @@ async fn Gateway::handle_messages(
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
-      self.stats.record_bad_request()
+      self.record_bad_request()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write("{\"error\":\"Invalid JSON\"}")
@@ -1542,7 +1576,7 @@ async fn Gateway::handle_messages(
       )
       match anthropic_request_result {
         Err(_) => {
-          self.stats.record_bad_request()
+          self.record_bad_request()
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.BadRequest)
           w.write("{\"error\":\"Invalid Anthropic request\"}")
@@ -1590,7 +1624,7 @@ async fn Gateway::handle_non_streaming_request(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
-    self.stats.record_unauthorized()
+    self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write("{\"error\":\"Not authenticated. Please login first.\"}")
@@ -1622,7 +1656,7 @@ async fn Gateway::handle_non_streaming_request(
         Err(_) => ()
       }
     }
-    self.stats.record_upstream_error_status(error_body.length(), response.code)
+    self.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write("{\"error\":\"Codex API error: \{response.code}\"}")
@@ -1638,14 +1672,14 @@ async fn Gateway::handle_non_streaming_request(
       let usage = token_usage_from_codex_response_auto(json).unwrap_or(
         TokenUsage::empty(),
       )
-      self.stats.record_success_usage(usage, response_body.length())
+      self.record_success_usage(usage, response_body.length())
       let anthropic_response = convert_codex_to_anthropic(json, request.model)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.Ok)
       w.write(anthropic_response.to_json().stringify())
     }
     Err(_) => {
-      self.stats.record_internal_error()
+      self.record_internal_error()
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.InternalServerError)
       w.write("{\"error\":\"Failed to parse Codex response\"}")
@@ -1663,7 +1697,7 @@ async fn Gateway::handle_streaming_request(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
-    self.stats.record_unauthorized()
+    self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write("{\"error\":\"Not authenticated. Please login first.\"}")
@@ -1695,7 +1729,7 @@ async fn Gateway::handle_streaming_request(
         Err(_) => ()
       }
     }
-    self.stats.record_upstream_error_status(error_body.length(), response.code)
+    self.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write("{\"error\":\"Codex API error: \{response.code}\"}")
@@ -1712,7 +1746,7 @@ async fn Gateway::handle_streaming_request(
     w.write("data: \{event.data}\n\n")
     w.flush()
   }
-  self.stats.record_success(0, 0, 0)
+  self.record_success(0, 0, 0)
   w.write("event: message_stop\ndata: {}\n\n")
   w.flush()
 }

@@ -97,3 +97,56 @@ async test "persistent store keeps session sync offsets across stats restart" {
   assert_eq(skipped_result.skipped, 0)
   assert_eq(loaded.request_logs.length(), 1)
 }
+
+///|
+async test "gateway completion records are persisted automatically" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-store-gateway-live-\{@async.now().to_int()}",
+  )
+  let gateway = Gateway::new(port=0)
+  gateway.stats.enable_persistent_store(storage_dir=dir)
+  gateway.stats.record_inbound(32)
+  gateway.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5.5",
+    session_id=Some("live-session"),
+    provider_type=Some("codex"),
+  )
+  gateway.record_success_usage(
+    TokenUsage::new(
+      input_tokens=11,
+      output_tokens=7,
+      cache_read_tokens=3,
+      model=Some("gpt-5.5"),
+    ),
+    128,
+  )
+
+  gateway.stats.record_inbound(12)
+  gateway.stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
+  gateway.stats.record_request_context(
+    "gemini",
+    "gemini-2.5-pro",
+    provider_type=Some("gemini"),
+  )
+  gateway.record_upstream_error_status(64, 502)
+
+  let loaded = TrafficStats::new()
+  loaded.load_persistent_store(storage_dir=dir)
+  assert_eq(loaded.request_logs.length(), 2)
+  let success = loaded.request_logs[0]
+  assert_eq(success.app_type, "codex")
+  assert_eq(success.model, "gpt-5.5")
+  assert_eq(success.input_tokens, 11)
+  assert_eq(success.output_tokens, 7)
+  assert_eq(success.cache_read_tokens, 3)
+  assert_eq(success.status_code, 200)
+  assert_eq(success.session_id, Some("live-session"))
+  let failure = loaded.request_logs[1]
+  assert_eq(failure.app_type, "gemini")
+  assert_eq(failure.model, "gemini-2.5-pro")
+  assert_eq(failure.status_code, 502)
+  assert_eq(failure.error_message, Some("upstream_error"))
+}
