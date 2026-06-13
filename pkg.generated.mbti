@@ -12,6 +12,8 @@ pub fn build_anthropic_response(String, String, String, Array[ToolCallInfo], Int
 
 pub fn build_codex_request(CodexInput, String, Bool) -> Json
 
+pub fn build_models_url_candidates(String, Bool, String?) -> Result[Array[String], String]
+
 pub fn convert_anthropic_to_codex(AnthropicRequest, String) -> CodexInput
 
 pub fn normalize_gemini_model_id(String) -> String
