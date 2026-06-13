@@ -8,6 +8,7 @@ pub struct Gateway {
   provider_router : ProviderRouter
   gemini_shadow : GeminiShadowStore
   codex_chat_history : CodexChatHistoryStore
+  usage_cache : UsageCache
   pricing_overrides : Map[String, ModelPricing]
   pricing_deleted_model_ids : Map[String, Bool]
   mut proxy_enabled : Bool
@@ -41,6 +42,7 @@ pub fn Gateway::new(
     provider_router: moonstat_default_provider_router(),
     gemini_shadow: GeminiShadowStore::new(),
     codex_chat_history: CodexChatHistoryStore::new(),
+    usage_cache: UsageCache::new(),
     pricing_overrides: Map([], capacity=0),
     pricing_deleted_model_ids: Map([], capacity=0),
     proxy_enabled: true,
@@ -730,6 +732,15 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(@httpx.Method::Get, "/get_usage_data_sources", (_, w) => {
     self.handle_usage_data_sources(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/queryProviderUsage", (r, w) => {
+    self.handle_query_provider_usage(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/queryProviderUsage", (r, w) => {
+    self.handle_query_provider_usage(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/testUsageScript", (r, w) => {
+    self.handle_test_usage_script(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/sync-session", (r, w) => {
     self.handle_usage_sync_session(r, w)
@@ -3711,6 +3722,66 @@ async fn Gateway::handle_usage_data_sources(
 }
 
 ///|
+async fn Gateway::handle_query_provider_usage(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  guard proxy_string_request(r.path, config, ["provider_id", "providerId"])
+    is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard proxy_string_request(r.path, config, ["app", "app_type", "appType"])
+    is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  match self.usage_cache.get_script(app_type, provider_id) {
+    Some(result) => write_usage_json(w, result.to_json())
+    None =>
+      write_usage_json(
+        w,
+        UsageResult::new(false, error=Some("Usage query is disabled")).to_json(),
+      )
+  }
+}
+
+///|
+async fn Gateway::handle_test_usage_script(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  guard proxy_string_request(r.path, config, ["provider_id", "providerId"])
+    is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard proxy_string_request(r.path, config, ["app", "app_type", "appType"])
+    is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  let result = match usage_result_from_request(r.path, body) {
+    Some(result) => result
+    None =>
+      UsageResult::new(
+        false,
+        error=Some(
+          "Usage script execution is unavailable in standalone Moonstat; provide a ccs UsageResult JSON object as result or scriptCode.",
+        ),
+      )
+  }
+  self.usage_cache.put_script(app_type, provider_id, result)
+  write_usage_json(w, result.to_json())
+}
+
+///|
 async fn Gateway::handle_usage_sync_session(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4367,6 +4438,61 @@ fn usage_pricing_from_query(path : StringView) -> ModelPricing? {
       cache_creation_cost.trim().to_owned(),
     ),
   )
+}
+
+///|
+fn usage_result_from_request(path : StringView, body : Json?) -> UsageResult? {
+  for key in ["result", "usageResult", "scriptCode", "script_code"] {
+    match usage_query_value(path, key) {
+      Some(value) =>
+        match usage_result_from_string(value) {
+          Some(result) => return Some(result)
+          None => ()
+        }
+      None => ()
+    }
+  }
+  match body {
+    Some(json) => {
+      match usage_result_from_json(json) {
+        Some(result) => return Some(result)
+        None => ()
+      }
+      guard json is Object(obj) else { return None }
+      for key in ["result", "usageResult"] {
+        match obj.get(key) {
+          Some(value) =>
+            match usage_result_from_json(value) {
+              Some(result) => return Some(result)
+              None => ()
+            }
+          None => ()
+        }
+      }
+      for key in ["scriptCode", "script_code"] {
+        match obj.get(key) {
+          Some(String(value)) =>
+            match usage_result_from_string(value) {
+              Some(result) => return Some(result)
+              None => ()
+            }
+          _ => ()
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn usage_result_from_string(value : String) -> UsageResult? {
+  let trimmed = value.trim().to_owned()
+  if trimmed.is_empty() {
+    return None
+  }
+  let parsed = @json.parse(trimmed) catch { _ => return None }
+  usage_result_from_json(parsed)
 }
 
 ///|

@@ -139,6 +139,30 @@ test "usage aliases build same paths as ccs command names" {
     ]),
     "/usage/provider-limits?provider_id=p1&app_type=codex",
   )
+  assert_eq(
+    usage_provider_script_path(
+      [
+        "moonstat", "usage", "query-provider-usage", "--provider-id", "p1", "--app",
+        "codex",
+      ],
+      "/queryProviderUsage",
+      false,
+    ),
+    Some("/queryProviderUsage?providerId=p1&app=codex"),
+  )
+  assert_eq(
+    usage_provider_script_path(
+      [
+        "moonstat", "usage", "test-usage-script", "--provider-id", "p1", "--app",
+        "codex", "--script-code", "{\"success\":true}",
+      ],
+      "/testUsageScript",
+      true,
+    ),
+    Some(
+      "/testUsageScript?providerId=p1&app=codex&scriptCode=%7B%22success%22%3Atrue%7D",
+    ),
+  )
 }
 
 ///|

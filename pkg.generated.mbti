@@ -305,6 +305,7 @@ pub struct Gateway {
   provider_router : ProviderRouter
   gemini_shadow : GeminiShadowStore
   codex_chat_history : CodexChatHistoryStore
+  usage_cache : UsageCache
   pricing_overrides : Map[String, ModelPricing]
   pricing_deleted_model_ids : Map[String, Bool]
   mut proxy_enabled : Bool

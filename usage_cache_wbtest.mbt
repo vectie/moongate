@@ -20,6 +20,37 @@ fn fake_usage_result() -> UsageResult {
 }
 
 ///|
+test "usage result parses ccs usage script json" {
+  let json = @json.parse(
+    (
+      #|{
+      #|  "success": true,
+      #|  "data": [
+      #|    {
+      #|      "planName": "Team",
+      #|      "total": 100,
+      #|      "used": 40,
+      #|      "remaining": 60,
+      #|      "unit": "%",
+      #|      "isValid": true,
+      #|      "extra": "resets tomorrow"
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  guard usage_result_from_json(json) is Some(result) else {
+    fail("expected usage result")
+  }
+  assert_true(result.success)
+  guard result.data is Some(rows) else { fail("expected data") }
+  assert_eq(rows.length(), 1)
+  assert_eq(rows[0].plan_name, Some("Team"))
+  assert_eq(rows[0].unit, Some("%"))
+  assert_eq(rows[0].remaining, Some(60.0))
+}
+
+///|
 test "usage cache subscription round trip matches ccs" {
   let cache = UsageCache::new()
   assert_true(

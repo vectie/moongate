@@ -89,6 +89,25 @@ pub fn UsageData::to_json(self : UsageData) -> Json {
 }
 
 ///|
+fn usage_data_from_json(json : Json) -> UsageData? {
+  guard json is Object(obj) else { return None }
+  Some(
+    UsageData::new(
+      plan_name=usage_cache_json_string_any(obj, ["planName", "plan_name"]),
+      extra=usage_cache_json_string(obj, "extra"),
+      is_valid=usage_cache_json_bool_any(obj, ["isValid", "is_valid"]),
+      invalid_message=usage_cache_json_string_any(obj, [
+        "invalidMessage", "invalid_message",
+      ]),
+      total=usage_cache_json_number(obj, "total"),
+      used=usage_cache_json_number(obj, "used"),
+      remaining=usage_cache_json_number(obj, "remaining"),
+      unit=usage_cache_json_string(obj, "unit"),
+    ),
+  )
+}
+
+///|
 pub struct UsageResult {
   success : Bool
   data : Array[UsageData]?
@@ -117,6 +136,33 @@ pub fn UsageResult::to_json(self : UsageResult) -> Json {
     None => ()
   }
   Json::object(obj)
+}
+
+///|
+fn usage_result_from_json(json : Json) -> UsageResult? {
+  guard json is Object(obj) else { return None }
+  guard usage_cache_json_bool(obj, "success") is Some(success) else {
+    return None
+  }
+  let rows : Array[UsageData] = []
+  match obj.get("data") {
+    Some(Array(items)) =>
+      for item in items {
+        match usage_data_from_json(item) {
+          Some(row) => rows.push(row)
+          None => return None
+        }
+      }
+    Some(Null) | None => ()
+    _ => return None
+  }
+  Some(
+    UsageResult::new(
+      success,
+      data=if rows.is_empty() { None } else { Some(rows) },
+      error=usage_cache_json_string(obj, "error"),
+    ),
+  )
 }
 
 ///|
@@ -296,4 +342,57 @@ pub fn UsageCache::invalidate_subscription(
 ///|
 fn usage_cache_script_key(app_type : String, provider_id : String) -> String {
   "\{app_type}\t\{provider_id}"
+}
+
+///|
+fn usage_cache_json_string(obj : Map[String, Json], key : String) -> String? {
+  match obj.get(key) {
+    Some(String(value)) => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn usage_cache_json_string_any(
+  obj : Map[String, Json],
+  keys : Array[String],
+) -> String? {
+  for key in keys {
+    match usage_cache_json_string(obj, key) {
+      Some(value) => return Some(value)
+      None => ()
+    }
+  }
+  None
+}
+
+///|
+fn usage_cache_json_bool(obj : Map[String, Json], key : String) -> Bool? {
+  match obj.get(key) {
+    Some(True) => Some(true)
+    Some(False) => Some(false)
+    _ => None
+  }
+}
+
+///|
+fn usage_cache_json_bool_any(
+  obj : Map[String, Json],
+  keys : Array[String],
+) -> Bool? {
+  for key in keys {
+    match usage_cache_json_bool(obj, key) {
+      Some(value) => return Some(value)
+      None => ()
+    }
+  }
+  None
+}
+
+///|
+fn usage_cache_json_number(obj : Map[String, Json], key : String) -> Double? {
+  match obj.get(key) {
+    Some(Number(value, ..)) => Some(value)
+    _ => None
+  }
 }

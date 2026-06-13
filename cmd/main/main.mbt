@@ -103,6 +103,8 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["usage", "sources", ..] => check_usage_endpoint(arr, "/usage/data-sources")
     ["usage", "get-usage-data-sources", ..] =>
       check_usage_endpoint(arr, "/usage/data-sources")
+    ["usage", "query-provider-usage", ..] => check_usage_provider_script(arr)
+    ["usage", "test-usage-script", ..] => test_usage_script(arr)
     ["usage", "pricing", "set", ..] => update_usage_pricing(arr)
     ["usage", "update-model-pricing", ..] => update_usage_pricing(arr)
     ["usage", "pricing", "delete", ..] => delete_usage_pricing(arr)
@@ -219,6 +221,8 @@ fn print_help() -> Unit {
   println(
     "  usage get-usage-data-sources  Alias for ccs get_usage_data_sources",
   )
+  println("  usage query-provider-usage  Alias for ccs queryProviderUsage")
+  println("  usage test-usage-script     Alias for ccs testUsageScript")
   println("  usage pricing    Show ccs-style editable model pricing")
   println("  usage get-model-pricing  Alias for ccs get_model_pricing")
   println("  usage pricing set       Upsert ccs-style model pricing")
@@ -250,6 +254,8 @@ fn print_help() -> Unit {
   println("Proxy config options:")
   println("  --app-type <app>  App type for app-level proxy config")
   println("  --provider-id <id> Provider id for provider-level proxy commands")
+  println("  --app <app>         App id for ccs usage script commands")
+  println("  --script-code <json> JSON UsageResult for ccs testUsageScript")
   println("  --value <value>    Value for ccs proxy scalar setter commands")
   println(
     "  --enabled <bool>   Boolean for proxy app/takeover/failover commands",
@@ -845,6 +851,41 @@ async fn check_usage_models(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_usage_provider_script(args : Array[String]) -> Unit {
+  guard usage_provider_script_path(args, "/queryProviderUsage", false)
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required usage script args: --provider-id --app")
+    return
+  }
+  check_usage_endpoint(args, path)
+}
+
+///|
+async fn test_usage_script(args : Array[String]) -> Unit {
+  guard usage_provider_script_path(args, "/testUsageScript", true) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required usage script args: --provider-id --app")
+    return
+  }
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
+  try {
+    let client = @http.Client::new(url, headers={})
+    defer client.close()
+    let response = client.post(path, "{}")
+    let body = client.read_all().text()
+    if response.code == 200 {
+      println(body)
+    } else {
+      logger.error("Usage script test failed: \{response.code} \{body}")
+    }
+  } catch {
+    err => logger.error("Usage script test failed: \{err}")
+  }
+}
+
+///|
 async fn sync_session_usage(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
@@ -960,6 +1001,31 @@ fn usage_limits_path(args : Array[String]) -> String {
   } else {
     "/usage/provider-limits?\{query.join("&")}"
   }
+}
+
+///|
+fn usage_provider_script_path(
+  args : Array[String],
+  path : String,
+  include_script : Bool,
+) -> String? {
+  guard parse_string_arg(args, "--provider-id") is Some(provider_id) else {
+    return None
+  }
+  guard parse_string_arg_any(args, "--app", "--app-type") is Some(app) else {
+    return None
+  }
+  let query = [
+    cli_query_pair("providerId", provider_id),
+    cli_query_pair("app", app),
+  ]
+  if include_script {
+    match parse_string_arg_any(args, "--script-code", "--scriptCode") {
+      Some(value) => query.push(cli_query_pair("scriptCode", value))
+      None => ()
+    }
+  }
+  Some("\{path}?\{query.join("&")}")
 }
 
 ///|
