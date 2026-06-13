@@ -1444,6 +1444,98 @@ test "ccs responses stream parser skips non emitting lifecycle blocks" {
 }
 
 ///|
+test "ccs responses stream parser converts response created to message start" {
+  let block =
+    #|event: response.created
+    #|data: {"type":"response.created","response":{"id":"resp_start","status":"in_progress","model":"gpt-5.4","usage":{"input_tokens":12,"output_tokens":0,"input_tokens_details":{"cached_tokens":4}}}}
+    #|
+  let (done, parsed, event) = codex_stream_event_from_sse_block(
+    block, "fallback-model",
+  )
+  assert_false(done)
+  assert_true(parsed is Some(_))
+  guard event is Some(event) else { fail("expected stream event") }
+  assert_eq(event.event_type, "message_start")
+  let data = @json.parse(event.data) catch {
+    _ => fail("expected json event data")
+  }
+  guard data is Object(obj) else { fail("expected object") }
+  guard obj["message"] is Object(message) else { fail("expected message") }
+  assert_eq(message["id"], Json::string("resp_start"))
+  assert_eq(message["model"], Json::string("gpt-5.4"))
+  guard message["usage"] is Object(usage) else { fail("expected usage") }
+  assert_eq(usage["input_tokens"], Json::number(8.0))
+  assert_eq(usage["output_tokens"], Json::number(0.0))
+  assert_eq(usage["cache_read_input_tokens"], Json::number(4.0))
+}
+
+///|
+test "ccs responses stream parser preserves completed usage" {
+  let block =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_done","status":"completed","model":"gpt-5.4","output":[],"usage":{"prompt_tokens":11,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":3}}}}
+    #|
+  let (done, parsed, event) = codex_stream_event_from_sse_block(
+    block, "gpt-5.4",
+  )
+  assert_false(done)
+  assert_true(parsed is Some(_))
+  guard event is Some(event) else { fail("expected stream event") }
+  assert_eq(event.event_type, "message_delta")
+  let data = @json.parse(event.data) catch {
+    _ => fail("expected json event data")
+  }
+  guard data is Object(obj) else { fail("expected object") }
+  guard obj["delta"] is Object(delta) else { fail("expected delta") }
+  assert_eq(delta["stop_reason"], Json::string("end_turn"))
+  assert_eq(delta["stop_sequence"], Json::null())
+  guard obj["usage"] is Object(usage) else { fail("expected usage") }
+  assert_eq(usage["input_tokens"], Json::number(8.0))
+  assert_eq(usage["output_tokens"], Json::number(5.0))
+  assert_eq(usage["cache_read_input_tokens"], Json::number(3.0))
+}
+
+///|
+test "ccs responses stream parser maps incomplete max output to max tokens" {
+  let block =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_max","status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},"model":"gpt-5.4","output":[],"usage":{"input_tokens":6,"output_tokens":2}}}
+    #|
+  let (done, parsed, event) = codex_stream_event_from_sse_block(
+    block, "gpt-5.4",
+  )
+  assert_false(done)
+  assert_true(parsed is Some(_))
+  guard event is Some(event) else { fail("expected stream event") }
+  let data = @json.parse(event.data) catch {
+    _ => fail("expected json event data")
+  }
+  guard data is Object(obj) else { fail("expected object") }
+  guard obj["delta"] is Object(delta) else { fail("expected delta") }
+  assert_eq(delta["stop_reason"], Json::string("max_tokens"))
+}
+
+///|
+test "ccs responses stream parser maps completed function output to tool use" {
+  let block =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_tool","status":"completed","model":"gpt-5.4","output":[{"type":"function_call","call_id":"call_1","name":"lookup","arguments":"{}"}],"usage":{"input_tokens":6,"output_tokens":2}}}
+    #|
+  let (done, parsed, event) = codex_stream_event_from_sse_block(
+    block, "gpt-5.4",
+  )
+  assert_false(done)
+  assert_true(parsed is Some(_))
+  guard event is Some(event) else { fail("expected stream event") }
+  let data = @json.parse(event.data) catch {
+    _ => fail("expected json event data")
+  }
+  guard data is Object(obj) else { fail("expected object") }
+  guard obj["delta"] is Object(delta) else { fail("expected delta") }
+  assert_eq(delta["stop_reason"], Json::string("tool_use"))
+}
+
+///|
 test "ccs responses sse parser ignores truncated trailing block" {
   let sse =
     #|event: response.completed

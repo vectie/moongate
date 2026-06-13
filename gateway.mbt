@@ -6388,9 +6388,28 @@ fn push_sse_json_event(events : Array[Json], data : String) -> Unit {
 fn convert_stream_event(
   event_type : String,
   obj : Map[String, Json],
-  _model : String,
+  model : String,
 ) -> StreamEvent? {
   match event_type {
+    "response.created" => {
+      let response_obj = responses_stream_response_object(obj)
+      let usage = responses_stream_anthropic_usage_json(response_obj)
+      let message_id = json_string_from_map(response_obj, "id").unwrap_or("")
+      let response_model = json_string_from_map(response_obj, "model").unwrap_or(
+        model,
+      )
+      let event_data = Json::object({
+        "type": Json::string("message_start"),
+        "message": Json::object({
+          "id": Json::string(message_id),
+          "type": Json::string("message"),
+          "role": Json::string("assistant"),
+          "model": Json::string(response_model),
+          "usage": usage,
+        }),
+      })
+      Some({ event_type: "message_start", data: event_data.stringify() })
+    }
     "response.output_text.delta" => {
       let delta = match obj.get("delta") {
         Some(String(d)) => d
@@ -6454,10 +6473,17 @@ fn convert_stream_event(
       None
     }
     "response.completed" => {
+      let response_obj = responses_stream_response_object(obj)
+      let usage = responses_stream_anthropic_usage_json(response_obj)
+      let stop_reason = responses_stream_stop_reason_json(
+        json_string_from_map(response_obj, "status"),
+        responses_stream_response_has_tool_use(response_obj),
+        responses_stream_incomplete_reason(response_obj),
+      )
       let event_data : Map[String, Json] = {
         "type": Json::string("message_delta"),
-        "delta": { "stop_reason": Json::string("end_turn") }.to_json(),
-        "usage": { "output_tokens": Json::number(0.0) }.to_json(),
+        "delta": { "stop_reason": stop_reason, "stop_sequence": Json::null() }.to_json(),
+        "usage": usage,
       }
       Some({
         event_type: "message_delta",
@@ -6465,5 +6491,102 @@ fn convert_stream_event(
       })
     }
     _ => None
+  }
+}
+
+///|
+fn responses_stream_response_object(
+  obj : Map[String, Json],
+) -> Map[String, Json] {
+  match obj.get("response") {
+    Some(Object(response_obj)) => response_obj
+    _ => obj
+  }
+}
+
+///|
+fn responses_stream_anthropic_usage_json(
+  response_obj : Map[String, Json],
+) -> Json {
+  guard response_obj.get("usage") is Some(Object(usage)) else {
+    return openai_chat_zero_usage_json()
+  }
+  let input_tokens = match json_int(usage, "input_tokens") {
+    Some(n) => n
+    None => json_int_or_zero(usage, "prompt_tokens")
+  }
+  let output_tokens = match json_int(usage, "output_tokens") {
+    Some(n) => n
+    None => json_int_or_zero(usage, "completion_tokens")
+  }
+  let mut cache_read_tokens = match usage.get("input_tokens_details") {
+    Some(Object(details)) => json_int_or_zero(details, "cached_tokens")
+    _ =>
+      match usage.get("prompt_tokens_details") {
+        Some(Object(details)) => json_int_or_zero(details, "cached_tokens")
+        _ => 0
+      }
+  }
+  match json_int(usage, "cache_read_input_tokens") {
+    Some(n) => cache_read_tokens = n
+    None => ()
+  }
+  let cache_creation_tokens = json_int_or_zero(
+    usage, "cache_creation_input_tokens",
+  )
+  TokenUsage::new(
+    input_tokens~,
+    output_tokens~,
+    cache_read_tokens~,
+    cache_creation_tokens~,
+  ).as_anthropic_usage_json()
+}
+
+///|
+fn responses_stream_response_has_tool_use(
+  response_obj : Map[String, Json],
+) -> Bool {
+  match response_obj.get("output") {
+    Some(Array(output)) =>
+      output
+      .iter()
+      .any(fn(item) {
+        match item {
+          Object(item_obj) =>
+            json_string_from_map(item_obj, "type") == Some("function_call")
+          _ => false
+        }
+      })
+    _ => false
+  }
+}
+
+///|
+fn responses_stream_incomplete_reason(
+  response_obj : Map[String, Json],
+) -> String? {
+  match response_obj.get("incomplete_details") {
+    Some(Object(details)) => json_string_from_map(details, "reason")
+    _ => None
+  }
+}
+
+///|
+fn responses_stream_stop_reason_json(
+  status : String?,
+  has_tool_use : Bool,
+  incomplete_reason : String?,
+) -> Json {
+  match status {
+    Some("completed") if has_tool_use => Json::string("tool_use")
+    Some("incomplete") =>
+      match incomplete_reason {
+        Some("max_output_tokens") | Some("max_tokens") =>
+          Json::string("max_tokens")
+        None => Json::string("max_tokens")
+        _ => Json::string("end_turn")
+      }
+    Some(_) => Json::string("end_turn")
+    None => Json::null()
   }
 }
