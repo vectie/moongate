@@ -127,6 +127,110 @@ test "usage query helpers parse ccs auto failover boolean parameters" {
 }
 
 ///|
+test "ccs settings defaults mirror desktop command payloads" {
+  guard ccs_default_app_settings_json() is Object(settings) else {
+    fail("expected settings object")
+  }
+  assert_eq(proxy_json_bool(settings, "showInTray"), Some(true))
+  assert_eq(proxy_json_bool(settings, "launchOnStartup"), Some(false))
+  assert_eq(json_string_from_map(settings, "skillSyncMethod"), Some("auto"))
+
+  guard ccs_default_rectifier_config_json() is Object(rectifier) else {
+    fail("expected rectifier object")
+  }
+  assert_eq(proxy_json_bool(rectifier, "enabled"), Some(true))
+  assert_eq(proxy_json_bool(rectifier, "requestThinkingBudget"), Some(true))
+
+  guard ccs_default_optimizer_config_json() is Object(optimizer) else {
+    fail("expected optimizer object")
+  }
+  assert_eq(proxy_json_bool(optimizer, "enabled"), Some(false))
+  assert_eq(json_string_from_map(optimizer, "cacheTtl"), Some("1h"))
+
+  guard ccs_default_copilot_optimizer_config_json() is Object(copilot) else {
+    fail("expected copilot object")
+  }
+  assert_eq(proxy_json_bool(copilot, "warmupDowngrade"), Some(true))
+  assert_eq(json_string_from_map(copilot, "warmupModel"), Some("gpt-5-mini"))
+}
+
+///|
+test "ccs save settings merge preserves omitted sync secrets" {
+  let existing = {
+    "webdavSync": {
+      "baseUrl": Json::string("https://dav.example.com"),
+      "username": Json::string("alice"),
+      "password": Json::string("secret"),
+    }.to_json(),
+    "s3Sync": {
+      "bucket": Json::string("bucket"),
+      "secretAccessKey": Json::string("s3-secret"),
+    }.to_json(),
+    "localMigrations": {
+      "codexProviderTemplateV1": {
+        "completedAt": Json::string("2026-01-01T00:00:00Z"),
+      }.to_json(),
+    }.to_json(),
+  }.to_json()
+  let incoming = {
+    "webdavSync": {
+      "baseUrl": Json::string("https://dav.example.com"),
+      "username": Json::string("alice"),
+      "password": Json::string(""),
+    }.to_json(),
+    "s3Sync": {
+      "bucket": Json::string("bucket"),
+      "secretAccessKey": Json::string(""),
+    }.to_json(),
+  }.to_json()
+  guard ccs_merge_settings_for_save(incoming, existing) is Object(merged) else {
+    fail("expected merged settings")
+  }
+  guard merged.get("webdavSync") is Some(Object(webdav)) else {
+    fail("expected webdav sync")
+  }
+  assert_eq(json_string_from_map(webdav, "password"), Some("secret"))
+  guard merged.get("s3Sync") is Some(Object(s3)) else {
+    fail("expected s3 sync")
+  }
+  assert_eq(json_string_from_map(s3, "secretAccessKey"), Some("s3-secret"))
+  assert_true(merged.get("localMigrations") is Some(_))
+}
+
+///|
+test "ccs settings config query builders update defaults" {
+  guard ccs_rectifier_config_from_request(
+      "/set_rectifier_config?requestThinkingSignature=false",
+      None,
+      ccs_default_rectifier_config_json(),
+    )
+    is Object(rectifier) else {
+    fail("expected rectifier")
+  }
+  assert_eq(proxy_json_bool(rectifier, "requestThinkingSignature"), Some(false))
+
+  let optimizer = ccs_optimizer_config_from_request(
+    "/set_optimizer_config?enabled=true&cacheTtl=5m",
+    None,
+    ccs_default_optimizer_config_json(),
+  )
+  assert_true(ccs_optimizer_cache_ttl_valid(optimizer))
+  let invalid = ccs_optimizer_config_from_request(
+    "/set_optimizer_config?cacheTtl=30m",
+    None,
+    ccs_default_optimizer_config_json(),
+  )
+  assert_false(ccs_optimizer_cache_ttl_valid(invalid))
+}
+
+///|
+test "ccs claude plugin detection matches managed primary api key" {
+  assert_true(ccs_json_primary_api_key_any("{\"primaryApiKey\":\"any\"}"))
+  assert_false(ccs_json_primary_api_key_any("{\"primaryApiKey\":\"real\"}"))
+  assert_false(ccs_json_primary_api_key_any("not-json"))
+}
+
+///|
 test "provider command helpers parse ccs sort and endpoint test payloads" {
   let updates = provider_sort_updates_from_request(
     "/update_providers_sort_order?app=codex&id=custom&sortIndex=2",

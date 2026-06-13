@@ -333,6 +333,16 @@ pub struct Gateway {
   config_snippets : Map[String, String]
   mcp_servers : Map[String, Json]
   prompts : Map[String, Json]
+  mut app_settings : Json
+  mut app_config_dir_override : String?
+  mut auto_launch_enabled : Bool
+  mut rectifier_config_json : Json
+  mut optimizer_config_json : Json
+  mut copilot_optimizer_config_json : Json
+  mut log_config_json : Json
+  mut claude_plugin_config : String?
+  mut claude_plugin_applied : Bool
+  mut claude_onboarding_skipped : Bool
   mut stream_check_config : StreamCheckConfig
   logger : @pino.Logger
   started_at_ms : Int

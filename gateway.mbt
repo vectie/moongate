@@ -34,6 +34,16 @@ pub struct Gateway {
   config_snippets : Map[String, String]
   mcp_servers : Map[String, Json]
   prompts : Map[String, Json]
+  mut app_settings : Json
+  mut app_config_dir_override : String?
+  mut auto_launch_enabled : Bool
+  mut rectifier_config_json : Json
+  mut optimizer_config_json : Json
+  mut copilot_optimizer_config_json : Json
+  mut log_config_json : Json
+  mut claude_plugin_config : String?
+  mut claude_plugin_applied : Bool
+  mut claude_onboarding_skipped : Bool
   mut stream_check_config : StreamCheckConfig
   logger : @pino.Logger
   started_at_ms : Int
@@ -81,6 +91,16 @@ pub fn Gateway::new(
     config_snippets: Map([], capacity=8),
     mcp_servers: Map([], capacity=16),
     prompts: Map([], capacity=16),
+    app_settings: ccs_default_app_settings_json(),
+    app_config_dir_override: None,
+    auto_launch_enabled: false,
+    rectifier_config_json: ccs_default_rectifier_config_json(),
+    optimizer_config_json: ccs_default_optimizer_config_json(),
+    copilot_optimizer_config_json: ccs_default_copilot_optimizer_config_json(),
+    log_config_json: ccs_default_log_config_json(),
+    claude_plugin_config: None,
+    claude_plugin_applied: false,
+    claude_onboarding_skipped: false,
     stream_check_config: StreamCheckConfig::default(),
     logger,
     started_at_ms: @async.now().to_int(),
@@ -760,6 +780,55 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/proxy/global-config", (r, w) => {
     self.handle_proxy_update_global_config(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_settings", (_, w) => {
+    self.handle_get_settings(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/save_settings", (r, w) => {
+    self.handle_save_settings(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/restart_app", (_, w) => {
+    self.handle_restart_app(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/install_update_and_restart", (_, w) => {
+    self.handle_install_update_and_restart(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_app_config_dir_override", (_, w) => {
+    self.handle_get_app_config_dir_override(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_app_config_dir_override", (r, w) => {
+    self.handle_set_app_config_dir_override(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_auto_launch", (r, w) => {
+    self.handle_set_auto_launch(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_auto_launch_status", (_, w) => {
+    self.handle_get_auto_launch_status(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_rectifier_config", (_, w) => {
+    self.handle_get_rectifier_config(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_rectifier_config", (r, w) => {
+    self.handle_set_rectifier_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_optimizer_config", (_, w) => {
+    self.handle_get_optimizer_config(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_optimizer_config", (r, w) => {
+    self.handle_set_optimizer_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_copilot_optimizer_config", (_, w) => {
+    self.handle_get_copilot_optimizer_config(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_copilot_optimizer_config", (
+    r,
+    w,
+  ) => self.handle_set_copilot_optimizer_config(r, w))
+  router.add_handler(@httpx.Method::Get, "/get_log_config", (_, w) => {
+    self.handle_get_log_config(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_log_config", (r, w) => {
+    self.handle_set_log_config(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_global_proxy_url", (_, w) => {
     self.handle_get_global_proxy_url(w)
   })
@@ -918,6 +987,26 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/read_live_provider_settings", (r, w) => {
     self.handle_read_live_provider_settings(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_claude_plugin_status", (_, w) => {
+    self.handle_get_claude_plugin_status(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/read_claude_plugin_config", (_, w) => {
+    self.handle_read_claude_plugin_config(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/apply_claude_plugin_config", (r, w) => {
+    self.handle_apply_claude_plugin_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/is_claude_plugin_applied", (_, w) => {
+    self.handle_is_claude_plugin_applied(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/apply_claude_onboarding_skip", (
+    _,
+    w,
+  ) => self.handle_apply_claude_onboarding_skip(w))
+  router.add_handler(@httpx.Method::Post, "/clear_claude_onboarding_skip", (
+    _,
+    w,
+  ) => self.handle_clear_claude_onboarding_skip(w))
   router.add_handler(@httpx.Method::Get, "/get_opencode_live_provider_ids", (
     _,
     w,
@@ -3229,6 +3318,299 @@ fn ccs_app_config_path() -> String {
 }
 
 ///|
+fn ccs_default_app_settings_json() -> Json {
+  {
+    "showInTray": Json::boolean(true),
+    "minimizeToTrayOnClose": Json::boolean(true),
+    "useAppWindowControls": Json::boolean(false),
+    "enableClaudePluginIntegration": Json::boolean(false),
+    "skipClaudeOnboarding": Json::boolean(false),
+    "launchOnStartup": Json::boolean(false),
+    "silentStartup": Json::boolean(false),
+    "enableLocalProxy": Json::boolean(false),
+    "enableFailoverToggle": Json::boolean(false),
+    "preserveCodexOfficialAuthOnSwitch": Json::boolean(false),
+    "skillSyncMethod": Json::string("auto"),
+    "skillStorageLocation": Json::string("cc_switch"),
+  }.to_json()
+}
+
+///|
+fn ccs_default_rectifier_config_json() -> Json {
+  {
+    "enabled": Json::boolean(true),
+    "requestThinkingSignature": Json::boolean(true),
+    "requestThinkingBudget": Json::boolean(true),
+    "requestMediaFallback": Json::boolean(true),
+    "requestMediaHeuristic": Json::boolean(true),
+  }.to_json()
+}
+
+///|
+fn ccs_default_optimizer_config_json() -> Json {
+  {
+    "enabled": Json::boolean(false),
+    "thinkingOptimizer": Json::boolean(true),
+    "cacheInjection": Json::boolean(true),
+    "cacheTtl": Json::string("1h"),
+  }.to_json()
+}
+
+///|
+fn ccs_default_copilot_optimizer_config_json() -> Json {
+  {
+    "enabled": Json::boolean(true),
+    "requestClassification": Json::boolean(true),
+    "toolResultMerging": Json::boolean(true),
+    "compactDetection": Json::boolean(true),
+    "deterministicRequestId": Json::boolean(true),
+    "subagentDetection": Json::boolean(true),
+    "warmupDowngrade": Json::boolean(true),
+    "warmupModel": Json::string("gpt-5-mini"),
+    "stripThinking": Json::boolean(true),
+  }.to_json()
+}
+
+///|
+fn ccs_default_log_config_json() -> Json {
+  { "enabled": Json::boolean(true), "level": Json::string("info") }.to_json()
+}
+
+///|
+fn ccs_claude_plugin_config_path() -> String {
+  @pathx.join(ccs_config_dir("claude"), "config.json")
+}
+
+///|
+fn ccs_merge_settings_for_save(incoming : Json, existing : Json) -> Json {
+  guard incoming is Object(incoming_obj) else { return existing }
+  guard existing is Object(existing_obj) else { return incoming }
+  let next = incoming_obj
+  ccs_preserve_missing_settings_object(next, existing_obj, "webdavSync")
+  ccs_preserve_missing_settings_object(next, existing_obj, "webdav_sync")
+  ccs_preserve_missing_settings_object(next, existing_obj, "s3Sync")
+  ccs_preserve_missing_settings_object(next, existing_obj, "s3_sync")
+  ccs_preserve_missing_settings_object(next, existing_obj, "localMigrations")
+  ccs_preserve_missing_settings_object(next, existing_obj, "local_migrations")
+  ccs_preserve_secret_if_empty(next, existing_obj, "webdavSync", "password")
+  ccs_preserve_secret_if_empty(next, existing_obj, "webdav_sync", "password")
+  ccs_preserve_secret_if_empty(next, existing_obj, "s3Sync", "secretAccessKey")
+  ccs_preserve_secret_if_empty(
+    next, existing_obj, "s3_sync", "secret_access_key",
+  )
+  Json::object(next)
+}
+
+///|
+fn ccs_preserve_missing_settings_object(
+  incoming : Map[String, Json],
+  existing : Map[String, Json],
+  key : String,
+) -> Unit {
+  if incoming.get(key) is None {
+    match existing.get(key) {
+      Some(value) => incoming[key] = value
+      None => ()
+    }
+  }
+}
+
+///|
+fn ccs_preserve_secret_if_empty(
+  incoming : Map[String, Json],
+  existing : Map[String, Json],
+  object_key : String,
+  secret_key : String,
+) -> Unit {
+  guard incoming.get(object_key) is Some(Object(incoming_obj)) else { return }
+  guard existing.get(object_key) is Some(Object(existing_obj)) else { return }
+  let incoming_secret = json_string_from_map(incoming_obj, secret_key).unwrap_or(
+    "",
+  )
+  let existing_secret = json_string_from_map(existing_obj, secret_key).unwrap_or(
+    "",
+  )
+  if incoming_secret.is_empty() && !existing_secret.is_empty() {
+    incoming_obj[secret_key] = Json::string(existing_secret)
+    incoming[object_key] = Json::object(incoming_obj)
+  }
+}
+
+///|
+fn ccs_settings_with_bool(settings : Json, key : String, value : Bool) -> Json {
+  match settings {
+    Object(obj) => {
+      obj[key] = Json::boolean(value)
+      Json::object(obj)
+    }
+    _ => {
+      let obj : Map[String, Json] = {}
+      obj[key] = Json::boolean(value)
+      Json::object(obj)
+    }
+  }
+}
+
+///|
+fn ccs_optional_path_from_request(path : StringView, body : Json?) -> String? {
+  match proxy_string_request(path, body, ["path", "appConfigDir"]) {
+    Some(value) if !value.trim().is_empty() => return Some(value)
+    Some(_) => return None
+    None => ()
+  }
+  match body {
+    Some(Object(obj)) =>
+      match obj.get("path") {
+        Some(Null) => None
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn ccs_json_config_from_request(
+  path : StringView,
+  body : Json?,
+  current : Json,
+  setters : Array[(String, Array[String], String)],
+) -> Json {
+  let base = match proxy_embedded_config(body) {
+    Some(Object(obj)) => Json::object(obj)
+    Some(json) => json
+    None => current
+  }
+  match base {
+    Object(obj) => {
+      for setter in setters {
+        let (field, keys, kind) = setter
+        match kind {
+          "bool" =>
+            match proxy_bool_request(path, body, keys) {
+              Some(value) => obj[field] = Json::boolean(value)
+              None => ()
+            }
+          "string" =>
+            match proxy_string_request(path, body, keys) {
+              Some(value) => obj[field] = Json::string(value)
+              None => ()
+            }
+          _ => ()
+        }
+      }
+      Json::object(obj)
+    }
+    _ => base
+  }
+}
+
+///|
+fn ccs_rectifier_config_from_request(
+  path : StringView,
+  body : Json?,
+  current : Json,
+) -> Json {
+  ccs_json_config_from_request(path, body, current, [
+    ("enabled", ["enabled"], "bool"),
+    (
+      "requestThinkingSignature",
+      ["requestThinkingSignature", "request_thinking_signature"],
+      "bool",
+    ),
+    (
+      "requestThinkingBudget",
+      ["requestThinkingBudget", "request_thinking_budget"],
+      "bool",
+    ),
+    (
+      "requestMediaFallback",
+      ["requestMediaFallback", "request_media_fallback"],
+      "bool",
+    ),
+    (
+      "requestMediaHeuristic",
+      ["requestMediaHeuristic", "request_media_heuristic"],
+      "bool",
+    ),
+  ])
+}
+
+///|
+fn ccs_optimizer_config_from_request(
+  path : StringView,
+  body : Json?,
+  current : Json,
+) -> Json {
+  ccs_json_config_from_request(path, body, current, [
+    ("enabled", ["enabled"], "bool"),
+    ("thinkingOptimizer", ["thinkingOptimizer", "thinking_optimizer"], "bool"),
+    ("cacheInjection", ["cacheInjection", "cache_injection"], "bool"),
+    ("cacheTtl", ["cacheTtl", "cache_ttl"], "string"),
+  ])
+}
+
+///|
+fn ccs_copilot_optimizer_config_from_request(
+  path : StringView,
+  body : Json?,
+  current : Json,
+) -> Json {
+  ccs_json_config_from_request(path, body, current, [
+    ("enabled", ["enabled"], "bool"),
+    (
+      "requestClassification",
+      ["requestClassification", "request_classification"],
+      "bool",
+    ),
+    ("toolResultMerging", ["toolResultMerging", "tool_result_merging"], "bool"),
+    ("compactDetection", ["compactDetection", "compact_detection"], "bool"),
+    (
+      "deterministicRequestId",
+      ["deterministicRequestId", "deterministic_request_id"],
+      "bool",
+    ),
+    ("subagentDetection", ["subagentDetection", "subagent_detection"], "bool"),
+    ("warmupDowngrade", ["warmupDowngrade", "warmup_downgrade"], "bool"),
+    ("warmupModel", ["warmupModel", "warmup_model"], "string"),
+    ("stripThinking", ["stripThinking", "strip_thinking"], "bool"),
+  ])
+}
+
+///|
+fn ccs_log_config_from_request(
+  path : StringView,
+  body : Json?,
+  current : Json,
+) -> Json {
+  ccs_json_config_from_request(path, body, current, [
+    ("enabled", ["enabled"], "bool"),
+    ("level", ["level"], "string"),
+  ])
+}
+
+///|
+fn ccs_optimizer_cache_ttl_valid(config : Json) -> Bool {
+  guard config is Object(obj) else { return true }
+  match json_string_from_map_any(obj, ["cacheTtl", "cache_ttl"]) {
+    Some("5m") | Some("1h") | None => true
+    _ => false
+  }
+}
+
+///|
+fn ccs_json_primary_api_key_any(content : String) -> Bool {
+  let parsed : Result[Json, Error] = try? @json.parse(content)
+  match parsed {
+    Ok(Object(obj)) =>
+      match json_string_from_map(obj, "primaryApiKey") {
+        Some(value) => value == "any"
+        None => false
+      }
+    _ => false
+  }
+}
+
+///|
 async fn ccs_config_status_json(app : String) -> Json {
   let normalized = ccs_normalize_app_type(app)
   let path = match normalized {
@@ -3767,6 +4149,210 @@ async fn Gateway::handle_open_app_config_folder(
       "path": Json::string(ccs_app_config_dir()),
     }.to_json(),
   )
+}
+
+///|
+async fn Gateway::handle_get_settings(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.app_settings)
+}
+
+///|
+async fn Gateway::handle_save_settings(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match proxy_json_body(r) {
+    Some(settings) => {
+      self.app_settings = ccs_merge_settings_for_save(
+        settings,
+        self.app_settings,
+      )
+      match self.app_settings {
+        Object(obj) => {
+          match proxy_json_bool(obj, "launchOnStartup") {
+            Some(enabled) => self.auto_launch_enabled = enabled
+            None => ()
+          }
+          match proxy_json_bool(obj, "skipClaudeOnboarding") {
+            Some(skipped) => self.claude_onboarding_skipped = skipped
+            None => ()
+          }
+        }
+        _ => ()
+      }
+      write_usage_json(w, Json::boolean(true))
+    }
+    None => write_usage_bad_request(w, "invalid_settings")
+  }
+}
+
+///|
+async fn Gateway::handle_restart_app(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_install_update_and_restart(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, Json::boolean(false))
+}
+
+///|
+async fn Gateway::handle_get_app_config_dir_override(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.app_config_dir_override {
+    Some(path) => write_usage_json(w, Json::string(path))
+    None => write_usage_json(w, Json::null())
+  }
+}
+
+///|
+async fn Gateway::handle_set_app_config_dir_override(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  self.app_config_dir_override = ccs_optional_path_from_request(r.path, body)
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_set_auto_launch(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
+    write_usage_bad_request(w, "invalid_auto_launch")
+    return
+  }
+  self.auto_launch_enabled = enabled
+  self.app_settings = ccs_settings_with_bool(
+    self.app_settings,
+    "launchOnStartup",
+    enabled,
+  )
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_get_auto_launch_status(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, Json::boolean(self.auto_launch_enabled))
+}
+
+///|
+async fn Gateway::handle_get_rectifier_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.rectifier_config_json)
+}
+
+///|
+async fn Gateway::handle_set_rectifier_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  self.rectifier_config_json = ccs_rectifier_config_from_request(
+    r.path,
+    body,
+    self.rectifier_config_json,
+  )
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_get_optimizer_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.optimizer_config_json)
+}
+
+///|
+async fn Gateway::handle_set_optimizer_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = ccs_optimizer_config_from_request(
+    r.path,
+    body,
+    self.optimizer_config_json,
+  )
+  if !ccs_optimizer_cache_ttl_valid(config) {
+    write_usage_bad_request(w, "invalid_optimizer_cache_ttl")
+    return
+  }
+  self.optimizer_config_json = config
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_get_copilot_optimizer_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.copilot_optimizer_config_json)
+}
+
+///|
+async fn Gateway::handle_set_copilot_optimizer_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  self.copilot_optimizer_config_json = ccs_copilot_optimizer_config_from_request(
+    r.path,
+    body,
+    self.copilot_optimizer_config_json,
+  )
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_get_log_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.log_config_json)
+}
+
+///|
+async fn Gateway::handle_set_log_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  self.log_config_json = ccs_log_config_from_request(
+    r.path,
+    body,
+    self.log_config_json,
+  )
+  write_usage_json(w, Json::boolean(true))
 }
 
 ///|
@@ -5146,6 +5732,117 @@ async fn Gateway::handle_read_live_provider_settings(
     w,
     self.provider_router.read_live_provider_settings(app_type),
   )
+}
+
+///|
+async fn Gateway::handle_get_claude_plugin_status(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(
+    w,
+    {
+      "exists": Json::boolean(
+        self.claude_plugin_config is Some(_) ||
+        @fsx.exists_as_file(ccs_claude_plugin_config_path()),
+      ),
+      "path": Json::string(ccs_claude_plugin_config_path()),
+    }.to_json(),
+  )
+}
+
+///|
+async fn Gateway::handle_read_claude_plugin_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.claude_plugin_config {
+    Some(content) => write_usage_json(w, Json::string(content))
+    None =>
+      if @fsx.exists_as_file(ccs_claude_plugin_config_path()) {
+        let content = @fsx.read_file(ccs_claude_plugin_config_path()) catch {
+          _ => {
+            write_usage_json(w, Json::null())
+            return
+          }
+        }
+        write_usage_json(w, Json::string(content))
+      } else {
+        write_usage_json(w, Json::null())
+      }
+  }
+}
+
+///|
+async fn Gateway::handle_apply_claude_plugin_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let official = proxy_bool_request(r.path, body, ["official"]).unwrap_or(false)
+  if official {
+    self.claude_plugin_applied = false
+    self.claude_plugin_config = None
+  } else {
+    self.claude_plugin_applied = true
+    self.claude_plugin_config = Some("{\n  \"primaryApiKey\": \"any\"\n}\n")
+  }
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_is_claude_plugin_applied(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.claude_plugin_config {
+    Some(content) =>
+      write_usage_json(w, Json::boolean(ccs_json_primary_api_key_any(content)))
+    None =>
+      if @fsx.exists_as_file(ccs_claude_plugin_config_path()) {
+        let content = @fsx.read_file(ccs_claude_plugin_config_path()) catch {
+          _ => {
+            write_usage_json(w, Json::boolean(false))
+            return
+          }
+        }
+        write_usage_json(
+          w,
+          Json::boolean(ccs_json_primary_api_key_any(content)),
+        )
+      } else {
+        write_usage_json(w, Json::boolean(self.claude_plugin_applied))
+      }
+  }
+}
+
+///|
+async fn Gateway::handle_apply_claude_onboarding_skip(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.claude_onboarding_skipped = true
+  self.app_settings = ccs_settings_with_bool(
+    self.app_settings,
+    "skipClaudeOnboarding",
+    true,
+  )
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_clear_claude_onboarding_skip(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.claude_onboarding_skipped = false
+  self.app_settings = ccs_settings_with_bool(
+    self.app_settings,
+    "skipClaudeOnboarding",
+    false,
+  )
+  write_usage_json(w, Json::boolean(true))
 }
 
 ///|

@@ -48,6 +48,40 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_proxy_global_config(arr)
     ["update_global_proxy_config", ..] | ["update-global-proxy-config", ..] =>
       update_proxy_global_config(arr)
+    ["get_settings", ..] | ["get-settings", ..] =>
+      check_usage_endpoint(arr, "/get_settings")
+    ["save_settings", ..] | ["save-settings", ..] => save_settings(arr)
+    ["restart_app", ..] | ["restart-app", ..] =>
+      check_json_post_endpoint(arr, "/restart_app", "Settings")
+    ["install_update_and_restart", ..] | ["install-update-and-restart", ..] =>
+      check_json_post_endpoint(arr, "/install_update_and_restart", "Settings")
+    ["get_app_config_dir_override", ..] | ["get-app-config-dir-override", ..] =>
+      check_usage_endpoint(arr, "/get_app_config_dir_override")
+    ["set_app_config_dir_override", ..] | ["set-app-config-dir-override", ..] =>
+      set_app_config_dir_override(arr)
+    ["set_auto_launch", ..] | ["set-auto-launch", ..] => set_auto_launch(arr)
+    ["get_auto_launch_status", ..] | ["get-auto-launch-status", ..] =>
+      check_usage_endpoint(arr, "/get_auto_launch_status")
+    ["get_rectifier_config", ..] | ["get-rectifier-config", ..] =>
+      check_usage_endpoint(arr, "/get_rectifier_config")
+    ["set_rectifier_config", ..] | ["set-rectifier-config", ..] =>
+      set_ccs_json_config(arr, "/set_rectifier_config", "--config", "Settings")
+    ["get_optimizer_config", ..] | ["get-optimizer-config", ..] =>
+      check_usage_endpoint(arr, "/get_optimizer_config")
+    ["set_optimizer_config", ..] | ["set-optimizer-config", ..] =>
+      set_ccs_json_config(arr, "/set_optimizer_config", "--config", "Settings")
+    ["get_copilot_optimizer_config", ..]
+    | ["get-copilot-optimizer-config", ..] =>
+      check_usage_endpoint(arr, "/get_copilot_optimizer_config")
+    ["set_copilot_optimizer_config", ..]
+    | ["set-copilot-optimizer-config", ..] =>
+      set_ccs_json_config(
+        arr, "/set_copilot_optimizer_config", "--config", "Settings",
+      )
+    ["get_log_config", ..] | ["get-log-config", ..] =>
+      check_usage_endpoint(arr, "/get_log_config")
+    ["set_log_config", ..] | ["set-log-config", ..] =>
+      set_ccs_json_config(arr, "/set_log_config", "--config", "Settings")
     ["get_global_proxy_url", ..] | ["get-global-proxy-url", ..] =>
       check_usage_endpoint(arr, "/get_global_proxy_url")
     ["set_global_proxy_url", ..] | ["set-global-proxy-url", ..] =>
@@ -116,6 +150,20 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["switch_provider", ..] | ["switch-provider", ..] => switch_provider(arr)
     ["read_live_provider_settings", ..] | ["read-live-provider-settings", ..] =>
       check_live_provider_settings(arr)
+    ["get_claude_plugin_status", ..] | ["get-claude-plugin-status", ..] =>
+      check_usage_endpoint(arr, "/get_claude_plugin_status")
+    ["read_claude_plugin_config", ..] | ["read-claude-plugin-config", ..] =>
+      check_usage_endpoint(arr, "/read_claude_plugin_config")
+    ["apply_claude_plugin_config", ..] | ["apply-claude-plugin-config", ..] =>
+      apply_claude_plugin_config(arr)
+    ["is_claude_plugin_applied", ..] | ["is-claude-plugin-applied", ..] =>
+      check_usage_endpoint(arr, "/is_claude_plugin_applied")
+    ["apply_claude_onboarding_skip", ..]
+    | ["apply-claude-onboarding-skip", ..] =>
+      check_json_post_endpoint(arr, "/apply_claude_onboarding_skip", "Plugin")
+    ["clear_claude_onboarding_skip", ..]
+    | ["clear-claude-onboarding-skip", ..] =>
+      check_json_post_endpoint(arr, "/clear_claude_onboarding_skip", "Plugin")
     ["get_opencode_live_provider_ids", ..]
     | ["get-opencode-live-provider-ids", ..] =>
       check_named_live_provider_ids(arr, "opencode")
@@ -432,6 +480,43 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       switch_provider(arr)
     ["provider", "live-settings", ..] | ["providers", "live-settings", ..] =>
       check_live_provider_settings(arr)
+    ["settings", "get", ..] => check_usage_endpoint(arr, "/get_settings")
+    ["settings", "save", ..] => save_settings(arr)
+    ["settings", "app-config-dir", "set", ..] =>
+      set_app_config_dir_override(arr)
+    ["settings", "app-config-dir", ..] =>
+      check_usage_endpoint(arr, "/get_app_config_dir_override")
+    ["settings", "auto-launch", "set", ..] => set_auto_launch(arr)
+    ["settings", "auto-launch", ..] =>
+      check_usage_endpoint(arr, "/get_auto_launch_status")
+    ["settings", "rectifier", "set", ..] =>
+      set_ccs_json_config(arr, "/set_rectifier_config", "--config", "Settings")
+    ["settings", "rectifier", ..] =>
+      check_usage_endpoint(arr, "/get_rectifier_config")
+    ["settings", "optimizer", "set", ..] =>
+      set_ccs_json_config(arr, "/set_optimizer_config", "--config", "Settings")
+    ["settings", "optimizer", ..] =>
+      check_usage_endpoint(arr, "/get_optimizer_config")
+    ["settings", "copilot-optimizer", "set", ..] =>
+      set_ccs_json_config(
+        arr, "/set_copilot_optimizer_config", "--config", "Settings",
+      )
+    ["settings", "copilot-optimizer", ..] =>
+      check_usage_endpoint(arr, "/get_copilot_optimizer_config")
+    ["settings", "log", "set", ..] =>
+      set_ccs_json_config(arr, "/set_log_config", "--config", "Settings")
+    ["settings", "log", ..] => check_usage_endpoint(arr, "/get_log_config")
+    ["plugin", "claude", "status", ..] =>
+      check_usage_endpoint(arr, "/get_claude_plugin_status")
+    ["plugin", "claude", "config", ..] =>
+      check_usage_endpoint(arr, "/read_claude_plugin_config")
+    ["plugin", "claude", "apply", ..] => apply_claude_plugin_config(arr)
+    ["plugin", "claude", "applied", ..] =>
+      check_usage_endpoint(arr, "/is_claude_plugin_applied")
+    ["plugin", "claude", "onboarding-skip", ..] =>
+      check_json_post_endpoint(arr, "/apply_claude_onboarding_skip", "Plugin")
+    ["plugin", "claude", "onboarding-clear", ..] =>
+      check_json_post_endpoint(arr, "/clear_claude_onboarding_skip", "Plugin")
     ["provider", "live-ids", ..] | ["providers", "live-ids", ..] =>
       check_provider_live_ids(arr)
     ["provider", "live-get", ..] | ["providers", "live-get", ..] =>
@@ -612,6 +697,25 @@ fn print_help() -> Unit {
   println("  provider endpoints remove  Alias for ccs remove_custom_endpoint")
   println(
     "  provider endpoints touch   Alias for ccs update_endpoint_last_used",
+  )
+  println(
+    "  settings get/save          Alias for ccs get_settings/save_settings",
+  )
+  println(
+    "  settings app-config-dir    Show or set ccs app_config_dir override",
+  )
+  println("  settings auto-launch       Show or set ccs auto launch state")
+  println("  settings rectifier         Show or set ccs rectifier config")
+  println("  settings optimizer         Show or set ccs optimizer config")
+  println(
+    "  settings copilot-optimizer Show or set ccs Copilot optimizer config",
+  )
+  println("  settings log               Show or set ccs log config")
+  println(
+    "  plugin claude status/config/apply/applied  Manage ccs Claude plugin state",
+  )
+  println(
+    "  plugin claude onboarding-skip/onboarding-clear  Toggle onboarding skip",
   )
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage get-request-logs  Alias for ccs get_request_logs")
@@ -1254,6 +1358,60 @@ async fn set_suite_json_config(
 }
 
 ///|
+async fn save_settings(args : Array[String]) -> Unit {
+  guard parse_string_arg_any(args, "--settings", "--config") is Some(settings) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --settings JSON")
+    return
+  }
+  post_json_body_endpoint(args, "/save_settings", settings, "Settings")
+}
+
+///|
+async fn set_ccs_json_config(
+  args : Array[String],
+  base_path : String,
+  flag : String,
+  label : String,
+) -> Unit {
+  guard ccs_json_config_path(args, base_path, flag) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required \{flag} JSON or config field flags")
+    return
+  }
+  check_json_post_endpoint(args, path, label)
+}
+
+///|
+async fn set_app_config_dir_override(args : Array[String]) -> Unit {
+  guard app_config_dir_override_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --path or --clear")
+    return
+  }
+  check_json_post_endpoint(args, path, "Settings")
+}
+
+///|
+async fn set_auto_launch(args : Array[String]) -> Unit {
+  guard set_auto_launch_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --enabled")
+    return
+  }
+  check_json_post_endpoint(args, path, "Settings")
+}
+
+///|
+async fn apply_claude_plugin_config(args : Array[String]) -> Unit {
+  check_json_post_endpoint(
+    args,
+    apply_claude_plugin_config_path(args),
+    "Plugin",
+  )
+}
+
+///|
 async fn check_hermes_memory(args : Array[String]) -> Unit {
   guard hermes_kind_path(args, "/get_hermes_memory") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1743,6 +1901,81 @@ fn config_app_arg(args : Array[String]) -> String {
 ///|
 fn config_app_path(args : Array[String], base_path : String) -> String {
   "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
+}
+
+///|
+fn app_config_dir_override_path(args : Array[String]) -> String? {
+  match parse_string_arg(args, "--path") {
+    Some(path) =>
+      Some("/set_app_config_dir_override?\{cli_query_pair("path", path)}")
+    None =>
+      match parse_string_arg(args, "--clear") {
+        Some(value) =>
+          if value == "true" || value == "1" || value == "yes" {
+            Some("/set_app_config_dir_override?path=")
+          } else {
+            None
+          }
+        None => None
+      }
+  }
+}
+
+///|
+fn set_auto_launch_path(args : Array[String]) -> String? {
+  match parse_string_arg(args, "--enabled") {
+    Some(enabled) =>
+      Some("/set_auto_launch?\{cli_query_pair("enabled", enabled)}")
+    None => None
+  }
+}
+
+///|
+fn ccs_json_config_path(
+  args : Array[String],
+  base_path : String,
+  flag : String,
+) -> String? {
+  match parse_string_arg(args, flag) {
+    Some(config) =>
+      return Some("\{base_path}?\{cli_query_pair("config", config)}")
+    None => ()
+  }
+  let query : Array[String] = []
+  for flag_name in ccs_json_config_flag_names() {
+    match parse_string_arg(args, "--\{flag_name}") {
+      Some(value) => query.push(cli_query_pair(flag_name, value))
+      None => ()
+    }
+  }
+  if query.is_empty() {
+    None
+  } else {
+    Some("\{base_path}?\{query.join("&")}")
+  }
+}
+
+///|
+fn ccs_json_config_flag_names() -> Array[String] {
+  [
+    "enabled", "requestThinkingSignature", "request_thinking_signature", "requestThinkingBudget",
+    "request_thinking_budget", "requestMediaFallback", "request_media_fallback",
+    "requestMediaHeuristic", "request_media_heuristic", "thinkingOptimizer", "thinking_optimizer",
+    "cacheInjection", "cache_injection", "cacheTtl", "cache_ttl", "requestClassification",
+    "request_classification", "toolResultMerging", "tool_result_merging", "compactDetection",
+    "compact_detection", "deterministicRequestId", "deterministic_request_id", "subagentDetection",
+    "subagent_detection", "warmupDowngrade", "warmup_downgrade", "warmupModel", "warmup_model",
+    "stripThinking", "strip_thinking", "level",
+  ]
+}
+
+///|
+fn apply_claude_plugin_config_path(args : Array[String]) -> String {
+  match parse_string_arg(args, "--official") {
+    Some(official) =>
+      "/apply_claude_plugin_config?\{cli_query_pair("official", official)}"
+    None => "/apply_claude_plugin_config"
+  }
 }
 
 ///|
@@ -2747,6 +2980,32 @@ async fn check_json_post_endpoint(
     let client = @http.Client::new(url, headers={})
     defer client.close()
     let response = client.post(path, "{}")
+    if response.code == 200 {
+      let body = client.read_all().text()
+      println(body)
+    } else {
+      logger.error("\{label} update failed: \{response.code}")
+    }
+  } catch {
+    err => logger.error("\{label} update failed: \{err}")
+  }
+}
+
+///|
+async fn post_json_body_endpoint(
+  args : Array[String],
+  path : String,
+  body : String,
+  label : String,
+) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
+  try {
+    let client = @http.Client::new(url, headers={
+      "Content-Type": "application/json",
+    })
+    defer client.close()
+    let response = client.post(path, body)
     if response.code == 200 {
       let body = client.read_all().text()
       println(body)

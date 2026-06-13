@@ -162,6 +162,22 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /pick_directory?defaultPath=/tmp`
 - `GET /get_app_config_path`
 - `GET /open_app_config_folder`
+- `GET /get_settings`
+- `POST /save_settings`
+- `POST /restart_app`
+- `POST /install_update_and_restart`
+- `GET /get_app_config_dir_override`
+- `POST /set_app_config_dir_override?path=/tmp/cc-switch`
+- `POST /set_auto_launch?enabled=true`
+- `GET /get_auto_launch_status`
+- `GET /get_rectifier_config`
+- `POST /set_rectifier_config?enabled=true`
+- `GET /get_optimizer_config`
+- `POST /set_optimizer_config?cacheTtl=5m`
+- `GET /get_copilot_optimizer_config`
+- `POST /set_copilot_optimizer_config?warmupModel=gpt-5-mini`
+- `GET /get_log_config`
+- `POST /set_log_config?level=debug`
 - `GET /get_claude_common_config_snippet`
 - `POST /set_claude_common_config_snippet?snippet={}`
 - `GET /get_common_config_snippet?appType=codex`
@@ -184,6 +200,12 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `DELETE|POST /delete_mcp_server?id=filesystem`
 - `POST /toggle_mcp_app?app=codex&id=filesystem&enabled=true`
 - `POST /import_mcp_from_apps`
+- `GET /get_claude_plugin_status`
+- `GET /read_claude_plugin_config`
+- `POST /apply_claude_plugin_config?official=false`
+- `GET /is_claude_plugin_applied`
+- `POST /apply_claude_onboarding_skip`
+- `POST /clear_claude_onboarding_skip`
 - `GET /get_prompts?app=codex`
 - `POST /upsert_prompt?app=codex&id=review&content=Check`
 - `DELETE|POST /delete_prompt?app=codex&id=review`
@@ -311,6 +333,15 @@ conflict commands are mirrored by `/get_config_status`, `/get_config_dir`,
 `/extract_common_config_snippet`, `/check_env_conflicts`, `/delete_env_vars`,
 and `/restore_env_backup`; standalone folder open/pick and env delete/restore
 routes are intentionally non-destructive and snippets are kept in gateway memory.
+CCS settings and Claude plugin commands are mirrored by `/get_settings`,
+`/save_settings`, `/get_rectifier_config`, `/set_rectifier_config`,
+`/get_optimizer_config`, `/set_optimizer_config`,
+`/get_copilot_optimizer_config`, `/set_copilot_optimizer_config`,
+`/get_log_config`, `/set_log_config`, and the Claude plugin/onboarding routes.
+Moonstat keeps these settings in standalone gateway state, preserves hidden
+WebDAV/S3 secrets during `save_settings` like CCS, validates optimizer
+`cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
+as deterministic local state changes instead of mutating the desktop OS.
 CCS MCP and prompt commands are mirrored by `/get_mcp_config`,
 `/upsert_mcp_server_in_config`, `/set_mcp_enabled`, `/get_mcp_servers`,
 `/toggle_mcp_app`, `/get_prompts`, `/upsert_prompt`, and related Claude-specific

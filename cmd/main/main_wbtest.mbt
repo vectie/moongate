@@ -615,6 +615,71 @@ test "top level ccs config command names build config paths" {
 }
 
 ///|
+test "top level ccs settings command names build settings paths" {
+  assert_eq(
+    app_config_dir_override_path([
+      "moonstat", "set_app_config_dir_override", "--path", "/tmp/cc switch",
+    ]),
+    Some("/set_app_config_dir_override?path=%2Ftmp%2Fcc%20switch"),
+  )
+  assert_eq(
+    app_config_dir_override_path([
+      "moonstat", "set_app_config_dir_override", "--clear", "true",
+    ]),
+    Some("/set_app_config_dir_override?path="),
+  )
+  assert_eq(
+    set_auto_launch_path(["moonstat", "set_auto_launch", "--enabled", "true"]),
+    Some("/set_auto_launch?enabled=true"),
+  )
+  assert_eq(
+    ccs_json_config_path(
+      [
+        "moonstat", "set_rectifier_config", "--requestThinkingSignature", "false",
+      ],
+      "/set_rectifier_config",
+      "--config",
+    ),
+    Some("/set_rectifier_config?requestThinkingSignature=false"),
+  )
+  assert_eq(
+    ccs_json_config_path(
+      ["moonstat", "set_optimizer_config", "--config", "{\"cacheTtl\":\"5m\"}"],
+      "/set_optimizer_config",
+      "--config",
+    ),
+    Some("/set_optimizer_config?config=%7B%22cacheTtl%22%3A%225m%22%7D"),
+  )
+  assert_eq(
+    ccs_json_config_path(
+      [
+        "moonstat", "set_copilot_optimizer_config", "--warmupModel", "gpt-5-mini",
+        "--stripThinking", "true",
+      ],
+      "/set_copilot_optimizer_config",
+      "--config",
+    ),
+    Some(
+      "/set_copilot_optimizer_config?warmupModel=gpt-5-mini&stripThinking=true",
+    ),
+  )
+}
+
+///|
+test "top level ccs plugin command names build plugin paths" {
+  assert_eq(
+    apply_claude_plugin_config_path([
+      "moonstat", "apply_claude_plugin_config", "--official", "true",
+    ]),
+    "/apply_claude_plugin_config?official=true",
+  )
+  assert_eq(
+    apply_claude_plugin_config_path(["moonstat", "apply_claude_plugin_config"]),
+    "/apply_claude_plugin_config",
+  )
+}
+
+///|
 test "top level ccs mcp command names build mcp paths" {
   assert_eq(
     mcp_app_path(
