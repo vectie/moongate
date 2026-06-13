@@ -271,6 +271,7 @@ pub struct ProviderRouteTarget {
   base_url : String?
   api_key : String?
   is_full_url : Bool
+  model_mapping : ModelMapping?
 }
 
 ///|
@@ -283,6 +284,7 @@ pub fn ProviderRouteTarget::new(
   base_url? : String? = None,
   api_key? : String? = None,
   is_full_url? : Bool = false,
+  model_mapping? : ModelMapping? = None,
 ) -> ProviderRouteTarget {
   {
     app_type,
@@ -293,6 +295,7 @@ pub fn ProviderRouteTarget::new(
     base_url,
     api_key,
     is_full_url,
+    model_mapping,
   }
 }
 
@@ -306,6 +309,7 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
     "providerType": provider_route_optional_string_json(self.provider_type),
     "baseUrl": provider_route_optional_string_json(self.base_url),
     "isFullUrl": Json::boolean(self.is_full_url),
+    "modelMapping": provider_route_model_mapping_json(self.model_mapping),
   }.to_json()
 }
 
@@ -313,6 +317,14 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
 fn provider_route_optional_string_json(value : String?) -> Json {
   match value {
     Some(value) => Json::string(value)
+    None => Json::null()
+  }
+}
+
+///|
+fn provider_route_model_mapping_json(value : ModelMapping?) -> Json {
+  match value {
+    Some(mapping) => mapping.to_json()
     None => Json::null()
   }
 }

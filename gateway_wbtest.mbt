@@ -401,6 +401,32 @@ test "ccs upstream status retryability matches client error bucket" {
 }
 
 ///|
+test "gateway uses ccs model mapping for upstream claude model" {
+  let gateway = Gateway::new(port=0, model="gpt-default")
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="mapped",
+    provider_name="Mapped",
+    model_mapping=Some(
+      ModelMapping::new(sonnet_model=Some("deepseek-v4-pro [1M]")),
+    ),
+  )
+  assert_eq(
+    gateway.upstream_claude_model("claude-sonnet-4-6", Some(provider)),
+    "deepseek-v4-pro",
+  )
+  let unmapped = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="plain",
+    provider_name="Plain",
+  )
+  assert_eq(
+    gateway.upstream_claude_model("claude-sonnet-4-6", Some(unmapped)),
+    "gpt-default",
+  )
+}
+
+///|
 async test "gateway nonretryable upstream errors release half open permit" {
   let gateway = Gateway::new(port=0)
   gateway.provider_router.update_all_configs({

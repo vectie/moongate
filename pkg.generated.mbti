@@ -48,6 +48,8 @@ pub fn normalize_gemini_model_id(String) -> String
 
 pub fn static_model_pricing_json() -> Json
 
+pub fn strip_one_m_suffix_for_upstream(String) -> String
+
 pub fn token_usage_from_claude_response(Json) -> TokenUsage?
 
 pub fn token_usage_from_codex_response(Json) -> TokenUsage?
@@ -252,6 +254,17 @@ pub fn Gateway::new(port~ : Int, host? : String, model? : String) -> Self
 pub fn Gateway::port(Self) -> Int
 pub async fn Gateway::start(Self) -> Unit
 
+pub struct ModelMapping {
+  haiku_model : String?
+  sonnet_model : String?
+  opus_model : String?
+  default_model : String?
+}
+pub fn ModelMapping::has_mapping(Self) -> Bool
+pub fn ModelMapping::map_model(Self, String) -> String
+pub fn ModelMapping::new(haiku_model? : String?, sonnet_model? : String?, opus_model? : String?, default_model? : String?) -> Self
+pub fn ModelMapping::to_json(Self) -> Json
+
 pub struct ModelPricing {
   model_id : String
   display_name : String
@@ -276,8 +289,10 @@ pub struct ProviderRouteTarget {
   base_url : String?
   api_key : String?
   is_full_url : Bool
+  model_mapping : ModelMapping?
 }
-pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, base_url? : String?, api_key? : String?, is_full_url? : Bool) -> Self
+pub fn ProviderRouteTarget::map_model_for_upstream(Self, String) -> String
+pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, base_url? : String?, api_key? : String?, is_full_url? : Bool, model_mapping? : ModelMapping?) -> Self
 pub fn ProviderRouteTarget::to_json(Self) -> Json
 
 pub struct ProviderRouter {

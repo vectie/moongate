@@ -258,6 +258,7 @@ test "provider route target carries upstream config without serializing key" {
     "providerType": "codex",
     "baseUrl": "https://api.openai.com/v1",
     "isFullUrl": false,
+    "modelMapping": null,
   })
   let serialized = target.to_json().stringify()
   assert_false(serialized.contains("apiKey"))

@@ -128,6 +128,13 @@ local token at `~/.moonstat/claude_desktop_gateway_token`, and the gateway reads
 that token automatically. Use `moonstat claude-desktop uninstall` to restore the
 profile mode.
 
+Claude model rerouting honors the same ccs environment names:
+`ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`,
+`ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_OPUS_MODEL`.
+`MOONSTAT_`-prefixed aliases are also accepted. When present, Moonstat maps the
+client's Haiku/Sonnet/Opus/default request model to that upstream model and
+strips the local `[1M]` context marker before forwarding.
+
 For Codex standalone setup, run
 `moonstat codex install --port 15721 --model gpt-5`. Moonstat writes a managed
 Moonstat provider block to `~/.codex/config.toml` using

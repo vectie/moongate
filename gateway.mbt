@@ -36,12 +36,14 @@ pub fn Gateway::new(
 ///|
 fn moonstat_default_provider_router() -> ProviderRouter {
   let router = ProviderRouter::new()
+  let claude_model_mapping = ccs_model_mapping_from_env()
   router.upsert_provider(
     ProviderRouteTarget::new(
       app_type="claude",
       provider_id="codex-oauth",
       provider_name="Codex OAuth",
       provider_type=Some("codex_oauth"),
+      model_mapping=claude_model_mapping,
     ),
   )
   router.upsert_provider(
@@ -50,6 +52,7 @@ fn moonstat_default_provider_router() -> ProviderRouter {
       provider_id="codex-oauth",
       provider_name="Codex OAuth",
       provider_type=Some("codex_oauth"),
+      model_mapping=claude_model_mapping,
     ),
   )
   router.upsert_provider(
@@ -1625,6 +1628,29 @@ fn codex_base_is_full_url() -> Bool {
 }
 
 ///|
+fn ccs_model_mapping_from_env() -> ModelMapping? {
+  let mapping = ModelMapping::new(
+    haiku_model=env_first_non_empty([
+      "MOONSTAT_ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+    ]),
+    sonnet_model=env_first_non_empty([
+      "MOONSTAT_ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    ]),
+    opus_model=env_first_non_empty([
+      "MOONSTAT_ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL",
+    ]),
+    default_model=env_first_non_empty([
+      "MOONSTAT_ANTHROPIC_MODEL", "ANTHROPIC_MODEL",
+    ]),
+  )
+  if mapping.has_mapping() {
+    Some(mapping)
+  } else {
+    None
+  }
+}
+
+///|
 fn env_first_non_empty(keys : Array[String]) -> String? {
   for key in keys {
     match getenv_or_none(key) {
@@ -2554,7 +2580,7 @@ async fn Gateway::handle_messages(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
-  let _ = self.activate_provider(app_type)
+  let active_provider = self.activate_provider(app_type)
   self.stats.record_request_context(
     app_type,
     self.model,
@@ -2591,7 +2617,10 @@ async fn Gateway::handle_messages(
           self.logger.info(
             "Received Anthropic request for model: \{anthropic_request.model}",
           )
-          let model = self.model
+          let model = self.upstream_claude_model(
+            anthropic_request.model,
+            active_provider,
+          )
           self.logger.debug("Using Codex model: \{model}")
           let stream = anthropic_request.stream.unwrap_or(false)
           self.stats.record_stream_mode(stream)
@@ -2613,6 +2642,23 @@ async fn Gateway::handle_messages(
         }
       }
     }
+  }
+}
+
+///|
+fn Gateway::upstream_claude_model(
+  self : Gateway,
+  request_model : String,
+  provider : ProviderRouteTarget?,
+) -> String {
+  match provider {
+    Some(provider) =>
+      match provider.model_mapping {
+        Some(mapping) if mapping.has_mapping() =>
+          provider.map_model_for_upstream(request_model)
+        _ => self.model
+      }
+    None => self.model
   }
 }
 
