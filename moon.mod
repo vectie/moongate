@@ -4,13 +4,13 @@ version = "0.1.0"
 
 readme = "README.mbt.md"
 
-repository = ""
+repository = "https://github.com/vectie/moonstat"
 
 license = "Apache-2.0"
 
 keywords = [ ]
 
-description = "Anthropic to OpenAI Codex OAuth Gateway"
+description = "MoonBit-native local proxy and usage statistics gateway for the Moon suite"
 
 import {
   "moonbitlang/async@0.16.6",
