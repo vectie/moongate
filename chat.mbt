@@ -873,13 +873,31 @@ fn codex_call_item_from_openai_tool_call(
   let call_id = json_string_from_map(tool_call, "id").unwrap_or(
     generate_chat_completion_id(),
   )
-  let item : Map[String, Json] = match
-    codex_chat_tool_context_lookup(tool_context, chat_name) {
+  let item = codex_response_call_item_from_chat_name(
+    "completed", call_id, chat_name, arguments, tool_context,
+  )
+  match json_string_from_map(tool_call, "reasoning_content") {
+    Some(reasoning) if !reasoning.is_empty() =>
+      item["reasoning_content"] = Json::string(reasoning)
+    _ => ()
+  }
+  Json::object(item)
+}
+
+///|
+fn codex_response_call_item_from_chat_name(
+  status : String,
+  call_id : String,
+  chat_name : String,
+  arguments : String,
+  tool_context : CodexChatToolContext,
+) -> Map[String, Json] {
+  match codex_chat_tool_context_lookup(tool_context, chat_name) {
     Some(spec) if spec.kind == "custom" =>
       {
         "id": Json::string("ctc_\{call_id}"),
         "type": Json::string("custom_tool_call"),
-        "status": Json::string("completed"),
+        "status": Json::string(status),
         "call_id": Json::string(call_id),
         "name": Json::string(spec.name),
         "input": Json::string(custom_tool_input_from_chat_arguments(arguments)),
@@ -887,7 +905,7 @@ fn codex_call_item_from_openai_tool_call(
     Some(spec) if spec.kind == "tool_search" =>
       {
         "type": Json::string("tool_search_call"),
-        "status": Json::string("completed"),
+        "status": Json::string(status),
         "execution": Json::string("client"),
         "call_id": Json::string(call_id),
         "arguments": parse_tool_arguments_object(arguments),
@@ -898,7 +916,7 @@ fn codex_call_item_from_openai_tool_call(
         "call_id": Json::string(call_id),
         "name": Json::string(spec.name),
         "arguments": Json::string(arguments),
-        "status": Json::string("completed"),
+        "status": Json::string(status),
         "id": Json::string("fc_\{call_id}"),
       }
       match spec.ns_name {
@@ -913,14 +931,33 @@ fn codex_call_item_from_openai_tool_call(
         "call_id": Json::string(call_id),
         "name": Json::string(chat_name),
         "arguments": Json::string(arguments),
+        "status": Json::string(status),
+        "id": Json::string("fc_\{call_id}"),
       }
   }
-  match json_string_from_map(tool_call, "reasoning_content") {
-    Some(reasoning) if !reasoning.is_empty() =>
-      item["reasoning_content"] = Json::string(reasoning)
-    _ => ()
+}
+
+///|
+fn codex_response_call_item_id_from_chat_name(
+  call_id : String,
+  chat_name : String,
+  tool_context : CodexChatToolContext,
+) -> String {
+  match codex_chat_tool_context_lookup(tool_context, chat_name) {
+    Some(spec) if spec.kind == "custom" => "ctc_\{call_id}"
+    _ => "fc_\{call_id}"
   }
-  Json::object(item)
+}
+
+///|
+fn codex_chat_tool_context_is_custom(
+  context : CodexChatToolContext,
+  chat_name : String,
+) -> Bool {
+  match codex_chat_tool_context_lookup(context, chat_name) {
+    Some(spec) => spec.kind == "custom"
+    None => false
+  }
 }
 
 ///|
@@ -1273,11 +1310,13 @@ priv struct ChatToCodexResponsesStreamState {
   output_items : Array[Json]
   mut latest_usage : Json?
   mut finish_reason : String?
+  tool_context : CodexChatToolContext
 }
 
 ///|
-fn ChatToCodexResponsesStreamState::new(
+fn ChatToCodexResponsesStreamState::new_with_context(
   model : String,
+  tool_context : CodexChatToolContext,
 ) -> ChatToCodexResponsesStreamState {
   {
     response_started: false,
@@ -1295,6 +1334,7 @@ fn ChatToCodexResponsesStreamState::new(
     output_items: [],
     latest_usage: None,
     finish_reason: None,
+    tool_context,
   }
 }
 
@@ -1476,22 +1516,27 @@ fn ChatToCodexResponsesStreamState::push_tool_call_delta(
     if state.name.is_empty() {
       state.name = "tool"
     }
-    state.item_id = "fc_\{state.call_id}"
+    state.item_id = codex_response_call_item_id_from_chat_name(
+      state.call_id,
+      state.name,
+      self.tool_context,
+    )
+    let added_item = codex_response_call_item_from_chat_name(
+      "in_progress",
+      state.call_id,
+      state.name,
+      "",
+      self.tool_context,
+    )
     events.push(
       Json::object({
         "type": Json::string("response.output_item.added"),
         "output_index": Json::number(output_index.to_double()),
-        "item": Json::object({
-          "id": Json::string(state.item_id),
-          "type": Json::string("function_call"),
-          "status": Json::string("in_progress"),
-          "call_id": Json::string(state.call_id),
-          "name": Json::string(state.name),
-          "arguments": Json::string(""),
-        }),
+        "item": Json::object(added_item),
       }),
     )
-    if !state.arguments.is_empty() {
+    if !state.arguments.is_empty() &&
+      !codex_chat_tool_context_is_custom(self.tool_context, state.name) {
       events.push(
         Json::object({
           "type": Json::string("response.function_call_arguments.delta"),
@@ -1504,7 +1549,8 @@ fn ChatToCodexResponsesStreamState::push_tool_call_delta(
   } else if state.added &&
     tool_call.get("function") is Some(Object(function)) &&
     json_string_from_map(function, "arguments") is Some(arguments) &&
-    !arguments.is_empty() {
+    !arguments.is_empty() &&
+    !codex_chat_tool_context_is_custom(self.tool_context, state.name) {
     let output_index = state.output_index.unwrap_or(0)
     events.push(
       Json::object({
@@ -1599,24 +1645,51 @@ fn ChatToCodexResponsesStreamState::finish_tools(
     let arguments = canonicalize_tool_arguments(
       Some(Json::string(state.arguments)),
     )
-    let item = Json::object({
-      "id": Json::string(state.item_id),
-      "type": Json::string("function_call"),
-      "status": Json::string("completed"),
-      "call_id": Json::string(state.call_id),
-      "name": Json::string(state.name),
-      "arguments": Json::string(arguments),
-    })
+    let is_custom_tool = codex_chat_tool_context_is_custom(
+      self.tool_context,
+      state.name,
+    )
+    let item = Json::object(
+      codex_response_call_item_from_chat_name(
+        "completed",
+        state.call_id,
+        state.name,
+        arguments,
+        self.tool_context,
+      ),
+    )
     self.output_items.push(item)
     state.done = true
-    events.push(
-      Json::object({
-        "type": Json::string("response.function_call_arguments.done"),
-        "item_id": Json::string(state.item_id),
-        "output_index": Json::number(output_index.to_double()),
-        "arguments": Json::string(arguments),
-      }),
-    )
+    if is_custom_tool {
+      let input = custom_tool_input_from_chat_arguments(arguments)
+      if !input.is_empty() {
+        events.push(
+          Json::object({
+            "type": Json::string("response.custom_tool_call_input.delta"),
+            "item_id": Json::string(state.item_id),
+            "output_index": Json::number(output_index.to_double()),
+            "delta": Json::string(input),
+          }),
+        )
+      }
+      events.push(
+        Json::object({
+          "type": Json::string("response.custom_tool_call_input.done"),
+          "item_id": Json::string(state.item_id),
+          "output_index": Json::number(output_index.to_double()),
+          "input": Json::string(input),
+        }),
+      )
+    } else {
+      events.push(
+        Json::object({
+          "type": Json::string("response.function_call_arguments.done"),
+          "item_id": Json::string(state.item_id),
+          "output_index": Json::number(output_index.to_double()),
+          "arguments": Json::string(arguments),
+        }),
+      )
+    }
     events.push(
       Json::object({
         "type": Json::string("response.output_item.done"),

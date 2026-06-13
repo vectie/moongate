@@ -1357,8 +1357,9 @@ async fn Gateway::forward_streaming_codex_response(
         w.write_header(@status.Ok)
         let mut response_bytes = 0
         let stream_events : Array[Json] = []
-        let chat_state = ChatToCodexResponsesStreamState::new(
+        let chat_state = ChatToCodexResponsesStreamState::new_with_context(
           codex_request_model(request, self.model),
+          codex_chat_tool_context_from_responses_request(outbound_request),
         )
         if first_line is [.. "data: ", .. rest] {
           let data = rest.trim().to_owned()

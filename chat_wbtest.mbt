@@ -442,7 +442,10 @@ test "chat completion response converts back to codex response" {
 
 ///|
 test "chat completion stream converts text to codex responses events" {
-  let state = ChatToCodexResponsesStreamState::new("fallback")
+  let state = ChatToCodexResponsesStreamState::new_with_context(
+    "fallback",
+    codex_chat_empty_tool_context(),
+  )
   let all_events : Array[Json] = []
   let (_, _, start_events) = openai_chat_stream_data_to_codex_response_events(
     (
@@ -521,7 +524,10 @@ test "chat completion stream converts text to codex responses events" {
 
 ///|
 test "chat completion stream converts tool call to codex responses events" {
-  let state = ChatToCodexResponsesStreamState::new("fallback")
+  let state = ChatToCodexResponsesStreamState::new_with_context(
+    "fallback",
+    codex_chat_empty_tool_context(),
+  )
   let all_events : Array[Json] = []
   let (_, _, first_events) = openai_chat_stream_data_to_codex_response_events(
     (
@@ -600,4 +606,200 @@ test "chat completion stream converts tool call to codex responses events" {
   guard output[0] is Object(call) else { fail("expected call") }
   assert_eq(call["type"], Json::string("function_call"))
   assert_eq(call["arguments"], Json::string("{\"q\":\"moon\"}"))
+}
+
+///|
+test "chat completion stream restores custom tool call with request context" {
+  let request = chat_parse_json_for_test(
+    (
+      #|{
+      #|  "model": "gpt-5",
+      #|  "tools": [{ "type": "custom", "name": "apply_patch" }]
+      #|}
+    ),
+  )
+  let state = ChatToCodexResponsesStreamState::new_with_context(
+    "fallback",
+    codex_chat_tool_context_from_responses_request(request),
+  )
+  let all_events : Array[Json] = []
+  let (_, _, first_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_custom",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{
+      #|    "delta": {
+      #|      "tool_calls": [{
+      #|        "index": 0,
+      #|        "id": "call_custom",
+      #|        "type": "function",
+      #|        "function": { "name": "apply_patch", "arguments": "{\"input\":\"***" }
+      #|      }]
+      #|    },
+      #|    "finish_reason": null
+      #|  }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(first_events)
+  let (_, _, second_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_custom",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{
+      #|    "delta": {
+      #|      "tool_calls": [{
+      #|        "index": 0,
+      #|        "function": { "arguments": " Begin Patch\"}" }
+      #|      }]
+      #|    },
+      #|    "finish_reason": "tool_calls"
+      #|  }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(second_events)
+  let (_, _, finish_events) = openai_chat_stream_data_to_codex_response_events(
+    "[DONE]", state,
+  )
+  all_events.append(finish_events)
+  let mut saw_custom_delta = false
+  let mut saw_custom_done = false
+  let mut saw_function_arguments_event = false
+  for event in all_events {
+    guard event is Object(obj) else { continue }
+    match json_string_from_map(obj, "type") {
+      Some("response.output_item.added") =>
+        if obj.get("item") is Some(Object(item)) &&
+          item.get("call_id") is Some(String("call_custom")) {
+          assert_eq(item["type"], Json::string("custom_tool_call"))
+        }
+      Some("response.custom_tool_call_input.delta") => {
+        saw_custom_delta = true
+        assert_eq(obj["delta"], Json::string("*** Begin Patch"))
+      }
+      Some("response.custom_tool_call_input.done") => {
+        saw_custom_done = true
+        assert_eq(obj["input"], Json::string("*** Begin Patch"))
+      }
+      Some("response.function_call_arguments.delta")
+      | Some("response.function_call_arguments.done") =>
+        saw_function_arguments_event = true
+      Some("response.completed") => {
+        guard obj["response"] is Object(response) else {
+          fail("expected response")
+        }
+        guard response["output"] is Array(output) else {
+          fail("expected output")
+        }
+        guard output[0] is Object(call) else { fail("expected call") }
+        assert_eq(call["type"], Json::string("custom_tool_call"))
+        assert_eq(call["input"], Json::string("*** Begin Patch"))
+      }
+      _ => ()
+    }
+  }
+  assert_true(saw_custom_delta)
+  assert_true(saw_custom_done)
+  assert_false(saw_function_arguments_event)
+}
+
+///|
+test "chat completion stream restores tool search call with request context" {
+  let request = chat_parse_json_for_test(
+    (
+      #|{
+      #|  "model": "gpt-5",
+      #|  "tools": [{ "type": "tool_search" }]
+      #|}
+    ),
+  )
+  let state = ChatToCodexResponsesStreamState::new_with_context(
+    "fallback",
+    codex_chat_tool_context_from_responses_request(request),
+  )
+  let all_events : Array[Json] = []
+  let (_, _, first_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_search",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{
+      #|    "delta": {
+      #|      "tool_calls": [{
+      #|        "index": 0,
+      #|        "id": "call_search",
+      #|        "type": "function",
+      #|        "function": { "name": "tool_search", "arguments": "{\"query\"" }
+      #|      }]
+      #|    },
+      #|    "finish_reason": null
+      #|  }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(first_events)
+  let (_, _, second_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_search",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{
+      #|    "delta": {
+      #|      "tool_calls": [{
+      #|        "index": 0,
+      #|        "function": { "arguments": ":\"browser\"}" }
+      #|      }]
+      #|    },
+      #|    "finish_reason": "tool_calls"
+      #|  }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(second_events)
+  let (_, _, finish_events) = openai_chat_stream_data_to_codex_response_events(
+    "[DONE]", state,
+  )
+  all_events.append(finish_events)
+  let mut saw_arguments_done = false
+  for event in all_events {
+    guard event is Object(obj) else { continue }
+    match json_string_from_map(obj, "type") {
+      Some("response.output_item.added") =>
+        if obj.get("item") is Some(Object(item)) &&
+          item.get("call_id") is Some(String("call_search")) {
+          assert_eq(item["type"], Json::string("tool_search_call"))
+        }
+      Some("response.function_call_arguments.done") => {
+        saw_arguments_done = true
+        assert_eq(obj["arguments"], Json::string("{\"query\":\"browser\"}"))
+      }
+      Some("response.completed") => {
+        guard obj["response"] is Object(response) else {
+          fail("expected response")
+        }
+        guard response["output"] is Array(output) else {
+          fail("expected output")
+        }
+        guard output[0] is Object(call) else { fail("expected call") }
+        assert_eq(call["type"], Json::string("tool_search_call"))
+        guard call["arguments"] is Object(arguments) else {
+          fail("expected args")
+        }
+        assert_eq(arguments["query"], Json::string("browser"))
+      }
+      _ => ()
+    }
+  }
+  assert_true(saw_arguments_done)
 }
