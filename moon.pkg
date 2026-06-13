@@ -1,5 +1,6 @@
 import {
   "vectie/moonstat/internal/fsx",
+  "vectie/moonstat/internal/claude_desktop",
   "moonbitlang/core/json",
   "moonbitlang/core/random",
   "moonbitlang/async",

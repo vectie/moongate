@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moonstat/internal/claude_desktop"
+
+// Values
+pub async fn gateway_token() -> String?
+
+pub async fn get_or_create_gateway_token(String?) -> String
+
+pub async fn install_proxy_profile(String, Int, token? : String?) -> Result[ClaudeDesktopInstall, String]
+
+pub fn local_gateway_base_url(String, Int) -> String
+
+pub async fn status() -> ClaudeDesktopStatus
+
+pub async fn uninstall_proxy_profile() -> Result[Unit, String]
+
+// Errors
+
+// Types and methods
+pub struct ClaudeDesktopInstall {
+  token : String
+  profile_path : String
+  meta_path : String
+  base_url : String
+}
+
+pub struct ClaudeDesktopStatus {
+  configured : Bool
+  profile_path : String
+  meta_path : String
+  token_configured : Bool
+}
+
+// Type aliases
+
+// Traits
+

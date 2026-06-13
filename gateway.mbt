@@ -824,7 +824,7 @@ async fn Gateway::validate_claude_desktop_gateway_auth(
   w : @httpx.ResponseWriter,
 ) -> Bool {
   let _ = self
-  match claude_desktop_gateway_token() {
+  match @claude_desktop.gateway_token() {
     None => true
     Some(expected) =>
       if claude_desktop_authorization_valid(r.headers, expected) {
@@ -833,18 +833,6 @@ async fn Gateway::validate_claude_desktop_gateway_auth(
         self.stats.record_unauthorized()
         write_auth_error(w, "Claude Desktop gateway token invalid or missing")
         false
-      }
-  }
-}
-
-///|
-fn claude_desktop_gateway_token() -> String? {
-  match getenv_or_none("MOONSTAT_CLAUDE_DESKTOP_TOKEN") {
-    Some(token) if !token.trim().is_empty() => Some(token.trim().to_owned())
-    _ =>
-      match getenv_or_none("CLAUDE_DESKTOP_GATEWAY_TOKEN") {
-        Some(token) if !token.trim().is_empty() => Some(token.trim().to_owned())
-        _ => None
       }
   }
 }

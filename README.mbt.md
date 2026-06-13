@@ -75,6 +75,13 @@ Claude Desktop gateway routes are open by default for standalone local use. Set
 `/claude-desktop/v1/messages`, matching ccs gateway-token behavior without the
 ccs database dependency.
 
+For Claude Desktop standalone setup, run
+`moonstat claude-desktop install --port 15721`. Moonstat writes the same gateway
+profile shape as ccs under Claude Desktop's `Claude-3p/configLibrary`, stores a
+local token at `~/.moonstat/claude_desktop_gateway_token`, and the gateway reads
+that token automatically. Use `moonstat claude-desktop uninstall` to restore the
+profile mode.
+
 Gemini routes proxy to `https://generativelanguage.googleapis.com` by default
 and accept either a `?key=` query parameter or `GEMINI_API_KEY` /
 `GOOGLE_API_KEY` in the environment. Set `GOOGLE_GEMINI_BASE_URL` or

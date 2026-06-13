@@ -1,0 +1,9 @@
+import {
+  "moonbitlang/async",
+  "moonbitlang/core/json",
+  "moonbitlang/core/random",
+  "vectie/moonstat/internal/fsx",
+  "vectie/moonstat/internal/os",
+  "vectie/moonstat/internal/pathx",
+  "vectie/moonstat/internal/uuid",
+}

@@ -6,6 +6,9 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["login", ..] => do_login(arr)
     ["install", ..] => install_reroute(arr)
     ["uninstall"] | ["remove"] => uninstall_reroute()
+    ["claude-desktop", "install", ..] => install_claude_desktop(arr)
+    ["claude-desktop", "uninstall" | "remove", ..] => uninstall_claude_desktop()
+    ["claude-desktop", "status", ..] => status_claude_desktop()
     ["status", ..] => check_status(arr)
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
@@ -31,6 +34,11 @@ fn print_help() -> Unit {
   println("  start       Start the gateway server")
   println("  install     Install hosts reroute (requires sudo)")
   println("  uninstall   Remove hosts reroute (requires sudo)")
+  println(
+    "  claude-desktop install    Configure Claude Desktop gateway profile",
+  )
+  println("  claude-desktop uninstall  Remove Claude Desktop gateway profile")
+  println("  claude-desktop status     Show Claude Desktop profile status")
   println("  status      Check reroute and gateway status")
   println("  stats       Show gateway traffic statistics")
   println("  login       Login to OpenAI Codex OAuth")
@@ -47,6 +55,7 @@ fn print_help() -> Unit {
   println("  sudo moonstat install          # Install hosts reroute")
   println("  moonstat start                 # Start gateway on 127.0.0.1:15721")
   println("  moonstat start --port 80       # Start gateway on port 80")
+  println("  moonstat claude-desktop install --port 15721")
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat uninstall             # Remove hosts reroute")
@@ -181,6 +190,49 @@ async fn uninstall_reroute() -> Unit {
     Ok(_) => logger.info("Hosts reroute removed successfully!")
     Err(e) => logger.error("Failed to uninstall: \{e}")
   }
+}
+
+///|
+async fn install_claude_desktop(args : Array[String]) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
+  let port = parse_int_arg(args, "--port", default=15721)
+  let token = parse_string_arg(args, "--token")
+  logger.info("Installing Claude Desktop gateway profile...")
+  let result = @claude_desktop.install_proxy_profile(host, port, token~)
+  match result {
+    Ok(installed) => {
+      logger.info("Claude Desktop profile installed")
+      logger.info("Gateway base URL: \{installed.base_url}")
+      logger.info("Profile: \{installed.profile_path}")
+      logger.info("Token saved for Moonstat gateway auth")
+    }
+    Err(e) => logger.error(e)
+  }
+}
+
+///|
+async fn uninstall_claude_desktop() -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  logger.info("Removing Claude Desktop gateway profile...")
+  let result = @claude_desktop.uninstall_proxy_profile()
+  match result {
+    Ok(_) => logger.info("Claude Desktop profile removed")
+    Err(e) => logger.error(e)
+  }
+}
+
+///|
+async fn status_claude_desktop() -> Unit {
+  let status = @claude_desktop.status()
+  println(
+    Json::object({
+      "configured": Json::boolean(status.configured),
+      "profile_path": Json::string(status.profile_path),
+      "meta_path": Json::string(status.meta_path),
+      "token_configured": Json::boolean(status.token_configured),
+    }).stringify(indent=2),
+  )
 }
 
 ///|

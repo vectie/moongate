@@ -1,5 +1,6 @@
 import {
   "vectie/moonstat",
+  "vectie/moonstat/internal/claude_desktop",
   "vectie/moonstat/internal/os",
   "vectie/moonstat/internal/pino",
   "vectie/moonstat/internal/hosts",
