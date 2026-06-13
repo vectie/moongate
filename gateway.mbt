@@ -98,16 +98,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_codex_responses(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.handle_codex_responses(r, w, compact=true)
   })
   router.add_handler(@httpx.Method::Post, "/v1/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.handle_codex_responses(r, w, compact=true)
   })
   router.add_handler(@httpx.Method::Post, "/v1/v1/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.handle_codex_responses(r, w, compact=true)
   })
   router.add_handler(@httpx.Method::Post, "/codex/v1/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.handle_codex_responses(r, w, compact=true)
   })
   router.add_handler(@httpx.Method::Get, "/participant/register", (_, w) => {
     self.handle_register_page(w)
@@ -173,6 +173,7 @@ async fn Gateway::handle_codex_responses(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
+  compact? : Bool = false,
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
@@ -194,10 +195,11 @@ async fn Gateway::handle_codex_responses(
       let stream = json_bool_field(json, "stream").unwrap_or(false)
       self.stats.record_stream_mode(stream)
       let request = normalize_codex_oauth_request(json)
+      let endpoint = codex_backend_responses_endpoint(compact)
       if stream {
-        self.forward_streaming_codex_response(request, w)
+        self.forward_streaming_codex_response(request, endpoint, w)
       } else {
-        self.forward_non_streaming_codex_response(request, w)
+        self.forward_non_streaming_codex_response(request, endpoint, w)
       }
     }
   }
@@ -502,6 +504,7 @@ async fn Gateway::forward_streaming_chat_completion(
 async fn Gateway::forward_non_streaming_codex_response(
   self : Gateway,
   request : Json,
+  endpoint : String,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
@@ -516,7 +519,7 @@ async fn Gateway::forward_non_streaming_codex_response(
   }
   let client = self.codex_client(creds, accept="application/json")
   defer client.close()
-  let response = client.post("/backend-api/codex/responses", request)
+  let response = client.post(endpoint, request)
   let response_body = client.read_all().text()
   if response.code != 200 {
     self.stats.record_upstream_error(response_body.length())
@@ -543,6 +546,7 @@ async fn Gateway::forward_non_streaming_codex_response(
 async fn Gateway::forward_streaming_codex_response(
   self : Gateway,
   request : Json,
+  endpoint : String,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.credentials is Some(creds) else {
@@ -557,7 +561,7 @@ async fn Gateway::forward_streaming_codex_response(
   }
   let client = self.codex_client(creds, accept="text/event-stream")
   defer client.close()
-  let response = client.post("/backend-api/codex/responses", request)
+  let response = client.post(endpoint, request)
   if response.code != 200 {
     let error_body = client.read_all().text()
     self.stats.record_upstream_error(error_body.length())
@@ -580,6 +584,15 @@ async fn Gateway::forward_streaming_codex_response(
   }
   self.stats.record_success(0, 0, response_bytes)
   w.flush()
+}
+
+///|
+fn codex_backend_responses_endpoint(compact : Bool) -> String {
+  if compact {
+    "/backend-api/codex/responses/compact"
+  } else {
+    "/backend-api/codex/responses"
+  }
 }
 
 ///|

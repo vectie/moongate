@@ -26,3 +26,15 @@ test "claude desktop model list matches ccs response shape" {
     "last_id": "claude-haiku-4-5",
   })
 }
+
+///|
+test "codex compact responses keep compact backend endpoint" {
+  assert_eq(
+    codex_backend_responses_endpoint(false),
+    "/backend-api/codex/responses",
+  )
+  assert_eq(
+    codex_backend_responses_endpoint(true),
+    "/backend-api/codex/responses/compact",
+  )
+}
