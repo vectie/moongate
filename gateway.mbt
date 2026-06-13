@@ -2958,8 +2958,13 @@ async fn Gateway::handle_models(
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  let models = live_codex_models_or_fallback(self.model)
-  w.write(codex_models_response_json(models).stringify())
+  match @codex_config.active_model_catalog_json() {
+    Some(catalog) => w.write(catalog.stringify())
+    None => {
+      let models = live_codex_models_or_fallback(self.model)
+      w.write(codex_models_response_json(models).stringify())
+    }
+  }
   w.flush()
 }
 

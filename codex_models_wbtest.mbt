@@ -91,6 +91,15 @@ test "codex models response exposes openai and moonstat lists" {
 }
 
 ///|
+test "codex models response remains ccs top-level models compatible" {
+  let body = codex_models_response_json([{ id: "gpt-5.4", owned_by: "openai" }])
+  guard body is Object(obj) else { fail("expected object") }
+  guard obj["models"] is Array(models) else { fail("expected models array") }
+  guard models[0] is Object(model) else { fail("expected model") }
+  assert_true(model["id"] is String("gpt-5.4"))
+}
+
+///|
 fn model_ids(models : Array[CodexModel]) -> Array[String] {
   models.map(fn(model) { model.id })
 }

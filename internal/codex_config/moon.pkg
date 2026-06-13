@@ -2,6 +2,7 @@ import {
   "vectie/moonstat/internal/fsx",
   "vectie/moonstat/internal/os",
   "vectie/moonstat/internal/pathx",
+  "moonbitlang/core/json",
 }
 
 import {

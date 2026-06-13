@@ -7,6 +7,10 @@ async test "codex config install writes ccs-style local provider block" {
     }
     assert_eq(installed.base_url, "http://127.0.0.1:15721/v1")
     assert_eq(installed.model, "gpt-5")
+    assert_eq(
+      installed.model_catalog_path,
+      @pathx.join(@pathx.join(tmpdir, ".codex"), "moonstat-model-catalog.json"),
+    )
     let content = @fsx.read_file(installed.config_path)
     inspect(
       content,
@@ -14,6 +18,7 @@ async test "codex config install writes ccs-style local provider block" {
         #|# >>> moonstat managed codex proxy
         #|model = "gpt-5"
         #|model_provider = "moonstat"
+        #|model_catalog_json = "moonstat-model-catalog.json"
         #|
         #|[model_providers.moonstat]
         #|name = "Moonstat"
@@ -24,6 +29,14 @@ async test "codex config install writes ccs-style local provider block" {
         #|
       ),
     )
+    guard @json.parse(@fsx.read_file(installed.model_catalog_path))
+      is Object(catalog) else {
+      fail("expected catalog object")
+    }
+    guard catalog["models"] is Array(models) else { fail("expected models") }
+    guard models[0] is Object(model) else { fail("expected model") }
+    assert_eq(model["slug"], Json::string("gpt-5"))
+    assert_true(model["model_messages"] is Object(_))
   })
 }
 
@@ -66,6 +79,7 @@ async test "codex config reinstall replaces only managed block" {
         #|# >>> moonstat managed codex proxy
         #|model = "gpt-5"
         #|model_provider = "moonstat"
+        #|model_catalog_json = "moonstat-model-catalog.json"
         #|
         #|[model_providers.moonstat]
         #|name = "Moonstat"
@@ -96,6 +110,7 @@ async test "codex config uninstall preserves user config" {
       fail("expected codex config uninstall to succeed")
     }
     let content = @fsx.read_file(installed.config_path)
+    assert_false(@fsx.exists_as_file(installed.model_catalog_path))
     assert_eq(
       content,
       (
@@ -117,5 +132,34 @@ async test "codex config status reports managed values" {
     assert_true(status.configured)
     assert_true(status.base_url is Some("http://127.0.0.1:15721/v1"))
     assert_true(status.model is Some("gpt-5"))
+    assert_eq(
+      status.model_catalog_path,
+      @pathx.join(@pathx.join(tmpdir, ".codex"), "moonstat-model-catalog.json"),
+    )
+  })
+}
+
+///|
+async test "codex config active catalog follows ccs stale guard" {
+  @fsx.with_temporary_directory("moonstat-codex-catalog-XXXXXX", tmpdir => {
+    assert_true(active_model_catalog_json_at(tmpdir) is None)
+    let result = install_proxy_config_at(tmpdir, "127.0.0.1", 15721, "gpt-5.1")
+    guard result is Ok(installed) else {
+      fail("expected codex config install to succeed")
+    }
+    guard active_model_catalog_json_at(tmpdir) is Some(Object(catalog)) else {
+      fail("expected active catalog")
+    }
+    guard catalog["models"] is Array(models) else { fail("expected models") }
+    guard models[0] is Object(model) else { fail("expected model") }
+    assert_eq(model["slug"], Json::string("gpt-5.1"))
+    @fsx.write_to_file(
+      installed.config_path,
+      @fsx.read_file(installed.config_path).replace(
+        old="model_catalog_json = \"moonstat-model-catalog.json\"",
+        new="model_catalog_json = \"custom-model-catalog.json\"",
+      ),
+    )
+    assert_true(active_model_catalog_json_at(tmpdir) is None)
   })
 }

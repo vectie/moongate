@@ -2,6 +2,8 @@
 package "vectie/moonstat/internal/codex_config"
 
 // Values
+pub async fn active_model_catalog_json() -> Json?
+
 pub async fn install_proxy_config(String, Int, String) -> Result[CodexConfigInstall, String]
 
 pub async fn status() -> CodexConfigStatus
@@ -13,6 +15,7 @@ pub async fn uninstall_proxy_config() -> Result[Unit, String]
 // Types and methods
 pub struct CodexConfigInstall {
   config_path : String
+  model_catalog_path : String
   base_url : String
   model : String
 }
@@ -20,6 +23,7 @@ pub struct CodexConfigInstall {
 pub struct CodexConfigStatus {
   configured : Bool
   config_path : String
+  model_catalog_path : String
   base_url : String?
   model : String?
 }
