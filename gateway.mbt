@@ -262,18 +262,6 @@ async fn Gateway::record_internal_error(self : Gateway) -> Unit {
 }
 
 ///|
-async fn Gateway::record_success(
-  self : Gateway,
-  input_tokens : Int,
-  output_tokens : Int,
-  response_bytes : Int,
-) -> Unit {
-  self.record_provider_result(true)
-  self.stats.record_success(input_tokens, output_tokens, response_bytes)
-  self.stats.save_persistent_store()
-}
-
-///|
 async fn Gateway::record_success_usage(
   self : Gateway,
   usage : TokenUsage,
@@ -290,13 +278,25 @@ async fn Gateway::record_success_usage(
 }
 
 ///|
-async fn Gateway::record_success_stats_only(
+async fn Gateway::record_success_stream_usage(
   self : Gateway,
-  input_tokens : Int,
-  output_tokens : Int,
+  usage : TokenUsage?,
   response_bytes : Int,
+  record_provider? : Bool = true,
 ) -> Unit {
-  self.stats.record_success(input_tokens, output_tokens, response_bytes)
+  if record_provider {
+    self.record_provider_result(true)
+  }
+  match usage {
+    Some(usage) if usage.has_billable_tokens() =>
+      self.stats.record_success_usage_with_pricing(
+        usage,
+        response_bytes,
+        self.pricing_override_rows(),
+        self.pricing_deleted_model_ids,
+      )
+    _ => self.stats.record_success_without_request_log(response_bytes)
+  }
   self.stats.save_persistent_store()
 }
 
@@ -941,21 +941,23 @@ async fn Gateway::forward_streaming_chat_completion(
         return
       }
       Some(first_line) => {
-        self.record_provider_result(true)
         w.header().set("Content-Type", "text/event-stream")
         w.header().set("Cache-Control", "no-cache")
         w.header().set("Connection", "keep-alive")
         w.write_header(@status.Ok)
         let id = generate_chat_completion_id()
         let created = @async.now().to_int() / 1000
+        let stream_events : Array[Json] = []
         w.write(
           "data: \{openai_chat_role_chunk(id, response_model, created).stringify()}\n\n",
         )
         w.flush()
+        self.record_provider_result(true)
         let mut response_bytes = 0
         if first_line is [.. "data: ", .. rest] {
           let data = rest.trim().to_owned()
           if data != "[DONE]" {
+            push_sse_json_event(stream_events, data)
             if codex_stream_event_to_openai_chat_chunk(
                 data, id, response_model, created,
               )
@@ -973,6 +975,7 @@ async fn Gateway::forward_streaming_chat_completion(
           if data == "[DONE]" {
             break
           }
+          push_sse_json_event(stream_events, data)
           if codex_stream_event_to_openai_chat_chunk(
               data, id, response_model, created,
             )
@@ -984,7 +987,11 @@ async fn Gateway::forward_streaming_chat_completion(
           }
         }
         client.close()
-        self.record_success_stats_only(0, 0, response_bytes)
+        self.record_success_stream_usage(
+          token_usage_from_codex_stream_events_auto(stream_events),
+          response_bytes,
+          record_provider=false,
+        )
         w.write("data: [DONE]\n\n")
         w.flush()
         return
@@ -1196,23 +1203,40 @@ async fn Gateway::forward_streaming_codex_response(
         return
       }
       Some(first_line) => {
-        self.record_provider_result(true)
         w.header().set("Content-Type", "text/event-stream")
         w.header().set("Cache-Control", "no-cache")
         w.header().set("Connection", "keep-alive")
         w.write_header(@status.Ok)
         let mut response_bytes = first_line.length() + 1
+        let stream_events : Array[Json] = []
+        if first_line is [.. "data: ", .. rest] {
+          let data = rest.trim().to_owned()
+          if data != "[DONE]" {
+            push_sse_json_event(stream_events, data)
+          }
+        }
         w.write(first_line)
         w.write("\n")
         w.flush()
+        self.record_provider_result(true)
         while client.read_until("\n") is Some(line) {
           response_bytes += line.length() + 1
+          if line is [.. "data: ", .. rest] {
+            let data = rest.trim().to_owned()
+            if data != "[DONE]" {
+              push_sse_json_event(stream_events, data)
+            }
+          }
           w.write(line)
           w.write("\n")
           w.flush()
         }
         client.close()
-        self.record_success_stats_only(0, 0, response_bytes)
+        self.record_success_stream_usage(
+          token_usage_from_codex_stream_events_auto(stream_events),
+          response_bytes,
+          record_provider=false,
+        )
         w.flush()
         return
       }
@@ -2788,12 +2812,17 @@ async fn Gateway::handle_streaming_request(
   w.header().set("Connection", "keep-alive")
   w.write_header(@status.Ok)
   let reader = CodexStreamReader::new(client, request.model)
+  self.record_provider_result(true)
   while reader.read() is Some(event) {
     w.write("event: \{event.event_type}\n")
     w.write("data: \{event.data}\n\n")
     w.flush()
   }
-  self.record_success(0, 0, 0)
+  self.record_success_stream_usage(
+    token_usage_from_codex_stream_events_auto(reader.events),
+    0,
+    record_provider=false,
+  )
   w.write("event: message_stop\ndata: {}\n\n")
   w.flush()
 }
@@ -2932,6 +2961,7 @@ priv struct StreamEvent {
 priv struct CodexStreamReader {
   reader : &@io.Reader
   model : String
+  events : Array[Json]
 }
 
 ///|
@@ -2939,7 +2969,7 @@ fn CodexStreamReader::new(
   reader : &@io.Reader,
   model : String,
 ) -> CodexStreamReader {
-  CodexStreamReader::{ reader, model }
+  CodexStreamReader::{ reader, model, events: [] }
 }
 
 ///|
@@ -2951,6 +2981,7 @@ async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
     if data == "[DONE]" {
       return None
     }
+    push_sse_json_event(self.events, data)
     let json_result : Result[Json, Error] = try? @json.parse(data)
     guard json_result is Ok(Object(_)) else { return None }
     let json = json_result.unwrap()
@@ -2964,6 +2995,15 @@ async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
       Some(event) => return Some(event)
       None => return None
     }
+  }
+}
+
+///|
+fn push_sse_json_event(events : Array[Json], data : String) -> Unit {
+  let json_result : Result[Json, Error] = try? @json.parse(data)
+  match json_result {
+    Ok(json) => events.push(json)
+    Err(_) => ()
   }
 }
 

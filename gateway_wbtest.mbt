@@ -427,6 +427,62 @@ test "gateway uses ccs model mapping for upstream claude model" {
 }
 
 ///|
+async test "gateway records billable ccs stream usage once" {
+  let gateway = Gateway::new(port=0)
+  gateway.stats.record_inbound(10)
+  let _ = gateway.activate_provider("codex")
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  gateway.stats.record_stream_mode(true)
+  gateway.record_success_stream_usage(
+    Some(
+      TokenUsage::new(
+        input_tokens=10,
+        output_tokens=2,
+        cache_read_tokens=4,
+        model=Some("gpt-5"),
+      ),
+    ),
+    42,
+  )
+  assert_eq(gateway.stats.successful_responses, 1)
+  assert_eq(gateway.stats.input_tokens, 10)
+  assert_eq(gateway.stats.cache_read_tokens, 4)
+  assert_eq(gateway.stats.request_logs.length(), 1)
+  let log = gateway.stats.request_logs[0]
+  assert_true(log.is_streaming)
+  assert_eq(log.model, "gpt-5")
+  assert_eq(log.input_tokens, 10)
+  guard gateway.provider_router.get_circuit_breaker_stats(
+      "codex-oauth", "codex",
+    )
+    is Some(stats) else {
+    fail("expected circuit stats")
+  }
+  assert_eq(stats.total_requests, 1)
+}
+
+///|
+async test "gateway skips all zero ccs stream usage request log" {
+  let gateway = Gateway::new(port=0)
+  gateway.stats.record_inbound(10)
+  let _ = gateway.activate_provider("codex")
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  gateway.stats.record_stream_mode(true)
+  gateway.record_success_stream_usage(Some(TokenUsage::empty()), 42)
+  assert_eq(gateway.stats.successful_responses, 1)
+  assert_eq(gateway.stats.response_bytes, 42)
+  assert_eq(gateway.stats.request_logs.length(), 0)
+}
+
+///|
 async test "gateway nonretryable upstream errors release half open permit" {
   let gateway = Gateway::new(port=0)
   gateway.provider_router.update_all_configs({
@@ -519,7 +575,7 @@ async test "gateway streaming success records provider health before request com
     fail("request should remain open until stream end")
   }
 
-  gateway.record_success_stats_only(0, 0, 24)
+  gateway.record_success_stream_usage(None, 24, record_provider=false)
   assert_true(gateway.stats.successful_responses == 1)
   assert_true(gateway.stats.response_bytes == 24)
   assert_true(gateway.stats.current_request_id is None)
