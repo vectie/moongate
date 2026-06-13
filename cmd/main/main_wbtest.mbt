@@ -680,6 +680,41 @@ test "top level ccs plugin command names build plugin paths" {
 }
 
 ///|
+test "top level ccs workspace command names build workspace paths" {
+  assert_eq(
+    workspace_filename_path(
+      ["moonstat", "read_workspace_file", "--filename", "AGENTS.md"],
+      "/read_workspace_file",
+    ),
+    "/read_workspace_file?filename=AGENTS.md",
+  )
+  assert_eq(
+    workspace_content_path(
+      [
+        "moonstat", "write_workspace_file", "--filename", "AGENTS.md", "--content",
+        "hello moon",
+      ],
+      "/write_workspace_file",
+    ),
+    Some("/write_workspace_file?filename=AGENTS.md&content=hello%20moon"),
+  )
+  assert_eq(
+    workspace_query_path(
+      ["moonstat", "search_daily_memory_files", "--query", "daily plan"],
+      "/search_daily_memory_files",
+    ),
+    "/search_daily_memory_files?query=daily%20plan",
+  )
+  assert_eq(
+    workspace_subdir_path(
+      ["moonstat", "open_workspace_directory", "--subdir", "memory"],
+      "/open_workspace_directory",
+    ),
+    "/open_workspace_directory?subdir=memory",
+  )
+}
+
+///|
 test "top level ccs mcp command names build mcp paths" {
   assert_eq(
     mcp_app_path(

@@ -231,6 +231,32 @@ test "ccs claude plugin detection matches managed primary api key" {
 }
 
 ///|
+test "ccs workspace filename validators mirror OpenClaw whitelist" {
+  assert_true(ccs_validate_workspace_filename("AGENTS.md"))
+  assert_true(ccs_validate_workspace_filename("BOOTSTRAP.md"))
+  assert_false(ccs_validate_workspace_filename("../AGENTS.md"))
+  assert_false(ccs_validate_workspace_filename("notes.md"))
+
+  assert_true(ccs_validate_daily_memory_filename("2026-06-14.md"))
+  assert_false(ccs_validate_daily_memory_filename("2026-6-14.md"))
+  assert_false(ccs_validate_daily_memory_filename("../2026-06-14.md"))
+  assert_eq(ccs_daily_memory_date("2026-06-14.md"), "2026-06-14")
+}
+
+///|
+test "ccs daily memory search helpers count and snippet matches" {
+  let (count, first) = ccs_count_case_insensitive_matches(
+    "Plan today. plan tomorrow. PLAN later.", "plan",
+  )
+  assert_eq(count, 3)
+  assert_eq(first, Some(0))
+  assert_eq(
+    ccs_search_snippet("abcdefghijklmnopqrstuvwxyz", 10),
+    "abcdefghijklmnopqrstuvwxyz",
+  )
+}
+
+///|
 test "provider command helpers parse ccs sort and endpoint test payloads" {
   let updates = provider_sort_updates_from_request(
     "/update_providers_sort_order?app=codex&id=custom&sortIndex=2",

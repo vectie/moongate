@@ -206,6 +206,14 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /is_claude_plugin_applied`
 - `POST /apply_claude_onboarding_skip`
 - `POST /clear_claude_onboarding_skip`
+- `GET /list_daily_memory_files`
+- `GET /read_daily_memory_file?filename=2026-06-14.md`
+- `POST /write_daily_memory_file?filename=2026-06-14.md&content=...`
+- `GET|POST /search_daily_memory_files?query=plan`
+- `DELETE|POST /delete_daily_memory_file?filename=2026-06-14.md`
+- `GET /read_workspace_file?filename=AGENTS.md`
+- `POST /write_workspace_file?filename=AGENTS.md&content=...`
+- `GET|POST /open_workspace_directory?subdir=memory`
 - `GET /get_prompts?app=codex`
 - `POST /upsert_prompt?app=codex&id=review&content=Check`
 - `DELETE|POST /delete_prompt?app=codex&id=review`
@@ -342,6 +350,15 @@ Moonstat keeps these settings in standalone gateway state, preserves hidden
 WebDAV/S3 secrets during `save_settings` like CCS, validates optimizer
 `cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
 as deterministic local state changes instead of mutating the desktop OS.
+CCS OpenClaw workspace commands are mirrored by `list_daily_memory_files`,
+`read_daily_memory_file`, `write_daily_memory_file`,
+`search_daily_memory_files`, `delete_daily_memory_file`,
+`read_workspace_file`, `write_workspace_file`, and
+`open_workspace_directory`. Standalone mode stores the same whitelisted
+workspace files and `memory/YYYY-MM-DD.md` daily memory files under
+`~/.moonstat/openclaw/workspace`, returns CCS camelCase metadata, and keeps
+directory opening non-destructive while still ensuring the target directory
+exists.
 CCS MCP and prompt commands are mirrored by `/get_mcp_config`,
 `/upsert_mcp_server_in_config`, `/set_mcp_enabled`, `/get_mcp_servers`,
 `/toggle_mcp_app`, `/get_prompts`, `/upsert_prompt`, and related Claude-specific

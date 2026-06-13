@@ -164,6 +164,35 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["clear_claude_onboarding_skip", ..]
     | ["clear-claude-onboarding-skip", ..] =>
       check_json_post_endpoint(arr, "/clear_claude_onboarding_skip", "Plugin")
+    ["list_daily_memory_files", ..] | ["list-daily-memory-files", ..] =>
+      check_usage_endpoint(arr, "/list_daily_memory_files")
+    ["read_daily_memory_file", ..] | ["read-daily-memory-file", ..] =>
+      check_usage_endpoint(
+        arr,
+        workspace_filename_path(arr, "/read_daily_memory_file"),
+      )
+    ["write_daily_memory_file", ..] | ["write-daily-memory-file", ..] =>
+      write_workspace_content(arr, "/write_daily_memory_file", "Workspace")
+    ["search_daily_memory_files", ..] | ["search-daily-memory-files", ..] =>
+      check_usage_endpoint(
+        arr,
+        workspace_query_path(arr, "/search_daily_memory_files"),
+      )
+    ["delete_daily_memory_file", ..] | ["delete-daily-memory-file", ..] =>
+      delete_workspace_resource(arr, "/delete_daily_memory_file", "Workspace")
+    ["read_workspace_file", ..] | ["read-workspace-file", ..] =>
+      check_usage_endpoint(
+        arr,
+        workspace_filename_path(arr, "/read_workspace_file"),
+      )
+    ["write_workspace_file", ..] | ["write-workspace-file", ..] =>
+      write_workspace_content(arr, "/write_workspace_file", "Workspace")
+    ["open_workspace_directory", ..] | ["open-workspace-directory", ..] =>
+      check_json_post_endpoint(
+        arr,
+        workspace_subdir_path(arr, "/open_workspace_directory"),
+        "Workspace",
+      )
     ["get_opencode_live_provider_ids", ..]
     | ["get-opencode-live-provider-ids", ..] =>
       check_named_live_provider_ids(arr, "opencode")
@@ -517,6 +546,35 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_json_post_endpoint(arr, "/apply_claude_onboarding_skip", "Plugin")
     ["plugin", "claude", "onboarding-clear", ..] =>
       check_json_post_endpoint(arr, "/clear_claude_onboarding_skip", "Plugin")
+    ["workspace", "memory", "list", ..] =>
+      check_usage_endpoint(arr, "/list_daily_memory_files")
+    ["workspace", "memory", "read", ..] =>
+      check_usage_endpoint(
+        arr,
+        workspace_filename_path(arr, "/read_daily_memory_file"),
+      )
+    ["workspace", "memory", "write", ..] =>
+      write_workspace_content(arr, "/write_daily_memory_file", "Workspace")
+    ["workspace", "memory", "search", ..] =>
+      check_usage_endpoint(
+        arr,
+        workspace_query_path(arr, "/search_daily_memory_files"),
+      )
+    ["workspace", "memory", "delete", ..] =>
+      delete_workspace_resource(arr, "/delete_daily_memory_file", "Workspace")
+    ["workspace", "read", ..] =>
+      check_usage_endpoint(
+        arr,
+        workspace_filename_path(arr, "/read_workspace_file"),
+      )
+    ["workspace", "write", ..] =>
+      write_workspace_content(arr, "/write_workspace_file", "Workspace")
+    ["workspace", "open", ..] =>
+      check_json_post_endpoint(
+        arr,
+        workspace_subdir_path(arr, "/open_workspace_directory"),
+        "Workspace",
+      )
     ["provider", "live-ids", ..] | ["providers", "live-ids", ..] =>
       check_provider_live_ids(arr)
     ["provider", "live-get", ..] | ["providers", "live-get", ..] =>
@@ -716,6 +774,10 @@ fn print_help() -> Unit {
   )
   println(
     "  plugin claude onboarding-skip/onboarding-clear  Toggle onboarding skip",
+  )
+  println("  workspace read/write/open  Manage ccs OpenClaw workspace files")
+  println(
+    "  workspace memory list/read/write/search/delete  Manage daily memory",
   )
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage get-request-logs  Alias for ccs get_request_logs")
@@ -1412,6 +1474,34 @@ async fn apply_claude_plugin_config(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn write_workspace_content(
+  args : Array[String],
+  base_path : String,
+  label : String,
+) -> Unit {
+  guard workspace_content_path(args, base_path) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --filename and --content")
+    return
+  }
+  check_json_post_endpoint(args, path, label)
+}
+
+///|
+async fn delete_workspace_resource(
+  args : Array[String],
+  base_path : String,
+  label : String,
+) -> Unit {
+  guard workspace_filename_path_optional(args, base_path) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --filename")
+    return
+  }
+  check_json_delete_endpoint(args, path, label)
+}
+
+///|
 async fn check_hermes_memory(args : Array[String]) -> Unit {
   guard hermes_kind_path(args, "/get_hermes_memory") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1975,6 +2065,55 @@ fn apply_claude_plugin_config_path(args : Array[String]) -> String {
     Some(official) =>
       "/apply_claude_plugin_config?\{cli_query_pair("official", official)}"
     None => "/apply_claude_plugin_config"
+  }
+}
+
+///|
+fn workspace_filename_arg(args : Array[String]) -> String? {
+  parse_string_arg_any(args, "--filename", "--file")
+}
+
+///|
+fn workspace_filename_path(args : Array[String], base_path : String) -> String {
+  workspace_filename_path_optional(args, base_path).unwrap_or(base_path)
+}
+
+///|
+fn workspace_filename_path_optional(
+  args : Array[String],
+  base_path : String,
+) -> String? {
+  match workspace_filename_arg(args) {
+    Some(filename) =>
+      Some("\{base_path}?\{cli_query_pair("filename", filename)}")
+    None => None
+  }
+}
+
+///|
+fn workspace_content_path(args : Array[String], base_path : String) -> String? {
+  guard workspace_filename_arg(args) is Some(filename) else { return None }
+  guard parse_string_arg(args, "--content") is Some(content) else {
+    return None
+  }
+  Some(
+    "\{base_path}?\{cli_query_pair("filename", filename)}&\{cli_query_pair("content", content)}",
+  )
+}
+
+///|
+fn workspace_query_path(args : Array[String], base_path : String) -> String {
+  match parse_string_arg(args, "--query") {
+    Some(query) => "\{base_path}?\{cli_query_pair("query", query)}"
+    None => base_path
+  }
+}
+
+///|
+fn workspace_subdir_path(args : Array[String], base_path : String) -> String {
+  match parse_string_arg(args, "--subdir") {
+    Some(subdir) => "\{base_path}?\{cli_query_pair("subdir", subdir)}"
+    None => base_path
   }
 }
 

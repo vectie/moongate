@@ -1007,6 +1007,45 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     _,
     w,
   ) => self.handle_clear_claude_onboarding_skip(w))
+  router.add_handler(@httpx.Method::Get, "/list_daily_memory_files", (_, w) => {
+    self.handle_list_daily_memory_files(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/read_daily_memory_file", (r, w) => {
+    self.handle_read_daily_memory_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/read_daily_memory_file", (r, w) => {
+    self.handle_read_daily_memory_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/write_daily_memory_file", (r, w) => {
+    self.handle_write_daily_memory_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/search_daily_memory_files", (r, w) => {
+    self.handle_search_daily_memory_files(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/search_daily_memory_files", (r, w) => {
+    self.handle_search_daily_memory_files(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/delete_daily_memory_file", (r, w) => {
+    self.handle_delete_daily_memory_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/delete_daily_memory_file", (r, w) => {
+    self.handle_delete_daily_memory_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/read_workspace_file", (r, w) => {
+    self.handle_read_workspace_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/read_workspace_file", (r, w) => {
+    self.handle_read_workspace_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/write_workspace_file", (r, w) => {
+    self.handle_write_workspace_file(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/open_workspace_directory", (r, w) => {
+    self.handle_open_workspace_directory(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/open_workspace_directory", (r, w) => {
+    self.handle_open_workspace_directory(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_opencode_live_provider_ids", (
     _,
     w,
@@ -3379,6 +3418,237 @@ fn ccs_default_log_config_json() -> Json {
 ///|
 fn ccs_claude_plugin_config_path() -> String {
   @pathx.join(ccs_config_dir("claude"), "config.json")
+}
+
+///|
+fn ccs_openclaw_workspace_dir() -> String {
+  @pathx.join(
+    @pathx.join(@pathx.join(ccs_home_dir(), ".moonstat"), "openclaw"),
+    "workspace",
+  )
+}
+
+///|
+fn ccs_openclaw_memory_dir() -> String {
+  @pathx.join(ccs_openclaw_workspace_dir(), "memory")
+}
+
+///|
+fn ccs_allowed_workspace_files() -> Array[String] {
+  [
+    "AGENTS.md", "SOUL.md", "USER.md", "IDENTITY.md", "TOOLS.md", "MEMORY.md", "HEARTBEAT.md",
+    "BOOTSTRAP.md", "BOOT.md",
+  ]
+}
+
+///|
+fn ccs_validate_workspace_filename(filename : String) -> Bool {
+  ccs_allowed_workspace_files().contains(filename)
+}
+
+///|
+fn ccs_validate_daily_memory_filename(filename : String) -> Bool {
+  filename.length() == 13 &&
+  filename.has_suffix(".md") &&
+  ccs_ascii_digit_at(filename, 0) &&
+  ccs_ascii_digit_at(filename, 1) &&
+  ccs_ascii_digit_at(filename, 2) &&
+  ccs_ascii_digit_at(filename, 3) &&
+  filename[4] == '-' &&
+  ccs_ascii_digit_at(filename, 5) &&
+  ccs_ascii_digit_at(filename, 6) &&
+  filename[7] == '-' &&
+  ccs_ascii_digit_at(filename, 8) &&
+  ccs_ascii_digit_at(filename, 9)
+}
+
+///|
+fn ccs_ascii_digit_at(value : String, index : Int) -> Bool {
+  let ch = value[index]
+  ch >= '0' && ch <= '9'
+}
+
+///|
+fn ccs_daily_memory_date(filename : String) -> String {
+  filename[:10].to_owned()
+}
+
+///|
+fn ccs_workspace_file_path(filename : String) -> String {
+  @pathx.join(ccs_openclaw_workspace_dir(), filename)
+}
+
+///|
+fn ccs_daily_memory_file_path(filename : String) -> String {
+  @pathx.join(ccs_openclaw_memory_dir(), filename)
+}
+
+///|
+async fn ccs_ensure_directory(path : String) -> Bool {
+  @fsx.make_directory(path, recursive=true, exists_ok=true) catch {
+    _ => return false
+  }
+  true
+}
+
+///|
+fn ccs_file_mtime(path : String) -> Int64 {
+  let stat = @fsx.stat(path) catch { _ => return 0L }
+  stat.mtime()
+}
+
+///|
+fn ccs_preview(content : String, limit : Int) -> String {
+  if content.length() <= limit {
+    content
+  } else {
+    content[:limit].to_owned()
+  }
+}
+
+///|
+fn ccs_search_snippet(content : String, first_pos : Int) -> String {
+  let start = if first_pos > 50 { first_pos - 50 } else { 0 }
+  let end = if first_pos + 70 < content.length() {
+    first_pos + 70
+  } else {
+    content.length()
+  }
+  let prefix = if start > 0 { "..." } else { "" }
+  let suffix = if end < content.length() { "..." } else { "" }
+  "\{prefix}\{content[start:end]}\{suffix}"
+}
+
+///|
+fn ccs_count_case_insensitive_matches(
+  haystack : String,
+  needle : String,
+) -> (Int, Int?) {
+  let lower = haystack.to_lower()
+  let query = needle.to_lower()
+  if query.is_empty() {
+    return (0, None)
+  }
+  let mut count = 0
+  let mut first : Int? = None
+  let mut offset = 0
+  while offset <= lower.length() {
+    match lower[offset:].find(query) {
+      Some(found) => {
+        let pos = offset + found
+        if first is None {
+          first = Some(pos)
+        }
+        count = count + 1
+        offset = pos + query.length()
+      }
+      None => break
+    }
+  }
+  (count, first)
+}
+
+///|
+async fn ccs_daily_memory_info_json(path : String, filename : String) -> Json {
+  let content = @fsx.read_file(path) catch { _ => "" }
+  let modified_at = ccs_file_mtime(path)
+  {
+    "filename": Json::string(filename),
+    "date": Json::string(ccs_daily_memory_date(filename)),
+    "sizeBytes": Json::number(content.length().to_double()),
+    "modifiedAt": Json::number(modified_at.to_double()),
+    "preview": Json::string(ccs_preview(content, 200)),
+  }.to_json()
+}
+
+///|
+async fn ccs_list_daily_memory_files_json() -> Json {
+  let memory_dir = ccs_openclaw_memory_dir()
+  if !@fsx.exists(memory_dir) {
+    return Json::array([])
+  }
+  let filenames : Array[String] = []
+  let rows_by_filename : Map[String, Json] = {}
+  let rows : Array[Json] = []
+  let entries = @fsx.list_directory(memory_dir) catch {
+    _ => return Json::array([])
+  }
+  for entry in entries {
+    if entry.kind is @fsx.FileKind::Regular &&
+      ccs_validate_daily_memory_filename(entry.name) {
+      filenames.push(entry.name)
+      rows_by_filename[entry.name] = ccs_daily_memory_info_json(
+        entry.path,
+        entry.name,
+      )
+    }
+  }
+  filenames.sort()
+  let mut index = filenames.length() - 1
+  while index >= 0 {
+    guard rows_by_filename.get(filenames[index]) is Some(row) else {
+      index = index - 1
+      continue
+    }
+    rows.push(row)
+    index = index - 1
+  }
+  Json::array(rows)
+}
+
+///|
+async fn ccs_search_daily_memory_files_json(query : String) -> Json {
+  let trimmed = query.trim().to_owned()
+  let memory_dir = ccs_openclaw_memory_dir()
+  if trimmed.is_empty() || !@fsx.exists(memory_dir) {
+    return Json::array([])
+  }
+  let filenames : Array[String] = []
+  let rows_by_filename : Map[String, Json] = {}
+  let rows : Array[Json] = []
+  let entries = @fsx.list_directory(memory_dir) catch {
+    _ => return Json::array([])
+  }
+  for entry in entries {
+    if !(entry.kind is @fsx.FileKind::Regular) ||
+      !ccs_validate_daily_memory_filename(entry.name) {
+      continue
+    }
+    let content = @fsx.read_file(entry.path) catch { _ => "" }
+    let date = ccs_daily_memory_date(entry.name)
+    let (content_count, first_pos) = ccs_count_case_insensitive_matches(
+      content, trimmed,
+    )
+    let (date_count, _) = ccs_count_case_insensitive_matches(date, trimmed)
+    if content_count == 0 && date_count == 0 {
+      continue
+    }
+    let snippet = match first_pos {
+      Some(pos) => ccs_search_snippet(content, pos)
+      None => ccs_preview(content, 120)
+    }
+    let modified_at = ccs_file_mtime(entry.path)
+    filenames.push(entry.name)
+    rows_by_filename[entry.name] = {
+      "filename": Json::string(entry.name),
+      "date": Json::string(date),
+      "sizeBytes": Json::number(content.length().to_double()),
+      "modifiedAt": Json::number(modified_at.to_double()),
+      "snippet": Json::string(snippet),
+      "matchCount": Json::number((content_count + date_count).to_double()),
+    }.to_json()
+  }
+  filenames.sort()
+  let mut index = filenames.length() - 1
+  while index >= 0 {
+    guard rows_by_filename.get(filenames[index]) is Some(row) else {
+      index = index - 1
+      continue
+    }
+    rows.push(row)
+    index = index - 1
+  }
+  Json::array(rows)
 }
 
 ///|
@@ -5842,6 +6112,183 @@ async fn Gateway::handle_clear_claude_onboarding_skip(
     "skipClaudeOnboarding",
     false,
   )
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_list_daily_memory_files(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_list_daily_memory_files_json())
+}
+
+///|
+async fn Gateway::handle_read_daily_memory_file(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+    ccs_validate_daily_memory_filename(filename) else {
+    write_usage_bad_request(w, "invalid_daily_memory_filename")
+    return
+  }
+  let path = ccs_daily_memory_file_path(filename)
+  if !@fsx.exists_as_file(path) {
+    write_usage_json(w, Json::null())
+    return
+  }
+  let content = @fsx.read_file(path) catch {
+    _ => {
+      write_usage_bad_request(w, "daily_memory_read_failed")
+      return
+    }
+  }
+  write_usage_json(w, Json::string(content))
+}
+
+///|
+async fn Gateway::handle_write_daily_memory_file(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+    ccs_validate_daily_memory_filename(filename) else {
+    write_usage_bad_request(w, "invalid_daily_memory_filename")
+    return
+  }
+  let content = proxy_string_request(r.path, body, ["content"]).unwrap_or("")
+  if !ccs_ensure_directory(ccs_openclaw_memory_dir()) {
+    write_usage_bad_request(w, "daily_memory_directory_failed")
+    return
+  }
+  @fsx.write_to_file(ccs_daily_memory_file_path(filename), content) catch {
+    _ => {
+      write_usage_bad_request(w, "daily_memory_write_failed")
+      return
+    }
+  }
+  write_usage_json(w, Json::null())
+}
+
+///|
+async fn Gateway::handle_search_daily_memory_files(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let query = proxy_string_request(r.path, body, ["query"]).unwrap_or("")
+  write_usage_json(w, ccs_search_daily_memory_files_json(query))
+}
+
+///|
+async fn Gateway::handle_delete_daily_memory_file(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+    ccs_validate_daily_memory_filename(filename) else {
+    write_usage_bad_request(w, "invalid_daily_memory_filename")
+    return
+  }
+  let path = ccs_daily_memory_file_path(filename)
+  if @fsx.exists_as_file(path) {
+    @fsx.remove(path) catch {
+      _ => {
+        write_usage_bad_request(w, "daily_memory_delete_failed")
+        return
+      }
+    }
+  }
+  write_usage_json(w, Json::null())
+}
+
+///|
+async fn Gateway::handle_read_workspace_file(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+    ccs_validate_workspace_filename(filename) else {
+    write_usage_bad_request(w, "invalid_workspace_filename")
+    return
+  }
+  let path = ccs_workspace_file_path(filename)
+  if !@fsx.exists_as_file(path) {
+    write_usage_json(w, Json::null())
+    return
+  }
+  let content = @fsx.read_file(path) catch {
+    _ => {
+      write_usage_bad_request(w, "workspace_file_read_failed")
+      return
+    }
+  }
+  write_usage_json(w, Json::string(content))
+}
+
+///|
+async fn Gateway::handle_write_workspace_file(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+    ccs_validate_workspace_filename(filename) else {
+    write_usage_bad_request(w, "invalid_workspace_filename")
+    return
+  }
+  let content = proxy_string_request(r.path, body, ["content"]).unwrap_or("")
+  if !ccs_ensure_directory(ccs_openclaw_workspace_dir()) {
+    write_usage_bad_request(w, "workspace_directory_failed")
+    return
+  }
+  @fsx.write_to_file(ccs_workspace_file_path(filename), content) catch {
+    _ => {
+      write_usage_bad_request(w, "workspace_file_write_failed")
+      return
+    }
+  }
+  write_usage_json(w, Json::null())
+}
+
+///|
+async fn Gateway::handle_open_workspace_directory(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let subdir = proxy_string_request(r.path, body, ["subdir"]).unwrap_or(
+    "workspace",
+  )
+  let target = if subdir == "memory" {
+    ccs_openclaw_memory_dir()
+  } else {
+    ccs_openclaw_workspace_dir()
+  }
+  if !ccs_ensure_directory(target) {
+    write_usage_bad_request(w, "workspace_directory_failed")
+    return
+  }
   write_usage_json(w, Json::boolean(true))
 }
 
