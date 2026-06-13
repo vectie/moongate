@@ -77,12 +77,10 @@ fn apply_ccs_optimizer_for_provider(
   if !config.enabled || !provider_is_bedrock(provider) {
     return body
   }
-  // The CCS optimizer config carries this sub-switch next to cache injection.
-  // Thinking optimization is ported separately; reading it preserves the shape.
-  if config.thinking_optimizer {
-    ()
-  }
   let mut optimized = body
+  if config.thinking_optimizer {
+    optimized = optimize_ccs_thinking(optimized)
+  }
   if config.cache_injection {
     optimized = inject_ccs_cache_breakpoints(optimized, config.cache_ttl)
   }
@@ -95,6 +93,89 @@ fn provider_is_bedrock(provider : ProviderRouteTarget?) -> Bool {
   guard provider.settings_config is Some(Object(settings)) else { return false }
   guard settings.get("env") is Some(Object(env)) else { return false }
   json_string_from_map(env, "CLAUDE_CODE_USE_BEDROCK") == Some("1")
+}
+
+///|
+fn optimize_ccs_thinking(body : Json) -> Json {
+  let copied = copy_json(body)
+  guard copied is Object(obj) else { return copied }
+  let model = match json_string_from_map(obj, "model") {
+    Some(model) => model.to_lower()
+    None => return Json::object(obj)
+  }
+  if model.contains("haiku") {
+    return Json::object(obj)
+  }
+  if ccs_model_uses_adaptive_thinking(model) {
+    obj["thinking"] = Json::object({ "type": Json::string("adaptive") })
+    obj["output_config"] = Json::object({ "effort": Json::string("max") })
+    append_ccs_anthropic_beta(obj, "context-1m-2025-08-07")
+    return Json::object(obj)
+  }
+  let max_tokens = json_int_from_map(obj, "max_tokens").unwrap_or(16384)
+  let budget_target = max_int(max_tokens - 1, 0)
+  let thinking_type = match obj.get("thinking") {
+    Some(Object(thinking)) => json_string_from_map(thinking, "type")
+    _ => None
+  }
+  match thinking_type {
+    None | Some("disabled") => {
+      obj["thinking"] = Json::object({
+        "type": Json::string("enabled"),
+        "budget_tokens": Json::number(budget_target.to_double()),
+      })
+      append_ccs_anthropic_beta(obj, "interleaved-thinking-2025-05-14")
+    }
+    Some("enabled") => {
+      let current_budget = match obj.get("thinking") {
+        Some(Object(thinking)) =>
+          json_int_from_map(thinking, "budget_tokens").unwrap_or(0)
+        _ => 0
+      }
+      if current_budget < budget_target &&
+        obj.get("thinking") is Some(Object(thinking)) {
+        thinking["budget_tokens"] = Json::number(budget_target.to_double())
+        obj["thinking"] = Json::object(thinking)
+      }
+      append_ccs_anthropic_beta(obj, "interleaved-thinking-2025-05-14")
+    }
+    Some(_) => append_ccs_anthropic_beta(obj, "interleaved-thinking-2025-05-14")
+  }
+  Json::object(obj)
+}
+
+///|
+fn ccs_model_uses_adaptive_thinking(model : String) -> Bool {
+  let normalized = model.replace_all(old=".", new="-")
+  ["opus-4-8", "opus-4-7", "opus-4-6", "sonnet-4-6"].any(needle => {
+    normalized.contains(needle)
+  })
+}
+
+///|
+fn append_ccs_anthropic_beta(obj : Map[String, Json], beta : String) -> Unit {
+  match obj.get("anthropic_beta") {
+    Some(Array(values)) => {
+      for value in values {
+        if value == Json::string(beta) {
+          return
+        }
+      }
+      values.push(Json::string(beta))
+      obj["anthropic_beta"] = Json::array(values)
+    }
+    Some(Null) | None =>
+      obj["anthropic_beta"] = Json::array([Json::string(beta)])
+    Some(_) => obj["anthropic_beta"] = Json::array([Json::string(beta)])
+  }
+}
+
+///|
+fn json_int_from_map(obj : Map[String, Json], key : String) -> Int? {
+  match obj.get(key) {
+    Some(Number(n, ..)) => Some(n.trunc().to_int())
+    _ => None
+  }
 }
 
 ///|

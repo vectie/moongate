@@ -1392,6 +1392,140 @@ test "ccs upstream body filter removes private fields" {
 }
 
 ///|
+test "ccs thinking optimizer uses adaptive mode for newer opus and sonnet" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "anthropic.claude-opus-4-6-20250514-v1:0",
+      #|  "max_tokens": 16384,
+      #|  "thinking": { "type": "enabled", "budget_tokens": 8000 },
+      #|  "messages": [{ "role": "user", "content": "hello" }]
+      #|}
+    ),
+  )
+  let optimized = optimize_ccs_thinking(body)
+  guard optimized is Object(obj) else { fail("expected object") }
+  guard obj["thinking"] is Object(thinking) else { fail("expected thinking") }
+  assert_eq(thinking["type"], Json::string("adaptive"))
+  assert_true(thinking.get("budget_tokens") is None)
+  guard obj["output_config"] is Object(output_config) else {
+    fail("expected output_config")
+  }
+  assert_eq(output_config["effort"], Json::string("max"))
+  guard obj["anthropic_beta"] is Array(betas) else {
+    fail("expected anthropic_beta")
+  }
+  assert_true(betas.contains(Json::string("context-1m-2025-08-07")))
+}
+
+///|
+test "ccs thinking optimizer injects legacy budget and beta" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "anthropic.claude-sonnet-4-5-20250514-v1:0",
+      #|  "max_tokens": 8192,
+      #|  "thinking": { "type": "disabled" },
+      #|  "messages": [{ "role": "user", "content": "hello" }]
+      #|}
+    ),
+  )
+  let optimized = optimize_ccs_thinking(body)
+  guard optimized is Object(obj) else { fail("expected object") }
+  guard obj["thinking"] is Object(thinking) else { fail("expected thinking") }
+  assert_eq(thinking["type"], Json::string("enabled"))
+  assert_eq(thinking["budget_tokens"], Json::number(8191.0))
+  guard obj["anthropic_beta"] is Array(betas) else {
+    fail("expected anthropic_beta")
+  }
+  assert_true(betas.contains(Json::string("interleaved-thinking-2025-05-14")))
+}
+
+///|
+test "ccs thinking optimizer upgrades small enabled legacy budget" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "anthropic.claude-sonnet-4-5-20250514-v1:0",
+      #|  "max_tokens": 4096,
+      #|  "thinking": { "type": "enabled", "budget_tokens": 1024 },
+      #|  "anthropic_beta": ["interleaved-thinking-2025-05-14"],
+      #|  "messages": [{ "role": "user", "content": "hello" }]
+      #|}
+    ),
+  )
+  let optimized = optimize_ccs_thinking(body)
+  guard optimized is Object(obj) else { fail("expected object") }
+  guard obj["thinking"] is Object(thinking) else { fail("expected thinking") }
+  assert_eq(thinking["budget_tokens"], Json::number(4095.0))
+  guard obj["anthropic_beta"] is Array(betas) else {
+    fail("expected anthropic_beta")
+  }
+  assert_eq(betas.length(), 1)
+}
+
+///|
+test "ccs thinking optimizer skips haiku models" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "anthropic.claude-haiku-4-5-20250514-v1:0",
+      #|  "max_tokens": 8192,
+      #|  "messages": [{ "role": "user", "content": "hello" }]
+      #|}
+    ),
+  )
+  assert_eq(optimize_ccs_thinking(body), body)
+}
+
+///|
+test "ccs thinking optimizer can be disabled for bedrock provider" {
+  let keys = [
+    "MOONSTAT_OPTIMIZER_ENABLED", "MOONSTAT_THINKING_OPTIMIZER", "MOONSTAT_CACHE_INJECTION",
+  ]
+  for key in keys {
+    @os.unsetenv(key) catch {
+      _ => ()
+    }
+  }
+  @os.setenv("MOONSTAT_OPTIMIZER_ENABLED", "true", overwrite=true)
+  @os.setenv("MOONSTAT_THINKING_OPTIMIZER", "false", overwrite=true)
+  @os.setenv("MOONSTAT_CACHE_INJECTION", "false", overwrite=true)
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="bedrock-thinking-off",
+    provider_name="Bedrock Thinking Off",
+    settings_config=Some(
+      @json.parse(
+        (
+          #|{
+          #|  "env": { "CLAUDE_CODE_USE_BEDROCK": "1" }
+          #|}
+        ),
+      ),
+    ),
+  )
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "anthropic.claude-sonnet-4-5-20250514-v1:0",
+      #|  "max_tokens": 8192,
+      #|  "messages": [{ "role": "user", "content": "hello" }]
+      #|}
+    ),
+  )
+  let optimized = prepare_upstream_request_body(body, provider=Some(provider))
+  guard optimized is Object(obj) else { fail("expected object") }
+  assert_true(obj.get("thinking") is None)
+  assert_true(obj.get("anthropic_beta") is None)
+  for key in keys {
+    @os.unsetenv(key) catch {
+      _ => ()
+    }
+  }
+}
+
+///|
 test "ccs cache injector adds cache breakpoints at provider send sites" {
   let body = @json.parse(
     (
@@ -1518,6 +1652,11 @@ test "ccs optimizer runs only for enabled bedrock providers" {
   @os.setenv("MOONSTAT_CACHE_TTL", "1h", overwrite=true)
   let enabled = prepare_upstream_request_body(body, provider=Some(provider))
   assert_eq(count_ccs_cache_breakpoints(enabled), 1)
+  guard enabled is Object(enabled_obj) else { fail("expected enabled object") }
+  guard enabled_obj["thinking"] is Object(thinking) else {
+    fail("expected thinking")
+  }
+  assert_eq(thinking["type"], Json::string("enabled"))
   let non_bedrock = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="plain",
