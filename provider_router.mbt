@@ -268,6 +268,9 @@ pub struct ProviderRouteTarget {
   provider_name : String
   enabled : Bool
   provider_type : String?
+  api_format : String?
+  prompt_cache_key : String?
+  codex_fast_mode : Bool
   base_url : String?
   api_key : String?
   is_full_url : Bool
@@ -281,6 +284,9 @@ pub fn ProviderRouteTarget::new(
   provider_name~ : String,
   enabled? : Bool = true,
   provider_type? : String? = None,
+  api_format? : String? = None,
+  prompt_cache_key? : String? = None,
+  codex_fast_mode? : Bool = true,
   base_url? : String? = None,
   api_key? : String? = None,
   is_full_url? : Bool = false,
@@ -292,6 +298,9 @@ pub fn ProviderRouteTarget::new(
     provider_name,
     enabled,
     provider_type,
+    api_format,
+    prompt_cache_key,
+    codex_fast_mode,
     base_url,
     api_key,
     is_full_url,
@@ -301,7 +310,7 @@ pub fn ProviderRouteTarget::new(
 
 ///|
 pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
-  {
+  let obj : Map[String, Json] = {
     "appType": Json::string(self.app_type),
     "providerId": Json::string(self.provider_id),
     "providerName": Json::string(self.provider_name),
@@ -310,7 +319,11 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
     "baseUrl": provider_route_optional_string_json(self.base_url),
     "isFullUrl": Json::boolean(self.is_full_url),
     "modelMapping": provider_route_model_mapping_json(self.model_mapping),
-  }.to_json()
+  }
+  if self.api_format is Some(api_format) {
+    obj["apiFormat"] = Json::string(api_format)
+  }
+  Json::object(obj)
 }
 
 ///|

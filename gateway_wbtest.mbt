@@ -906,6 +906,119 @@ test "codex compatible provider url follows ccs base url rules" {
 }
 
 ///|
+test "claude compatible provider api format follows ccs endpoints" {
+  let chat_provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="openai-chat",
+    provider_name="OpenAI Chat",
+    provider_type=Some("openai"),
+    api_format=Some("openai_chat"),
+    base_url=Some("https://api.openai.com/v1"),
+    api_key=Some("sk-test"),
+  )
+  assert_eq(chat_provider.claude_api_format(), "openai_chat")
+  assert_true(chat_provider.can_use_claude_compatible_upstream())
+  assert_eq(
+    claude_transform_endpoint(chat_provider.claude_api_format(), false),
+    "/v1/chat/completions",
+  )
+  assert_eq(
+    codex_compatible_provider_url(
+      "https://api.openai.com/v1",
+      claude_transform_endpoint(chat_provider.claude_api_format(), false),
+    ),
+    "https://api.openai.com/v1/chat/completions",
+  )
+
+  let responses_provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="openai-responses",
+    provider_name="OpenAI Responses",
+    api_format=Some("openai_responses"),
+    base_url=Some("https://api.openai.com"),
+    api_key=Some("sk-test"),
+  )
+  assert_eq(
+    claude_transform_endpoint(responses_provider.claude_api_format(), false),
+    "/v1/responses",
+  )
+  assert_eq(
+    codex_compatible_provider_url(
+      "https://api.openai.com",
+      claude_transform_endpoint(responses_provider.claude_api_format(), false),
+    ),
+    "https://api.openai.com/v1/responses",
+  )
+}
+
+///|
+test "claude upstream request json rewrites mapped model" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "claude-sonnet-4-6",
+      #|  "max_tokens": 128,
+      #|  "messages": [
+      #|    { "role": "user", "content": "hello" }
+      #|  ]
+      #|}
+    ),
+  )
+  let upstream = claude_request_json_for_upstream(body, "gpt-5.4")
+  guard upstream is Object(obj) else { fail("expected object") }
+  assert_eq(obj["model"], Json::string("gpt-5.4"))
+  assert_true(obj.get("messages") is Some(_))
+}
+
+///|
+test "openai chat completion converts to anthropic response" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "id": "chatcmpl_1",
+      #|  "model": "gpt-4o",
+      #|  "choices": [
+      #|    {
+      #|      "message": {
+      #|        "role": "assistant",
+      #|        "content": "done",
+      #|        "tool_calls": [
+      #|          {
+      #|            "id": "call_1",
+      #|            "type": "function",
+      #|            "function": {
+      #|              "name": "lookup",
+      #|              "arguments": "{\"query\":\"moon\"}"
+      #|            }
+      #|          }
+      #|        ]
+      #|      }
+      #|    }
+      #|  ],
+      #|  "usage": {
+      #|    "prompt_tokens": 10,
+      #|    "completion_tokens": 2,
+      #|    "prompt_tokens_details": { "cached_tokens": 3 }
+      #|  }
+      #|}
+    ),
+  )
+  let response = openai_chat_completion_to_anthropic(body, "claude-sonnet-4-6")
+  assert_eq(response.id, "chatcmpl_1")
+  assert_eq(response.model, "claude-sonnet-4-6")
+  assert_eq(response.stop_reason, Some("tool_use"))
+  assert_eq(response.usage.input_tokens, 7)
+  assert_eq(response.usage.output_tokens, 2)
+  assert_eq(response.usage.cache_read_input_tokens, Some(3))
+  assert_eq(response.content.length(), 2)
+  assert_eq(response.content[0].type_, "text")
+  assert_eq(response.content[0].text, Some("done"))
+  assert_eq(response.content[1].type_, "tool_use")
+  assert_eq(response.content[1].name, Some("lookup"))
+  assert_eq(response.content[1].id, Some("call_1"))
+}
+
+///|
 test "gateway detects active direct codex compatible provider" {
   let gateway = Gateway::new(port=0)
   let providers = [

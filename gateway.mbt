@@ -37,6 +37,8 @@ pub fn Gateway::new(
 fn moonstat_default_provider_router() -> ProviderRouter {
   let router = ProviderRouter::new()
   let claude_model_mapping = ccs_model_mapping_from_env()
+  let mut claude_current_provider = "codex-oauth"
+  let mut claude_desktop_current_provider = "codex-oauth"
   router.upsert_provider(
     ProviderRouteTarget::new(
       app_type="claude",
@@ -72,6 +74,28 @@ fn moonstat_default_provider_router() -> ProviderRouter {
     }
     None => ()
   }
+  match claude_provider_from_env("claude") {
+    Some(provider) => {
+      let provider_id = provider.provider_id
+      router.upsert_provider(provider)
+      claude_current_provider = provider_id
+      router.set_current_provider("claude", provider_id)
+      router.set_failover_queue("claude", [provider_id, "codex-oauth"])
+      router.set_auto_failover("claude", true)
+    }
+    None => ()
+  }
+  match claude_provider_from_env("claude-desktop") {
+    Some(provider) => {
+      let provider_id = provider.provider_id
+      router.upsert_provider(provider)
+      claude_desktop_current_provider = provider_id
+      router.set_current_provider("claude-desktop", provider_id)
+      router.set_failover_queue("claude-desktop", [provider_id, "codex-oauth"])
+      router.set_auto_failover("claude-desktop", true)
+    }
+    None => ()
+  }
   router.upsert_provider(
     ProviderRouteTarget::new(
       app_type="gemini",
@@ -79,8 +103,8 @@ fn moonstat_default_provider_router() -> ProviderRouter {
       provider_name="Gemini API Key",
     ),
   )
-  router.set_current_provider("claude", "codex-oauth")
-  router.set_current_provider("claude-desktop", "codex-oauth")
+  router.set_current_provider("claude", claude_current_provider)
+  router.set_current_provider("claude-desktop", claude_desktop_current_provider)
   router.set_current_provider("codex", "codex-oauth")
   router.set_current_provider("gemini", "gemini-api-key")
   router
@@ -1300,6 +1324,35 @@ fn ProviderRouteTarget::can_use_codex_compatible_upstream(
 }
 
 ///|
+fn ProviderRouteTarget::can_use_claude_compatible_upstream(
+  self : ProviderRouteTarget,
+) -> Bool {
+  self.provider_type != Some("codex_oauth") &&
+  self.base_url is Some(_) &&
+  self.api_key is Some(_)
+}
+
+///|
+fn ProviderRouteTarget::claude_api_format(self : ProviderRouteTarget) -> String {
+  if self.provider_type == Some("codex_oauth") {
+    return "openai_responses"
+  }
+  match self.api_format {
+    Some("openai_chat") => "openai_chat"
+    Some("openai_responses") => "openai_responses"
+    Some("gemini_native") => "gemini_native"
+    _ => "anthropic"
+  }
+}
+
+///|
+fn claude_api_format_needs_transform(api_format : String) -> Bool {
+  api_format == "openai_chat" ||
+  api_format == "openai_responses" ||
+  api_format == "gemini_native"
+}
+
+///|
 async fn Gateway::post_codex_compatible_provider_json(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -1315,6 +1368,35 @@ async fn Gateway::post_codex_compatible_provider_json(
     "Content-Type": "application/json",
     "Accept": "application/json",
   })
+  match result {
+    Ok((response, data)) => Ok((response, data.text()))
+    Err(error) => Err(error)
+  }
+}
+
+///|
+async fn Gateway::post_claude_compatible_provider_json(
+  self : Gateway,
+  provider : ProviderRouteTarget,
+  endpoint : String,
+  request : Json,
+  api_format : String,
+) -> Result[(@http.Response, String), Error] {
+  let _ = self
+  let base_url = provider.base_url.unwrap()
+  let api_key = provider.api_key.unwrap()
+  let url = codex_compatible_provider_url(base_url, endpoint)
+  let headers : Map[String, String] = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  }
+  if api_format == "anthropic" {
+    headers["x-api-key"] = api_key
+    headers["anthropic-version"] = "2023-06-01"
+  } else {
+    headers["Authorization"] = "Bearer \{api_key}"
+  }
+  let result = try? @http.post(url, request, headers~)
   match result {
     Ok((response, data)) => Ok((response, data.text()))
     Err(error) => Err(error)
@@ -1355,7 +1437,19 @@ fn codex_compatible_provider_url(
 
 ///|
 fn provider_base_is_full_endpoint(base_url : String) -> Bool {
-  base_url.has_suffix("/responses") || base_url.has_suffix("/chat/completions")
+  base_url.has_suffix("/responses") ||
+  base_url.has_suffix("/chat/completions") ||
+  base_url.has_suffix("/messages")
+}
+
+///|
+fn claude_transform_endpoint(api_format : String, is_stream : Bool) -> String {
+  let _ = is_stream
+  match api_format {
+    "openai_responses" => "/v1/responses"
+    "openai_chat" => "/v1/chat/completions"
+    _ => "/v1/messages"
+  }
 }
 
 ///|
@@ -1647,8 +1741,62 @@ fn codex_provider_from_env() -> ProviderRouteTarget? {
 }
 
 ///|
+fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
+  guard env_first_non_empty(["MOONSTAT_CLAUDE_BASE_URL", "ANTHROPIC_BASE_URL"])
+    is Some(base_url) else {
+    return None
+  }
+  guard env_first_non_empty([
+      "MOONSTAT_CLAUDE_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN",
+    ])
+    is Some(api_key) else {
+    return None
+  }
+  let provider_id_prefix = if app_type == "claude-desktop" {
+    "claude-desktop"
+  } else {
+    "claude"
+  }
+  Some(
+    ProviderRouteTarget::new(
+      app_type~,
+      provider_id=env_first_non_empty([
+        "MOONSTAT_CLAUDE_PROVIDER_ID", "ANTHROPIC_PROVIDER_ID",
+      ]).unwrap_or("\{provider_id_prefix}-compatible"),
+      provider_name=env_first_non_empty([
+        "MOONSTAT_CLAUDE_PROVIDER_NAME", "ANTHROPIC_PROVIDER_NAME",
+      ]).unwrap_or("Claude Compatible"),
+      provider_type=Some(
+        env_first_non_empty([
+          "MOONSTAT_CLAUDE_PROVIDER_TYPE", "ANTHROPIC_PROVIDER_TYPE",
+        ]).unwrap_or("anthropic"),
+      ),
+      api_format=Some(
+        env_first_non_empty([
+          "MOONSTAT_CLAUDE_API_FORMAT", "ANTHROPIC_API_FORMAT",
+        ]).unwrap_or("anthropic"),
+      ),
+      prompt_cache_key=env_first_non_empty([
+        "MOONSTAT_CLAUDE_PROMPT_CACHE_KEY", "ANTHROPIC_PROMPT_CACHE_KEY",
+      ]),
+      codex_fast_mode=env_bool("MOONSTAT_CODEX_FAST_MODE") ||
+        env_bool("CODEX_FAST_MODE"),
+      base_url=Some(base_url),
+      api_key=Some(api_key),
+      is_full_url=claude_base_is_full_url(),
+      model_mapping=ccs_model_mapping_from_env(),
+    ),
+  )
+}
+
+///|
 fn codex_base_is_full_url() -> Bool {
   env_bool("MOONSTAT_CODEX_FULL_URL") || env_bool("CODEX_FULL_URL")
+}
+
+///|
+fn claude_base_is_full_url() -> Bool {
+  env_bool("MOONSTAT_CLAUDE_FULL_URL") || env_bool("ANTHROPIC_FULL_URL")
 }
 
 ///|
@@ -2660,7 +2808,7 @@ async fn Gateway::handle_messages(
             )
           } else {
             self.handle_non_streaming_request(
-              anthropic_request, model, session_id, w,
+              anthropic_request, json, model, active_provider, session_id, w,
             )
           }
         }
@@ -2687,13 +2835,260 @@ fn Gateway::upstream_claude_model(
 }
 
 ///|
-async fn Gateway::handle_non_streaming_request(
+async fn Gateway::forward_non_streaming_claude_compatible_request(
   self : Gateway,
   request : AnthropicRequest,
-  model : String,
+  request_json : Json,
+  upstream_model : String,
+  provider : ProviderRouteTarget,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
+  let api_format = provider.claude_api_format()
+  if api_format == "gemini_native" {
+    self.record_upstream_error_status(0, @status.BadGateway)
+    w.header().set("Content-Type", "application/json")
+    w.write_header(@status.BadGateway)
+    w.write(
+      "{\"error\":{\"message\":\"Gemini-native Claude provider forwarding is not implemented yet\",\"type\":\"upstream_error\"}}",
+    )
+    w.flush()
+    return
+  }
+  let upstream_body = claude_request_json_for_upstream(
+    request_json, upstream_model,
+  )
+  let endpoint = claude_transform_endpoint(api_format, false)
+  let outbound = if claude_api_format_needs_transform(api_format) {
+    transform_claude_request_for_api_format(
+      upstream_body,
+      api_format,
+      session_id~,
+      explicit_prompt_cache_key=provider.prompt_cache_key,
+      is_codex_oauth=provider.provider_type == Some("codex_oauth"),
+      codex_fast_mode=provider.codex_fast_mode,
+    )
+  } else {
+    upstream_body
+  }
+  match
+    self.post_claude_compatible_provider_json(
+      provider, endpoint, outbound, api_format,
+    ) {
+    Err(error) => {
+      let error_body = "{\"error\":{\"message\":\"Claude upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
+      self.record_upstream_error_status(error_body.length(), @status.BadGateway)
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.BadGateway)
+      w.write(error_body)
+      w.flush()
+    }
+    Ok((response, response_body)) => {
+      if response.code is (200..=299) {
+        let parsed = @json.parse(response_body) catch {
+          _ => {
+            self.record_internal_error()
+            w.header().set("Content-Type", "application/json")
+            w.write_header(@status.InternalServerError)
+            w.write("{\"error\":\"Failed to parse upstream response\"}")
+            w.flush()
+            return
+          }
+        }
+        let usage = token_usage_from_claude_compatible_response(
+          parsed, api_format,
+        ).unwrap_or(TokenUsage::empty())
+        self.record_success_usage(usage, response_body.length())
+        let anthropic_response = claude_compatible_response_to_anthropic(
+          parsed,
+          api_format,
+          request.model,
+        )
+        w.header().set("Content-Type", "application/json")
+        w.write_header(response.code)
+        w.write(anthropic_response.stringify())
+      } else {
+        self.record_upstream_error_status(response_body.length(), response.code)
+        w.header().set("Content-Type", "application/json")
+        w.write_header(response.code)
+        w.write(response_body)
+      }
+      w.flush()
+    }
+  }
+}
+
+///|
+fn claude_request_json_for_upstream(
+  body : Json,
+  upstream_model : String,
+) -> Json {
+  guard body is Object(obj) else { return body }
+  obj["model"] = Json::string(upstream_model)
+  Json::object(obj)
+}
+
+///|
+fn token_usage_from_claude_compatible_response(
+  body : Json,
+  api_format : String,
+) -> TokenUsage? {
+  match api_format {
+    "openai_chat" => token_usage_from_openai_response(body)
+    "openai_responses" => token_usage_from_codex_response_auto(body)
+    _ => token_usage_from_claude_response(body)
+  }
+}
+
+///|
+fn claude_compatible_response_to_anthropic(
+  body : Json,
+  api_format : String,
+  model : String,
+) -> Json {
+  match api_format {
+    "openai_chat" => openai_chat_completion_to_anthropic(body, model).to_json()
+    "openai_responses" => convert_codex_to_anthropic(body, model).to_json()
+    _ => body
+  }
+}
+
+///|
+fn openai_chat_completion_to_anthropic(
+  body : Json,
+  model : String,
+) -> AnthropicResponse {
+  let content : Array[AnthropicResponseBlock] = []
+  let usage = token_usage_from_openai_response(body).unwrap_or(
+    TokenUsage::empty(),
+  )
+  let id = openai_chat_completion_id(body).unwrap_or(generate_message_id())
+  if body is Object(obj) {
+    match obj.get("choices") {
+      Some(Array(choices)) =>
+        if choices.get(0) is Some(Object(choice)) &&
+          choice.get("message") is Some(Object(message)) {
+          append_openai_chat_message_content_as_anthropic(message, content)
+          append_openai_chat_tool_calls_as_anthropic(message, content)
+        }
+      _ => ()
+    }
+  }
+  let has_tools = content.iter().any(fn(block) { block.type_ == "tool_use" })
+  {
+    id,
+    type_: "message",
+    role: "assistant",
+    content,
+    model,
+    stop_reason: Some(if has_tools { "tool_use" } else { "end_turn" }),
+    stop_sequence: None,
+    usage: {
+      input_tokens: usage.anthropic_input_tokens(),
+      output_tokens: usage.output_tokens,
+      cache_read_input_tokens: optional_positive_int(usage.cache_read_tokens),
+      cache_creation_input_tokens: optional_positive_int(
+        usage.cache_creation_tokens,
+      ),
+    },
+  }
+}
+
+///|
+fn openai_chat_completion_id(body : Json) -> String? {
+  guard body is Object(obj) else { return None }
+  json_string_from_map(obj, "id")
+}
+
+///|
+fn append_openai_chat_message_content_as_anthropic(
+  message : Map[String, Json],
+  content : Array[AnthropicResponseBlock],
+) -> Unit {
+  match message.get("content") {
+    Some(String(text)) if !text.is_empty() =>
+      content.push({
+        type_: "text",
+        text: Some(text),
+        name: None,
+        input: None,
+        id: None,
+      })
+    Some(Array(parts)) =>
+      for part in parts {
+        match part {
+          String(text) if !text.is_empty() =>
+            content.push({
+              type_: "text",
+              text: Some(text),
+              name: None,
+              input: None,
+              id: None,
+            })
+          Object(obj) =>
+            if obj.get("type") is Some(String("text")) &&
+              obj.get("text") is Some(String(text)) &&
+              !text.is_empty() {
+              content.push({
+                type_: "text",
+                text: Some(text),
+                name: None,
+                input: None,
+                id: None,
+              })
+            }
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+}
+
+///|
+fn append_openai_chat_tool_calls_as_anthropic(
+  message : Map[String, Json],
+  content : Array[AnthropicResponseBlock],
+) -> Unit {
+  guard message.get("tool_calls") is Some(Array(tool_calls)) else { return }
+  for tool_call in tool_calls {
+    guard tool_call is Object(call_obj) else { continue }
+    guard call_obj.get("function") is Some(Object(function)) else { continue }
+    let input = @json.parse(
+      json_string_from_map(function, "arguments").unwrap_or("{}"),
+    ) catch {
+      _ => Json::object({})
+    }
+    content.push({
+      type_: "tool_use",
+      text: None,
+      name: Some(json_string_from_map(function, "name").unwrap_or("unknown")),
+      input: Some(input),
+      id: Some(
+        json_string_from_map(call_obj, "id").unwrap_or(generate_message_id()),
+      ),
+    })
+  }
+}
+
+///|
+async fn Gateway::handle_non_streaming_request(
+  self : Gateway,
+  request : AnthropicRequest,
+  request_json : Json,
+  model : String,
+  active_provider : ProviderRouteTarget?,
+  session_id : String?,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match active_provider {
+    Some(provider) if provider.can_use_claude_compatible_upstream() => {
+      self.forward_non_streaming_claude_compatible_request(
+        request, request_json, model, provider, session_id, w,
+      )
+      return
+    }
+    _ => ()
+  }
   guard self.credentials is Some(creds) else {
     self.record_unauthorized()
     w.header().set("Content-Type", "application/json")
@@ -2721,7 +3116,9 @@ async fn Gateway::handle_non_streaming_request(
         Ok(new_creds) => {
           self.credentials = Some(new_creds)
           self.logger.info("Credentials refreshed, retrying request")
-          self.handle_non_streaming_request(request, model, session_id, w)
+          self.handle_non_streaming_request(
+            request, request_json, model, active_provider, session_id, w,
+          )
           return
         }
         Err(_) => ()
