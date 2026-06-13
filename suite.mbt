@@ -25,6 +25,9 @@ pub fn moonstat_suite_manifest_json(
     "health_url": Json::string("\{moonstat_base_url(host, port)}/health"),
     "status_url": Json::string("\{moonstat_base_url(host, port)}/status"),
     "stats_url": Json::string("\{moonstat_base_url(host, port)}/stats"),
+    "usage_logs_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/logs",
+    ),
     "models_url": Json::string("\{moonstat_openai_base_url(host, port)}/models"),
     "routes": Json::array(
       moonstat_suite_routes().map(fn(route) { Json::string(route) }),
@@ -48,6 +51,7 @@ pub fn moonstat_suite_manifest_json(
       "health": Json::string("moonstat health"),
       "status": Json::string("moonstat status"),
       "stats": Json::string("moonstat stats"),
+      "usage_logs": Json::string("moonstat usage logs"),
       "codex_install": Json::string(
         "moonstat codex install --port \{port} --model \{model}",
       ),
@@ -74,6 +78,9 @@ pub fn moonstat_suite_status_json(
     "health_url": Json::string("\{moonstat_base_url(host, port)}/health"),
     "status_url": Json::string("\{moonstat_base_url(host, port)}/status"),
     "stats_url": Json::string("\{moonstat_base_url(host, port)}/stats"),
+    "usage_logs_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/logs",
+    ),
     "openai_base_url": Json::string(moonstat_openai_base_url(host, port)),
     "anthropic_base_url": Json::string(moonstat_base_url(host, port)),
     "claude_desktop_base_url": Json::string(
@@ -146,8 +153,8 @@ fn suite_app_json(id : String, role : String, usage : String) -> Json {
 ///|
 fn moonstat_suite_routes() -> Array[String] {
   [
-    "GET /health", "GET /status", "GET /stats", "GET /models", "GET /v1/models",
-    "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude/v1/messages",
+    "GET /health", "GET /status", "GET /stats", "GET /usage/logs", "GET /models",
+    "GET /v1/models", "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude/v1/messages",
     "POST /claude-desktop/v1/messages", "POST /responses", "POST /v1/responses",
     "POST /v1/v1/responses", "POST /codex/v1/responses", "POST /responses/compact",
     "POST /v1/responses/compact", "POST /v1/v1/responses/compact", "POST /codex/v1/responses/compact",

@@ -34,6 +34,7 @@ Status and counters:
 moon run cmd/main -- health
 moon run cmd/main -- status
 moon run cmd/main -- stats
+moon run cmd/main -- usage logs
 ```
 
 Provider model discovery uses the same ccs-compatible `/v1/models` candidate
@@ -64,6 +65,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /health`
 - `GET /status`
 - `GET /stats`
+- `GET /usage/logs`
 - `GET /models`
 - `GET /v1/models`
 - `GET /claude-desktop/v1/models`
@@ -88,7 +90,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
 
 `/status` and `/stats` include ccs-style request counts, success/failure
 counts, active connections, token totals, cache token totals, last request time,
-last error, current provider metadata, and success rate.
+last error, current provider metadata, and success rate. `/usage/logs` returns
+recent in-memory `proxy_request_logs` rows with ccs-style provider/app/model,
+token, cache-token, cost, latency, status, session, streaming, and data-source
+fields.
 
 Claude Desktop gateway routes are open by default for standalone local use. Set
 `MOONSTAT_CLAUDE_DESKTOP_TOKEN` or `CLAUDE_DESKTOP_GATEWAY_TOKEN` to require

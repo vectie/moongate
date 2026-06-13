@@ -169,6 +169,38 @@ pub fn Gateway::new(port~ : Int, host? : String, model? : String) -> Self
 pub fn Gateway::port(Self) -> Int
 pub async fn Gateway::start(Self) -> Unit
 
+pub struct RequestLog {
+  request_id : String
+  provider_id : String
+  provider_name : String?
+  app_type : String
+  model : String
+  request_model : String?
+  pricing_model : String?
+  input_tokens : Int
+  output_tokens : Int
+  cache_read_tokens : Int
+  cache_creation_tokens : Int
+  input_cost_usd : String
+  output_cost_usd : String
+  cache_read_cost_usd : String
+  cache_creation_cost_usd : String
+  total_cost_usd : String
+  is_streaming : Bool
+  latency_ms : Int
+  first_token_ms : Int?
+  duration_ms : Int?
+  status_code : Int
+  error_message : String?
+  session_id : String?
+  provider_type : String?
+  cost_multiplier : String
+  created_at : Int
+  data_source : String
+}
+pub fn RequestLog::new(request_id~ : String, provider_id~ : String, app_type~ : String, model~ : String, usage~ : TokenUsage, status_code~ : Int, latency_ms? : Int, first_token_ms? : Int?, duration_ms? : Int?, error_message? : String?, session_id? : String?, provider_name? : String?, provider_type? : String?, request_model? : String?, pricing_model? : String?, input_cost_usd? : String, output_cost_usd? : String, cache_read_cost_usd? : String, cache_creation_cost_usd? : String, total_cost_usd? : String, is_streaming? : Bool, cost_multiplier? : String, created_at? : Int, data_source? : String) -> Self
+pub fn RequestLog::to_json(Self) -> Json
+
 pub struct TokenUsage {
   input_tokens : Int
   output_tokens : Int
@@ -211,19 +243,32 @@ pub struct TrafficStats {
   active_targets : Map[String, ActiveTarget]
   mut last_request_at : String?
   mut last_error : String?
+  request_logs : Array[RequestLog]
+  mut current_request_id : String?
+  mut current_request_started_at_ms : Int?
+  mut current_request_app_type : String?
+  mut current_request_model : String?
+  mut current_request_session_id : String?
+  mut current_request_provider_type : String?
+  mut current_request_is_streaming : Bool
 }
 pub fn TrafficStats::new() -> Self
 pub fn TrafficStats::record_bad_request(Self) -> Unit
 pub fn TrafficStats::record_inbound(Self, Int) -> Unit
 pub fn TrafficStats::record_internal_error(Self) -> Unit
+pub fn TrafficStats::record_request_context(Self, String, String, session_id? : String?, provider_type? : String?) -> Unit
+pub fn TrafficStats::record_request_log(Self, RequestLog) -> Unit
 pub fn TrafficStats::record_stream_mode(Self, Bool) -> Unit
 pub fn TrafficStats::record_success(Self, Int, Int, Int) -> Unit
 pub fn TrafficStats::record_success_usage(Self, TokenUsage, Int) -> Unit
 pub fn TrafficStats::record_unauthorized(Self) -> Unit
 pub fn TrafficStats::record_upstream_error(Self, Int) -> Unit
+pub fn TrafficStats::record_upstream_error_status(Self, Int, Int) -> Unit
+pub fn TrafficStats::request_logs_json(Self, limit? : Int) -> Json
 pub fn TrafficStats::set_active_target(Self, String, String, String) -> Unit
 pub fn TrafficStats::status_json(Self, String, Int, Int) -> Json
 pub fn TrafficStats::to_json(Self) -> Json
+pub fn TrafficStats::usage_logs_json(Self, limit? : Int) -> Json
 
 // Type aliases
 

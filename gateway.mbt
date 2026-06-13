@@ -121,6 +121,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/stats", (_, w) => {
     self.handle_stats(w)
   })
+  router.add_handler(@httpx.Method::Get, "/usage/logs", (_, w) => {
+    self.handle_usage_logs(w)
+  })
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
     self.handle_models(w)
   })
@@ -179,6 +182,11 @@ async fn Gateway::handle_codex_responses(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   self.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  self.stats.record_request_context(
+    "codex",
+    self.model,
+    provider_type=Some("codex"),
+  )
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -196,6 +204,12 @@ async fn Gateway::handle_codex_responses(
       self.stats.record_stream_mode(stream)
       let request = normalize_codex_oauth_request(json)
       let session_id = extract_client_session_id(r.headers, json, "codex")
+      self.stats.record_request_context(
+        "codex",
+        json_string_field(json, "model").unwrap_or(self.model),
+        session_id~,
+        provider_type=Some("codex"),
+      )
       let endpoint = codex_backend_responses_endpoint(
         compact,
         request_path=r.path,
@@ -221,6 +235,11 @@ async fn Gateway::handle_chat_completions(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   self.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  self.stats.record_request_context(
+    "codex",
+    self.model,
+    provider_type=Some("codex"),
+  )
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -238,6 +257,12 @@ async fn Gateway::handle_chat_completions(
       let stream = json_bool_field(json, "stream").unwrap_or(false)
       self.stats.record_stream_mode(stream)
       let session_id = extract_client_session_id(r.headers, json, "openai")
+      self.stats.record_request_context(
+        "codex",
+        response_model,
+        session_id~,
+        provider_type=Some("codex"),
+      )
       let request = openai_chat_to_codex_response_request(json, self.model)
       guard request is Some(codex_request) else {
         self.stats.record_bad_request()
@@ -272,6 +297,11 @@ async fn Gateway::handle_gemini(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   self.stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
+  self.stats.record_request_context(
+    "gemini",
+    "gemini",
+    provider_type=Some("gemini"),
+  )
   let request_json : Json = if body_str.is_empty() {
     Json::null()
   } else {
@@ -289,6 +319,11 @@ async fn Gateway::handle_gemini(
     }
   }
   let endpoint = normalize_gemini_endpoint(r.path)
+  self.stats.record_request_context(
+    "gemini",
+    gemini_model_from_endpoint(endpoint),
+    provider_type=Some("gemini"),
+  )
   self.stats.record_stream_mode(
     gemini_request_is_stream(endpoint, request_json),
   )
@@ -329,7 +364,7 @@ async fn Gateway::forward_gemini_get(
   let result = try? @http.get(url)
   match result {
     Err(error) => {
-      self.stats.record_upstream_error(0)
+      self.stats.record_upstream_error_status(0, @status.BadGateway)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(
@@ -344,7 +379,10 @@ async fn Gateway::forward_gemini_get(
           response_body.length(),
         )
       } else {
-        self.stats.record_upstream_error(response_body.length())
+        self.stats.record_upstream_error_status(
+          response_body.length(),
+          response.code,
+        )
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -366,7 +404,7 @@ async fn Gateway::forward_gemini_post(
   })
   match result {
     Err(error) => {
-      self.stats.record_upstream_error(0)
+      self.stats.record_upstream_error_status(0, @status.BadGateway)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(
@@ -383,7 +421,10 @@ async fn Gateway::forward_gemini_post(
         }
         self.stats.record_success_usage(usage, response_body.length())
       } else {
-        self.stats.record_upstream_error(response_body.length())
+        self.stats.record_upstream_error_status(
+          response_body.length(),
+          response.code,
+        )
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -416,7 +457,10 @@ async fn Gateway::forward_non_streaming_chat_completion(
   let response = client.post("/backend-api/codex/responses", request)
   let response_body = client.read_all().text()
   if response.code != 200 {
-    self.stats.record_upstream_error(response_body.length())
+    self.stats.record_upstream_error_status(
+      response_body.length(),
+      response.code,
+    )
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(response_body)
@@ -472,7 +516,7 @@ async fn Gateway::forward_streaming_chat_completion(
   let response = client.post("/backend-api/codex/responses", request)
   if response.code != 200 {
     let error_body = client.read_all().text()
-    self.stats.record_upstream_error(error_body.length())
+    self.stats.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(error_body)
@@ -534,7 +578,10 @@ async fn Gateway::forward_non_streaming_codex_response(
   let response = client.post(endpoint, request)
   let response_body = client.read_all().text()
   if response.code != 200 {
-    self.stats.record_upstream_error(response_body.length())
+    self.stats.record_upstream_error_status(
+      response_body.length(),
+      response.code,
+    )
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(response_body)
@@ -577,7 +624,7 @@ async fn Gateway::forward_streaming_codex_response(
   let response = client.post(endpoint, request)
   if response.code != 200 {
     let error_body = client.read_all().text()
-    self.stats.record_upstream_error(error_body.length())
+    self.stats.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(error_body)
@@ -783,6 +830,15 @@ fn json_bool_field(json : Json, key : String) -> Bool? {
 }
 
 ///|
+fn json_string_field(json : Json, key : String) -> String? {
+  guard json is Object(obj) else { return None }
+  match obj.get(key) {
+    Some(String(value)) if !value.is_empty() => Some(value)
+    _ => None
+  }
+}
+
+///|
 fn normalize_gemini_endpoint(path : StringView) -> String {
   let raw = path.to_owned()
   if raw.has_prefix("/gemini/v1beta/") {
@@ -791,6 +847,20 @@ fn normalize_gemini_endpoint(path : StringView) -> String {
     "/v1/\{raw["/gemini/v1/".length():]}"
   } else {
     raw
+  }
+}
+
+///|
+fn gemini_model_from_endpoint(endpoint : String) -> String {
+  match endpoint.find("/models/") {
+    Some(index) => {
+      let rest = endpoint[index + "/models/".length():]
+      match rest.find(":") {
+        Some(end) => normalize_gemini_model_id(rest[:end].to_owned())
+        None => normalize_gemini_model_id(rest.to_owned())
+      }
+    }
+    None => "gemini"
   }
 }
 
@@ -900,6 +970,17 @@ async fn Gateway::handle_stats(
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(self.stats.to_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+async fn Gateway::handle_usage_logs(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(self.stats.usage_logs_json().stringify(indent=2))
   w.flush()
 }
 
@@ -1180,6 +1261,11 @@ async fn Gateway::handle_messages(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   self.stats.set_active_target(app_type, "codex-oauth", "Codex OAuth")
+  self.stats.record_request_context(
+    app_type,
+    self.model,
+    provider_type=Some("claude"),
+  )
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -1215,6 +1301,12 @@ async fn Gateway::handle_messages(
           self.logger.debug("Using Codex model: \{model}")
           let stream = anthropic_request.stream.unwrap_or(false)
           self.stats.record_stream_mode(stream)
+          self.stats.record_request_context(
+            app_type,
+            anthropic_request.model,
+            session_id~,
+            provider_type=Some("claude"),
+          )
           if stream {
             self.handle_streaming_request(
               anthropic_request, model, session_id, w,
@@ -1271,7 +1363,7 @@ async fn Gateway::handle_non_streaming_request(
         Err(_) => ()
       }
     }
-    self.stats.record_upstream_error(error_body.length())
+    self.stats.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write("{\"error\":\"Codex API error: \{response.code}\"}")
@@ -1344,7 +1436,7 @@ async fn Gateway::handle_streaming_request(
         Err(_) => ()
       }
     }
-    self.stats.record_upstream_error(error_body.length())
+    self.stats.record_upstream_error_status(error_body.length(), response.code)
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write("{\"error\":\"Codex API error: \{response.code}\"}")

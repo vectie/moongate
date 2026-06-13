@@ -12,8 +12,13 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(obj["default_port"], Json::number(15721.0))
   assert_eq(obj["base_url"], Json::string("http://127.0.0.1:15721"))
   assert_eq(obj["openai_base_url"], Json::string("http://127.0.0.1:15721/v1"))
+  assert_eq(
+    obj["usage_logs_url"],
+    Json::string("http://127.0.0.1:15721/usage/logs"),
+  )
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   assert_true(routes.contains(Json::string("GET /stats")))
+  assert_true(routes.contains(Json::string("GET /usage/logs")))
   assert_true(routes.contains(Json::string("POST /v1/messages")))
   guard obj["apps"] is Array(apps) else { fail("expected apps") }
   assert_eq(apps.length(), 4)
@@ -31,6 +36,10 @@ async test "suite status writes discovery file" {
     }
     assert_eq(obj["contract"], Json::string("moon.suite.status.v1"))
     assert_eq(obj["openai_base_url"], Json::string("http://127.0.0.1:17000/v1"))
+    assert_eq(
+      obj["usage_logs_url"],
+      Json::string("http://127.0.0.1:17000/usage/logs"),
+    )
     guard obj["manifest"] is Object(manifest) else {
       fail("expected manifest object")
     }

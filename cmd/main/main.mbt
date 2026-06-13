@@ -20,6 +20,7 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["status", ..] => check_status(arr)
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
+    ["usage", "logs", ..] => check_usage_logs(arr)
     ["help"] | ["--help"] | ["-h"] => print_help()
     ["version"] | ["--version"] | ["-v"] => println("moonstat v0.1.0")
     _ => print_help()
@@ -61,6 +62,7 @@ fn print_help() -> Unit {
   println("  suite write-status        Write ~/.moonstat/suite-status.json")
   println("  status      Check reroute and gateway status")
   println("  stats       Show gateway traffic statistics")
+  println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  login       Login to OpenAI Codex OAuth")
   println("  health      Check gateway health")
   println("  version     Show version")
@@ -93,6 +95,7 @@ fn print_help() -> Unit {
   println("  moonstat suite write-status --port 15721")
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat stats                 # Show traffic counters")
+  println("  moonstat usage logs            # Show recent request logs")
   println("  moonstat uninstall             # Remove hosts reroute")
 }
 
@@ -159,6 +162,25 @@ async fn check_stats(args : Array[String]) -> Unit {
     }
   } catch {
     err => logger.error("Stats check failed: \{err}")
+  }
+}
+
+///|
+async fn check_usage_logs(args : Array[String]) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
+  try {
+    let client = @http.Client::new(url, headers={})
+    defer client.close()
+    let response = client.get("/usage/logs")
+    if response.code == 200 {
+      let body = client.read_all().text()
+      println(body)
+    } else {
+      logger.error("Usage logs check failed: \{response.code}")
+    }
+  } catch {
+    err => logger.error("Usage logs check failed: \{err}")
   }
 }
 
