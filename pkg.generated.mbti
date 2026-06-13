@@ -18,6 +18,8 @@ pub fn calculate_cost_for_app(String, TokenUsage, ModelPricing, cost_multiplier?
 
 pub fn convert_anthropic_to_codex(AnthropicRequest, String) -> CodexInput
 
+pub let credential_statuses : Array[CredentialStatus]
+
 pub fn default_claude_projects_dir() -> String
 
 pub fn default_codex_config_dir() -> String
@@ -244,6 +246,14 @@ pub struct CostBreakdown {
   total_cost_usd : String
 }
 
+pub enum CredentialStatus {
+  Valid
+  Expired
+  NotFound
+  ParseError
+} derive(Eq)
+pub fn CredentialStatus::to_string(Self) -> String
+
 pub struct FetchedModel {
   id : String
   owned_by : String?
@@ -418,6 +428,21 @@ pub struct SessionSyncResult {
 pub fn SessionSyncResult::new() -> Self
 pub fn SessionSyncResult::to_json(Self) -> Json
 
+pub struct SubscriptionQuota {
+  tool : String
+  credential_status : CredentialStatus
+  credential_message : String?
+  success : Bool
+  tiers : Array[Json]
+  extra_usage : Json?
+  error : String?
+  queried_at : Int?
+}
+pub fn SubscriptionQuota::error(String, CredentialStatus, String) -> Self
+pub fn SubscriptionQuota::new(String, credential_status? : CredentialStatus, credential_message? : String?, success? : Bool, tiers? : Array[Json], extra_usage? : Json?, error? : String?, queried_at? : Int?) -> Self
+pub fn SubscriptionQuota::not_found(String) -> Self
+pub fn SubscriptionQuota::to_json(Self) -> Json
+
 pub struct TokenUsage {
   input_tokens : Int
   output_tokens : Int
@@ -515,6 +540,41 @@ pub fn TrafficStats::usage_logs_json(Self, limit? : Int) -> Json
 pub fn TrafficStats::usage_summary_by_app_json(Self) -> Json
 pub fn TrafficStats::usage_summary_json(Self, app_type? : String?) -> Json
 pub fn TrafficStats::usage_trends_json(Self, start_ts? : Int?, end_ts? : Int?, app_type? : String?) -> Json
+
+pub struct UsageCache {
+  subscription : Map[String, SubscriptionQuota]
+  script : Map[String, UsageResult]
+}
+pub fn UsageCache::get_script(Self, String, String) -> UsageResult?
+pub fn UsageCache::get_subscription(Self, String) -> SubscriptionQuota?
+pub fn UsageCache::invalidate_script(Self, String, String) -> Unit
+pub fn UsageCache::invalidate_subscription(Self, String) -> Unit
+pub fn UsageCache::new() -> Self
+pub fn UsageCache::put_script(Self, String, String, UsageResult) -> Unit
+pub fn UsageCache::put_subscription(Self, String, SubscriptionQuota) -> Unit
+pub fn[R] UsageCache::with_script(Self, String, String, (UsageResult) -> R) -> R?
+pub fn[R] UsageCache::with_subscription(Self, String, (SubscriptionQuota) -> R) -> R?
+
+pub struct UsageData {
+  plan_name : String?
+  extra : String?
+  is_valid : Bool?
+  invalid_message : String?
+  total : Double?
+  used : Double?
+  remaining : Double?
+  unit : String?
+}
+pub fn UsageData::new(plan_name? : String?, extra? : String?, is_valid? : Bool?, invalid_message? : String?, total? : Double?, used? : Double?, remaining? : Double?, unit? : String?) -> Self
+pub fn UsageData::to_json(Self) -> Json
+
+pub struct UsageResult {
+  success : Bool
+  data : Array[UsageData]?
+  error : String?
+}
+pub fn UsageResult::new(Bool, data? : Array[UsageData]?, error? : String?) -> Self
+pub fn UsageResult::to_json(Self) -> Json
 
 // Type aliases
 
