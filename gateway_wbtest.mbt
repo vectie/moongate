@@ -1234,3 +1234,86 @@ test "gateway detects active direct codex compatible provider" {
   assert_true(active.provider_id == "codex-openai")
   assert_true(active.can_use_codex_compatible_upstream())
 }
+
+///|
+test "gemini native claude compatible provider uses gemini url and headers" {
+  assert_eq(
+    claude_compatible_provider_url(
+      "https://generativelanguage.googleapis.com", "/v1beta/models/gemini-2.5-pro:generateContent",
+      "gemini_native", false,
+    ),
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+  )
+  let headers = claude_compatible_provider_headers(
+    "gemini-key", "gemini_native",
+  )
+  assert_eq(headers["x-goog-api-key"], "gemini-key")
+  assert_eq(headers["x-goog-api-client"], "GeminiCLI/1.0")
+  assert_true(headers.get("Authorization") is None)
+}
+
+///|
+test "gemini native response converts to anthropic message with usage" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "candidates": [
+      #|    {
+      #|      "finishReason": "STOP",
+      #|      "content": {
+      #|        "parts": [
+      #|          { "text": "done" },
+      #|          {
+      #|            "functionCall": {
+      #|              "id": "gem_call_1",
+      #|              "name": "lookup",
+      #|              "args": { "q": "moon" }
+      #|            }
+      #|          }
+      #|        ]
+      #|      }
+      #|    }
+      #|  ],
+      #|  "usageMetadata": {
+      #|    "promptTokenCount": 10,
+      #|    "totalTokenCount": 17,
+      #|    "cachedContentTokenCount": 4
+      #|  }
+      #|}
+    ),
+  )
+  let response = gemini_native_response_to_anthropic(body, "claude-sonnet-4-6")
+  assert_eq(response.model, "claude-sonnet-4-6")
+  assert_eq(response.stop_reason, Some("tool_use"))
+  assert_eq(response.content.length(), 2)
+  assert_eq(response.content[0].type_, "text")
+  assert_eq(response.content[0].text, Some("done"))
+  assert_eq(response.content[1].type_, "tool_use")
+  assert_eq(response.content[1].name, Some("lookup"))
+  assert_eq(response.content[1].id, Some("gem_call_1"))
+  assert_eq(
+    response.content[1].input,
+    Some(Json::object({ "q": Json::string("moon") })),
+  )
+  assert_eq(response.usage.input_tokens, 6)
+  assert_eq(response.usage.output_tokens, 7)
+  assert_eq(response.usage.cache_read_input_tokens, Some(4))
+}
+
+///|
+test "gemini native prompt block converts to anthropic refusal" {
+  let response = gemini_native_response_to_anthropic(
+    @json.parse(
+      (
+        #|{
+        #|  "promptFeedback": { "blockReason": "SAFETY" },
+        #|  "usageMetadata": { "promptTokenCount": 5, "totalTokenCount": 5 }
+        #|}
+      ),
+    ),
+    "claude-sonnet-4-6",
+  )
+  assert_eq(response.stop_reason, Some("refusal"))
+  assert_eq(response.content.length(), 1)
+  assert_eq(response.content[0].type_, "text")
+}

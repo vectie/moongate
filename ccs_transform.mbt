@@ -10,6 +10,7 @@ pub fn transform_claude_request_for_api_format(
   match api_format {
     "openai_chat" =>
       anthropic_json_to_openai_chat(body, explicit_prompt_cache_key)
+    "gemini_native" => anthropic_json_to_gemini(body)
     "openai_responses" => {
       let cache_key = match explicit_prompt_cache_key {
         Some(_) => explicit_prompt_cache_key
@@ -20,6 +21,274 @@ pub fn transform_claude_request_for_api_format(
       )
     }
     _ => body
+  }
+}
+
+///|
+fn anthropic_json_to_gemini(body : Json) -> Json {
+  guard body is Object(obj) else { return body }
+  let result : Map[String, Json] = {}
+  let system_instruction = anthropic_gemini_system_instruction(obj)
+  if system_instruction is Some(instruction) {
+    result["systemInstruction"] = instruction
+  }
+  result["contents"] = Json::array(anthropic_messages_to_gemini_contents(obj))
+  append_gemini_generation_config(obj, result)
+  append_gemini_tools(obj, result)
+  append_gemini_tool_choice(obj, result)
+  Json::object(result)
+}
+
+///|
+fn anthropic_gemini_system_instruction(obj : Map[String, Json]) -> Json? {
+  let texts : Array[String] = []
+  let system = anthropic_system_instructions(obj)
+  if !system.is_empty() {
+    texts.push(system)
+  }
+  guard obj.get("messages") is Some(Array(messages)) else {
+    return gemini_system_instruction_from_texts(texts)
+  }
+  for message in messages {
+    guard message is Object(message_obj) else { continue }
+    if json_string_from_map(message_obj, "role") != Some("system") {
+      continue
+    }
+    append_gemini_texts_from_content(message_obj.get("content"), texts)
+  }
+  gemini_system_instruction_from_texts(texts)
+}
+
+///|
+fn gemini_system_instruction_from_texts(texts : Array[String]) -> Json? {
+  if texts.is_empty() {
+    return None
+  }
+  Some(
+    Json::object({
+      "parts": Json::array([
+        Json::object({ "text": Json::string(texts.join("\n\n")) }),
+      ]),
+    }),
+  )
+}
+
+///|
+fn append_gemini_texts_from_content(
+  content : Json?,
+  texts : Array[String],
+) -> Unit {
+  match content {
+    Some(String(text)) if !text.is_empty() => texts.push(text)
+    Some(Array(blocks)) =>
+      for block in blocks {
+        match block {
+          String(text) if !text.is_empty() => texts.push(text)
+          Object(block_obj) =>
+            if json_string_from_map(block_obj, "type") == Some("text") &&
+              block_obj.get("text") is Some(String(text)) &&
+              !text.is_empty() {
+              texts.push(text)
+            }
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+}
+
+///|
+fn anthropic_messages_to_gemini_contents(
+  obj : Map[String, Json],
+) -> Array[Json] {
+  let contents : Array[Json] = []
+  guard obj.get("messages") is Some(Array(source_messages)) else {
+    return contents
+  }
+  for message in source_messages {
+    guard message is Object(message_obj) else { continue }
+    let role = json_string_from_map(message_obj, "role").unwrap_or("user")
+    if role == "system" {
+      continue
+    }
+    let parts = anthropic_content_to_gemini_parts(message_obj.get("content"))
+    if parts.is_empty() {
+      continue
+    }
+    contents.push(
+      Json::object({
+        "role": Json::string(if role == "assistant" { "model" } else { "user" }),
+        "parts": Json::array(parts),
+      }),
+    )
+  }
+  contents
+}
+
+///|
+fn anthropic_content_to_gemini_parts(content : Json?) -> Array[Json] {
+  let parts : Array[Json] = []
+  match content {
+    Some(String(text)) =>
+      parts.push(Json::object({ "text": Json::string(text) }))
+    Some(Array(blocks)) =>
+      for block in blocks {
+        append_anthropic_block_as_gemini_part(block, parts)
+      }
+    Some(json) =>
+      parts.push(Json::object({ "text": Json::string(json.stringify()) }))
+    None => ()
+  }
+  parts
+}
+
+///|
+fn append_anthropic_block_as_gemini_part(
+  block : Json,
+  parts : Array[Json],
+) -> Unit {
+  guard block is Object(block_obj) else { return }
+  match json_string_from_map(block_obj, "type") {
+    Some("text") =>
+      if block_obj.get("text") is Some(String(text)) {
+        parts.push(Json::object({ "text": Json::string(text) }))
+      }
+    Some("image") | Some("document") =>
+      if block_obj.get("source") is Some(Object(source)) {
+        let media_type = json_string_from_map(source, "media_type").unwrap_or(
+          if json_string_from_map(block_obj, "type") == Some("document") {
+            "application/pdf"
+          } else {
+            "image/png"
+          },
+        )
+        let data = json_string_from_map(source, "data").unwrap_or("")
+        parts.push(
+          Json::object({
+            "inlineData": Json::object({
+              "mimeType": Json::string(media_type),
+              "data": Json::string(data),
+            }),
+          }),
+        )
+      }
+    Some("tool_use") =>
+      parts.push(
+        Json::object({
+          "functionCall": Json::object({
+            "id": Json::string(
+              json_string_from_map(block_obj, "id").unwrap_or(""),
+            ),
+            "name": Json::string(
+              json_string_from_map(block_obj, "name").unwrap_or(""),
+            ),
+            "args": block_obj.get("input").unwrap_or(Json::object({})),
+          }),
+        }),
+      )
+    Some("tool_result") =>
+      parts.push(
+        Json::object({
+          "functionResponse": Json::object({
+            "name": Json::string(gemini_tool_result_name(block_obj)),
+            "response": Json::object({
+              "content": block_obj.get("content").unwrap_or(Json::string("")),
+            }),
+          }),
+        }),
+      )
+    _ => ()
+  }
+}
+
+///|
+fn gemini_tool_result_name(block_obj : Map[String, Json]) -> String {
+  match json_string_from_map(block_obj, "name") {
+    Some(name) => name
+    None =>
+      json_string_from_map(block_obj, "tool_use_id").unwrap_or("tool_result")
+  }
+}
+
+///|
+fn append_gemini_generation_config(
+  obj : Map[String, Json],
+  result : Map[String, Json],
+) -> Unit {
+  let config : Map[String, Json] = {}
+  if obj.get("max_tokens") is Some(value) {
+    config["maxOutputTokens"] = value
+  }
+  copy_json_field(obj, config, "temperature")
+  if obj.get("top_p") is Some(value) {
+    config["topP"] = value
+  }
+  if obj.get("stop_sequences") is Some(value) {
+    config["stopSequences"] = value
+  }
+  if !config.is_empty() {
+    result["generationConfig"] = Json::object(config)
+  }
+}
+
+///|
+fn append_gemini_tools(
+  obj : Map[String, Json],
+  result : Map[String, Json],
+) -> Unit {
+  guard obj.get("tools") is Some(Array(tools)) else { return }
+  let declarations : Array[Json] = []
+  for tool in tools {
+    guard tool is Object(tool_obj) else { continue }
+    if json_string_from_map(tool_obj, "type") == Some("BatchTool") {
+      continue
+    }
+    let declaration : Map[String, Json] = {
+      "name": Json::string(json_string_from_map(tool_obj, "name").unwrap_or("")),
+      "parameters": tool_obj.get("input_schema").unwrap_or(Json::object({})),
+    }
+    if tool_obj.get("description") is Some(desc) {
+      declaration["description"] = desc
+    }
+    declarations.push(Json::object(declaration))
+  }
+  if !declarations.is_empty() {
+    result["tools"] = Json::array([
+      Json::object({ "functionDeclarations": Json::array(declarations) }),
+    ])
+  }
+}
+
+///|
+fn append_gemini_tool_choice(
+  obj : Map[String, Json],
+  result : Map[String, Json],
+) -> Unit {
+  guard obj.get("tool_choice") is Some(choice) else { return }
+  let config : Map[String, Json] = {}
+  match choice {
+    String("any") => config["mode"] = Json::string("ANY")
+    String("auto") => config["mode"] = Json::string("AUTO")
+    String("none") => config["mode"] = Json::string("NONE")
+    Object(choice_obj) =>
+      match json_string_from_map(choice_obj, "type") {
+        Some("any") => config["mode"] = Json::string("ANY")
+        Some("auto") => config["mode"] = Json::string("AUTO")
+        Some("none") => config["mode"] = Json::string("NONE")
+        Some("tool") => {
+          config["mode"] = Json::string("ANY")
+          if choice_obj.get("name") is Some(String(name)) {
+            config["allowedFunctionNames"] = Json::array([Json::string(name)])
+          }
+        }
+        _ => ()
+      }
+    _ => ()
+  }
+  if !config.is_empty() {
+    result["toolConfig"] = Json::object({
+      "functionCallingConfig": Json::object(config),
+    })
   }
 }
 

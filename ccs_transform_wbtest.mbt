@@ -117,3 +117,129 @@ test "ccs transform maps anthropic tool choice" {
     }),
   )
 }
+
+///|
+test "ccs gemini native transform maps anthropic request" {
+  let body = Json::object({
+    "model": Json::string("claude-sonnet-4-6"),
+    "system": Json::string("You are terse."),
+    "messages": Json::array([
+      Json::object({
+        "role": Json::string("user"),
+        "content": Json::array([
+          Json::object({
+            "type": Json::string("text"),
+            "text": Json::string("search docs"),
+          }),
+          Json::object({
+            "type": Json::string("image"),
+            "source": Json::object({
+              "type": Json::string("base64"),
+              "media_type": Json::string("image/jpeg"),
+              "data": Json::string("abc"),
+            }),
+          }),
+        ]),
+      }),
+      Json::object({
+        "role": Json::string("assistant"),
+        "content": Json::array([
+          Json::object({
+            "type": Json::string("tool_use"),
+            "id": Json::string("toolu_1"),
+            "name": Json::string("lookup"),
+            "input": Json::object({ "q": Json::string("moon") }),
+          }),
+        ]),
+      }),
+    ]),
+    "max_tokens": Json::number(128.0),
+    "temperature": Json::number(0.2),
+    "top_p": Json::number(0.9),
+    "stop_sequences": Json::array([Json::string("END")]),
+    "tools": Json::array([
+      Json::object({
+        "name": Json::string("lookup"),
+        "description": Json::string("Look up docs"),
+        "input_schema": Json::object({
+          "type": Json::string("object"),
+          "properties": Json::object({}),
+        }),
+      }),
+    ]),
+    "tool_choice": Json::object({
+      "type": Json::string("tool"),
+      "name": Json::string("lookup"),
+    }),
+  })
+  let transformed = transform_claude_request_for_api_format(
+    body, "gemini_native",
+  )
+  guard transformed is Object(obj) else { fail("expected object") }
+  guard obj["systemInstruction"] is Object(system) else {
+    fail("expected systemInstruction")
+  }
+  assert_eq(
+    system["parts"],
+    Json::array([Json::object({ "text": Json::string("You are terse.") })]),
+  )
+  guard obj["contents"] is Array(contents) else { fail("expected contents") }
+  guard contents[0] is Object(user) else { fail("expected user message") }
+  assert_eq(user["role"], Json::string("user"))
+  guard user["parts"] is Array(user_parts) else { fail("expected user parts") }
+  assert_eq(
+    user_parts[0],
+    Json::object({ "text": Json::string("search docs") }),
+  )
+  assert_eq(
+    user_parts[1],
+    Json::object({
+      "inlineData": Json::object({
+        "mimeType": Json::string("image/jpeg"),
+        "data": Json::string("abc"),
+      }),
+    }),
+  )
+  guard contents[1] is Object(model) else { fail("expected model message") }
+  assert_eq(model["role"], Json::string("model"))
+  guard model["parts"] is Array(model_parts) else {
+    fail("expected model parts")
+  }
+  assert_eq(
+    model_parts[0],
+    Json::object({
+      "functionCall": Json::object({
+        "id": Json::string("toolu_1"),
+        "name": Json::string("lookup"),
+        "args": Json::object({ "q": Json::string("moon") }),
+      }),
+    }),
+  )
+  assert_eq(
+    obj["generationConfig"],
+    Json::object({
+      "maxOutputTokens": Json::number(128.0),
+      "temperature": Json::number(0.2),
+      "topP": Json::number(0.9),
+      "stopSequences": Json::array([Json::string("END")]),
+    }),
+  )
+  guard obj["tools"] is Array(tools) else { fail("expected tools") }
+  guard tools[0] is Object(tool) else { fail("expected tool") }
+  guard tool["functionDeclarations"] is Array(declarations) else {
+    fail("expected declarations")
+  }
+  guard declarations[0] is Object(declaration) else {
+    fail("expected declaration")
+  }
+  assert_eq(declaration["name"], Json::string("lookup"))
+  assert_eq(
+    obj["toolConfig"],
+    Json::object({
+      "functionCallingConfig": Json::object({
+        "mode": Json::string("ANY"),
+        "allowedFunctionNames": Json::array([Json::string("lookup")]),
+      }),
+    }),
+  )
+}

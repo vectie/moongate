@@ -1385,7 +1385,12 @@ async fn Gateway::post_claude_compatible_provider_json(
   let _ = self
   let base_url = provider.base_url.unwrap()
   let api_key = provider.api_key.unwrap()
-  let url = codex_compatible_provider_url(base_url, endpoint)
+  let url = claude_compatible_provider_url(
+    base_url,
+    endpoint,
+    api_format,
+    provider.is_full_url,
+  )
   let headers = claude_compatible_provider_headers(api_key, api_format)
   let result = try? @http.post(url, request, headers~)
   match result {
@@ -1404,13 +1409,32 @@ fn claude_compatible_provider_headers(
     "Content-Type": "application/json",
     "Accept": accept,
   }
-  if api_format == "anthropic" {
-    headers["x-api-key"] = api_key
-    headers["anthropic-version"] = "2023-06-01"
-  } else {
-    headers["Authorization"] = "Bearer \{api_key}"
+  match api_format {
+    "anthropic" => {
+      headers["x-api-key"] = api_key
+      headers["anthropic-version"] = "2023-06-01"
+    }
+    "gemini_native" => {
+      headers["x-goog-api-key"] = api_key
+      headers["x-goog-api-client"] = "GeminiCLI/1.0"
+    }
+    _ => headers["Authorization"] = "Bearer \{api_key}"
   }
   headers
+}
+
+///|
+fn claude_compatible_provider_url(
+  base_url : String,
+  endpoint : String,
+  api_format : String,
+  is_full_url : Bool,
+) -> String {
+  if api_format == "gemini_native" {
+    resolve_gemini_native_url(base_url, endpoint, is_full_url)
+  } else {
+    codex_compatible_provider_url(base_url, endpoint)
+  }
 }
 
 ///|
@@ -1454,10 +1478,15 @@ fn provider_base_is_full_endpoint(base_url : String) -> Bool {
 
 ///|
 fn claude_transform_endpoint(api_format : String, is_stream : Bool) -> String {
-  let _ = is_stream
   match api_format {
     "openai_responses" => "/v1/responses"
     "openai_chat" => "/v1/chat/completions"
+    "gemini_native" =>
+      if is_stream {
+        "/v1beta/models/__MODEL__:streamGenerateContent?alt=sse"
+      } else {
+        "/v1beta/models/__MODEL__:generateContent"
+      }
     _ => "/v1/messages"
   }
 }
@@ -2887,20 +2916,13 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let api_format = provider.claude_api_format()
-  if api_format == "gemini_native" {
-    self.record_upstream_error_status(0, @status.BadGateway)
-    w.header().set("Content-Type", "application/json")
-    w.write_header(@status.BadGateway)
-    w.write(
-      "{\"error\":{\"message\":\"Gemini-native Claude provider forwarding is not implemented yet\",\"type\":\"upstream_error\"}}",
-    )
-    w.flush()
-    return
-  }
   let upstream_body = claude_request_json_for_upstream(
     request_json, upstream_model,
   )
-  let endpoint = claude_transform_endpoint(api_format, false)
+  let endpoint = claude_transform_endpoint(api_format, false).replace_all(
+    old="__MODEL__",
+    new=normalize_gemini_model_id(upstream_model),
+  )
   let outbound = if claude_api_format_needs_transform(api_format) {
     transform_claude_request_for_api_format(
       upstream_body,
@@ -3022,6 +3044,7 @@ fn token_usage_from_claude_compatible_response(
   match api_format {
     "openai_chat" => token_usage_from_openai_response(body)
     "openai_responses" => token_usage_from_codex_response_auto(body)
+    "gemini_native" => token_usage_from_gemini_response(body)
     _ => token_usage_from_claude_response(body)
   }
 }
@@ -3035,7 +3058,117 @@ fn claude_compatible_response_to_anthropic(
   match api_format {
     "openai_chat" => openai_chat_completion_to_anthropic(body, model).to_json()
     "openai_responses" => convert_codex_to_anthropic(body, model).to_json()
+    "gemini_native" =>
+      gemini_native_response_to_anthropic(body, model).to_json()
     _ => body
+  }
+}
+
+///|
+fn gemini_native_response_to_anthropic(
+  body : Json,
+  model : String,
+) -> AnthropicResponse {
+  let usage = token_usage_from_gemini_response(body).unwrap_or(
+    TokenUsage::empty(),
+  )
+  let content : Array[AnthropicResponseBlock] = []
+  let mut finish_reason = "STOP"
+  if body is Object(obj) {
+    if gemini_prompt_block_reason(obj) is Some(reason) {
+      content.push({
+        type_: "text",
+        text: Some("Request blocked by Gemini safety filter: \{reason}"),
+        name: None,
+        input: None,
+        id: None,
+      })
+      finish_reason = "SAFETY"
+    } else if obj.get("candidates") is Some(Array(candidates)) &&
+      candidates.get(0) is Some(Object(candidate)) {
+      finish_reason = json_string_from_map(candidate, "finishReason").unwrap_or(
+        "STOP",
+      )
+      if candidate.get("content") is Some(Object(candidate_content)) &&
+        candidate_content.get("parts") is Some(Array(parts)) {
+        append_gemini_parts_as_anthropic(parts, content)
+      }
+    }
+  }
+  let has_tools = content.iter().any(fn(block) { block.type_ == "tool_use" })
+  {
+    id: generate_message_id(),
+    type_: "message",
+    role: "assistant",
+    content,
+    model,
+    stop_reason: Some(
+      gemini_finish_reason_to_anthropic(finish_reason, has_tools),
+    ),
+    stop_sequence: None,
+    usage: {
+      input_tokens: usage.anthropic_input_tokens(),
+      output_tokens: usage.output_tokens,
+      cache_read_input_tokens: optional_positive_int(usage.cache_read_tokens),
+      cache_creation_input_tokens: optional_positive_int(
+        usage.cache_creation_tokens,
+      ),
+    },
+  }
+}
+
+///|
+fn gemini_prompt_block_reason(obj : Map[String, Json]) -> String? {
+  guard obj.get("promptFeedback") is Some(Object(feedback)) else { return None }
+  json_string_from_map(feedback, "blockReason")
+}
+
+///|
+fn append_gemini_parts_as_anthropic(
+  parts : Array[Json],
+  content : Array[AnthropicResponseBlock],
+) -> Unit {
+  for part in parts {
+    guard part is Object(part_obj) else { continue }
+    if part_obj.get("text") is Some(String(text)) && !text.is_empty() {
+      content.push({
+        type_: "text",
+        text: Some(text),
+        name: None,
+        input: None,
+        id: None,
+      })
+    } else if part_obj.get("functionCall") is Some(Object(function_call)) {
+      content.push({
+        type_: "tool_use",
+        text: None,
+        name: Some(
+          json_string_from_map(function_call, "name").unwrap_or("unknown"),
+        ),
+        input: Some(function_call.get("args").unwrap_or(Json::object({}))),
+        id: Some(
+          json_string_from_map(function_call, "id").unwrap_or(
+            generate_message_id(),
+          ),
+        ),
+      })
+    }
+  }
+}
+
+///|
+fn gemini_finish_reason_to_anthropic(
+  finish_reason : String,
+  has_tools : Bool,
+) -> String {
+  if has_tools {
+    return "tool_use"
+  }
+  match finish_reason {
+    "MAX_TOKENS" => "max_tokens"
+    "SAFETY" | "RECITATION" | "BLOCKLIST" | "PROHIBITED_CONTENT" | "SPII" =>
+      "refusal"
+    _ => "end_turn"
   }
 }
 
