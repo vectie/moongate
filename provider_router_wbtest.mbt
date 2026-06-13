@@ -303,3 +303,101 @@ test "provider route target carries upstream config without serializing key" {
   assert_false(serialized.contains("apiKey"))
   assert_false(serialized.contains("sk-test"))
 }
+
+///|
+test "provider router exposes ccs failover queue and available providers" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="a",
+      provider_name="Provider A",
+      provider_type=Some("codex"),
+      settings_config=Some({ "model": Json::string("gpt-5") }.to_json()),
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="b",
+      provider_name="Provider B",
+    ),
+  )
+  router.set_failover_queue("codex", ["b"])
+  json_inspect(router.failover_queue_json("codex"), content=[
+    { "providerId": "b", "providerName": "Provider B", "sortIndex": 0 },
+  ])
+  guard router.available_failover_providers_json("codex") is Array(available) else {
+    fail("expected available providers array")
+  }
+  assert_eq(available.length(), 1)
+  guard available[0] is Object(provider) else {
+    fail("expected available provider object")
+  }
+  assert_eq(provider["id"], Json::string("a"))
+  assert_eq(provider["name"], Json::string("Provider A"))
+  assert_eq(provider["inFailoverQueue"], Json::boolean(false))
+  guard provider["settingsConfig"] is Object(settings) else {
+    fail("expected settingsConfig")
+  }
+  assert_eq(settings["model"], Json::string("gpt-5"))
+}
+
+///|
+test "provider router add remove failover queue mirrors ccs semantics" {
+  let router = ProviderRouter::new(circuit_config={
+    failure_threshold: 1,
+    success_threshold: 2,
+    timeout_seconds: 60,
+    error_rate_threshold: 0.6,
+    min_requests: 10,
+  })
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="a",
+      provider_name="Provider A",
+    ),
+  )
+  router.add_to_failover_queue("claude", "a")
+  router.add_to_failover_queue("claude", "a")
+  json_inspect(router.failover_queue_json("claude"), content=[
+    { "providerId": "a", "providerName": "Provider A", "sortIndex": 0 },
+  ])
+  router.record_result("a", "claude", false, false, now_ms=1000)
+  guard router.get_circuit_breaker_stats("a", "claude") is Some(open_stats) else {
+    fail("expected open stats")
+  }
+  assert_true(open_stats.state == Open)
+  router.remove_from_failover_queue("claude", "a")
+  json_inspect(router.failover_queue_json("claude"), content=[])
+  guard router.get_circuit_breaker_stats("a", "claude") is Some(reset_stats) else {
+    fail("expected reset stats")
+  }
+  assert_true(reset_stats.state == Closed)
+}
+
+///|
+test "provider router ccs auto failover enable seeds empty queue" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="current",
+      provider_name="Current Provider",
+    ),
+  )
+  router.set_current_provider("codex", "current")
+  assert_true(router.set_auto_failover_ccs("codex", true))
+  assert_true(router.auto_failover_enabled_for_app("codex"))
+  json_inspect(router.failover_queue_json("codex"), content=[
+    {
+      "providerId": "current",
+      "providerName": "Current Provider",
+      "sortIndex": 0,
+    },
+  ])
+  assert_true(router.set_auto_failover_ccs("codex", false))
+  assert_false(router.auto_failover_enabled_for_app("codex"))
+  assert_false(router.set_auto_failover_ccs("unknown", true))
+}

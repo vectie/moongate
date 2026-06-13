@@ -87,6 +87,12 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /proxy/circuit-breaker-config`
 - `GET /proxy/circuit-breaker-stats?app_type=claude&provider_id=codex-oauth`
 - `POST /proxy/reset-circuit-breaker?app_type=claude&provider_id=codex-oauth`
+- `GET /proxy/failover-queue?app_type=claude`
+- `POST /proxy/failover-queue?app_type=claude&provider_id=codex-oauth`
+- `DELETE /proxy/failover-queue?app_type=claude&provider_id=codex-oauth`
+- `GET /proxy/available-failover-providers?app_type=claude`
+- `GET /proxy/auto-failover-enabled?app_type=claude`
+- `POST /proxy/auto-failover-enabled?app_type=claude&enabled=true`
 - `GET /proxy/takeover-status`
 - `GET /proxy/running`
 - `GET /usage/logs`
@@ -138,7 +144,10 @@ ccs-style failover health and circuit-breaker control over Moonstat's in-memory
 router state. The circuit-breaker config update accepts the same camelCase
 shape as ccs, including `failureThreshold`, `successThreshold`,
 `timeoutSeconds`, `errorRateThreshold`, and `minRequests`, and hot-applies it to
-existing breakers.
+existing breakers. `/proxy/failover-queue`,
+`/proxy/available-failover-providers`, and `/proxy/auto-failover-enabled`
+mirror the ccs failover queue and app auto-failover command shapes using
+Moonstat's standalone provider router state.
 `/usage/logs` returns
 recent `proxy_request_logs` rows with ccs-style provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.

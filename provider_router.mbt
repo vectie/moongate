@@ -417,6 +417,27 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
 }
 
 ///|
+fn ProviderRouteTarget::to_ccs_provider_json(
+  self : ProviderRouteTarget,
+  in_failover_queue : Bool,
+) -> Json {
+  let empty_settings : Map[String, Json] = {}
+  let obj : Map[String, Json] = {
+    "id": Json::string(self.provider_id),
+    "name": Json::string(self.provider_name),
+    "settingsConfig": self.settings_config.unwrap_or(empty_settings.to_json()),
+    "inFailoverQueue": Json::boolean(in_failover_queue),
+  }
+  if self.base_url is Some(base_url) {
+    obj["websiteUrl"] = Json::string(base_url)
+  }
+  if self.provider_type is Some(provider_type) {
+    obj["category"] = Json::string(provider_type)
+  }
+  Json::object(obj)
+}
+
+///|
 fn provider_route_optional_string_json(value : String?) -> Json {
   match value {
     Some(value) => Json::string(value)
@@ -530,6 +551,28 @@ pub fn ProviderRouter::set_auto_failover(
 }
 
 ///|
+fn ProviderRouter::set_auto_failover_ccs(
+  self : ProviderRouter,
+  app_type : String,
+  enabled : Bool,
+) -> Bool {
+  if !enabled {
+    self.auto_failover_enabled.set(app_type, false)
+    return true
+  }
+  guard self.has_configured_app(app_type) else { return false }
+  let queue = self.failover_queues.get(app_type).unwrap_or([])
+  if queue.is_empty() {
+    guard self.current_provider_ids.get(app_type) is Some(provider_id) else {
+      return false
+    }
+    self.add_to_failover_queue(app_type, provider_id)
+  }
+  self.auto_failover_enabled.set(app_type, true)
+  true
+}
+
+///|
 pub fn ProviderRouter::set_max_retries(
   self : ProviderRouter,
   app_type : String,
@@ -590,6 +633,78 @@ pub fn ProviderRouter::set_failover_queue(
     }
   }
   self.failover_queues.set(app_type, deduped)
+}
+
+///|
+fn ProviderRouter::add_to_failover_queue(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+) -> Unit {
+  let queue = self.failover_queues.get(app_type).unwrap_or([])
+  if !queue.contains(provider_id) {
+    queue.push(provider_id)
+  }
+  self.failover_queues.set(app_type, queue)
+}
+
+///|
+fn ProviderRouter::remove_from_failover_queue(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+) -> Unit {
+  let queue = self.failover_queues.get(app_type).unwrap_or([])
+  let next : Array[String] = []
+  for queued_provider_id in queue {
+    if queued_provider_id != provider_id {
+      next.push(queued_provider_id)
+    }
+  }
+  self.failover_queues.set(app_type, next)
+  self.reset_provider_breaker(provider_id, app_type)
+}
+
+///|
+fn ProviderRouter::failover_queue_json(
+  self : ProviderRouter,
+  app_type : String,
+) -> Json {
+  let queue = self.failover_queues.get(app_type).unwrap_or([])
+  let rows : Array[Json] = []
+  for index, provider_id in queue {
+    guard self.provider_by_id(app_type, provider_id) is Some(provider) else {
+      continue
+    }
+    rows.push(
+      {
+        "providerId": Json::string(provider.provider_id),
+        "providerName": Json::string(provider.provider_name),
+        "sortIndex": Json::number(index.to_double()),
+      }.to_json(),
+    )
+  }
+  Json::array(rows)
+}
+
+///|
+fn ProviderRouter::available_failover_providers_json(
+  self : ProviderRouter,
+  app_type : String,
+) -> Json {
+  let queue = self.failover_queues.get(app_type).unwrap_or([])
+  let rows : Array[Json] = []
+  match self.providers.get(app_type) {
+    Some(providers) =>
+      for provider_id in providers.keys() {
+        guard providers.get(provider_id) is Some(provider) else { continue }
+        if !queue.contains(provider.provider_id) {
+          rows.push(provider.to_ccs_provider_json(false))
+        }
+      }
+    None => ()
+  }
+  Json::array(rows)
 }
 
 ///|

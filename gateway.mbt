@@ -592,6 +592,26 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/proxy/reset-circuit-breaker", (r, w) => {
     self.handle_proxy_reset_circuit_breaker(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/proxy/failover-queue", (r, w) => {
+    self.handle_proxy_failover_queue(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/proxy/failover-queue", (r, w) => {
+    self.handle_proxy_add_failover_queue(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/proxy/failover-queue", (r, w) => {
+    self.handle_proxy_remove_failover_queue(r, w)
+  })
+  router.add_handler(
+    @httpx.Method::Get,
+    "/proxy/available-failover-providers",
+    (r, w) => self.handle_proxy_available_failover_providers(r, w),
+  )
+  router.add_handler(@httpx.Method::Get, "/proxy/auto-failover-enabled", (r, w) => {
+    self.handle_proxy_auto_failover_enabled(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/proxy/auto-failover-enabled", (r, w) => {
+    self.handle_proxy_set_auto_failover_enabled(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/proxy/takeover-status", (_, w) => {
     self.handle_proxy_takeover_status(w)
   })
@@ -2871,6 +2891,103 @@ async fn Gateway::handle_proxy_reset_circuit_breaker(
 }
 
 ///|
+async fn Gateway::handle_proxy_failover_queue(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  write_usage_json(w, self.provider_router.failover_queue_json(app_type))
+}
+
+///|
+async fn Gateway::handle_proxy_available_failover_providers(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  write_usage_json(
+    w,
+    self.provider_router.available_failover_providers_json(app_type),
+  )
+}
+
+///|
+async fn Gateway::handle_proxy_add_failover_queue(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard proxy_provider_query(r.path) is Some(query) else {
+    write_usage_bad_request(w, "missing_provider_id_or_app_type")
+    return
+  }
+  self.provider_router.add_to_failover_queue(query.app_type, query.provider_id)
+  write_usage_json(w, { "ok": Json::boolean(true) }.to_json())
+}
+
+///|
+async fn Gateway::handle_proxy_remove_failover_queue(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard proxy_provider_query(r.path) is Some(query) else {
+    write_usage_bad_request(w, "missing_provider_id_or_app_type")
+    return
+  }
+  self.provider_router.remove_from_failover_queue(
+    query.app_type,
+    query.provider_id,
+  )
+  write_usage_json(w, { "ok": Json::boolean(true) }.to_json())
+}
+
+///|
+async fn Gateway::handle_proxy_auto_failover_enabled(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  write_usage_json(
+    w,
+    Json::boolean(self.provider_router.auto_failover_enabled_for_app(app_type)),
+  )
+}
+
+///|
+async fn Gateway::handle_proxy_set_auto_failover_enabled(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  guard proxy_enabled_value(r) is Some(enabled) else {
+    write_usage_bad_request(w, "missing_enabled")
+    return
+  }
+  if !self.provider_router.set_auto_failover_ccs(app_type, enabled) {
+    write_usage_bad_request(w, "auto_failover_unavailable")
+    return
+  }
+  write_usage_json(w, Json::boolean(enabled))
+}
+
+///|
 async fn Gateway::handle_proxy_takeover_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3294,6 +3411,21 @@ fn proxy_circuit_config_from_query(path : StringView) -> CircuitBreakerConfig? {
 }
 
 ///|
+async fn proxy_enabled_value(r : @httpx.RequestReader) -> Bool? {
+  match usage_query_bool_any(r.path, "enabled", "enabled") {
+    Some(enabled) => Some(enabled)
+    None => {
+      let body = r.body.read_all().text()
+      if body.trim().is_empty() {
+        return None
+      }
+      let parsed = @json.parse(body) catch { _ => return None }
+      json_bool_field(parsed, "enabled")
+    }
+  }
+}
+
+///|
 fn usage_query_value_any(
   path : StringView,
   left_key : String,
@@ -3319,6 +3451,27 @@ fn usage_query_int_any(
         parsed => Some(parsed)
       }
     None => None
+  }
+}
+
+///|
+fn usage_query_bool_any(
+  path : StringView,
+  left_key : String,
+  right_key : String,
+) -> Bool? {
+  match usage_query_value_any(path, left_key, right_key) {
+    Some(value) => parse_bool_value(value)
+    None => None
+  }
+}
+
+///|
+fn parse_bool_value(value : String) -> Bool? {
+  match value.trim().to_owned().to_lower() {
+    "true" | "1" | "yes" | "on" => Some(true)
+    "false" | "0" | "no" | "off" => Some(false)
+    _ => None
   }
 }
 

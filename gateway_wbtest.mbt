@@ -105,6 +105,28 @@ test "usage query helpers parse ccs provider limit parameters" {
 }
 
 ///|
+test "usage query helpers parse ccs auto failover boolean parameters" {
+  assert_eq(
+    usage_query_bool_any(
+      "/proxy/auto-failover-enabled?appType=codex&enabled=true", "enabled", "enabled",
+    ),
+    Some(true),
+  )
+  assert_eq(
+    usage_query_bool_any(
+      "/proxy/auto-failover-enabled?app_type=codex&enabled=0", "enabled", "enabled",
+    ),
+    Some(false),
+  )
+  assert_eq(
+    usage_query_bool_any(
+      "/proxy/auto-failover-enabled?enabled=maybe", "enabled", "enabled",
+    ),
+    None,
+  )
+}
+
+///|
 test "usage query helpers parse ccs request log parameters" {
   let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&end_date=20"
   assert_eq(usage_query_int(path, "page"), Some(2))

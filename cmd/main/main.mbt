@@ -38,6 +38,26 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["proxy", "circuit-breaker-stats", ..] =>
       check_proxy_circuit_breaker_stats(arr)
     ["proxy", "reset-circuit-breaker", ..] => reset_proxy_circuit_breaker(arr)
+    ["proxy", "failover-queue", "add", ..] => add_proxy_failover_queue(arr)
+    ["proxy", "failover-queue", "remove", ..] =>
+      remove_proxy_failover_queue(arr)
+    ["proxy", "failover-queue", ..] => check_proxy_failover_queue(arr)
+    ["proxy", "get-failover-queue", ..] => check_proxy_failover_queue(arr)
+    ["proxy", "available-failover-providers", ..] =>
+      check_proxy_available_failover_providers(arr)
+    ["proxy", "get-available-providers-for-failover", ..] =>
+      check_proxy_available_failover_providers(arr)
+    ["proxy", "add-to-failover-queue", ..] => add_proxy_failover_queue(arr)
+    ["proxy", "remove-from-failover-queue", ..] =>
+      remove_proxy_failover_queue(arr)
+    ["proxy", "auto-failover-enabled", "set", ..] =>
+      set_proxy_auto_failover_enabled(arr)
+    ["proxy", "auto-failover-enabled", ..] =>
+      check_proxy_auto_failover_enabled(arr)
+    ["proxy", "get-auto-failover-enabled", ..] =>
+      check_proxy_auto_failover_enabled(arr)
+    ["proxy", "set-auto-failover-enabled", ..] =>
+      set_proxy_auto_failover_enabled(arr)
     ["proxy", "takeover-status", ..] => check_proxy_takeover_status(arr)
     ["proxy", "running", ..] => check_proxy_running(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
@@ -106,6 +126,14 @@ fn print_help() -> Unit {
   println("  proxy circuit-breaker-config set  Update ccs-style circuit config")
   println("  proxy circuit-breaker-stats    Show ccs-style circuit stats")
   println("  proxy reset-circuit-breaker    Reset provider circuit breaker")
+  println("  proxy failover-queue           Show ccs-style failover queue")
+  println("  proxy failover-queue add       Add provider to failover queue")
+  println(
+    "  proxy failover-queue remove    Remove provider from failover queue",
+  )
+  println("  proxy available-failover-providers  Show providers outside queue")
+  println("  proxy auto-failover-enabled    Show app auto-failover boolean")
+  println("  proxy auto-failover-enabled set  Set app auto-failover boolean")
   println("  proxy takeover-status  Show ccs-style app takeover status")
   println("  proxy running          Show ccs-style proxy running boolean")
   println("  usage logs  Show ccs-style recent proxy_request_logs")
@@ -146,6 +174,7 @@ fn print_help() -> Unit {
   println("Proxy config options:")
   println("  --app-type <app>  App type for app-level proxy config")
   println("  --provider-id <id> Provider id for provider-level proxy commands")
+  println("  --enabled <bool>   Boolean for auto-failover commands")
   println("  --failure-threshold <n>     Circuit failures before open")
   println("  --success-threshold <n>     Half-open successes before close")
   println("  --timeout-seconds <n>       Circuit open timeout in seconds")
@@ -170,6 +199,13 @@ fn print_help() -> Unit {
   )
   println(
     "  moonstat proxy circuit-breaker-config set --failure-threshold 4 --success-threshold 2 --timeout-seconds 60 --error-rate-threshold 0.6 --min-requests 10",
+  )
+  println("  moonstat proxy failover-queue --app-type codex")
+  println(
+    "  moonstat proxy failover-queue add --app-type codex --provider-id codex-oauth",
+  )
+  println(
+    "  moonstat proxy auto-failover-enabled set --app-type codex --enabled true",
   )
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat usage logs            # Show recent request logs")
@@ -322,6 +358,53 @@ async fn reset_proxy_circuit_breaker(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_proxy_failover_queue(args : Array[String]) -> Unit {
+  check_proxy_app_endpoint(args, "/proxy/failover-queue")
+}
+
+///|
+async fn check_proxy_available_failover_providers(args : Array[String]) -> Unit {
+  check_proxy_app_endpoint(args, "/proxy/available-failover-providers")
+}
+
+///|
+async fn add_proxy_failover_queue(args : Array[String]) -> Unit {
+  guard proxy_provider_endpoint_path(args, "/proxy/failover-queue")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --provider-id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Proxy")
+}
+
+///|
+async fn remove_proxy_failover_queue(args : Array[String]) -> Unit {
+  guard proxy_provider_endpoint_path(args, "/proxy/failover-queue")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --provider-id")
+    return
+  }
+  check_json_delete_endpoint(args, path, "Proxy")
+}
+
+///|
+async fn check_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
+  check_proxy_app_endpoint(args, "/proxy/auto-failover-enabled")
+}
+
+///|
+async fn set_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
+  guard proxy_auto_failover_enabled_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --enabled")
+    return
+  }
+  check_json_post_endpoint(args, path, "Proxy")
+}
+
+///|
 async fn check_proxy_takeover_status(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/takeover-status")
 }
@@ -398,6 +481,17 @@ fn proxy_circuit_config_update_path(args : Array[String]) -> String? {
     cli_query_pair("minRequests", min_requests),
   ].join("&")
   Some("/proxy/circuit-breaker-config?\{query}")
+}
+
+///|
+fn proxy_auto_failover_enabled_path(args : Array[String]) -> String? {
+  guard parse_string_arg(args, "--enabled") is Some(enabled) else {
+    return None
+  }
+  let app_type = parse_string_arg(args, "--app-type").unwrap_or("claude")
+  Some(
+    "/proxy/auto-failover-enabled?app_type=\{cli_url_encode(app_type)}&enabled=\{cli_url_encode(enabled)}",
+  )
 }
 
 ///|
@@ -732,6 +826,30 @@ async fn check_json_post_endpoint(
     }
   } catch {
     err => logger.error("\{label} update failed: \{err}")
+  }
+}
+
+///|
+async fn check_json_delete_endpoint(
+  args : Array[String],
+  path : String,
+  label : String,
+) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
+  try {
+    let client = @http.Client::new(url, headers={})
+    defer client.close()
+    client.request(@http.RequestMethod::Delete, path)
+    let response = client.end_request()
+    let body = client.read_all().text()
+    if response.code == 200 {
+      println(body)
+    } else {
+      logger.error("\{label} delete failed: \{response.code} \{body}")
+    }
+  } catch {
+    err => logger.error("\{label} delete failed: \{err}")
   }
 }
 
