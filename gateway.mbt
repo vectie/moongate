@@ -3200,8 +3200,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         }
       }
       if response_code is (200..=299) {
-        let parsed = @json.parse(final_response_body) catch {
-          _ => {
+        let parsed = match
+          parse_claude_compatible_non_stream_body(
+            api_format, final_response_body,
+          ) {
+          Some(parsed) => parsed
+          None => {
             self.record_internal_error()
             w.header().set("Content-Type", "application/json")
             w.write_header(@status.InternalServerError)
@@ -3324,6 +3328,147 @@ fn claude_compatible_response_to_anthropic(
       gemini_native_response_to_anthropic(body, model).to_json()
     _ => body
   }
+}
+
+///|
+fn parse_claude_compatible_non_stream_body(
+  api_format : String,
+  body : String,
+) -> Json? {
+  let parsed = @json.parse(body) catch {
+    _ => {
+      if api_format == "openai_responses" && body_looks_like_sse(body) {
+        return responses_sse_to_response_value(body)
+      }
+      return None
+    }
+  }
+  Some(parsed)
+}
+
+///|
+fn body_looks_like_sse(body : String) -> Bool {
+  let trimmed = body.trim()
+  trimmed.has_prefix("data:") ||
+  trimmed.has_prefix("event:") ||
+  trimmed.has_prefix("id:") ||
+  trimmed.has_prefix("retry:") ||
+  trimmed.has_prefix(":")
+}
+
+///|
+fn responses_sse_to_response_value(body : String) -> Json? {
+  let mut buffer = ""
+  let mut completed_response : Json? = None
+  let mut output_items : Array[Json] = []
+  let normalized = body
+    .replace_all(old="\r\n", new="\n")
+    .replace_all(old="\r", new="\n")
+  for line_view in normalized.split("\n") {
+    let line = line_view.to_owned()
+    if line.trim().is_empty() {
+      let next = process_responses_sse_block(
+        buffer, true, completed_response, output_items,
+      )
+      completed_response = next.0
+      output_items = next.1
+      buffer = ""
+    } else if buffer.is_empty() {
+      buffer = line
+    } else {
+      buffer = "\{buffer}\n\{line}"
+    }
+  }
+  let next = process_responses_sse_block(
+    buffer, false, completed_response, output_items,
+  )
+  completed_response = next.0
+  output_items = next.1
+  match completed_response {
+    Some(Object(obj)) => {
+      if !output_items.is_empty() {
+        obj["output"] = Json::array(output_items)
+      }
+      Some(Json::object(obj))
+    }
+    Some(response) =>
+      if output_items.is_empty() {
+        Some(response)
+      } else {
+        None
+      }
+    None => None
+  }
+}
+
+///|
+fn process_responses_sse_block(
+  block : String,
+  strict : Bool,
+  completed_response : Json?,
+  output_items : Array[Json],
+) -> (Json?, Array[Json]) {
+  if block.trim().is_empty() {
+    return (completed_response, output_items)
+  }
+  if !strict && completed_response is Some(_) {
+    return (completed_response, output_items)
+  }
+  let mut event_name = ""
+  let data_lines : Array[String] = []
+  for line_view in block.split("\n") {
+    let line = line_view.to_owned().trim().to_owned()
+    match strip_sse_field(line, "event") {
+      Some(event) => event_name = event.trim().to_owned()
+      None =>
+        match strip_sse_field(line, "data") {
+          Some(data) => data_lines.push(data)
+          None => ()
+        }
+    }
+  }
+  if data_lines.is_empty() {
+    return (completed_response, output_items)
+  }
+  let data = data_lines.join("\n")
+  if data.trim() == "[DONE]" {
+    return (completed_response, output_items)
+  }
+  let parsed = @json.parse(data) catch {
+    _ => return (completed_response, output_items)
+  }
+  guard parsed is Object(obj) else { return (completed_response, output_items) }
+  let actual_event_name = if event_name.is_empty() {
+    json_string_from_map(obj, "type").unwrap_or("")
+  } else {
+    event_name
+  }
+  match actual_event_name {
+    "response.output_item.done" =>
+      if obj.get("item") is Some(item) {
+        output_items.push(item)
+      }
+    "response.completed" =>
+      match obj.get("response") {
+        Some(response) => return (Some(response), output_items)
+        None => return (Some(parsed), output_items)
+      }
+    _ => ()
+  }
+  (completed_response, output_items)
+}
+
+///|
+fn strip_sse_field(line : String, field : String) -> String? {
+  let prefix = "\{field}:"
+  if !line.has_prefix(prefix) {
+    return None
+  }
+  let mut value = line[prefix.length():].to_owned()
+  if value.has_prefix(" ") {
+    value = value[1:].to_owned()
+  }
+  Some(value)
 }
 
 ///|

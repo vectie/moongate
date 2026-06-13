@@ -1346,6 +1346,51 @@ test "claude stream upstream request forces stream true" {
 }
 
 ///|
+test "ccs responses sse parser handles missing trailing blank line" {
+  let sse =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_tail","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
+  let parsed = parse_claude_compatible_non_stream_body("openai_responses", sse).unwrap()
+  guard parsed is Object(obj) else { fail("expected object") }
+  assert_eq(obj["id"], Json::string("resp_tail"))
+  assert_eq(obj["model"], Json::string("gpt-5.4"))
+  guard obj["usage"] is Object(usage) else { fail("expected usage") }
+  assert_eq(usage["input_tokens"], Json::number(3.0))
+  assert_eq(usage["output_tokens"], Json::number(1.0))
+}
+
+///|
+test "ccs responses sse parser ignores truncated trailing block" {
+  let sse =
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_ok","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
+    #|
+    #|event: response.output_text.delta
+    #|data: {"type":"response.output_text.delta","delta":"unterminated
+  let parsed = parse_claude_compatible_non_stream_body("openai_responses", sse).unwrap()
+  guard parsed is Object(obj) else { fail("expected object") }
+  assert_eq(obj["id"], Json::string("resp_ok"))
+}
+
+///|
+test "ccs responses sse parser collects output items" {
+  let sse =
+    #|event: response.output_item.done
+    #|data: {"type":"response.output_item.done","item":{"type":"function_call","call_id":"call_1","name":"lookup","arguments":"{\"q\":\"moon\"}"}}
+    #|
+    #|event: response.completed
+    #|data: {"type":"response.completed","response":{"id":"resp_1","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":10,"output_tokens":2}}}
+    #|
+  let parsed = parse_claude_compatible_non_stream_body("openai_responses", sse).unwrap()
+  guard parsed is Object(obj) else { fail("expected object") }
+  guard obj["output"] is Array(output) else { fail("expected output") }
+  assert_eq(output.length(), 1)
+  guard output[0] is Object(item) else { fail("expected item") }
+  assert_eq(item["type"], Json::string("function_call"))
+  assert_eq(item["call_id"], Json::string("call_1"))
+}
+
+///|
 test "ccs upstream body filter removes private fields" {
   let body = @json.parse(
     (
