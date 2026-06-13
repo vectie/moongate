@@ -1310,6 +1310,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/save_stream_check_config", (r, w) => {
     self.handle_save_stream_check_config(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/fetch_models_for_config", (r, w) => {
+    self.handle_fetch_models_for_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/fetch_models_for_config", (r, w) => {
+    self.handle_fetch_models_for_config(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
     self.handle_models(w)
   })
@@ -8841,6 +8847,39 @@ fn model_pricing_store_json(pricing : ModelPricing, deleted~ : Bool) -> Json {
     ),
     "deleted": Json::boolean(deleted),
   }.to_json()
+}
+
+///|
+async fn Gateway::handle_fetch_models_for_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["baseUrl", "base_url"])
+    is Some(base_url) else {
+    write_usage_bad_request(w, "missing_base_url")
+    return
+  }
+  guard proxy_string_request(r.path, body, ["apiKey", "api_key"])
+    is Some(api_key) else {
+    write_usage_bad_request(w, "missing_api_key")
+    return
+  }
+  let is_full_url = proxy_bool_request(r.path, body, [
+    "isFullUrl", "is_full_url", "fullUrl", "full_url",
+  ]).unwrap_or(false)
+  let models_url = proxy_string_request(r.path, body, [
+    "modelsUrl", "models_url",
+  ])
+  let user_agent = proxy_string_request(r.path, body, [
+    "customUserAgent", "custom_user_agent", "userAgent", "user_agent",
+  ])
+  match fetch_models(base_url, api_key, is_full_url, models_url, user_agent) {
+    Ok(models) => write_usage_json(w, fetched_models_to_json(models))
+    Err(error) => write_usage_bad_request(w, error)
+  }
 }
 
 ///|

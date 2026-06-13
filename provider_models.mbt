@@ -8,6 +8,22 @@ pub struct FetchedModel {
 }
 
 ///|
+pub fn FetchedModel::to_json(self : FetchedModel) -> Json {
+  Json::object({
+    "id": Json::string(self.id),
+    "ownedBy": match self.owned_by {
+      Some(value) => Json::string(value)
+      None => Json::null()
+    },
+  })
+}
+
+///|
+pub fn fetched_models_to_json(models : Array[FetchedModel]) -> Json {
+  Json::array(models.map(fn(model) { model.to_json() }))
+}
+
+///|
 pub async fn fetch_models(
   base_url : String,
   api_key : String,

@@ -277,6 +277,18 @@ test "parse provider models response sorts openai data" {
 }
 
 ///|
+test "provider models JSON uses ccs frontend field names" {
+  let models : Array[FetchedModel] = [
+    { id: "gpt-test", owned_by: Some("openai") },
+    { id: "local-test", owned_by: None },
+  ]
+  json_inspect(fetched_models_to_json(models), content=[
+    { "id": "gpt-test", "ownedBy": "openai" },
+    { "id": "local-test", "ownedBy": null },
+  ])
+}
+
+///|
 test "parse provider models response allows missing owned by" {
   let models = parse_models_response_body(
     (

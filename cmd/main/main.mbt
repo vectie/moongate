@@ -14,6 +14,8 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["codex", "status", ..] => status_codex()
     ["models", "fetch", ..] => fetch_provider_models(arr)
     ["models", "candidates", ..] => print_model_candidates(arr)
+    ["fetch_models_for_config", ..] | ["fetch-models-for-config", ..] =>
+      fetch_provider_models(arr)
     ["stream-check", "provider", ..]
     | ["stream-check", "stream-check-provider", ..] =>
       stream_check_provider(arr)
@@ -690,6 +692,7 @@ fn print_help() -> Unit {
   println(
     "  models fetch              Fetch provider models using ccs-compatible logic",
   )
+  println("  fetch_models_for_config   Alias for ccs model fetch command")
   println("  models candidates         Print /v1/models candidate URLs")
   println("  stream-check provider     Alias for ccs stream_check_provider")
   println(
@@ -3514,23 +3517,7 @@ async fn print_model_candidates(args : Array[String]) -> Unit {
 
 ///|
 fn provider_models_to_json(models : Array[@moonstat.FetchedModel]) -> Json {
-  Json::array(models.map(provider_model_to_json))
-}
-
-///|
-fn provider_model_to_json(model : @moonstat.FetchedModel) -> Json {
-  provider_model_fields_to_json(model.id, model.owned_by)
-}
-
-///|
-fn provider_model_fields_to_json(id : String, owned_by : String?) -> Json {
-  Json::object({
-    "id": Json::string(id),
-    "ownedBy": match owned_by {
-      Some(value) => Json::string(value)
-      None => Json::null()
-    },
-  })
+  @moonstat.fetched_models_to_json(models)
 }
 
 ///|

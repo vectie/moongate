@@ -6,12 +6,6 @@ test "has flag matches exact CLI option" {
 }
 
 ///|
-test "provider model JSON uses ccs field names" {
-  let json = provider_model_fields_to_json("gpt-test", Some("openai"))
-  assert_eq(json.stringify(), "{\"id\":\"gpt-test\",\"ownedBy\":\"openai\"}")
-}
-
-///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),

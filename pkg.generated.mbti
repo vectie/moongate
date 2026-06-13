@@ -50,6 +50,8 @@ pub fn default_opencode_export_path() -> String
 
 pub async fn fetch_models(String, String, Bool, String?, String?) -> Result[Array[FetchedModel], String]
 
+pub fn fetched_models_to_json(Array[FetchedModel]) -> Json
+
 pub fn find_static_model_pricing(String) -> ModelPricing?
 
 pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
@@ -297,6 +299,7 @@ pub struct FetchedModel {
   id : String
   owned_by : String?
 }
+pub fn FetchedModel::to_json(Self) -> Json
 
 pub struct Gateway {
   host : String

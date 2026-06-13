@@ -43,6 +43,7 @@ logic and returns the same frontend wire shape, `[{ "id": "...", "ownedBy":
 
 ```sh
 moon run cmd/main -- models fetch --base-url https://api.example.com --api-key sk-...
+moon run cmd/main -- fetch_models_for_config --base-url https://api.example.com --api-key sk-...
 moon run cmd/main -- models candidates --base-url https://api.deepseek.com/anthropic
 ```
 
@@ -275,6 +276,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
   contract for standalone provider readiness checks.
 - `GET /models`
 - `GET /v1/models`
+- `GET|POST /fetch_models_for_config?baseUrl=https://api.example.com&apiKey=sk-...`
 - `GET /claude-desktop/v1/models`
 - `POST /v1/messages`
 - `POST /claude/v1/messages`
