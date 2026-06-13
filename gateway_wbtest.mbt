@@ -61,6 +61,24 @@ test "usage query helpers parse ccs trend parameters" {
 }
 
 ///|
+test "usage query helpers parse ccs provider limit parameters" {
+  let path = "/usage/provider-limits?providerId=codex-oauth&appType=codex&dailyLimitUsd=0.10&monthly_limit_usd=1.25"
+  assert_eq(
+    usage_query_value_any(path, "provider_id", "providerId"),
+    Some("codex-oauth"),
+  )
+  assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
+  assert_eq(
+    usage_query_value_any(path, "daily_limit_usd", "dailyLimitUsd"),
+    Some("0.10"),
+  )
+  assert_eq(
+    usage_query_value_any(path, "monthly_limit_usd", "monthlyLimitUsd"),
+    Some("1.25"),
+  )
+}
+
+///|
 test "codex responses endpoints preserve request query" {
   assert_eq(
     codex_backend_responses_endpoint(

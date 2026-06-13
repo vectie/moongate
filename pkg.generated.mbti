@@ -192,6 +192,12 @@ pub struct ModelPricing {
   cache_creation_cost_per_million : String
 }
 
+pub struct ProviderLimitConfig {
+  daily_limit_usd : String?
+  monthly_limit_usd : String?
+}
+pub fn ProviderLimitConfig::new(daily_limit_usd? : String?, monthly_limit_usd? : String?) -> Self
+
 pub struct RequestLog {
   request_id : String
   provider_id : String
@@ -264,6 +270,7 @@ pub struct TrafficStats {
   mut current_provider_id : String?
   mut failover_count : Int
   active_targets : Map[String, ActiveTarget]
+  provider_limits : Map[String, ProviderLimitConfig]
   mut last_request_at : String?
   mut last_error : String?
   request_logs : Array[RequestLog]
@@ -277,6 +284,7 @@ pub struct TrafficStats {
 }
 pub fn TrafficStats::model_stats_json(Self, app_type? : String?) -> Json
 pub fn TrafficStats::new() -> Self
+pub fn TrafficStats::provider_limit_status_json(Self, String, String, daily_limit_usd? : String?, monthly_limit_usd? : String?, now_ts? : Int?) -> Json
 pub fn TrafficStats::provider_stats_json(Self, app_type? : String?) -> Json
 pub fn TrafficStats::record_bad_request(Self) -> Unit
 pub fn TrafficStats::record_inbound(Self, Int) -> Unit
@@ -292,6 +300,7 @@ pub fn TrafficStats::record_upstream_error_status(Self, Int, Int) -> Unit
 pub fn TrafficStats::request_detail_json(Self, String) -> Json?
 pub fn TrafficStats::request_logs_json(Self, limit? : Int) -> Json
 pub fn TrafficStats::set_active_target(Self, String, String, String) -> Unit
+pub fn TrafficStats::set_provider_limits(Self, String, String, daily_limit_usd? : String?, monthly_limit_usd? : String?) -> Unit
 pub fn TrafficStats::status_json(Self, String, Int, Int) -> Json
 pub fn TrafficStats::to_json(Self) -> Json
 pub fn TrafficStats::usage_data_sources_json(Self) -> Json

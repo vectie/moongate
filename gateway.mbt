@@ -133,6 +133,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/usage/trends", (r, w) => {
     self.handle_usage_trends(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/usage/provider-limits", (r, w) => {
+    self.handle_usage_provider_limits(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/usage/provider-stats", (_, w) => {
     self.handle_usage_provider_stats(w)
   })
@@ -1040,6 +1043,42 @@ async fn Gateway::handle_usage_trends(
 }
 
 ///|
+async fn Gateway::handle_usage_provider_limits(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "provider_id", "providerId")
+    is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  let daily_limit_usd = usage_query_value_any(
+    r.path,
+    "daily_limit_usd",
+    "dailyLimitUsd",
+  )
+  let monthly_limit_usd = usage_query_value_any(
+    r.path,
+    "monthly_limit_usd",
+    "monthlyLimitUsd",
+  )
+  write_usage_json(
+    w,
+    self.stats.provider_limit_status_json(
+      provider_id,
+      app_type,
+      daily_limit_usd~,
+      monthly_limit_usd~,
+    ),
+  )
+}
+
+///|
 async fn Gateway::handle_usage_provider_stats(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1101,6 +1140,17 @@ async fn write_usage_json(w : @httpx.ResponseWriter, body : Json) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(body.stringify(indent=2))
+  w.flush()
+}
+
+///|
+async fn write_usage_bad_request(
+  w : @httpx.ResponseWriter,
+  error : String,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.BadRequest)
+  w.write({ "error": Json::string(error) }.to_json().stringify(indent=2))
   w.flush()
 }
 

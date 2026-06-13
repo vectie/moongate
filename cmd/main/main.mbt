@@ -24,6 +24,7 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["usage", "summary", ..] => check_usage_endpoint(arr, "/usage/summary")
     ["usage", "apps", ..] => check_usage_endpoint(arr, "/usage/summary/by-app")
     ["usage", "trends", ..] => check_usage_trends(arr)
+    ["usage", "limits", ..] => check_usage_limits(arr)
     ["usage", "providers", ..] =>
       check_usage_endpoint(arr, "/usage/provider-stats")
     ["usage", "models", ..] => check_usage_endpoint(arr, "/usage/model-stats")
@@ -76,6 +77,7 @@ fn print_help() -> Unit {
   println("  usage summary    Show ccs-style usage summary")
   println("  usage apps       Show ccs-style usage summary by app")
   println("  usage trends     Show ccs-style hourly/daily usage trends")
+  println("  usage limits     Show ccs-style provider limit status")
   println("  usage providers  Show ccs-style provider statistics")
   println("  usage models     Show ccs-style model statistics")
   println("  usage sources    Show ccs-style data source breakdown")
@@ -116,6 +118,7 @@ fn print_help() -> Unit {
   println("  moonstat usage logs            # Show recent request logs")
   println("  moonstat usage summary         # Show aggregate token/cost usage")
   println("  moonstat usage trends --start-date 0 --end-date 86400")
+  println("  moonstat usage limits --provider-id codex-oauth --app-type codex")
   println("  moonstat usage detail --request-id req_x")
   println("  moonstat uninstall             # Remove hosts reroute")
 }
@@ -197,6 +200,11 @@ async fn check_usage_trends(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_usage_limits(args : Array[String]) -> Unit {
+  check_usage_endpoint(args, usage_limits_path(args))
+}
+
+///|
 fn usage_trends_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--start-date") {
@@ -215,6 +223,32 @@ fn usage_trends_path(args : Array[String]) -> String {
     "/usage/trends"
   } else {
     "/usage/trends?\{query.join("&")}"
+  }
+}
+
+///|
+fn usage_limits_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg(args, "--provider-id") {
+    Some(value) => query.push("provider_id=\{value}")
+    None => ()
+  }
+  match parse_string_arg(args, "--app-type") {
+    Some(value) => query.push("app_type=\{value}")
+    None => ()
+  }
+  match parse_string_arg(args, "--daily-limit-usd") {
+    Some(value) => query.push("daily_limit_usd=\{value}")
+    None => ()
+  }
+  match parse_string_arg(args, "--monthly-limit-usd") {
+    Some(value) => query.push("monthly_limit_usd=\{value}")
+    None => ()
+  }
+  if query.is_empty() {
+    "/usage/provider-limits"
+  } else {
+    "/usage/provider-limits?\{query.join("&")}"
   }
 }
 

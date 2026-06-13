@@ -556,3 +556,98 @@ test "usage trends use local daily buckets for long ranges" {
   assert_eq(day_two["requestCount"], Json::number(0.0))
   assert_eq(day_two["totalCost"], Json::string("0.000000"))
 }
+
+///|
+test "provider limit status matches ccs daily and monthly semantics" {
+  let stats = TrafficStats::new()
+  let now = TREND_DAY_SECONDS * 10
+  stats.set_provider_limits(
+    "codex-oauth",
+    "codex",
+    daily_limit_usd=Some("0.10"),
+    monthly_limit_usd=Some("0.30"),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-today",
+      provider_id="codex-oauth",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(input_tokens=1, output_tokens=1),
+      total_cost_usd="0.100000",
+      status_code=200,
+      created_at=now - 100,
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-month",
+      provider_id="codex-oauth",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(input_tokens=1, output_tokens=1),
+      total_cost_usd="0.150000",
+      status_code=200,
+      created_at=now - TREND_DAY_SECONDS * 2,
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-ignored",
+      provider_id="anthropic",
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      usage=TokenUsage::new(input_tokens=1, output_tokens=1),
+      total_cost_usd="9.000000",
+      status_code=200,
+      created_at=now,
+    ),
+  )
+  json_inspect(
+    stats.provider_limit_status_json("codex-oauth", "codex", now_ts=Some(now)),
+    content={
+      "providerId": "codex-oauth",
+      "dailyUsage": "0.100000",
+      "dailyLimit": "0.10",
+      "dailyExceeded": true,
+      "monthlyUsage": "0.250000",
+      "monthlyLimit": "0.30",
+      "monthlyExceeded": false,
+    },
+  )
+}
+
+///|
+test "provider limit status allows standalone query limits" {
+  let stats = TrafficStats::new()
+  let now = TREND_DAY_SECONDS * 10
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-today",
+      provider_id="gemini-api-key",
+      app_type="gemini",
+      model="gemini-2.5-pro",
+      usage=TokenUsage::new(input_tokens=1, output_tokens=1),
+      total_cost_usd="0.020000",
+      status_code=200,
+      created_at=now,
+    ),
+  )
+  json_inspect(
+    stats.provider_limit_status_json(
+      "gemini-api-key",
+      "gemini",
+      daily_limit_usd=Some("0.50"),
+      now_ts=Some(now),
+    ),
+    content={
+      "providerId": "gemini-api-key",
+      "dailyUsage": "0.020000",
+      "dailyLimit": "0.50",
+      "dailyExceeded": false,
+      "monthlyUsage": "0.020000",
+      "monthlyLimit": null,
+      "monthlyExceeded": false,
+    },
+  )
+}

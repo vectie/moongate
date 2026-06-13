@@ -37,6 +37,9 @@ pub fn moonstat_suite_manifest_json(
     "usage_trends_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/trends",
     ),
+    "usage_provider_limits_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/provider-limits",
+    ),
     "usage_provider_stats_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/provider-stats",
     ),
@@ -79,6 +82,9 @@ pub fn moonstat_suite_manifest_json(
       "usage_summary": Json::string("moonstat usage summary"),
       "usage_apps": Json::string("moonstat usage apps"),
       "usage_trends": Json::string("moonstat usage trends"),
+      "usage_limits": Json::string(
+        "moonstat usage limits --provider-id <provider_id> --app-type <app_type>",
+      ),
       "usage_providers": Json::string("moonstat usage providers"),
       "usage_models": Json::string("moonstat usage models"),
       "usage_sources": Json::string("moonstat usage sources"),
@@ -123,6 +129,9 @@ pub fn moonstat_suite_status_json(
     ),
     "usage_trends_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/trends",
+    ),
+    "usage_provider_limits_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/provider-limits",
     ),
     "usage_provider_stats_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/provider-stats",
@@ -213,13 +222,14 @@ fn moonstat_suite_routes() -> Array[String] {
   [
     "GET /health", "GET /status", "GET /stats", "GET /usage/logs", "GET /models",
     "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
-    "GET /usage/trends", "GET /usage/model-stats", "GET /usage/data-sources", "GET /usage/model-pricing",
-    "GET /usage/request-detail/{request_id}", "GET /v1/models", "GET /claude-desktop/v1/models",
-    "POST /v1/messages", "POST /claude/v1/messages", "POST /claude-desktop/v1/messages",
-    "POST /responses", "POST /v1/responses", "POST /v1/v1/responses", "POST /codex/v1/responses",
-    "POST /responses/compact", "POST /v1/responses/compact", "POST /v1/v1/responses/compact",
-    "POST /codex/v1/responses/compact", "POST /chat/completions", "POST /v1/chat/completions",
-    "POST /v1/v1/chat/completions", "POST /codex/v1/chat/completions", "GET|POST /v1beta/*path",
-    "GET|POST /gemini/v1beta/*path", "GET|POST /gemini/v1/*path",
+    "GET /usage/trends", "GET /usage/provider-limits", "GET /usage/model-stats",
+    "GET /usage/data-sources", "GET /usage/model-pricing", "GET /usage/request-detail/{request_id}",
+    "GET /v1/models", "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude/v1/messages",
+    "POST /claude-desktop/v1/messages", "POST /responses", "POST /v1/responses",
+    "POST /v1/v1/responses", "POST /codex/v1/responses", "POST /responses/compact",
+    "POST /v1/responses/compact", "POST /v1/v1/responses/compact", "POST /codex/v1/responses/compact",
+    "POST /chat/completions", "POST /v1/chat/completions", "POST /v1/v1/chat/completions",
+    "POST /codex/v1/chat/completions", "GET|POST /v1beta/*path", "GET|POST /gemini/v1beta/*path",
+    "GET|POST /gemini/v1/*path",
   ]
 }
