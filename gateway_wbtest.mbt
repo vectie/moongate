@@ -1378,7 +1378,14 @@ test "ccs responses sse parser handles missing trailing blank line" {
   let sse =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_tail","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
-  let parsed = parse_claude_compatible_non_stream_body("openai_responses", sse).unwrap()
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_responses",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed response")
+  }
   guard parsed is Object(obj) else { fail("expected object") }
   assert_eq(obj["id"], Json::string("resp_tail"))
   assert_eq(obj["model"], Json::string("gpt-5.4"))
@@ -1395,7 +1402,14 @@ test "ccs responses sse parser ignores truncated trailing block" {
     #|
     #|event: response.output_text.delta
     #|data: {"type":"response.output_text.delta","delta":"unterminated
-  let parsed = parse_claude_compatible_non_stream_body("openai_responses", sse).unwrap()
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_responses",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed response")
+  }
   guard parsed is Object(obj) else { fail("expected object") }
   assert_eq(obj["id"], Json::string("resp_ok"))
 }
@@ -1409,7 +1423,14 @@ test "ccs responses sse parser collects output items" {
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_1","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":10,"output_tokens":2}}}
     #|
-  let parsed = parse_claude_compatible_non_stream_body("openai_responses", sse).unwrap()
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_responses",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed response")
+  }
   guard parsed is Object(obj) else { fail("expected object") }
   guard obj["output"] is Array(output) else { fail("expected output") }
   assert_eq(output.length(), 1)
@@ -1426,6 +1447,35 @@ test "ccs sse body sniffing accepts bom and indented fields" {
 }
 
 ///|
+test "ccs upstream parse diagnostics include headers and body snippet" {
+  let headers = { "content-type": "text/html", "content-encoding": "gzip" }
+  let suffix = body_diagnostics_suffix(headers, "<html>\r\nblocked\u{0}</html>")
+  assert_true(suffix.contains("content-type: text/html"))
+  assert_true(suffix.contains("content-encoding: gzip"))
+  assert_true(suffix.contains("<html>\\nblocked?</html>"))
+}
+
+///|
+test "ccs upstream parse diagnostics mark missing headers" {
+  let result = parse_claude_compatible_non_stream_body_with_diagnostics(
+    "anthropic",
+    "data: oops",
+    {},
+  )
+  guard result is Err(message) else { fail("expected parse error") }
+  assert_true(message.contains("Failed to parse upstream response"))
+  assert_true(message.contains("content-type: <none>"))
+  assert_true(message.contains("content-encoding: <none>"))
+  assert_true(message.contains("body[..120]: 'data: oops'"))
+}
+
+///|
+test "ccs upstream parse diagnostics truncate long body snippets" {
+  let body = "abcdefghijklmnopqrstuvwxyz"
+  assert_eq(body_snippet(body, 5), "abcde...")
+}
+
+///|
 test "ccs chat sse parser aggregates text and usage" {
   let sse =
     #|data: {"id":"chatcmpl_1","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"Hel"},"finish_reason":null}]}
@@ -1434,7 +1484,14 @@ test "ccs chat sse parser aggregates text and usage" {
     #|
     #|data: [DONE]
     #|
-  let parsed = parse_claude_compatible_non_stream_body("openai_chat", sse).unwrap()
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed chat")
+  }
   let response = openai_chat_completion_to_anthropic(
     parsed, "claude-sonnet-4-6",
   )
@@ -1453,7 +1510,14 @@ test "ccs chat sse parser merges tool call argument fragments" {
     #|
     #|data: {"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":":\"moon\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":4,"completion_tokens":2}}
     #|
-  let parsed = parse_claude_compatible_non_stream_body("openai_chat", sse).unwrap()
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed chat")
+  }
   guard parsed is Object(obj) else { fail("expected object") }
   guard obj["choices"] is Array(choices) else { fail("expected choices") }
   guard choices[0] is Object(choice) else { fail("expected choice") }
@@ -1479,7 +1543,14 @@ test "ccs chat sse parser ignores truncated trailing block after done" {
     #|data: {"id":"chatcmpl_ok","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}
     #|
     #|data: {"choices":[{"index":0,"delta":{"content":"unterminated
-  let parsed = parse_claude_compatible_non_stream_body("openai_chat", sse).unwrap()
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed chat")
+  }
   guard parsed is Object(obj) else { fail("expected object") }
   assert_eq(obj["id"], Json::string("chatcmpl_ok"))
   guard obj["choices"] is Array(choices) else { fail("expected choices") }
@@ -1496,7 +1567,12 @@ test "ccs chat sse parser rejects stream without choices" {
     #|data: [DONE]
     #|
   assert_true(
-    parse_claude_compatible_non_stream_body("openai_chat", sse) is None,
+    parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Err(_),
   )
 }
 
@@ -1509,7 +1585,12 @@ test "ccs chat sse parser rejects event error" {
     #|data: {"error":{"message":"quota exceeded"}}
     #|
   assert_true(
-    parse_claude_compatible_non_stream_body("openai_chat", sse) is None,
+    parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Err(_),
   )
 }
 

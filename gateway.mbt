@@ -3154,6 +3154,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     Ok((response, response_body)) => {
       let mut response_code = response.code
       let mut final_response_body = response_body
+      let mut final_response_headers = response.headers
       if ccs_media_retry_should_trigger(
           response_code, final_response_body, upstream_body,
         ) {
@@ -3172,6 +3173,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             Ok((retry_response, retry_response_body)) => {
               response_code = retry_response.code
               final_response_body = retry_response_body
+              final_response_headers = retry_response.headers
             }
             Err(_) => ()
           }
@@ -3196,6 +3198,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
               Ok((retry_response, retry_response_body)) => {
                 response_code = retry_response.code
                 final_response_body = retry_response_body
+                final_response_headers = retry_response.headers
               }
               Err(_) => ()
             }
@@ -3205,15 +3208,17 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
       }
       if response_code is (200..=299) {
         let parsed = match
-          parse_claude_compatible_non_stream_body(
-            api_format, final_response_body,
+          parse_claude_compatible_non_stream_body_with_diagnostics(
+            api_format, final_response_body, final_response_headers,
           ) {
-          Some(parsed) => parsed
-          None => {
+          Ok(parsed) => parsed
+          Err(message) => {
             self.record_internal_error()
             w.header().set("Content-Type", "application/json")
             w.write_header(@status.InternalServerError)
-            w.write("{\"error\":\"Failed to parse upstream response\"}")
+            w.write(
+              Json::object({ "error": Json::string(message) }).stringify(),
+            )
             w.flush()
             return
           }
@@ -3335,22 +3340,37 @@ fn claude_compatible_response_to_anthropic(
 }
 
 ///|
-fn parse_claude_compatible_non_stream_body(
+fn parse_claude_compatible_non_stream_body_with_diagnostics(
   api_format : String,
   body : String,
-) -> Json? {
+  headers : Map[String, String],
+) -> Result[Json, String] {
   let parsed = @json.parse(body) catch {
-    _ => {
+    error => {
       if api_format == "openai_responses" && body_looks_like_sse(body) {
-        return responses_sse_to_response_value(body)
+        match responses_sse_to_response_value(body) {
+          Some(value) => return Ok(value)
+          None =>
+            return Err(
+              "Failed to aggregate upstream SSE response \{body_diagnostics_suffix(headers, body)}",
+            )
+        }
       }
       if api_format == "openai_chat" && body_looks_like_sse(body) {
-        return chat_sse_to_response_value(body)
+        match chat_sse_to_response_value(body) {
+          Some(value) => return Ok(value)
+          None =>
+            return Err(
+              "Failed to aggregate upstream chat SSE response \{body_diagnostics_suffix(headers, body)}",
+            )
+        }
       }
-      return None
+      return Err(
+        "Failed to parse upstream response: \{error} \{body_diagnostics_suffix(headers, body)}",
+      )
     }
   }
-  Some(parsed)
+  Ok(parsed)
 }
 
 ///|
@@ -3361,6 +3381,38 @@ fn body_looks_like_sse(body : String) -> Bool {
   trimmed.has_prefix("id:") ||
   trimmed.has_prefix("retry:") ||
   trimmed.has_prefix(":")
+}
+
+///|
+fn body_diagnostics_suffix(
+  headers : Map[String, String],
+  body : String,
+) -> String {
+  let content_type = headers.get("content-type").unwrap_or("<none>")
+  let content_encoding = headers.get("content-encoding").unwrap_or("<none>")
+  "(content-type: \{content_type}; content-encoding: \{content_encoding}; body[..120]: '\{body_snippet(body, 120)}')"
+}
+
+///|
+fn body_snippet(body : String, max_chars : Int) -> String {
+  let mut snippet = ""
+  let limit = if body.length() < max_chars { body.length() } else { max_chars }
+  for i in 0..<limit {
+    let ch = body[i]
+    if ch == '\n' {
+      snippet += "\\n"
+    } else if ch == '\r' {
+      ()
+    } else if ch.to_int() < 32 {
+      snippet += "?"
+    } else {
+      snippet += body[i:i + 1].to_owned()
+    }
+  }
+  if body.length() > max_chars {
+    snippet += "..."
+  }
+  snippet
 }
 
 ///|
