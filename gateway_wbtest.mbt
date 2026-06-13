@@ -842,6 +842,30 @@ async test "gateway skips all zero ccs stream usage request log" {
 }
 
 ///|
+async test "gateway skips all zero ccs nonstream usage request log" {
+  let gateway = Gateway::new(port=0)
+  gateway.stats.record_inbound(10)
+  let _ = gateway.activate_provider("codex")
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  gateway.stats.record_stream_mode(false)
+  gateway.record_success_usage(TokenUsage::empty(), 42)
+  assert_eq(gateway.stats.successful_responses, 1)
+  assert_eq(gateway.stats.response_bytes, 42)
+  assert_eq(gateway.stats.request_logs.length(), 0)
+  guard gateway.provider_router.get_circuit_breaker_stats(
+      "codex-oauth", "codex",
+    )
+    is Some(stats) else {
+    fail("expected circuit stats")
+  }
+  assert_eq(stats.total_requests, 1)
+}
+
+///|
 async test "gateway nonretryable upstream errors release half open permit" {
   let gateway = Gateway::new(port=0)
   gateway.provider_router.update_all_configs({
