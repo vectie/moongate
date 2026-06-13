@@ -7,6 +7,7 @@ pub struct Gateway {
   stats : TrafficStats
   provider_router : ProviderRouter
   gemini_shadow : GeminiShadowStore
+  codex_chat_history : CodexChatHistoryStore
   pricing_overrides : Map[String, ModelPricing]
   pricing_deleted_model_ids : Map[String, Bool]
   logger : @pino.Logger
@@ -28,6 +29,7 @@ pub fn Gateway::new(
     stats: TrafficStats::new(),
     provider_router: moonstat_default_provider_router(),
     gemini_shadow: GeminiShadowStore::new(),
+    codex_chat_history: CodexChatHistoryStore::new(),
     pricing_overrides: Map([], capacity=0),
     pricing_deleted_model_ids: Map([], capacity=0),
     logger,
@@ -836,6 +838,7 @@ async fn Gateway::forward_non_streaming_chat_completion(
       let parsed : Result[Json, Error] = try? @json.parse(response_body)
       match parsed {
         Ok(json) => {
+          ignore(self.codex_chat_history.record_response(json))
           let usage = token_usage_from_codex_response_auto(json).unwrap_or(
             TokenUsage::empty(),
           )
@@ -1019,6 +1022,7 @@ async fn Gateway::forward_streaming_chat_completion(
           }
         }
         client.close()
+        ignore(self.codex_chat_history.record_stream_events(stream_events))
         self.record_success_stream_usage(
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
@@ -1045,13 +1049,16 @@ async fn Gateway::forward_non_streaming_codex_response(
   let attempted_provider_ids : Array[String] = []
   for ;; {
     let active_provider = self.active_provider_target(providers)
+    let outbound_request = self.codex_provider_outbound_request(
+      active_provider, request,
+    )
     let (response, response_body) = match active_provider {
       Some(provider) if provider.can_use_codex_compatible_upstream() =>
         match
           self.post_codex_compatible_provider_json(
             provider,
             codex_compatible_responses_endpoint(endpoint),
-            request,
+            outbound_request,
           ) {
           Ok(result) => result
           Err(error) => {
@@ -1107,13 +1114,15 @@ async fn Gateway::forward_non_streaming_codex_response(
       }
     }
     if response.code == 200 {
-      let usage = try {
-        let json = @json.parse(response_body)
-        token_usage_from_codex_response_auto(json).unwrap_or(
-          TokenUsage::empty(),
-        )
-      } catch {
-        _ => TokenUsage::empty()
+      let parsed : Result[Json, Error] = try? @json.parse(response_body)
+      let usage = match parsed {
+        Ok(json) => {
+          ignore(self.codex_chat_history.record_response(json))
+          token_usage_from_codex_response_auto(json).unwrap_or(
+            TokenUsage::empty(),
+          )
+        }
+        Err(_) => TokenUsage::empty()
       }
       self.record_success_usage(usage, response_body.length())
       w.header().set("Content-Type", "application/json")
@@ -1149,6 +1158,19 @@ async fn Gateway::forward_non_streaming_codex_response(
 }
 
 ///|
+fn Gateway::codex_provider_outbound_request(
+  self : Gateway,
+  provider : ProviderRouteTarget?,
+  request : Json,
+) -> Json {
+  match provider {
+    Some(provider) if provider.can_use_codex_compatible_upstream() =>
+      self.codex_chat_history.enriched_request(request)
+    _ => request
+  }
+}
+
+///|
 async fn Gateway::forward_streaming_codex_response(
   self : Gateway,
   request : Json,
@@ -1170,12 +1192,16 @@ async fn Gateway::forward_streaming_codex_response(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
+    let active_provider = self.active_provider_target(providers)
+    let outbound_request = self.codex_provider_outbound_request(
+      active_provider, request,
+    )
     let client = self.codex_client(
       creds,
       accept="text/event-stream",
       session_id~,
     )
-    let response = client.post(endpoint, request)
+    let response = client.post(endpoint, outbound_request)
     if response.code != 200 {
       let error_body = client.read_all().text()
       client.close()
@@ -1264,6 +1290,7 @@ async fn Gateway::forward_streaming_codex_response(
           w.flush()
         }
         client.close()
+        ignore(self.codex_chat_history.record_stream_events(stream_events))
         self.record_success_stream_usage(
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
@@ -3226,6 +3253,9 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         let usage = token_usage_from_claude_compatible_response(
           parsed, api_format,
         ).unwrap_or(TokenUsage::empty())
+        if api_format == "openai_responses" {
+          ignore(self.codex_chat_history.record_response(parsed))
+        }
         self.record_success_usage(usage, response_body.length())
         if api_format == "gemini_native" {
           self.gemini_shadow.record_gemini_response(
@@ -4147,6 +4177,7 @@ async fn Gateway::handle_non_streaming_request(
   )
   match response_json_result {
     Ok(json) => {
+      ignore(self.codex_chat_history.record_response(json))
       let usage = token_usage_from_codex_response_auto(json).unwrap_or(
         TokenUsage::empty(),
       )
@@ -4421,6 +4452,7 @@ async fn Gateway::forward_successful_claude_compatible_stream(
       w.write("data: \{event.data}\n\n")
       w.flush()
     }
+    ignore(self.codex_chat_history.record_stream_events(reader.events))
     self.record_success_stream_usage(
       token_usage_from_codex_stream_events_auto(reader.events),
       0,
@@ -6147,6 +6179,7 @@ async fn Gateway::handle_streaming_request(
     w.write("data: \{event.data}\n\n")
     w.flush()
   }
+  ignore(self.codex_chat_history.record_stream_events(reader.events))
   self.record_success_stream_usage(
     token_usage_from_codex_stream_events_auto(reader.events),
     0,

@@ -212,6 +212,8 @@ pub enum CircuitState {
 } derive(Eq)
 pub fn CircuitState::to_string(Self) -> String
 
+type CodexChatHistoryStore
+
 pub struct CodexInput {
   messages : Array[CodexMessage]
   tools : Array[CodexTool]?
@@ -255,6 +257,7 @@ pub struct Gateway {
   stats : TrafficStats
   provider_router : ProviderRouter
   gemini_shadow : GeminiShadowStore
+  codex_chat_history : CodexChatHistoryStore
   pricing_overrides : Map[String, ModelPricing]
   pricing_deleted_model_ids : Map[String, Bool]
   logger : @pino.Logger
