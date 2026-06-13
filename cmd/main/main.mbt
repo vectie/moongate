@@ -27,6 +27,9 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_usage_endpoint(arr, "/usage/provider-stats")
     ["usage", "models", ..] => check_usage_endpoint(arr, "/usage/model-stats")
     ["usage", "sources", ..] => check_usage_endpoint(arr, "/usage/data-sources")
+    ["usage", "pricing", ..] =>
+      check_usage_endpoint(arr, "/usage/model-pricing")
+    ["usage", "detail", ..] => check_usage_detail(arr)
     ["help"] | ["--help"] | ["-h"] => print_help()
     ["version"] | ["--version"] | ["-v"] => println("moonstat v0.1.0")
     _ => print_help()
@@ -74,6 +77,8 @@ fn print_help() -> Unit {
   println("  usage providers  Show ccs-style provider statistics")
   println("  usage models     Show ccs-style model statistics")
   println("  usage sources    Show ccs-style data source breakdown")
+  println("  usage pricing    Show ccs-style static model pricing")
+  println("  usage detail     Show one ccs-style request detail by id")
   println("  login       Login to OpenAI Codex OAuth")
   println("  health      Check gateway health")
   println("  version     Show version")
@@ -108,6 +113,7 @@ fn print_help() -> Unit {
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat usage logs            # Show recent request logs")
   println("  moonstat usage summary         # Show aggregate token/cost usage")
+  println("  moonstat usage detail --request-id req_x")
   println("  moonstat uninstall             # Remove hosts reroute")
 }
 
@@ -199,6 +205,16 @@ async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
   } catch {
     err => logger.error("Usage logs check failed: \{err}")
   }
+}
+
+///|
+async fn check_usage_detail(args : Array[String]) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  guard parse_string_arg(args, "--request-id") is Some(request_id) else {
+    logger.error("Missing required --request-id")
+    return
+  }
+  check_usage_endpoint(args, "/usage/request-detail/\{request_id}")
 }
 
 ///|

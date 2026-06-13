@@ -28,6 +28,10 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /usage/provider-stats")))
   assert_true(routes.contains(Json::string("GET /usage/model-stats")))
   assert_true(routes.contains(Json::string("GET /usage/data-sources")))
+  assert_true(routes.contains(Json::string("GET /usage/model-pricing")))
+  assert_true(
+    routes.contains(Json::string("GET /usage/request-detail/{request_id}")),
+  )
   assert_true(routes.contains(Json::string("POST /v1/messages")))
   guard obj["apps"] is Array(apps) else { fail("expected apps") }
   assert_eq(apps.length(), 4)

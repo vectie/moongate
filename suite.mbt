@@ -43,6 +43,12 @@ pub fn moonstat_suite_manifest_json(
     "usage_data_sources_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/data-sources",
     ),
+    "usage_model_pricing_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/model-pricing",
+    ),
+    "usage_request_detail_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/request-detail/{request_id}",
+    ),
     "models_url": Json::string("\{moonstat_openai_base_url(host, port)}/models"),
     "routes": Json::array(
       moonstat_suite_routes().map(fn(route) { Json::string(route) }),
@@ -72,6 +78,10 @@ pub fn moonstat_suite_manifest_json(
       "usage_providers": Json::string("moonstat usage providers"),
       "usage_models": Json::string("moonstat usage models"),
       "usage_sources": Json::string("moonstat usage sources"),
+      "usage_pricing": Json::string("moonstat usage pricing"),
+      "usage_detail": Json::string(
+        "moonstat usage detail --request-id <request_id>",
+      ),
       "codex_install": Json::string(
         "moonstat codex install --port \{port} --model \{model}",
       ),
@@ -115,6 +125,12 @@ pub fn moonstat_suite_status_json(
     ),
     "usage_data_sources_url": Json::string(
       "\{moonstat_base_url(host, port)}/usage/data-sources",
+    ),
+    "usage_model_pricing_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/model-pricing",
+    ),
+    "usage_request_detail_url": Json::string(
+      "\{moonstat_base_url(host, port)}/usage/request-detail/{request_id}",
     ),
     "openai_base_url": Json::string(moonstat_openai_base_url(host, port)),
     "anthropic_base_url": Json::string(moonstat_base_url(host, port)),
@@ -190,7 +206,8 @@ fn moonstat_suite_routes() -> Array[String] {
   [
     "GET /health", "GET /status", "GET /stats", "GET /usage/logs", "GET /models",
     "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
-    "GET /usage/model-stats", "GET /usage/data-sources", "GET /v1/models", "GET /claude-desktop/v1/models",
+    "GET /usage/model-stats", "GET /usage/data-sources", "GET /usage/model-pricing",
+    "GET /usage/request-detail/{request_id}", "GET /v1/models", "GET /claude-desktop/v1/models",
     "POST /v1/messages", "POST /claude/v1/messages", "POST /claude-desktop/v1/messages",
     "POST /responses", "POST /v1/responses", "POST /v1/v1/responses", "POST /codex/v1/responses",
     "POST /responses/compact", "POST /v1/responses/compact", "POST /v1/v1/responses/compact",

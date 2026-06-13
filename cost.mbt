@@ -102,6 +102,25 @@ pub fn find_static_model_pricing(model_id : String) -> ModelPricing? {
 }
 
 ///|
+pub fn static_model_pricing_json() -> Json {
+  Json::array(static_model_pricing().map(fn(pricing) { pricing.to_json() }))
+}
+
+///|
+fn ModelPricing::to_json(self : ModelPricing) -> Json {
+  {
+    "modelId": Json::string(self.model_id),
+    "displayName": Json::string(self.display_name),
+    "inputCostPerMillion": Json::string(self.input_cost_per_million),
+    "outputCostPerMillion": Json::string(self.output_cost_per_million),
+    "cacheReadCostPerMillion": Json::string(self.cache_read_cost_per_million),
+    "cacheCreationCostPerMillion": Json::string(
+      self.cache_creation_cost_per_million,
+    ),
+  }.to_json()
+}
+
+///|
 fn static_model_pricing() -> Array[ModelPricing] {
   [
     mp("claude-fable-5", "Claude Fable 5", "10", "50", "1.00", "12.50"),

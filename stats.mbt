@@ -614,6 +614,22 @@ pub fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
 }
 
 ///|
+pub fn TrafficStats::request_detail_json(
+  self : TrafficStats,
+  request_id : String,
+) -> Json? {
+  let mut i = self.request_logs.length() - 1
+  while i >= 0 {
+    let log = self.request_logs[i]
+    if log.request_id == request_id {
+      return Some(log.to_json())
+    }
+    i -= 1
+  }
+  None
+}
+
+///|
 priv struct UsageSummaryAccumulator {
   mut total_requests : Int
   mut success_count : Int

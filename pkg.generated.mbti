@@ -30,6 +30,8 @@ pub fn moonstat_suite_status_json(host? : String, port? : Int, model? : String) 
 
 pub fn normalize_gemini_model_id(String) -> String
 
+pub fn static_model_pricing_json() -> Json
+
 pub fn token_usage_from_claude_response(Json) -> TokenUsage?
 
 pub fn token_usage_from_codex_response(Json) -> TokenUsage?
@@ -287,6 +289,7 @@ pub fn TrafficStats::record_success_usage(Self, TokenUsage, Int) -> Unit
 pub fn TrafficStats::record_unauthorized(Self) -> Unit
 pub fn TrafficStats::record_upstream_error(Self, Int) -> Unit
 pub fn TrafficStats::record_upstream_error_status(Self, Int, Int) -> Unit
+pub fn TrafficStats::request_detail_json(Self, String) -> Json?
 pub fn TrafficStats::request_logs_json(Self, limit? : Int) -> Json
 pub fn TrafficStats::set_active_target(Self, String, String, String) -> Unit
 pub fn TrafficStats::status_json(Self, String, Int, Int) -> Json

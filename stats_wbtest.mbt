@@ -225,6 +225,29 @@ test "traffic stats keeps request log retention bounded" {
 }
 
 ///|
+test "request detail lookup returns retained proxy request log" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-detail",
+      provider_id="provider",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(input_tokens=1, output_tokens=2),
+      status_code=200,
+      total_cost_usd="0.000010",
+    ),
+  )
+  assert_true(stats.request_detail_json("missing") is None)
+  guard stats.request_detail_json("req-detail") is Some(detail) else {
+    fail("expected request detail")
+  }
+  guard detail is Object(obj) else { fail("expected detail object") }
+  assert_eq(obj["request_id"], Json::string("req-detail"))
+  assert_eq(obj["total_cost_usd"], Json::string("0.000010"))
+}
+
+///|
 test "usage summary aggregates ccs token and cost semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(

@@ -40,6 +40,12 @@ test "codex compact responses keep compact backend endpoint" {
 }
 
 ///|
+test "usage request detail route extracts ccs request id" {
+  assert_eq(usage_request_detail_id("/usage/request-detail/req_123"), "req_123")
+  assert_eq(usage_request_detail_id("req_123"), "req_123")
+}
+
+///|
 test "codex responses endpoints preserve request query" {
   assert_eq(
     codex_backend_responses_endpoint(

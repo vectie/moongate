@@ -148,3 +148,16 @@ test "model pricing lookup mirrors ccs normalization cases" {
   assert_true(find_static_model_pricing("kimi-for-coding") is None)
   assert_true(find_static_model_pricing("unknown-model-123") is None)
 }
+
+///|
+test "static model pricing json uses ccs field names" {
+  let pricing = static_model_pricing_json()
+  guard pricing is Array(rows) else { fail("expected pricing array") }
+  guard rows[0] is Object(first) else { fail("expected pricing row") }
+  assert_eq(first["modelId"], Json::string("claude-fable-5"))
+  assert_eq(first["displayName"], Json::string("Claude Fable 5"))
+  assert_eq(first["inputCostPerMillion"], Json::string("10"))
+  assert_eq(first["outputCostPerMillion"], Json::string("50"))
+  assert_eq(first["cacheReadCostPerMillion"], Json::string("1.00"))
+  assert_eq(first["cacheCreationCostPerMillion"], Json::string("12.50"))
+}

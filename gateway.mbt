@@ -139,6 +139,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/usage/data-sources", (_, w) => {
     self.handle_usage_data_sources(w)
   })
+  router.add_handler(@httpx.Method::Get, "/usage/model-pricing", (_, w) => {
+    self.handle_usage_model_pricing(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/usage/request-detail/*path", (r, w) => {
+    self.handle_usage_request_detail(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
     self.handle_models(w)
   })
@@ -1040,11 +1046,54 @@ async fn Gateway::handle_usage_data_sources(
 }
 
 ///|
+async fn Gateway::handle_usage_model_pricing(
+  _self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, static_model_pricing_json())
+}
+
+///|
+async fn Gateway::handle_usage_request_detail(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let request_id = usage_request_detail_id(r.path.to_owned())
+  match self.stats.request_detail_json(request_id) {
+    Some(detail) => write_usage_json(w, detail)
+    None => {
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.NotFound)
+      w.write(
+        {
+          "error": Json::string("request_not_found"),
+          "requestId": Json::string(request_id),
+        }
+        .to_json()
+        .stringify(indent=2),
+      )
+      w.flush()
+    }
+  }
+}
+
+///|
 async fn write_usage_json(w : @httpx.ResponseWriter, body : Json) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(body.stringify(indent=2))
   w.flush()
+}
+
+///|
+fn usage_request_detail_id(path : String) -> String {
+  let prefix = "/usage/request-detail/"
+  if path.has_prefix(prefix) {
+    path[prefix.length():].to_owned()
+  } else {
+    path
+  }
 }
 
 ///|
