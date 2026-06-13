@@ -267,6 +267,10 @@ pub struct ProviderRouteTarget {
   provider_id : String
   provider_name : String
   enabled : Bool
+  provider_type : String?
+  base_url : String?
+  api_key : String?
+  is_full_url : Bool
 }
 
 ///|
@@ -275,8 +279,21 @@ pub fn ProviderRouteTarget::new(
   provider_id~ : String,
   provider_name~ : String,
   enabled? : Bool = true,
+  provider_type? : String? = None,
+  base_url? : String? = None,
+  api_key? : String? = None,
+  is_full_url? : Bool = false,
 ) -> ProviderRouteTarget {
-  { app_type, provider_id, provider_name, enabled }
+  {
+    app_type,
+    provider_id,
+    provider_name,
+    enabled,
+    provider_type,
+    base_url,
+    api_key,
+    is_full_url,
+  }
 }
 
 ///|
@@ -286,7 +303,18 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
     "providerId": Json::string(self.provider_id),
     "providerName": Json::string(self.provider_name),
     "enabled": Json::boolean(self.enabled),
+    "providerType": provider_route_optional_string_json(self.provider_type),
+    "baseUrl": provider_route_optional_string_json(self.base_url),
+    "isFullUrl": Json::boolean(self.is_full_url),
   }.to_json()
+}
+
+///|
+fn provider_route_optional_string_json(value : String?) -> Json {
+  match value {
+    Some(value) => Json::string(value)
+    None => Json::null()
+  }
 }
 
 ///|

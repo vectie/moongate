@@ -275,8 +275,19 @@ test "moonstat default provider router selects suite app targets" {
   let router = moonstat_default_provider_router()
   let codex = router.select_providers("codex", now_ms=1000)
   assert_true(codex.is_ok())
-  assert_eq(codex.providers.length(), 1)
-  assert_eq(codex.providers[0].provider_id, "codex-oauth")
+  match codex_provider_from_env() {
+    Some(provider) => {
+      assert_true(codex.providers.length() == 2)
+      assert_true(codex.providers[0].provider_id == provider.provider_id)
+      assert_true(codex.providers[0].can_use_codex_compatible_upstream())
+      assert_true(codex.providers[1].provider_id == "codex-oauth")
+    }
+    None => {
+      assert_true(codex.providers.length() == 1)
+      assert_true(codex.providers[0].provider_id == "codex-oauth")
+      assert_true(codex.providers[0].provider_type == Some("codex_oauth"))
+    }
+  }
   let gemini = router.select_providers("gemini", now_ms=1000)
   assert_true(gemini.is_ok())
   assert_eq(gemini.providers.length(), 1)
@@ -285,6 +296,7 @@ test "moonstat default provider router selects suite app targets" {
   assert_true(claude.is_ok())
   assert_eq(claude.providers.length(), 1)
   assert_eq(claude.providers[0].provider_name, "Codex OAuth")
+  assert_eq(claude.providers[0].provider_type, Some("codex_oauth"))
 }
 
 ///|
@@ -723,4 +735,50 @@ test "gateway activation bypasses circuit breaker for single provider" {
   assert_eq(provider.provider_id, "codex-oauth")
   assert_eq(gateway.stats.current_provider_id, Some("codex-oauth"))
   assert_false(gateway.stats.current_request_used_half_open_permit)
+}
+
+///|
+test "codex compatible provider url follows ccs base url rules" {
+  assert_true(
+    codex_compatible_provider_url("https://api.openai.com", "/responses") ==
+    "https://api.openai.com/v1/responses",
+  )
+  assert_true(
+    codex_compatible_provider_url(
+      "https://api.openai.com/v1", "/v1/responses?conversation=abc",
+    ) ==
+    "https://api.openai.com/v1/responses?conversation=abc",
+  )
+  assert_true(
+    codex_compatible_provider_url(
+      "https://proxy.example.com/openai", "/responses",
+    ) ==
+    "https://proxy.example.com/openai/responses",
+  )
+  assert_true(
+    codex_compatible_provider_url(
+      "https://proxy.example.com/v1/responses", "/responses?conversation=abc",
+    ) ==
+    "https://proxy.example.com/v1/responses?conversation=abc",
+  )
+}
+
+///|
+test "gateway detects active direct codex compatible provider" {
+  let gateway = Gateway::new(port=0)
+  let providers = [
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-openai",
+      provider_name="OpenAI",
+      provider_type=Some("codex"),
+      base_url=Some("https://api.openai.com/v1"),
+      api_key=Some("sk-test"),
+    ),
+  ]
+  guard gateway.active_provider_target(providers) is Some(active) else {
+    fail("expected active provider")
+  }
+  assert_true(active.provider_id == "codex-openai")
+  assert_true(active.can_use_codex_compatible_upstream())
 }

@@ -234,3 +234,32 @@ test "provider router reports all providers circuit open" {
     "failedRequests": 1,
   })
 }
+
+///|
+test "provider route target carries upstream config without serializing key" {
+  let target = ProviderRouteTarget::new(
+    app_type="codex",
+    provider_id="codex-openai",
+    provider_name="OpenAI",
+    provider_type=Some("codex"),
+    base_url=Some("https://api.openai.com/v1"),
+    api_key=Some("sk-test"),
+    is_full_url=false,
+  )
+  assert_true(target.provider_type == Some("codex"))
+  assert_true(target.base_url == Some("https://api.openai.com/v1"))
+  assert_true(target.api_key == Some("sk-test"))
+  assert_false(target.is_full_url)
+  json_inspect(target.to_json(), content={
+    "appType": "codex",
+    "providerId": "codex-openai",
+    "providerName": "OpenAI",
+    "enabled": true,
+    "providerType": "codex",
+    "baseUrl": "https://api.openai.com/v1",
+    "isFullUrl": false,
+  })
+  let serialized = target.to_json().stringify()
+  assert_false(serialized.contains("apiKey"))
+  assert_false(serialized.contains("sk-test"))
+}

@@ -37,6 +37,7 @@ fn moonstat_default_provider_router() -> ProviderRouter {
       app_type="claude",
       provider_id="codex-oauth",
       provider_name="Codex OAuth",
+      provider_type=Some("codex_oauth"),
     ),
   )
   router.upsert_provider(
@@ -44,6 +45,7 @@ fn moonstat_default_provider_router() -> ProviderRouter {
       app_type="claude-desktop",
       provider_id="codex-oauth",
       provider_name="Codex OAuth",
+      provider_type=Some("codex_oauth"),
     ),
   )
   router.upsert_provider(
@@ -51,8 +53,18 @@ fn moonstat_default_provider_router() -> ProviderRouter {
       app_type="codex",
       provider_id="codex-oauth",
       provider_name="Codex OAuth",
+      provider_type=Some("codex_oauth"),
     ),
   )
+  match codex_provider_from_env() {
+    Some(provider) => {
+      router.upsert_provider(provider)
+      router.set_current_provider("codex", provider.provider_id)
+      router.set_failover_queue("codex", [provider.provider_id, "codex-oauth"])
+      router.set_auto_failover("codex", true)
+    }
+    None => ()
+  }
   router.upsert_provider(
     ProviderRouteTarget::new(
       app_type="gemini",
@@ -703,28 +715,72 @@ async fn Gateway::forward_non_streaming_chat_completion(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard self.credentials is Some(creds) else {
-    self.record_unauthorized()
-    w.header().set("Content-Type", "application/json")
-    w.write_header(@status.Unauthorized)
-    w.write(
-      "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
-    )
-    w.flush()
-    return
-  }
   let selection = self.provider_router.select_providers("codex")
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let client = self.codex_client(
-      creds,
-      accept="application/json",
-      session_id~,
-    )
-    let response = client.post("/backend-api/codex/responses", request)
-    let response_body = client.read_all().text()
-    client.close()
+    let active_provider = self.active_provider_target(providers)
+    let (response, response_body) = match active_provider {
+      Some(provider) if provider.can_use_codex_compatible_upstream() =>
+        match
+          self.post_codex_compatible_provider_json(
+            provider,
+            codex_compatible_responses_endpoint("/backend-api/codex/responses"),
+            request,
+          ) {
+          Ok(result) => result
+          Err(error) => {
+            let error_body = "{\"error\":{\"message\":\"Codex upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
+            if !providers.is_empty() {
+              let next = self.activate_next_provider_after_upstream_status(
+                "codex",
+                providers,
+                attempted_provider_ids,
+                @status.BadGateway,
+              )
+              if next is Some(_) {
+                continue
+              }
+              self.stats.record_upstream_error_status(
+                error_body.length(),
+                @status.BadGateway,
+              )
+              self.stats.save_persistent_store()
+            } else {
+              self.record_upstream_error_status(
+                error_body.length(),
+                @status.BadGateway,
+              )
+            }
+            w.header().set("Content-Type", "application/json")
+            w.write_header(@status.BadGateway)
+            w.write(error_body)
+            w.flush()
+            return
+          }
+        }
+      _ => {
+        guard self.credentials is Some(creds) else {
+          self.record_unauthorized()
+          w.header().set("Content-Type", "application/json")
+          w.write_header(@status.Unauthorized)
+          w.write(
+            "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
+          )
+          w.flush()
+          return
+        }
+        let client = self.codex_client(
+          creds,
+          accept="application/json",
+          session_id~,
+        )
+        let response = client.post("/backend-api/codex/responses", request)
+        let response_body = client.read_all().text()
+        client.close()
+        (response, response_body)
+      }
+    }
     if response.code == 200 {
       let parsed : Result[Json, Error] = try? @json.parse(response_body)
       match parsed {
@@ -926,28 +982,72 @@ async fn Gateway::forward_non_streaming_codex_response(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard self.credentials is Some(creds) else {
-    self.record_unauthorized()
-    w.header().set("Content-Type", "application/json")
-    w.write_header(@status.Unauthorized)
-    w.write(
-      "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
-    )
-    w.flush()
-    return
-  }
   let selection = self.provider_router.select_providers("codex")
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let client = self.codex_client(
-      creds,
-      accept="application/json",
-      session_id~,
-    )
-    let response = client.post(endpoint, request)
-    let response_body = client.read_all().text()
-    client.close()
+    let active_provider = self.active_provider_target(providers)
+    let (response, response_body) = match active_provider {
+      Some(provider) if provider.can_use_codex_compatible_upstream() =>
+        match
+          self.post_codex_compatible_provider_json(
+            provider,
+            codex_compatible_responses_endpoint(endpoint),
+            request,
+          ) {
+          Ok(result) => result
+          Err(error) => {
+            let error_body = "{\"error\":{\"message\":\"Codex upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
+            if !providers.is_empty() {
+              let next = self.activate_next_provider_after_upstream_status(
+                "codex",
+                providers,
+                attempted_provider_ids,
+                @status.BadGateway,
+              )
+              if next is Some(_) {
+                continue
+              }
+              self.stats.record_upstream_error_status(
+                error_body.length(),
+                @status.BadGateway,
+              )
+              self.stats.save_persistent_store()
+            } else {
+              self.record_upstream_error_status(
+                error_body.length(),
+                @status.BadGateway,
+              )
+            }
+            w.header().set("Content-Type", "application/json")
+            w.write_header(@status.BadGateway)
+            w.write(error_body)
+            w.flush()
+            return
+          }
+        }
+      _ => {
+        guard self.credentials is Some(creds) else {
+          self.record_unauthorized()
+          w.header().set("Content-Type", "application/json")
+          w.write_header(@status.Unauthorized)
+          w.write(
+            "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
+          )
+          w.flush()
+          return
+        }
+        let client = self.codex_client(
+          creds,
+          accept="application/json",
+          session_id~,
+        )
+        let response = client.post(endpoint, request)
+        let response_body = client.read_all().text()
+        client.close()
+        (response, response_body)
+      }
+    }
     if response.code == 200 {
       let usage = try {
         let json = @json.parse(response_body)
@@ -1122,6 +1222,116 @@ fn endpoint_with_request_query(
   match request_path.find("?") {
     Some(index) => "\{endpoint}?\{request_path[index + 1:]}"
     None => endpoint
+  }
+}
+
+///|
+fn Gateway::active_provider_target(
+  self : Gateway,
+  providers : Array[ProviderRouteTarget],
+) -> ProviderRouteTarget? {
+  guard self.stats.current_provider_id is Some(provider_id) else {
+    match providers.get(0) {
+      Some(provider) => return Some(provider)
+      None => return None
+    }
+  }
+  for provider in providers {
+    if provider.provider_id == provider_id {
+      return Some(provider)
+    }
+  }
+  match providers.get(0) {
+    Some(provider) => Some(provider)
+    None => None
+  }
+}
+
+///|
+fn ProviderRouteTarget::can_use_codex_compatible_upstream(
+  self : ProviderRouteTarget,
+) -> Bool {
+  self.provider_type != Some("codex_oauth") &&
+  self.base_url is Some(_) &&
+  self.api_key is Some(_)
+}
+
+///|
+async fn Gateway::post_codex_compatible_provider_json(
+  self : Gateway,
+  provider : ProviderRouteTarget,
+  endpoint : String,
+  request : Json,
+) -> Result[(@http.Response, String), Error] {
+  let _ = self
+  let base_url = provider.base_url.unwrap()
+  let api_key = provider.api_key.unwrap()
+  let url = codex_compatible_provider_url(base_url, endpoint)
+  let result = try? @http.post(url, request, headers={
+    "Authorization": "Bearer \{api_key}",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  })
+  match result {
+    Ok((response, data)) => Ok((response, data.text()))
+    Err(error) => Err(error)
+  }
+}
+
+///|
+fn codex_compatible_responses_endpoint(endpoint : String) -> String {
+  let query = match endpoint.find("?") {
+    Some(index) => endpoint[index:]
+    None => ""
+  }
+  "/responses\{query}"
+}
+
+///|
+fn codex_compatible_provider_url(
+  base_url : String,
+  endpoint : String,
+) -> String {
+  let base_trimmed = trim_end_slashes(base_url.trim().to_owned())
+  let endpoint_trimmed = trim_start_slashes(endpoint.trim().to_owned())
+  let (_, path) = split_origin_and_path(base_trimmed)
+  let mut url = if base_trimmed.has_suffix("/v1") {
+    "\{base_trimmed}/\{endpoint_trimmed}"
+  } else if path.is_empty() {
+    "\{base_trimmed}/v1/\{endpoint_trimmed}"
+  } else if provider_base_is_full_endpoint(base_trimmed) {
+    append_query_to_full_url(base_trimmed, endpoint_trimmed)
+  } else {
+    "\{base_trimmed}/\{endpoint_trimmed}"
+  }
+  while url.contains("/v1/v1") {
+    url = url.replace_all(old="/v1/v1", new="/v1")
+  }
+  url
+}
+
+///|
+fn provider_base_is_full_endpoint(base_url : String) -> Bool {
+  base_url.has_suffix("/responses") || base_url.has_suffix("/chat/completions")
+}
+
+///|
+fn append_query_to_full_url(
+  base_url : String,
+  endpoint_trimmed : String,
+) -> String {
+  match endpoint_trimmed.find("?") {
+    Some(index) => {
+      let query = endpoint_trimmed[index + 1:]
+      if query.is_empty() {
+        base_url
+      } else if base_url.contains("?") {
+        "\{base_url}&\{query}"
+      } else {
+        "\{base_url}?\{query}"
+      }
+    }
+    None => base_url
   }
 }
 
@@ -1356,6 +1566,58 @@ fn gemini_base_url() -> String {
 ///|
 fn gemini_base_is_full_url() -> Bool {
   env_bool("MOONSTAT_GEMINI_FULL_URL") || env_bool("GEMINI_FULL_URL")
+}
+
+///|
+fn codex_provider_from_env() -> ProviderRouteTarget? {
+  guard env_first_non_empty([
+      "MOONSTAT_CODEX_BASE_URL", "CODEX_BASE_URL", "OPENAI_BASE_URL",
+    ])
+    is Some(base_url) else {
+    return None
+  }
+  guard env_first_non_empty([
+      "MOONSTAT_CODEX_API_KEY", "CODEX_API_KEY", "OPENAI_API_KEY",
+    ])
+    is Some(api_key) else {
+    return None
+  }
+  Some(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id=env_first_non_empty([
+        "MOONSTAT_CODEX_PROVIDER_ID", "CODEX_PROVIDER_ID",
+      ]).unwrap_or("codex-compatible"),
+      provider_name=env_first_non_empty([
+        "MOONSTAT_CODEX_PROVIDER_NAME", "CODEX_PROVIDER_NAME",
+      ]).unwrap_or("Codex Compatible"),
+      provider_type=Some(
+        env_first_non_empty([
+          "MOONSTAT_CODEX_PROVIDER_TYPE", "CODEX_PROVIDER_TYPE",
+        ]).unwrap_or("codex"),
+      ),
+      base_url=Some(base_url),
+      api_key=Some(api_key),
+      is_full_url=codex_base_is_full_url(),
+    ),
+  )
+}
+
+///|
+fn codex_base_is_full_url() -> Bool {
+  env_bool("MOONSTAT_CODEX_FULL_URL") || env_bool("CODEX_FULL_URL")
+}
+
+///|
+fn env_first_non_empty(keys : Array[String]) -> String? {
+  for key in keys {
+    match getenv_or_none(key) {
+      Some(value) if !value.trim().is_empty() =>
+        return Some(value.trim().to_owned())
+      _ => continue
+    }
+  }
+  None
 }
 
 ///|

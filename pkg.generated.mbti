@@ -270,8 +270,12 @@ pub struct ProviderRouteTarget {
   provider_id : String
   provider_name : String
   enabled : Bool
+  provider_type : String?
+  base_url : String?
+  api_key : String?
+  is_full_url : Bool
 }
-pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool) -> Self
+pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, base_url? : String?, api_key? : String?, is_full_url? : Bool) -> Self
 pub fn ProviderRouteTarget::to_json(Self) -> Json
 
 pub struct ProviderRouter {
