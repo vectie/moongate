@@ -21,14 +21,13 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
-    ["usage", "summary", ..] => check_usage_endpoint(arr, "/usage/summary")
-    ["usage", "apps", ..] => check_usage_endpoint(arr, "/usage/summary/by-app")
+    ["usage", "summary", ..] => check_usage_summary(arr)
+    ["usage", "apps", ..] => check_usage_apps(arr)
     ["usage", "trends", ..] => check_usage_trends(arr)
     ["usage", "limits", ..] => check_usage_limits(arr)
     ["usage", "sync", ..] => sync_session_usage(arr)
-    ["usage", "providers", ..] =>
-      check_usage_endpoint(arr, "/usage/provider-stats")
-    ["usage", "models", ..] => check_usage_endpoint(arr, "/usage/model-stats")
+    ["usage", "providers", ..] => check_usage_providers(arr)
+    ["usage", "models", ..] => check_usage_models(arr)
     ["usage", "sources", ..] => check_usage_endpoint(arr, "/usage/data-sources")
     ["usage", "pricing", "set", ..] => update_usage_pricing(arr)
     ["usage", "pricing", "delete", ..] => delete_usage_pricing(arr)
@@ -206,7 +205,23 @@ async fn check_stats(args : Array[String]) -> Unit {
 
 ///|
 async fn check_usage_logs(args : Array[String]) -> Unit {
-  check_usage_endpoint(args, "/usage/logs")
+  check_usage_endpoint(args, usage_logs_path(args))
+}
+
+///|
+async fn check_usage_summary(args : Array[String]) -> Unit {
+  check_usage_endpoint(
+    args,
+    usage_filtered_path(args, "/usage/summary", app_filter=true),
+  )
+}
+
+///|
+async fn check_usage_apps(args : Array[String]) -> Unit {
+  check_usage_endpoint(
+    args,
+    usage_filtered_path(args, "/usage/summary/by-app", app_filter=false),
+  )
 }
 
 ///|
@@ -217,6 +232,22 @@ async fn check_usage_trends(args : Array[String]) -> Unit {
 ///|
 async fn check_usage_limits(args : Array[String]) -> Unit {
   check_usage_endpoint(args, usage_limits_path(args))
+}
+
+///|
+async fn check_usage_providers(args : Array[String]) -> Unit {
+  check_usage_endpoint(
+    args,
+    usage_filtered_path(args, "/usage/provider-stats", app_filter=true),
+  )
+}
+
+///|
+async fn check_usage_models(args : Array[String]) -> Unit {
+  check_usage_endpoint(
+    args,
+    usage_filtered_path(args, "/usage/model-stats", app_filter=true),
+  )
 }
 
 ///|
@@ -241,23 +272,73 @@ async fn sync_session_usage(args : Array[String]) -> Unit {
 
 ///|
 fn usage_trends_path(args : Array[String]) -> String {
+  usage_filtered_path(args, "/usage/trends", app_filter=true)
+}
+
+///|
+fn usage_logs_path(args : Array[String]) -> String {
+  let query = usage_date_app_query(args, app_filter=true)
+  match parse_string_arg(args, "--page") {
+    Some(value) => query.push(cli_query_pair("page", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--page-size", "--pageSize") {
+    Some(value) => query.push(cli_query_pair("pageSize", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--provider-name", "--providerName") {
+    Some(value) => query.push(cli_query_pair("providerName", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--model") {
+    Some(value) => query.push(cli_query_pair("model", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--status-code", "--statusCode") {
+    Some(value) => query.push(cli_query_pair("statusCode", value))
+    None => ()
+  }
+  cli_path_with_query("/usage/logs", query)
+}
+
+///|
+fn usage_filtered_path(
+  args : Array[String],
+  base_path : String,
+  app_filter~ : Bool,
+) -> String {
+  cli_path_with_query(base_path, usage_date_app_query(args, app_filter~))
+}
+
+///|
+fn usage_date_app_query(
+  args : Array[String],
+  app_filter~ : Bool,
+) -> Array[String] {
   let query : Array[String] = []
-  match parse_string_arg(args, "--start-date") {
+  match parse_string_arg_any(args, "--start-date", "--startDate") {
     Some(value) => query.push(cli_query_pair("start_date", value))
     None => ()
   }
-  match parse_string_arg(args, "--end-date") {
+  match parse_string_arg_any(args, "--end-date", "--endDate") {
     Some(value) => query.push(cli_query_pair("end_date", value))
     None => ()
   }
-  match parse_string_arg(args, "--app-type") {
-    Some(value) => query.push(cli_query_pair("app_type", value))
-    None => ()
+  if app_filter {
+    match parse_string_arg_any(args, "--app-type", "--appType") {
+      Some(value) => query.push(cli_query_pair("app_type", value))
+      None => ()
+    }
   }
+  query
+}
+
+///|
+fn cli_path_with_query(path : String, query : Array[String]) -> String {
   if query.is_empty() {
-    "/usage/trends"
+    path
   } else {
-    "/usage/trends?\{query.join("&")}"
+    "\{path}?\{query.join("&")}"
   }
 }
 
@@ -432,7 +513,10 @@ async fn check_usage_detail(args : Array[String]) -> Unit {
     logger.error("Missing required --request-id")
     return
   }
-  check_usage_endpoint(args, "/usage/request-detail/\{request_id}")
+  check_usage_endpoint(
+    args,
+    "/usage/request-detail/\{cli_url_encode(request_id)}",
+  )
 }
 
 ///|
@@ -711,6 +795,18 @@ fn parse_string_arg(args : Array[String], name : String) -> String? {
     i = i + 1
   }
   None
+}
+
+///|
+fn parse_string_arg_any(
+  args : Array[String],
+  left_name : String,
+  right_name : String,
+) -> String? {
+  match parse_string_arg(args, left_name) {
+    Some(value) => Some(value)
+    None => parse_string_arg(args, right_name)
+  }
 }
 
 ///|

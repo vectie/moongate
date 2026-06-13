@@ -70,3 +70,47 @@ test "usage filter paths encode ccs query values" {
     "/usage/provider-limits?provider_id=Codex%20OAuth&app_type=codex&daily_limit_usd=1.5&monthly_limit_usd=30",
   )
 }
+
+///|
+test "usage aggregate paths accept ccs date and app filters" {
+  let args = [
+    "moonstat", "usage", "summary", "--startDate", "10", "--endDate", "20", "--appType",
+    "claude desktop",
+  ]
+  assert_eq(
+    usage_filtered_path(args, "/usage/summary", app_filter=true),
+    "/usage/summary?start_date=10&end_date=20&app_type=claude%20desktop",
+  )
+  assert_eq(
+    usage_filtered_path(args, "/usage/summary/by-app", app_filter=false),
+    "/usage/summary/by-app?start_date=10&end_date=20",
+  )
+  assert_eq(
+    usage_filtered_path(args, "/usage/provider-stats", app_filter=true),
+    "/usage/provider-stats?start_date=10&end_date=20&app_type=claude%20desktop",
+  )
+  assert_eq(
+    usage_filtered_path(args, "/usage/model-stats", app_filter=true),
+    "/usage/model-stats?start_date=10&end_date=20&app_type=claude%20desktop",
+  )
+}
+
+///|
+test "usage logs path accepts ccs filters and pagination" {
+  assert_eq(
+    usage_logs_path([
+      "moonstat", "usage", "logs", "--page", "2", "--page-size", "25", "--app-type",
+      "codex", "--provider-name", "Codex OAuth", "--model", "anthropic/claude-sonnet",
+      "--status-code", "200", "--start-date", "10", "--end-date", "20",
+    ]),
+    "/usage/logs?start_date=10&end_date=20&app_type=codex&page=2&pageSize=25&providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200",
+  )
+}
+
+///|
+test "usage detail path encodes ccs request ids" {
+  assert_eq(
+    "/usage/request-detail/\{cli_url_encode("session:msg/1")}",
+    "/usage/request-detail/session%3Amsg%2F1",
+  )
+}
