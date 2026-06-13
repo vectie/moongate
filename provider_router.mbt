@@ -467,6 +467,33 @@ pub fn ProviderRouter::max_attempts_for_app(
 }
 
 ///|
+fn ProviderRouter::has_configured_app(
+  self : ProviderRouter,
+  app_type : String,
+) -> Bool {
+  match self.providers.get(app_type) {
+    Some(providers) => !providers.is_empty()
+    None => false
+  }
+}
+
+///|
+fn ProviderRouter::auto_failover_enabled_for_app(
+  self : ProviderRouter,
+  app_type : String,
+) -> Bool {
+  self.auto_failover_enabled.get(app_type).unwrap_or(false)
+}
+
+///|
+fn ProviderRouter::max_retries_for_app(
+  self : ProviderRouter,
+  app_type : String,
+) -> Int {
+  self.max_retries.get(app_type).unwrap_or(3)
+}
+
+///|
 pub fn ProviderRouter::set_failover_queue(
   self : ProviderRouter,
   app_type : String,

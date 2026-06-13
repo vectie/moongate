@@ -22,6 +22,12 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["stats", ..] => check_stats(arr)
     ["proxy", "status", ..] => check_proxy_status(arr)
     ["proxy", "config", ..] => check_proxy_config(arr)
+    ["proxy", "global-config", ..] => check_proxy_global_config(arr)
+    ["proxy", "app-config", ..] => check_proxy_app_config(arr)
+    ["proxy", "default-cost-multiplier", ..] =>
+      check_proxy_default_cost_multiplier(arr)
+    ["proxy", "pricing-model-source", ..] =>
+      check_proxy_pricing_model_source(arr)
     ["proxy", "takeover-status", ..] => check_proxy_takeover_status(arr)
     ["proxy", "running", ..] => check_proxy_running(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
@@ -81,6 +87,10 @@ fn print_help() -> Unit {
   println("  stats       Show gateway traffic statistics")
   println("  proxy status           Show ccs-style proxy server status")
   println("  proxy config           Show ccs-style proxy server config")
+  println("  proxy global-config    Show ccs-style global proxy config")
+  println("  proxy app-config       Show ccs-style app proxy config")
+  println("  proxy default-cost-multiplier  Show ccs-style app cost multiplier")
+  println("  proxy pricing-model-source     Show ccs-style app pricing mode")
   println("  proxy takeover-status  Show ccs-style app takeover status")
   println("  proxy running          Show ccs-style proxy running boolean")
   println("  usage logs  Show ccs-style recent proxy_request_logs")
@@ -118,6 +128,9 @@ fn print_help() -> Unit {
   println("Suite options:")
   println("  --path <path>     Status file path for suite write-status")
   println("")
+  println("Proxy config options:")
+  println("  --app-type <app>  App type for app-level proxy config")
+  println("")
   println("Examples:")
   println("  sudo moonstat install          # Install hosts reroute")
   println("  moonstat start                 # Start gateway on 127.0.0.1:15721")
@@ -130,6 +143,7 @@ fn print_help() -> Unit {
   println("  moonstat suite write-status --port 15721")
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat proxy status          # Show ccs-style proxy status")
+  println("  moonstat proxy app-config --app-type codex")
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat usage logs            # Show recent request logs")
   println("  moonstat usage summary         # Show aggregate token/cost usage")
@@ -223,6 +237,26 @@ async fn check_proxy_config(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_proxy_global_config(args : Array[String]) -> Unit {
+  check_proxy_endpoint(args, "/proxy/global-config")
+}
+
+///|
+async fn check_proxy_app_config(args : Array[String]) -> Unit {
+  check_proxy_app_endpoint(args, "/proxy/app-config")
+}
+
+///|
+async fn check_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
+  check_proxy_app_endpoint(args, "/proxy/default-cost-multiplier")
+}
+
+///|
+async fn check_proxy_pricing_model_source(args : Array[String]) -> Unit {
+  check_proxy_app_endpoint(args, "/proxy/pricing-model-source")
+}
+
+///|
 async fn check_proxy_takeover_status(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/takeover-status")
 }
@@ -235,6 +269,12 @@ async fn check_proxy_running(args : Array[String]) -> Unit {
 ///|
 async fn check_proxy_endpoint(args : Array[String], path : String) -> Unit {
   check_json_endpoint(args, path, "Proxy")
+}
+
+///|
+async fn check_proxy_app_endpoint(args : Array[String], path : String) -> Unit {
+  let app_type = parse_string_arg(args, "--app-type").unwrap_or("claude")
+  check_proxy_endpoint(args, "\{path}?app_type=\{cli_url_encode(app_type)}")
 }
 
 ///|

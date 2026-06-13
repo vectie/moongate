@@ -78,6 +78,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /stats`
 - `GET /proxy/status`
 - `GET /proxy/config`
+- `GET /proxy/global-config`
+- `GET /proxy/app-config?app_type=claude`
+- `GET /proxy/default-cost-multiplier?app_type=claude`
+- `GET /proxy/pricing-model-source?app_type=claude`
 - `GET /proxy/takeover-status`
 - `GET /proxy/running`
 - `GET /usage/logs`
@@ -119,7 +123,11 @@ Moonstat currently exposes the ccs-compatible local routes below:
 success/failure counts, active connections, token totals, cache token totals,
 last request time, last error, current provider metadata, and success rate.
 `/proxy/config`, `/proxy/takeover-status`, and `/proxy/running` expose
-standalone HTTP aliases for the ccs proxy command shapes. `/usage/logs` returns
+standalone HTTP aliases for the ccs proxy command shapes. `/proxy/global-config`,
+`/proxy/app-config`, `/proxy/default-cost-multiplier`, and
+`/proxy/pricing-model-source` expose the ccs v3 global/app config and pricing
+defaults using the same env-backed settings that request accounting uses.
+`/usage/logs` returns
 recent `proxy_request_logs` rows with ccs-style provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.
 Gateway startup loads file-backed usage state from

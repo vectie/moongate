@@ -171,6 +171,64 @@ test "proxy config alias matches ccs default shape" {
 }
 
 ///|
+test "proxy global config alias matches ccs v3 shape" {
+  let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
+  guard gateway.proxy_global_config_json() is Object(config) else {
+    fail("expected proxy global config object")
+  }
+  assert_eq(config["proxyEnabled"], Json::boolean(true))
+  assert_eq(config["listenAddress"], Json::string("127.0.0.5"))
+  assert_eq(config["listenPort"], Json::number(17004.0))
+  assert_eq(config["enableLogging"], Json::boolean(true))
+}
+
+///|
+test "proxy app config alias matches ccs app config shape" {
+  let gateway = Gateway::new(port=17005, host="127.0.0.6", model="gpt-5")
+  guard gateway.proxy_app_config_json("claude") is Object(config) else {
+    fail("expected proxy app config object")
+  }
+  assert_eq(config["appType"], Json::string("claude"))
+  assert_eq(config["enabled"], Json::boolean(true))
+  assert_eq(config["autoFailoverEnabled"], Json::boolean(false))
+  assert_eq(config["maxRetries"], Json::number(3.0))
+  assert_eq(config["streamingFirstByteTimeout"], Json::number(60.0))
+  assert_eq(config["streamingIdleTimeout"], Json::number(120.0))
+  assert_eq(config["nonStreamingTimeout"], Json::number(600.0))
+  assert_eq(config["circuitFailureThreshold"], Json::number(4.0))
+  assert_eq(config["circuitSuccessThreshold"], Json::number(2.0))
+  assert_eq(config["circuitTimeoutSeconds"], Json::number(60.0))
+  assert_eq(config["circuitErrorRateThreshold"], Json::number(0.6))
+  assert_eq(config["circuitMinRequests"], Json::number(10.0))
+  guard gateway.proxy_app_config_json("unknown") is Object(unknown) else {
+    fail("expected unknown proxy app config object")
+  }
+  assert_eq(unknown["enabled"], Json::boolean(false))
+}
+
+///|
+test "proxy pricing config aliases use ccs env-backed defaults" {
+  let cost_key = "MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER"
+  let source_key = "MOONSTAT_CODEX_PRICING_MODEL_SOURCE"
+  @os.unsetenv(cost_key) catch {
+    _ => ()
+  }
+  @os.unsetenv(source_key) catch {
+    _ => ()
+  }
+  @os.setenv(cost_key, "1.25", overwrite=true)
+  @os.setenv(source_key, "request", overwrite=true)
+  assert_eq(default_cost_multiplier_for_app("codex"), "1.25")
+  assert_eq(default_pricing_model_source_for_app("codex"), "request")
+  @os.unsetenv(cost_key) catch {
+    _ => ()
+  }
+  @os.unsetenv(source_key) catch {
+    _ => ()
+  }
+}
+
+///|
 test "proxy status alias matches ccs proxy status shape" {
   let gateway = Gateway::new(port=17002, host="127.0.0.3", model="gpt-5")
   gateway.stats.record_inbound(16)

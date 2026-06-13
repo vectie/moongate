@@ -563,6 +563,19 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
     self.handle_proxy_config(w)
   })
+  router.add_handler(@httpx.Method::Get, "/proxy/global-config", (_, w) => {
+    self.handle_proxy_global_config(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/proxy/app-config", (r, w) => {
+    self.handle_proxy_app_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/proxy/default-cost-multiplier", (
+    r,
+    w,
+  ) => self.handle_proxy_default_cost_multiplier(r, w))
+  router.add_handler(@httpx.Method::Get, "/proxy/pricing-model-source", (r, w) => {
+    self.handle_proxy_pricing_model_source(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/proxy/takeover-status", (_, w) => {
     self.handle_proxy_takeover_status(w)
   })
@@ -2660,6 +2673,93 @@ fn Gateway::proxy_config_json(self : Gateway) -> Json {
     "streaming_idle_timeout": Json::number(120.0),
     "non_streaming_timeout": Json::number(600.0),
   }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_global_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.proxy_global_config_json())
+}
+
+///|
+fn Gateway::proxy_global_config_json(self : Gateway) -> Json {
+  {
+    "proxyEnabled": Json::boolean(true),
+    "listenAddress": Json::string(self.host),
+    "listenPort": Json::number(self.port.to_double()),
+    "enableLogging": Json::boolean(true),
+  }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_app_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  write_usage_json(w, self.proxy_app_config_json(app_type))
+}
+
+///|
+fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
+  let circuit = self.provider_router.circuit_config
+  {
+    "appType": Json::string(app_type),
+    "enabled": Json::boolean(self.provider_router.has_configured_app(app_type)),
+    "autoFailoverEnabled": Json::boolean(
+      self.provider_router.auto_failover_enabled_for_app(app_type),
+    ),
+    "maxRetries": Json::number(
+      self.provider_router.max_retries_for_app(app_type).to_double(),
+    ),
+    "streamingFirstByteTimeout": Json::number(60.0),
+    "streamingIdleTimeout": Json::number(120.0),
+    "nonStreamingTimeout": Json::number(600.0),
+    "circuitFailureThreshold": Json::number(
+      circuit.failure_threshold.to_double(),
+    ),
+    "circuitSuccessThreshold": Json::number(
+      circuit.success_threshold.to_double(),
+    ),
+    "circuitTimeoutSeconds": Json::number(circuit.timeout_seconds.to_double()),
+    "circuitErrorRateThreshold": Json::number(circuit.error_rate_threshold),
+    "circuitMinRequests": Json::number(circuit.min_requests.to_double()),
+  }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_default_cost_multiplier(
+  _self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  write_usage_json(w, Json::string(default_cost_multiplier_for_app(app_type)))
+}
+
+///|
+async fn Gateway::handle_proxy_pricing_model_source(
+  _self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  write_usage_json(
+    w,
+    Json::string(default_pricing_model_source_for_app(app_type)),
+  )
 }
 
 ///|
