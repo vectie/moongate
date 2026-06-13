@@ -243,3 +243,51 @@ test "ccs gemini native transform maps anthropic request" {
     }),
   )
 }
+
+///|
+test "ccs gemini native transform resolves tool result names" {
+  let body = Json::object({
+    "model": Json::string("claude-sonnet-4-6"),
+    "messages": Json::array([
+      Json::object({
+        "role": Json::string("assistant"),
+        "content": Json::array([
+          Json::object({
+            "type": Json::string("tool_use"),
+            "id": Json::string("toolu_lookup"),
+            "name": Json::string("lookup"),
+            "input": Json::object({ "q": Json::string("moon") }),
+          }),
+        ]),
+      }),
+      Json::object({
+        "role": Json::string("user"),
+        "content": Json::array([
+          Json::object({
+            "type": Json::string("tool_result"),
+            "tool_use_id": Json::string("toolu_lookup"),
+            "content": Json::string("found"),
+          }),
+        ]),
+      }),
+    ]),
+  })
+  let transformed = transform_claude_request_for_api_format(
+    body, "gemini_native",
+  )
+  guard transformed is Object(obj) else { fail("expected object") }
+  guard obj["contents"] is Array(contents) else { fail("expected contents") }
+  guard contents[1] is Object(user_message) else {
+    fail("expected user message")
+  }
+  guard user_message["parts"] is Array(parts) else { fail("expected parts") }
+  assert_eq(
+    parts[0],
+    Json::object({
+      "functionResponse": Json::object({
+        "name": Json::string("lookup"),
+        "response": Json::object({ "content": Json::string("found") }),
+      }),
+    }),
+  )
+}

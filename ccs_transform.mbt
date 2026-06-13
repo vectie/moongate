@@ -102,6 +102,7 @@ fn anthropic_messages_to_gemini_contents(
   obj : Map[String, Json],
 ) -> Array[Json] {
   let contents : Array[Json] = []
+  let tool_names_by_id : Map[String, String] = {}
   guard obj.get("messages") is Some(Array(source_messages)) else {
     return contents
   }
@@ -111,7 +112,10 @@ fn anthropic_messages_to_gemini_contents(
     if role == "system" {
       continue
     }
-    let parts = anthropic_content_to_gemini_parts(message_obj.get("content"))
+    let parts = anthropic_content_to_gemini_parts(
+      message_obj.get("content"),
+      tool_names_by_id,
+    )
     if parts.is_empty() {
       continue
     }
@@ -126,14 +130,17 @@ fn anthropic_messages_to_gemini_contents(
 }
 
 ///|
-fn anthropic_content_to_gemini_parts(content : Json?) -> Array[Json] {
+fn anthropic_content_to_gemini_parts(
+  content : Json?,
+  tool_names_by_id : Map[String, String],
+) -> Array[Json] {
   let parts : Array[Json] = []
   match content {
     Some(String(text)) =>
       parts.push(Json::object({ "text": Json::string(text) }))
     Some(Array(blocks)) =>
       for block in blocks {
-        append_anthropic_block_as_gemini_part(block, parts)
+        append_anthropic_block_as_gemini_part(block, parts, tool_names_by_id)
       }
     Some(json) =>
       parts.push(Json::object({ "text": Json::string(json.stringify()) }))
@@ -146,6 +153,7 @@ fn anthropic_content_to_gemini_parts(content : Json?) -> Array[Json] {
 fn append_anthropic_block_as_gemini_part(
   block : Json,
   parts : Array[Json],
+  tool_names_by_id : Map[String, String],
 ) -> Unit {
   guard block is Object(block_obj) else { return }
   match json_string_from_map(block_obj, "type") {
@@ -172,25 +180,29 @@ fn append_anthropic_block_as_gemini_part(
           }),
         )
       }
-    Some("tool_use") =>
+    Some("tool_use") => {
+      let id = json_string_from_map(block_obj, "id").unwrap_or("")
+      let name = json_string_from_map(block_obj, "name").unwrap_or("")
+      if !id.is_empty() && !name.is_empty() {
+        tool_names_by_id[id] = name
+      }
       parts.push(
         Json::object({
           "functionCall": Json::object({
-            "id": Json::string(
-              json_string_from_map(block_obj, "id").unwrap_or(""),
-            ),
-            "name": Json::string(
-              json_string_from_map(block_obj, "name").unwrap_or(""),
-            ),
+            "id": Json::string(id),
+            "name": Json::string(name),
             "args": block_obj.get("input").unwrap_or(Json::object({})),
           }),
         }),
       )
+    }
     Some("tool_result") =>
       parts.push(
         Json::object({
           "functionResponse": Json::object({
-            "name": Json::string(gemini_tool_result_name(block_obj)),
+            "name": Json::string(
+              gemini_tool_result_name(block_obj, tool_names_by_id),
+            ),
             "response": Json::object({
               "content": block_obj.get("content").unwrap_or(Json::string("")),
             }),
@@ -202,11 +214,21 @@ fn append_anthropic_block_as_gemini_part(
 }
 
 ///|
-fn gemini_tool_result_name(block_obj : Map[String, Json]) -> String {
+fn gemini_tool_result_name(
+  block_obj : Map[String, Json],
+  tool_names_by_id : Map[String, String],
+) -> String {
   match json_string_from_map(block_obj, "name") {
     Some(name) => name
     None =>
-      json_string_from_map(block_obj, "tool_use_id").unwrap_or("tool_result")
+      match json_string_from_map(block_obj, "tool_use_id") {
+        Some(id) =>
+          match tool_names_by_id.get(id) {
+            Some(name) => name
+            None => id
+          }
+        None => "tool_result"
+      }
   }
 }
 
