@@ -917,6 +917,36 @@ fn ProviderRouter::available_failover_providers_json(
 }
 
 ///|
+fn ProviderRouter::stream_check_provider_ids(
+  self : ProviderRouter,
+  app_type : String,
+  proxy_targets_only : Bool,
+) -> Array[String] {
+  let ids : Array[String] = []
+  if proxy_targets_only {
+    match self.current_provider_ids.get(app_type) {
+      Some(provider_id) if !ids.contains(provider_id) => ids.push(provider_id)
+      _ => ()
+    }
+    for provider_id in self.failover_queues.get(app_type).unwrap_or([]) {
+      if !ids.contains(provider_id) {
+        ids.push(provider_id)
+      }
+    }
+  } else {
+    match self.providers.get(app_type) {
+      Some(providers) =>
+        for provider_id in providers.keys() {
+          ids.push(provider_id)
+        }
+      None => ()
+    }
+    ids.sort()
+  }
+  ids
+}
+
+///|
 pub fn ProviderRouter::select_providers(
   self : ProviderRouter,
   app_type : String,

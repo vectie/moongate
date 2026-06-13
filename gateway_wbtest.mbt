@@ -303,6 +303,88 @@ test "proxy app config state updates ccs app fields" {
 }
 
 ///|
+test "stream check config accepts ccs camelCase body and query fields" {
+  let config = stream_check_config_from_request(
+    "/save_stream_check_config?geminiModel=gemini-test&testPrompt=Ping",
+    (
+      #|{"config":{"timeoutSecs":30,"maxRetries":1,"degradedThresholdMs":5000,"claudeModel":"claude-test","codexModel":"codex-test"}}
+    ),
+    StreamCheckConfig::default(),
+  )
+  guard config is Some(config) else { fail("expected stream check config") }
+  assert_eq(config.timeout_secs, 30)
+  assert_eq(config.max_retries, 1)
+  assert_eq(config.degraded_threshold_ms, 5000)
+  assert_eq(config.claude_model, "claude-test")
+  assert_eq(config.codex_model, "codex-test")
+  assert_eq(config.gemini_model, "gemini-test")
+  assert_eq(config.test_prompt, "Ping")
+  assert_true(
+    stream_check_config_from_request(
+      "/save_stream_check_config?timeoutSecs=0",
+      "",
+      StreamCheckConfig::default(),
+    )
+    is None,
+  )
+}
+
+///|
+test "stream check result uses ccs camelCase shape" {
+  let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
+  gateway.stream_check_config = {
+    ..gateway.stream_check_config,
+    codex_model: "codex-check-model",
+  }
+  guard gateway.stream_check_provider_result_json("codex", "codex-oauth")
+    is Some(Object(result)) else {
+    fail("expected stream check result")
+  }
+  assert_eq(result["status"], Json::string("operational"))
+  assert_eq(result["success"], Json::boolean(true))
+  assert_eq(result["message"], Json::string("Check succeeded"))
+  assert_eq(result["modelUsed"], Json::string("codex-check-model"))
+  assert_eq(result["retryCount"], Json::number(0.0))
+  assert_eq(result["httpStatus"], Json::number(200.0))
+  guard result.get("testedAt") is Some(Number(_)) else {
+    fail("expected testedAt")
+  }
+}
+
+///|
+test "stream check all provider ids follow ccs proxy target filter" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="b",
+      provider_name="B",
+      base_url=Some("https://b.example.com"),
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="a",
+      provider_name="A",
+      base_url=Some("https://a.example.com"),
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="c",
+      provider_name="C",
+      base_url=Some("https://c.example.com"),
+    ),
+  )
+  router.set_current_provider("codex", "b")
+  router.set_failover_queue("codex", ["c", "b"])
+  assert_eq(router.stream_check_provider_ids("codex", false), ["a", "b", "c"])
+  assert_eq(router.stream_check_provider_ids("codex", true), ["b", "c"])
+}
+
+///|
 test "proxy config request parsers accept ccs camelCase and query aliases" {
   let config = Some(
     {

@@ -146,6 +146,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /usage/request-detail/{request_id}`
 - `GET /queryProviderUsage?providerId=codex-oauth&app=codex`
 - `POST /testUsageScript?providerId=codex-oauth&app=codex`
+- `POST /stream_check_provider?appType=codex&providerId=codex-oauth`
+- `POST /stream_check_all_providers?appType=codex&proxyTargetsOnly=true`
+- `GET /get_stream_check_config`
+- `POST /save_stream_check_config?codexModel=gpt-5.5@low&timeoutSecs=45`
 - CCS command-name aliases: `GET /get_usage_summary`,
   `GET /get_usage_summary_by_app`, `GET /get_usage_trends`,
   `GET /get_provider_stats`, `GET /get_model_stats`, `GET /get_request_logs`,
@@ -154,6 +158,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
   `GET /check_provider_limits`, `POST /sync_session_usage`,
   `GET /get_usage_data_sources`, `GET /queryProviderUsage`, and
   `POST /testUsageScript`.
+  Stream check command aliases `stream_check_provider`,
+  `stream_check_all_providers`, `get_stream_check_config`, and
+  `save_stream_check_config` expose the ccs camelCase config/result JSON
+  contract for standalone provider readiness checks.
 - `GET /models`
 - `GET /v1/models`
 - `GET /claude-desktop/v1/models`

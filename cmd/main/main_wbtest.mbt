@@ -72,6 +72,31 @@ test "usage filter paths encode ccs query values" {
 }
 
 ///|
+test "stream check paths use ccs command names and camelCase args" {
+  assert_eq(
+    stream_check_provider_path([
+      "moonstat", "stream-check", "provider", "--app-type", "codex", "--provider-id",
+      "codex oauth",
+    ]),
+    Some("/stream_check_provider?appType=codex&providerId=codex%20oauth"),
+  )
+  assert_eq(
+    stream_check_all_path([
+      "moonstat", "stream-check", "all", "--appType", "claude", "--proxyTargetsOnly",
+      "true",
+    ]),
+    "/stream_check_all_providers?appType=claude&proxyTargetsOnly=true",
+  )
+  assert_eq(
+    stream_check_config_update_path([
+      "moonstat", "stream-check", "config", "set", "--codex-model", "gpt/5", "--timeout-secs",
+      "45", "--test-prompt", "Who are you?",
+    ]),
+    "/save_stream_check_config?timeoutSecs=45&codexModel=gpt%2F5&testPrompt=Who%20are%20you%3F",
+  )
+}
+
+///|
 test "usage aggregate paths accept ccs date and app filters" {
   let args = [
     "moonstat", "usage", "summary", "--startDate", "10", "--endDate", "20", "--appType",

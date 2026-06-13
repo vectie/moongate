@@ -14,6 +14,18 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["codex", "status", ..] => status_codex()
     ["models", "fetch", ..] => fetch_provider_models(arr)
     ["models", "candidates", ..] => print_model_candidates(arr)
+    ["stream-check", "provider", ..]
+    | ["stream-check", "stream-check-provider", ..] =>
+      stream_check_provider(arr)
+    ["stream-check", "all", ..]
+    | ["stream-check", "stream-check-all-providers", ..] =>
+      stream_check_all_providers(arr)
+    ["stream-check", "config", "set", ..]
+    | ["stream-check", "save-stream-check-config", ..] =>
+      save_stream_check_config(arr)
+    ["stream-check", "config", ..]
+    | ["stream-check", "get-stream-check-config", ..] =>
+      check_usage_endpoint(arr, "/get_stream_check_config")
     ["suite", "manifest", ..] => print_suite_manifest(arr)
     ["suite", "status", ..] => print_suite_status(arr)
     ["suite", "write-status", ..] => write_suite_status(arr)
@@ -174,6 +186,12 @@ fn print_help() -> Unit {
     "  models fetch              Fetch provider models using ccs-compatible logic",
   )
   println("  models candidates         Print /v1/models candidate URLs")
+  println("  stream-check provider     Alias for ccs stream_check_provider")
+  println(
+    "  stream-check all          Alias for ccs stream_check_all_providers",
+  )
+  println("  stream-check config       Alias for ccs get_stream_check_config")
+  println("  stream-check config set   Alias for ccs save_stream_check_config")
   println("  suite manifest            Print Moon suite service manifest")
   println("  suite status              Print Moon suite status contract")
   println("  suite write-status        Write ~/.moonstat/suite-status.json")
@@ -341,6 +359,15 @@ fn print_help() -> Unit {
   println("  moonstat provider switch --app codex --id custom")
   println(
     "  moonstat provider endpoints add --app codex --id custom --endpoint-url https://api.backup.example.com/v1",
+  )
+  println(
+    "  moonstat stream-check provider --app-type codex --provider-id codex-oauth",
+  )
+  println(
+    "  moonstat stream-check all --app-type codex --proxy-targets-only true",
+  )
+  println(
+    "  moonstat stream-check config set --codex-model gpt-5.5@low --timeout-secs 45",
   )
   println("  moonstat proxy app-config --app-type codex")
   println(
@@ -1051,6 +1078,80 @@ fn proxy_auto_failover_enabled_path(args : Array[String]) -> String? {
 }
 
 ///|
+fn stream_check_provider_path(args : Array[String]) -> String? {
+  let app_type = match parse_string_arg_any(args, "--app-type", "--appType") {
+    Some(value) => Some(value)
+    None => parse_string_arg(args, "--app")
+  }
+  guard app_type is Some(app_type) else { return None }
+  let provider_id = match
+    parse_string_arg_any(args, "--provider-id", "--providerId") {
+    Some(value) => Some(value)
+    None => parse_string_arg(args, "--id")
+  }
+  guard provider_id is Some(provider_id) else { return None }
+  Some(
+    "/stream_check_provider?appType=\{cli_url_encode(app_type)}&providerId=\{cli_url_encode(provider_id)}",
+  )
+}
+
+///|
+fn stream_check_all_path(args : Array[String]) -> String {
+  let app_type = match parse_string_arg_any(args, "--app-type", "--appType") {
+    Some(value) => value
+    None => parse_string_arg(args, "--app").unwrap_or("claude")
+  }
+  let query : Array[String] = [cli_query_pair("appType", app_type)]
+  match
+    parse_string_arg_any(args, "--proxy-targets-only", "--proxyTargetsOnly") {
+    Some(value) => query.push(cli_query_pair("proxyTargetsOnly", value))
+    None => ()
+  }
+  "/stream_check_all_providers?\{query.join("&")}"
+}
+
+///|
+fn stream_check_config_update_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--timeout-secs", "--timeoutSecs") {
+    Some(value) => query.push(cli_query_pair("timeoutSecs", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--max-retries", "--maxRetries") {
+    Some(value) => query.push(cli_query_pair("maxRetries", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(
+      args, "--degraded-threshold-ms", "--degradedThresholdMs",
+    ) {
+    Some(value) => query.push(cli_query_pair("degradedThresholdMs", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--claude-model", "--claudeModel") {
+    Some(value) => query.push(cli_query_pair("claudeModel", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--codex-model", "--codexModel") {
+    Some(value) => query.push(cli_query_pair("codexModel", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--gemini-model", "--geminiModel") {
+    Some(value) => query.push(cli_query_pair("geminiModel", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--test-prompt", "--testPrompt") {
+    Some(value) => query.push(cli_query_pair("testPrompt", value))
+    None => ()
+  }
+  if query.is_empty() {
+    "/save_stream_check_config"
+  } else {
+    "/save_stream_check_config?\{query.join("&")}"
+  }
+}
+
+///|
 async fn check_usage_logs(args : Array[String]) -> Unit {
   check_usage_endpoint(args, usage_logs_path(args))
 }
@@ -1087,6 +1188,43 @@ async fn check_usage_providers(args : Array[String]) -> Unit {
     args,
     usage_filtered_path(args, "/usage/provider-stats", app_filter=true),
   )
+}
+
+///|
+async fn stream_check_provider(args : Array[String]) -> Unit {
+  guard stream_check_provider_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required stream check args: --provider-id --app-type")
+    return
+  }
+  check_usage_endpoint(args, path)
+}
+
+///|
+async fn stream_check_all_providers(args : Array[String]) -> Unit {
+  check_usage_endpoint(args, stream_check_all_path(args))
+}
+
+///|
+async fn save_stream_check_config(args : Array[String]) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
+  let path = stream_check_config_update_path(args)
+  try {
+    let client = @http.Client::new(url, headers={})
+    defer client.close()
+    let response = client.post(path, "{}")
+    let body = client.read_all().text()
+    if response.code == 200 {
+      println(body)
+    } else {
+      logger.error(
+        "Stream check config update failed: \{response.code} \{body}",
+      )
+    }
+  } catch {
+    err => logger.error("Stream check config update failed: \{err}")
+  }
 }
 
 ///|

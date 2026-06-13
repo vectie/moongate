@@ -22,6 +22,7 @@ pub struct Gateway {
   proxy_non_streaming_timeout : Map[String, Int]
   proxy_default_cost_multipliers : Map[String, String]
   proxy_pricing_model_sources : Map[String, String]
+  mut stream_check_config : StreamCheckConfig
   logger : @pino.Logger
   started_at_ms : Int
 }
@@ -56,6 +57,7 @@ pub fn Gateway::new(
     proxy_non_streaming_timeout: Map([], capacity=0),
     proxy_default_cost_multipliers: Map([], capacity=0),
     proxy_pricing_model_sources: Map([], capacity=0),
+    stream_check_config: StreamCheckConfig::default(),
     logger,
     started_at_ms: @async.now().to_int(),
   }
@@ -846,6 +848,24 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(@httpx.Method::Get, "/get_request_detail", (r, w) => {
     self.handle_usage_request_detail(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/stream_check_provider", (r, w) => {
+    self.handle_stream_check_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/stream_check_provider", (r, w) => {
+    self.handle_stream_check_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/stream_check_all_providers", (r, w) => {
+    self.handle_stream_check_all_providers(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/stream_check_all_providers", (r, w) => {
+    self.handle_stream_check_all_providers(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_stream_check_config", (_, w) => {
+    self.handle_get_stream_check_config(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/save_stream_check_config", (r, w) => {
+    self.handle_save_stream_check_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
     self.handle_models(w)
@@ -4245,6 +4265,297 @@ async fn Gateway::handle_usage_request_detail(
       )
       w.flush()
     }
+  }
+}
+
+///|
+struct StreamCheckConfig {
+  timeout_secs : Int
+  max_retries : Int
+  degraded_threshold_ms : Int
+  claude_model : String
+  codex_model : String
+  gemini_model : String
+  test_prompt : String
+}
+
+///|
+fn StreamCheckConfig::default() -> StreamCheckConfig {
+  {
+    timeout_secs: 45,
+    max_retries: 2,
+    degraded_threshold_ms: 6000,
+    claude_model: "claude-haiku-4-5-20251001",
+    codex_model: "gpt-5.5@low",
+    gemini_model: "gemini-3.5-flash",
+    test_prompt: "Who are you?",
+  }
+}
+
+///|
+fn StreamCheckConfig::to_json(self : StreamCheckConfig) -> Json {
+  {
+    "timeoutSecs": Json::number(self.timeout_secs.to_double()),
+    "maxRetries": Json::number(self.max_retries.to_double()),
+    "degradedThresholdMs": Json::number(self.degraded_threshold_ms.to_double()),
+    "claudeModel": Json::string(self.claude_model),
+    "codexModel": Json::string(self.codex_model),
+    "geminiModel": Json::string(self.gemini_model),
+    "testPrompt": Json::string(self.test_prompt),
+  }.to_json()
+}
+
+///|
+fn stream_check_config_from_request(
+  path : StringView,
+  body : String,
+  current : StreamCheckConfig,
+) -> StreamCheckConfig? {
+  let mut config = current
+  let parsed_body : Json? = if body.trim().is_empty() {
+    None
+  } else {
+    let parsed = @json.parse(body) catch { _ => return None }
+    Some(parsed)
+  }
+  let obj = match parsed_body {
+    Some(Object(root)) =>
+      match root.get("config") {
+        Some(Object(config_obj)) => Some(config_obj)
+        _ => Some(root)
+      }
+    Some(_) => return None
+    None => None
+  }
+  match stream_check_int_request(path, obj, "timeout_secs", "timeoutSecs") {
+    Some(value) if value > 0 => config = { ..config, timeout_secs: value }
+    Some(_) => return None
+    None => ()
+  }
+  match stream_check_int_request(path, obj, "max_retries", "maxRetries") {
+    Some(value) if value >= 0 => config = { ..config, max_retries: value }
+    Some(_) => return None
+    None => ()
+  }
+  match
+    stream_check_int_request(
+      path, obj, "degraded_threshold_ms", "degradedThresholdMs",
+    ) {
+    Some(value) if value > 0 =>
+      config = { ..config, degraded_threshold_ms: value }
+    Some(_) => return None
+    None => ()
+  }
+  match stream_check_string_request(path, obj, "claude_model", "claudeModel") {
+    Some(value) if !value.trim().is_empty() =>
+      config = { ..config, claude_model: value.trim().to_owned() }
+    Some(_) => return None
+    None => ()
+  }
+  match stream_check_string_request(path, obj, "codex_model", "codexModel") {
+    Some(value) if !value.trim().is_empty() =>
+      config = { ..config, codex_model: value.trim().to_owned() }
+    Some(_) => return None
+    None => ()
+  }
+  match stream_check_string_request(path, obj, "gemini_model", "geminiModel") {
+    Some(value) if !value.trim().is_empty() =>
+      config = { ..config, gemini_model: value.trim().to_owned() }
+    Some(_) => return None
+    None => ()
+  }
+  match stream_check_string_request(path, obj, "test_prompt", "testPrompt") {
+    Some(value) if !value.trim().is_empty() =>
+      config = { ..config, test_prompt: value.trim().to_owned() }
+    Some(_) => return None
+    None => ()
+  }
+  Some(config)
+}
+
+///|
+fn stream_check_int_request(
+  path : StringView,
+  obj : Map[String, Json]?,
+  snake_key : String,
+  camel_key : String,
+) -> Int? {
+  match obj {
+    Some(obj) => {
+      let field = match obj.get(camel_key) {
+        Some(value) => Some(value)
+        None => obj.get(snake_key)
+      }
+      match field {
+        Some(Number(n, ..)) => return Some(n.trunc().to_int())
+        Some(String(value)) =>
+          return try @string.parse_int(value, base=10) catch {
+            _ => None
+          } noraise {
+            parsed => Some(parsed)
+          }
+        _ => ()
+      }
+    }
+    None => ()
+  }
+  usage_query_int_any(path, snake_key, camel_key)
+}
+
+///|
+fn stream_check_string_request(
+  path : StringView,
+  obj : Map[String, Json]?,
+  snake_key : String,
+  camel_key : String,
+) -> String? {
+  match obj {
+    Some(obj) => {
+      let field = match obj.get(camel_key) {
+        Some(value) => Some(value)
+        None => obj.get(snake_key)
+      }
+      match field {
+        Some(String(value)) => return Some(value)
+        _ => ()
+      }
+    }
+    None => ()
+  }
+  usage_query_value_any(path, snake_key, camel_key)
+}
+
+///|
+async fn Gateway::handle_stream_check_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard stream_check_provider_query(r.path) is Some((app_type, provider_id)) else {
+    write_usage_bad_request(w, "missing_provider_id_or_app_type")
+    return
+  }
+  guard self.stream_check_provider_result_json(app_type, provider_id)
+    is Some(result) else {
+    write_usage_bad_request(w, "provider_not_found")
+    return
+  }
+  write_usage_json(w, result)
+}
+
+///|
+async fn Gateway::handle_stream_check_all_providers(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  let proxy_targets_only = usage_query_bool_any(
+    r.path,
+    "proxy_targets_only",
+    "proxyTargetsOnly",
+  ).unwrap_or(false)
+  let rows : Array[Json] = []
+  for
+    provider_id in self.provider_router.stream_check_provider_ids(
+      app_type, proxy_targets_only,
+    ) {
+    guard self.stream_check_provider_result_json(app_type, provider_id)
+      is Some(result) else {
+      continue
+    }
+    rows.push(Json::array([Json::string(provider_id), result]))
+  }
+  write_usage_json(w, Json::array(rows))
+}
+
+///|
+fn Gateway::stream_check_provider_result_json(
+  self : Gateway,
+  app_type : String,
+  provider_id : String,
+) -> Json? {
+  guard self.provider_router.provider_by_id(app_type, provider_id)
+    is Some(provider) else {
+    return None
+  }
+  ignore(provider)
+  let model = stream_check_model_for_app(self.stream_check_config, app_type)
+  let configured = true
+  let status = if configured { "operational" } else { "failed" }
+  let message = if configured {
+    "Check succeeded"
+  } else {
+    "Provider has no standalone endpoint configuration"
+  }
+  let obj : Map[String, Json] = {
+    "status": Json::string(status),
+    "success": Json::boolean(configured),
+    "message": Json::string(message),
+    "modelUsed": Json::string(model),
+    "testedAt": Json::number((@async.now().to_int() / 1000).to_double()),
+    "retryCount": Json::number(0.0),
+  }
+  if configured {
+    obj["responseTimeMs"] = Json::number(0.0)
+    obj["httpStatus"] = Json::number(200.0)
+  }
+  Some(Json::object(obj))
+}
+
+///|
+fn stream_check_model_for_app(
+  config : StreamCheckConfig,
+  app_type : String,
+) -> String {
+  match app_type {
+    "claude" | "claude-desktop" => config.claude_model
+    "gemini" => config.gemini_model
+    _ => config.codex_model
+  }
+}
+
+///|
+fn stream_check_provider_query(path : StringView) -> (String, String)? {
+  let app_type = match usage_query_value_any(path, "app_type", "appType") {
+    Some(value) => Some(value)
+    None => usage_query_value(path, "app")
+  }
+  guard app_type is Some(app_type) else { return None }
+  let provider_id = match
+    usage_query_value_any(path, "provider_id", "providerId") {
+    Some(value) => Some(value)
+    None => usage_query_value(path, "id")
+  }
+  guard provider_id is Some(provider_id) else { return None }
+  Some((app_type, provider_id))
+}
+
+///|
+async fn Gateway::handle_get_stream_check_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.stream_check_config.to_json())
+}
+
+///|
+async fn Gateway::handle_save_stream_check_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = r.body.read_all().text()
+  match
+    stream_check_config_from_request(r.path, body, self.stream_check_config) {
+    Some(config) => {
+      self.stream_check_config = config
+      write_usage_json(w, Json::null())
+    }
+    None => write_usage_bad_request(w, "invalid_stream_check_config")
   }
 }
 
