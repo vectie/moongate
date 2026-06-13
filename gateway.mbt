@@ -702,6 +702,18 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/switch_provider", (r, w) => {
     self.handle_switch_provider(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_custom_endpoints", (r, w) => {
+    self.handle_get_custom_endpoints(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/add_custom_endpoint", (r, w) => {
+    self.handle_add_custom_endpoint(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/remove_custom_endpoint", (r, w) => {
+    self.handle_remove_custom_endpoint(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/update_endpoint_last_used", (r, w) => {
+    self.handle_update_endpoint_last_used(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/proxy/running", (_, w) => {
     self.handle_proxy_running(w)
   })
@@ -3693,6 +3705,98 @@ async fn Gateway::handle_switch_provider(
 }
 
 ///|
+async fn Gateway::handle_get_custom_endpoints(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, None) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  write_usage_json(
+    w,
+    self.provider_router.custom_endpoints_json(app_type, provider_id),
+  )
+}
+
+///|
+async fn Gateway::handle_add_custom_endpoint(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard provider_url_from_request(r.path, body) is Some(url) else {
+    write_usage_bad_request(w, "missing_url")
+    return
+  }
+  if !self.provider_router.add_custom_endpoint(app_type, provider_id, url) {
+    write_usage_bad_request(w, "invalid_url")
+    return
+  }
+  write_usage_json(w, Json::null())
+}
+
+///|
+async fn Gateway::handle_remove_custom_endpoint(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard provider_url_from_request(r.path, body) is Some(url) else {
+    write_usage_bad_request(w, "missing_url")
+    return
+  }
+  self.provider_router.remove_custom_endpoint(app_type, provider_id, url)
+  write_usage_json(w, Json::null())
+}
+
+///|
+async fn Gateway::handle_update_endpoint_last_used(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard provider_url_from_request(r.path, body) is Some(url) else {
+    write_usage_bad_request(w, "missing_url")
+    return
+  }
+  self.provider_router.update_endpoint_last_used(app_type, provider_id, url)
+  write_usage_json(w, Json::null())
+}
+
+///|
 fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
   {
     "claude": Json::boolean(self.proxy_takeover_for_app("claude")),
@@ -4227,6 +4331,11 @@ fn provider_app_from_request(path : StringView, body : Json?) -> String? {
 ///|
 fn provider_id_from_request(path : StringView, body : Json?) -> String? {
   provider_string_from_request(path, body, ["id", "provider_id", "providerId"])
+}
+
+///|
+fn provider_url_from_request(path : StringView, body : Json?) -> String? {
+  provider_string_from_request(path, body, ["url"])
 }
 
 ///|

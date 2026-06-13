@@ -114,6 +114,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `DELETE /delete_provider?app=codex&id=custom`
 - `DELETE /remove_provider_from_live_config?app=codex&id=custom`
 - `POST /switch_provider?app=codex&id=custom`
+- `GET /get_custom_endpoints?app=codex&providerId=custom`
+- `POST /add_custom_endpoint?app=codex&providerId=custom&url=https://api.backup.example.com/v1`
+- `DELETE /remove_custom_endpoint?app=codex&providerId=custom&url=https://api.backup.example.com/v1`
+- `POST /update_endpoint_last_used?app=codex&providerId=custom&url=https://api.backup.example.com/v1`
 - `GET /proxy/running`
 - `GET /is_proxy_running`
 - `GET /usage/logs`
@@ -185,7 +189,11 @@ Moonstat's standalone provider router state. `/get_providers`,
 `/get_current_provider`, `/add_provider`, `/update_provider`,
 `/delete_provider`, `/remove_provider_from_live_config`, and
 `/switch_provider` mirror ccs provider CRUD/current-provider command shapes
-against that same standalone provider router state.
+against that same standalone provider router state. `/get_custom_endpoints`,
+`/add_custom_endpoint`, `/remove_custom_endpoint`, and
+`/update_endpoint_last_used` mirror ccs provider custom endpoint metadata,
+including URL normalization, newest-first listing, and best-effort last-used
+updates.
 `/usage/logs` returns
 recent `proxy_request_logs` rows with ccs-style provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.

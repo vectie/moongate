@@ -498,3 +498,51 @@ test "provider router remove live config preserves stored provider" {
   assert_true(providers.get("a") is Some(_))
   json_inspect(router.failover_queue_json("gemini"), content=[])
 }
+
+///|
+test "provider router custom endpoints mirror ccs metadata semantics" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="a",
+      provider_name="Provider A",
+    ),
+  )
+  assert_true(
+    router.add_custom_endpoint(
+      "codex",
+      "a",
+      " https://first.example.com/v1/// ",
+      now_ms=1000,
+    ),
+  )
+  assert_true(
+    router.add_custom_endpoint(
+      "codex",
+      "a",
+      "https://second.example.com/v1",
+      now_ms=2000,
+    ),
+  )
+  assert_false(router.add_custom_endpoint("codex", "a", " /// ", now_ms=3000))
+  json_inspect(router.custom_endpoints_json("codex", "a"), content=[
+    { "url": "https://second.example.com/v1", "addedAt": 2000 },
+    { "url": "https://first.example.com/v1", "addedAt": 1000 },
+  ])
+  router.update_endpoint_last_used(
+    "codex",
+    "a",
+    "https://first.example.com/v1/",
+    now_ms=5000,
+  )
+  json_inspect(router.custom_endpoints_json("codex", "a"), content=[
+    { "url": "https://second.example.com/v1", "addedAt": 2000 },
+    { "url": "https://first.example.com/v1", "addedAt": 1000, "lastUsed": 5000 },
+  ])
+  router.remove_custom_endpoint("codex", "a", "https://second.example.com/v1/")
+  json_inspect(router.custom_endpoints_json("codex", "a"), content=[
+    { "url": "https://first.example.com/v1", "addedAt": 1000, "lastUsed": 5000 },
+  ])
+  json_inspect(router.custom_endpoints_json("codex", "missing"), content=[])
+}

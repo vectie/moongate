@@ -291,6 +291,8 @@ pub enum CredentialStatus {
 } derive(Eq)
 pub fn CredentialStatus::to_string(Self) -> String
 
+type CustomEndpoint
+
 pub struct FetchedModel {
   id : String
   owned_by : String?
@@ -394,6 +396,7 @@ pub fn ProviderRouteTarget::to_json(Self) -> Json
 pub struct ProviderRouter {
   providers : Map[String, Map[String, ProviderRouteTarget]]
   current_provider_ids : Map[String, String]
+  custom_endpoints : Map[String, Map[String, Map[String, CustomEndpoint]]]
   failover_queues : Map[String, Array[String]]
   auto_failover_enabled : Map[String, Bool]
   max_retries : Map[String, Int]

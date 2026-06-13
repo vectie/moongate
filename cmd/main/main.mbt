@@ -96,6 +96,17 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       remove_provider_from_live_config(arr)
     ["provider", "switch", ..] | ["providers", "switch", ..] =>
       switch_provider(arr)
+    ["provider", "endpoints", "list", ..]
+    | ["providers", "endpoints", "list", ..] =>
+      check_provider_custom_endpoints(arr)
+    ["provider", "endpoints", "add", ..]
+    | ["providers", "endpoints", "add", ..] => add_provider_custom_endpoint(arr)
+    ["provider", "endpoints", "remove", ..]
+    | ["providers", "endpoints", "remove", ..] =>
+      remove_provider_custom_endpoint(arr)
+    ["provider", "endpoints", "touch", ..]
+    | ["providers", "endpoints", "touch", ..] =>
+      update_provider_endpoint_last_used(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
     ["usage", "get-request-logs", ..] => check_usage_logs(arr)
     ["usage", "summary", ..] => check_usage_summary(arr)
@@ -218,6 +229,12 @@ fn print_help() -> Unit {
     "  provider remove-live   Alias for ccs remove_provider_from_live_config",
   )
   println("  provider switch        Alias for ccs switch_provider")
+  println("  provider endpoints list    Alias for ccs get_custom_endpoints")
+  println("  provider endpoints add     Alias for ccs add_custom_endpoint")
+  println("  provider endpoints remove  Alias for ccs remove_custom_endpoint")
+  println(
+    "  provider endpoints touch   Alias for ccs update_endpoint_last_used",
+  )
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage get-request-logs  Alias for ccs get_request_logs")
   println("  usage summary    Show ccs-style usage summary")
@@ -280,6 +297,7 @@ fn print_help() -> Unit {
   println("  --base-url <url>   Provider API base URL for provider add/update")
   println("  --api-key <key>    Provider API key for provider add/update")
   println("  --category <kind>  Provider category for provider add/update")
+  println("  --endpoint-url <url> Provider custom endpoint URL")
   println("  --app <app>         App id for ccs usage script commands")
   println("  --script-code <json> JSON UsageResult for ccs testUsageScript")
   println("  --value <value>    Value for ccs proxy scalar setter commands")
@@ -321,6 +339,9 @@ fn print_help() -> Unit {
     "  moonstat provider add --app codex --id custom --name Custom --base-url https://api.example.com/v1 --api-key sk-...",
   )
   println("  moonstat provider switch --app codex --id custom")
+  println(
+    "  moonstat provider endpoints add --app codex --id custom --endpoint-url https://api.backup.example.com/v1",
+  )
   println("  moonstat proxy app-config --app-type codex")
   println(
     "  moonstat proxy global-config set --proxy-enabled true --listen-address 127.0.0.1 --listen-port 15721",
@@ -710,6 +731,48 @@ async fn switch_provider(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_provider_custom_endpoints(args : Array[String]) -> Unit {
+  guard provider_id_path(args, "/get_custom_endpoints") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_endpoint(args, path, "Provider")
+}
+
+///|
+async fn add_provider_custom_endpoint(args : Array[String]) -> Unit {
+  guard provider_endpoint_url_path(args, "/add_custom_endpoint") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required provider endpoint args: --id --endpoint-url")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
+async fn remove_provider_custom_endpoint(args : Array[String]) -> Unit {
+  guard provider_endpoint_url_path(args, "/remove_custom_endpoint")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required provider endpoint args: --id --endpoint-url")
+    return
+  }
+  check_json_delete_endpoint(args, path, "Provider")
+}
+
+///|
+async fn update_provider_endpoint_last_used(args : Array[String]) -> Unit {
+  guard provider_endpoint_url_path(args, "/update_endpoint_last_used")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required provider endpoint args: --id --endpoint-url")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
 async fn check_proxy_endpoint(args : Array[String], path : String) -> Unit {
   check_json_endpoint(args, path, "Proxy")
 }
@@ -767,6 +830,18 @@ fn provider_id_path(args : Array[String], path : String) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   Some(
     "\{path}?app=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}",
+  )
+}
+
+///|
+fn provider_endpoint_url_path(args : Array[String], path : String) -> String? {
+  guard provider_id_arg(args) is Some(provider_id) else { return None }
+  guard parse_string_arg_any(args, "--endpoint-url", "--endpointUrl")
+    is Some(endpoint_url) else {
+    return None
+  }
+  Some(
+    "\{path}?app=\{cli_url_encode(provider_app_arg(args))}&providerId=\{cli_url_encode(provider_id)}&url=\{cli_url_encode(endpoint_url)}",
   )
 }
 

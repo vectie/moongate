@@ -476,6 +476,30 @@ pub struct ProviderSelection {
 }
 
 ///|
+struct CustomEndpoint {
+  url : String
+  added_at : Int
+  last_used : Int?
+}
+
+///|
+fn CustomEndpoint::new(url : String, added_at : Int) -> CustomEndpoint {
+  { url, added_at, last_used: None }
+}
+
+///|
+fn CustomEndpoint::to_json(self : CustomEndpoint) -> Json {
+  let obj : Map[String, Json] = {
+    "url": Json::string(self.url),
+    "addedAt": Json::number(self.added_at.to_double()),
+  }
+  if self.last_used is Some(last_used) {
+    obj["lastUsed"] = Json::number(last_used.to_double())
+  }
+  Json::object(obj)
+}
+
+///|
 pub fn ProviderSelection::ok(
   providers : Array[ProviderRouteTarget],
 ) -> ProviderSelection {
@@ -498,6 +522,7 @@ pub fn ProviderSelection::is_ok(self : ProviderSelection) -> Bool {
 pub struct ProviderRouter {
   providers : Map[String, Map[String, ProviderRouteTarget]]
   current_provider_ids : Map[String, String]
+  custom_endpoints : Map[String, Map[String, Map[String, CustomEndpoint]]]
   failover_queues : Map[String, Array[String]]
   auto_failover_enabled : Map[String, Bool]
   max_retries : Map[String, Int]
@@ -512,6 +537,7 @@ pub fn ProviderRouter::new(
   {
     providers: Map([], capacity=0),
     current_provider_ids: Map([], capacity=0),
+    custom_endpoints: Map([], capacity=0),
     failover_queues: Map([], capacity=0),
     auto_failover_enabled: Map([], capacity=0),
     max_retries: Map([], capacity=0),
@@ -685,6 +711,106 @@ fn ProviderRouter::remove_provider_from_live_config(
     self.current_provider_ids.remove(app_type)
   }
   true
+}
+
+///|
+fn ProviderRouter::custom_endpoints_json(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+) -> Json {
+  guard self.provider_by_id(app_type, provider_id) is Some(_) else {
+    return Json::array([])
+  }
+  guard self.custom_endpoints.get(app_type) is Some(app_endpoints) else {
+    return Json::array([])
+  }
+  guard app_endpoints.get(provider_id) is Some(provider_endpoints) else {
+    return Json::array([])
+  }
+  let endpoints : Array[CustomEndpoint] = []
+  for url in provider_endpoints.keys() {
+    guard provider_endpoints.get(url) is Some(endpoint) else { continue }
+    endpoints.push(endpoint)
+  }
+  endpoints.sort_by(fn(left, right) { right.added_at.compare(left.added_at) })
+  Json::array(endpoints.map(fn(endpoint) { endpoint.to_json() }))
+}
+
+///|
+fn ProviderRouter::add_custom_endpoint(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+  url : String,
+  now_ms? : Int = @async.now().to_int(),
+) -> Bool {
+  guard normalize_custom_endpoint_url(url) is Some(normalized) else {
+    return false
+  }
+  let app_endpoints = self.custom_endpoints
+    .get(app_type)
+    .unwrap_or(Map([], capacity=0))
+  let provider_endpoints = app_endpoints
+    .get(provider_id)
+    .unwrap_or(Map([], capacity=0))
+  provider_endpoints.set(normalized, CustomEndpoint::new(normalized, now_ms))
+  app_endpoints.set(provider_id, provider_endpoints)
+  self.custom_endpoints.set(app_type, app_endpoints)
+  true
+}
+
+///|
+fn ProviderRouter::remove_custom_endpoint(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+  url : String,
+) -> Unit {
+  guard normalize_custom_endpoint_url(url) is Some(normalized) else { return }
+  guard self.custom_endpoints.get(app_type) is Some(app_endpoints) else {
+    return
+  }
+  guard app_endpoints.get(provider_id) is Some(provider_endpoints) else {
+    return
+  }
+  provider_endpoints.remove(normalized)
+  app_endpoints.set(provider_id, provider_endpoints)
+  self.custom_endpoints.set(app_type, app_endpoints)
+}
+
+///|
+fn ProviderRouter::update_endpoint_last_used(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+  url : String,
+  now_ms? : Int = @async.now().to_int(),
+) -> Unit {
+  guard normalize_custom_endpoint_url(url) is Some(normalized) else { return }
+  guard self.custom_endpoints.get(app_type) is Some(app_endpoints) else {
+    return
+  }
+  guard app_endpoints.get(provider_id) is Some(provider_endpoints) else {
+    return
+  }
+  guard provider_endpoints.get(normalized) is Some(endpoint) else { return }
+  provider_endpoints.set(normalized, { ..endpoint, last_used: Some(now_ms) })
+  app_endpoints.set(provider_id, provider_endpoints)
+  self.custom_endpoints.set(app_type, app_endpoints)
+}
+
+///|
+fn normalize_custom_endpoint_url(url : String) -> String? {
+  let mut normalized = url.trim().to_owned()
+  while normalized.has_suffix("/") {
+    normalized = normalized[:normalized.length() - 1].to_owned()
+  }
+  if normalized.is_empty() {
+    None
+  } else {
+    Some(normalized)
+  }
 }
 
 ///|

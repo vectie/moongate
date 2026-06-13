@@ -244,4 +244,37 @@ test "proxy config setter paths encode ccs command arguments" {
       "/add_provider?app=codex&id=custom&name=Custom%20Provider&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&category=custom&enabled=true&addToLive=false",
     ),
   )
+  assert_eq(
+    provider_id_path(
+      [
+        "moonstat", "provider", "endpoints", "list", "--app", "codex", "--id", "custom",
+      ],
+      "/get_custom_endpoints",
+    ),
+    Some("/get_custom_endpoints?app=codex&id=custom"),
+  )
+  assert_eq(
+    provider_endpoint_url_path(
+      [
+        "moonstat", "provider", "endpoints", "add", "--app", "codex", "--id", "custom",
+        "--endpoint-url", "https://backup.example.com/v1",
+      ],
+      "/add_custom_endpoint",
+    ),
+    Some(
+      "/add_custom_endpoint?app=codex&providerId=custom&url=https%3A%2F%2Fbackup.example.com%2Fv1",
+    ),
+  )
+  assert_eq(
+    provider_endpoint_url_path(
+      [
+        "moonstat", "provider", "endpoints", "touch", "--app", "codex", "--id", "custom",
+        "--endpoint-url", "https://backup.example.com/v1",
+      ],
+      "/update_endpoint_last_used",
+    ),
+    Some(
+      "/update_endpoint_last_used?app=codex&providerId=custom&url=https%3A%2F%2Fbackup.example.com%2Fv1",
+    ),
+  )
 }
