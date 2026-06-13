@@ -246,6 +246,86 @@ fn ccs_upstream_status_retryable(status_code : Int) -> Bool {
 }
 
 ///|
+fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
+  match error {
+    NoProvidersConfigured | AllProvidersCircuitOpen =>
+      @status.ServiceUnavailable
+  }
+}
+
+///|
+fn provider_selection_error_code(error : ProviderSelectionError) -> String {
+  match error {
+    NoProvidersConfigured => "cc_switch_no_providers_configured"
+    AllProvidersCircuitOpen => "cc_switch_all_providers_circuit_open"
+  }
+}
+
+///|
+fn provider_selection_error_message(
+  error : ProviderSelectionError,
+  app_type : String,
+) -> String {
+  match error {
+    NoProvidersConfigured =>
+      "Moonstat local proxy has no configured provider for \{app_type}"
+    AllProvidersCircuitOpen =>
+      "Moonstat local proxy has no available \{app_type} provider because all provider circuits are open"
+  }
+}
+
+///|
+fn provider_selection_error_json(
+  error : ProviderSelectionError,
+  app_type : String,
+) -> Json {
+  {
+    "error": {
+      "message": Json::string(provider_selection_error_message(error, app_type)),
+      "type": Json::string("proxy_error"),
+      "code": Json::string(provider_selection_error_code(error)),
+      "param": Json::null(),
+      "app_type": Json::string(app_type),
+      "selection_error": Json::string(error.to_string()),
+    }.to_json(),
+  }.to_json()
+}
+
+///|
+async fn Gateway::write_provider_selection_error(
+  self : Gateway,
+  app_type : String,
+  error : ProviderSelectionError,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let status_code = provider_selection_error_status(error)
+  let body = provider_selection_error_json(error, app_type).stringify()
+  self.record_upstream_error_status(body.length(), status_code)
+  self.stats.last_error = Some(error.to_string())
+  w.header().set("Content-Type", "application/json")
+  w.write_header(status_code)
+  w.write(body)
+  w.flush()
+}
+
+///|
+fn provider_selection_is_all_circuits_open(
+  selection : ProviderSelection,
+) -> Bool {
+  selection.error == Some(AllProvidersCircuitOpen)
+}
+
+///|
+fn Gateway::all_provider_circuits_open(
+  self : Gateway,
+  app_type : String,
+) -> Bool {
+  provider_selection_is_all_circuits_open(
+    self.provider_router.select_providers(app_type),
+  )
+}
+
+///|
 pub fn Gateway::host(self : Gateway) -> String {
   self.host
 }
@@ -769,6 +849,10 @@ async fn Gateway::forward_non_streaming_chat_completion(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let selection = self.provider_router.select_providers("codex")
+  if provider_selection_is_all_circuits_open(selection) {
+    self.write_provider_selection_error("codex", AllProvidersCircuitOpen, w)
+    return
+  }
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
@@ -908,6 +992,10 @@ async fn Gateway::forward_streaming_chat_completion(
     return
   }
   let selection = self.provider_router.select_providers("codex")
+  if provider_selection_is_all_circuits_open(selection) {
+    self.write_provider_selection_error("codex", AllProvidersCircuitOpen, w)
+    return
+  }
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
@@ -1045,6 +1133,10 @@ async fn Gateway::forward_non_streaming_codex_response(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let selection = self.provider_router.select_providers("codex")
+  if provider_selection_is_all_circuits_open(selection) {
+    self.write_provider_selection_error("codex", AllProvidersCircuitOpen, w)
+    return
+  }
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
@@ -1213,6 +1305,10 @@ async fn Gateway::forward_streaming_codex_response(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let selection = self.provider_router.select_providers("codex")
+  if provider_selection_is_all_circuits_open(selection) {
+    self.write_provider_selection_error("codex", AllProvidersCircuitOpen, w)
+    return
+  }
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
@@ -3255,6 +3351,10 @@ async fn Gateway::handle_messages(
     self.model,
     provider_type=Some("claude"),
   )
+  if active_provider is None && self.all_provider_circuits_open(app_type) {
+    self.write_provider_selection_error(app_type, AllProvidersCircuitOpen, w)
+    return
+  }
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {

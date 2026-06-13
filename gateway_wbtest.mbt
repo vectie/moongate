@@ -102,6 +102,36 @@ test "usage query helpers parse ccs request log parameters" {
 }
 
 ///|
+test "provider selection errors use ccs proxy error codes" {
+  assert_eq(
+    provider_selection_error_status(AllProvidersCircuitOpen),
+    @status.ServiceUnavailable,
+  )
+  assert_eq(
+    provider_selection_error_code(AllProvidersCircuitOpen),
+    "cc_switch_all_providers_circuit_open",
+  )
+  guard provider_selection_error_json(AllProvidersCircuitOpen, "codex")
+    is Object(body) else {
+    fail("expected provider selection error body")
+  }
+  guard body["error"] is Object(error) else { fail("expected error object") }
+  assert_eq(error["code"], Json::string("cc_switch_all_providers_circuit_open"))
+  assert_eq(error["type"], Json::string("proxy_error"))
+  assert_eq(error["param"], Json::null())
+  assert_eq(error["app_type"], Json::string("codex"))
+  assert_eq(
+    error["selection_error"],
+    Json::string("all_providers_circuit_open"),
+  )
+  assert_true(
+    provider_selection_error_message(AllProvidersCircuitOpen, "codex").contains(
+      "all provider circuits are open",
+    ),
+  )
+}
+
+///|
 test "usage pricing query helpers parse and validate ccs pricing update" {
   let path = "/usage/model-pricing?modelId=test-model&displayName=Test%20Model&inputCost=1.25&outputCost=2&cacheReadCost=0.10&cacheCreationCost=0"
   guard usage_pricing_from_query(path) is Some(pricing) else {
