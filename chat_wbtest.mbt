@@ -274,3 +274,165 @@ test "chat completion response converts back to codex response" {
   }
   assert_eq(details["cached_tokens"], Json::number(3.0))
 }
+
+///|
+test "chat completion stream converts text to codex responses events" {
+  let state = ChatToCodexResponsesStreamState::new("fallback")
+  let all_events : Array[Json] = []
+  let (_, _, start_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_1",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{ "delta": { "role": "assistant" }, "finish_reason": null }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(start_events)
+  let (_, _, text_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_1",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{ "delta": { "content": "hi" }, "finish_reason": null }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(text_events)
+  let (_, _, usage_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_1",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [],
+      #|  "usage": {
+      #|    "prompt_tokens": 2,
+      #|    "completion_tokens": 3,
+      #|    "prompt_tokens_details": { "cached_tokens": 1 }
+      #|  }
+      #|}
+    ),
+    state,
+  )
+  all_events.append(usage_events)
+  let (done, _, finish_events) = openai_chat_stream_data_to_codex_response_events(
+    "[DONE]", state,
+  )
+  all_events.append(finish_events)
+  assert_true(done)
+  guard all_events[0] is Object(created) else { fail("expected created") }
+  assert_eq(created["type"], Json::string("response.created"))
+  guard all_events[2] is Object(item_added) else { fail("expected item") }
+  assert_eq(item_added["type"], Json::string("response.output_item.added"))
+  guard all_events[4] is Object(delta) else { fail("expected delta") }
+  assert_eq(delta["type"], Json::string("response.output_text.delta"))
+  assert_eq(delta["delta"], Json::string("hi"))
+  guard all_events[all_events.length() - 1] is Object(completed) else {
+    fail("expected completed")
+  }
+  assert_eq(completed["type"], Json::string("response.completed"))
+  guard completed["response"] is Object(response) else {
+    fail("expected response")
+  }
+  assert_eq(response["id"], Json::string("resp_chatcmpl_1"))
+  guard response["output"] is Array(output) else { fail("expected output") }
+  guard output[0] is Object(message) else { fail("expected message") }
+  guard message["content"] is Array(content) else { fail("expected content") }
+  guard content[0] is Object(part) else { fail("expected part") }
+  assert_eq(part["text"], Json::string("hi"))
+  guard response["usage"] is Object(usage) else { fail("expected usage") }
+  assert_eq(usage["input_tokens"], Json::number(2.0))
+  assert_eq(usage["output_tokens"], Json::number(3.0))
+  guard usage["input_tokens_details"] is Object(details) else {
+    fail("expected usage details")
+  }
+  assert_eq(details["cached_tokens"], Json::number(1.0))
+}
+
+///|
+test "chat completion stream converts tool call to codex responses events" {
+  let state = ChatToCodexResponsesStreamState::new("fallback")
+  let all_events : Array[Json] = []
+  let (_, _, first_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_tool",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{
+      #|    "delta": {
+      #|      "tool_calls": [{
+      #|        "index": 0,
+      #|        "id": "call_1",
+      #|        "type": "function",
+      #|        "function": { "name": "lookup", "arguments": "{\"q\"" }
+      #|      }]
+      #|    },
+      #|    "finish_reason": null
+      #|  }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(first_events)
+  let (_, _, second_events) = openai_chat_stream_data_to_codex_response_events(
+    (
+      #|{
+      #|  "id": "chatcmpl_tool",
+      #|  "model": "deepseek-chat",
+      #|  "created": 10,
+      #|  "choices": [{
+      #|    "delta": {
+      #|      "tool_calls": [{
+      #|        "index": 0,
+      #|        "function": { "arguments": ":\"moon\"}" }
+      #|      }]
+      #|    },
+      #|    "finish_reason": "tool_calls"
+      #|  }]
+      #|}
+    ),
+    state,
+  )
+  all_events.append(second_events)
+  let (_, _, finish_events) = openai_chat_stream_data_to_codex_response_events(
+    "[DONE]", state,
+  )
+  all_events.append(finish_events)
+  guard all_events[2] is Object(added) else { fail("expected added") }
+  assert_eq(added["type"], Json::string("response.output_item.added"))
+  guard added["item"] is Object(added_item) else { fail("expected added item") }
+  assert_eq(added_item["type"], Json::string("function_call"))
+  assert_eq(added_item["call_id"], Json::string("call_1"))
+  assert_eq(added_item["name"], Json::string("lookup"))
+  guard all_events[3] is Object(first_delta) else { fail("expected delta") }
+  assert_eq(
+    first_delta["type"],
+    Json::string("response.function_call_arguments.delta"),
+  )
+  guard all_events[4] is Object(second_delta) else {
+    fail("expected second delta")
+  }
+  assert_eq(second_delta["delta"], Json::string(":\"moon\"}"))
+  guard all_events[5] is Object(done_args) else { fail("expected done") }
+  assert_eq(
+    done_args["type"],
+    Json::string("response.function_call_arguments.done"),
+  )
+  assert_eq(done_args["arguments"], Json::string("{\"q\":\"moon\"}"))
+  guard all_events[all_events.length() - 1] is Object(completed) else {
+    fail("expected completed")
+  }
+  guard completed["response"] is Object(response) else {
+    fail("expected response")
+  }
+  guard response["output"] is Array(output) else { fail("expected output") }
+  guard output[0] is Object(call) else { fail("expected call") }
+  assert_eq(call["type"], Json::string("function_call"))
+  assert_eq(call["arguments"], Json::string("{\"q\":\"moon\"}"))
+}

@@ -1211,16 +1211,6 @@ async fn Gateway::forward_streaming_codex_response(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard self.credentials is Some(creds) else {
-    self.record_unauthorized()
-    w.header().set("Content-Type", "application/json")
-    w.write_header(@status.Unauthorized)
-    w.write(
-      "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
-    )
-    w.flush()
-    return
-  }
   let selection = self.provider_router.select_providers("codex")
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
@@ -1229,12 +1219,78 @@ async fn Gateway::forward_streaming_codex_response(
     let outbound_request = self.codex_provider_outbound_request(
       active_provider, request,
     )
-    let client = self.codex_client(
-      creds,
-      accept="text/event-stream",
-      session_id~,
-    )
-    let response = client.post(endpoint, outbound_request)
+    let (client, response, use_chat_bridge) = match active_provider {
+      Some(provider) if provider.can_use_codex_compatible_upstream() => {
+        let use_chat_bridge = provider.codex_uses_chat_completions()
+        let provider_endpoint = if use_chat_bridge {
+          codex_compatible_chat_completions_endpoint(endpoint)
+        } else {
+          codex_compatible_responses_endpoint(endpoint)
+        }
+        let provider_request = if use_chat_bridge {
+          codex_responses_request_to_openai_chat_completion(
+            outbound_request,
+            codex_request_model(request, self.model),
+          ).unwrap_or(outbound_request)
+        } else {
+          outbound_request
+        }
+        match
+          self.post_codex_compatible_provider_stream(
+            provider, provider_endpoint, provider_request,
+          ) {
+          Ok((client, response)) => (client, response, use_chat_bridge)
+          Err(error) => {
+            let error_body = "{\"error\":{\"message\":\"Codex upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
+            if !providers.is_empty() {
+              let next = self.activate_next_provider_after_upstream_status(
+                "codex",
+                providers,
+                attempted_provider_ids,
+                @status.BadGateway,
+              )
+              if next is Some(_) {
+                continue
+              }
+              self.stats.record_upstream_error_status(
+                error_body.length(),
+                @status.BadGateway,
+              )
+              self.stats.save_persistent_store()
+            } else {
+              self.record_upstream_error_status(
+                error_body.length(),
+                @status.BadGateway,
+              )
+            }
+            w.header().set("Content-Type", "application/json")
+            w.write_header(@status.BadGateway)
+            w.write(error_body)
+            w.flush()
+            return
+          }
+        }
+      }
+      _ => {
+        guard self.credentials is Some(creds) else {
+          self.record_unauthorized()
+          w.header().set("Content-Type", "application/json")
+          w.write_header(@status.Unauthorized)
+          w.write(
+            "{\"error\":{\"message\":\"Not authenticated. Please login first.\",\"type\":\"authentication_error\"}}",
+          )
+          w.flush()
+          return
+        }
+        let client = self.codex_client(
+          creds,
+          accept="text/event-stream",
+          session_id~,
+        )
+        let response = client.post(endpoint, outbound_request)
+        (client, response, false)
+      }
+    }
     if response.code != 200 {
       let error_body = client.read_all().text()
       client.close()
@@ -1298,31 +1354,66 @@ async fn Gateway::forward_streaming_codex_response(
         w.header().set("Cache-Control", "no-cache")
         w.header().set("Connection", "keep-alive")
         w.write_header(@status.Ok)
-        let mut response_bytes = first_line.length() + 1
+        let mut response_bytes = 0
         let stream_events : Array[Json] = []
+        let chat_state = ChatToCodexResponsesStreamState::new(
+          codex_request_model(request, self.model),
+        )
         if first_line is [.. "data: ", .. rest] {
           let data = rest.trim().to_owned()
-          if data != "[DONE]" {
-            push_sse_json_event(stream_events, data)
-          }
-        }
-        w.write(first_line)
-        w.write("\n")
-        w.flush()
-        self.record_provider_result(true)
-        while client.read_until("\n") is Some(line) {
-          response_bytes += line.length() + 1
-          if line is [.. "data: ", .. rest] {
-            let data = rest.trim().to_owned()
+          if use_chat_bridge {
+            let (_, bytes) = write_chat_provider_codex_stream_data(
+              w, data, chat_state, stream_events,
+            )
+            response_bytes += bytes
+          } else {
             if data != "[DONE]" {
               push_sse_json_event(stream_events, data)
             }
+            response_bytes += first_line.length() + 1
+            w.write(first_line)
+            w.write("\n")
+            w.flush()
           }
-          w.write(line)
+        } else if !use_chat_bridge {
+          response_bytes += first_line.length() + 1
+          w.write(first_line)
           w.write("\n")
           w.flush()
         }
+        self.record_provider_result(true)
+        while client.read_until("\n") is Some(line) {
+          if use_chat_bridge {
+            guard line is [.. "data: ", .. rest] else { continue }
+            let data = rest.trim().to_owned()
+            let (done, bytes) = write_chat_provider_codex_stream_data(
+              w, data, chat_state, stream_events,
+            )
+            response_bytes += bytes
+            if done {
+              break
+            }
+          } else {
+            response_bytes += line.length() + 1
+            if line is [.. "data: ", .. rest] {
+              let data = rest.trim().to_owned()
+              if data != "[DONE]" {
+                push_sse_json_event(stream_events, data)
+              }
+            }
+            w.write(line)
+            w.write("\n")
+            w.flush()
+          }
+        }
         client.close()
+        if use_chat_bridge {
+          let (_, bytes) = write_chat_provider_codex_stream_data(
+            w, "[DONE]", chat_state, stream_events,
+          )
+          response_bytes += bytes
+          w.write("data: [DONE]\n\n")
+        }
         ignore(self.codex_chat_history.record_stream_events(stream_events))
         self.record_success_stream_usage(
           token_usage_from_codex_stream_events_auto(stream_events),
@@ -1453,6 +1544,32 @@ async fn Gateway::post_codex_compatible_provider_json(
     Ok((response, data)) => Ok((response, data.text()))
     Err(error) => Err(error)
   }
+}
+
+///|
+async fn Gateway::post_codex_compatible_provider_stream(
+  self : Gateway,
+  provider : ProviderRouteTarget,
+  endpoint : String,
+  request : Json,
+) -> Result[(@http.Client, @http.Response), Error] {
+  let _ = self
+  let base_url = provider.base_url.unwrap()
+  let api_key = provider.api_key.unwrap()
+  let url = codex_compatible_provider_url(base_url, endpoint)
+  let (origin, path) = split_origin_and_path(url)
+  let client = @http.Client::new(origin, headers={
+    "Authorization": "Bearer \{api_key}",
+    "Content-Type": "application/json",
+    "Accept": "text/event-stream",
+  })
+  let response = client.post(path, request) catch {
+    error => {
+      client.close()
+      return Err(error)
+    }
+  }
+  Ok((client, response))
 }
 
 ///|
@@ -6526,6 +6643,42 @@ fn push_sse_json_event(events : Array[Json], data : String) -> Unit {
     Ok(json) => events.push(json)
     Err(_) => ()
   }
+}
+
+///|
+async fn write_codex_response_sse_event(
+  w : @httpx.ResponseWriter,
+  event : Json,
+) -> Int {
+  let event_type = match event {
+    Object(obj) => json_string_from_map(obj, "type").unwrap_or("")
+    _ => ""
+  }
+  if !event_type.is_empty() {
+    w.write("event: \{event_type}\n")
+  }
+  let payload = event.stringify()
+  w.write("data: \{payload}\n\n")
+  w.flush()
+  payload.length()
+}
+
+///|
+async fn write_chat_provider_codex_stream_data(
+  w : @httpx.ResponseWriter,
+  data : String,
+  state : ChatToCodexResponsesStreamState,
+  stream_events : Array[Json],
+) -> (Bool, Int) {
+  let (done, _, events) = openai_chat_stream_data_to_codex_response_events(
+    data, state,
+  )
+  let mut bytes = 0
+  for event in events {
+    stream_events.push(event)
+    bytes += write_codex_response_sse_event(w, event)
+  }
+  (done, bytes)
 }
 
 ///|

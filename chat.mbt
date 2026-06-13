@@ -770,6 +770,442 @@ fn codex_stream_event_to_openai_chat_chunk(
 }
 
 ///|
+priv struct ChatToCodexResponsesToolState {
+  mut output_index : Int?
+  mut item_id : String
+  mut call_id : String
+  mut name : String
+  mut arguments : String
+  mut added : Bool
+  mut done : Bool
+}
+
+///|
+priv struct ChatToCodexResponsesStreamState {
+  mut response_started : Bool
+  mut completed : Bool
+  mut response_id : String
+  mut model : String
+  mut created_at : Int
+  mut next_output_index : Int
+  mut text_output_index : Int?
+  mut text_item_id : String
+  mut text : String
+  mut text_added : Bool
+  mut text_done : Bool
+  tool_states : Map[Int, ChatToCodexResponsesToolState]
+  output_items : Array[Json]
+  mut latest_usage : Json?
+  mut finish_reason : String?
+}
+
+///|
+fn ChatToCodexResponsesStreamState::new(
+  model : String,
+) -> ChatToCodexResponsesStreamState {
+  {
+    response_started: false,
+    completed: false,
+    response_id: "resp_moonstat",
+    model,
+    created_at: @async.now().to_int() / 1000,
+    next_output_index: 0,
+    text_output_index: None,
+    text_item_id: "",
+    text: "",
+    text_added: false,
+    text_done: false,
+    tool_states: Map([], capacity=0),
+    output_items: [],
+    latest_usage: None,
+    finish_reason: None,
+  }
+}
+
+///|
+fn openai_chat_stream_data_to_codex_response_events(
+  data : String,
+  state : ChatToCodexResponsesStreamState,
+) -> (Bool, Json?, Array[Json]) {
+  if data.trim() == "[DONE]" {
+    return (true, None, state.finish())
+  }
+  let parsed = @json.parse(data) catch { _ => return (false, None, []) }
+  (false, Some(parsed), state.push_chunk(parsed))
+}
+
+///|
+fn ChatToCodexResponsesStreamState::push_chunk(
+  self : ChatToCodexResponsesStreamState,
+  chunk : Json,
+) -> Array[Json] {
+  let events : Array[Json] = []
+  guard chunk is Object(obj) else { return events }
+  if json_string_from_map(obj, "id") is Some(id) {
+    self.response_id = codex_response_id_from_chat_id(id)
+  }
+  if json_string_from_map(obj, "model") is Some(model) && !model.is_empty() {
+    self.model = model
+  }
+  if json_int(obj, "created") is Some(created) {
+    self.created_at = created
+  }
+  events.append(self.ensure_response_started())
+  if obj.get("usage") is Some(Object(usage)) {
+    self.latest_usage = Some(
+      openai_chat_usage_to_codex_usage(Some(Json::object(usage))),
+    )
+  }
+  guard obj.get("choices") is Some(Array(choices)) else { return events }
+  guard choices.get(0) is Some(Object(choice)) else { return events }
+  if choice.get("delta") is Some(Object(delta)) {
+    if json_string_from_map(delta, "content") is Some(content) &&
+      !content.is_empty() {
+      events.append(self.push_text_delta(content))
+    }
+    if json_string_from_map(delta, "refusal") is Some(refusal) &&
+      !refusal.is_empty() {
+      events.append(self.push_text_delta(refusal))
+    }
+    if delta.get("tool_calls") is Some(Array(tool_calls)) {
+      events.append(self.finish_text())
+      for tool_call in tool_calls {
+        if tool_call is Object(tool_call_obj) {
+          events.append(self.push_tool_call_delta(tool_call_obj))
+        }
+      }
+    }
+  }
+  if json_string_from_map(choice, "finish_reason") is Some(reason) {
+    self.finish_reason = Some(reason)
+  }
+  events
+}
+
+///|
+fn ChatToCodexResponsesStreamState::ensure_response_started(
+  self : ChatToCodexResponsesStreamState,
+) -> Array[Json] {
+  if self.response_started {
+    return []
+  }
+  self.response_started = true
+  [
+    Json::object({
+      "type": Json::string("response.created"),
+      "response": self.base_response("in_progress"),
+    }),
+    Json::object({
+      "type": Json::string("response.in_progress"),
+      "response": self.base_response("in_progress"),
+    }),
+  ]
+}
+
+///|
+fn ChatToCodexResponsesStreamState::push_text_delta(
+  self : ChatToCodexResponsesStreamState,
+  delta : String,
+) -> Array[Json] {
+  let events : Array[Json] = []
+  if !self.text_added {
+    let output_index = self.next_output_index()
+    let item_id = "\{self.response_id}_msg"
+    self.text_output_index = Some(output_index)
+    self.text_item_id = item_id
+    self.text_added = true
+    events.push(
+      Json::object({
+        "type": Json::string("response.output_item.added"),
+        "output_index": Json::number(output_index.to_double()),
+        "item": Json::object({
+          "id": Json::string(item_id),
+          "type": Json::string("message"),
+          "status": Json::string("in_progress"),
+          "role": Json::string("assistant"),
+          "content": Json::array([]),
+        }),
+      }),
+    )
+    events.push(
+      Json::object({
+        "type": Json::string("response.content_part.added"),
+        "item_id": Json::string(self.text_item_id),
+        "output_index": Json::number(output_index.to_double()),
+        "content_index": Json::number(0.0),
+        "part": Json::object({
+          "type": Json::string("output_text"),
+          "text": Json::string(""),
+          "annotations": Json::array([]),
+        }),
+      }),
+    )
+  }
+  self.text += delta
+  let output_index = self.text_output_index.unwrap_or(0)
+  events.push(
+    Json::object({
+      "type": Json::string("response.output_text.delta"),
+      "item_id": Json::string(self.text_item_id),
+      "output_index": Json::number(output_index.to_double()),
+      "content_index": Json::number(0.0),
+      "delta": Json::string(delta),
+    }),
+  )
+  events
+}
+
+///|
+fn ChatToCodexResponsesStreamState::push_tool_call_delta(
+  self : ChatToCodexResponsesStreamState,
+  tool_call : Map[String, Json],
+) -> Array[Json] {
+  let events : Array[Json] = []
+  let chat_index = json_int(tool_call, "index").unwrap_or(0)
+  let state = match self.tool_states.get(chat_index) {
+    Some(existing) => existing
+    None => {
+      let created = {
+        output_index: None,
+        item_id: "",
+        call_id: "",
+        name: "",
+        arguments: "",
+        added: false,
+        done: false,
+      }
+      self.tool_states.set(chat_index, created)
+      created
+    }
+  }
+  if json_string_from_map(tool_call, "id") is Some(id) && !id.is_empty() {
+    state.call_id = id
+  }
+  if tool_call.get("function") is Some(Object(function)) {
+    if json_string_from_map(function, "name") is Some(name) && !name.is_empty() {
+      state.name = name
+    }
+    if json_string_from_map(function, "arguments") is Some(arguments) &&
+      !arguments.is_empty() {
+      state.arguments += arguments
+    }
+  }
+  if !state.added && (!state.call_id.is_empty() || !state.name.is_empty()) {
+    let output_index = self.next_output_index()
+    state.added = true
+    state.output_index = Some(output_index)
+    if state.call_id.is_empty() {
+      state.call_id = "call_\{chat_index}"
+    }
+    if state.name.is_empty() {
+      state.name = "tool"
+    }
+    state.item_id = "fc_\{state.call_id}"
+    events.push(
+      Json::object({
+        "type": Json::string("response.output_item.added"),
+        "output_index": Json::number(output_index.to_double()),
+        "item": Json::object({
+          "id": Json::string(state.item_id),
+          "type": Json::string("function_call"),
+          "status": Json::string("in_progress"),
+          "call_id": Json::string(state.call_id),
+          "name": Json::string(state.name),
+          "arguments": Json::string(""),
+        }),
+      }),
+    )
+    if !state.arguments.is_empty() {
+      events.push(
+        Json::object({
+          "type": Json::string("response.function_call_arguments.delta"),
+          "item_id": Json::string(state.item_id),
+          "output_index": Json::number(output_index.to_double()),
+          "delta": Json::string(state.arguments),
+        }),
+      )
+    }
+  } else if state.added &&
+    tool_call.get("function") is Some(Object(function)) &&
+    json_string_from_map(function, "arguments") is Some(arguments) &&
+    !arguments.is_empty() {
+    let output_index = state.output_index.unwrap_or(0)
+    events.push(
+      Json::object({
+        "type": Json::string("response.function_call_arguments.delta"),
+        "item_id": Json::string(state.item_id),
+        "output_index": Json::number(output_index.to_double()),
+        "delta": Json::string(arguments),
+      }),
+    )
+  }
+  events
+}
+
+///|
+fn ChatToCodexResponsesStreamState::finish(
+  self : ChatToCodexResponsesStreamState,
+) -> Array[Json] {
+  if self.completed {
+    return []
+  }
+  let events : Array[Json] = []
+  events.append(self.ensure_response_started())
+  events.append(self.finish_text())
+  events.append(self.finish_tools())
+  events.push(
+    Json::object({
+      "type": Json::string("response.completed"),
+      "response": self.base_response(
+        codex_response_status_from_chat_finish_reason(self.finish_reason),
+      ),
+    }),
+  )
+  self.completed = true
+  events
+}
+
+///|
+fn ChatToCodexResponsesStreamState::finish_text(
+  self : ChatToCodexResponsesStreamState,
+) -> Array[Json] {
+  if !self.text_added || self.text_done {
+    return []
+  }
+  let output_index = self.text_output_index.unwrap_or(0)
+  let part = Json::object({
+    "type": Json::string("output_text"),
+    "text": Json::string(self.text),
+    "annotations": Json::array([]),
+  })
+  let item = Json::object({
+    "id": Json::string(self.text_item_id),
+    "type": Json::string("message"),
+    "status": Json::string("completed"),
+    "role": Json::string("assistant"),
+    "content": Json::array([part]),
+  })
+  self.output_items.push(item)
+  self.text_done = true
+  [
+    Json::object({
+      "type": Json::string("response.output_text.done"),
+      "item_id": Json::string(self.text_item_id),
+      "output_index": Json::number(output_index.to_double()),
+      "content_index": Json::number(0.0),
+      "text": Json::string(self.text),
+    }),
+    Json::object({
+      "type": Json::string("response.content_part.done"),
+      "item_id": Json::string(self.text_item_id),
+      "output_index": Json::number(output_index.to_double()),
+      "content_index": Json::number(0.0),
+      "part": part,
+    }),
+    Json::object({
+      "type": Json::string("response.output_item.done"),
+      "output_index": Json::number(output_index.to_double()),
+      "item": item,
+    }),
+  ]
+}
+
+///|
+fn ChatToCodexResponsesStreamState::finish_tools(
+  self : ChatToCodexResponsesStreamState,
+) -> Array[Json] {
+  let events : Array[Json] = []
+  for _, state in self.tool_states {
+    if !state.added || state.done {
+      continue
+    }
+    let output_index = state.output_index.unwrap_or(0)
+    let arguments = canonicalize_tool_arguments(
+      Some(Json::string(state.arguments)),
+    )
+    let item = Json::object({
+      "id": Json::string(state.item_id),
+      "type": Json::string("function_call"),
+      "status": Json::string("completed"),
+      "call_id": Json::string(state.call_id),
+      "name": Json::string(state.name),
+      "arguments": Json::string(arguments),
+    })
+    self.output_items.push(item)
+    state.done = true
+    events.push(
+      Json::object({
+        "type": Json::string("response.function_call_arguments.done"),
+        "item_id": Json::string(state.item_id),
+        "output_index": Json::number(output_index.to_double()),
+        "arguments": Json::string(arguments),
+      }),
+    )
+    events.push(
+      Json::object({
+        "type": Json::string("response.output_item.done"),
+        "output_index": Json::number(output_index.to_double()),
+        "item": item,
+      }),
+    )
+  }
+  events
+}
+
+///|
+fn ChatToCodexResponsesStreamState::next_output_index(
+  self : ChatToCodexResponsesStreamState,
+) -> Int {
+  let index = self.next_output_index
+  self.next_output_index += 1
+  index
+}
+
+///|
+fn ChatToCodexResponsesStreamState::base_response(
+  self : ChatToCodexResponsesStreamState,
+  status : String,
+) -> Json {
+  let response : Map[String, Json] = {
+    "id": Json::string(self.response_id),
+    "object": Json::string("response"),
+    "created_at": Json::number(self.created_at.to_double()),
+    "status": Json::string(status),
+    "model": Json::string(self.model),
+    "output": Json::array(self.output_items.copy()),
+    "usage": self.latest_usage.unwrap_or(
+      Json::object({
+        "input_tokens": Json::number(0.0),
+        "output_tokens": Json::number(0.0),
+      }),
+    ),
+  }
+  if status == "incomplete" {
+    response["incomplete_details"] = Json::object({
+      "reason": Json::string("max_output_tokens"),
+    })
+  }
+  Json::object(response)
+}
+
+///|
+fn codex_response_id_from_chat_id(id : String) -> String {
+  if id.has_prefix("resp_") {
+    id
+  } else {
+    "resp_\{id}"
+  }
+}
+
+///|
+fn codex_response_status_from_chat_finish_reason(reason : String?) -> String {
+  match reason {
+    Some("length") => "incomplete"
+    _ => "completed"
+  }
+}
+
+///|
 fn openai_chat_delta_chunk(
   id : String,
   model : String,
