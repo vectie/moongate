@@ -1335,6 +1335,12 @@ test "gemini native stream keeps parallel no id tool calls distinct" {
   assert_eq(first_block["type"], Json::string("tool_use"))
   assert_eq(second_block["type"], Json::string("tool_use"))
   assert_true(first_block["id"] != second_block["id"])
+  guard first_block["id"] is String(first_id) else { fail("expected first id") }
+  guard second_block["id"] is String(second_id) else {
+    fail("expected second id")
+  }
+  assert_true(first_id.has_prefix("gemini_synth_"))
+  assert_true(second_id.has_prefix("gemini_synth_"))
   assert_eq(first_block["name"], Json::string("lookup"))
   assert_eq(second_block["name"], Json::string("lookup"))
   let deltas = events.filter(event => event.event_type == "content_block_delta")
@@ -1460,6 +1466,43 @@ test "gemini native response converts to anthropic message with usage" {
   assert_eq(response.usage.input_tokens, 6)
   assert_eq(response.usage.output_tokens, 7)
   assert_eq(response.usage.cache_read_input_tokens, Some(4))
+}
+
+///|
+test "gemini native response synthesizes ccs marked missing tool id" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "candidates": [
+      #|    {
+      #|      "finishReason": "STOP",
+      #|      "content": {
+      #|        "parts": [
+      #|          {
+      #|            "functionCall": {
+      #|              "name": "lookup",
+      #|              "args": { "q": "moon" }
+      #|            }
+      #|          }
+      #|        ]
+      #|      }
+      #|    }
+      #|  ],
+      #|  "usageMetadata": {
+      #|    "promptTokenCount": 10,
+      #|    "totalTokenCount": 17
+      #|  }
+      #|}
+    ),
+  )
+  let response = gemini_native_response_to_anthropic(body, "claude-sonnet-4-6")
+  assert_eq(response.stop_reason, Some("tool_use"))
+  assert_eq(response.content.length(), 1)
+  assert_eq(response.content[0].type_, "tool_use")
+  guard response.content[0].id is Some(id) else {
+    fail("expected synthesized id")
+  }
+  assert_true(id.has_prefix("gemini_synth_"))
 }
 
 ///|

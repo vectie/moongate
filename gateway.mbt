@@ -3128,6 +3128,7 @@ fn append_gemini_parts_as_anthropic(
   parts : Array[Json],
   content : Array[AnthropicResponseBlock],
 ) -> Unit {
+  let mut tool_position = 0
   for part in parts {
     guard part is Object(part_obj) else { continue }
     if part_obj.get("text") is Some(String(text)) && !text.is_empty() {
@@ -3148,10 +3149,11 @@ fn append_gemini_parts_as_anthropic(
         input: Some(function_call.get("args").unwrap_or(Json::object({}))),
         id: Some(
           json_string_from_map(function_call, "id").unwrap_or(
-            generate_message_id(),
+            generate_gemini_synth_tool_call_id(tool_position),
           ),
         ),
       })
+      tool_position += 1
     }
   }
 }
@@ -3833,7 +3835,7 @@ fn GeminiNativeAnthropicStreamState::merge_tool_snapshots_from_parts(
       None =>
         match snapshot.id {
           Some(existing) => Some(existing)
-          None => Some("gemini_synth_\{position}")
+          None => Some(generate_gemini_synth_tool_call_id(position))
         }
     }
     snapshot.name = json_string_from_map(function_call, "name").unwrap_or(
@@ -4656,6 +4658,11 @@ fn generate_message_id() -> String {
   let gen = @uuid.generator(@random.Rand::new())
   let uuid = gen.v4()
   "msg_\{uuid}"
+}
+
+///|
+fn generate_gemini_synth_tool_call_id(position : Int) -> String {
+  "gemini_synth_\{position}"
 }
 
 ///|
