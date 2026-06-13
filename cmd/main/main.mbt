@@ -21,8 +21,14 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
     ["proxy", "status", ..] => check_proxy_status(arr)
+    ["proxy", "config", "set", ..] => update_proxy_config(arr)
+    ["proxy", "update-config", ..] => update_proxy_config(arr)
     ["proxy", "config", ..] => check_proxy_config(arr)
+    ["proxy", "global-config", "set", ..] => update_proxy_global_config(arr)
+    ["proxy", "update-global-config", ..] => update_proxy_global_config(arr)
     ["proxy", "global-config", ..] => check_proxy_global_config(arr)
+    ["proxy", "app-config", "set", ..] => update_proxy_app_config(arr)
+    ["proxy", "update-app-config", ..] => update_proxy_app_config(arr)
     ["proxy", "app-config", ..] => check_proxy_app_config(arr)
     ["proxy", "default-cost-multiplier", ..] =>
       check_proxy_default_cost_multiplier(arr)
@@ -58,6 +64,9 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_proxy_auto_failover_enabled(arr)
     ["proxy", "set-auto-failover-enabled", ..] =>
       set_proxy_auto_failover_enabled(arr)
+    ["proxy", "takeover-status", "set", ..] => set_proxy_takeover_status(arr)
+    ["proxy", "set-proxy-takeover-for-app", ..] =>
+      set_proxy_takeover_status(arr)
     ["proxy", "takeover-status", ..] => check_proxy_takeover_status(arr)
     ["proxy", "running", ..] => check_proxy_running(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
@@ -117,8 +126,11 @@ fn print_help() -> Unit {
   println("  stats       Show gateway traffic statistics")
   println("  proxy status           Show ccs-style proxy server status")
   println("  proxy config           Show ccs-style proxy server config")
+  println("  proxy config set       Update ccs-style legacy proxy config")
   println("  proxy global-config    Show ccs-style global proxy config")
+  println("  proxy global-config set  Update ccs-style global proxy config")
   println("  proxy app-config       Show ccs-style app proxy config")
+  println("  proxy app-config set   Update ccs-style app proxy config")
   println("  proxy default-cost-multiplier  Show ccs-style app cost multiplier")
   println("  proxy pricing-model-source     Show ccs-style app pricing mode")
   println("  proxy provider-health          Show ccs-style provider health")
@@ -135,6 +147,7 @@ fn print_help() -> Unit {
   println("  proxy auto-failover-enabled    Show app auto-failover boolean")
   println("  proxy auto-failover-enabled set  Set app auto-failover boolean")
   println("  proxy takeover-status  Show ccs-style app takeover status")
+  println("  proxy takeover-status set  Set ccs-style app takeover state")
   println("  proxy running          Show ccs-style proxy running boolean")
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage summary    Show ccs-style usage summary")
@@ -174,7 +187,17 @@ fn print_help() -> Unit {
   println("Proxy config options:")
   println("  --app-type <app>  App type for app-level proxy config")
   println("  --provider-id <id> Provider id for provider-level proxy commands")
-  println("  --enabled <bool>   Boolean for auto-failover commands")
+  println(
+    "  --enabled <bool>   Boolean for proxy app/takeover/failover commands",
+  )
+  println("  --proxy-enabled <bool> Global proxy enabled flag")
+  println("  --listen-address <host> Global proxy listen address")
+  println("  --listen-port <port>   Global proxy listen port")
+  println("  --enable-logging <bool> Global proxy logging flag")
+  println("  --max-retries <n>      App proxy max retries")
+  println("  --streaming-first-byte-timeout <n> App stream first-byte timeout")
+  println("  --streaming-idle-timeout <n>       App stream idle timeout")
+  println("  --non-streaming-timeout <n>        App non-stream timeout")
   println("  --failure-threshold <n>     Circuit failures before open")
   println("  --success-threshold <n>     Half-open successes before close")
   println("  --timeout-seconds <n>       Circuit open timeout in seconds")
@@ -194,6 +217,15 @@ fn print_help() -> Unit {
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat proxy status          # Show ccs-style proxy status")
   println("  moonstat proxy app-config --app-type codex")
+  println(
+    "  moonstat proxy global-config set --proxy-enabled true --listen-address 127.0.0.1 --listen-port 15721",
+  )
+  println(
+    "  moonstat proxy app-config set --app-type codex --enabled true --max-retries 3",
+  )
+  println(
+    "  moonstat proxy takeover-status set --app-type codex --enabled true",
+  )
   println(
     "  moonstat proxy provider-health --app-type codex --provider-id codex-oauth",
   )
@@ -300,13 +332,36 @@ async fn check_proxy_config(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn update_proxy_config(args : Array[String]) -> Unit {
+  check_json_post_endpoint(
+    args,
+    proxy_global_config_update_path(args, "/proxy/config"),
+    "Proxy",
+  )
+}
+
+///|
 async fn check_proxy_global_config(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/global-config")
 }
 
 ///|
+async fn update_proxy_global_config(args : Array[String]) -> Unit {
+  check_json_post_endpoint(
+    args,
+    proxy_global_config_update_path(args, "/proxy/global-config"),
+    "Proxy",
+  )
+}
+
+///|
 async fn check_proxy_app_config(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/app-config")
+}
+
+///|
+async fn update_proxy_app_config(args : Array[String]) -> Unit {
+  check_json_post_endpoint(args, proxy_app_config_update_path(args), "Proxy")
 }
 
 ///|
@@ -410,6 +465,16 @@ async fn check_proxy_takeover_status(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn set_proxy_takeover_status(args : Array[String]) -> Unit {
+  guard proxy_takeover_update_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --enabled")
+    return
+  }
+  check_json_post_endpoint(args, path, "Proxy")
+}
+
+///|
 async fn check_proxy_running(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/running")
 }
@@ -481,6 +546,113 @@ fn proxy_circuit_config_update_path(args : Array[String]) -> String? {
     cli_query_pair("minRequests", min_requests),
   ].join("&")
   Some("/proxy/circuit-breaker-config?\{query}")
+}
+
+///|
+fn proxy_global_config_update_path(
+  args : Array[String],
+  path : String,
+) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--proxy-enabled", "--proxyEnabled") {
+    Some(value) => query.push(cli_query_pair("proxyEnabled", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--listen-address", "--listenAddress") {
+    Some(value) => query.push(cli_query_pair("listenAddress", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--listen-port", "--listenPort") {
+    Some(value) => query.push(cli_query_pair("listenPort", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--enable-logging", "--enableLogging") {
+    Some(value) => query.push(cli_query_pair("enableLogging", value))
+    None => ()
+  }
+  if query.is_empty() {
+    path
+  } else {
+    "\{path}?\{query.join("&")}"
+  }
+}
+
+///|
+fn proxy_app_config_update_path(args : Array[String]) -> String {
+  let app_type = parse_string_arg(args, "--app-type").unwrap_or("claude")
+  let query : Array[String] = [cli_query_pair("appType", app_type)]
+  match parse_string_arg(args, "--enabled") {
+    Some(value) => query.push(cli_query_pair("enabled", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(
+      args, "--auto-failover-enabled", "--autoFailoverEnabled",
+    ) {
+    Some(value) => query.push(cli_query_pair("autoFailoverEnabled", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--max-retries", "--maxRetries") {
+    Some(value) => query.push(cli_query_pair("maxRetries", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(
+      args, "--streaming-first-byte-timeout", "--streamingFirstByteTimeout",
+    ) {
+    Some(value) =>
+      query.push(cli_query_pair("streamingFirstByteTimeout", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(
+      args, "--streaming-idle-timeout", "--streamingIdleTimeout",
+    ) {
+    Some(value) => query.push(cli_query_pair("streamingIdleTimeout", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(
+      args, "--non-streaming-timeout", "--nonStreamingTimeout",
+    ) {
+    Some(value) => query.push(cli_query_pair("nonStreamingTimeout", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(args, "--failure-threshold", "--failureThreshold") {
+    Some(value) => query.push(cli_query_pair("failureThreshold", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(args, "--success-threshold", "--successThreshold") {
+    Some(value) => query.push(cli_query_pair("successThreshold", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--timeout-seconds", "--timeoutSeconds") {
+    Some(value) => query.push(cli_query_pair("timeoutSeconds", value))
+    None => ()
+  }
+  match
+    parse_string_arg_any(args, "--error-rate-threshold", "--errorRateThreshold") {
+    Some(value) => query.push(cli_query_pair("errorRateThreshold", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--min-requests", "--minRequests") {
+    Some(value) => query.push(cli_query_pair("minRequests", value))
+    None => ()
+  }
+  "/proxy/app-config?\{query.join("&")}"
+}
+
+///|
+fn proxy_takeover_update_path(args : Array[String]) -> String? {
+  guard parse_string_arg(args, "--enabled") is Some(enabled) else {
+    return None
+  }
+  let app_type = parse_string_arg(args, "--app-type").unwrap_or("claude")
+  Some(
+    "/proxy/takeover-status?app_type=\{cli_url_encode(app_type)}&enabled=\{cli_url_encode(enabled)}",
+  )
 }
 
 ///|

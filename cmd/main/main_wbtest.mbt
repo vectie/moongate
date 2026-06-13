@@ -114,3 +114,35 @@ test "usage detail path encodes ccs request ids" {
     "/usage/request-detail/session%3Amsg%2F1",
   )
 }
+
+///|
+test "proxy config setter paths encode ccs command arguments" {
+  assert_eq(
+    proxy_global_config_update_path(
+      [
+        "moonstat", "proxy", "global-config", "set", "--proxy-enabled", "false",
+        "--listen-address", "127.0.0.2", "--listen-port", "17002", "--enable-logging",
+        "off",
+      ],
+      "/proxy/global-config",
+    ),
+    "/proxy/global-config?proxyEnabled=false&listenAddress=127.0.0.2&listenPort=17002&enableLogging=off",
+  )
+  assert_eq(
+    proxy_app_config_update_path([
+      "moonstat", "proxy", "app-config", "set", "--app-type", "codex", "--enabled",
+      "true", "--auto-failover-enabled", "false", "--max-retries", "5", "--streaming-first-byte-timeout",
+      "11", "--streaming-idle-timeout", "22", "--non-streaming-timeout", "33", "--failure-threshold",
+      "7", "--success-threshold", "3", "--timeout-seconds", "44", "--error-rate-threshold",
+      "0.4", "--min-requests", "12",
+    ]),
+    "/proxy/app-config?appType=codex&enabled=true&autoFailoverEnabled=false&maxRetries=5&streamingFirstByteTimeout=11&streamingIdleTimeout=22&nonStreamingTimeout=33&failureThreshold=7&successThreshold=3&timeoutSeconds=44&errorRateThreshold=0.4&minRequests=12",
+  )
+  assert_eq(
+    proxy_takeover_update_path([
+      "moonstat", "proxy", "takeover-status", "set", "--app-type", "codex", "--enabled",
+      "true",
+    ]),
+    Some("/proxy/takeover-status?app_type=codex&enabled=true"),
+  )
+}

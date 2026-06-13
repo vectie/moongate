@@ -229,6 +229,120 @@ test "proxy app config alias matches ccs app config shape" {
 }
 
 ///|
+test "proxy global config state updates ccs config shapes" {
+  let gateway = Gateway::new(port=17006, host="127.0.0.7", model="gpt-5")
+  gateway.proxy_enabled = false
+  gateway.proxy_listen_address = "127.0.0.8"
+  gateway.proxy_listen_port = 17007
+  gateway.proxy_enable_logging = false
+  gateway.proxy_takeover_enabled.set("codex", true)
+  guard gateway.proxy_global_config_json() is Object(global_config) else {
+    fail("expected global config object")
+  }
+  assert_eq(global_config["proxyEnabled"], Json::boolean(false))
+  assert_eq(global_config["listenAddress"], Json::string("127.0.0.8"))
+  assert_eq(global_config["listenPort"], Json::number(17007.0))
+  assert_eq(global_config["enableLogging"], Json::boolean(false))
+  guard gateway.proxy_config_json() is Object(legacy_config) else {
+    fail("expected legacy config object")
+  }
+  assert_eq(legacy_config["listen_address"], Json::string("127.0.0.8"))
+  assert_eq(legacy_config["listen_port"], Json::number(17007.0))
+  assert_eq(legacy_config["enable_logging"], Json::boolean(false))
+  assert_eq(legacy_config["live_takeover_active"], Json::boolean(true))
+  guard gateway.proxy_takeover_status_json() is Object(takeover) else {
+    fail("expected takeover object")
+  }
+  assert_eq(takeover["codex"], Json::boolean(true))
+  assert_eq(takeover["claude"], Json::boolean(false))
+}
+
+///|
+test "proxy app config state updates ccs app fields" {
+  let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
+  gateway.proxy_app_enabled.set("codex", false)
+  gateway.provider_router.set_max_retries("codex", 5)
+  gateway.proxy_streaming_first_byte_timeout.set("codex", 11)
+  gateway.proxy_streaming_idle_timeout.set("codex", 22)
+  gateway.proxy_non_streaming_timeout.set("codex", 33)
+  gateway.provider_router.update_all_configs({
+    failure_threshold: 7,
+    success_threshold: 3,
+    timeout_seconds: 44,
+    error_rate_threshold: 0.4,
+    min_requests: 12,
+  })
+  guard gateway.proxy_app_config_json("codex") is Object(config) else {
+    fail("expected app config object")
+  }
+  assert_eq(config["enabled"], Json::boolean(false))
+  assert_eq(config["maxRetries"], Json::number(5.0))
+  assert_eq(config["streamingFirstByteTimeout"], Json::number(11.0))
+  assert_eq(config["streamingIdleTimeout"], Json::number(22.0))
+  assert_eq(config["nonStreamingTimeout"], Json::number(33.0))
+  assert_eq(config["circuitFailureThreshold"], Json::number(7.0))
+  assert_eq(config["circuitSuccessThreshold"], Json::number(3.0))
+  assert_eq(config["circuitTimeoutSeconds"], Json::number(44.0))
+  assert_eq(config["circuitErrorRateThreshold"], Json::number(0.4))
+  assert_eq(config["circuitMinRequests"], Json::number(12.0))
+}
+
+///|
+test "proxy config request parsers accept ccs camelCase and query aliases" {
+  let config = Some(
+    {
+      "proxyEnabled": Json::boolean(false),
+      "listenAddress": Json::string("127.0.0.10"),
+      "listenPort": Json::number(17010.0),
+      "enableLogging": Json::string("off"),
+      "maxRetries": Json::string("6"),
+      "errorRateThreshold": Json::number(0.35),
+    }.to_json(),
+  )
+  assert_eq(
+    proxy_bool_request("/proxy/global-config", config, ["proxyEnabled"]),
+    Some(false),
+  )
+  assert_eq(
+    proxy_string_request("/proxy/global-config", config, ["listenAddress"]),
+    Some("127.0.0.10"),
+  )
+  assert_eq(
+    proxy_int_request("/proxy/global-config", config, ["listenPort"]),
+    Some(17010),
+  )
+  assert_eq(
+    proxy_bool_request("/proxy/global-config", config, ["enableLogging"]),
+    Some(false),
+  )
+  assert_eq(
+    proxy_int_request("/proxy/app-config", config, ["maxRetries"]),
+    Some(6),
+  )
+  assert_eq(
+    proxy_double_request("/proxy/app-config", config, ["errorRateThreshold"]),
+    Some(0.35),
+  )
+  assert_eq(
+    proxy_bool_request("/proxy/takeover-status?enabled=yes", None, ["enabled"]),
+    Some(true),
+  )
+}
+
+///|
+test "proxy circuit config request parser merges partial app config" {
+  let current = CircuitBreakerConfig::default()
+  let next = proxy_circuit_config_from_request(
+    "/proxy/app-config?failureThreshold=9&errorRateThreshold=0.25",
+    None,
+    current,
+  ).unwrap()
+  assert_eq(next.failure_threshold, 9)
+  assert_eq(next.success_threshold, current.success_threshold)
+  assert_eq(next.error_rate_threshold, 0.25)
+}
+
+///|
 test "proxy pricing config aliases use ccs env-backed defaults" {
   let cost_key = "MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER"
   let source_key = "MOONSTAT_CODEX_PRICING_MODEL_SOURCE"

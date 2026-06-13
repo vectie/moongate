@@ -10,6 +10,15 @@ pub struct Gateway {
   codex_chat_history : CodexChatHistoryStore
   pricing_overrides : Map[String, ModelPricing]
   pricing_deleted_model_ids : Map[String, Bool]
+  mut proxy_enabled : Bool
+  mut proxy_listen_address : String
+  mut proxy_listen_port : Int
+  mut proxy_enable_logging : Bool
+  proxy_takeover_enabled : Map[String, Bool]
+  proxy_app_enabled : Map[String, Bool]
+  proxy_streaming_first_byte_timeout : Map[String, Int]
+  proxy_streaming_idle_timeout : Map[String, Int]
+  proxy_non_streaming_timeout : Map[String, Int]
   logger : @pino.Logger
   started_at_ms : Int
 }
@@ -32,6 +41,15 @@ pub fn Gateway::new(
     codex_chat_history: CodexChatHistoryStore::new(),
     pricing_overrides: Map([], capacity=0),
     pricing_deleted_model_ids: Map([], capacity=0),
+    proxy_enabled: true,
+    proxy_listen_address: host,
+    proxy_listen_port: port,
+    proxy_enable_logging: true,
+    proxy_takeover_enabled: Map([], capacity=0),
+    proxy_app_enabled: Map([], capacity=0),
+    proxy_streaming_first_byte_timeout: Map([], capacity=0),
+    proxy_streaming_idle_timeout: Map([], capacity=0),
+    proxy_non_streaming_timeout: Map([], capacity=0),
     logger,
     started_at_ms: @async.now().to_int(),
   }
@@ -563,11 +581,20 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
     self.handle_proxy_config(w)
   })
+  router.add_handler(@httpx.Method::Post, "/proxy/config", (r, w) => {
+    self.handle_proxy_update_config(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/proxy/global-config", (_, w) => {
     self.handle_proxy_global_config(w)
   })
+  router.add_handler(@httpx.Method::Post, "/proxy/global-config", (r, w) => {
+    self.handle_proxy_update_global_config(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/proxy/app-config", (r, w) => {
     self.handle_proxy_app_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/proxy/app-config", (r, w) => {
+    self.handle_proxy_update_app_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/default-cost-multiplier", (
     r,
@@ -614,6 +641,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(@httpx.Method::Get, "/proxy/takeover-status", (_, w) => {
     self.handle_proxy_takeover_status(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/proxy/takeover-status", (r, w) => {
+    self.handle_proxy_set_takeover_for_app(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/running", (_, w) => {
     self.handle_proxy_running(w)
@@ -2699,16 +2729,28 @@ async fn Gateway::handle_proxy_config(
 ///|
 fn Gateway::proxy_config_json(self : Gateway) -> Json {
   {
-    "listen_address": Json::string(self.host),
-    "listen_port": Json::number(self.port.to_double()),
+    "listen_address": Json::string(self.proxy_listen_address),
+    "listen_port": Json::number(self.proxy_listen_port.to_double()),
     "max_retries": Json::number(3.0),
     "request_timeout": Json::number(600.0),
-    "enable_logging": Json::boolean(true),
-    "live_takeover_active": Json::boolean(false),
+    "enable_logging": Json::boolean(self.proxy_enable_logging),
+    "live_takeover_active": Json::boolean(self.proxy_takeover_active()),
     "streaming_first_byte_timeout": Json::number(60.0),
     "streaming_idle_timeout": Json::number(120.0),
     "non_streaming_timeout": Json::number(600.0),
   }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_update_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.apply_proxy_global_config_request(r, legacy=true) {
+    true => write_usage_json(w, self.proxy_config_json())
+    false => write_usage_bad_request(w, "invalid_proxy_config")
+  }
 }
 
 ///|
@@ -2722,11 +2764,23 @@ async fn Gateway::handle_proxy_global_config(
 ///|
 fn Gateway::proxy_global_config_json(self : Gateway) -> Json {
   {
-    "proxyEnabled": Json::boolean(true),
-    "listenAddress": Json::string(self.host),
-    "listenPort": Json::number(self.port.to_double()),
-    "enableLogging": Json::boolean(true),
+    "proxyEnabled": Json::boolean(self.proxy_enabled),
+    "listenAddress": Json::string(self.proxy_listen_address),
+    "listenPort": Json::number(self.proxy_listen_port.to_double()),
+    "enableLogging": Json::boolean(self.proxy_enable_logging),
   }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_update_global_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.apply_proxy_global_config_request(r) {
+    true => write_usage_json(w, self.proxy_global_config_json())
+    false => write_usage_bad_request(w, "invalid_global_proxy_config")
+  }
 }
 
 ///|
@@ -2747,16 +2801,25 @@ fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
   let circuit = self.provider_router.circuit_config
   {
     "appType": Json::string(app_type),
-    "enabled": Json::boolean(self.provider_router.has_configured_app(app_type)),
+    "enabled": Json::boolean(self.proxy_app_enabled_for_app(app_type)),
     "autoFailoverEnabled": Json::boolean(
       self.provider_router.auto_failover_enabled_for_app(app_type),
     ),
     "maxRetries": Json::number(
       self.provider_router.max_retries_for_app(app_type).to_double(),
     ),
-    "streamingFirstByteTimeout": Json::number(60.0),
-    "streamingIdleTimeout": Json::number(120.0),
-    "nonStreamingTimeout": Json::number(600.0),
+    "streamingFirstByteTimeout": Json::number(
+      self.proxy_streaming_first_byte_timeout
+      .get(app_type)
+      .unwrap_or(60)
+      .to_double(),
+    ),
+    "streamingIdleTimeout": Json::number(
+      self.proxy_streaming_idle_timeout.get(app_type).unwrap_or(120).to_double(),
+    ),
+    "nonStreamingTimeout": Json::number(
+      self.proxy_non_streaming_timeout.get(app_type).unwrap_or(600).to_double(),
+    ),
     "circuitFailureThreshold": Json::number(
       circuit.failure_threshold.to_double(),
     ),
@@ -2767,6 +2830,18 @@ fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
     "circuitErrorRateThreshold": Json::number(circuit.error_rate_threshold),
     "circuitMinRequests": Json::number(circuit.min_requests.to_double()),
   }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_update_app_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.apply_proxy_app_config_request(r) {
+    Some(app_type) => write_usage_json(w, self.proxy_app_config_json(app_type))
+    None => write_usage_bad_request(w, "invalid_app_proxy_config")
+  }
 }
 
 ///|
@@ -2796,6 +2871,146 @@ async fn Gateway::handle_proxy_pricing_model_source(
     w,
     Json::string(default_pricing_model_source_for_app(app_type)),
   )
+}
+
+///|
+async fn Gateway::apply_proxy_global_config_request(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  legacy? : Bool = false,
+) -> Bool {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  let proxy_enabled = proxy_bool_request(r.path, config, [
+    "proxy_enabled", "proxyEnabled", "enabled",
+  ])
+  let listen_address = proxy_string_request(r.path, config, [
+    "listen_address", "listenAddress",
+  ])
+  let listen_port = proxy_int_request(r.path, config, [
+    "listen_port", "listenPort",
+  ])
+  let enable_logging = proxy_bool_request(r.path, config, [
+    "enable_logging", "enableLogging",
+  ])
+  if proxy_enabled is Some(enabled) {
+    self.proxy_enabled = enabled
+  } else if legacy {
+    match proxy_bool_request(r.path, config, ["proxyEnabled"]) {
+      Some(enabled) => self.proxy_enabled = enabled
+      None => ()
+    }
+  }
+  if listen_address is Some(address) {
+    if address.trim().is_empty() {
+      return false
+    }
+    self.proxy_listen_address = address.trim().to_owned()
+  }
+  if listen_port is Some(port) {
+    if port <= 0 || port > 65535 {
+      return false
+    }
+    self.proxy_listen_port = port
+  }
+  if enable_logging is Some(enabled) {
+    self.proxy_enable_logging = enabled
+  }
+  true
+}
+
+///|
+async fn Gateway::apply_proxy_app_config_request(
+  self : Gateway,
+  r : @httpx.RequestReader,
+) -> String? {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  let app_type = match
+    proxy_string_request(r.path, config, ["app_type", "appType"]) {
+    Some(app_type) if !app_type.trim().is_empty() => app_type.trim().to_owned()
+    _ => return None
+  }
+  match proxy_bool_request(r.path, config, ["enabled"]) {
+    Some(enabled) => self.proxy_app_enabled.set(app_type, enabled)
+    None => ()
+  }
+  match
+    proxy_bool_request(r.path, config, [
+      "auto_failover_enabled", "autoFailoverEnabled",
+    ]) {
+    Some(enabled) =>
+      if !self.provider_router.set_auto_failover_ccs(app_type, enabled) {
+        return None
+      }
+    None => ()
+  }
+  match proxy_int_request(r.path, config, ["max_retries", "maxRetries"]) {
+    Some(max_retries) if max_retries >= 0 =>
+      self.provider_router.set_max_retries(app_type, max_retries)
+    Some(_) => return None
+    None => ()
+  }
+  if !self.apply_proxy_app_timeout_config(app_type, r.path, config) {
+    return None
+  }
+  match
+    proxy_circuit_config_from_request(
+      r.path,
+      config,
+      self.provider_router.circuit_config,
+    ) {
+    Some(config) => self.provider_router.update_all_configs(config)
+    None => ()
+  }
+  Some(app_type)
+}
+
+///|
+fn Gateway::apply_proxy_app_timeout_config(
+  self : Gateway,
+  app_type : String,
+  path : StringView,
+  config : Json?,
+) -> Bool {
+  match
+    proxy_int_request(path, config, [
+      "streaming_first_byte_timeout", "streamingFirstByteTimeout",
+    ]) {
+    Some(timeout) if timeout > 0 =>
+      self.proxy_streaming_first_byte_timeout.set(app_type, timeout)
+    Some(_) => return false
+    None => ()
+  }
+  match
+    proxy_int_request(path, config, [
+      "streaming_idle_timeout", "streamingIdleTimeout",
+    ]) {
+    Some(timeout) if timeout > 0 =>
+      self.proxy_streaming_idle_timeout.set(app_type, timeout)
+    Some(_) => return false
+    None => ()
+  }
+  match
+    proxy_int_request(path, config, [
+      "non_streaming_timeout", "nonStreamingTimeout",
+    ]) {
+    Some(timeout) if timeout > 0 =>
+      self.proxy_non_streaming_timeout.set(app_type, timeout)
+    Some(_) => return false
+    None => ()
+  }
+  true
+}
+
+///|
+fn Gateway::proxy_app_enabled_for_app(
+  self : Gateway,
+  app_type : String,
+) -> Bool {
+  self.proxy_app_enabled
+  .get(app_type)
+  .unwrap_or(self.provider_router.has_configured_app(app_type))
 }
 
 ///|
@@ -2999,16 +3214,57 @@ async fn Gateway::handle_proxy_takeover_status(
 }
 
 ///|
-fn Gateway::proxy_takeover_status_json(_self : Gateway) -> Json {
+async fn Gateway::handle_proxy_set_takeover_for_app(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  guard proxy_string_request(r.path, config, ["app_type", "appType"])
+    is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  guard proxy_bool_request(r.path, config, ["enabled"]) is Some(enabled) else {
+    write_usage_bad_request(w, "missing_enabled")
+    return
+  }
+  self.proxy_takeover_enabled.set(app_type, enabled)
+  write_usage_json(w, self.proxy_takeover_status_json())
+}
+
+///|
+fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
   {
-    "claude": Json::boolean(false),
-    "claude-desktop": Json::boolean(false),
-    "codex": Json::boolean(false),
-    "gemini": Json::boolean(false),
-    "opencode": Json::boolean(false),
-    "openclaw": Json::boolean(false),
-    "hermes": Json::boolean(false),
+    "claude": Json::boolean(self.proxy_takeover_for_app("claude")),
+    "claude-desktop": Json::boolean(
+      self.proxy_takeover_for_app("claude-desktop"),
+    ),
+    "codex": Json::boolean(self.proxy_takeover_for_app("codex")),
+    "gemini": Json::boolean(self.proxy_takeover_for_app("gemini")),
+    "opencode": Json::boolean(self.proxy_takeover_for_app("opencode")),
+    "openclaw": Json::boolean(self.proxy_takeover_for_app("openclaw")),
+    "hermes": Json::boolean(self.proxy_takeover_for_app("hermes")),
   }.to_json()
+}
+
+///|
+fn Gateway::proxy_takeover_for_app(self : Gateway, app_type : String) -> Bool {
+  self.proxy_takeover_enabled.get(app_type).unwrap_or(false)
+}
+
+///|
+fn Gateway::proxy_takeover_active(self : Gateway) -> Bool {
+  for
+    app_type in [
+      "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw", "hermes",
+    ] {
+    if self.proxy_takeover_for_app(app_type) {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -3405,6 +3661,213 @@ fn proxy_circuit_config_from_query(path : StringView) -> CircuitBreakerConfig? {
   }
   if circuit_breaker_config_is_valid(config) {
     Some(config)
+  } else {
+    None
+  }
+}
+
+///|
+async fn proxy_json_body(r : @httpx.RequestReader) -> Json? {
+  let body = r.body.read_all().text()
+  if body.trim().is_empty() {
+    return None
+  }
+  Some(@json.parse(body) catch { _ => return None })
+}
+
+///|
+fn proxy_embedded_config(body : Json?) -> Json? {
+  match body {
+    Some(Object(obj)) =>
+      match obj.get("config") {
+        Some(Object(config)) => Some(Json::object(config))
+        _ => body
+      }
+    _ => body
+  }
+}
+
+///|
+fn proxy_bool_request(
+  path : StringView,
+  config : Json?,
+  keys : Array[String],
+) -> Bool? {
+  for key in keys {
+    match usage_query_value(path, key) {
+      Some(value) =>
+        match parse_bool_value(value) {
+          Some(parsed) => return Some(parsed)
+          None => ()
+        }
+      None => ()
+    }
+  }
+  match config {
+    Some(Object(obj)) =>
+      for key in keys {
+        match proxy_json_bool(obj, key) {
+          Some(parsed) => return Some(parsed)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  None
+}
+
+///|
+fn proxy_string_request(
+  path : StringView,
+  config : Json?,
+  keys : Array[String],
+) -> String? {
+  for key in keys {
+    match usage_query_value(path, key) {
+      Some(value) => return Some(value)
+      None => ()
+    }
+  }
+  match config {
+    Some(Object(obj)) =>
+      for key in keys {
+        match obj.get(key) {
+          Some(String(value)) => return Some(value)
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+  None
+}
+
+///|
+fn proxy_int_request(
+  path : StringView,
+  config : Json?,
+  keys : Array[String],
+) -> Int? {
+  for key in keys {
+    match usage_query_value(path, key) {
+      Some(value) =>
+        try @string.parse_int(value, base=10) catch {
+          _ => ()
+        } noraise {
+          parsed => return Some(parsed)
+        }
+      None => ()
+    }
+  }
+  match config {
+    Some(Object(obj)) =>
+      for key in keys {
+        match proxy_json_int(obj, key) {
+          Some(parsed) => return Some(parsed)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  None
+}
+
+///|
+fn proxy_double_request(
+  path : StringView,
+  config : Json?,
+  keys : Array[String],
+) -> Double? {
+  for key in keys {
+    match usage_query_value(path, key) {
+      Some(value) =>
+        match parse_non_negative_decimal_to_double(value) {
+          Some(parsed) => return Some(parsed)
+          None => ()
+        }
+      None => ()
+    }
+  }
+  match config {
+    Some(Object(obj)) =>
+      for key in keys {
+        match obj.get(key) {
+          Some(Number(value, ..)) => return Some(value)
+          Some(String(value)) =>
+            match parse_non_negative_decimal_to_double(value) {
+              Some(parsed) => return Some(parsed)
+              None => ()
+            }
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+  None
+}
+
+///|
+fn proxy_json_bool(obj : Map[String, Json], key : String) -> Bool? {
+  match obj.get(key) {
+    Some(true) => Some(true)
+    Some(false) => Some(false)
+    Some(String(value)) => parse_bool_value(value)
+    _ => None
+  }
+}
+
+///|
+fn proxy_json_int(obj : Map[String, Json], key : String) -> Int? {
+  match obj.get(key) {
+    Some(Number(value, ..)) => Some(value.trunc().to_int())
+    Some(String(value)) =>
+      try @string.parse_int(value, base=10) catch {
+        _ => None
+      } noraise {
+        parsed => Some(parsed)
+      }
+    _ => None
+  }
+}
+
+///|
+fn proxy_circuit_config_from_request(
+  path : StringView,
+  config : Json?,
+  current : CircuitBreakerConfig,
+) -> CircuitBreakerConfig? {
+  let failure_threshold = proxy_int_request(path, config, [
+    "failure_threshold", "failureThreshold",
+  ])
+  let success_threshold = proxy_int_request(path, config, [
+    "success_threshold", "successThreshold",
+  ])
+  let timeout_seconds = proxy_int_request(path, config, [
+    "timeout_seconds", "timeoutSeconds",
+  ])
+  let error_rate_threshold = proxy_double_request(path, config, [
+    "error_rate_threshold", "errorRateThreshold",
+  ])
+  let min_requests = proxy_int_request(path, config, [
+    "min_requests", "minRequests",
+  ])
+  if failure_threshold is None &&
+    success_threshold is None &&
+    timeout_seconds is None &&
+    error_rate_threshold is None &&
+    min_requests is None {
+    return None
+  }
+  let next = {
+    failure_threshold: failure_threshold.unwrap_or(current.failure_threshold),
+    success_threshold: success_threshold.unwrap_or(current.success_threshold),
+    timeout_seconds: timeout_seconds.unwrap_or(current.timeout_seconds),
+    error_rate_threshold: error_rate_threshold.unwrap_or(
+      current.error_rate_threshold,
+    ),
+    min_requests: min_requests.unwrap_or(current.min_requests),
+  }
+  if circuit_breaker_config_is_valid(next) {
+    Some(next)
   } else {
     None
   }

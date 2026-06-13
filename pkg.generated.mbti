@@ -307,6 +307,15 @@ pub struct Gateway {
   codex_chat_history : CodexChatHistoryStore
   pricing_overrides : Map[String, ModelPricing]
   pricing_deleted_model_ids : Map[String, Bool]
+  mut proxy_enabled : Bool
+  mut proxy_listen_address : String
+  mut proxy_listen_port : Int
+  mut proxy_enable_logging : Bool
+  proxy_takeover_enabled : Map[String, Bool]
+  proxy_app_enabled : Map[String, Bool]
+  proxy_streaming_first_byte_timeout : Map[String, Int]
+  proxy_streaming_idle_timeout : Map[String, Int]
+  proxy_non_streaming_timeout : Map[String, Int]
   logger : @pino.Logger
   started_at_ms : Int
 }

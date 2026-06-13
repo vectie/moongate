@@ -78,8 +78,11 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /stats`
 - `GET /proxy/status`
 - `GET /proxy/config`
+- `POST /proxy/config`
 - `GET /proxy/global-config`
+- `POST /proxy/global-config`
 - `GET /proxy/app-config?app_type=claude`
+- `POST /proxy/app-config?app_type=claude&enabled=true`
 - `GET /proxy/default-cost-multiplier?app_type=claude`
 - `GET /proxy/pricing-model-source?app_type=claude`
 - `GET /proxy/provider-health?app_type=claude&provider_id=codex-oauth`
@@ -94,6 +97,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /proxy/auto-failover-enabled?app_type=claude`
 - `POST /proxy/auto-failover-enabled?app_type=claude&enabled=true`
 - `GET /proxy/takeover-status`
+- `POST /proxy/takeover-status?app_type=claude&enabled=true`
 - `GET /proxy/running`
 - `GET /usage/logs`
 - `GET /usage/summary`
@@ -134,10 +138,13 @@ Moonstat currently exposes the ccs-compatible local routes below:
 success/failure counts, active connections, token totals, cache token totals,
 last request time, last error, current provider metadata, and success rate.
 `/proxy/config`, `/proxy/takeover-status`, and `/proxy/running` expose
-standalone HTTP aliases for the ccs proxy command shapes. `/proxy/global-config`,
-`/proxy/app-config`, `/proxy/default-cost-multiplier`, and
-`/proxy/pricing-model-source` expose the ccs v3 global/app config and pricing
-defaults using the same env-backed settings that request accounting uses.
+standalone HTTP aliases for the ccs proxy command shapes. Their POST aliases
+accept either ccs camelCase JSON bodies or query parameters for standalone
+scripts. `/proxy/global-config`, `/proxy/app-config`,
+`/proxy/default-cost-multiplier`, and `/proxy/pricing-model-source` expose the
+ccs v3 global/app config and pricing defaults using the same env-backed
+settings that request accounting uses. Global/app config and takeover setters
+mutate Moonstat's standalone runtime state without requiring the CCS database.
 `/proxy/provider-health`, `/proxy/circuit-breaker-config`,
 `/proxy/circuit-breaker-stats`, and `/proxy/reset-circuit-breaker` expose
 ccs-style failover health and circuit-breaker control over Moonstat's in-memory
