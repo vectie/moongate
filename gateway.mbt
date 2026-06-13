@@ -1581,6 +1581,7 @@ async fn Gateway::post_claude_compatible_provider_json(
   endpoint : String,
   request : Json,
   api_format : String,
+  anthropic_beta : String?,
 ) -> Result[(@http.Response, String), Error] {
   let _ = self
   let base_url = provider.base_url.unwrap()
@@ -1591,7 +1592,11 @@ async fn Gateway::post_claude_compatible_provider_json(
     api_format,
     provider.is_full_url,
   )
-  let headers = claude_compatible_provider_headers(api_key, api_format)
+  let headers = claude_compatible_provider_headers(
+    api_key,
+    api_format,
+    anthropic_beta~,
+  )
   let result = try? @http.post(url, request, headers~)
   match result {
     Ok((response, data)) => Ok((response, data.text()))
@@ -1603,6 +1608,7 @@ async fn Gateway::post_claude_compatible_provider_json(
 fn claude_compatible_provider_headers(
   api_key : String,
   api_format : String,
+  anthropic_beta? : String? = None,
   accept? : String = "application/json",
 ) -> Map[String, String] {
   let headers : Map[String, String] = {
@@ -1613,7 +1619,7 @@ fn claude_compatible_provider_headers(
     "anthropic" => {
       headers["x-api-key"] = api_key
       headers["anthropic-version"] = "2023-06-01"
-      headers["anthropic-beta"] = ccs_claude_code_beta_header()
+      headers["anthropic-beta"] = ccs_claude_code_beta_header(anthropic_beta)
     }
     "gemini_native" => {
       headers["x-goog-api-key"] = api_key
@@ -1625,8 +1631,13 @@ fn claude_compatible_provider_headers(
 }
 
 ///|
-fn ccs_claude_code_beta_header() -> String {
-  "claude-code-20250219"
+fn ccs_claude_code_beta_header(existing_beta : String?) -> String {
+  let claude_code_beta = "claude-code-20250219"
+  match existing_beta {
+    Some(beta) if beta.contains(claude_code_beta) => beta
+    Some(beta) if !beta.trim().is_empty() => "\{claude_code_beta},\{beta}"
+    _ => claude_code_beta
+  }
 }
 
 ///|
@@ -3256,6 +3267,7 @@ async fn Gateway::handle_messages(
     }
     Ok(json) => {
       let session_id = extract_client_session_id(r.headers, json, "claude")
+      let anthropic_beta = r.headers.get("anthropic-beta")
       let anthropic_request_result : Result[AnthropicRequest, Error] = try? @json.from_json(
         json,
       )
@@ -3297,6 +3309,7 @@ async fn Gateway::handle_messages(
               app_type,
               self.selected_provider_chain(app_type),
               [],
+              anthropic_beta,
               session_id,
               w,
             )
@@ -3309,6 +3322,7 @@ async fn Gateway::handle_messages(
               app_type,
               self.selected_provider_chain(app_type),
               [],
+              anthropic_beta,
               session_id,
               w,
             )
@@ -3359,6 +3373,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
+  anthropic_beta : String?,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3376,7 +3391,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   )
   match
     self.post_claude_compatible_provider_json(
-      provider, endpoint, outbound, api_format,
+      provider, endpoint, outbound, api_format, anthropic_beta,
     ) {
     Err(error) => {
       let error_body = "{\"error\":{\"message\":\"Claude upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
@@ -3396,6 +3411,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             app_type,
             providers,
             attempted_provider_ids,
+            anthropic_beta,
             session_id,
             w,
           )
@@ -3425,7 +3441,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           )
           match
             self.post_claude_compatible_provider_json(
-              provider, endpoint, retry_outbound, api_format,
+              provider, endpoint, retry_outbound, api_format, anthropic_beta,
             ) {
             Ok((retry_response, retry_response_body)) => {
               response_code = retry_response.code
@@ -3450,7 +3466,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             )
             match
               self.post_claude_compatible_provider_json(
-                provider, endpoint, retry_outbound, api_format,
+                provider, endpoint, retry_outbound, api_format, anthropic_beta,
               ) {
               Ok((retry_response, retry_response_body)) => {
                 response_code = retry_response.code
@@ -3516,6 +3532,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
               app_type,
               providers,
               attempted_provider_ids,
+              anthropic_beta,
               session_id,
               w,
             )
@@ -4345,6 +4362,7 @@ async fn Gateway::handle_non_streaming_request(
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
+  anthropic_beta : String?,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -4352,7 +4370,7 @@ async fn Gateway::handle_non_streaming_request(
     Some(provider) if provider.can_use_claude_compatible_upstream() => {
       self.forward_non_streaming_claude_compatible_request(
         request, request_json, model, provider, app_type, providers, attempted_provider_ids,
-        session_id, w,
+        anthropic_beta, session_id, w,
       )
       return
     }
@@ -4387,7 +4405,7 @@ async fn Gateway::handle_non_streaming_request(
           self.logger.info("Credentials refreshed, retrying request")
           self.handle_non_streaming_request(
             request, request_json, model, active_provider, app_type, providers, attempted_provider_ids,
-            session_id, w,
+            anthropic_beta, session_id, w,
           )
           return
         }
@@ -4437,6 +4455,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
+  anthropic_beta : String?,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -4466,6 +4485,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     headers=claude_compatible_provider_headers(
       api_key,
       api_format,
+      anthropic_beta~,
       accept="text/event-stream",
     ),
   )
@@ -4487,6 +4507,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
           headers=claude_compatible_provider_headers(
             api_key,
             api_format,
+            anthropic_beta~,
             accept="text/event-stream",
           ),
         )
@@ -4520,6 +4541,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
               app_type,
               providers,
               attempted_provider_ids,
+              anthropic_beta,
               session_id,
               w,
             )
@@ -4553,6 +4575,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
           headers=claude_compatible_provider_headers(
             api_key,
             api_format,
+            anthropic_beta~,
             accept="text/event-stream",
           ),
         )
@@ -4586,6 +4609,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
               app_type,
               providers,
               attempted_provider_ids,
+              anthropic_beta,
               session_id,
               w,
             )
@@ -4620,6 +4644,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
           app_type,
           providers,
           attempted_provider_ids,
+          anthropic_beta,
           session_id,
           w,
         )
@@ -6379,6 +6404,7 @@ async fn Gateway::handle_streaming_request(
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
+  anthropic_beta : String?,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -6386,7 +6412,7 @@ async fn Gateway::handle_streaming_request(
     Some(provider) if provider.can_use_claude_compatible_upstream() => {
       self.forward_streaming_claude_compatible_request(
         request, request_json, model, provider, app_type, providers, attempted_provider_ids,
-        session_id, w,
+        anthropic_beta, session_id, w,
       )
       return
     }
@@ -6421,7 +6447,7 @@ async fn Gateway::handle_streaming_request(
           self.logger.info("Credentials refreshed, retrying request")
           self.handle_streaming_request(
             request, request_json, model, active_provider, app_type, providers, attempted_provider_ids,
-            session_id, w,
+            anthropic_beta, session_id, w,
           )
           return
         }

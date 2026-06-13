@@ -3915,6 +3915,28 @@ test "anthropic claude compatible provider sends ccs claude code beta headers" {
 }
 
 ///|
+test "anthropic claude compatible provider preserves existing beta headers" {
+  let headers = claude_compatible_provider_headers(
+    "anthropic-key",
+    "anthropic",
+    anthropic_beta=Some("interleaved-thinking-2025-05-14"),
+  )
+  assert_eq(
+    headers["anthropic-beta"],
+    "claude-code-20250219,interleaved-thinking-2025-05-14",
+  )
+  let existing = claude_compatible_provider_headers(
+    "anthropic-key",
+    "anthropic",
+    anthropic_beta=Some("claude-code-20250219,interleaved-thinking-2025-05-14"),
+  )
+  assert_eq(
+    existing["anthropic-beta"],
+    "claude-code-20250219,interleaved-thinking-2025-05-14",
+  )
+}
+
+///|
 test "gemini native response converts to anthropic message with usage" {
   let body = @json.parse(
     (
