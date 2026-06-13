@@ -1777,6 +1777,9 @@ fn codex_provider_from_env() -> ProviderRouteTarget? {
       base_url=Some(base_url),
       api_key=Some(api_key),
       is_full_url=codex_base_is_full_url(),
+      settings_config=provider_settings_config_from_env([
+        "MOONSTAT_CODEX_SETTINGS_CONFIG", "CODEX_SETTINGS_CONFIG", "OPENAI_SETTINGS_CONFIG",
+      ]),
     ),
   )
 }
@@ -1826,6 +1829,9 @@ fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
       api_key=Some(api_key),
       is_full_url=claude_base_is_full_url(),
       model_mapping=ccs_model_mapping_from_env(),
+      settings_config=provider_settings_config_from_env([
+        "MOONSTAT_CLAUDE_SETTINGS_CONFIG", "ANTHROPIC_SETTINGS_CONFIG",
+      ]),
     ),
   )
 }
@@ -1873,6 +1879,14 @@ fn env_first_non_empty(keys : Array[String]) -> String? {
     }
   }
   None
+}
+
+///|
+fn provider_settings_config_from_env(keys : Array[String]) -> Json? {
+  match env_first_non_empty(keys) {
+    Some(raw) => Some(@json.parse(raw)) catch { _ => None }
+    None => None
+  }
 }
 
 ///|

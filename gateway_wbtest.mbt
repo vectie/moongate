@@ -360,6 +360,45 @@ test "moonstat default provider router selects suite app targets" {
 }
 
 ///|
+test "claude provider env carries ccs settings config" {
+  let keys = [
+    "MOONSTAT_CLAUDE_BASE_URL", "MOONSTAT_CLAUDE_API_KEY", "MOONSTAT_CLAUDE_SETTINGS_CONFIG",
+  ]
+  for key in keys {
+    @os.unsetenv(key) catch {
+      _ => ()
+    }
+  }
+  @os.setenv("MOONSTAT_CLAUDE_BASE_URL", "https://example.test", overwrite=true)
+  @os.setenv("MOONSTAT_CLAUDE_API_KEY", "secret", overwrite=true)
+  @os.setenv(
+    "MOONSTAT_CLAUDE_SETTINGS_CONFIG",
+    (
+      #|{
+      #|  "modelCatalog": {
+      #|    "models": [
+      #|      { "model": "gpt-4o", "input": ["text"] }
+      #|    ]
+      #|  }
+      #|}
+    ),
+    overwrite=true,
+  )
+  guard claude_provider_from_env("claude") is Some(provider) else {
+    fail("expected provider")
+  }
+  guard provider.settings_config is Some(Object(settings)) else {
+    fail("expected settings config")
+  }
+  assert_true(settings.get("modelCatalog") is Some(_))
+  for key in keys {
+    @os.unsetenv(key) catch {
+      _ => ()
+    }
+  }
+}
+
+///|
 test "gateway records upstream failures into provider router before finish" {
   let gateway = Gateway::new(port=0)
   gateway.provider_router.update_all_configs({
