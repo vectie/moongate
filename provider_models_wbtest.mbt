@@ -219,6 +219,135 @@ test "model url candidates deduplicate" {
 }
 
 ///|
+test "model url target splits origin and path" {
+  guard models_url_target("https://api.example.com/v1/models?x=1") is Ok(target) else {
+    fail("expected target")
+  }
+  assert_eq(target.origin, "https://api.example.com")
+  assert_eq(target.path, "/v1/models?x=1")
+}
+
+///|
+test "model url target defaults empty path" {
+  guard models_url_target("https://api.example.com") is Ok(target) else {
+    fail("expected target")
+  }
+  assert_eq(target.origin, "https://api.example.com")
+  assert_eq(target.path, "/")
+}
+
+///|
+test "model url target preserves query without path" {
+  guard models_url_target("https://api.example.com?api-version=1") is Ok(target) else {
+    fail("expected target")
+  }
+  assert_eq(target.origin, "https://api.example.com")
+  assert_eq(target.path, "/?api-version=1")
+}
+
+///|
+test "model url target rejects invalid url" {
+  assert_true(models_url_target("api.example.com/v1/models") is Err(_))
+}
+
+///|
+test "parse provider models response sorts openai data" {
+  let models = parse_models_response_body(
+    (
+      #|{
+      #|  "object": "list",
+      #|  "data": [
+      #|    { "id": "z-model", "object": "model", "owned_by": "z" },
+      #|    { "id": "a-model", "object": "model", "owned_by": "a" }
+      #|  ]
+      #|}
+    ),
+  )
+  guard models is Ok(models) else { fail("expected models") }
+  assert_fetched_model_ids(models, ["a-model", "z-model"])
+  assert_true(models[0].owned_by is Some("a"))
+  assert_true(models[1].owned_by is Some("z"))
+}
+
+///|
+test "parse provider models response allows missing owned by" {
+  let models = parse_models_response_body(
+    (
+      #|{
+      #|  "data": [
+      #|    { "id": "my-model", "object": "model" }
+      #|  ]
+      #|}
+    ),
+  )
+  guard models is Ok(models) else { fail("expected models") }
+  assert_eq(models.length(), 1)
+  assert_eq(models[0].id, "my-model")
+  assert_true(models[0].owned_by is None)
+}
+
+///|
+test "parse provider models response defaults missing data to empty" {
+  let models = parse_models_response_body(
+    (
+      #|{
+      #|  "object": "list"
+      #|}
+    ),
+  )
+  guard models is Ok(models) else { fail("expected models") }
+  assert_eq(models.length(), 0)
+}
+
+///|
+test "parse provider models response rejects malformed entry" {
+  assert_true(
+    parse_models_response_body(
+      (
+        #|{
+        #|  "data": [
+        #|    { "object": "model" }
+        #|  ]
+        #|}
+      ),
+    )
+    is Err(_),
+  )
+  assert_true(
+    parse_models_response_body(
+      (
+        #|{
+        #|  "data": [
+        #|    { "id": "ok", "owned_by": 1 }
+        #|  ]
+        #|}
+      ),
+    )
+    is Err(_),
+  )
+}
+
+///|
+test "provider model fetch error body truncates long text" {
+  let long = "x".repeat(520)
+  let truncated = truncate_model_fetch_error_body(long)
+  assert_eq(truncated.length(), 515)
+  assert_true(truncated.has_suffix("..."))
+}
+
+///|
+async test "fetch provider models rejects empty api key before network" {
+  let result = fetch_models("https://api.example.com", "", false, None, None)
+  assert_true(result is Err("API Key is required to fetch models"))
+}
+
+///|
+async test "fetch provider models rejects empty base url before network" {
+  let result = fetch_models("", "sk-test", false, None, None)
+  assert_true(result is Err("Base URL is empty"))
+}
+
+///|
 fn assert_model_url_candidates(
   actual : Result[Array[String], String],
   expected : Array[String],
@@ -227,5 +356,16 @@ fn assert_model_url_candidates(
   assert_eq(candidates.length(), expected.length())
   for i in 0..<expected.length() {
     assert_eq(candidates[i], expected[i])
+  }
+}
+
+///|
+fn assert_fetched_model_ids(
+  models : Array[FetchedModel],
+  expected : Array[String],
+) -> Unit raise {
+  assert_eq(models.length(), expected.length())
+  for i in 0..<expected.length() {
+    assert_eq(models[i].id, expected[i])
   }
 }

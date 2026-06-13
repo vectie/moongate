@@ -16,6 +16,8 @@ pub fn build_models_url_candidates(String, Bool, String?) -> Result[Array[String
 
 pub fn convert_anthropic_to_codex(AnthropicRequest, String) -> CodexInput
 
+pub async fn fetch_models(String, String, Bool, String?, String?) -> Result[Array[FetchedModel], String]
+
 pub fn normalize_gemini_model_id(String) -> String
 
 pub fn token_usage_from_claude_response(Json) -> TokenUsage?
@@ -139,6 +141,11 @@ pub struct CodexTool {
   parameters : Json
 }
 pub impl ToJson for CodexTool
+
+pub struct FetchedModel {
+  id : String
+  owned_by : String?
+}
 
 pub struct Gateway {
   host : String
