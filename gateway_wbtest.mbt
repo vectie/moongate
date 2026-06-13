@@ -1098,6 +1098,7 @@ test "gateway activation can exclude already attempted failover providers" {
   for provider in providers {
     gateway.provider_router.upsert_provider(provider)
   }
+  gateway.provider_router.set_auto_failover("codex", true)
   let selected = gateway.activate_first_available_provider_excluding(
     "codex",
     providers,
@@ -1176,6 +1177,73 @@ test "gateway retryable upstream status activates next failover provider" {
   assert_true(stats.state == Open)
   assert_true(stats.total_requests == 1)
   assert_true(stats.failed_requests == 1)
+}
+
+///|
+test "gateway retryable upstream status respects ccs max retries cap before permits" {
+  let gateway = Gateway::new(port=0)
+  gateway.provider_router.update_all_configs({
+    failure_threshold: 1,
+    success_threshold: 2,
+    timeout_seconds: 0,
+    error_rate_threshold: 0.6,
+    min_requests: 10,
+  })
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-alt",
+      provider_name="Codex Alt",
+    ),
+  )
+  gateway.provider_router.set_failover_queue("codex", [
+    "codex-oauth", "codex-alt",
+  ])
+  gateway.provider_router.set_auto_failover("codex", true)
+  gateway.provider_router.set_max_retries("codex", 0)
+  gateway.provider_router.record_result(
+    "codex-alt",
+    "codex",
+    false,
+    false,
+    now_ms=1000,
+  )
+  let selection = gateway.provider_router.select_providers("codex", now_ms=1000)
+  assert_true(selection.is_ok())
+  assert_eq(selection.providers.length(), 2)
+
+  gateway.stats.record_inbound(10)
+  gateway.stats.record_request_context(
+    "codex",
+    "gpt-5",
+    provider_type=Some("codex"),
+  )
+  let first = gateway.activate_first_available_provider(
+    "codex",
+    selection.providers,
+  )
+  guard first is Some(primary) else { fail("expected primary provider") }
+  assert_eq(primary.provider_id, "codex-oauth")
+
+  let attempted : Array[String] = []
+  let next = gateway.activate_next_provider_after_upstream_status(
+    "codex",
+    selection.providers,
+    attempted,
+    502,
+  )
+  assert_true(next is None)
+  assert_eq(attempted.length(), 1)
+  assert_eq(attempted[0], "codex-oauth")
+  assert_eq(gateway.stats.current_provider_id, Some("codex-oauth"))
+
+  let fallback_permit = gateway.provider_router.allow_provider_request(
+    "codex-alt",
+    "codex",
+    now_ms=1000,
+  )
+  assert_true(fallback_permit.allowed)
+  assert_true(fallback_permit.used_half_open_permit)
 }
 
 ///|

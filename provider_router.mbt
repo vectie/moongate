@@ -395,6 +395,7 @@ pub struct ProviderRouter {
   current_provider_ids : Map[String, String]
   failover_queues : Map[String, Array[String]]
   auto_failover_enabled : Map[String, Bool]
+  max_retries : Map[String, Int]
   circuit_breakers : Map[String, CircuitBreaker]
   mut circuit_config : CircuitBreakerConfig
 }
@@ -408,6 +409,7 @@ pub fn ProviderRouter::new(
     current_provider_ids: Map([], capacity=0),
     failover_queues: Map([], capacity=0),
     auto_failover_enabled: Map([], capacity=0),
+    max_retries: Map([], capacity=0),
     circuit_breakers: Map([], capacity=0),
     circuit_config,
   }
@@ -441,6 +443,27 @@ pub fn ProviderRouter::set_auto_failover(
   enabled : Bool,
 ) -> Unit {
   self.auto_failover_enabled.set(app_type, enabled)
+}
+
+///|
+pub fn ProviderRouter::set_max_retries(
+  self : ProviderRouter,
+  app_type : String,
+  max_retries : Int,
+) -> Unit {
+  self.max_retries.set(app_type, max_int(max_retries, 0))
+}
+
+///|
+pub fn ProviderRouter::max_attempts_for_app(
+  self : ProviderRouter,
+  app_type : String,
+) -> Int {
+  if self.auto_failover_enabled.get(app_type).unwrap_or(false) {
+    self.max_retries.get(app_type).unwrap_or(3) + 1
+  } else {
+    1
+  }
 }
 
 ///|

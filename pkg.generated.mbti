@@ -337,11 +337,13 @@ pub struct ProviderRouter {
   current_provider_ids : Map[String, String]
   failover_queues : Map[String, Array[String]]
   auto_failover_enabled : Map[String, Bool]
+  max_retries : Map[String, Int]
   circuit_breakers : Map[String, CircuitBreaker]
   mut circuit_config : CircuitBreakerConfig
 }
 pub fn ProviderRouter::allow_provider_request(Self, String, String, now_ms? : Int) -> AllowResult
 pub fn ProviderRouter::get_circuit_breaker_stats(Self, String, String) -> CircuitBreakerStats?
+pub fn ProviderRouter::max_attempts_for_app(Self, String) -> Int
 pub fn ProviderRouter::new(circuit_config? : CircuitBreakerConfig) -> Self
 pub fn ProviderRouter::record_result(Self, String, String, Bool, Bool, now_ms? : Int) -> Unit
 pub fn ProviderRouter::release_permit_neutral(Self, String, String, Bool) -> Unit
@@ -351,6 +353,7 @@ pub fn ProviderRouter::select_providers(Self, String, now_ms? : Int) -> Provider
 pub fn ProviderRouter::set_auto_failover(Self, String, Bool) -> Unit
 pub fn ProviderRouter::set_current_provider(Self, String, String) -> Unit
 pub fn ProviderRouter::set_failover_queue(Self, String, Array[String]) -> Unit
+pub fn ProviderRouter::set_max_retries(Self, String, Int) -> Unit
 pub fn ProviderRouter::update_all_configs(Self, CircuitBreakerConfig) -> Unit
 pub fn ProviderRouter::upsert_provider(Self, ProviderRouteTarget) -> Unit
 
