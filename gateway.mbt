@@ -373,8 +373,8 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/stats", (_, w) => {
     self.handle_stats(w)
   })
-  router.add_handler(@httpx.Method::Get, "/usage/logs", (_, w) => {
-    self.handle_usage_logs(w)
+  router.add_handler(@httpx.Method::Get, "/usage/logs", (r, w) => {
+    self.handle_usage_logs(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/summary", (_, w) => {
     self.handle_usage_summary(w)
@@ -1698,11 +1698,30 @@ async fn Gateway::handle_stats(
 ///|
 async fn Gateway::handle_usage_logs(
   self : Gateway,
+  r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  w.write(self.stats.usage_logs_json().stringify(indent=2))
+  let filters = RequestLogFilters::new(
+    app_type=usage_query_value_any(r.path, "app_type", "appType"),
+    provider_name=usage_query_value_any(r.path, "provider_name", "providerName"),
+    model=usage_query_value(r.path, "model"),
+    status_code=usage_query_int_any(r.path, "status_code", "statusCode"),
+    start_date=usage_query_int_any(r.path, "start_date", "startDate"),
+    end_date=usage_query_int_any(r.path, "end_date", "endDate"),
+  )
+  w.write(
+    self.stats
+    .usage_logs_paginated_json(
+      filters,
+      page=usage_query_int(r.path, "page").unwrap_or(0),
+      page_size=usage_query_int_any(r.path, "page_size", "pageSize").unwrap_or(
+        100,
+      ),
+    )
+    .stringify(indent=2),
+  )
   w.flush()
 }
 
@@ -1916,6 +1935,19 @@ fn usage_query_int_any(
   right_key : String,
 ) -> Int? {
   match usage_query_value_any(path, left_key, right_key) {
+    Some(value) =>
+      try @string.parse_int(value, base=10) catch {
+        _ => None
+      } noraise {
+        parsed => Some(parsed)
+      }
+    None => None
+  }
+}
+
+///|
+fn usage_query_int(path : StringView, key : String) -> Int? {
+  match usage_query_value(path, key) {
     Some(value) =>
       try @string.parse_int(value, base=10) catch {
         _ => None

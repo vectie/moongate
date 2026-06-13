@@ -225,6 +225,127 @@ test "traffic stats keeps request log retention bounded" {
 }
 
 ///|
+test "usage logs paginated json matches ccs filters and ordering" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-older",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5",
+      request_model=Some("gpt-5"),
+      pricing_model=Some("gpt-5"),
+      usage=TokenUsage::new(input_tokens=10, output_tokens=2),
+      total_cost_usd="0.000010",
+      status_code=200,
+      latency_ms=11,
+      created_at=100,
+      data_source="proxy",
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-newer",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5-mini",
+      request_model=Some("gpt-5-mini"),
+      pricing_model=Some("gpt-5-mini"),
+      usage=TokenUsage::new(input_tokens=20, output_tokens=3),
+      total_cost_usd="0.000020",
+      status_code=200,
+      latency_ms=22,
+      first_token_ms=Some(7),
+      duration_ms=Some(30),
+      created_at=300,
+      data_source="proxy",
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-failed",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(input_tokens=30, output_tokens=4),
+      total_cost_usd="0.000030",
+      status_code=500,
+      created_at=400,
+      data_source="proxy",
+    ),
+  )
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-claude",
+      provider_id="anthropic",
+      provider_name=Some("Anthropic"),
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      usage=TokenUsage::new(input_tokens=40, output_tokens=5),
+      total_cost_usd="0.000040",
+      status_code=200,
+      created_at=500,
+      data_source="proxy",
+    ),
+  )
+
+  let filters = RequestLogFilters::new(
+    app_type=Some("codex"),
+    provider_name=Some("oauth"),
+    model=Some("gpt-5"),
+    status_code=Some(200),
+    start_date=Some(50),
+    end_date=Some(350),
+  )
+  guard stats.usage_logs_paginated_json(filters, page=0, page_size=1)
+    is Object(first_page) else {
+    fail("expected first page object")
+  }
+  assert_eq(first_page["total"], Json::number(2.0))
+  assert_eq(first_page["page"], Json::number(0.0))
+  assert_eq(first_page["pageSize"], Json::number(1.0))
+  guard first_page["data"] is Array(first_rows) else {
+    fail("expected first page data")
+  }
+  assert_eq(first_rows.length(), 1)
+  guard first_rows[0] is Object(first) else { fail("expected first row") }
+  assert_eq(first["requestId"], Json::string("req-newer"))
+  assert_eq(first["providerId"], Json::string("codex-oauth"))
+  assert_eq(first["providerName"], Json::string("Codex OAuth"))
+  assert_eq(first["appType"], Json::string("codex"))
+  assert_eq(first["model"], Json::string("gpt-5-mini"))
+  assert_eq(first["requestModel"], Json::string("gpt-5-mini"))
+  assert_eq(first["costMultiplier"], Json::string("1.0"))
+  assert_eq(first["inputTokens"], Json::number(20.0))
+  assert_eq(first["outputTokens"], Json::number(3.0))
+  assert_eq(first["totalCostUsd"], Json::string("0.000020"))
+  assert_eq(first["isStreaming"], Json::boolean(false))
+  assert_eq(first["latencyMs"], Json::number(22.0))
+  assert_eq(first["firstTokenMs"], Json::number(7.0))
+  assert_eq(first["durationMs"], Json::number(30.0))
+  assert_eq(first["statusCode"], Json::number(200.0))
+  assert_eq(first["dataSource"], Json::string("proxy"))
+  assert_eq(first["pricingModel"], Json::string("gpt-5-mini"))
+  assert_true(first.get("sessionId") is None)
+  assert_true(first.get("providerType") is None)
+  guard stats.usage_logs_paginated_json(filters, page=1, page_size=1)
+    is Object(second_page) else {
+    fail("expected second page object")
+  }
+  guard second_page["data"] is Array(second_rows) else {
+    fail("expected second page data")
+  }
+  assert_eq(second_rows.length(), 1)
+  guard second_rows[0] is Object(second) else {
+    fail("expected second page row")
+  }
+  assert_eq(second["requestId"], Json::string("req-older"))
+}
+
+///|
 test "request detail lookup returns retained proxy request log" {
   let stats = TrafficStats::new()
   stats.record_request_log(

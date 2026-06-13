@@ -79,6 +79,22 @@ test "usage query helpers parse ccs provider limit parameters" {
 }
 
 ///|
+test "usage query helpers parse ccs request log parameters" {
+  let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=OAuth&model=gpt&statusCode=200&startDate=10&end_date=20"
+  assert_eq(usage_query_int(path, "page"), Some(2))
+  assert_eq(usage_query_int_any(path, "page_size", "pageSize"), Some(25))
+  assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
+  assert_eq(
+    usage_query_value_any(path, "provider_name", "providerName"),
+    Some("OAuth"),
+  )
+  assert_eq(usage_query_value(path, "model"), Some("gpt"))
+  assert_eq(usage_query_int_any(path, "status_code", "statusCode"), Some(200))
+  assert_eq(usage_query_int_any(path, "start_date", "startDate"), Some(10))
+  assert_eq(usage_query_int_any(path, "end_date", "endDate"), Some(20))
+}
+
+///|
 test "codex responses endpoints preserve request query" {
   assert_eq(
     codex_backend_responses_endpoint(

@@ -491,6 +491,69 @@ pub fn TrafficStats::usage_logs_json(
 }
 
 ///|
+priv struct RequestLogFilters {
+  app_type : String?
+  provider_name : String?
+  model : String?
+  status_code : Int?
+  start_date : Int?
+  end_date : Int?
+}
+
+///|
+fn RequestLogFilters::new(
+  app_type? : String? = None,
+  provider_name? : String? = None,
+  model? : String? = None,
+  status_code? : Int? = None,
+  start_date? : Int? = None,
+  end_date? : Int? = None,
+) -> RequestLogFilters {
+  { app_type, provider_name, model, status_code, start_date, end_date }
+}
+
+///|
+fn TrafficStats::usage_logs_paginated_json(
+  self : TrafficStats,
+  filters : RequestLogFilters,
+  page? : Int = 0,
+  page_size? : Int = 100,
+) -> Json {
+  let page = max_int(page, 0)
+  let page_size = max_int(page_size, 0)
+  let rows : Array[RequestLog] = []
+  for log in self.request_logs {
+    if self.request_log_is_effective(log) &&
+      request_log_matches_filters(log, filters) {
+      rows.push(log)
+    }
+  }
+  rows.sort_by(fn(left, right) {
+    let created_order = right.created_at.compare(left.created_at)
+    if created_order != 0 {
+      created_order
+    } else {
+      right.request_id.compare(left.request_id)
+    }
+  })
+  let data : Array[Json] = []
+  let total = rows.length()
+  let start = page * page_size
+  let end = request_log_min_int(start + page_size, total)
+  if start < total {
+    for i in start..<end {
+      data.push(rows[i].to_ccs_request_log_detail_json())
+    }
+  }
+  {
+    "data": Json::array(data),
+    "total": Json::number(total.to_double()),
+    "page": Json::number(page.to_double()),
+    "pageSize": Json::number(page_size.to_double()),
+  }.to_json()
+}
+
+///|
 pub fn TrafficStats::usage_summary_json(
   self : TrafficStats,
   app_type? : String? = None,
@@ -915,6 +978,110 @@ fn request_log_matches_app(log : RequestLog, app_type : String?) -> Bool {
   match app_type {
     Some(filter) if !filter.is_empty() => log.app_type == filter
     _ => true
+  }
+}
+
+///|
+fn request_log_matches_filters(
+  log : RequestLog,
+  filters : RequestLogFilters,
+) -> Bool {
+  if !request_log_matches_app(log, filters.app_type) {
+    return false
+  }
+  match filters.provider_name {
+    Some(filter) =>
+      if !request_log_text_contains(request_log_provider_name(log), filter) {
+        return false
+      }
+    _ => ()
+  }
+  match filters.model {
+    Some(filter) if !request_log_text_contains(log.model, filter) =>
+      return false
+    _ => ()
+  }
+  match filters.status_code {
+    Some(status) if log.status_code != status => return false
+    _ => ()
+  }
+  match filters.start_date {
+    Some(start) if log.created_at < start => return false
+    _ => ()
+  }
+  match filters.end_date {
+    Some(end) if log.created_at > end => return false
+    _ => ()
+  }
+  true
+}
+
+///|
+fn request_log_text_contains(value : String, needle : String) -> Bool {
+  needle.is_empty() || value.to_lower().contains(needle.to_lower())
+}
+
+///|
+fn request_log_min_int(left : Int, right : Int) -> Int {
+  if left < right {
+    left
+  } else {
+    right
+  }
+}
+
+///|
+fn RequestLog::to_ccs_request_log_detail_json(self : RequestLog) -> Json {
+  let obj : Map[String, Json] = {
+    "requestId": Json::string(self.request_id),
+    "providerId": Json::string(self.provider_id),
+    "providerName": Json::string(request_log_provider_name(self)),
+    "appType": Json::string(self.app_type),
+    "model": Json::string(self.model),
+    "costMultiplier": Json::string(self.cost_multiplier),
+    "inputTokens": Json::number(self.input_tokens.to_double()),
+    "outputTokens": Json::number(self.output_tokens.to_double()),
+    "cacheReadTokens": Json::number(self.cache_read_tokens.to_double()),
+    "cacheCreationTokens": Json::number(self.cache_creation_tokens.to_double()),
+    "inputCostUsd": Json::string(self.input_cost_usd),
+    "outputCostUsd": Json::string(self.output_cost_usd),
+    "cacheReadCostUsd": Json::string(self.cache_read_cost_usd),
+    "cacheCreationCostUsd": Json::string(self.cache_creation_cost_usd),
+    "totalCostUsd": Json::string(self.total_cost_usd),
+    "isStreaming": Json::boolean(self.is_streaming),
+    "latencyMs": Json::number(self.latency_ms.to_double()),
+    "firstTokenMs": optional_int_json(self.first_token_ms),
+    "durationMs": optional_int_json(self.duration_ms),
+    "statusCode": Json::number(self.status_code.to_double()),
+    "errorMessage": optional_string_json(self.error_message),
+    "createdAt": Json::number(self.created_at.to_double()),
+  }
+  match self.request_model {
+    Some(model) => obj.set("requestModel", Json::string(model))
+    None => ()
+  }
+  if !self.data_source.is_empty() {
+    obj.set("dataSource", Json::string(request_log_data_source(self)))
+  }
+  match self.pricing_model {
+    Some(model) => obj.set("pricingModel", Json::string(model))
+    None => ()
+  }
+  Json::object(obj)
+}
+
+///|
+fn request_log_provider_name(log : RequestLog) -> String {
+  match log.provider_name {
+    Some(name) if !name.is_empty() => name
+    _ =>
+      match log.provider_id {
+        "_session" => "Claude (Session)"
+        "_codex_session" => "Codex (Session)"
+        "_gemini_session" => "Gemini (Session)"
+        "_opencode_session" => "OpenCode (Session)"
+        provider_id => provider_id
+      }
   }
 }
 
