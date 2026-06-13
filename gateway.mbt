@@ -557,6 +557,18 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/stats", (_, w) => {
     self.handle_stats(w)
   })
+  router.add_handler(@httpx.Method::Get, "/proxy/status", (_, w) => {
+    self.handle_proxy_status(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
+    self.handle_proxy_config(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/proxy/takeover-status", (_, w) => {
+    self.handle_proxy_takeover_status(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/proxy/running", (_, w) => {
+    self.handle_proxy_running(w)
+  })
   router.add_handler(@httpx.Method::Get, "/usage/logs", (r, w) => {
     self.handle_usage_logs(r, w)
   })
@@ -2605,6 +2617,83 @@ async fn Gateway::handle_stats(
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(self.stats.to_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+async fn Gateway::handle_proxy_status(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(self.proxy_status_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+fn Gateway::proxy_status_json(self : Gateway) -> Json {
+  self.stats.status_json(self.host, self.port, self.uptime_seconds())
+}
+
+///|
+async fn Gateway::handle_proxy_config(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(self.proxy_config_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+fn Gateway::proxy_config_json(self : Gateway) -> Json {
+  {
+    "listen_address": Json::string(self.host),
+    "listen_port": Json::number(self.port.to_double()),
+    "max_retries": Json::number(3.0),
+    "request_timeout": Json::number(600.0),
+    "enable_logging": Json::boolean(true),
+    "live_takeover_active": Json::boolean(false),
+    "streaming_first_byte_timeout": Json::number(60.0),
+    "streaming_idle_timeout": Json::number(120.0),
+    "non_streaming_timeout": Json::number(600.0),
+  }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_takeover_status(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(self.proxy_takeover_status_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+fn Gateway::proxy_takeover_status_json(_self : Gateway) -> Json {
+  {
+    "claude": Json::boolean(false),
+    "claude-desktop": Json::boolean(false),
+    "codex": Json::boolean(false),
+    "gemini": Json::boolean(false),
+    "opencode": Json::boolean(false),
+    "openclaw": Json::boolean(false),
+    "hermes": Json::boolean(false),
+  }.to_json()
+}
+
+///|
+async fn Gateway::handle_proxy_running(
+  _self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(Json::boolean(true).stringify())
   w.flush()
 }
 

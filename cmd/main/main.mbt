@@ -20,6 +20,10 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["status", ..] => check_status(arr)
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
+    ["proxy", "status", ..] => check_proxy_status(arr)
+    ["proxy", "config", ..] => check_proxy_config(arr)
+    ["proxy", "takeover-status", ..] => check_proxy_takeover_status(arr)
+    ["proxy", "running", ..] => check_proxy_running(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
     ["usage", "summary", ..] => check_usage_summary(arr)
     ["usage", "apps", ..] => check_usage_apps(arr)
@@ -75,6 +79,10 @@ fn print_help() -> Unit {
   println("  suite write-status        Write ~/.moonstat/suite-status.json")
   println("  status      Check reroute and gateway status")
   println("  stats       Show gateway traffic statistics")
+  println("  proxy status           Show ccs-style proxy server status")
+  println("  proxy config           Show ccs-style proxy server config")
+  println("  proxy takeover-status  Show ccs-style app takeover status")
+  println("  proxy running          Show ccs-style proxy running boolean")
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage summary    Show ccs-style usage summary")
   println("  usage apps       Show ccs-style usage summary by app")
@@ -121,6 +129,7 @@ fn print_help() -> Unit {
   )
   println("  moonstat suite write-status --port 15721")
   println("  claude                         # Use Claude CLI through moonstat")
+  println("  moonstat proxy status          # Show ccs-style proxy status")
   println("  moonstat stats                 # Show traffic counters")
   println("  moonstat usage logs            # Show recent request logs")
   println("  moonstat usage summary         # Show aggregate token/cost usage")
@@ -201,6 +210,31 @@ async fn check_stats(args : Array[String]) -> Unit {
   } catch {
     err => logger.error("Stats check failed: \{err}")
   }
+}
+
+///|
+async fn check_proxy_status(args : Array[String]) -> Unit {
+  check_proxy_endpoint(args, "/proxy/status")
+}
+
+///|
+async fn check_proxy_config(args : Array[String]) -> Unit {
+  check_proxy_endpoint(args, "/proxy/config")
+}
+
+///|
+async fn check_proxy_takeover_status(args : Array[String]) -> Unit {
+  check_proxy_endpoint(args, "/proxy/takeover-status")
+}
+
+///|
+async fn check_proxy_running(args : Array[String]) -> Unit {
+  check_proxy_endpoint(args, "/proxy/running")
+}
+
+///|
+async fn check_proxy_endpoint(args : Array[String], path : String) -> Unit {
+  check_json_endpoint(args, path, "Proxy")
 }
 
 ///|
@@ -489,6 +523,15 @@ async fn delete_usage_pricing(args : Array[String]) -> Unit {
 
 ///|
 async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
+  check_json_endpoint(args, path, "Usage")
+}
+
+///|
+async fn check_json_endpoint(
+  args : Array[String],
+  path : String,
+  label : String,
+) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
   try {
@@ -499,10 +542,10 @@ async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
       let body = client.read_all().text()
       println(body)
     } else {
-      logger.error("Usage logs check failed: \{response.code}")
+      logger.error("\{label} check failed: \{response.code}")
     }
   } catch {
-    err => logger.error("Usage logs check failed: \{err}")
+    err => logger.error("\{label} check failed: \{err}")
   }
 }
 

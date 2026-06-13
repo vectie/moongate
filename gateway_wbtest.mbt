@@ -154,6 +154,64 @@ test "provider selection errors use ccs proxy error codes" {
 }
 
 ///|
+test "proxy config alias matches ccs default shape" {
+  let gateway = Gateway::new(port=17001, host="127.0.0.2", model="gpt-5")
+  guard gateway.proxy_config_json() is Object(config) else {
+    fail("expected proxy config object")
+  }
+  assert_eq(config["listen_address"], Json::string("127.0.0.2"))
+  assert_eq(config["listen_port"], Json::number(17001.0))
+  assert_eq(config["max_retries"], Json::number(3.0))
+  assert_eq(config["request_timeout"], Json::number(600.0))
+  assert_eq(config["enable_logging"], Json::boolean(true))
+  assert_eq(config["live_takeover_active"], Json::boolean(false))
+  assert_eq(config["streaming_first_byte_timeout"], Json::number(60.0))
+  assert_eq(config["streaming_idle_timeout"], Json::number(120.0))
+  assert_eq(config["non_streaming_timeout"], Json::number(600.0))
+}
+
+///|
+test "proxy status alias matches ccs proxy status shape" {
+  let gateway = Gateway::new(port=17002, host="127.0.0.3", model="gpt-5")
+  gateway.stats.record_inbound(16)
+  gateway.stats.record_bad_request()
+  gateway.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  gateway.stats.last_request_at = Some("test-timestamp")
+  guard gateway.proxy_status_json() is Object(status) else {
+    fail("expected proxy status object")
+  }
+  assert_eq(status["running"], Json::boolean(true))
+  assert_eq(status["address"], Json::string("127.0.0.3"))
+  assert_eq(status["port"], Json::number(17002.0))
+  assert_eq(status["active_connections"], Json::number(0.0))
+  assert_eq(status["total_requests"], Json::number(1.0))
+  assert_eq(status["success_requests"], Json::number(0.0))
+  assert_eq(status["failed_requests"], Json::number(1.0))
+  assert_eq(status["success_rate"], Json::number(0.0))
+  assert_eq(status["current_provider"], Json::string("Codex OAuth"))
+  assert_eq(status["current_provider_id"], Json::string("codex-oauth"))
+  assert_eq(status["last_request_at"], Json::string("test-timestamp"))
+  assert_eq(status["last_error"], Json::string("bad_request"))
+  assert_eq(status["failover_count"], Json::number(0.0))
+  assert_true(status.get("active_targets") is Some(_))
+  assert_true(status.get("provider_routes") is None)
+}
+
+///|
+test "proxy takeover status alias is ccs-compatible standalone false state" {
+  let gateway = Gateway::new(port=17003, host="127.0.0.4", model="gpt-5")
+  json_inspect(gateway.proxy_takeover_status_json(), content={
+    "claude": false,
+    "claude-desktop": false,
+    "codex": false,
+    "gemini": false,
+    "opencode": false,
+    "openclaw": false,
+    "hermes": false,
+  })
+}
+
+///|
 test "codex provider forward failures use ccs proxy error shape" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",
