@@ -5,6 +5,7 @@ pub struct Gateway {
   model : String
   mut credentials : @codex.Credentials?
   stats : TrafficStats
+  provider_router : ProviderRouter
   logger : @pino.Logger
   started_at_ms : Int
 }
@@ -22,9 +23,65 @@ pub fn Gateway::new(
     model,
     credentials: None,
     stats: TrafficStats::new(),
+    provider_router: moonstat_default_provider_router(),
     logger,
     started_at_ms: @async.now().to_int(),
   }
+}
+
+///|
+fn moonstat_default_provider_router() -> ProviderRouter {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="codex-oauth",
+      provider_name="Codex OAuth",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude-desktop",
+      provider_id="codex-oauth",
+      provider_name="Codex OAuth",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-oauth",
+      provider_name="Codex OAuth",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="gemini",
+      provider_id="gemini-api-key",
+      provider_name="Gemini API Key",
+    ),
+  )
+  router.set_current_provider("claude", "codex-oauth")
+  router.set_current_provider("claude-desktop", "codex-oauth")
+  router.set_current_provider("codex", "codex-oauth")
+  router.set_current_provider("gemini", "gemini-api-key")
+  router
+}
+
+///|
+fn Gateway::activate_provider(
+  self : Gateway,
+  app_type : String,
+) -> ProviderRouteTarget? {
+  let selected = self.provider_router.select_providers(app_type)
+  guard selected.error is None else { return None }
+  guard selected.providers.length() > 0 else { return None }
+  let provider = selected.providers[0]
+  self.stats.set_active_target(
+    app_type,
+    provider.provider_id,
+    provider.provider_name,
+  )
+  Some(provider)
 }
 
 ///|
@@ -261,7 +318,7 @@ async fn Gateway::handle_codex_responses(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
-  self.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  let _ = self.activate_provider("codex")
   self.stats.record_request_context(
     "codex",
     self.model,
@@ -314,7 +371,7 @@ async fn Gateway::handle_chat_completions(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
-  self.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  let _ = self.activate_provider("codex")
   self.stats.record_request_context(
     "codex",
     self.model,
@@ -376,7 +433,7 @@ async fn Gateway::handle_gemini(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
-  self.stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
+  let _ = self.activate_provider("gemini")
   self.stats.record_request_context(
     "gemini",
     "gemini",
@@ -1021,7 +1078,12 @@ async fn Gateway::handle_status(
   w.write_header(@status.Ok)
   w.write(
     self.stats
-    .status_json(self.host, self.port, self.uptime_seconds())
+    .status_json(
+      self.host,
+      self.port,
+      self.uptime_seconds(),
+      provider_routes=Some(self.provider_router.route_stats_json()),
+    )
     .stringify(indent=2),
   )
   w.flush()
@@ -1323,7 +1385,7 @@ async fn Gateway::handle_claude_desktop_models(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.validate_claude_desktop_gateway_auth(r, w) else { return }
-  self.stats.set_active_target("claude-desktop", "codex-oauth", "Codex OAuth")
+  let _ = self.activate_provider("claude-desktop")
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(claude_desktop_model_list_json().stringify())
@@ -1565,7 +1627,7 @@ async fn Gateway::handle_messages(
   let body = r.body.read_all()
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
-  self.stats.set_active_target(app_type, "codex-oauth", "Codex OAuth")
+  let _ = self.activate_provider(app_type)
   self.stats.record_request_context(
     app_type,
     self.model,

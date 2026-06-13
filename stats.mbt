@@ -1014,8 +1014,9 @@ pub fn TrafficStats::status_json(
   address : String,
   port : Int,
   uptime_seconds : Int,
+  provider_routes? : Json? = None,
 ) -> Json {
-  {
+  let status : Map[String, Json] = {
     "running": Json::boolean(true),
     "address": Json::string(address),
     "port": Json::number(port.to_double()),
@@ -1031,7 +1032,11 @@ pub fn TrafficStats::status_json(
     "last_error": optional_string_json(self.last_error),
     "failover_count": Json::number(self.failover_count.to_double()),
     "active_targets": active_targets_json(self.active_targets),
-  }.to_json()
+  }
+  if provider_routes is Some(routes) {
+    status["provider_routes"] = routes
+  }
+  status.to_json()
 }
 
 ///|

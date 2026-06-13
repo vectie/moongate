@@ -269,3 +269,20 @@ test "codex to anthropic response emits ccs cache usage buckets" {
     "cache_creation_input_tokens": 5,
   })
 }
+
+///|
+test "moonstat default provider router selects suite app targets" {
+  let router = moonstat_default_provider_router()
+  let codex = router.select_providers("codex", now_ms=1000)
+  assert_true(codex.is_ok())
+  assert_eq(codex.providers.length(), 1)
+  assert_eq(codex.providers[0].provider_id, "codex-oauth")
+  let gemini = router.select_providers("gemini", now_ms=1000)
+  assert_true(gemini.is_ok())
+  assert_eq(gemini.providers.length(), 1)
+  assert_eq(gemini.providers[0].provider_id, "gemini-api-key")
+  let claude = router.select_providers("claude-desktop", now_ms=1000)
+  assert_true(claude.is_ok())
+  assert_eq(claude.providers.length(), 1)
+  assert_eq(claude.providers[0].provider_name, "Codex OAuth")
+}

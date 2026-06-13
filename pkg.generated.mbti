@@ -69,6 +69,11 @@ pub struct ActiveTarget {
   provider_name : String
 }
 
+pub struct AllowResult {
+  allowed : Bool
+  used_half_open_permit : Bool
+}
+
 pub struct AnthropicBlock {
   type_ : String
   text : String?
@@ -150,6 +155,51 @@ pub struct AnthropicUsage {
 } derive(Show, @json.FromJson)
 pub impl ToJson for AnthropicUsage
 
+pub struct CircuitBreaker {
+  mut state : CircuitState
+  mut consecutive_failures : Int
+  mut consecutive_successes : Int
+  mut total_requests : Int
+  mut failed_requests : Int
+  mut last_opened_at_ms : Int?
+  mut config : CircuitBreakerConfig
+  mut half_open_requests : Int
+}
+pub fn CircuitBreaker::allow_request(Self, now_ms? : Int) -> AllowResult
+pub fn CircuitBreaker::get_stats(Self) -> CircuitBreakerStats
+pub fn CircuitBreaker::is_available(Self, now_ms? : Int) -> Bool
+pub fn CircuitBreaker::new(config? : CircuitBreakerConfig) -> Self
+pub fn CircuitBreaker::record_failure(Self, Bool, now_ms? : Int) -> Unit
+pub fn CircuitBreaker::record_success(Self, Bool) -> Unit
+pub fn CircuitBreaker::release_half_open_permit(Self) -> Unit
+pub fn CircuitBreaker::reset(Self) -> Unit
+pub fn CircuitBreaker::update_config(Self, CircuitBreakerConfig) -> Unit
+
+pub struct CircuitBreakerConfig {
+  failure_threshold : Int
+  success_threshold : Int
+  timeout_seconds : Int
+  error_rate_threshold : Double
+  min_requests : Int
+}
+pub fn CircuitBreakerConfig::default() -> Self
+
+pub struct CircuitBreakerStats {
+  state : CircuitState
+  consecutive_failures : Int
+  consecutive_successes : Int
+  total_requests : Int
+  failed_requests : Int
+}
+pub fn CircuitBreakerStats::to_json(Self) -> Json
+
+pub enum CircuitState {
+  Closed
+  Open
+  HalfOpen
+} derive(Eq)
+pub fn CircuitState::to_string(Self) -> String
+
 pub struct CodexInput {
   messages : Array[CodexMessage]
   tools : Array[CodexTool]?
@@ -191,6 +241,7 @@ pub struct Gateway {
   model : String
   mut credentials : @codex.Credentials?
   stats : TrafficStats
+  provider_router : ProviderRouter
   logger : @pino.Logger
   started_at_ms : Int
 }
@@ -213,6 +264,51 @@ pub struct ProviderLimitConfig {
   monthly_limit_usd : String?
 }
 pub fn ProviderLimitConfig::new(daily_limit_usd? : String?, monthly_limit_usd? : String?) -> Self
+
+pub struct ProviderRouteTarget {
+  app_type : String
+  provider_id : String
+  provider_name : String
+  enabled : Bool
+}
+pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool) -> Self
+pub fn ProviderRouteTarget::to_json(Self) -> Json
+
+pub struct ProviderRouter {
+  providers : Map[String, Map[String, ProviderRouteTarget]]
+  current_provider_ids : Map[String, String]
+  failover_queues : Map[String, Array[String]]
+  auto_failover_enabled : Map[String, Bool]
+  circuit_breakers : Map[String, CircuitBreaker]
+  mut circuit_config : CircuitBreakerConfig
+}
+pub fn ProviderRouter::allow_provider_request(Self, String, String, now_ms? : Int) -> AllowResult
+pub fn ProviderRouter::get_circuit_breaker_stats(Self, String, String) -> CircuitBreakerStats?
+pub fn ProviderRouter::new(circuit_config? : CircuitBreakerConfig) -> Self
+pub fn ProviderRouter::record_result(Self, String, String, Bool, Bool, now_ms? : Int) -> Unit
+pub fn ProviderRouter::release_permit_neutral(Self, String, String, Bool) -> Unit
+pub fn ProviderRouter::reset_provider_breaker(Self, String, String) -> Unit
+pub fn ProviderRouter::route_stats_json(Self) -> Json
+pub fn ProviderRouter::select_providers(Self, String, now_ms? : Int) -> ProviderSelection
+pub fn ProviderRouter::set_auto_failover(Self, String, Bool) -> Unit
+pub fn ProviderRouter::set_current_provider(Self, String, String) -> Unit
+pub fn ProviderRouter::set_failover_queue(Self, String, Array[String]) -> Unit
+pub fn ProviderRouter::update_all_configs(Self, CircuitBreakerConfig) -> Unit
+pub fn ProviderRouter::upsert_provider(Self, ProviderRouteTarget) -> Unit
+
+pub struct ProviderSelection {
+  providers : Array[ProviderRouteTarget]
+  error : ProviderSelectionError?
+}
+pub fn ProviderSelection::err(ProviderSelectionError) -> Self
+pub fn ProviderSelection::is_ok(Self) -> Bool
+pub fn ProviderSelection::ok(Array[ProviderRouteTarget]) -> Self
+
+pub enum ProviderSelectionError {
+  NoProvidersConfigured
+  AllProvidersCircuitOpen
+} derive(Eq)
+pub fn ProviderSelectionError::to_string(Self) -> String
 
 pub struct RequestLog {
   request_id : String
@@ -342,7 +438,7 @@ pub fn TrafficStats::request_logs_json(Self, limit? : Int) -> Json
 pub async fn TrafficStats::save_persistent_store(Self) -> Unit
 pub fn TrafficStats::set_active_target(Self, String, String, String) -> Unit
 pub fn TrafficStats::set_provider_limits(Self, String, String, daily_limit_usd? : String?, monthly_limit_usd? : String?) -> Unit
-pub fn TrafficStats::status_json(Self, String, Int, Int) -> Json
+pub fn TrafficStats::status_json(Self, String, Int, Int, provider_routes? : Json?) -> Json
 pub async fn TrafficStats::sync_claude_session_logs(Self, projects_dir? : String) -> SessionSyncResult
 pub async fn TrafficStats::sync_codex_session_logs(Self, codex_dir? : String) -> SessionSyncResult
 pub async fn TrafficStats::sync_gemini_session_logs(Self, gemini_dir? : String) -> SessionSyncResult
