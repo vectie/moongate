@@ -88,6 +88,11 @@ fn get_credentials_path() -> String raise Error {
 }
 
 ///|
+fn get_legacy_credentials_path() -> String raise Error {
+  @pathx.join(get_home(), LEGACY_CREDENTIALS_FILE)
+}
+
+///|
 fn get_codex_auth_path() -> String raise Error {
   @pathx.join(get_home(), CODEX_AUTH_FILE)
 }
@@ -148,6 +153,14 @@ pub async fn load_credentials() -> Credentials raise Error {
     let content = @fsx.read_file(path)
     return @json.from_json(@json.parse(content))
   }
+  let legacy_path = get_legacy_credentials_path()
+  if @fsx.exists_as_file(legacy_path) {
+    let content = @fsx.read_file(legacy_path)
+    let credentials : Credentials = @json.from_json(@json.parse(content))
+    save_credentials(credentials)
+    logger.info("Migrated credentials from legacy moonclaw path")
+    return credentials
+  }
   // Try to import from codex CLI
   if try_load_from_codex() is Some(credentials) {
     return credentials
@@ -161,6 +174,10 @@ pub async fn credentials_exist() -> Bool {
   try {
     let path = get_credentials_path()
     if @fsx.exists_as_file(path) {
+      return true
+    }
+    let legacy_path = get_legacy_credentials_path()
+    if @fsx.exists_as_file(legacy_path) {
       return true
     }
     let codex_path = get_codex_auth_path()

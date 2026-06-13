@@ -83,7 +83,7 @@ async fn do_login(_args : Array[String]) -> Unit {
     logger.info("Login successful!")
     logger.info("Email: \{@codex.extract_token_claims(creds.idToken).email}")
     @codex.save_credentials(creds)
-    logger.info("Credentials saved to ~/.moonclaw/codex-credentials.json")
+    logger.info("Credentials saved to ~/.moonstat/codex-credentials.json")
   } catch {
     err => logger.error("Login failed: \{err}")
   }
