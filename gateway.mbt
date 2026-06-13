@@ -3242,34 +3242,15 @@ fn model_pricing_store_json(pricing : ModelPricing, deleted~ : Bool) -> Json {
 
 ///|
 async fn Gateway::handle_models(
-  self : Gateway,
+  _self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  match @codex_config.active_model_catalog_json() {
-    Some(catalog) => w.write(catalog.stringify())
-    None => {
-      let models = live_codex_models_or_fallback(self.model)
-      w.write(codex_models_response_json(models).stringify())
-    }
-  }
+  w.write(
+    ccs_models_endpoint_response_json(@codex_config.active_model_catalog_json()).stringify(),
+  )
   w.flush()
-}
-
-///|
-async fn live_codex_models_or_fallback(
-  default_model : String,
-) -> Array[CodexModel] {
-  try @codex.load_credentials() catch {
-    _ => static_codex_models(default_model)
-  } noraise {
-    creds =>
-      match fetch_codex_oauth_models(creds) {
-        Ok(models) if !models.is_empty() => models
-        _ => static_codex_models(default_model)
-      }
-  }
 }
 
 ///|
