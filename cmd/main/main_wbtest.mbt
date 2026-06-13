@@ -215,4 +215,33 @@ test "proxy config setter paths encode ccs command arguments" {
     ),
     Some("/switch_proxy_provider?provider_id=codex-oauth&app_type=codex"),
   )
+  assert_eq(
+    provider_app_path(
+      ["moonstat", "provider", "list", "--app", "codex"],
+      "/get_providers",
+    ),
+    "/get_providers?app=codex",
+  )
+  assert_eq(
+    provider_id_path(
+      ["moonstat", "provider", "switch", "--app", "codex", "--id", "custom"],
+      "/switch_provider",
+    ),
+    Some("/switch_provider?app=codex&id=custom"),
+  )
+  assert_eq(
+    provider_upsert_path(
+      [
+        "moonstat", "provider", "add", "--app", "codex", "--id", "custom", "--name",
+        "Custom Provider", "--base-url", "https://api.example.com/v1", "--api-key",
+        "sk-test", "--category", "custom", "--enabled", "true", "--add-to-live",
+        "false",
+      ],
+      "/add_provider",
+      require_original=false,
+    ),
+    Some(
+      "/add_provider?app=codex&id=custom&name=Custom%20Provider&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&category=custom&enabled=true&addToLive=false",
+    ),
+  )
 }

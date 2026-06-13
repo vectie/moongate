@@ -679,6 +679,29 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/switch_proxy_provider", (r, w) => {
     self.handle_proxy_switch_provider(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_providers", (r, w) => {
+    self.handle_get_providers(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_current_provider", (r, w) => {
+    self.handle_get_current_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/add_provider", (r, w) => {
+    self.handle_add_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/update_provider", (r, w) => {
+    self.handle_update_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/delete_provider", (r, w) => {
+    self.handle_delete_provider(r, w)
+  })
+  router.add_handler(
+    @httpx.Method::Delete,
+    "/remove_provider_from_live_config",
+    (r, w) => self.handle_remove_provider_from_live_config(r, w),
+  )
+  router.add_handler(@httpx.Method::Post, "/switch_provider", (r, w) => {
+    self.handle_switch_provider(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/proxy/running", (_, w) => {
     self.handle_proxy_running(w)
   })
@@ -3506,6 +3529,170 @@ async fn Gateway::handle_proxy_switch_provider(
 }
 
 ///|
+async fn Gateway::handle_get_providers(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  write_usage_json(w, self.provider_router.providers_ccs_json(app_type))
+}
+
+///|
+async fn Gateway::handle_get_current_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  match self.provider_router.current_provider_id(app_type) {
+    Some(provider_id) => write_usage_json(w, Json::string(provider_id))
+    None => write_usage_bad_request(w, "current_provider_not_found")
+  }
+}
+
+///|
+async fn Gateway::handle_add_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_target_from_request(r.path, body, app_type) is Some(target) else {
+    write_usage_bad_request(w, "invalid_provider")
+    return
+  }
+  let add_to_live = provider_bool_from_request(r.path, body, [
+    "addToLive", "add_to_live",
+  ]).unwrap_or(true)
+  let provider_id = target.provider_id
+  self.provider_router.upsert_provider(target)
+  if add_to_live || self.provider_router.current_provider_id(app_type) is None {
+    self.provider_router.set_current_provider(app_type, provider_id)
+  }
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_update_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_target_from_request(r.path, body, app_type) is Some(target) else {
+    write_usage_bad_request(w, "invalid_provider")
+    return
+  }
+  let original_id = provider_string_from_request(r.path, body, [
+    "originalId", "original_id",
+  ])
+  let was_current = match original_id {
+    Some(original_id) =>
+      self.provider_router.current_provider_id(app_type) == Some(original_id)
+    None => false
+  }
+  if original_id is Some(original_id) && original_id != target.provider_id {
+    ignore(self.provider_router.delete_provider(app_type, original_id))
+  }
+  let provider_id = target.provider_id
+  self.provider_router.upsert_provider(target)
+  if was_current {
+    self.provider_router.set_current_provider(app_type, provider_id)
+  }
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_delete_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  if !self.provider_router.delete_provider(app_type, provider_id) {
+    write_usage_bad_request(w, "provider_not_found")
+    return
+  }
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_remove_provider_from_live_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  if !self.provider_router.remove_provider_from_live_config(
+      app_type, provider_id,
+    ) {
+    write_usage_bad_request(w, "provider_not_found")
+    return
+  }
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_switch_provider(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
+    write_usage_bad_request(w, "missing_provider_id")
+    return
+  }
+  guard self.provider_router.provider_by_id(app_type, provider_id)
+    is Some(provider) else {
+    write_usage_bad_request(w, "provider_not_found")
+    return
+  }
+  self.provider_router.set_current_provider(app_type, provider_id)
+  self.stats.set_active_target(
+    app_type,
+    provider.provider_id,
+    provider.provider_name,
+  )
+  write_usage_json(w, { "warnings": Json::array([]) }.to_json())
+}
+
+///|
 fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
   {
     "claude": Json::boolean(self.proxy_takeover_for_app("claude")),
@@ -4030,6 +4217,117 @@ fn proxy_embedded_config(body : Json?) -> Json? {
       }
     _ => body
   }
+}
+
+///|
+fn provider_app_from_request(path : StringView, body : Json?) -> String? {
+  provider_string_from_request(path, body, ["app", "app_type", "appType"])
+}
+
+///|
+fn provider_id_from_request(path : StringView, body : Json?) -> String? {
+  provider_string_from_request(path, body, ["id", "provider_id", "providerId"])
+}
+
+///|
+fn provider_string_from_request(
+  path : StringView,
+  body : Json?,
+  keys : Array[String],
+) -> String? {
+  match proxy_string_request(path, body, keys) {
+    Some(value) => return Some(value)
+    None => ()
+  }
+  match provider_body_payload(body) {
+    Some(payload) => proxy_string_request(path, Some(payload), keys)
+    None => None
+  }
+}
+
+///|
+fn provider_bool_from_request(
+  path : StringView,
+  body : Json?,
+  keys : Array[String],
+) -> Bool? {
+  match proxy_bool_request(path, body, keys) {
+    Some(value) => return Some(value)
+    None => ()
+  }
+  match provider_body_payload(body) {
+    Some(payload) => proxy_bool_request(path, Some(payload), keys)
+    None => None
+  }
+}
+
+///|
+fn provider_body_payload(body : Json?) -> Json? {
+  match body {
+    Some(Object(obj)) =>
+      match obj.get("provider") {
+        Some(Object(provider)) => Some(Json::object(provider))
+        _ => body
+      }
+    _ => body
+  }
+}
+
+///|
+fn provider_settings_config_from_body(body : Json?) -> Json? {
+  guard provider_body_payload(body) is Some(Object(obj)) else { return None }
+  match obj.get("settingsConfig") {
+    Some(settings) => Some(settings)
+    None =>
+      match obj.get("settings_config") {
+        Some(settings) => Some(settings)
+        None => None
+      }
+  }
+}
+
+///|
+fn provider_target_from_request(
+  path : StringView,
+  body : Json?,
+  app_type : String,
+) -> ProviderRouteTarget? {
+  guard provider_id_from_request(path, body) is Some(provider_id) else {
+    return None
+  }
+  let provider_name = provider_string_from_request(path, body, [
+    "name", "provider_name", "providerName",
+  ]).unwrap_or(provider_id)
+  let enabled = provider_bool_from_request(path, body, ["enabled"]).unwrap_or(
+    true,
+  )
+  let provider_type = provider_string_from_request(path, body, [
+    "category", "provider_type", "providerType",
+  ])
+  let api_format = provider_string_from_request(path, body, [
+    "api_format", "apiFormat",
+  ])
+  let base_url = provider_string_from_request(path, body, [
+    "base_url", "baseUrl", "websiteUrl",
+  ])
+  let api_key = provider_string_from_request(path, body, ["api_key", "apiKey"])
+  let is_full_url = provider_bool_from_request(path, body, [
+    "is_full_url", "isFullUrl", "fullUrl",
+  ]).unwrap_or(false)
+  Some(
+    ProviderRouteTarget::new(
+      app_type~,
+      provider_id~,
+      provider_name~,
+      enabled~,
+      provider_type~,
+      api_format~,
+      base_url~,
+      api_key~,
+      is_full_url~,
+      settings_config=provider_settings_config_from_body(body),
+    ),
+  )
 }
 
 ///|

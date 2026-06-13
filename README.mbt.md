@@ -107,6 +107,13 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /proxy/takeover-status?app_type=claude&enabled=true`
 - `GET /is_live_takeover_active`
 - `POST /switch_proxy_provider?app_type=claude&provider_id=codex-oauth`
+- `GET /get_providers?app=codex`
+- `GET /get_current_provider?app=codex`
+- `POST /add_provider?app=codex&id=custom&name=Custom`
+- `POST /update_provider?app=codex&id=custom&name=Custom`
+- `DELETE /delete_provider?app=codex&id=custom`
+- `DELETE /remove_provider_from_live_config?app=codex&id=custom`
+- `POST /switch_provider?app=codex&id=custom`
 - `GET /proxy/running`
 - `GET /is_proxy_running`
 - `GET /usage/logs`
@@ -174,7 +181,11 @@ shape as ccs, including `failureThreshold`, `successThreshold`,
 existing breakers. `/proxy/failover-queue`,
 `/proxy/available-failover-providers`, and `/proxy/auto-failover-enabled`
 mirror the ccs failover queue and app auto-failover command shapes using
-Moonstat's standalone provider router state.
+Moonstat's standalone provider router state. `/get_providers`,
+`/get_current_provider`, `/add_provider`, `/update_provider`,
+`/delete_provider`, `/remove_provider_from_live_config`, and
+`/switch_provider` mirror ccs provider CRUD/current-provider command shapes
+against that same standalone provider router state.
 `/usage/logs` returns
 recent `proxy_request_logs` rows with ccs-style provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.

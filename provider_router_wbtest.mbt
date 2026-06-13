@@ -401,3 +401,100 @@ test "provider router ccs auto failover enable seeds empty queue" {
   assert_false(router.auto_failover_enabled_for_app("codex"))
   assert_false(router.set_auto_failover_ccs("unknown", true))
 }
+
+///|
+test "provider router exposes ccs provider map and current id" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="a",
+      provider_name="Provider A",
+      provider_type=Some("custom"),
+      base_url=Some("https://api.example.com/v1"),
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="b",
+      provider_name="Provider B",
+    ),
+  )
+  router.set_current_provider("codex", "a")
+  router.set_failover_queue("codex", ["b"])
+  assert_eq(router.current_provider_id("codex"), Some("a"))
+  guard router.providers_ccs_json("codex") is Object(providers) else {
+    fail("expected providers object")
+  }
+  guard providers["a"] is Object(provider_a) else {
+    fail("expected provider a")
+  }
+  assert_eq(provider_a["id"], Json::string("a"))
+  assert_eq(provider_a["name"], Json::string("Provider A"))
+  assert_eq(provider_a["category"], Json::string("custom"))
+  assert_eq(
+    provider_a["websiteUrl"],
+    Json::string("https://api.example.com/v1"),
+  )
+  assert_eq(provider_a["inFailoverQueue"], Json::boolean(false))
+  guard providers["b"] is Object(provider_b) else {
+    fail("expected provider b")
+  }
+  assert_eq(provider_b["inFailoverQueue"], Json::boolean(true))
+}
+
+///|
+test "provider router delete provider updates current and queue" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="a",
+      provider_name="Provider A",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="b",
+      provider_name="Provider B",
+    ),
+  )
+  router.set_current_provider("claude", "a")
+  router.set_failover_queue("claude", ["a", "b"])
+  assert_true(router.delete_provider("claude", "a"))
+  assert_eq(router.current_provider_id("claude"), Some("b"))
+  json_inspect(router.failover_queue_json("claude"), content=[
+    { "providerId": "b", "providerName": "Provider B", "sortIndex": 0 },
+  ])
+  assert_false(router.delete_provider("claude", "missing"))
+}
+
+///|
+test "provider router remove live config preserves stored provider" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="gemini",
+      provider_id="a",
+      provider_name="Provider A",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="gemini",
+      provider_id="b",
+      provider_name="Provider B",
+    ),
+  )
+  router.set_current_provider("gemini", "a")
+  router.set_failover_queue("gemini", ["a"])
+  assert_true(router.remove_provider_from_live_config("gemini", "a"))
+  assert_eq(router.current_provider_id("gemini"), Some("b"))
+  guard router.providers_ccs_json("gemini") is Object(providers) else {
+    fail("expected providers object")
+  }
+  assert_true(providers.get("a") is Some(_))
+  json_inspect(router.failover_queue_json("gemini"), content=[])
+}

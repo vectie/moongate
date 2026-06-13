@@ -605,6 +605,89 @@ fn ProviderRouter::has_configured_app(
 }
 
 ///|
+fn ProviderRouter::current_provider_id(
+  self : ProviderRouter,
+  app_type : String,
+) -> String? {
+  self.current_provider_ids.get(app_type)
+}
+
+///|
+fn ProviderRouter::providers_ccs_json(
+  self : ProviderRouter,
+  app_type : String,
+) -> Json {
+  let queue = self.failover_queues.get(app_type).unwrap_or([])
+  let obj : Map[String, Json] = {}
+  match self.providers.get(app_type) {
+    Some(providers) =>
+      for provider_id in providers.keys() {
+        guard providers.get(provider_id) is Some(provider) else { continue }
+        obj[provider_id] = provider.to_ccs_provider_json(
+          queue.contains(provider.provider_id),
+        )
+      }
+    None => ()
+  }
+  Json::object(obj)
+}
+
+///|
+fn ProviderRouter::delete_provider(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+) -> Bool {
+  guard self.providers.get(app_type) is Some(app_providers) else {
+    return false
+  }
+  guard app_providers.get(provider_id) is Some(_) else { return false }
+  app_providers.remove(provider_id)
+  self.providers.set(app_type, app_providers)
+  self.remove_from_failover_queue(app_type, provider_id)
+  self.circuit_breakers.remove(circuit_key(app_type, provider_id))
+  if self.current_provider_ids.get(app_type) == Some(provider_id) {
+    let mut next_provider_id : String? = None
+    for candidate_id in app_providers.keys() {
+      next_provider_id = Some(candidate_id)
+      break
+    }
+    match next_provider_id {
+      Some(next_provider_id) =>
+        self.current_provider_ids.set(app_type, next_provider_id)
+      None => self.current_provider_ids.remove(app_type)
+    }
+  }
+  true
+}
+
+///|
+fn ProviderRouter::remove_provider_from_live_config(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id : String,
+) -> Bool {
+  guard self.provider_by_id(app_type, provider_id) is Some(_) else {
+    return false
+  }
+  self.remove_from_failover_queue(app_type, provider_id)
+  if self.current_provider_ids.get(app_type) == Some(provider_id) {
+    match self.providers.get(app_type) {
+      Some(app_providers) =>
+        for candidate_id in app_providers.keys() {
+          if candidate_id != provider_id {
+            self.current_provider_ids.set(app_type, candidate_id)
+            return true
+          }
+        }
+      None => ()
+    }
+    self.current_provider_ids.remove(app_type)
+  }
+  true
+}
+
+///|
 fn ProviderRouter::auto_failover_enabled_for_app(
   self : ProviderRouter,
   app_type : String,

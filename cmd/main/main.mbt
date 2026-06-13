@@ -84,6 +84,18 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["proxy", "switch-proxy-provider", ..] => switch_proxy_provider(arr)
     ["proxy", "running", ..] => check_proxy_running(arr)
     ["proxy", "is-proxy-running", ..] => check_proxy_running(arr)
+    ["provider", "list", ..] | ["providers", "list", ..] => check_providers(arr)
+    ["provider", "current", ..] | ["providers", "current", ..] =>
+      check_current_provider(arr)
+    ["provider", "add", ..] | ["providers", "add", ..] => add_provider(arr)
+    ["provider", "update", ..] | ["providers", "update", ..] =>
+      update_provider(arr)
+    ["provider", "delete", ..] | ["providers", "delete", ..] =>
+      delete_provider(arr)
+    ["provider", "remove-live", ..] | ["providers", "remove-live", ..] =>
+      remove_provider_from_live_config(arr)
+    ["provider", "switch", ..] | ["providers", "switch", ..] =>
+      switch_provider(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
     ["usage", "get-request-logs", ..] => check_usage_logs(arr)
     ["usage", "summary", ..] => check_usage_summary(arr)
@@ -197,6 +209,15 @@ fn print_help() -> Unit {
   println("  proxy switch-proxy-provider  Hot-switch current app provider")
   println("  proxy running          Show ccs-style proxy running boolean")
   println("  proxy is-proxy-running  Alias for ccs is_proxy_running")
+  println("  provider list          Alias for ccs get_providers")
+  println("  provider current       Alias for ccs get_current_provider")
+  println("  provider add           Alias for ccs add_provider")
+  println("  provider update        Alias for ccs update_provider")
+  println("  provider delete        Alias for ccs delete_provider")
+  println(
+    "  provider remove-live   Alias for ccs remove_provider_from_live_config",
+  )
+  println("  provider switch        Alias for ccs switch_provider")
   println("  usage logs  Show ccs-style recent proxy_request_logs")
   println("  usage get-request-logs  Alias for ccs get_request_logs")
   println("  usage summary    Show ccs-style usage summary")
@@ -254,6 +275,11 @@ fn print_help() -> Unit {
   println("Proxy config options:")
   println("  --app-type <app>  App type for app-level proxy config")
   println("  --provider-id <id> Provider id for provider-level proxy commands")
+  println("  --id <id>          Provider id for ccs provider CRUD commands")
+  println("  --name <name>      Provider display name for provider add/update")
+  println("  --base-url <url>   Provider API base URL for provider add/update")
+  println("  --api-key <key>    Provider API key for provider add/update")
+  println("  --category <kind>  Provider category for provider add/update")
   println("  --app <app>         App id for ccs usage script commands")
   println("  --script-code <json> JSON UsageResult for ccs testUsageScript")
   println("  --value <value>    Value for ccs proxy scalar setter commands")
@@ -290,6 +316,11 @@ fn print_help() -> Unit {
   println(
     "  moonstat proxy switch-proxy-provider --app-type codex --provider-id codex-oauth",
   )
+  println("  moonstat provider list --app codex")
+  println(
+    "  moonstat provider add --app codex --id custom --name Custom --base-url https://api.example.com/v1 --api-key sk-...",
+  )
+  println("  moonstat provider switch --app codex --id custom")
   println("  moonstat proxy app-config --app-type codex")
   println(
     "  moonstat proxy global-config set --proxy-enabled true --listen-address 127.0.0.1 --listen-port 15721",
@@ -608,6 +639,77 @@ async fn check_proxy_running(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_providers(args : Array[String]) -> Unit {
+  check_json_endpoint(
+    args,
+    provider_app_path(args, "/get_providers"),
+    "Provider",
+  )
+}
+
+///|
+async fn check_current_provider(args : Array[String]) -> Unit {
+  check_json_endpoint(
+    args,
+    provider_app_path(args, "/get_current_provider"),
+    "Provider",
+  )
+}
+
+///|
+async fn add_provider(args : Array[String]) -> Unit {
+  guard provider_upsert_path(args, "/add_provider", require_original=false)
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required provider args: --id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
+async fn update_provider(args : Array[String]) -> Unit {
+  guard provider_upsert_path(args, "/update_provider", require_original=false)
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required provider args: --id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
+async fn delete_provider(args : Array[String]) -> Unit {
+  guard provider_id_path(args, "/delete_provider") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_delete_endpoint(args, path, "Provider")
+}
+
+///|
+async fn remove_provider_from_live_config(args : Array[String]) -> Unit {
+  guard provider_id_path(args, "/remove_provider_from_live_config")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_delete_endpoint(args, path, "Provider")
+}
+
+///|
+async fn switch_provider(args : Array[String]) -> Unit {
+  guard provider_id_path(args, "/switch_provider") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
 async fn check_proxy_endpoint(args : Array[String], path : String) -> Unit {
   check_json_endpoint(args, path, "Proxy")
 }
@@ -640,6 +742,76 @@ fn proxy_provider_endpoint_path(args : Array[String], path : String) -> String? 
   Some(
     "\{path}?provider_id=\{cli_url_encode(provider_id)}&app_type=\{cli_url_encode(app_type)}",
   )
+}
+
+///|
+fn provider_app_arg(args : Array[String]) -> String {
+  parse_string_arg_any(args, "--app", "--app-type").unwrap_or("claude")
+}
+
+///|
+fn provider_id_arg(args : Array[String]) -> String? {
+  match parse_string_arg(args, "--id") {
+    Some(id) => Some(id)
+    None => parse_string_arg(args, "--provider-id")
+  }
+}
+
+///|
+fn provider_app_path(args : Array[String], path : String) -> String {
+  "\{path}?app=\{cli_url_encode(provider_app_arg(args))}"
+}
+
+///|
+fn provider_id_path(args : Array[String], path : String) -> String? {
+  guard provider_id_arg(args) is Some(provider_id) else { return None }
+  Some(
+    "\{path}?app=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}",
+  )
+}
+
+///|
+fn provider_upsert_path(
+  args : Array[String],
+  path : String,
+  require_original~ : Bool,
+) -> String? {
+  guard provider_id_arg(args) is Some(provider_id) else { return None }
+  let name = parse_string_arg(args, "--name").unwrap_or(provider_id)
+  if require_original &&
+    parse_string_arg_any(args, "--original-id", "--originalId") is None {
+    return None
+  }
+  let query : Array[String] = [
+    cli_query_pair("app", provider_app_arg(args)),
+    cli_query_pair("id", provider_id),
+    cli_query_pair("name", name),
+  ]
+  match parse_string_arg_any(args, "--original-id", "--originalId") {
+    Some(value) => query.push(cli_query_pair("originalId", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--base-url", "--baseUrl") {
+    Some(value) => query.push(cli_query_pair("baseUrl", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--api-key", "--apiKey") {
+    Some(value) => query.push(cli_query_pair("apiKey", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--category") {
+    Some(value) => query.push(cli_query_pair("category", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--enabled") {
+    Some(value) => query.push(cli_query_pair("enabled", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--add-to-live", "--addToLive") {
+    Some(value) => query.push(cli_query_pair("addToLive", value))
+    None => ()
+  }
+  Some("\{path}?\{query.join("&")}")
 }
 
 ///|
