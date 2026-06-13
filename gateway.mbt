@@ -5011,6 +5011,23 @@ fn ccs_media_retry_should_trigger(
   response_body : String,
   request_body : Json,
 ) -> Bool {
+  ccs_media_retry_should_trigger_with_config(
+    status_code,
+    response_body,
+    request_body,
+    moonstat_rectifier_config_from_env(),
+  )
+}
+
+///|
+fn ccs_media_retry_should_trigger_with_config(
+  status_code : Int,
+  response_body : String,
+  request_body : Json,
+  config : RectifierConfig,
+) -> Bool {
+  config.enabled &&
+  config.request_media_fallback &&
   contains_image_blocks(request_body) &&
   is_unsupported_image_error_status(status_code, response_body)
 }

@@ -3189,6 +3189,34 @@ test "ccs media retry detects unsupported image upstream errors" {
       body,
     ),
   )
+  assert_false(
+    ccs_media_retry_should_trigger_with_config(
+      400,
+      "{\"error\":{\"message\":\"This model does not support image input\"}}",
+      body,
+      {
+        enabled: true,
+        request_thinking_signature: true,
+        request_thinking_budget: true,
+        request_media_fallback: false,
+        request_media_heuristic: true,
+      },
+    ),
+  )
+  assert_false(
+    ccs_media_retry_should_trigger_with_config(
+      400,
+      "{\"error\":{\"message\":\"This model does not support image input\"}}",
+      body,
+      {
+        enabled: false,
+        request_thinking_signature: true,
+        request_thinking_budget: true,
+        request_media_fallback: true,
+        request_media_heuristic: true,
+      },
+    ),
+  )
 }
 
 ///|
