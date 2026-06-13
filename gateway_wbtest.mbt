@@ -1193,6 +1193,152 @@ test "ccs media sanitizer replaces nested and responses image blocks" {
 }
 
 ///|
+test "ccs media retry detects unsupported image upstream errors" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "xiaomi-mimo-token-plan/mimo-v2.5-pro",
+      #|  "messages": [
+      #|    {
+      #|      "role": "user",
+      #|      "content": [
+      #|        {
+      #|          "type": "image",
+      #|          "source": {
+      #|            "type": "base64",
+      #|            "media_type": "image/png",
+      #|            "data": "AAAA"
+      #|          }
+      #|        }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  assert_true(contains_image_blocks(body))
+  assert_true(
+    ccs_media_retry_should_trigger(
+      400, "{\"error\":{\"message\":\"This model does not support image input\"}}",
+      body,
+    ),
+  )
+  assert_true(
+    ccs_media_retry_should_trigger(
+      415, "{\"error\":{\"message\":\"This model cannot process media inputs\"}}",
+      body,
+    ),
+  )
+  assert_true(
+    ccs_media_retry_should_trigger(
+      422, "{\"message\":\"attachments are not supported by this model\"}", body,
+    ),
+  )
+  assert_true(
+    ccs_media_retry_should_trigger(
+      400,
+      (
+        #|{
+        #|  "error": {
+        #|    "message": "Failed to deserialize the JSON body: unknown variant image_url, expected text"
+        #|  }
+        #|}
+      ),
+      body,
+    ),
+  )
+}
+
+///|
+test "ccs media retry ignores non media errors and bodies without images" {
+  let image_body = @json.parse(
+    (
+      #|{
+      #|  "model": "any-model",
+      #|  "messages": [
+      #|    {
+      #|      "role": "user",
+      #|      "content": [
+      #|        {
+      #|          "type": "image_url",
+      #|          "image_url": { "url": "data:image/png;base64,AAAA" }
+      #|        }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  assert_false(
+    ccs_media_retry_should_trigger(
+      400, "{\"error\":{\"message\":\"Invalid API key\"}}", image_body,
+    ),
+  )
+  assert_false(
+    ccs_media_retry_should_trigger(
+      429, "{\"error\":{\"message\":\"This model does not support image input\"}}",
+      image_body,
+    ),
+  )
+
+  let text_body = @json.parse(
+    (
+      #|{
+      #|  "model": "any-model",
+      #|  "messages": [
+      #|    {
+      #|      "role": "user",
+      #|      "content": [{ "type": "text", "text": "hello" }]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  assert_false(contains_image_blocks(text_body))
+  assert_false(
+    ccs_media_retry_should_trigger(
+      400, "{\"error\":{\"message\":\"This model does not support image input\"}}",
+      text_body,
+    ),
+  )
+}
+
+///|
+test "ccs media retry replacement is unconditional" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "xiaomi-mimo-token-plan/mimo-v2.5-pro",
+      #|  "messages": [
+      #|    {
+      #|      "role": "user",
+      #|      "content": [
+      #|        {
+      #|          "type": "image",
+      #|          "source": {
+      #|            "type": "base64",
+      #|            "media_type": "image/png",
+      #|            "data": "AAAA"
+      #|          }
+      #|        }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  let result = replace_image_blocks_with_marker(body)
+  assert_eq(result.count, 1)
+  guard result.body is Object(obj) else { fail("expected object") }
+  guard obj["messages"] is Array(messages) else { fail("expected messages") }
+  guard messages[0] is Object(message) else { fail("expected message") }
+  guard message["content"] is Array(content) else { fail("expected content") }
+  guard content[0] is Object(marker) else { fail("expected marker") }
+  assert_eq(marker["type"], Json::string("text"))
+  assert_eq(marker["text"], Json::string("[Unsupported Image]"))
+}
+
+///|
 test "openai chat completion converts to anthropic response" {
   let body = @json.parse(
     (

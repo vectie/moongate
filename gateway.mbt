@@ -2925,22 +2925,9 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     old="__MODEL__",
     new=normalize_gemini_model_id(upstream_model),
   )
-  let outbound = if claude_api_format_needs_transform(api_format) {
-    transform_claude_request_for_api_format(
-      upstream_body,
-      api_format,
-      session_id~,
-      explicit_prompt_cache_key=provider.prompt_cache_key,
-      is_codex_oauth=provider.provider_type == Some("codex_oauth"),
-      codex_fast_mode=provider.codex_fast_mode,
-      gemini_shadow_turns=self.gemini_shadow.session_turns(
-        provider.provider_id,
-        session_id,
-      ),
-    )
-  } else {
-    upstream_body
-  }
+  let outbound = self.claude_provider_outbound_body(
+    provider, upstream_body, api_format, session_id,
+  )
   match
     self.post_claude_compatible_provider_json(
       provider, endpoint, outbound, api_format,
@@ -2976,8 +2963,33 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
       w.flush()
     }
     Ok((response, response_body)) => {
-      if response.code is (200..=299) {
-        let parsed = @json.parse(response_body) catch {
+      let mut response_code = response.code
+      let mut final_response_body = response_body
+      if ccs_media_retry_should_trigger(
+          response_code, final_response_body, upstream_body,
+        ) {
+        let retry_body = replace_image_blocks_with_marker(upstream_body)
+        if retry_body.count > 0 {
+          let retry_outbound = self.claude_provider_outbound_body(
+            provider,
+            retry_body.body,
+            api_format,
+            session_id,
+          )
+          match
+            self.post_claude_compatible_provider_json(
+              provider, endpoint, retry_outbound, api_format,
+            ) {
+            Ok((retry_response, retry_response_body)) => {
+              response_code = retry_response.code
+              final_response_body = retry_response_body
+            }
+            Err(_) => ()
+          }
+        }
+      }
+      if response_code is (200..=299) {
+        let parsed = @json.parse(final_response_body) catch {
           _ => {
             self.record_internal_error()
             w.header().set("Content-Type", "application/json")
@@ -3004,15 +3016,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           request.model,
         )
         w.header().set("Content-Type", "application/json")
-        w.write_header(response.code)
+        w.write_header(response_code)
         w.write(anthropic_response.stringify())
       } else {
         if !providers.is_empty() {
           let next = self.activate_next_provider_after_upstream_status(
-            app_type,
-            providers,
-            attempted_provider_ids,
-            response.code,
+            app_type, providers, attempted_provider_ids, response_code,
           )
           if next is Some(provider) {
             self.handle_non_streaming_request(
@@ -3029,13 +3038,42 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             return
           }
         }
-        self.record_upstream_error_status(response_body.length(), response.code)
+        self.record_upstream_error_status(
+          final_response_body.length(),
+          response_code,
+        )
         w.header().set("Content-Type", "application/json")
-        w.write_header(response.code)
-        w.write(response_body)
+        w.write_header(response_code)
+        w.write(final_response_body)
       }
       w.flush()
     }
+  }
+}
+
+///|
+fn Gateway::claude_provider_outbound_body(
+  self : Gateway,
+  provider : ProviderRouteTarget,
+  upstream_body : Json,
+  api_format : String,
+  session_id : String?,
+) -> Json {
+  if claude_api_format_needs_transform(api_format) {
+    transform_claude_request_for_api_format(
+      upstream_body,
+      api_format,
+      session_id~,
+      explicit_prompt_cache_key=provider.prompt_cache_key,
+      is_codex_oauth=provider.provider_type == Some("codex_oauth"),
+      codex_fast_mode=provider.codex_fast_mode,
+      gemini_shadow_turns=self.gemini_shadow.session_turns(
+        provider.provider_id,
+        session_id,
+      ),
+    )
+  } else {
+    upstream_body
   }
 }
 
@@ -3597,6 +3635,135 @@ fn replace_images_for_text_only_model(body : Json) -> MediaReplacementResult {
     return { body: Json::object(obj), count: 0 }
   }
   replace_image_blocks_with_marker(Json::object(obj))
+}
+
+///|
+fn ccs_media_retry_should_trigger(
+  status_code : Int,
+  response_body : String,
+  request_body : Json,
+) -> Bool {
+  contains_image_blocks(request_body) &&
+  is_unsupported_image_error_status(status_code, response_body)
+}
+
+///|
+fn contains_image_blocks(body : Json) -> Bool {
+  match body {
+    Object(obj) =>
+      messages_have_image_blocks(obj) ||
+      responses_input_has_image_blocks(obj.get("input"))
+    _ => false
+  }
+}
+
+///|
+fn messages_have_image_blocks(obj : Map[String, Json]) -> Bool {
+  guard obj.get("messages") is Some(Array(messages)) else { return false }
+  messages.any(message => {
+    match message {
+      Object(message_obj) =>
+        match message_obj.get("content") {
+          Some(content) => content_has_image_blocks(content)
+          None => false
+        }
+      _ => false
+    }
+  })
+}
+
+///|
+fn content_has_image_blocks(content : Json) -> Bool {
+  guard content is Array(blocks) else { return false }
+  blocks.any(block => {
+    if is_image_block(block) {
+      return true
+    }
+    match block {
+      Object(block_obj) =>
+        match block_obj.get("content") {
+          Some(nested) => content_has_image_blocks(nested)
+          None => false
+        }
+      _ => false
+    }
+  })
+}
+
+///|
+fn responses_input_has_image_blocks(input : Json?) -> Bool {
+  match input {
+    Some(Array(items)) =>
+      items.any(item => responses_input_item_has_image_blocks(item))
+    Some(item) => responses_input_item_has_image_blocks(item)
+    _ => false
+  }
+}
+
+///|
+fn responses_input_item_has_image_blocks(item : Json) -> Bool {
+  guard item is Object(item_obj) else { return false }
+  if json_string_from_map(item_obj, "type") == Some("input_image") {
+    return true
+  }
+  match item_obj.get("content") {
+    Some(content) => content_has_image_blocks(content)
+    None => false
+  }
+}
+
+///|
+fn is_unsupported_image_error_status(status_code : Int, body : String) -> Bool {
+  match status_code {
+    400 | 415 | 422 | 501 => ()
+    _ => return false
+  }
+  let message = extract_upstream_error_text(body).to_lower()
+  let mentions_image = message.contains("image") ||
+    message.contains("vision") ||
+    message.contains("multimodal") ||
+    message.contains("multi-modal") ||
+    message.contains("modality") ||
+    message.contains("modalities") ||
+    message.contains("media") ||
+    message.contains("attachment")
+  if !mentions_image {
+    return false
+  }
+  [
+    "unsupported", "not supported", "does not support", "doesn't support", "do not support",
+    "don't support", "only supports text", "text only", "text-only", "invalid content type",
+    "invalid message content", "unknown variant", "unknown content type", "unrecognized content type",
+    "cannot process", "cannot handle", "can't process", "can't handle", "unable to process",
+  ].any(hint => message.contains(hint))
+}
+
+///|
+fn extract_upstream_error_text(body : String) -> String {
+  let parsed = @json.parse(body) catch { _ => return body }
+  match parsed {
+    Object(obj) => {
+      match obj.get("error") {
+        Some(Object(error_obj)) =>
+          match json_string_from_map(error_obj, "message") {
+            Some(message) => return message
+            None => ()
+          }
+        Some(String(message)) => return message
+        _ => ()
+      }
+      match json_string_from_map(obj, "message") {
+        Some(message) => return message
+        None => ()
+      }
+      match json_string_from_map(obj, "detail") {
+        Some(detail) => return detail
+        None => ()
+      }
+      parsed.stringify()
+    }
+    _ => parsed.stringify()
+  }
 }
 
 ///|
