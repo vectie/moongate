@@ -7,6 +7,7 @@ import {
   "moonbitlang/async/io",
   "vectie/moonstat/internal/httpx",
   "vectie/moonstat/internal/httpx/status",
+  "vectie/moonstat/internal/os",
   "vectie/moonstat/internal/pino",
   "vectie/moonstat/internal/uuid",
   "vectie/moonstat/oauth/codex",

@@ -61,10 +61,18 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /v1/chat/completions`
 - `POST /v1/v1/chat/completions`
 - `POST /codex/v1/chat/completions`
+- `GET|POST /v1beta/*path`
+- `GET|POST /gemini/v1beta/*path`
+- `GET|POST /gemini/v1/*path`
 
 `/status` and `/stats` include ccs-style request counts, success/failure
 counts, active connections, token totals, cache token totals, last request time,
 last error, current provider metadata, and success rate.
+
+Gemini routes proxy to `https://generativelanguage.googleapis.com` and accept
+either a `?key=` query parameter or `GEMINI_API_KEY` / `GOOGLE_API_KEY` in the
+environment. Aliased `/gemini/v1beta/...` and `/gemini/v1/...` requests are
+normalized back to the upstream `/v1beta/...` and `/v1/...` paths.
 
 ## Suite Role
 

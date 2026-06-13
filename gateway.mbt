@@ -62,6 +62,17 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/claude-desktop/v1/messages", (r, w) => {
     self.handle_messages(r, w)
   })
+  for method_ in @httpx.methods {
+    router.add_handler(method_, "/v1beta/*path", (r, w) => {
+      self.handle_gemini(r, w)
+    })
+    router.add_handler(method_, "/gemini/v1beta/*path", (r, w) => {
+      self.handle_gemini(r, w)
+    })
+    router.add_handler(method_, "/gemini/v1/*path", (r, w) => {
+      self.handle_gemini(r, w)
+    })
+  }
   router.add_handler(@httpx.Method::Post, "/chat/completions", (r, w) => {
     self.handle_chat_completions(r, w)
   })
@@ -236,6 +247,136 @@ async fn Gateway::handle_chat_completions(
       }
     }
   }
+}
+
+///|
+async fn Gateway::handle_gemini(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = r.body.read_all()
+  let body_str = body.text()
+  self.stats.record_inbound(body_str.length())
+  let request_json : Json = if body_str.is_empty() {
+    Json::null()
+  } else {
+    @json.parse(body_str) catch {
+      _ => {
+        self.stats.record_bad_request()
+        w.header().set("Content-Type", "application/json")
+        w.write_header(@status.BadRequest)
+        w.write(
+          "{\"error\":{\"message\":\"Invalid JSON\",\"type\":\"invalid_request_error\"}}",
+        )
+        w.flush()
+        return
+      }
+    }
+  }
+  let endpoint = normalize_gemini_endpoint(r.path)
+  self.stats.record_stream_mode(
+    gemini_request_is_stream(endpoint, request_json),
+  )
+  let url = match gemini_proxy_url(endpoint) {
+    Some(url) => url
+    None => {
+      self.stats.record_unauthorized()
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.Unauthorized)
+      w.write(
+        "{\"error\":{\"message\":\"Gemini API key not configured. Set GEMINI_API_KEY or pass ?key=.\",\"type\":\"authentication_error\"}}",
+      )
+      w.flush()
+      return
+    }
+  }
+  match r.method_ {
+    @httpx.Method::Get => self.forward_gemini_get(url, w)
+    @httpx.Method::Post => self.forward_gemini_post(url, request_json, w)
+    _ => {
+      self.stats.record_bad_request()
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.MethodNotAllowed)
+      w.write(
+        "{\"error\":{\"message\":\"Gemini proxy currently supports GET and POST\",\"type\":\"invalid_request_error\"}}",
+      )
+      w.flush()
+    }
+  }
+}
+
+///|
+async fn Gateway::forward_gemini_get(
+  self : Gateway,
+  url : String,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let result = try? @http.get(url)
+  match result {
+    Err(error) => {
+      self.stats.record_upstream_error(0)
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.BadGateway)
+      w.write(
+        "{\"error\":{\"message\":\"Gemini upstream request failed: \{error}\",\"type\":\"upstream_error\"}}",
+      )
+    }
+    Ok((response, data)) => {
+      let response_body = data.text()
+      if response.code is (200..=299) {
+        self.stats.record_success_usage(
+          TokenUsage::empty(),
+          response_body.length(),
+        )
+      } else {
+        self.stats.record_upstream_error(response_body.length())
+      }
+      w.header().set("Content-Type", "application/json")
+      w.write_header(response.code)
+      w.write(response_body)
+    }
+  }
+  w.flush()
+}
+
+///|
+async fn Gateway::forward_gemini_post(
+  self : Gateway,
+  url : String,
+  request_json : Json,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let result = try? @http.post(url, request_json, headers={
+    "Content-Type": "application/json",
+  })
+  match result {
+    Err(error) => {
+      self.stats.record_upstream_error(0)
+      w.header().set("Content-Type", "application/json")
+      w.write_header(@status.BadGateway)
+      w.write(
+        "{\"error\":{\"message\":\"Gemini upstream request failed: \{error}\",\"type\":\"upstream_error\"}}",
+      )
+    }
+    Ok((response, data)) => {
+      let response_body = data.text()
+      if response.code is (200..=299) {
+        let usage = token_usage_from_gemini_response(@json.parse(response_body)).unwrap_or(
+          TokenUsage::empty(),
+        ) catch {
+          _ => TokenUsage::empty()
+        }
+        self.stats.record_success_usage(usage, response_body.length())
+      } else {
+        self.stats.record_upstream_error(response_body.length())
+      }
+      w.header().set("Content-Type", "application/json")
+      w.write_header(response.code)
+      w.write(response_body)
+    }
+  }
+  w.flush()
 }
 
 ///|
@@ -479,6 +620,61 @@ fn json_bool_field(json : Json, key : String) -> Bool? {
     Some(false) => Some(false)
     _ => None
   }
+}
+
+///|
+fn normalize_gemini_endpoint(path : StringView) -> String {
+  let raw = path.to_owned()
+  if raw.has_prefix("/gemini/v1beta/") {
+    "/v1beta/\{raw["/gemini/v1beta/".length():]}"
+  } else if raw.has_prefix("/gemini/v1/") {
+    "/v1/\{raw["/gemini/v1/".length():]}"
+  } else {
+    raw
+  }
+}
+
+///|
+fn gemini_proxy_url(endpoint : String) -> String? {
+  let base = "https://generativelanguage.googleapis.com"
+  if endpoint.contains("?key=") || endpoint.contains("&key=") {
+    Some("\{base}\{endpoint}")
+  } else {
+    match gemini_api_key() {
+      Some(key) =>
+        if endpoint.contains("?") {
+          Some("\{base}\{endpoint}&key=\{key}")
+        } else {
+          Some("\{base}\{endpoint}?key=\{key}")
+        }
+      None => None
+    }
+  }
+}
+
+///|
+fn gemini_api_key() -> String? {
+  match getenv_or_none("GEMINI_API_KEY") {
+    Some(key) if !key.is_empty() => Some(key)
+    _ =>
+      match getenv_or_none("GOOGLE_API_KEY") {
+        Some(key) if !key.is_empty() => Some(key)
+        _ => None
+      }
+  }
+}
+
+///|
+fn getenv_or_none(key : String) -> String? {
+  @os.getenv(key) catch {
+    _ => None
+  }
+}
+
+///|
+fn gemini_request_is_stream(endpoint : String, body : Json) -> Bool {
+  endpoint.contains("streamGenerateContent") ||
+  json_bool_field(body, "stream").unwrap_or(false)
 }
 
 ///|

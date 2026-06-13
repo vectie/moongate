@@ -33,12 +33,18 @@ fn Route::new(handle : Handler) -> Route {
 priv struct Layer {
   routes : MethodMap[Route]
   matches : Map[StringView, Layer]
+  catch_all_routes : MethodMap[Route]
   mut default : Layer?
 }
 
 ///|
 fn Layer::new() -> Layer {
-  Layer::{ routes: MethodMap::new(), matches: {}, default: None }
+  Layer::{
+    routes: MethodMap::new(),
+    matches: {},
+    catch_all_routes: MethodMap::new(),
+    default: None,
+  }
 }
 
 ///|
@@ -50,6 +56,7 @@ fn Layer::add_route(
 ) -> Unit {
   match segments {
     [] => self.routes[method_] = route
+    [['*', .. _name]] => self.catch_all_routes[method_] = route
     [['{', .. name, '}'], .. segments] => {
       route.names.push(name)
       if self.default is Some(child) {
@@ -85,7 +92,13 @@ fn Layer::route(
   loop segments {
     [] =>
       for r in curr {
-        break Some((r.0.routes, r.1))
+        if r.0.routes.keys().head() is Some(_) {
+          break Some((r.0.routes, r.1))
+        } else if r.0.catch_all_routes.keys().head() is Some(_) {
+          break Some((r.0.catch_all_routes, r.1))
+        } else {
+          break Some((r.0.routes, r.1))
+        }
       } nobreak {
         None
       }
@@ -99,9 +112,21 @@ fn Layer::route(
           next.push((child, values))
         }
       }
-      curr = next
-      next = []
-      continue segments
+      if next.is_empty() {
+        for r in curr {
+          if r.0.catch_all_routes.keys().head() is Some(_) {
+            break Some((r.0.catch_all_routes, r.1))
+          }
+        } nobreak {
+          curr = next
+          next = []
+          continue segments
+        }
+      } else {
+        curr = next
+        next = []
+        continue segments
+      }
     }
   }
 }
@@ -245,4 +270,21 @@ test "Layer::route" {
   )
   layer.add_route(Post, ["hello"], route)
   json_inspect(layer.route(["hello"]) is Some(_), content=true)
+}
+
+///|
+test "Layer::route supports catch all" {
+  let route : Route = Route::new((_, _) => ())
+  let layer = Layer::new()
+  layer.add_route(Get, ["v1beta", "*path"], route)
+  guard layer.route(["v1beta", "models"]) is Some((routes, _)) else {
+    fail("expected catch-all route")
+  }
+  json_inspect(routes.keys().map(method_ => method_.to_string()).collect(), content=[
+    "GET",
+  ])
+  json_inspect(
+    layer.route(["v1beta", "models", "gemini-pro:generateContent"]) is Some(_),
+    content=true,
+  )
 }
