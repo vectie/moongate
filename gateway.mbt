@@ -6,6 +6,8 @@ pub struct Gateway {
   mut credentials : @codex.Credentials?
   stats : TrafficStats
   provider_router : ProviderRouter
+  pricing_overrides : Map[String, ModelPricing]
+  pricing_deleted_model_ids : Map[String, Bool]
   logger : @pino.Logger
   started_at_ms : Int
 }
@@ -24,6 +26,8 @@ pub fn Gateway::new(
     credentials: None,
     stats: TrafficStats::new(),
     provider_router: moonstat_default_provider_router(),
+    pricing_overrides: Map([], capacity=0),
+    pricing_deleted_model_ids: Map([], capacity=0),
     logger,
     started_at_ms: @async.now().to_int(),
   }
@@ -273,7 +277,12 @@ async fn Gateway::record_success_usage(
   response_bytes : Int,
 ) -> Unit {
   self.record_provider_result(true)
-  self.stats.record_success_usage(usage, response_bytes)
+  self.stats.record_success_usage_with_pricing(
+    usage,
+    response_bytes,
+    self.pricing_override_rows(),
+    self.pricing_deleted_model_ids,
+  )
   self.stats.save_persistent_store()
 }
 
@@ -402,6 +411,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(@httpx.Method::Get, "/usage/model-pricing", (_, w) => {
     self.handle_usage_model_pricing(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/usage/model-pricing", (r, w) => {
+    self.handle_usage_update_model_pricing(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/usage/model-pricing", (r, w) => {
+    self.handle_usage_delete_model_pricing(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/request-detail/*path", (r, w) => {
     self.handle_usage_request_detail(r, w)
@@ -1887,10 +1902,54 @@ async fn Gateway::handle_usage_sync_session(
 
 ///|
 async fn Gateway::handle_usage_model_pricing(
-  _self : Gateway,
+  self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, static_model_pricing_json())
+  write_usage_json(
+    w,
+    model_pricing_json(
+      self.pricing_override_rows(),
+      self.pricing_deleted_model_ids,
+    ),
+  )
+}
+
+///|
+async fn Gateway::handle_usage_update_model_pricing(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_pricing_from_query(r.path) is Some(pricing) else {
+    write_usage_bad_request(w, "invalid_model_pricing")
+    return
+  }
+  self.pricing_overrides.set(pricing.model_id, pricing)
+  self.pricing_deleted_model_ids.set(pricing.model_id, false)
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(pricing.to_json().stringify(indent=2))
+  w.flush()
+}
+
+///|
+async fn Gateway::handle_usage_delete_model_pricing(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard usage_query_value_any(r.path, "model_id", "modelId") is Some(model_id) else {
+    write_usage_bad_request(w, "missing_model_id")
+    return
+  }
+  let trimmed = model_id.trim().to_owned()
+  if trimmed.is_empty() {
+    write_usage_bad_request(w, "missing_model_id")
+    return
+  }
+  self.pricing_deleted_model_ids.set(trimmed, true)
+  w.write_header(@status.NoContent)
+  w.flush()
 }
 
 ///|
@@ -2007,6 +2066,86 @@ fn usage_query_value(path : StringView, key : String) -> String? {
     }
   }
   None
+}
+
+///|
+fn usage_pricing_from_query(path : StringView) -> ModelPricing? {
+  guard usage_query_value_any(path, "model_id", "modelId") is Some(model_id) else {
+    return None
+  }
+  guard usage_query_value_any(path, "display_name", "displayName")
+    is Some(display_name) else {
+    return None
+  }
+  guard usage_query_value_any(path, "input_cost", "inputCost")
+    is Some(input_cost) else {
+    return None
+  }
+  guard usage_query_value_any(path, "output_cost", "outputCost")
+    is Some(output_cost) else {
+    return None
+  }
+  guard usage_query_value_any(path, "cache_read_cost", "cacheReadCost")
+    is Some(cache_read_cost) else {
+    return None
+  }
+  guard usage_query_value_any(path, "cache_creation_cost", "cacheCreationCost")
+    is Some(cache_creation_cost) else {
+    return None
+  }
+  let model_id = model_id.trim().to_owned()
+  let display_name = display_name.trim().to_owned()
+  if model_id.is_empty() || display_name.is_empty() {
+    return None
+  }
+  for value in [input_cost, output_cost, cache_read_cost, cache_creation_cost] {
+    if !usage_non_negative_decimal(value) {
+      return None
+    }
+  }
+  Some(
+    mp(
+      model_id,
+      display_name,
+      input_cost.trim().to_owned(),
+      output_cost.trim().to_owned(),
+      cache_read_cost.trim().to_owned(),
+      cache_creation_cost.trim().to_owned(),
+    ),
+  )
+}
+
+///|
+fn usage_non_negative_decimal(value : String) -> Bool {
+  let trimmed = value.trim().to_owned()
+  if trimmed.is_empty() || trimmed.has_prefix("-") {
+    return false
+  }
+  let mut seen_digit = false
+  let mut seen_dot = false
+  for ch in trimmed {
+    let code = ch.to_int()
+    if code >= '0'.to_int() && code <= '9'.to_int() {
+      seen_digit = true
+    } else if ch == '.' && !seen_dot {
+      seen_dot = true
+    } else {
+      return false
+    }
+  }
+  seen_digit
+}
+
+///|
+fn Gateway::pricing_override_rows(self : Gateway) -> Array[ModelPricing] {
+  let rows : Array[ModelPricing] = []
+  for model_id in self.pricing_overrides.keys() {
+    guard self.pricing_overrides.get(model_id) is Some(pricing) else {
+      continue
+    }
+    rows.push(pricing)
+  }
+  rows
 }
 
 ///|

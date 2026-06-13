@@ -242,6 +242,8 @@ pub struct Gateway {
   mut credentials : @codex.Credentials?
   stats : TrafficStats
   provider_router : ProviderRouter
+  pricing_overrides : Map[String, ModelPricing]
+  pricing_deleted_model_ids : Map[String, Bool]
   logger : @pino.Logger
   started_at_ms : Int
 }

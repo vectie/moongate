@@ -95,6 +95,32 @@ test "usage query helpers parse ccs request log parameters" {
 }
 
 ///|
+test "usage pricing query helpers parse and validate ccs pricing update" {
+  let path = "/usage/model-pricing?modelId=test-model&displayName=Test%20Model&inputCost=1.25&outputCost=2&cacheReadCost=0.10&cacheCreationCost=0"
+  guard usage_pricing_from_query(path) is Some(pricing) else {
+    fail("expected pricing")
+  }
+  assert_eq(pricing.model_id, "test-model")
+  assert_eq(pricing.display_name, "Test%20Model")
+  assert_eq(pricing.input_cost_per_million, "1.25")
+  assert_eq(pricing.output_cost_per_million, "2")
+  assert_eq(pricing.cache_read_cost_per_million, "0.10")
+  assert_eq(pricing.cache_creation_cost_per_million, "0")
+  assert_true(
+    usage_pricing_from_query(
+      "/usage/model-pricing?modelId=test&displayName=Test&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0",
+    )
+    is None,
+  )
+  assert_true(
+    usage_pricing_from_query(
+      "/usage/model-pricing?modelId=test&displayName=Test&inputCost=abc&outputCost=2&cacheReadCost=0&cacheCreationCost=0",
+    )
+    is None,
+  )
+}
+
+///|
 test "codex responses endpoints preserve request query" {
   assert_eq(
     codex_backend_responses_endpoint(

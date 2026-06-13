@@ -161,3 +161,30 @@ test "static model pricing json uses ccs field names" {
   assert_eq(first["cacheReadCostPerMillion"], Json::string("1.00"))
   assert_eq(first["cacheCreationCostPerMillion"], Json::string("12.50"))
 }
+
+///|
+test "model pricing json merges ccs overrides and delete tombstones" {
+  let deleted : Map[String, Bool] = Map([], capacity=0)
+  deleted.set("gpt-5", true)
+  let pricing = model_pricing_json(
+    [mp("custom-model", "A Custom Model", "1", "2", "0.1", "0")],
+    deleted,
+  )
+  guard pricing is Array(rows) else { fail("expected pricing array") }
+  let found_custom = rows.any(fn(row) {
+    match row {
+      Object(obj) =>
+        obj["modelId"] == Json::string("custom-model") &&
+        obj["displayName"] == Json::string("A Custom Model")
+      _ => false
+    }
+  })
+  let found_deleted = rows.any(fn(row) {
+    match row {
+      Object(obj) => obj["modelId"] == Json::string("gpt-5")
+      _ => false
+    }
+  })
+  assert_true(found_custom)
+  assert_false(found_deleted)
+}

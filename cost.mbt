@@ -71,8 +71,17 @@ pub fn calculate_cost_for_app(
 
 ///|
 pub fn find_static_model_pricing(model_id : String) -> ModelPricing? {
+  find_model_pricing(model_id, [], Map([], capacity=0))
+}
+
+///|
+fn find_model_pricing(
+  model_id : String,
+  overrides : Array[ModelPricing],
+  deleted_model_ids : Map[String, Bool],
+) -> ModelPricing? {
   let candidates = model_pricing_candidates(model_id)
-  let table = static_model_pricing()
+  let table = merged_model_pricing(overrides, deleted_model_ids)
   for candidate in candidates {
     for pricing in table {
       if pricing.model_id == candidate {
@@ -104,6 +113,55 @@ pub fn find_static_model_pricing(model_id : String) -> ModelPricing? {
 ///|
 pub fn static_model_pricing_json() -> Json {
   Json::array(static_model_pricing().map(fn(pricing) { pricing.to_json() }))
+}
+
+///|
+fn model_pricing_json(
+  overrides : Array[ModelPricing],
+  deleted_model_ids : Map[String, Bool],
+) -> Json {
+  let rows = merged_model_pricing(overrides, deleted_model_ids)
+  rows.sort_by(fn(left, right) {
+    let display_order = left.display_name.compare(right.display_name)
+    if display_order != 0 {
+      display_order
+    } else {
+      left.model_id.compare(right.model_id)
+    }
+  })
+  Json::array(rows.map(fn(pricing) { pricing.to_json() }))
+}
+
+///|
+fn merged_model_pricing(
+  overrides : Array[ModelPricing],
+  deleted_model_ids : Map[String, Bool],
+) -> Array[ModelPricing] {
+  let by_id : Map[String, ModelPricing] = Map([], capacity=0)
+  for pricing in static_model_pricing() {
+    if !model_pricing_is_deleted(pricing.model_id, deleted_model_ids) {
+      by_id.set(pricing.model_id, pricing)
+    }
+  }
+  for pricing in overrides {
+    if !model_pricing_is_deleted(pricing.model_id, deleted_model_ids) {
+      by_id.set(pricing.model_id, pricing)
+    }
+  }
+  let rows : Array[ModelPricing] = []
+  for model_id in by_id.keys() {
+    guard by_id.get(model_id) is Some(pricing) else { continue }
+    rows.push(pricing)
+  }
+  rows
+}
+
+///|
+fn model_pricing_is_deleted(
+  model_id : String,
+  deleted_model_ids : Map[String, Bool],
+) -> Bool {
+  deleted_model_ids.get(model_id).unwrap_or(false)
 }
 
 ///|

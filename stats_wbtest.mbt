@@ -204,6 +204,49 @@ test "traffic stats writes request logs from request context" {
 }
 
 ///|
+test "traffic stats can price gateway requests with ccs model pricing overrides" {
+  let stats = TrafficStats::new()
+  stats.record_inbound(64)
+  stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  stats.record_request_context("codex", "custom-priced")
+  stats.record_stream_mode(false)
+  stats.record_success_usage_with_pricing(
+    TokenUsage::new(
+      input_tokens=10,
+      output_tokens=5,
+      model=Some("custom-priced"),
+    ),
+    128,
+    [mp("custom-priced", "Custom Priced", "2", "4", "0", "0")],
+    Map([], capacity=0),
+  )
+  assert_eq(stats.request_logs.length(), 1)
+  let log = stats.request_logs[0]
+  assert_eq(log.input_cost_usd, "0.00002")
+  assert_eq(log.output_cost_usd, "0.00002")
+  assert_eq(log.total_cost_usd, "0.00004")
+}
+
+///|
+test "traffic stats honors ccs model pricing delete tombstones" {
+  let stats = TrafficStats::new()
+  let deleted : Map[String, Bool] = Map([], capacity=0)
+  deleted.set("gpt-5", true)
+  stats.record_inbound(64)
+  stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  stats.record_request_context("codex", "gpt-5")
+  stats.record_stream_mode(false)
+  stats.record_success_usage_with_pricing(
+    TokenUsage::new(input_tokens=10, output_tokens=5, model=Some("gpt-5")),
+    128,
+    [],
+    deleted,
+  )
+  assert_eq(stats.request_logs.length(), 1)
+  assert_eq(stats.request_logs[0].total_cost_usd, "0")
+}
+
+///|
 test "traffic stats keeps request log retention bounded" {
   let stats = TrafficStats::new()
   for i in 0..<505 {

@@ -362,6 +362,22 @@ pub fn TrafficStats::record_success_usage(
   usage : TokenUsage,
   response_bytes : Int,
 ) -> Unit {
+  self.record_success_usage_with_pricing(
+    usage,
+    response_bytes,
+    [],
+    Map([], capacity=0),
+  )
+}
+
+///|
+fn TrafficStats::record_success_usage_with_pricing(
+  self : TrafficStats,
+  usage : TokenUsage,
+  response_bytes : Int,
+  pricing_overrides : Array[ModelPricing],
+  deleted_model_ids : Map[String, Bool],
+) -> Unit {
   self.successful_responses += 1
   self.input_tokens += usage.input_tokens
   self.output_tokens += usage.output_tokens
@@ -369,7 +385,13 @@ pub fn TrafficStats::record_success_usage(
   self.cache_creation_tokens += usage.cache_creation_tokens
   self.response_bytes += response_bytes
   self.last_error = None
-  self.record_completed_request(200, usage, None)
+  self.record_completed_request(
+    200,
+    usage,
+    None,
+    pricing_overrides~,
+    deleted_model_ids~,
+  )
   self.finish_request()
 }
 
@@ -379,6 +401,8 @@ fn TrafficStats::record_completed_request(
   status_code : Int,
   usage : TokenUsage,
   error_message : String?,
+  pricing_overrides? : Array[ModelPricing] = [],
+  deleted_model_ids? : Map[String, Bool] = Map([], capacity=0),
 ) -> Unit {
   guard self.current_request_id is Some(request_id) else { return }
   let now_ms = @async.now().to_int()
@@ -395,7 +419,7 @@ fn TrafficStats::record_completed_request(
     None => Some(model)
   }
   let app_type = self.current_request_app_type.unwrap_or("unknown")
-  let pricing = find_static_model_pricing(model)
+  let pricing = find_model_pricing(model, pricing_overrides, deleted_model_ids)
   let cost = match pricing {
     Some(model_pricing) if usage.has_billable_tokens() =>
       calculate_cost_for_app(app_type, usage, model_pricing)
