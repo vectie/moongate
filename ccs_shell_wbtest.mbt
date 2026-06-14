@@ -8,6 +8,14 @@ test "ccs external url normalization mirrors shell command behavior" {
     ccs_normalize_external_url("https://github.com/farion1231/cc-switch"),
     "https://github.com/farion1231/cc-switch",
   )
+  assert_eq(
+    ccs_normalize_external_url("HTTP://github.com/farion1231/cc-switch"),
+    "https://HTTP://github.com/farion1231/cc-switch",
+  )
+  assert_eq(
+    ccs_normalize_external_url(" http://github.com/farion1231/cc-switch "),
+    "https:// http://github.com/farion1231/cc-switch ",
+  )
 }
 
 ///|

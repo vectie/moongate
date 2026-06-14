@@ -384,6 +384,7 @@ pub struct Gateway {
   proxy_default_cost_multipliers : Map[String, String]
   proxy_pricing_model_sources : Map[String, String]
   mut upstream_proxy_url : String?
+  mut last_external_url : String?
   mut openclaw_default_model : Json?
   mut openclaw_model_catalog : Json?
   mut openclaw_agents_defaults : Json?

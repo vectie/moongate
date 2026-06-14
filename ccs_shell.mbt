@@ -1,5 +1,5 @@
 ///|
-const CCS_UPDATE_URL = "https://github.com/farion1231/cc-switch/releases/latest"
+const CCS_UPDATE_URL = "https://github.com/vectie/moonstat/releases/latest"
 
 ///|
 const CCS_TOOL_VERSION_TIMEOUT_MS = 3000
@@ -38,12 +38,10 @@ priv struct CcsToolInstallationReport {
 
 ///|
 fn ccs_normalize_external_url(url : String) -> String {
-  let trimmed = url.trim().to_owned()
-  let lower = trimmed.to_lower()
-  if lower.find("http://") == Some(0) || lower.find("https://") == Some(0) {
-    trimmed
+  if url.find("http://") == Some(0) || url.find("https://") == Some(0) {
+    url
   } else {
-    "https://\{trimmed}"
+    "https://\{url}"
   }
 }
 

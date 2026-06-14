@@ -23,6 +23,7 @@ pub struct Gateway {
   proxy_default_cost_multipliers : Map[String, String]
   proxy_pricing_model_sources : Map[String, String]
   mut upstream_proxy_url : String?
+  mut last_external_url : String?
   mut openclaw_default_model : Json?
   mut openclaw_model_catalog : Json?
   mut openclaw_agents_defaults : Json?
@@ -83,6 +84,7 @@ pub fn Gateway::new(
     proxy_default_cost_multipliers: Map([], capacity=0),
     proxy_pricing_model_sources: Map([], capacity=0),
     upstream_proxy_url: None,
+    last_external_url: None,
     openclaw_default_model: None,
     openclaw_model_catalog: None,
     openclaw_agents_defaults: None,
@@ -6389,13 +6391,19 @@ async fn Gateway::handle_open_external(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  ignore(self)
   let body = proxy_json_body(r)
   let raw_url = proxy_string_request(r.path, body, ["url"]).unwrap_or(
     ccs_update_url(),
   )
-  ignore(ccs_normalize_external_url(raw_url))
+  ignore(self.record_external_open(raw_url))
   write_usage_json(w, Json::boolean(true))
+}
+
+///|
+fn Gateway::record_external_open(self : Gateway, raw_url : String) -> String {
+  let normalized = ccs_normalize_external_url(raw_url)
+  self.last_external_url = Some(normalized)
+  normalized
 }
 
 ///|
@@ -6415,7 +6423,7 @@ async fn Gateway::handle_check_for_updates(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  ignore(self)
+  ignore(self.record_external_open(ccs_update_url()))
   write_usage_json(w, Json::boolean(true))
 }
 

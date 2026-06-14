@@ -1418,6 +1418,35 @@ test "standalone tray update mirrors ccs no tray result" {
 }
 
 ///|
+test "standalone external open records ccs normalized target" {
+  let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
+  assert_eq(gateway.last_external_url, None)
+  assert_eq(
+    gateway.record_external_open("github.com/vectie/moonstat"),
+    "https://github.com/vectie/moonstat",
+  )
+  assert_eq(
+    gateway.last_external_url,
+    Some("https://github.com/vectie/moonstat"),
+  )
+  assert_eq(
+    gateway.record_external_open("HTTP://github.com/vectie/moonstat"),
+    "https://HTTP://github.com/vectie/moonstat",
+  )
+  assert_eq(
+    gateway.last_external_url,
+    Some("https://HTTP://github.com/vectie/moonstat"),
+  )
+}
+
+///|
+test "standalone update check records moonstat release target" {
+  let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
+  assert_eq(gateway.record_external_open(ccs_update_url()), ccs_update_url())
+  assert_eq(gateway.last_external_url, Some(ccs_update_url()))
+}
+
+///|
 test "proxy app config state updates ccs app fields" {
   let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
   gateway.proxy_app_enabled.set("codex", false)
