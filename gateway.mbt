@@ -12483,7 +12483,7 @@ fn provider_target_from_request(
   )
   let prompt_cache_key = provider_settings_prompt_cache_key(settings_config)
   let codex_fast_mode = provider_settings_codex_fast_mode(settings_config).unwrap_or(
-    true,
+    false,
   )
   let notes = provider_string_from_request(path, body, ["notes"])
   let is_full_url = provider_bool_from_request(path, body, [

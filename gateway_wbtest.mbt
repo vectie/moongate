@@ -730,6 +730,40 @@ test "provider target merges ccs sibling meta with settings config" {
 }
 
 ///|
+test "provider target defaults missing ccs codex fast mode to false" {
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("codex-oauth-default"),
+            "name": Json::string("Codex OAuth Default"),
+            "settingsConfig": {
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string(
+                  "https://chatgpt.com/backend-api/codex",
+                ),
+                "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
+              }.to_json(),
+            }.to_json(),
+            "meta": {
+              "providerType": Json::string("codex-oauth"),
+              "apiFormat": Json::string("openai_responses"),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(provider) else {
+    fail("expected provider")
+  }
+  assert_eq(provider.provider_type, Some("codex_oauth"))
+  assert_eq(provider.api_format, Some("openai_responses"))
+  assert_false(provider.codex_fast_mode)
+}
+
+///|
 test "provider target keeps ccs custom user agent metadata" {
   guard provider_target_from_request(
       "/add_provider",

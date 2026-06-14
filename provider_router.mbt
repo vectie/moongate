@@ -403,7 +403,7 @@ pub fn ProviderRouteTarget::new(
   provider_type? : String? = None,
   api_format? : String? = None,
   prompt_cache_key? : String? = None,
-  codex_fast_mode? : Bool = true,
+  codex_fast_mode? : Bool = false,
   base_url? : String? = None,
   api_key? : String? = None,
   is_full_url? : Bool = false,

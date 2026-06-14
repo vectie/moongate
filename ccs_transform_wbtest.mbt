@@ -98,6 +98,28 @@ test "ccs codex oauth responses constraints match ccs" {
 }
 
 ///|
+test "ccs codex oauth responses defaults fast mode off" {
+  let body = Json::object({
+    "model": Json::string("gpt-5.4"),
+    "messages": Json::array([
+      Json::object({
+        "role": Json::string("user"),
+        "content": Json::string("hello"),
+      }),
+    ]),
+    "max_tokens": Json::number(128.0),
+  })
+  let transformed = transform_claude_request_for_api_format(
+    body,
+    "openai_responses",
+    is_codex_oauth=true,
+  )
+  guard transformed is Object(obj) else { fail("expected object") }
+  assert_true(obj.get("service_tier") is None)
+  assert_true(obj.get("max_output_tokens") is None)
+}
+
+///|
 test "ccs transform maps anthropic tool choice" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),

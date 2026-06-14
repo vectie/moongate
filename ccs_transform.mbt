@@ -5,7 +5,7 @@ pub fn transform_claude_request_for_api_format(
   session_id? : String? = None,
   explicit_prompt_cache_key? : String? = None,
   is_codex_oauth? : Bool = false,
-  codex_fast_mode? : Bool = true,
+  codex_fast_mode? : Bool = false,
   gemini_shadow_turns? : Array[GeminiAssistantTurn] = [],
 ) -> Json {
   match api_format {
