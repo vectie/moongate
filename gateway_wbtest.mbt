@@ -724,6 +724,37 @@ test "global proxy url helpers use ccs response shapes" {
 }
 
 ///|
+test "ccs local proxy scan catalog mirrors ccs common ports" {
+  let ports = ccs_local_proxy_ports()
+  assert_eq(ports.length(), 8)
+  assert_eq(ports[0], (7890, "http", true))
+  assert_eq(ports[1], (7891, "socks5", false))
+  assert_eq(ports[2], (1080, "socks5", false))
+  assert_eq(ports[3], (8080, "http", false))
+  assert_eq(ports[4], (8888, "http", false))
+  assert_eq(ports[5], (3128, "http", false))
+  assert_eq(ports[6], (10808, "socks5", false))
+  assert_eq(ports[7], (10809, "http", false))
+}
+
+///|
+test "ccs local proxy scan expands mixed ports into http and socks5 entries" {
+  json_inspect(
+    Json::array(ccs_detected_proxy_entries_json(7890, "http", true)),
+    content=[
+      { "url": "http://127.0.0.1:7890", "proxyType": "http", "port": 7890 },
+      { "url": "socks5://127.0.0.1:7890", "proxyType": "socks5", "port": 7890 },
+    ],
+  )
+  json_inspect(
+    Json::array(ccs_detected_proxy_entries_json(1080, "socks5", false)),
+    content=[
+      { "url": "socks5://127.0.0.1:1080", "proxyType": "socks5", "port": 1080 },
+    ],
+  )
+}
+
+///|
 test "suite config helpers mirror ccs openclaw hermes shapes" {
   json_inspect(openclaw_default_tools_json(), content={
     "allow": [],

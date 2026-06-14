@@ -1,0 +1,7 @@
+import {
+  "moonbitlang/core/test",
+}
+
+options(
+  "native-stub": [ "net.c" ],
+)

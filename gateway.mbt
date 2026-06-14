@@ -8234,7 +8234,7 @@ async fn Gateway::handle_scan_local_proxies(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  write_usage_json(w, Json::array([]))
+  write_usage_json(w, ccs_scan_local_proxies_json())
 }
 
 ///|
@@ -8243,6 +8243,57 @@ fn upstream_proxy_url_is_valid(url : String) -> Bool {
   url.has_prefix("https://") ||
   url.has_prefix("socks5://") ||
   url.has_prefix("socks5h://")
+}
+
+///|
+fn ccs_local_proxy_ports() -> Array[(Int, String, Bool)] {
+  [
+    (7890, "http", true),
+    (7891, "socks5", false),
+    (1080, "socks5", false),
+    (8080, "http", false),
+    (8888, "http", false),
+    (3128, "http", false),
+    (10808, "socks5", false),
+    (10809, "http", false),
+  ]
+}
+
+///|
+fn ccs_detected_proxy_json(port : Int, proxy_type : String) -> Json {
+  {
+    "url": Json::string("\{proxy_type}://127.0.0.1:\{port}"),
+    "proxyType": Json::string(proxy_type),
+    "port": Json::number(port.to_double()),
+  }.to_json()
+}
+
+///|
+fn ccs_detected_proxy_entries_json(
+  port : Int,
+  primary_type : String,
+  is_mixed : Bool,
+) -> Array[Json] {
+  let entries = [ccs_detected_proxy_json(port, primary_type)]
+  if is_mixed {
+    let alt_type = if primary_type == "http" { "socks5" } else { "http" }
+    entries.push(ccs_detected_proxy_json(port, alt_type))
+  }
+  entries
+}
+
+///|
+fn ccs_scan_local_proxies_json() -> Json {
+  let found : Array[Json] = []
+  for item in ccs_local_proxy_ports() {
+    let (port, primary_type, is_mixed) = item
+    if @net.localhost_port_open(port, timeout_ms=100) {
+      found.append(
+        ccs_detected_proxy_entries_json(port, primary_type, is_mixed),
+      )
+    }
+  }
+  Json::array(found)
 }
 
 ///|

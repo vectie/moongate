@@ -14,6 +14,7 @@ import {
   "moonbitlang/async/io",
   "vectie/moonstat/internal/httpx",
   "vectie/moonstat/internal/httpx/status",
+  "vectie/moonstat/internal/net",
   "vectie/moonstat/internal/os",
   "vectie/moonstat/internal/pathx",
   "vectie/moonstat/internal/pino",
