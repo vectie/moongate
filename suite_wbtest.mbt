@@ -33,6 +33,10 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("http://127.0.0.1:15721/usage/provider-limits"),
   )
   assert_eq(
+    obj["provider_presets_url"],
+    Json::string("http://127.0.0.1:15721/get_provider_presets"),
+  )
+  assert_eq(
     obj["usage_sync_session_url"],
     Json::string("http://127.0.0.1:15721/usage/sync-session"),
   )
@@ -87,6 +91,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(capabilities.contains(Json::string("ccs-usage-statistics")))
   assert_true(capabilities.contains(Json::string("ccs-stream-check")))
   assert_true(capabilities.contains(Json::string("ccs-skills-management")))
+  assert_true(capabilities.contains(Json::string("provider-presets")))
   assert_true(capabilities.contains(Json::string("suite-discovery")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /stats")))
@@ -111,6 +116,7 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_true(routes.contains(Json::string("GET /get_stream_check_config")))
   assert_true(routes.contains(Json::string("POST /save_stream_check_config")))
+  assert_true(routes.contains(Json::string("GET /get_provider_presets")))
   assert_true(routes.contains(Json::string("GET /auth_get_status")))
   assert_true(routes.contains(Json::string("GET /auth_list_accounts")))
   assert_true(routes.contains(Json::string("POST /auth_start_login")))
@@ -247,6 +253,10 @@ test "suite manifest publishes moonstat service contract" {
     moonclaw_env["OPENAI_BASE_URL"],
     Json::string("http://127.0.0.1:15721/v1"),
   )
+  assert_eq(
+    moonclaw["provider_presets_url"],
+    Json::string("http://127.0.0.1:15721/get_provider_presets"),
+  )
   guard integrations["moonbook"] is Object(moonbook) else {
     fail("expected moonbook integration")
   }
@@ -275,6 +285,10 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("http://127.0.0.1:15721/claude-desktop/v1"),
   )
   assert_eq(
+    moondesk["provider_presets_url"],
+    Json::string("http://127.0.0.1:15721/get_provider_presets"),
+  )
+  assert_eq(
     moondesk["stream_check_config_url"],
     Json::string("http://127.0.0.1:15721/get_stream_check_config"),
   )
@@ -296,6 +310,10 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(
     commands["stream_check_all"],
     Json::string("moonstat stream-check all --app-type <app_type>"),
+  )
+  assert_eq(
+    commands["provider_presets"],
+    Json::string("moonstat provider presets list --app <app_type>"),
   )
   assert_eq(obj["cli"], obj["commands"])
 }
@@ -328,6 +346,10 @@ async test "suite status writes discovery file" {
     assert_eq(
       obj["usage_provider_limits_url"],
       Json::string("http://127.0.0.1:17000/usage/provider-limits"),
+    )
+    assert_eq(
+      obj["provider_presets_url"],
+      Json::string("http://127.0.0.1:17000/get_provider_presets"),
     )
     assert_eq(
       obj["usage_sync_session_url"],
@@ -372,6 +394,7 @@ async test "suite status writes discovery file" {
     }
     assert_true(capabilities.contains(Json::string("session-usage-sync")))
     assert_true(capabilities.contains(Json::string("ccs-stream-check")))
+    assert_true(capabilities.contains(Json::string("provider-presets")))
     guard obj["suite_integrations"] is Object(integrations) else {
       fail("expected suite integrations")
     }
@@ -381,6 +404,10 @@ async test "suite status writes discovery file" {
     assert_eq(
       moondesk["models_url"],
       Json::string("http://127.0.0.1:17000/v1/models"),
+    )
+    assert_eq(
+      moondesk["provider_presets_url"],
+      Json::string("http://127.0.0.1:17000/get_provider_presets"),
     )
     assert_eq(
       moondesk["stream_check_provider_url"],
@@ -395,6 +422,10 @@ async test "suite status writes discovery file" {
     assert_eq(
       commands["copilot_auth_status"],
       Json::string("moonstat copilot status"),
+    )
+    assert_eq(
+      commands["provider_presets"],
+      Json::string("moonstat provider presets list --app <app_type>"),
     )
     guard obj["manifest"] is Object(manifest) else {
       fail("expected manifest object")
