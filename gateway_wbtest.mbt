@@ -2351,6 +2351,11 @@ test "proxy circuit breaker config update hot applies to existing breakers" {
 }
 
 ///|
+test "ccs circuit breaker stats command currently returns null" {
+  assert_eq(ccs_circuit_breaker_stats_command_json(), Json::null())
+}
+
+///|
 test "proxy provider health alias mirrors circuit breaker state" {
   let gateway = Gateway::new(port=17007, host="127.0.0.8", model="gpt-5")
   guard gateway.provider_router.provider_health_json(

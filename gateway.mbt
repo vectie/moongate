@@ -1253,8 +1253,8 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/circuit-breaker-stats", (r, w) => {
     self.handle_proxy_circuit_breaker_stats(r, w)
   })
-  router.add_handler(@httpx.Method::Get, "/get_circuit_breaker_stats", (r, w) => {
-    self.handle_proxy_circuit_breaker_stats(r, w)
+  router.add_handler(@httpx.Method::Get, "/get_circuit_breaker_stats", (_, w) => {
+    self.handle_proxy_circuit_breaker_stats_ccs_alias(w)
   })
   router.add_handler(@httpx.Method::Post, "/proxy/reset-circuit-breaker", (r, w) => {
     self.handle_proxy_reset_circuit_breaker(r, w)
@@ -8945,6 +8945,20 @@ async fn Gateway::handle_proxy_circuit_breaker_stats(
     None => Json::null()
   }
   write_usage_json(w, body)
+}
+
+///|
+async fn Gateway::handle_proxy_circuit_breaker_stats_ccs_alias(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_circuit_breaker_stats_command_json())
+}
+
+///|
+fn ccs_circuit_breaker_stats_command_json() -> Json {
+  Json::null()
 }
 
 ///|
