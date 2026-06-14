@@ -3144,6 +3144,7 @@ async fn Gateway::post_claude_compatible_provider_json(
     api_format,
     anthropic_beta~,
     custom_user_agent=provider_custom_user_agent(provider),
+    provider_type=provider.provider_type,
   )
   match ccs_reject_proxy_managed_placeholder_for_upstream(url, headers) {
     Err(message) => return Err(message)
@@ -3315,22 +3316,31 @@ fn claude_compatible_provider_headers(
   anthropic_beta? : String? = None,
   accept? : String = "application/json",
   custom_user_agent? : String? = None,
+  provider_type? : String? = None,
 ) -> Map[String, String] {
   let headers : Map[String, String] = {
     "Content-Type": "application/json",
     "Accept": accept,
   }
-  match api_format {
-    "anthropic" => {
-      headers["x-api-key"] = api_key
-      headers["anthropic-version"] = "2023-06-01"
-      headers["anthropic-beta"] = ccs_claude_code_beta_header(anthropic_beta)
+  if provider_type == Some("gemini_cli") {
+    headers["Authorization"] = "Bearer \{api_key}"
+    headers["x-goog-api-client"] = "GeminiCLI/1.0"
+  } else if provider_type == Some("openrouter") ||
+    provider_type == Some("claude_auth") {
+    headers["Authorization"] = "Bearer \{api_key}"
+  } else {
+    match api_format {
+      "anthropic" => {
+        headers["x-api-key"] = api_key
+        headers["anthropic-version"] = "2023-06-01"
+        headers["anthropic-beta"] = ccs_claude_code_beta_header(anthropic_beta)
+      }
+      "gemini_native" => {
+        headers["x-goog-api-key"] = api_key
+        headers["x-goog-api-client"] = "GeminiCLI/1.0"
+      }
+      _ => headers["Authorization"] = "Bearer \{api_key}"
     }
-    "gemini_native" => {
-      headers["x-goog-api-key"] = api_key
-      headers["x-goog-api-client"] = "GeminiCLI/1.0"
-    }
-    _ => headers["Authorization"] = "Bearer \{api_key}"
   }
   match custom_user_agent {
     Some(value) => headers["User-Agent"] = value
@@ -11680,11 +11690,161 @@ fn provider_settings_api_key(app_type : String, settings : Json?) -> String? {
       match obj.get("env") {
         Some(Object(env)) =>
           json_non_empty_string_from_map_any(env, [
-            "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY", "GOOGLE_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY",
+            "GOOGLE_API_KEY",
           ])
         _ => None
       }
     _ => None
+  }
+}
+
+///|
+fn provider_settings_api_format(settings : Json?) -> String? {
+  guard settings is Some(Object(obj)) else { return None }
+  match obj.get("meta") {
+    Some(Object(meta)) =>
+      match
+        json_non_empty_string_from_map_any(meta, ["apiFormat", "api_format"]) {
+        Some(api_format) => return Some(api_format)
+        None => ()
+      }
+    _ => ()
+  }
+  match json_non_empty_string_from_map_any(obj, ["api_format", "apiFormat"]) {
+    Some(api_format) => Some(api_format)
+    None =>
+      if provider_settings_openrouter_compat_enabled(obj) {
+        Some("openai_chat")
+      } else {
+        None
+      }
+  }
+}
+
+///|
+fn provider_settings_openrouter_compat_enabled(obj : Map[String, Json]) -> Bool {
+  match proxy_json_bool(obj, "openrouter_compat_mode") {
+    Some(value) => value
+    None => false
+  }
+}
+
+///|
+fn provider_explicit_type_from_request(
+  path : StringView,
+  body : Json?,
+  settings : Json?,
+) -> String? {
+  match
+    provider_string_from_request(path, body, [
+      "category", "provider_type", "providerType",
+    ]) {
+    Some(value) if !value.trim().is_empty() => return Some(value)
+    _ => ()
+  }
+  guard settings is Some(Object(obj)) else { return None }
+  match obj.get("meta") {
+    Some(Object(meta)) => {
+      match
+        json_non_empty_string_from_map_any(meta, [
+          "providerType", "provider_type",
+        ]) {
+        Some(value) => return Some(provider_type_normalize(value))
+        None => ()
+      }
+      match meta.get("authBinding") {
+        Some(Object(binding)) =>
+          match
+            json_non_empty_string_from_map_any(binding, [
+              "authProvider", "auth_provider",
+            ]) {
+            Some(value) => return Some(provider_type_normalize(value))
+            None => ()
+          }
+        _ => ()
+      }
+    }
+    _ => ()
+  }
+  None
+}
+
+///|
+fn provider_type_normalize(value : String) -> String {
+  value.trim().to_owned().to_lower().replace_all(old="-", new="_")
+}
+
+///|
+fn provider_resolved_provider_type(
+  app_type : String,
+  explicit_type : String?,
+  settings : Json?,
+  api_format : String?,
+  base_url : String?,
+  api_key : String?,
+) -> String? {
+  match explicit_type {
+    Some(value) if !value.trim().is_empty() =>
+      return Some(provider_type_normalize(value))
+    _ => ()
+  }
+  match app_type {
+    "claude" | "claude-desktop" => {
+      if api_format == Some("gemini_native") {
+        return Some(provider_gemini_key_provider_type(api_key))
+      }
+      match base_url {
+        Some(url) => {
+          let normalized_url = url.to_lower()
+          if normalized_url.contains("githubcopilot.com") {
+            return Some("github_copilot")
+          }
+          if normalized_url.contains("openrouter.ai") {
+            return Some("openrouter")
+          }
+        }
+        None => ()
+      }
+      if provider_settings_bearer_only(settings) {
+        return Some("claude_auth")
+      }
+      None
+    }
+    "gemini" => Some(provider_gemini_key_provider_type(api_key))
+    _ => None
+  }
+}
+
+///|
+fn provider_gemini_key_provider_type(api_key : String?) -> String {
+  match api_key {
+    Some(key) => {
+      let trimmed = key.trim()
+      if trimmed.has_prefix("ya29.") || trimmed.has_prefix("{") {
+        "gemini_cli"
+      } else {
+        "gemini"
+      }
+    }
+    None => "gemini"
+  }
+}
+
+///|
+fn provider_settings_bearer_only(settings : Json?) -> Bool {
+  guard settings is Some(Object(obj)) else { return false }
+  match json_non_empty_string_from_map_any(obj, ["auth_mode", "authMode"]) {
+    Some(mode) if mode == "bearer_only" => return true
+    _ => ()
+  }
+  match obj.get("env") {
+    Some(Object(env)) =>
+      match json_non_empty_string_from_map_any(env, ["AUTH_MODE"]) {
+        Some(mode) => mode == "bearer_only"
+        None => false
+      }
+    _ => false
   }
 }
 
@@ -12211,13 +12371,14 @@ fn provider_target_from_request(
   let enabled = provider_bool_from_request(path, body, ["enabled"]).unwrap_or(
     true,
   )
-  let provider_type = provider_string_from_request(path, body, [
-    "category", "provider_type", "providerType",
-  ])
-  let api_format = provider_string_from_request(path, body, [
-    "api_format", "apiFormat",
-  ])
   let settings_config = provider_settings_config_from_body(body)
+  let explicit_provider_type = provider_explicit_type_from_request(
+    path, body, settings_config,
+  )
+  let api_format = provider_prefer_non_empty(
+    provider_string_from_request(path, body, ["api_format", "apiFormat"]),
+    provider_settings_api_format(settings_config),
+  )
   let base_url = provider_prefer_non_empty(
     provider_string_from_request(path, body, [
       "base_url", "baseUrl", "websiteUrl",
@@ -12227,6 +12388,9 @@ fn provider_target_from_request(
   let api_key = provider_prefer_non_empty(
     provider_string_from_request(path, body, ["api_key", "apiKey"]),
     provider_settings_api_key(app_type, settings_config),
+  )
+  let provider_type = provider_resolved_provider_type(
+    app_type, explicit_provider_type, settings_config, api_format, base_url, api_key,
   )
   let notes = provider_string_from_request(path, body, ["notes"])
   let is_full_url = provider_bool_from_request(path, body, [
@@ -15165,6 +15329,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       anthropic_beta~,
       accept="text/event-stream",
       custom_user_agent~,
+      provider_type=provider.provider_type,
     ),
   )
   defer client.close()
@@ -15188,6 +15353,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             anthropic_beta~,
             accept="text/event-stream",
             custom_user_agent~,
+            provider_type=provider.provider_type,
           ),
         )
         defer retry_client.close()
@@ -15262,6 +15428,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             anthropic_beta~,
             accept="text/event-stream",
             custom_user_agent~,
+            provider_type=provider.provider_type,
           ),
         )
         defer retry_client.close()

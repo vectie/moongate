@@ -568,6 +568,126 @@ test "provider target resolves ccs app settings credentials" {
 }
 
 ///|
+test "provider target infers ccs proxy provider type from settings" {
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("openrouter-native"),
+            "settingsConfig": {
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string(
+                  "https://openrouter.ai/api/v1",
+                ),
+                "OPENROUTER_API_KEY": Json::string("sk-or"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(openrouter) else {
+    fail("expected openrouter provider")
+  }
+  assert_eq(openrouter.provider_type, Some("openrouter"))
+  assert_eq(openrouter.api_key, Some("sk-or"))
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("bearer-native"),
+            "settingsConfig": {
+              "auth_mode": Json::string("bearer_only"),
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
+                "ANTHROPIC_AUTH_TOKEN": Json::string("bearer-token"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(bearer) else {
+    fail("expected bearer provider")
+  }
+  assert_eq(bearer.provider_type, Some("claude_auth"))
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("gemini-oauth"),
+            "settingsConfig": {
+              "env": {
+                "GOOGLE_GEMINI_BASE_URL": Json::string("https://gemini.example"),
+                "GEMINI_API_KEY": Json::string("ya29.access-token"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "gemini",
+    )
+    is Some(gemini) else {
+    fail("expected gemini provider")
+  }
+  assert_eq(gemini.provider_type, Some("gemini_cli"))
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("claude-gemini"),
+            "settingsConfig": {
+              "api_format": Json::string("gemini_native"),
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string(
+                  "https://generativelanguage.googleapis.com",
+                ),
+                "GEMINI_API_KEY": Json::string("ya29.claude-gemini"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(claude_gemini) else {
+    fail("expected claude gemini provider")
+  }
+  assert_eq(claude_gemini.api_format, Some("gemini_native"))
+  assert_eq(claude_gemini.api_key, Some("ya29.claude-gemini"))
+  assert_eq(claude_gemini.provider_type, Some("gemini_cli"))
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("managed-meta"),
+            "settingsConfig": {
+              "meta": {
+                "authBinding": {
+                  "source": Json::string("managedAccount"),
+                  "authProvider": Json::string("github-copilot"),
+                }.to_json(),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(managed) else {
+    fail("expected managed provider")
+  }
+  assert_eq(managed.provider_type, Some("github_copilot"))
+}
+
+///|
 test "provider target keeps ccs custom user agent metadata" {
   guard provider_target_from_request(
       "/add_provider",
@@ -6357,6 +6477,32 @@ test "gemini native claude compatible provider uses gemini url and headers" {
   assert_eq(headers["x-goog-api-client"], "GeminiCLI/1.0")
   assert_true(headers.get("Authorization") is None)
   assert_true(headers.get("anthropic-beta") is None)
+}
+
+///|
+test "claude compatible provider headers honor ccs inferred provider type auth" {
+  let openrouter = claude_compatible_provider_headers(
+    "sk-or",
+    "anthropic",
+    provider_type=Some("openrouter"),
+  )
+  assert_eq(openrouter["Authorization"], "Bearer sk-or")
+  assert_true(openrouter.get("x-api-key") is None)
+  let bearer = claude_compatible_provider_headers(
+    "bearer-token",
+    "anthropic",
+    provider_type=Some("claude_auth"),
+  )
+  assert_eq(bearer["Authorization"], "Bearer bearer-token")
+  assert_true(bearer.get("x-api-key") is None)
+  let gemini_oauth = claude_compatible_provider_headers(
+    "ya29.access-token",
+    "gemini_native",
+    provider_type=Some("gemini_cli"),
+  )
+  assert_eq(gemini_oauth["Authorization"], "Bearer ya29.access-token")
+  assert_eq(gemini_oauth["x-goog-api-client"], "GeminiCLI/1.0")
+  assert_true(gemini_oauth.get("x-goog-api-key") is None)
 }
 
 ///|
