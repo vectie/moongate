@@ -570,7 +570,7 @@ test "provider router ccs auto failover command switches to p1" {
       { id: "current", sort_index: 1 },
     ]),
   )
-  router.set_failover_queue("codex", ["p1", "current"])
+  router.set_failover_queue("codex", ["current", "p1"])
   assert_true(router.set_auto_failover_command_ccs("codex", true))
   assert_true(router.auto_failover_enabled_for_app("codex"))
   assert_eq(router.current_provider_id("codex"), Some("p1"))

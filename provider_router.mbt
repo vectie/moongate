@@ -778,14 +778,14 @@ fn ProviderRouter::set_auto_failover_command_ccs(
   }
   guard self.has_configured_app(app_type) else { return false }
   let mut auto_added_provider_id : String? = None
-  let mut queue = self.failover_queues.get(app_type).unwrap_or([])
+  let mut queue = self.ordered_failover_queue(app_type)
   if queue.is_empty() {
     guard self.current_provider_ids.get(app_type) is Some(provider_id) else {
       return false
     }
     self.add_to_failover_queue(app_type, provider_id)
     auto_added_provider_id = Some(provider_id)
-    queue = self.failover_queues.get(app_type).unwrap_or([])
+    queue = self.ordered_failover_queue(app_type)
   }
   guard queue.length() > 0 else { return false }
   let p1_provider_id = queue[0]
