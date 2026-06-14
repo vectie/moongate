@@ -141,21 +141,31 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /get_stream_check_config")))
   assert_true(routes.contains(Json::string("POST /save_stream_check_config")))
   assert_true(routes.contains(Json::string("GET /get_provider_presets")))
-  assert_true(routes.contains(Json::string("GET /auth_get_status")))
-  assert_true(routes.contains(Json::string("GET /auth_list_accounts")))
-  assert_true(routes.contains(Json::string("POST /auth_start_login")))
-  assert_true(routes.contains(Json::string("POST /auth_poll_for_account")))
-  assert_true(routes.contains(Json::string("POST /auth_logout")))
+  assert_true(routes.contains(Json::string("GET|POST /auth_get_status")))
+  assert_true(routes.contains(Json::string("GET|POST /auth_list_accounts")))
+  assert_true(routes.contains(Json::string("GET|POST /auth_start_login")))
+  assert_true(routes.contains(Json::string("GET|POST /auth_poll_for_account")))
+  assert_true(routes.contains(Json::string("DELETE|POST /auth_remove_account")))
+  assert_true(
+    routes.contains(Json::string("GET|POST /auth_set_default_account")),
+  )
+  assert_true(routes.contains(Json::string("GET|POST /auth_logout")))
   assert_true(routes.contains(Json::string("GET /copilot_get_auth_status")))
   assert_true(routes.contains(Json::string("GET /copilot_list_accounts")))
   assert_true(routes.contains(Json::string("GET /copilot_is_authenticated")))
-  assert_true(routes.contains(Json::string("POST /copilot_start_device_flow")))
-  assert_true(routes.contains(Json::string("POST /copilot_poll_for_auth")))
-  assert_true(routes.contains(Json::string("POST /copilot_poll_for_account")))
-  assert_true(routes.contains(Json::string("POST /copilot_logout")))
-  assert_true(routes.contains(Json::string("DELETE /copilot_remove_account")))
   assert_true(
-    routes.contains(Json::string("POST /copilot_set_default_account")),
+    routes.contains(Json::string("GET|POST /copilot_start_device_flow")),
+  )
+  assert_true(routes.contains(Json::string("GET|POST /copilot_poll_for_auth")))
+  assert_true(
+    routes.contains(Json::string("GET|POST /copilot_poll_for_account")),
+  )
+  assert_true(routes.contains(Json::string("GET|POST /copilot_logout")))
+  assert_true(
+    routes.contains(Json::string("DELETE|POST /copilot_remove_account")),
+  )
+  assert_true(
+    routes.contains(Json::string("GET|POST /copilot_set_default_account")),
   )
   assert_true(routes.contains(Json::string("GET /copilot_get_token")))
   assert_true(
