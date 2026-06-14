@@ -11743,9 +11743,17 @@ fn provider_settings_api_format(settings : Json?) -> String? {
 
 ///|
 fn provider_settings_openrouter_compat_enabled(obj : Map[String, Json]) -> Bool {
-  match proxy_json_bool(obj, "openrouter_compat_mode") {
-    Some(value) => value
+  match obj.get("openrouter_compat_mode") {
+    Some(true) => true
+    Some(false) => false
+    Some(Number(value, ..)) => value != 0
+    Some(String(value)) =>
+      match parse_bool_value(value) {
+        Some(parsed) => parsed
+        None => false
+      }
     None => false
+    _ => false
   }
 }
 

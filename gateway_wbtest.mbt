@@ -688,6 +688,75 @@ test "provider target infers ccs proxy provider type from settings" {
 }
 
 ///|
+test "provider target accepts ccs legacy openrouter compat values" {
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("openrouter-compat-number"),
+            "settingsConfig": {
+              "openrouter_compat_mode": Json::number(1),
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(number_provider) else {
+    fail("expected numeric legacy provider")
+  }
+  assert_eq(number_provider.api_format, Some("openai_chat"))
+
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("openrouter-compat-string"),
+            "settingsConfig": {
+              "openrouter_compat_mode": Json::string("true"),
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(string_provider) else {
+    fail("expected string legacy provider")
+  }
+  assert_eq(string_provider.api_format, Some("openai_chat"))
+
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("openrouter-compat-zero"),
+            "settingsConfig": {
+              "openrouter_compat_mode": Json::number(0),
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(zero_provider) else {
+    fail("expected disabled numeric legacy provider")
+  }
+  assert_eq(zero_provider.api_format, None)
+}
+
+///|
 test "provider target merges ccs sibling meta with settings config" {
   guard provider_target_from_request(
       "/add_provider",
