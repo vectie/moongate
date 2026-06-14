@@ -349,6 +349,11 @@ fn moonstat_suite_integrations_json(
         "\{base_url}/usage/provider-limits",
       ),
       "suite_status_file": Json::string(default_moonstat_suite_status_path()),
+      "moonclaw_provider_manifest_path": Json::string(
+        ".moonclaw/providers.json",
+      ),
+      "moonclaw_provider_manifest_command": Json::string("moon run cmd/main --"),
+      "moonclaw_provider_manifest_target": Json::string("moonbook"),
       "moonbook_provider_manifest_path": Json::string(
         ".moonclaw/providers.json",
       ),

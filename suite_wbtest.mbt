@@ -404,6 +404,18 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("http://127.0.0.1:15721/usage/provider-limits"),
   )
   assert_eq(
+    moontown["moonclaw_provider_manifest_path"],
+    Json::string(".moonclaw/providers.json"),
+  )
+  assert_eq(
+    moontown["moonclaw_provider_manifest_command"],
+    Json::string("moon run cmd/main --"),
+  )
+  assert_eq(
+    moontown["moonclaw_provider_manifest_target"],
+    Json::string("moonbook"),
+  )
+  assert_eq(
     moontown["moonbook_provider_manifest_path"],
     Json::string(".moonclaw/providers.json"),
   )
