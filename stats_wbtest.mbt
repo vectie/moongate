@@ -162,12 +162,7 @@ test "traffic stats writes request logs from request context" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
-  stats.record_request_context(
-    "codex",
-    "gpt-5",
-    session_id=Some("session-2"),
-    provider_type=Some("codex"),
-  )
+  stats.record_request_context("codex", "gpt-5", session_id=Some("session-2"))
   stats.record_stream_mode(false)
   stats.record_success_usage(
     TokenUsage::new(input_tokens=3, output_tokens=4, model=Some("gpt-5")),
@@ -192,7 +187,7 @@ test "traffic stats writes request logs from request context" {
   assert_eq(log.status_code, 200)
   assert_eq(log.error_message, None)
   assert_eq(log.session_id, Some("session-2"))
-  assert_eq(log.provider_type, Some("codex"))
+  assert_eq(log.provider_type, None)
   assert_false(log.is_streaming)
   json_inspect(stats.usage_logs_json(limit=1), content={
     "data": [log.to_ccs_request_log_detail_json()],
@@ -212,7 +207,6 @@ test "traffic stats uses ccs session request id for message usage" {
     "claude",
     "claude-sonnet-4-6",
     session_id=Some("session-2"),
-    provider_type=Some("claude"),
   )
   stats.record_stream_mode(true)
   stats.record_success_usage(

@@ -1961,11 +1961,7 @@ async fn Gateway::handle_codex_responses(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   let _ = self.activate_provider("codex")
-  self.stats.record_request_context(
-    "codex",
-    self.model,
-    provider_type=Some("codex"),
-  )
+  self.stats.record_request_context("codex", self.model)
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -1987,7 +1983,6 @@ async fn Gateway::handle_codex_responses(
         "codex",
         json_string_field(json, "model").unwrap_or(self.model),
         session_id~,
-        provider_type=Some("codex"),
       )
       let endpoint = codex_backend_responses_endpoint(
         compact,
@@ -2014,11 +2009,7 @@ async fn Gateway::handle_chat_completions(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   let _ = self.activate_provider("codex")
-  self.stats.record_request_context(
-    "codex",
-    self.model,
-    provider_type=Some("codex"),
-  )
+  self.stats.record_request_context("codex", self.model)
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -2036,12 +2027,7 @@ async fn Gateway::handle_chat_completions(
       let stream = json_bool_field(json, "stream").unwrap_or(false)
       self.stats.record_stream_mode(stream)
       let session_id = extract_client_session_id(r.headers, json, "openai")
-      self.stats.record_request_context(
-        "codex",
-        response_model,
-        session_id~,
-        provider_type=Some("codex"),
-      )
+      self.stats.record_request_context("codex", response_model, session_id~)
       let request = openai_chat_to_codex_response_request(json, self.model)
       guard request is Some(codex_request) else {
         self.record_bad_request()
@@ -2076,11 +2062,7 @@ async fn Gateway::handle_gemini(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   let _ = self.activate_provider("gemini")
-  self.stats.record_request_context(
-    "gemini",
-    "gemini",
-    provider_type=Some("gemini"),
-  )
+  self.stats.record_request_context("gemini", "gemini")
   let request_json : Json = if body_str.is_empty() {
     Json::null()
   } else {
@@ -2101,7 +2083,6 @@ async fn Gateway::handle_gemini(
   self.stats.record_request_context(
     "gemini",
     gemini_model_from_endpoint(endpoint),
-    provider_type=Some("gemini"),
   )
   self.stats.record_stream_mode(
     gemini_request_is_stream(endpoint, request_json),
@@ -13706,11 +13687,7 @@ async fn Gateway::handle_messages(
   let body_str = body.text()
   self.stats.record_inbound(body_str.length())
   let active_provider = self.activate_provider(app_type)
-  self.stats.record_request_context(
-    app_type,
-    self.model,
-    provider_type=Some("claude"),
-  )
+  self.stats.record_request_context(app_type, self.model)
   if active_provider is None && self.all_provider_circuits_open(app_type) {
     self.write_provider_selection_error(app_type, AllProvidersCircuitOpen, w)
     return
@@ -13760,7 +13737,6 @@ async fn Gateway::handle_messages(
             anthropic_request.model,
             outbound_model=Some(model),
             session_id~,
-            provider_type=Some("claude"),
           )
           if stream {
             self.handle_streaming_request(
@@ -13851,7 +13827,6 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     request.model,
     outbound_model=Some(upstream_model),
     session_id~,
-    provider_type=Some("claude"),
   )
   let api_format = provider.claude_api_format_for_model(upstream_model)
   let upstream_body = prepare_upstream_request_body(
@@ -15010,7 +14985,6 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     request.model,
     outbound_model=Some(upstream_model),
     session_id~,
-    provider_type=Some("claude"),
   )
   let api_format = provider.claude_api_format_for_model(upstream_model)
   let upstream_body = prepare_upstream_request_body(
