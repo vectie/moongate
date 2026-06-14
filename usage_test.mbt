@@ -361,6 +361,22 @@ test "codex stream auto parses response completed usage" {
 }
 
 ///|
+test "codex auto parser returns synthetic all-zero usage like ccs" {
+  let body =
+    #|{
+    #|  "usage": {
+    #|    "input_tokens": 0,
+    #|    "output_tokens": 0,
+    #|    "total_tokens": 0
+    #|  }
+    #|}
+  let usage = token_usage_from_codex_response_auto(parse_json_for_test(body)).unwrap()
+  assert_eq(usage.input_tokens, 0)
+  assert_eq(usage.output_tokens, 0)
+  assert_false(usage.has_billable_tokens())
+}
+
+///|
 test "codex stream adjusted parser returns ccs adjusted input" {
   let events = [
     parse_json_for_test(
