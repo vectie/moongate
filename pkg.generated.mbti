@@ -678,7 +678,7 @@ pub fn TrafficStats::rollup_request_logs_before(Self, Int) -> Int
 pub async fn TrafficStats::save_persistent_store(Self) -> Unit
 pub fn TrafficStats::set_active_target(Self, String, String, String, cost_multiplier? : String, pricing_model_source? : String) -> Unit
 pub fn TrafficStats::set_provider_limits(Self, String, String, daily_limit_usd? : String?, monthly_limit_usd? : String?) -> Unit
-pub fn TrafficStats::status_json(Self, String, Int, Int, provider_routes? : Json?) -> Json
+pub fn TrafficStats::status_json(Self, String, Int, Int, running? : Bool, provider_routes? : Json?) -> Json
 pub async fn TrafficStats::sync_claude_session_logs(Self, projects_dir? : String) -> SessionSyncResult
 pub async fn TrafficStats::sync_codex_session_logs(Self, codex_dir? : String) -> SessionSyncResult
 pub async fn TrafficStats::sync_gemini_session_logs(Self, gemini_dir? : String) -> SessionSyncResult

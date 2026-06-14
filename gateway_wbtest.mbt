@@ -2269,6 +2269,21 @@ test "proxy status alias matches ccs proxy status shape" {
 }
 
 ///|
+test "proxy status running follows ccs start stop state" {
+  let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
+  gateway.proxy_enabled = false
+  guard gateway.proxy_status_json() is Object(stopped) else {
+    fail("expected stopped proxy status")
+  }
+  assert_eq(stopped["running"], Json::boolean(false))
+  gateway.proxy_enabled = true
+  guard gateway.proxy_status_json() is Object(started) else {
+    fail("expected started proxy status")
+  }
+  assert_eq(started["running"], Json::boolean(true))
+}
+
+///|
 test "proxy takeover status alias is ccs-compatible standalone false state" {
   let gateway = Gateway::new(port=17003, host="127.0.0.4", model="gpt-5")
   json_inspect(gateway.proxy_takeover_status_json(), content={

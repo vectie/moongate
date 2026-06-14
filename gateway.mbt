@@ -8160,7 +8160,12 @@ async fn Gateway::handle_proxy_status(
 
 ///|
 fn Gateway::proxy_status_json(self : Gateway) -> Json {
-  self.stats.status_json(self.host, self.port, self.uptime_seconds())
+  self.stats.status_json(
+    self.host,
+    self.port,
+    self.uptime_seconds(),
+    running=self.proxy_enabled,
+  )
 }
 
 ///|

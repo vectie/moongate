@@ -1990,10 +1990,11 @@ pub fn TrafficStats::status_json(
   address : String,
   port : Int,
   uptime_seconds : Int,
+  running? : Bool = true,
   provider_routes? : Json? = None,
 ) -> Json {
   let status : Map[String, Json] = {
-    "running": Json::boolean(true),
+    "running": Json::boolean(running),
     "address": Json::string(address),
     "port": Json::number(port.to_double()),
     "active_connections": Json::number(self.active_connections.to_double()),
