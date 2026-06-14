@@ -915,6 +915,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/status", (_, w) => {
     self.handle_proxy_status(w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_proxy_status", (_, w) => {
+    self.handle_proxy_status(w)
+  })
   router.add_handler(@httpx.Method::Post, "/start_proxy_server", (_, w) => {
     self.handle_proxy_start_server(w)
   })
@@ -927,13 +930,25 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
     self.handle_proxy_config(w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_proxy_config", (_, w) => {
+    self.handle_proxy_config(w)
+  })
   router.add_handler(@httpx.Method::Post, "/proxy/config", (r, w) => {
+    self.handle_proxy_update_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/update_proxy_config", (r, w) => {
     self.handle_proxy_update_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/global-config", (_, w) => {
     self.handle_proxy_global_config(w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_global_proxy_config", (_, w) => {
+    self.handle_proxy_global_config(w)
+  })
   router.add_handler(@httpx.Method::Post, "/proxy/global-config", (r, w) => {
+    self.handle_proxy_update_global_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/update_global_proxy_config", (r, w) => {
     self.handle_proxy_update_global_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_settings", (_, w) => {
@@ -1006,7 +1021,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/app-config", (r, w) => {
     self.handle_proxy_app_config(r, w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_proxy_config_for_app", (r, w) => {
+    self.handle_proxy_app_config(r, w)
+  })
   router.add_handler(@httpx.Method::Post, "/proxy/app-config", (r, w) => {
+    self.handle_proxy_update_app_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/update_proxy_config_for_app", (r, w) => {
     self.handle_proxy_update_app_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/default-cost-multiplier", (
@@ -1025,6 +1046,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     "/get_default_cost_multiplier_test_hook",
     (r, w) => self.handle_proxy_default_cost_multiplier(r, w),
   )
+  router.add_handler(@httpx.Method::Get, "/get_default_cost_multiplier", (r, w) => {
+    self.handle_proxy_default_cost_multiplier(r, w)
+  })
   router.add_handler(
     @httpx.Method::Post,
     "/set_default_cost_multiplier_test_hook",
@@ -1044,6 +1068,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     "/get_pricing_model_source_test_hook",
     (r, w) => self.handle_proxy_pricing_model_source(r, w),
   )
+  router.add_handler(@httpx.Method::Get, "/get_pricing_model_source", (r, w) => {
+    self.handle_proxy_pricing_model_source(r, w)
+  })
   router.add_handler(
     @httpx.Method::Post,
     "/set_pricing_model_source_test_hook",
@@ -1128,10 +1155,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/takeover-status", (_, w) => {
     self.handle_proxy_takeover_status(w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_proxy_takeover_status", (_, w) => {
+    self.handle_proxy_takeover_status(w)
+  })
   router.add_handler(@httpx.Method::Get, "/is_live_takeover_active", (_, w) => {
     self.handle_proxy_live_takeover_active(w)
   })
   router.add_handler(@httpx.Method::Post, "/proxy/takeover-status", (r, w) => {
+    self.handle_proxy_set_takeover_for_app(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/set_proxy_takeover_for_app", (r, w) => {
     self.handle_proxy_set_takeover_for_app(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/switch_proxy_provider", (r, w) => {

@@ -126,6 +126,19 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET|POST /search_skills_sh")))
   assert_true(routes.contains(Json::string("GET /get_skill_repos")))
   assert_true(routes.contains(Json::string("POST /install_skills_from_zip")))
+  assert_true(routes.contains(Json::string("GET /get_proxy_status")))
+  assert_true(routes.contains(Json::string("GET /get_proxy_config")))
+  assert_true(routes.contains(Json::string("POST /update_proxy_config")))
+  assert_true(routes.contains(Json::string("GET /get_global_proxy_config")))
+  assert_true(routes.contains(Json::string("POST /update_global_proxy_config")))
+  assert_true(routes.contains(Json::string("GET /get_proxy_config_for_app")))
+  assert_true(
+    routes.contains(Json::string("POST /update_proxy_config_for_app")),
+  )
+  assert_true(routes.contains(Json::string("GET /get_proxy_takeover_status")))
+  assert_true(routes.contains(Json::string("POST /set_proxy_takeover_for_app")))
+  assert_true(routes.contains(Json::string("GET /get_default_cost_multiplier")))
+  assert_true(routes.contains(Json::string("GET /get_pricing_model_source")))
   assert_true(
     routes.contains(Json::string("GET /get_default_cost_multiplier_test_hook")),
   )
