@@ -290,7 +290,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /update_endpoint_last_used?app=codex&providerId=custom&url=https://api.backup.example.com/v1`
 - `GET /proxy/running`
 - `GET /is_proxy_running`
-- `GET /usage/logs`
+- `GET|POST /usage/logs`
 - `GET /usage/summary`
 - `GET /usage/summary/by-app`
 - `GET /usage/trends`
@@ -338,7 +338,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /save_stream_check_config?codexModel=gpt-5.5@low&timeoutSecs=45`
 - CCS command-name aliases: `GET /get_usage_summary`,
   `GET /get_usage_summary_by_app`, `GET /get_usage_trends`,
-  `GET /get_provider_stats`, `GET /get_model_stats`, `GET /get_request_logs`,
+  `GET /get_provider_stats`, `GET /get_model_stats`, `GET|POST /get_request_logs`,
   `GET /get_request_detail?requestId=...`, `GET /get_model_pricing`,
   `POST /update_model_pricing`, `DELETE /delete_model_pricing`,
   `GET /check_provider_limits`, `POST /sync_session_usage`,

@@ -361,6 +361,65 @@ test "usage query helpers parse ccs request log parameters" {
 }
 
 ///|
+test "usage request log helpers parse ccs structured body filters" {
+  let body = {
+    "filters": {
+      "appType": Json::string("codex"),
+      "providerName": Json::string("Codex OAuth"),
+      "model": Json::string("gpt-5"),
+      "statusCode": Json::number(200.0),
+      "startDate": Json::number(10.0),
+      "endDate": Json::number(20.0),
+    }.to_json(),
+    "page": Json::number(2.0),
+    "pageSize": Json::number(25.0),
+  }.to_json()
+  let filters = usage_request_log_filters_from_request(
+    "/get_request_logs",
+    Some(body),
+  )
+  assert_eq(filters.app_type, Some("codex"))
+  assert_eq(filters.provider_name, Some("Codex OAuth"))
+  assert_eq(filters.model, Some("gpt-5"))
+  assert_eq(filters.status_code, Some(200))
+  assert_eq(filters.start_date, Some(10))
+  assert_eq(filters.end_date, Some(20))
+  assert_eq(
+    usage_int_from_request("/get_request_logs", Some(body), ["page"]),
+    Some(2),
+  )
+  assert_eq(
+    usage_int_from_request("/get_request_logs", Some(body), [
+      "page_size", "pageSize",
+    ]),
+    Some(25),
+  )
+}
+
+///|
+test "usage request log helpers let query override ccs body filters" {
+  let body = {
+    "filters": {
+      "appType": Json::string("claude"),
+      "providerName": Json::string("Anthropic"),
+      "statusCode": Json::number(500.0),
+    }.to_json(),
+    "page": Json::number(9.0),
+    "pageSize": Json::number(99.0),
+  }.to_json()
+  let path = "/get_request_logs?appType=codex&providerName=OAuth&statusCode=200&page=1&pageSize=10"
+  let filters = usage_request_log_filters_from_request(path, Some(body))
+  assert_eq(filters.app_type, Some("codex"))
+  assert_eq(filters.provider_name, Some("OAuth"))
+  assert_eq(filters.status_code, Some(200))
+  assert_eq(usage_int_from_request(path, Some(body), ["page"]), Some(1))
+  assert_eq(
+    usage_int_from_request(path, Some(body), ["page_size", "pageSize"]),
+    Some(10),
+  )
+}
+
+///|
 test "provider selection errors use ccs proxy error codes" {
   assert_eq(
     provider_selection_error_status(AllProvidersCircuitOpen),

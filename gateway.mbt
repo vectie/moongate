@@ -1540,7 +1540,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/usage/logs", (r, w) => {
     self.handle_usage_logs(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/usage/logs", (r, w) => {
+    self.handle_usage_logs(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_request_logs", (r, w) => {
+    self.handle_usage_logs(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_request_logs", (r, w) => {
     self.handle_usage_logs(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/summary", (r, w) => {
@@ -8698,14 +8704,8 @@ async fn Gateway::handle_usage_logs(
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  let filters = RequestLogFilters::new(
-    app_type=usage_query_value_any(r.path, "app_type", "appType"),
-    provider_name=usage_query_value_any(r.path, "provider_name", "providerName"),
-    model=usage_query_value(r.path, "model"),
-    status_code=usage_query_int_any(r.path, "status_code", "statusCode"),
-    start_date=usage_query_int_any(r.path, "start_date", "startDate"),
-    end_date=usage_query_int_any(r.path, "end_date", "endDate"),
-  )
+  let body = proxy_json_body(r)
+  let filters = usage_request_log_filters_from_request(r.path, body)
   let pricing_overrides = self.pricing_override_rows()
   let backfilled = self.stats.backfill_missing_usage_costs(
     pricing_overrides,
@@ -8718,8 +8718,8 @@ async fn Gateway::handle_usage_logs(
     self.stats
     .usage_logs_paginated_json(
       filters,
-      page=usage_query_int(r.path, "page").unwrap_or(0),
-      page_size=usage_query_int_any(r.path, "page_size", "pageSize").unwrap_or(
+      page=usage_int_from_request(r.path, body, ["page"]).unwrap_or(0),
+      page_size=usage_int_from_request(r.path, body, ["page_size", "pageSize"]).unwrap_or(
         20,
       ),
       pricing_overrides~,
@@ -10722,6 +10722,104 @@ async fn proxy_enabled_value(r : @httpx.RequestReader) -> Bool? {
       json_bool_field(parsed, "enabled")
     }
   }
+}
+
+///|
+fn usage_request_log_filters_from_request(
+  path : StringView,
+  body : Json?,
+) -> RequestLogFilters {
+  let filter_body = usage_filter_body(body)
+  RequestLogFilters::new(
+    app_type=usage_string_from_request(path, filter_body, [
+      "app_type", "appType",
+    ]),
+    provider_name=usage_string_from_request(path, filter_body, [
+      "provider_name", "providerName",
+    ]),
+    model=usage_string_from_request(path, filter_body, ["model"]),
+    status_code=usage_int_from_request(path, filter_body, [
+      "status_code", "statusCode",
+    ]),
+    start_date=usage_int_from_request(path, filter_body, [
+      "start_date", "startDate",
+    ]),
+    end_date=usage_int_from_request(path, filter_body, ["end_date", "endDate"]),
+  )
+}
+
+///|
+fn usage_filter_body(body : Json?) -> Json? {
+  match body {
+    Some(Object(obj)) =>
+      match obj.get("filters") {
+        Some(Object(filters)) => Some(Json::object(filters))
+        _ => body
+      }
+    _ => body
+  }
+}
+
+///|
+fn usage_string_from_request(
+  path : StringView,
+  body : Json?,
+  keys : Array[String],
+) -> String? {
+  for key in keys {
+    match usage_query_value(path, key) {
+      Some(value) => return Some(value)
+      None => ()
+    }
+  }
+  match body {
+    Some(Object(obj)) =>
+      for key in keys {
+        match obj.get(key) {
+          Some(String(value)) if !value.is_empty() => return Some(value)
+          Some(Number(value, ..)) => return Some(value.to_string())
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+  None
+}
+
+///|
+fn usage_int_from_request(
+  path : StringView,
+  body : Json?,
+  keys : Array[String],
+) -> Int? {
+  for key in keys {
+    match usage_query_value(path, key) {
+      Some(value) =>
+        try @string.parse_int(value, base=10) catch {
+          _ => ()
+        } noraise {
+          parsed => return Some(parsed)
+        }
+      None => ()
+    }
+  }
+  match body {
+    Some(Object(obj)) =>
+      for key in keys {
+        match obj.get(key) {
+          Some(Number(value, ..)) => return Some(value.trunc().to_int())
+          Some(String(value)) =>
+            try @string.parse_int(value, base=10) catch {
+              _ => ()
+            } noraise {
+              parsed => return Some(parsed)
+            }
+          _ => ()
+        }
+      }
+    _ => ()
+  }
+  None
 }
 
 ///|
