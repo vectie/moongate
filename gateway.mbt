@@ -3275,118 +3275,6 @@ fn ccs_is_managed_account_upstream_url(url : String) -> Bool {
 }
 
 ///|
-fn ccs_is_github_copilot_upstream_url(url : String) -> Bool {
-  let (origin, _) = split_origin_and_path(url)
-  let host = extract_host(origin).to_lower()
-  host == "githubcopilot.com" || host.has_suffix(".githubcopilot.com")
-}
-
-///|
-fn ccs_provider_managed_auth_url(provider : ProviderRouteTarget) -> String? {
-  match provider.base_url {
-    Some(url) if !url.trim().is_empty() => return Some(url)
-    _ => ()
-  }
-  guard provider.settings_config is Some(Object(settings)) else { return None }
-  match
-    json_string_from_map_any(settings, [
-      "baseUrl", "base_url", "apiBaseUrl", "api_base_url",
-    ]) {
-    Some(url) if !url.trim().is_empty() => return Some(url)
-    _ => ()
-  }
-  match settings.get("env") {
-    Some(Object(env)) =>
-      json_string_from_map_any(env, ["ANTHROPIC_BASE_URL", "OPENAI_BASE_URL"])
-    _ => None
-  }
-}
-
-///|
-fn ccs_provider_is_github_copilot(provider : ProviderRouteTarget) -> Bool {
-  if provider.provider_type == Some(AUTH_PROVIDER_GITHUB_COPILOT) {
-    return true
-  }
-  match ccs_provider_managed_auth_url(provider) {
-    Some(url) => ccs_is_github_copilot_upstream_url(url)
-    None => false
-  }
-}
-
-///|
-fn ccs_provider_uses_managed_account_auth(
-  provider : ProviderRouteTarget,
-) -> Bool {
-  if provider.provider_type == Some(AUTH_PROVIDER_CODEX_OAUTH) ||
-    provider.provider_type == Some(AUTH_PROVIDER_GITHUB_COPILOT) {
-    return true
-  }
-  match ccs_provider_managed_auth_url(provider) {
-    Some(url) => ccs_is_managed_account_upstream_url(url)
-    None => false
-  }
-}
-
-///|
-fn ccs_claude_takeover_settings_config_json(
-  provider : ProviderRouteTarget,
-  proxy_url : String,
-) -> Json {
-  let root : Map[String, Json] = {}
-  match provider.settings_config {
-    Some(Object(settings)) =>
-      for key in settings.keys() {
-        guard settings.get(key) is Some(value) else { continue }
-        root[key] = value
-      }
-    _ => ()
-  }
-  let env : Map[String, Json] = {}
-  match root.get("env") {
-    Some(Object(raw_env)) =>
-      for key in raw_env.keys() {
-        guard raw_env.get(key) is Some(value) else { continue }
-        env[key] = value
-      }
-    _ => ()
-  }
-  env["ANTHROPIC_BASE_URL"] = Json::string(proxy_url)
-  for
-    key in [
-      "ANTHROPIC_MODEL", "ANTHROPIC_REASONING_MODEL", "ANTHROPIC_SMALL_FAST_MODEL",
-      "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME", "ANTHROPIC_DEFAULT_OPUS_MODEL",
-      "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME", "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME",
-    ] {
-    env.remove(key)
-  }
-  let token_keys = [
-    "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY",
-  ]
-  if ccs_provider_uses_managed_account_auth(provider) {
-    for key in token_keys {
-      env.remove(key)
-    }
-    env["ANTHROPIC_API_KEY"] = Json::string(CCS_PROXY_MANAGED_PLACEHOLDER)
-    if !ccs_provider_is_github_copilot(provider) {
-      env["ANTHROPIC_AUTH_TOKEN"] = Json::string(CCS_PROXY_MANAGED_PLACEHOLDER)
-    }
-  } else {
-    let mut replaced_any = false
-    for key in token_keys {
-      if env.contains(key) {
-        env[key] = Json::string(CCS_PROXY_MANAGED_PLACEHOLDER)
-        replaced_any = true
-      }
-    }
-    if !replaced_any {
-      env["ANTHROPIC_AUTH_TOKEN"] = Json::string(CCS_PROXY_MANAGED_PLACEHOLDER)
-    }
-  }
-  root["env"] = Json::object(env)
-  Json::object(root)
-}
-
-///|
 fn ccs_headers_contain_proxy_managed_placeholder(
   headers : Map[String, String],
 ) -> Bool {
@@ -8502,7 +8390,7 @@ async fn Gateway::handle_proxy_update_config(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match self.apply_proxy_global_config_request(r, legacy=true) {
-    true => write_usage_json(w, self.proxy_config_json())
+    true => write_usage_json(w, ccs_unit_success_json())
     false => write_usage_bad_request(w, "invalid_proxy_config")
   }
 }
@@ -8532,7 +8420,7 @@ async fn Gateway::handle_proxy_update_global_config(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match self.apply_proxy_global_config_request(r) {
-    true => write_usage_json(w, self.proxy_global_config_json())
+    true => write_usage_json(w, ccs_unit_success_json())
     false => write_usage_bad_request(w, "invalid_global_proxy_config")
   }
 }
@@ -8770,7 +8658,7 @@ async fn Gateway::handle_proxy_update_app_config(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match self.apply_proxy_app_config_request(r) {
-    Some(app_type) => write_usage_json(w, self.proxy_app_config_json(app_type))
+    Some(_) => write_usage_json(w, ccs_unit_success_json())
     None => write_usage_bad_request(w, "invalid_app_proxy_config")
   }
 }
@@ -8814,7 +8702,7 @@ async fn Gateway::handle_proxy_set_default_cost_multiplier(
   }
   let trimmed = value.trim().to_owned()
   self.proxy_default_cost_multipliers.set(app_type, trimmed)
-  write_usage_json(w, Json::string(trimmed))
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
@@ -8880,7 +8768,7 @@ async fn Gateway::handle_proxy_set_pricing_model_source(
   }
   let trimmed = value.trim().to_owned()
   self.proxy_pricing_model_sources.set(app_type, trimmed)
-  write_usage_json(w, Json::string(trimmed))
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
@@ -9141,7 +9029,7 @@ async fn Gateway::handle_proxy_update_circuit_breaker_config(
     return
   }
   self.provider_router.update_all_configs(config)
-  write_usage_json(w, config.to_json())
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
@@ -9336,7 +9224,7 @@ async fn Gateway::handle_proxy_set_takeover_for_app(
     return
   }
   self.proxy_takeover_enabled.set(app_type, enabled)
-  write_usage_json(w, self.proxy_takeover_status_json())
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
@@ -9379,14 +9267,7 @@ async fn Gateway::handle_proxy_switch_provider(
     provider.provider_id,
     provider.provider_name,
   )
-  let response : Map[String, Json] = { "ok": Json::boolean(true) }
-  if app_type == "claude" || app_type == "claude-desktop" {
-    response["takeoverSettingsConfig"] = ccs_claude_takeover_settings_config_json(
-      provider,
-      "http://\{self.proxy_listen_address}:\{self.proxy_listen_port}",
-    )
-  }
-  write_usage_json(w, Json::object(response))
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
