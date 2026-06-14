@@ -211,6 +211,48 @@ test "ccs webdav basic auth header matches rfc7617" {
 }
 
 ///|
+test "ccs webdav connection command matches ccs methods" {
+  let settings = ccs_webdav_sync_settings_json(
+    {
+      "enabled": Json::boolean(true),
+      "baseUrl": Json::string("https://dav.example.com/root/"),
+      "username": Json::string("alice"),
+      "password": Json::string("secret"),
+      "remoteRoot": Json::string("cc-switch-sync"),
+      "profile": Json::string("default"),
+    }.to_json(),
+    None,
+    false,
+  )
+  assert_eq(
+    ccs_webdav_remote_dir_url(settings, "current", 2),
+    Ok("https://dav.example.com/root/cc-switch-sync/v2/"),
+  )
+  let request = ccs_webdav_curl_status_request(
+    settings,
+    "PROPFIND",
+    "https://dav.example.com/root",
+    depth_zero=true,
+  ).unwrap()
+  assert_eq(request.program, "curl")
+  assert_eq(request.args, [
+    "-sS", "-L", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "30", "-X",
+    "PROPFIND", "-H", "Depth: 0", "-u", "alice:secret", "https://dav.example.com/root",
+  ])
+}
+
+///|
+test "ccs webdav status classes match ccs connection behavior" {
+  assert_true(ccs_webdav_status_ok_for_propfind(207))
+  assert_true(ccs_webdav_status_ok_for_propfind(204))
+  assert_true(ccs_webdav_status_ok_for_mkcol(201))
+  assert_true(ccs_webdav_status_needs_propfind_verify(405))
+  assert_true(ccs_webdav_status_needs_propfind_verify(409))
+  assert_true(ccs_webdav_status_needs_propfind_verify(302))
+  assert_true(!ccs_webdav_status_needs_propfind_verify(500))
+}
+
+///|
 test "ccs sync manifest compatibility follows current and legacy db versions" {
   let manifest_json = {
     "format": Json::string(ccs_sync_protocol_format()),

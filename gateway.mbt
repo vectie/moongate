@@ -5284,13 +5284,10 @@ async fn Gateway::handle_webdav_test_connection(
   match ccs_validate_webdav_sync_settings(normalized) {
     Some(error) => write_usage_bad_request(w, error)
     None =>
-      write_usage_json(
-        w,
-        {
-          "success": Json::boolean(true),
-          "message": Json::string("WebDAV connection ok"),
-        }.to_json(),
-      )
+      match ccs_webdav_sync_test_connection_json(normalized) {
+        Ok(result) => write_usage_json(w, result)
+        Err(error) => write_usage_bad_request(w, error)
+      }
   }
 }
 

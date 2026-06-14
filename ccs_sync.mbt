@@ -49,6 +49,11 @@ fn ccs_sync_remote_manifest() -> String {
 }
 
 ///|
+fn ccs_webdav_default_timeout_ms() -> Int {
+  30000
+}
+
+///|
 priv struct CcsSyncManifestInfo {
   format : String
   version : Int
@@ -63,6 +68,12 @@ priv struct CcsSyncManifestInfo {
 priv struct CcsWebDavTextResponse {
   code : Int
   body : String
+}
+
+///|
+priv struct CcsWebDavCurlRequest {
+  program : String
+  args : Array[String]
 }
 
 ///|
@@ -483,11 +494,50 @@ fn ccs_webdav_remote_file_url(
   layout : String,
   file_name : String,
 ) -> Result[String, String] {
+  let remote_segments = match
+    ccs_webdav_remote_dir_segments_from_settings(settings, layout) {
+    Ok(segs) => segs
+    Err(error) => return Err(error)
+  }
+  for part in ccs_sync_path_segments(file_name) {
+    remote_segments.push(part)
+  }
+  ccs_webdav_remote_url(settings, remote_segments)
+}
+
+///|
+fn ccs_webdav_remote_dir_url(
+  settings : Json,
+  layout : String,
+  depth : Int,
+) -> Result[String, String] {
+  let remote_segments = match
+    ccs_webdav_remote_dir_segments_from_settings(settings, layout) {
+    Ok(segs) => segs
+    Err(error) => return Err(error)
+  }
+  if depth <= 0 {
+    return ccs_webdav_remote_url(settings, [])
+  }
+  let limit = if depth > remote_segments.length() {
+    remote_segments.length()
+  } else {
+    depth
+  }
+  let segs = remote_segments[:limit].to_owned()
+  match ccs_webdav_remote_url(settings, segs) {
+    Ok(url) => Ok(if url.has_suffix("/") { url } else { "\{url}/" })
+    Err(error) => Err(error)
+  }
+}
+
+///|
+fn ccs_webdav_remote_dir_segments_from_settings(
+  settings : Json,
+  layout : String,
+) -> Result[Array[String], String] {
   guard settings is Object(obj) else {
     return Err("WebDAV sync is not configured.")
-  }
-  guard json_string_from_map(obj, "baseUrl") is Some(base_url) else {
-    return Err("WebDAV URL is required.")
   }
   guard json_string_from_map(obj, "remoteRoot") is Some(remote_root) else {
     return Err("WebDAV remote root is required.")
@@ -495,17 +545,29 @@ fn ccs_webdav_remote_file_url(
   guard json_string_from_map(obj, "profile") is Some(profile) else {
     return Err("WebDAV profile is required.")
   }
+  Ok(ccs_sync_remote_dir_segments(remote_root, profile, layout))
+}
+
+///|
+fn ccs_webdav_remote_url(
+  settings : Json,
+  segments : Array[String],
+) -> Result[String, String] {
+  guard settings is Object(obj) else {
+    return Err("WebDAV sync is not configured.")
+  }
+  guard json_string_from_map(obj, "baseUrl") is Some(base_url) else {
+    return Err("WebDAV URL is required.")
+  }
   let base_url = trim_end_slashes(base_url.trim().to_owned())
   if base_url.is_empty() {
     return Err("WebDAV URL is required.")
   }
-  let remote_segments = ccs_sync_remote_dir_segments(
-    remote_root, profile, layout,
-  )
-  for part in ccs_sync_path_segments(file_name) {
-    remote_segments.push(part)
+  if segments.is_empty() {
+    Ok(base_url)
+  } else {
+    Ok("\{base_url}/\{ccs_webdav_encoded_path(segments)}")
   }
-  Ok("\{base_url}/\{ccs_webdav_encoded_path(remote_segments)}")
 }
 
 ///|
@@ -533,6 +595,159 @@ async fn ccs_webdav_get_text(
     code: response.code,
     body: client.read_all().text(),
   })
+}
+
+///|
+fn ccs_webdav_curl_status_request(
+  settings : Json,
+  webdav_method : String,
+  url : String,
+  depth_zero? : Bool = false,
+) -> Result[CcsWebDavCurlRequest, String] {
+  guard settings is Object(obj) else {
+    return Err("WebDAV sync is not configured.")
+  }
+  let args : Array[String] = [
+    "-sS", "-L", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "30", "-X",
+    webdav_method,
+  ]
+  if depth_zero {
+    args.push("-H")
+    args.push("Depth: 0")
+  }
+  let username = json_string_from_map(obj, "username").unwrap_or("")
+  if !username.is_empty() {
+    args.push("-u")
+    args.push(
+      "\{username}:\{json_string_from_map(obj, "password").unwrap_or("")}",
+    )
+  }
+  args.push(url)
+  Ok(CcsWebDavCurlRequest::{ program: "curl", args })
+}
+
+///|
+async fn ccs_webdav_run_status_request(
+  request : CcsWebDavCurlRequest,
+  operation : String,
+) -> Result[Int, String] {
+  let result = @spawn.spawn(
+    request.program,
+    request.args.map(fn(arg) { arg[:] }),
+    timeout=ccs_webdav_default_timeout_ms(),
+  ) catch {
+    err => return Err("WebDAV \{operation} failed: \{err}")
+  }
+  if result.status != 0 {
+    let detail = if result.stderr.trim().is_empty() {
+      result.stdout.trim()
+    } else {
+      result.stderr.trim()
+    }
+    return Err(
+      if detail.is_empty() {
+        "WebDAV \{operation} failed: exit code \{result.status}"
+      } else {
+        "WebDAV \{operation} failed: \{detail}"
+      },
+    )
+  }
+  let status = @string.parse_int(result.stdout.trim(), base=10) catch {
+    _ => return Err("WebDAV \{operation} returned an invalid HTTP status.")
+  }
+  Ok(status)
+}
+
+///|
+fn ccs_webdav_status_ok_for_propfind(status : Int) -> Bool {
+  (status >= 200 && status <= 299) || status == 207
+}
+
+///|
+fn ccs_webdav_status_ok_for_mkcol(status : Int) -> Bool {
+  status >= 200 && status <= 299
+}
+
+///|
+fn ccs_webdav_status_needs_propfind_verify(status : Int) -> Bool {
+  status == 405 || status == 409 || (status >= 300 && status <= 399)
+}
+
+///|
+async fn ccs_webdav_sync_test_connection_json(
+  settings : Json,
+) -> Result[Json, String] {
+  let base_url = match ccs_webdav_remote_url(settings, []) {
+    Ok(url) => url
+    Err(error) => return Err(error)
+  }
+  let propfind = ccs_webdav_curl_status_request(
+    settings,
+    "PROPFIND",
+    base_url,
+    depth_zero=true,
+  )
+  let propfind = match propfind {
+    Ok(request) => request
+    Err(error) => return Err(error)
+  }
+  let base_status = match ccs_webdav_run_status_request(propfind, "PROPFIND") {
+    Ok(status) => status
+    Err(error) => return Err(error)
+  }
+  if !ccs_webdav_status_ok_for_propfind(base_status) {
+    return Err("WebDAV PROPFIND failed: HTTP \{base_status}")
+  }
+  let dir_segments = match
+    ccs_webdav_remote_dir_segments_from_settings(settings, "current") {
+    Ok(segs) => segs
+    Err(error) => return Err(error)
+  }
+  for depth in 1..<=dir_segments.length() {
+    let dir_url = match ccs_webdav_remote_dir_url(settings, "current", depth) {
+      Ok(url) => url
+      Err(error) => return Err(error)
+    }
+    let mkcol = match
+      ccs_webdav_curl_status_request(settings, "MKCOL", dir_url) {
+      Ok(request) => request
+      Err(error) => return Err(error)
+    }
+    let status = match ccs_webdav_run_status_request(mkcol, "MKCOL") {
+      Ok(status) => status
+      Err(error) => return Err(error)
+    }
+    if ccs_webdav_status_ok_for_mkcol(status) {
+      continue
+    }
+    if ccs_webdav_status_needs_propfind_verify(status) {
+      let verify = ccs_webdav_curl_status_request(
+        settings,
+        "PROPFIND",
+        dir_url,
+        depth_zero=true,
+      )
+      let verify = match verify {
+        Ok(request) => request
+        Err(error) => return Err(error)
+      }
+      let verify_status = match
+        ccs_webdav_run_status_request(verify, "PROPFIND") {
+        Ok(status) => status
+        Err(error) => return Err(error)
+      }
+      if ccs_webdav_status_ok_for_propfind(verify_status) {
+        continue
+      }
+    }
+    return Err("WebDAV MKCOL failed: HTTP \{status}")
+  }
+  Ok(
+    {
+      "success": Json::boolean(true),
+      "message": Json::string("WebDAV connection ok"),
+    }.to_json(),
+  )
 }
 
 ///|
