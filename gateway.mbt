@@ -8192,11 +8192,16 @@ async fn Gateway::handle_proxy_stop_server(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   if self.proxy_takeover_active() {
-    write_usage_bad_request(w, "live_takeover_active")
+    write_usage_bad_request(w, ccs_stop_proxy_takeover_error())
     return
   }
   self.proxy_enabled = false
   write_usage_json(w, ccs_unit_success_json())
+}
+
+///|
+fn ccs_stop_proxy_takeover_error() -> String {
+  "仍有应用处于代理接管状态，请先在设置中关闭对应应用接管后再停止本地路由。"
 }
 
 ///|

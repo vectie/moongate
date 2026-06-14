@@ -1807,6 +1807,10 @@ test "proxy lifecycle state matches ccs command aliases" {
   assert_eq(server_info["port"], Json::number(17016.0))
   gateway.proxy_takeover_enabled.set("codex", true)
   assert_true(gateway.proxy_takeover_active())
+  assert_eq(
+    ccs_stop_proxy_takeover_error(),
+    "仍有应用处于代理接管状态，请先在设置中关闭对应应用接管后再停止本地路由。",
+  )
   gateway.proxy_clear_takeover()
   assert_false(gateway.proxy_takeover_active())
   gateway.proxy_enabled = true
