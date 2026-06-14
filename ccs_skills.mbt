@@ -1023,29 +1023,311 @@ async fn ccs_install_skills_from_zip_json(
   file_path : String,
   current_app : String,
   state_path? : String = ccs_skill_state_path(),
+  cc_switch_dir? : String = ccs_cc_switch_skills_dir(),
+  unified_dir? : String = ccs_unified_skills_dir(),
+  app_dir? : String = ccs_app_skills_dir(current_app),
 ) -> Json {
-  // MoonBit has no zip dependency here yet. For standalone parity we accept an
-  // already-extracted skill directory and return an empty install list otherwise.
   if !@fs.exists(file_path) {
     return Json::array([])
   }
-  let directory = ccs_skill_install_name(@pathx.basename(file_path).to_owned())
-  if directory.is_empty() {
+  if ccs_path_is_directory(file_path) {
+    return ccs_install_skills_from_extracted_dir_json(
+      file_path,
+      current_app,
+      state_path~,
+      cc_switch_dir~,
+      unified_dir~,
+      app_dir~,
+      source_name=@pathx.basename(file_path).to_owned(),
+    )
+  }
+
+  @fsx.with_temporary_directory("moonstat-skills-zip-XXXXXX", async fn(tmpdir) {
+    if !ccs_extract_local_zip(file_path, tmpdir) {
+      return Json::array([])
+    }
+    ccs_install_skills_from_extracted_dir_json(
+      tmpdir,
+      current_app,
+      state_path~,
+      cc_switch_dir~,
+      unified_dir~,
+      app_dir~,
+      source_name=@pathx.basename(file_path).to_owned(),
+    )
+  })
+}
+
+///|
+async fn ccs_install_skills_from_extracted_dir_json(
+  root_dir : String,
+  current_app : String,
+  state_path? : String = ccs_skill_state_path(),
+  cc_switch_dir? : String = ccs_cc_switch_skills_dir(),
+  unified_dir? : String = ccs_unified_skills_dir(),
+  app_dir? : String = ccs_app_skills_dir(current_app),
+  source_name? : String = @pathx.basename(root_dir).to_owned(),
+) -> Json {
+  let skill_dirs = ccs_scan_skill_dirs_in_dir(root_dir)
+  if skill_dirs.is_empty() {
     return Json::array([])
   }
-  let (name, description) = ccs_skill_metadata_from_file(
-    @pathx.join(file_path, "SKILL.md"),
+  let state = ccs_skill_state_load(path=state_path)
+  guard state is Object(state_obj) else { return Json::array([]) }
+  let storage_dir = ccs_skill_storage_dir_for_state(
+    Json::object(state_obj),
+    cc_switch_dir,
+    unified_dir,
   )
-  let skill = {
-    "key": Json::string("local:\{directory}"),
-    "name": Json::string(name.unwrap_or(directory)),
-    "description": match description {
-      Some(value) => Json::string(value)
-      None => Json::string("")
-    },
-    "directory": Json::string(directory),
-  }.to_json()
-  Json::array([ccs_install_skill_unified_json(skill, current_app, state_path~)])
+  let existing : Array[Json] = match state_obj.get("installed") {
+    Some(Array(items)) => items
+    _ => []
+  }
+  let installed : Array[Json] = []
+  for skill_dir in skill_dirs {
+    let (name, description) = ccs_skill_metadata_from_file(
+      @pathx.join(skill_dir, "SKILL.md"),
+    )
+    guard ccs_skill_zip_install_name(skill_dir, root_dir, name, source_name~)
+      is Some(directory) else {
+      continue
+    }
+    if ccs_installed_skill_directory_exists(existing, directory) {
+      continue
+    }
+    let dest = @pathx.join(storage_dir, directory)
+    if @fs.exists(dest) {
+      @fs.rmdir(dest, recursive=true) catch {
+        _ => ()
+      }
+    }
+    match ccs_copy_skill_directory(skill_dir, dest) {
+      Ok(_) => ()
+      Err(_) => continue
+    }
+    if !app_dir.is_empty() {
+      let app_dest = @pathx.join(app_dir, directory)
+      if @fs.exists(app_dest) {
+        @fs.rmdir(app_dest, recursive=true) catch {
+          _ => ()
+        }
+      }
+      ignore(ccs_copy_skill_directory(dest, app_dest))
+    }
+    let skill = ccs_installed_skill_json(
+      id="local:\{directory}",
+      name=name.unwrap_or(directory),
+      description~,
+      directory~,
+      repo_owner=None,
+      repo_name=None,
+      repo_branch=None,
+      readme_url=None,
+      apps=ccs_skill_apps_json(app=Some(current_app)),
+      installed_at=@os.unix_seconds(),
+      content_hash=ccs_skill_dir_hash(dest),
+      updated_at=0,
+    )
+    installed.push(ccs_upsert_installed_skill_json(skill, state_path~))
+  }
+  Json::array(installed)
+}
+
+///|
+async fn ccs_extract_local_zip(zip_path : String, dest_dir : String) -> Bool {
+  let result = @spawn.spawn(
+    "unzip",
+    ["-qq", "-o", zip_path, "-d", dest_dir],
+    timeout=60000,
+  ) catch {
+    _ => return false
+  }
+  result.status == 0
+}
+
+///|
+async fn ccs_scan_skill_dirs_in_dir(root_dir : String) -> Array[String] {
+  let result : Array[String] = []
+  ccs_scan_skill_dirs_recursive(root_dir, result, depth=0)
+  result
+}
+
+///|
+async fn ccs_scan_skill_dirs_recursive(
+  dir : String,
+  result : Array[String],
+  depth~ : Int,
+) -> Unit {
+  if depth > 16 || !ccs_path_is_directory(dir) {
+    return
+  }
+  if @fs.exists(@pathx.join(dir, "SKILL.md")) {
+    result.push(dir)
+  }
+  let entries = @fsx.list_directory(dir) catch { _ => return }
+  for entry in entries {
+    if entry.name.has_prefix(".") {
+      continue
+    }
+    if entry.kind is @fsx.FileKind::Directory {
+      ccs_scan_skill_dirs_recursive(entry.path, result, depth=depth + 1)
+    }
+  }
+}
+
+///|
+fn ccs_skill_zip_install_name(
+  skill_dir : String,
+  root_dir : String,
+  skill_name : String?,
+  source_name~ : String,
+) -> String? {
+  let dir_name = @pathx.basename(skill_dir).to_owned()
+  if skill_dir == root_dir || dir_name.is_empty() || dir_name.has_prefix(".") {
+    match skill_name {
+      Some(name) =>
+        match ccs_skill_install_name(name) {
+          "" => ccs_skill_install_name_optional(source_name)
+          value => Some(value)
+        }
+      None => ccs_skill_install_name_optional(source_name)
+    }
+  } else {
+    match ccs_skill_install_name(dir_name) {
+      "" =>
+        match skill_name {
+          Some(name) => ccs_skill_install_name_optional(name)
+          None => ccs_skill_install_name_optional(source_name)
+        }
+      value => Some(value)
+    }
+  }
+}
+
+///|
+fn ccs_skill_install_name_optional(value : String) -> String? {
+  match ccs_skill_install_name(value) {
+    "" => None
+    normalized => Some(normalized)
+  }
+}
+
+///|
+fn ccs_installed_skill_directory_exists(
+  installed : Array[Json],
+  directory : String,
+) -> Bool {
+  for item in installed {
+    guard item is Object(obj) else { continue }
+    if store_json_string_or_default(obj, "directory", "").to_lower() ==
+      directory.to_lower() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn ccs_skill_storage_dir_for_state(
+  state : Json,
+  cc_switch_dir : String,
+  unified_dir : String,
+) -> String {
+  guard state is Object(obj) else { return cc_switch_dir }
+  let location = ccs_normalize_skill_storage_location(
+    store_json_string_or_default(obj, "skillStorageLocation", "cc_switch"),
+  ).unwrap_or("cc_switch")
+  ccs_skill_storage_dir(location, cc_switch_dir, unified_dir)
+}
+
+///|
+async fn ccs_skill_dir_hash(dir : String) -> String? {
+  let files : Array[String] = []
+  ccs_collect_skill_hash_files(dir, dir, files, depth=0)
+  files.sort()
+  let bytes : Array[Byte] = []
+  for relative in files {
+    for byte in @encoding/utf8.encode(relative.replace(old="\\", new="/")) {
+      bytes.push(byte)
+    }
+    bytes.push(0)
+    let content = @fs.read_file(@pathx.join(dir, relative)) catch {
+      _ => return None
+    }
+    for byte in content.binary() {
+      bytes.push(byte)
+    }
+    bytes.push(0)
+  }
+  Some(ccs_skill_sha256_hex(Bytes::from_array(bytes)))
+}
+
+///|
+async fn ccs_collect_skill_hash_files(
+  base_dir : String,
+  current_dir : String,
+  files : Array[String],
+  depth~ : Int,
+) -> Unit {
+  if depth > 16 {
+    return
+  }
+  let entries = @fsx.list_directory(current_dir) catch { _ => return }
+  for entry in entries {
+    if entry.name.has_prefix(".") {
+      continue
+    }
+    match entry.kind {
+      @fsx.FileKind::Directory =>
+        ccs_collect_skill_hash_files(
+          base_dir,
+          entry.path,
+          files,
+          depth=depth + 1,
+        )
+      @fsx.FileKind::Regular | @fsx.FileKind::SymLink =>
+        files.push(ccs_relative_path(base_dir, entry.path))
+      _ => ()
+    }
+  }
+}
+
+///|
+fn ccs_relative_path(base_dir : String, path : String) -> String {
+  let prefix = if base_dir.has_suffix("/") { base_dir } else { "\{base_dir}/" }
+  if path.has_prefix(prefix) {
+    path[prefix.length():].to_owned()
+  } else {
+    @pathx.basename(path).to_owned()
+  }
+}
+
+///|
+fn ccs_skill_sha256_hex(bytes : Bytes) -> String {
+  let digest = @crypto.sha256(bytes)
+  let builder = StringBuilder::new()
+  for byte in digest {
+    let value = byte.to_int()
+    builder.write_char(ccs_skill_hex_digit(value / 16))
+    builder.write_char(ccs_skill_hex_digit(value % 16))
+  }
+  builder.to_string()
+}
+
+///|
+fn ccs_skill_hex_digit(n : Int) -> Char {
+  if n < 10 {
+    ('0'.to_int() + n).unsafe_to_char()
+  } else {
+    ('a'.to_int() + n - 10).unsafe_to_char()
+  }
+}
+
+///|
+async fn ccs_path_is_directory(path : String) -> Bool {
+  (@fs.kind(path, follow_symlink=false) is @fs.FileKind::Directory) catch {
+    _ => false
+  }
 }
 
 ///|
@@ -1093,7 +1375,7 @@ fn ccs_yaml_scalar(value : StringView) -> String {
 fn ccs_skill_install_name(directory : String) -> String {
   let normalized = directory.replace(old="\\", new="/").trim().to_owned()
   let base = @pathx.basename(normalized).to_owned().trim().to_owned()
-  if base == "." || base == ".." || base.contains("/") {
+  if base == "." || base == ".." || base.has_prefix(".") || base.contains("/") {
     ""
   } else {
     base

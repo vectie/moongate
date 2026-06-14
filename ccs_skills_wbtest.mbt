@@ -189,3 +189,78 @@ async test "ccs skill storage migration moves installed directories" {
     assert_eq(noop["errors"], Json::array([]))
   })
 }
+
+///|
+async test "ccs install skills from zip source scans and copies skill dirs" {
+  @fsx.with_temporary_directory("moonstat-skill-zip-XXXXXX", async fn(tmpdir) {
+    let state_path = @pathx.join(tmpdir, "skills_state.json")
+    let source_dir = @pathx.join(tmpdir, "bundle")
+    let nested_skill = @pathx.join(source_dir, "packs/traffic-stats")
+    let conflict_skill = @pathx.join(source_dir, "already-there")
+    let cc_switch_dir = @pathx.join(tmpdir, "cc-switch-skills")
+    let unified_dir = @pathx.join(tmpdir, "unified-skills")
+    let app_dir = @pathx.join(tmpdir, "codex-skills")
+    @fsx.make_directory(nested_skill, recursive=true, exists_ok=true)
+    @fsx.make_directory(conflict_skill, recursive=true, exists_ok=true)
+    let skill_md =
+      #|---
+      #|name: Traffic Stats
+      #|description: Watch traffic and usage.
+      #|---
+      #|
+      #|# Traffic Stats
+    @fsx.write_to_file(@pathx.join(nested_skill, "SKILL.md"), skill_md)
+    @fsx.write_to_file(@pathx.join(nested_skill, "notes.txt"), "usage")
+    @fsx.write_to_file(@pathx.join(conflict_skill, "SKILL.md"), "# Existing")
+    ignore(
+      ccs_skill_state_save(
+        {
+          "installed": Json::array([
+            {
+              "id": Json::string("local:already-there"),
+              "directory": Json::string("already-there"),
+              "name": Json::string("Already There"),
+            }.to_json(),
+          ]),
+          "repos": Json::array([]),
+          "backups": Json::array([]),
+          "skillStorageLocation": Json::string("unified"),
+        }.to_json(),
+        path=state_path,
+      ),
+    )
+
+    guard ccs_install_skills_from_zip_json(
+        source_dir,
+        "codex",
+        state_path~,
+        cc_switch_dir~,
+        unified_dir~,
+        app_dir~,
+      )
+      is Array(installed) else {
+      fail("expected installed skill array")
+    }
+    assert_eq(installed.length(), 1)
+    guard installed[0] is Object(skill) else { fail("expected skill object") }
+    assert_eq(skill["directory"], Json::string("traffic-stats"))
+    assert_eq(skill["name"], Json::string("Traffic Stats"))
+    assert_eq(skill["description"], Json::string("Watch traffic and usage."))
+    guard skill["contentHash"] is String(hash) else {
+      fail("expected content hash")
+    }
+    assert_eq(hash.length(), 64)
+    assert_true(
+      @fsx.exists_as_file(@pathx.join(unified_dir, "traffic-stats/SKILL.md")),
+    )
+    assert_true(
+      @fsx.exists_as_file(@pathx.join(app_dir, "traffic-stats/SKILL.md")),
+    )
+    assert_false(@fs.exists(@pathx.join(unified_dir, "already-there")))
+
+    guard ccs_get_installed_skills_json(path=state_path) is Array(all) else {
+      fail("expected state skills")
+    }
+    assert_eq(all.length(), 2)
+  })
+}
