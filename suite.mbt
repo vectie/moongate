@@ -355,7 +355,7 @@ fn moonstat_suite_routes() -> Array[String] {
     "GET /participant/register", "GET /health", "GET /status", "GET /stats", "GET /usage/logs",
     "GET /models", "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
     "GET /usage/trends", "GET /usage/provider-limits", "GET /usage/model-stats",
-    "GET /usage/data-sources", "POST /usage/sync-session", "GET /usage/model-pricing",
+    "GET|POST /usage/data-sources", "POST /usage/sync-session", "GET /usage/model-pricing",
     "POST /usage/model-pricing", "DELETE /usage/model-pricing", "GET /usage/request-detail/{request_id}",
     "GET /v1/models", "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude/v1/messages",
     "POST /claude-desktop/v1/messages", "POST /responses", "POST /v1/responses",

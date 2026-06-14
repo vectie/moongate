@@ -80,7 +80,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /usage/provider-limits")))
   assert_true(routes.contains(Json::string("GET /usage/provider-stats")))
   assert_true(routes.contains(Json::string("GET /usage/model-stats")))
-  assert_true(routes.contains(Json::string("GET /usage/data-sources")))
+  assert_true(routes.contains(Json::string("GET|POST /usage/data-sources")))
   assert_true(routes.contains(Json::string("POST /usage/sync-session")))
   assert_true(routes.contains(Json::string("GET /usage/model-pricing")))
   assert_true(routes.contains(Json::string("POST /usage/model-pricing")))

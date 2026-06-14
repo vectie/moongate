@@ -297,13 +297,13 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET|POST /usage/provider-limits`
 - `GET|POST /usage/provider-stats`
 - `GET|POST /usage/model-stats`
-- `GET /usage/data-sources`
+- `GET|POST /usage/data-sources`
 - `POST /usage/sync-session`
 - `GET /usage/model-pricing`
 - `POST /usage/model-pricing`
 - `DELETE /usage/model-pricing`
 - `GET /usage/request-detail/{request_id}`
-- `GET /queryProviderUsage?providerId=codex-oauth&app=codex`
+- `GET|POST /queryProviderUsage?providerId=codex-oauth&app=codex`
 - `GET|POST /get_balance?baseUrl=https://api.deepseek.com&apiKey=...`
 - `GET|POST /get_subscription_quota?tool=codex`
 - `GET|POST /get_codex_oauth_quota?accountId=...`
@@ -342,9 +342,10 @@ Moonstat currently exposes the ccs-compatible local routes below:
   `GET|POST /get_request_detail?requestId=...`, `GET /get_model_pricing`,
   `POST /update_model_pricing`, `DELETE|POST /delete_model_pricing`,
   `GET|POST /check_provider_limits`, `POST /sync_session_usage`,
-  `GET /get_usage_data_sources`, `GET /queryProviderUsage`, `GET /get_balance`,
-  `GET /get_subscription_quota`, `GET /get_codex_oauth_quota`,
-  `GET /get_codex_oauth_models`, `GET /get_coding_plan_quota`,
+  `GET|POST /get_usage_data_sources`, `GET|POST /queryProviderUsage`,
+  `GET|POST /get_balance`, `GET|POST /get_subscription_quota`,
+  `GET|POST /get_codex_oauth_quota`, `GET|POST /get_codex_oauth_models`,
+  `GET|POST /get_coding_plan_quota`,
   `GET|POST /auth_start_login`, `GET|POST /auth_poll_for_account`,
   `GET|POST /auth_list_accounts`, `GET|POST /auth_get_status`,
   `DELETE|POST /auth_remove_account`, `GET|POST /auth_set_default_account`,
