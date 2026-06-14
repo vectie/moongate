@@ -2075,6 +2075,33 @@ test "traffic stats backfills missing costs after ccs pricing update" {
 }
 
 ///|
+test "traffic stats backfill keeps ccs claude fresh input with cache read" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="claude-cache-fresh-input",
+      provider_id="_session",
+      app_type="claude",
+      model="claude-haiku-4-5",
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=0,
+        cache_read_tokens=200,
+      ),
+      total_cost_usd="0",
+      status_code=200,
+      data_source="session_log",
+      created_at=1,
+    ),
+  )
+  let updated = stats.backfill_missing_usage_costs([], Map([], capacity=0))
+  assert_eq(updated, 1)
+  assert_eq(stats.request_logs[0].input_cost_usd, "0.0001")
+  assert_eq(stats.request_logs[0].cache_read_cost_usd, "0.00002")
+  assert_eq(stats.request_logs[0].total_cost_usd, "0.00012")
+}
+
+///|
 test "traffic stats backfill uses persisted ccs pricing model" {
   let stats = TrafficStats::new()
   stats.record_request_log(
