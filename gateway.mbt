@@ -945,6 +945,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/set_default_cost_multiplier", (r, w) => {
     self.handle_proxy_set_default_cost_multiplier(r, w)
   })
+  router.add_handler(
+    @httpx.Method::Get,
+    "/get_default_cost_multiplier_test_hook",
+    (r, w) => self.handle_proxy_default_cost_multiplier(r, w),
+  )
+  router.add_handler(
+    @httpx.Method::Post,
+    "/set_default_cost_multiplier_test_hook",
+    (r, w) => self.handle_proxy_set_default_cost_multiplier_unit(r, w),
+  )
   router.add_handler(@httpx.Method::Get, "/proxy/pricing-model-source", (r, w) => {
     self.handle_proxy_pricing_model_source(r, w)
   })
@@ -954,6 +964,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/set_pricing_model_source", (r, w) => {
     self.handle_proxy_set_pricing_model_source(r, w)
   })
+  router.add_handler(
+    @httpx.Method::Get,
+    "/get_pricing_model_source_test_hook",
+    (r, w) => self.handle_proxy_pricing_model_source(r, w),
+  )
+  router.add_handler(
+    @httpx.Method::Post,
+    "/set_pricing_model_source_test_hook",
+    (r, w) => self.handle_proxy_set_pricing_model_source_unit(r, w),
+  )
   router.add_handler(@httpx.Method::Get, "/proxy/provider-health", (r, w) => {
     self.handle_proxy_provider_health(r, w)
   })
@@ -1068,6 +1088,26 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Post, "/switch_provider", (r, w) => {
     self.handle_switch_provider(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/switch_provider_test_hook", (r, w) => {
+    self.handle_switch_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_claude_desktop_status", (_, w) => {
+    self.handle_get_claude_desktop_status(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_claude_desktop_default_routes", (
+    _,
+    w,
+  ) => self.handle_get_claude_desktop_default_routes(w))
+  router.add_handler(
+    @httpx.Method::Post,
+    "/import_claude_desktop_providers_from_claude",
+    (_, w) => self.handle_import_claude_desktop_providers_from_claude(w),
+  )
+  router.add_handler(
+    @httpx.Method::Post,
+    "/ensure_claude_desktop_official_provider",
+    (_, w) => self.handle_ensure_claude_desktop_official_provider(w),
+  )
   router.add_handler(@httpx.Method::Get, "/read_live_provider_settings", (r, w) => {
     self.handle_read_live_provider_settings(r, w)
   })
@@ -5739,6 +5779,31 @@ async fn Gateway::handle_proxy_set_default_cost_multiplier(
 }
 
 ///|
+async fn Gateway::handle_proxy_set_default_cost_multiplier_unit(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  guard proxy_string_request(r.path, config, ["app_type", "appType"])
+    is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  guard proxy_string_request(r.path, config, ["value"]) is Some(value) else {
+    write_usage_bad_request(w, "missing_value")
+    return
+  }
+  if !usage_non_negative_decimal(value) {
+    write_usage_bad_request(w, "invalid_default_cost_multiplier")
+    return
+  }
+  self.proxy_default_cost_multipliers.set(app_type, value.trim().to_owned())
+  write_usage_json(w, Json::null())
+}
+
+///|
 async fn Gateway::handle_proxy_pricing_model_source(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -5778,6 +5843,31 @@ async fn Gateway::handle_proxy_set_pricing_model_source(
   let trimmed = value.trim().to_owned()
   self.proxy_pricing_model_sources.set(app_type, trimmed)
   write_usage_json(w, Json::string(trimmed))
+}
+
+///|
+async fn Gateway::handle_proxy_set_pricing_model_source_unit(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  guard proxy_string_request(r.path, config, ["app_type", "appType"])
+    is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app_type")
+    return
+  }
+  guard proxy_string_request(r.path, config, ["value"]) is Some(value) else {
+    write_usage_bad_request(w, "missing_value")
+    return
+  }
+  if !pricing_model_source_is_valid(value) {
+    write_usage_bad_request(w, "invalid_pricing_model_source")
+    return
+  }
+  self.proxy_pricing_model_sources.set(app_type, value.trim().to_owned())
+  write_usage_json(w, Json::null())
 }
 
 ///|
@@ -6367,6 +6457,165 @@ async fn Gateway::handle_switch_provider(
     provider.provider_name,
   )
   write_usage_json(w, { "warnings": Json::array([]) }.to_json())
+}
+
+///|
+async fn Gateway::handle_get_claude_desktop_status(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let status = @claude_desktop.status()
+  write_usage_json(
+    w,
+    {
+      "supported": Json::boolean(true),
+      "configured": Json::boolean(status.configured),
+      "appliedId": Json::null(),
+      "profilePath": Json::string(status.profile_path),
+      "configLibraryPath": Json::null(),
+      "mode": if status.configured {
+        Json::string("proxy")
+      } else {
+        Json::null()
+      },
+      "expectedBaseUrl": Json::string(
+        @claude_desktop.local_gateway_base_url(self.host, self.port),
+      ),
+      "actualBaseUrl": Json::null(),
+      "proxyRunning": Json::boolean(true),
+      "staleRawModels": Json::boolean(false),
+      "missingRouteMappings": Json::boolean(false),
+      "gatewayTokenConfigured": Json::boolean(status.token_configured),
+    }.to_json(),
+  )
+}
+
+///|
+async fn Gateway::handle_get_claude_desktop_default_routes(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, claude_desktop_default_routes_json())
+}
+
+///|
+async fn Gateway::handle_import_claude_desktop_providers_from_claude(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(
+    w,
+    Json::number(self.import_claude_desktop_providers_from_claude().to_double()),
+  )
+}
+
+///|
+async fn Gateway::handle_ensure_claude_desktop_official_provider(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(
+    w,
+    Json::boolean(self.ensure_claude_desktop_official_provider()),
+  )
+}
+
+///|
+fn claude_desktop_default_routes_json() -> Json {
+  Json::array([
+    claude_desktop_default_route_json(
+      "claude-sonnet-4-6", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+    ),
+    claude_desktop_default_route_json(
+      "claude-opus-4-8", "ANTHROPIC_DEFAULT_OPUS_MODEL",
+    ),
+    claude_desktop_default_route_json(
+      "claude-haiku-4-5", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+    ),
+  ])
+}
+
+///|
+fn claude_desktop_default_route_json(
+  route_id : String,
+  env_key : String,
+) -> Json {
+  {
+    "routeId": Json::string(route_id),
+    "envKey": Json::string(env_key),
+    "supports1m": Json::boolean(true),
+  }.to_json()
+}
+
+///|
+fn Gateway::ensure_claude_desktop_official_provider(self : Gateway) -> Bool {
+  if self.provider_router.provider_by_id("claude-desktop", "codex-oauth")
+    is Some(_) {
+    return false
+  }
+  self.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude-desktop",
+      provider_id="codex-oauth",
+      provider_name="Codex OAuth",
+      provider_type=Some("codex_oauth"),
+      model_mapping=ccs_model_mapping_from_env(),
+    ),
+  )
+  if self.provider_router.current_provider_id("claude-desktop") is None {
+    self.provider_router.set_current_provider("claude-desktop", "codex-oauth")
+  }
+  true
+}
+
+///|
+fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
+  ignore(self.ensure_claude_desktop_official_provider())
+  let mut imported = 0
+  guard self.provider_router.providers.get("claude") is Some(claude_providers) else {
+    return imported
+  }
+  for provider in claude_providers.values() {
+    if self.provider_router.provider_by_id(
+        "claude-desktop",
+        provider.provider_id,
+      )
+      is Some(_) {
+      continue
+    }
+    self.provider_router.upsert_provider(
+      ProviderRouteTarget::new(
+        app_type="claude-desktop",
+        provider_id=provider.provider_id,
+        provider_name=provider.provider_name,
+        enabled=provider.enabled,
+        provider_type=provider.provider_type,
+        api_format=provider.api_format,
+        prompt_cache_key=provider.prompt_cache_key,
+        codex_fast_mode=provider.codex_fast_mode,
+        base_url=provider.base_url,
+        api_key=provider.api_key,
+        is_full_url=provider.is_full_url,
+        model_mapping=provider.model_mapping,
+        settings_config=provider.settings_config,
+      ),
+    )
+    imported += 1
+  }
+  if self.provider_router.current_provider_id("claude-desktop") is None {
+    match self.provider_router.current_provider_id("claude") {
+      Some(provider_id) =>
+        if self.provider_router.provider_by_id("claude-desktop", provider_id)
+          is Some(_) {
+          self.provider_router.set_current_provider(
+            "claude-desktop", provider_id,
+          )
+        }
+      None => ()
+    }
+  }
+  imported
 }
 
 ///|

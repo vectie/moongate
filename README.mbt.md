@@ -181,6 +181,15 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET|POST /save_file_dialog?defaultName=config.json`
 - `GET|POST /open_file_dialog`
 - `GET|POST /open_zip_file_dialog`
+- `GET /get_default_cost_multiplier_test_hook?app_type=codex`
+- `POST /set_default_cost_multiplier_test_hook?app_type=codex&value=1.25`
+- `GET /get_pricing_model_source_test_hook?app_type=codex`
+- `POST /set_pricing_model_source_test_hook?app_type=codex&value=request`
+- `POST /switch_provider_test_hook?app=claude&id=codex-oauth`
+- `GET /get_claude_desktop_status`
+- `GET /get_claude_desktop_default_routes`
+- `POST /import_claude_desktop_providers_from_claude`
+- `POST /ensure_claude_desktop_official_provider`
 - `GET /get_app_config_path`
 - `GET /open_app_config_folder`
 - `GET /get_settings`

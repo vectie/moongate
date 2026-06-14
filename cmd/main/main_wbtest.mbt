@@ -999,3 +999,36 @@ test "top level ccs app shell commands build paths" {
     "/save_file_dialog?defaultName=config.json",
   )
 }
+
+///|
+test "top level ccs provider test hook commands build paths" {
+  assert_eq(
+    proxy_app_value_update_path(
+      [
+        "moonstat", "set_default_cost_multiplier_test_hook", "--appType", "codex",
+        "--value", "1.25",
+      ],
+      "/set_default_cost_multiplier_test_hook",
+    ),
+    Some("/set_default_cost_multiplier_test_hook?app_type=codex&value=1.25"),
+  )
+  assert_eq(
+    proxy_app_value_update_path(
+      [
+        "moonstat", "set_pricing_model_source_test_hook", "--app-type", "claude",
+        "--value", "request",
+      ],
+      "/set_pricing_model_source_test_hook",
+    ),
+    Some("/set_pricing_model_source_test_hook?app_type=claude&value=request"),
+  )
+  assert_eq(
+    provider_id_path(
+      [
+        "moonstat", "switch_provider_test_hook", "--app", "claude", "--id", "codex-oauth",
+      ],
+      "/switch_provider_test_hook",
+    ),
+    Some("/switch_provider_test_hook?app=claude&id=codex-oauth"),
+  )
+}

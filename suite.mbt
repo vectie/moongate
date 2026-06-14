@@ -368,7 +368,11 @@ fn moonstat_suite_routes() -> Array[String] {
     "GET /get_init_error", "GET /get_migration_result", "GET /get_skills_migration_result",
     "GET|POST /get_tool_versions", "GET|POST /set_window_theme", "GET|POST /enter_lightweight_mode",
     "GET|POST /exit_lightweight_mode", "GET /is_lightweight_mode", "GET|POST /save_file_dialog",
-    "GET|POST /open_file_dialog", "GET|POST /open_zip_file_dialog", "ANY /v1beta/*path",
-    "ANY /gemini/v1beta/*path", "ANY /gemini/v1/*path",
+    "GET|POST /open_file_dialog", "GET|POST /open_zip_file_dialog", "GET /get_default_cost_multiplier_test_hook",
+    "POST /set_default_cost_multiplier_test_hook", "GET /get_pricing_model_source_test_hook",
+    "POST /set_pricing_model_source_test_hook", "POST /switch_provider_test_hook",
+    "GET /get_claude_desktop_status", "GET /get_claude_desktop_default_routes", "POST /import_claude_desktop_providers_from_claude",
+    "POST /ensure_claude_desktop_official_provider", "ANY /v1beta/*path", "ANY /gemini/v1beta/*path",
+    "ANY /gemini/v1/*path",
   ]
 }

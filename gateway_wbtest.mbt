@@ -5342,3 +5342,35 @@ test "gemini native prompt block converts to anthropic refusal" {
   assert_eq(response.content.length(), 1)
   assert_eq(response.content[0].type_, "text")
 }
+
+///|
+test "ccs claude desktop default routes match upstream command shape" {
+  guard claude_desktop_default_routes_json() is Array(routes) else {
+    fail("expected default routes")
+  }
+  assert_eq(routes.length(), 3)
+  guard routes[0] is Object(sonnet) else { fail("expected route object") }
+  assert_eq(sonnet["routeId"], Json::string("claude-sonnet-4-6"))
+  assert_eq(sonnet["envKey"], Json::string("ANTHROPIC_DEFAULT_SONNET_MODEL"))
+  assert_eq(sonnet["supports1m"], Json::boolean(true))
+}
+
+///|
+test "ccs imports missing claude providers into claude desktop namespace" {
+  let gateway = Gateway::new(port=17071)
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="claude-extra",
+      provider_name="Claude Extra",
+      provider_type=Some("anthropic"),
+      base_url=Some("https://example.test"),
+    ),
+  )
+  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
+  assert_true(
+    gateway.provider_router.provider_by_id("claude-desktop", "claude-extra")
+    is Some(_),
+  )
+  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
+}

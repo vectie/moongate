@@ -118,6 +118,11 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET|POST /get_tool_versions")))
   assert_true(routes.contains(Json::string("GET|POST /open_external")))
   assert_true(routes.contains(Json::string("GET /is_lightweight_mode")))
+  assert_true(
+    routes.contains(Json::string("GET /get_default_cost_multiplier_test_hook")),
+  )
+  assert_true(routes.contains(Json::string("POST /switch_provider_test_hook")))
+  assert_true(routes.contains(Json::string("GET /get_claude_desktop_status")))
   assert_true(routes.contains(Json::string("POST /v1/messages")))
   assert_true(routes.contains(Json::string("POST /login")))
   assert_true(routes.contains(Json::string("ANY /v1beta/*path")))

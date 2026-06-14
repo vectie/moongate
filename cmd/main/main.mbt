@@ -206,10 +206,22 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_proxy_default_cost_multiplier(arr)
     ["set_default_cost_multiplier", ..] | ["set-default-cost-multiplier", ..] =>
       set_proxy_default_cost_multiplier(arr)
+    ["get_default_cost_multiplier_test_hook", ..]
+    | ["get-default-cost-multiplier-test-hook", ..] =>
+      check_proxy_default_cost_multiplier_test_hook(arr)
+    ["set_default_cost_multiplier_test_hook", ..]
+    | ["set-default-cost-multiplier-test-hook", ..] =>
+      set_proxy_default_cost_multiplier_test_hook(arr)
     ["get_pricing_model_source", ..] | ["get-pricing-model-source", ..] =>
       check_proxy_pricing_model_source(arr)
     ["set_pricing_model_source", ..] | ["set-pricing-model-source", ..] =>
       set_proxy_pricing_model_source(arr)
+    ["get_pricing_model_source_test_hook", ..]
+    | ["get-pricing-model-source-test-hook", ..] =>
+      check_proxy_pricing_model_source_test_hook(arr)
+    ["set_pricing_model_source_test_hook", ..]
+    | ["set-pricing-model-source-test-hook", ..] =>
+      set_proxy_pricing_model_source_test_hook(arr)
     ["get_provider_health", ..] | ["get-provider-health", ..] =>
       check_proxy_provider_health(arr)
     ["get_circuit_breaker_config", ..] | ["get-circuit-breaker-config", ..] =>
@@ -254,8 +266,25 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     | ["remove-provider-from-live-config", ..] =>
       remove_provider_from_live_config(arr)
     ["switch_provider", ..] | ["switch-provider", ..] => switch_provider(arr)
+    ["switch_provider_test_hook", ..] | ["switch-provider-test-hook", ..] =>
+      switch_provider_test_hook(arr)
     ["sync_current_providers_live", ..] | ["sync-current-providers-live", ..] =>
       sync_current_providers_live(arr)
+    ["get_claude_desktop_status", ..] | ["get-claude-desktop-status", ..] =>
+      check_usage_endpoint(arr, "/get_claude_desktop_status")
+    ["get_claude_desktop_default_routes", ..]
+    | ["get-claude-desktop-default-routes", ..] =>
+      check_usage_endpoint(arr, "/get_claude_desktop_default_routes")
+    ["import_claude_desktop_providers_from_claude", ..]
+    | ["import-claude-desktop-providers-from-claude", ..] =>
+      check_json_post_endpoint(
+        arr, "/import_claude_desktop_providers_from_claude", "Provider",
+      )
+    ["ensure_claude_desktop_official_provider", ..]
+    | ["ensure-claude-desktop-official-provider", ..] =>
+      check_json_post_endpoint(
+        arr, "/ensure_claude_desktop_official_provider", "Provider",
+      )
     ["read_live_provider_settings", ..] | ["read-live-provider-settings", ..] =>
       check_live_provider_settings(arr)
     ["get_claude_plugin_status", ..] | ["get-claude-plugin-status", ..] =>
@@ -1384,6 +1413,28 @@ async fn set_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn check_proxy_default_cost_multiplier_test_hook(
+  args : Array[String],
+) -> Unit {
+  check_proxy_app_endpoint(args, "/get_default_cost_multiplier_test_hook")
+}
+
+///|
+async fn set_proxy_default_cost_multiplier_test_hook(
+  args : Array[String],
+) -> Unit {
+  guard proxy_app_value_update_path(
+      args, "/set_default_cost_multiplier_test_hook",
+    )
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --value")
+    return
+  }
+  check_json_post_endpoint(args, path, "Proxy")
+}
+
+///|
 async fn check_proxy_pricing_model_source(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/pricing-model-source")
 }
@@ -1391,6 +1442,24 @@ async fn check_proxy_pricing_model_source(args : Array[String]) -> Unit {
 ///|
 async fn set_proxy_pricing_model_source(args : Array[String]) -> Unit {
   guard proxy_app_value_update_path(args, "/proxy/pricing-model-source")
+    is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --value")
+    return
+  }
+  check_json_post_endpoint(args, path, "Proxy")
+}
+
+///|
+async fn check_proxy_pricing_model_source_test_hook(
+  args : Array[String],
+) -> Unit {
+  check_proxy_app_endpoint(args, "/get_pricing_model_source_test_hook")
+}
+
+///|
+async fn set_proxy_pricing_model_source_test_hook(args : Array[String]) -> Unit {
+  guard proxy_app_value_update_path(args, "/set_pricing_model_source_test_hook")
     is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required --value")
@@ -1579,6 +1648,16 @@ async fn remove_provider_from_live_config(args : Array[String]) -> Unit {
 ///|
 async fn switch_provider(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/switch_provider") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required --id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Provider")
+}
+
+///|
+async fn switch_provider_test_hook(args : Array[String]) -> Unit {
+  guard provider_id_path(args, "/switch_provider_test_hook") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required --id")
     return
