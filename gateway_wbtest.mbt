@@ -4026,6 +4026,36 @@ test "ccs chat sse parser aggregates text and usage" {
 }
 
 ///|
+test "codex response conversion ignores invalid direct cache tokens like ccs" {
+  let body = @json.parse(
+    (
+      #|{
+      #|  "id": "resp_invalid_cache",
+      #|  "model": "gpt-5",
+      #|  "output": [
+      #|    {
+      #|      "type": "message",
+      #|      "content": [
+      #|        { "type": "output_text", "text": "ok" }
+      #|      ]
+      #|    }
+      #|  ],
+      #|  "usage": {
+      #|    "input_tokens": 10,
+      #|    "output_tokens": 2,
+      #|    "cache_read_input_tokens": -7,
+      #|    "input_tokens_details": { "cached_tokens": 4 }
+      #|  }
+      #|}
+    ),
+  )
+  let response = convert_codex_to_anthropic(body, "gpt-5")
+  assert_eq(response.usage.input_tokens, 6)
+  assert_eq(response.usage.output_tokens, 2)
+  assert_eq(response.usage.cache_read_input_tokens, Some(4))
+}
+
+///|
 test "ccs chat sse parser merges tool call argument fragments" {
   let sse =
     #|data: {"id":"chatcmpl_tool","model":"gpt-4o","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{\"q\""}}]},"finish_reason":null}]}
@@ -5699,6 +5729,53 @@ test "openai chat stream clamps fresh input when cache exceeds prompt" {
   assert_eq(usage["output_tokens"], Json::number(50.0))
   assert_eq(usage["cache_read_input_tokens"], Json::number(80.0))
   assert_eq(usage["cache_creation_input_tokens"], Json::number(50.0))
+}
+
+///|
+test "openai chat stream ignores invalid direct cache tokens like ccs" {
+  let state = OpenAIChatAnthropicStreamState::new()
+  let chunk = @json.parse(
+    (
+      #|{
+      #|  "id": "chatcmpl_invalid_cache",
+      #|  "model": "gpt-4o",
+      #|  "choices": [
+      #|    {
+      #|      "index": 0,
+      #|      "delta": { "content": "hi" }
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  let _ = state.push_chunk(chunk)
+  let done = @json.parse(
+    (
+      #|{
+      #|  "choices": [
+      #|    {
+      #|      "index": 0,
+      #|      "delta": {},
+      #|      "finish_reason": "stop"
+      #|    }
+      #|  ],
+      #|  "usage": {
+      #|    "prompt_tokens": 10,
+      #|    "completion_tokens": 2,
+      #|    "cache_read_input_tokens": -7,
+      #|    "prompt_tokens_details": { "cached_tokens": 4 }
+      #|  }
+      #|}
+    ),
+  )
+  let _ = state.push_chunk(done)
+  let done_events = state.finish()
+  let done_data = @json.parse(done_events[0].data)
+  guard done_data is Object(done_obj) else { fail("expected message delta") }
+  guard done_obj["usage"] is Object(usage) else { fail("expected usage") }
+  assert_eq(usage["input_tokens"], Json::number(6.0))
+  assert_eq(usage["output_tokens"], Json::number(2.0))
+  assert_eq(usage["cache_read_input_tokens"], Json::number(4.0))
 }
 
 ///|

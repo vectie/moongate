@@ -16882,9 +16882,9 @@ fn openai_chat_zero_usage_json() -> Json {
 
 ///|
 fn openai_chat_stream_anthropic_usage_json(usage : Map[String, Json]) -> Json {
-  let cache_read = match usage.get("cache_read_input_tokens") {
-    Some(Number(n, ..)) => n.trunc().to_int()
-    _ =>
+  let cache_read = match json_int(usage, "cache_read_input_tokens") {
+    Some(tokens) => tokens
+    None =>
       match usage.get("prompt_tokens_details") {
         Some(Object(details)) => json_int_or_zero(details, "cached_tokens")
         _ => 0
@@ -17089,30 +17089,19 @@ fn convert_codex_to_anthropic(
     }
   }
   if obj.get("usage") is Some(Object(usage_obj)) {
-    input_tokens = match usage_obj.get("input_tokens") {
-      Some(Number(n, ..)) => n.trunc().to_int()
-      _ => 0
-    }
-    output_tokens = match usage_obj.get("output_tokens") {
-      Some(Number(n, ..)) => n.trunc().to_int()
-      _ => 0
-    }
-    cache_read_tokens = match usage_obj.get("cache_read_input_tokens") {
-      Some(Number(n, ..)) => n.trunc().to_int()
-      _ =>
+    input_tokens = json_int_or_zero(usage_obj, "input_tokens")
+    output_tokens = json_int_or_zero(usage_obj, "output_tokens")
+    cache_read_tokens = match json_int(usage_obj, "cache_read_input_tokens") {
+      Some(tokens) => tokens
+      None =>
         match usage_obj.get("input_tokens_details") {
-          Some(Object(details)) =>
-            match details.get("cached_tokens") {
-              Some(Number(n, ..)) => n.trunc().to_int()
-              _ => 0
-            }
+          Some(Object(details)) => json_int_or_zero(details, "cached_tokens")
           _ => 0
         }
     }
-    cache_creation_tokens = match usage_obj.get("cache_creation_input_tokens") {
-      Some(Number(n, ..)) => n.trunc().to_int()
-      _ => 0
-    }
+    cache_creation_tokens = json_int_or_zero(
+      usage_obj, "cache_creation_input_tokens",
+    )
   }
   let usage = TokenUsage::new(
     input_tokens~,
