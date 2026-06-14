@@ -684,6 +684,52 @@ test "gateway syncs ccs provider limit metadata into usage limits" {
 }
 
 ///|
+test "gateway add provider follows ccs current provider semantics" {
+  let gateway = Gateway::new(port=0)
+  gateway.add_provider_target_ccs(
+    "codex",
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-alt",
+      provider_name="Codex Alt",
+    ),
+    true,
+  )
+  assert_eq(
+    gateway.provider_router.current_provider_id("codex"),
+    Some("codex-oauth"),
+  )
+  gateway.provider_router.current_provider_ids.remove("gemini")
+  gateway.add_provider_target_ccs(
+    "gemini",
+    ProviderRouteTarget::new(
+      app_type="gemini",
+      provider_id="gemini-alt",
+      provider_name="Gemini Alt",
+    ),
+    true,
+  )
+  assert_eq(
+    gateway.provider_router.current_provider_id("gemini"),
+    Some("gemini-alt"),
+  )
+  gateway.add_provider_target_ccs(
+    "opencode",
+    ProviderRouteTarget::new(
+      app_type="opencode",
+      provider_id="opencode-alt",
+      provider_name="OpenCode Alt",
+    ),
+    true,
+  )
+  assert_eq(gateway.provider_router.current_provider_id("opencode"), None)
+  assert_eq(
+    gateway.provider_router.current_provider_for_ccs_command("opencode"),
+    "",
+  )
+}
+
+///|
 test "provider target resolves ccs app settings credentials" {
   guard provider_target_from_request(
       "/add_provider",

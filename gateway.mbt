@@ -9177,13 +9177,26 @@ async fn Gateway::handle_add_provider(
   let add_to_live = provider_bool_from_request(r.path, body, [
     "addToLive", "add_to_live",
   ]).unwrap_or(true)
+  self.add_provider_target_ccs(app_type, target, add_to_live)
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+fn Gateway::add_provider_target_ccs(
+  self : Gateway,
+  app_type : String,
+  target : ProviderRouteTarget,
+  add_to_live : Bool,
+) -> Unit {
+  ignore(add_to_live)
   let provider_id = target.provider_id
   self.sync_provider_limits_from_target(target)
   self.provider_router.upsert_provider(target)
-  if add_to_live || self.provider_router.current_provider_id(app_type) is None {
-    self.provider_router.set_current_provider(app_type, provider_id)
+  if !provider_app_is_additive(app_type) {
+    if self.provider_router.current_provider_id(app_type) is None {
+      self.provider_router.set_current_provider(app_type, provider_id)
+    }
   }
-  write_usage_json(w, Json::boolean(true))
 }
 
 ///|
