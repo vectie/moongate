@@ -5656,6 +5656,60 @@ async test "ccs prompt file helpers import and read prompt files" {
 }
 
 ///|
+async test "ccs prompt enable writes prompt file and disables app siblings" {
+  @fsx.with_temporary_directory("moonstat-prompt-enable-XXXXXX", async fn(
+    tmpdir,
+  ) {
+    let prompt_path = @pathx.join(tmpdir, "AGENTS.md")
+    let prompts : Map[String, Json] = {}
+    prompts[ccs_prompt_store_key("codex", "first")] = ccs_normalize_prompt(
+      "first",
+      {
+        "content": Json::string("first content"),
+        "enabled": Json::boolean(true),
+      }.to_json(),
+    )
+    prompts[ccs_prompt_store_key("codex", "second")] = ccs_normalize_prompt(
+      "second",
+      {
+        "content": Json::string("second content"),
+        "enabled": Json::boolean(false),
+      }.to_json(),
+    )
+    prompts[ccs_prompt_store_key("claude", "first")] = ccs_normalize_prompt(
+      "first",
+      {
+        "content": Json::string("claude content"),
+        "enabled": Json::boolean(true),
+      }.to_json(),
+    )
+    match ccs_enable_prompt_json(prompts, "codex", "second", prompt_path) {
+      Ok(_) => ()
+      Err(error) => fail(error)
+    }
+    assert_eq(@fsx.read_file(prompt_path), "second content")
+    guard prompts.get(ccs_prompt_store_key("codex", "first"))
+      is Some(Object(codex_first)) else {
+      fail("expected codex first prompt")
+    }
+    assert_eq(codex_first["enabled"], Json::boolean(false))
+    guard prompts.get(ccs_prompt_store_key("codex", "second"))
+      is Some(Object(codex_second)) else {
+      fail("expected codex second prompt")
+    }
+    assert_eq(codex_second["enabled"], Json::boolean(true))
+    guard prompts.get(ccs_prompt_store_key("claude", "first"))
+      is Some(Object(claude_first)) else {
+      fail("expected claude first prompt")
+    }
+    assert_eq(claude_first["enabled"], Json::boolean(true))
+    assert_true(
+      ccs_enable_prompt_json(prompts, "codex", "missing", prompt_path) is Err(_),
+    )
+  })
+}
+
+///|
 test "gemini native response synthesizes ccs marked missing tool id" {
   let body = @json.parse(
     (

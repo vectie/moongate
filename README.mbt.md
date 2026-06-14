@@ -464,8 +464,9 @@ CCS MCP and prompt commands are mirrored by `/get_mcp_config`,
 `/toggle_mcp_app`, `/get_prompts`, `/upsert_prompt`, and related Claude-specific
 aliases. Standalone mode stores MCP servers and prompts in gateway memory,
 exports the Claude `mcpServers` JSON text shape, validates command names, and
-imports or reads CCS prompt files (`CLAUDE.md`, `AGENTS.md`, or `GEMINI.md`)
-without modifying those files.
+imports, reads, and enables CCS prompt files (`CLAUDE.md`, `AGENTS.md`, or
+`GEMINI.md`); enabling a prompt writes the selected content to that app's prompt
+file.
 `/get_universal_providers`,
 `/get_universal_provider`, `/upsert_universal_provider`,
 `/delete_universal_provider`, and `/sync_universal_provider` preserve the ccs

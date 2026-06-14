@@ -5192,6 +5192,62 @@ async fn ccs_current_prompt_file_content_json(
 }
 
 ///|
+async fn ccs_enable_prompt_json(
+  prompts : Map[String, Json],
+  app : String,
+  id : String,
+  file_path : String,
+) -> Result[Json, String] {
+  let normalized = ccs_normalize_app_type(app)
+  let prefix = "\{normalized}:"
+  let mut selected_content = ""
+  let mut found = false
+  for key in prompts.keys() {
+    if !key.has_prefix(prefix) {
+      continue
+    }
+    guard prompts.get(key) is Some(Object(prompt)) else { continue }
+    guard json_string_from_map_any(prompt, ["id"]) is Some(prompt_id) else {
+      continue
+    }
+    if prompt_id == id {
+      selected_content = json_string_from_map_any(prompt, ["content"]).unwrap_or(
+        "",
+      )
+      found = true
+      break
+    }
+  }
+  if !found {
+    return Err("提示词 \{id} 不存在")
+  }
+  @fsx.make_directory(@pathx.dirname(file_path), recursive=true, exists_ok=true) catch {
+    error => return Err("创建提示词目录失败: \{error}")
+  }
+  @fsx.write_to_file(file_path, selected_content) catch {
+    error => return Err("写入提示词文件失败: \{error}")
+  }
+  let now = Json::string(@async.now().to_string())
+  for key in prompts.keys() {
+    if !key.has_prefix(prefix) {
+      continue
+    }
+    guard prompts.get(key) is Some(Object(prompt)) else { continue }
+    let next = prompt
+    let enabled = match json_string_from_map_any(next, ["id"]) {
+      Some(prompt_id) => prompt_id == id
+      None => false
+    }
+    next["enabled"] = Json::boolean(enabled)
+    if enabled {
+      next["updatedAt"] = now
+    }
+    prompts[key] = Json::object(next)
+  }
+  Ok(Json::null())
+}
+
+///|
 fn ccs_normalize_prompt(id : String, prompt : Json) -> Json {
   match prompt {
     Object(obj) => {
@@ -6960,21 +7016,17 @@ async fn Gateway::handle_enable_prompt(
   let body = proxy_json_body(r)
   let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   match proxy_string_request(r.path, body, ["id", "promptId", "prompt_id"]) {
-    Some(id) => {
-      let key = ccs_prompt_store_key(app, id)
-      match self.prompts.get(key) {
-        Some(Object(prompt)) => {
-          let next = prompt
-          next["enabled"] = Json::boolean(true)
-          next["updatedAt"] = Json::string(@async.now().to_string())
-          self.prompts[key] = Json::object(next)
-        }
-        _ => ()
+    Some(id) =>
+      match ccs_prompt_file_path_from_request(r.path, body, app) {
+        Ok(file_path) =>
+          match ccs_enable_prompt_json(self.prompts, app, id, file_path) {
+            Ok(result) => write_usage_json(w, result)
+            Err(error) => write_usage_bad_request(w, error)
+          }
+        Err(error) => write_usage_bad_request(w, error)
       }
-    }
-    None => ()
+    None => write_usage_json(w, Json::null())
   }
-  write_usage_json(w, Json::null())
 }
 
 ///|
