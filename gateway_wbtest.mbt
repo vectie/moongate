@@ -312,21 +312,25 @@ test "token plan quota usage conversion mirrors ccs rows" {
 ///|
 test "usage query helpers parse ccs auto failover boolean parameters" {
   assert_eq(
-    usage_query_bool_any(
-      "/proxy/auto-failover-enabled?appType=codex&enabled=true", "enabled", "enabled",
+    proxy_bool_request(
+      "/proxy/auto-failover-enabled?appType=codex&enabled=true",
+      None,
+      ["enabled"],
     ),
     Some(true),
   )
   assert_eq(
-    usage_query_bool_any(
-      "/proxy/auto-failover-enabled?app_type=codex&enabled=0", "enabled", "enabled",
+    proxy_bool_request(
+      "/proxy/auto-failover-enabled?app_type=codex&enabled=0",
+      None,
+      ["enabled"],
     ),
     Some(false),
   )
   assert_eq(
-    usage_query_bool_any(
-      "/proxy/auto-failover-enabled?enabled=maybe", "enabled", "enabled",
-    ),
+    proxy_bool_request("/proxy/auto-failover-enabled?enabled=maybe", None, [
+      "enabled",
+    ]),
     None,
   )
 }
@@ -352,6 +356,25 @@ test "proxy failover command parsers accept ccs json payload keys" {
   )
   assert_eq(
     proxy_bool_request("/set_auto_failover_enabled", body, ["enabled"]),
+    Some(true),
+  )
+  guard stream_check_provider_from_request("/stream_check_provider", body)
+    is Some((stream_app, stream_provider)) else {
+    fail("expected stream check provider query")
+  }
+  assert_eq(stream_app, " codex ")
+  assert_eq(stream_provider, "codex-oauth")
+  assert_eq(
+    proxy_bool_request(
+      "/stream_check_all_providers",
+      Some(
+        {
+          "appType": Json::string("claude"),
+          "proxyTargetsOnly": Json::boolean(true),
+        }.to_json(),
+      ),
+      ["proxy_targets_only", "proxyTargetsOnly"],
+    ),
     Some(true),
   )
 }

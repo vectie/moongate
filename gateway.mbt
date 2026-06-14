@@ -8480,7 +8480,8 @@ async fn Gateway::handle_proxy_app_config(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
@@ -8561,7 +8562,8 @@ async fn Gateway::handle_proxy_default_cost_multiplier(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
@@ -8628,7 +8630,8 @@ async fn Gateway::handle_proxy_pricing_model_source(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
@@ -11566,7 +11569,9 @@ async fn Gateway::handle_stream_check_provider(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard stream_check_provider_query(r.path) is Some((app_type, provider_id)) else {
+  let body = proxy_json_body(r)
+  guard stream_check_provider_from_request(r.path, body)
+    is Some((app_type, provider_id)) else {
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
@@ -11584,15 +11589,14 @@ async fn Gateway::handle_stream_check_all_providers(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  let proxy_targets_only = usage_query_bool_any(
-    r.path,
-    "proxy_targets_only",
-    "proxyTargetsOnly",
-  ).unwrap_or(false)
+  let proxy_targets_only = proxy_bool_request(r.path, body, [
+    "proxy_targets_only", "proxyTargetsOnly",
+  ]).unwrap_or(false)
   let rows : Array[Json] = []
   for
     provider_id in self.provider_router.stream_check_provider_ids(
@@ -11689,16 +11693,27 @@ fn stream_check_parse_model_with_effort(model : String) -> (String, String?) {
 }
 
 ///|
-fn stream_check_provider_query(path : StringView) -> (String, String)? {
+fn stream_check_provider_from_request(
+  path : StringView,
+  body : Json?,
+) -> (String, String)? {
   let app_type = match usage_query_value_any(path, "app_type", "appType") {
     Some(value) => Some(value)
-    None => usage_query_value(path, "app")
+    None => proxy_string_request(path, body, ["app_type", "appType"])
+  }
+  let app_type = match app_type {
+    Some(value) => Some(value)
+    None => proxy_string_request(path, body, ["app"])
   }
   guard app_type is Some(app_type) else { return None }
   let provider_id = match
     usage_query_value_any(path, "provider_id", "providerId") {
     Some(value) => Some(value)
-    None => usage_query_value(path, "id")
+    None => proxy_string_request(path, body, ["provider_id", "providerId"])
+  }
+  let provider_id = match provider_id {
+    Some(value) => Some(value)
+    None => proxy_string_request(path, body, ["id"])
   }
   guard provider_id is Some(provider_id) else { return None }
   Some((app_type, provider_id))
@@ -13592,18 +13607,6 @@ fn usage_query_int_any(
       } noraise {
         parsed => Some(parsed)
       }
-    None => None
-  }
-}
-
-///|
-fn usage_query_bool_any(
-  path : StringView,
-  left_key : String,
-  right_key : String,
-) -> Bool? {
-  match usage_query_value_any(path, left_key, right_key) {
-    Some(value) => parse_bool_value(value)
     None => None
   }
 }
