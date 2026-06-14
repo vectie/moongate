@@ -3168,6 +3168,9 @@ async fn Gateway::post_claude_compatible_provider_json(
 const CCS_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
 
 ///|
+const HERMES_WEB_OFFLINE_ERROR = "hermes_web_offline"
+
+///|
 fn ccs_reject_proxy_managed_placeholder_for_upstream(
   url : String,
   headers : Map[String, String],
@@ -9873,17 +9876,14 @@ async fn Gateway::handle_open_hermes_web_ui(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let port = usage_query_int(r.path, "port").unwrap_or(9119)
+  let port = hermes_web_port_from_request(r.path)
   let path = usage_query_value(r.path, "path").unwrap_or("/")
-  let normalized_path = if path.has_prefix("/") { path } else { "/\{path}" }
-  write_usage_json(
-    w,
-    {
-      "url": Json::string("http://127.0.0.1:\{port}\{normalized_path}"),
-      "opened": Json::boolean(false),
-      "error": Json::null(),
-    }.to_json(),
-  )
+  if !hermes_web_ui_is_live(port) {
+    write_usage_bad_request(w, HERMES_WEB_OFFLINE_ERROR)
+    return
+  }
+  ignore(hermes_web_ui_target_url(port, path))
+  write_usage_json(w, Json::null())
 }
 
 ///|
@@ -11887,6 +11887,61 @@ fn hermes_memory_limits_json(enabled : Map[String, Bool]) -> Json {
     "memoryEnabled": Json::boolean(enabled.get("memory").unwrap_or(true)),
     "userEnabled": Json::boolean(enabled.get("user").unwrap_or(true)),
   }.to_json()
+}
+
+///|
+fn hermes_web_port_from_request(path : StringView) -> Int {
+  match usage_query_int(path, "port") {
+    Some(port) if port > 0 && port <= 65535 => return port
+    _ => ()
+  }
+  let env_port = @os.getenv("HERMES_WEB_PORT") catch { _ => None }
+  match env_port {
+    Some(raw) => {
+      let port = @string.parse_int(raw.trim().to_owned(), base=10) catch {
+        _ => -1
+      }
+      if port > 0 && port <= 65535 {
+        port
+      } else {
+        9119
+      }
+    }
+    None => 9119
+  }
+}
+
+///|
+fn hermes_web_ui_path(path : String) -> String {
+  if path.is_empty() {
+    "/"
+  } else if path.has_prefix("/") {
+    path
+  } else {
+    "/\{path}"
+  }
+}
+
+///|
+fn hermes_web_ui_target_url(port : Int, path : String) -> String {
+  "http://127.0.0.1:\{port}\{hermes_web_ui_path(path)}"
+}
+
+///|
+fn hermes_web_ui_probe_url(port : Int) -> String {
+  "http://127.0.0.1:\{port}/api/status"
+}
+
+///|
+async fn hermes_web_ui_is_live(port : Int) -> Bool {
+  if !@net.localhost_port_open(port, timeout_ms=1200) {
+    return false
+  }
+  let result = try? @http.get(hermes_web_ui_probe_url(port))
+  match result {
+    Ok(_) => true
+    Err(_) => false
+  }
 }
 
 ///|

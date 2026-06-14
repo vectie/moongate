@@ -792,6 +792,15 @@ test "suite config helpers mirror ccs openclaw hermes shapes" {
     hermes_memory_kind_from_request("/get_hermes_memory?kind=bad", None),
     None,
   )
+  assert_eq(hermes_web_port_from_request("/open_hermes_web_ui?port=9120"), 9120)
+  assert_eq(hermes_web_ui_path(""), "/")
+  assert_eq(hermes_web_ui_path("settings/models"), "/settings/models")
+  assert_eq(hermes_web_ui_path("/settings/models"), "/settings/models")
+  assert_eq(
+    hermes_web_ui_target_url(9120, "settings/models"),
+    "http://127.0.0.1:9120/settings/models",
+  )
+  assert_eq(hermes_web_ui_probe_url(9120), "http://127.0.0.1:9120/api/status")
 }
 
 ///|
