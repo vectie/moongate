@@ -3582,7 +3582,7 @@ fn gemini_stream_query_extra(
   is_stream : Bool,
   query : String?,
 ) -> String? {
-  if api_format != "gemini_native" || !is_stream {
+  if api_format != "gemini_native" {
     return query
   }
   let parts : Array[String] = []
@@ -3595,7 +3595,9 @@ fn gemini_stream_query_extra(
       }
     None => ()
   }
-  parts.push("alt=sse")
+  if is_stream {
+    parts.push("alt=sse")
+  }
   Some(parts.join("&"))
 }
 
