@@ -1076,6 +1076,56 @@ test "usage aggregate helpers prefer query params over ccs body args" {
 }
 
 ///|
+async test "queryProviderUsage returns cached ccs script result first" {
+  let gateway = Gateway::new(port=17019, host="127.0.0.19", model="gpt-5")
+  let cached = UsageResult::new(
+    true,
+    data=Some([
+      UsageData::new(
+        plan_name=Some("Cached"),
+        remaining=Some(42.0),
+        unit=Some("USD"),
+        is_valid=Some(true),
+      ),
+    ]),
+  )
+  gateway.usage_cache.put_script("codex", "cached-provider", cached)
+  assert_eq(
+    gateway
+    .query_provider_usage_standalone("codex", "cached-provider")
+    .to_json(),
+    cached.to_json(),
+  )
+}
+
+///|
+async test "queryProviderUsage falls back to ccs native balance credentials" {
+  let gateway = Gateway::new(port=17020, host="127.0.0.20", model="gpt-5")
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="openrouter-native",
+      provider_name="OpenRouter",
+      provider_type=Some("openrouter"),
+      base_url=Some("https://openrouter.ai/api/v1"),
+      api_key=Some(""),
+    ),
+  )
+  assert_eq(
+    gateway
+    .query_provider_usage_standalone("codex", "openrouter-native")
+    .to_json(),
+    UsageResult::new(false, error=Some("API key is empty")).to_json(),
+  )
+  assert_eq(
+    gateway
+    .query_provider_usage_standalone("codex", "missing-provider")
+    .to_json(),
+    UsageResult::new(false, error=Some("Usage query is disabled")).to_json(),
+  )
+}
+
+///|
 async test "ccs open folder helper creates directory and returns boolean success" {
   @fsx.with_temporary_directory("moonstat-open-folder-XXXXXX", async fn(
     tmpdir,

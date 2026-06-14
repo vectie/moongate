@@ -10509,14 +10509,40 @@ async fn Gateway::handle_query_provider_usage(
     write_usage_bad_request(w, "missing_app")
     return
   }
+  write_usage_json(
+    w,
+    self.query_provider_usage_standalone(app_type, provider_id).to_json(),
+  )
+}
+
+///|
+async fn Gateway::query_provider_usage_standalone(
+  self : Gateway,
+  app_type : String,
+  provider_id : String,
+) -> UsageResult {
   match self.usage_cache.get_script(app_type, provider_id) {
-    Some(result) => write_usage_json(w, result.to_json())
-    None =>
-      write_usage_json(
-        w,
-        UsageResult::new(false, error=Some("Usage query is disabled")).to_json(),
-      )
+    Some(result) => return result
+    None => ()
   }
+  match self.provider_router.provider_by_id(app_type, provider_id) {
+    Some(provider) =>
+      match ccs_provider_balance_query_credentials(provider) {
+        Some((base_url, api_key)) => return ccs_get_balance(base_url, api_key)
+        None => ()
+      }
+    None => ()
+  }
+  UsageResult::new(false, error=Some("Usage query is disabled"))
+}
+
+///|
+fn ccs_provider_balance_query_credentials(
+  provider : ProviderRouteTarget,
+) -> (String, String)? {
+  guard provider.base_url is Some(base_url) else { return None }
+  guard ccs_detect_balance_provider(base_url) is Some(_) else { return None }
+  Some((base_url, provider.api_key.unwrap_or("")))
 }
 
 ///|
