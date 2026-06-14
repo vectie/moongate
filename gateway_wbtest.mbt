@@ -3581,6 +3581,177 @@ test "gateway repairs unsafe ccs claude desktop route ids" {
 }
 
 ///|
+fn mimo_anthropic_claude_desktop_provider(
+  api_format? : String? = Some("anthropic"),
+) -> ProviderRouteTarget {
+  let routes : Map[String, ClaudeDesktopModelRoute] = {
+    "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(model="mimo-v2.5-pro"),
+  }
+  ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="mimo",
+    provider_name="MiMo",
+    api_format~,
+    settings_config=Some(
+      {
+        "env": {
+          "ANTHROPIC_BASE_URL": Json::string(
+            "https://api.xiaomimimo.com/anthropic",
+          ),
+        }.to_json(),
+      }.to_json(),
+    ),
+    claude_desktop_model_routes=routes,
+  )
+}
+
+///|
+test "claude desktop mimo anthropic rewrites redacted thinking for tool history" {
+  let provider = mimo_anthropic_claude_desktop_provider()
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "claude-sonnet-4-6",
+      #|  "messages": [
+      #|    {
+      #|      "role": "assistant",
+      #|      "content": [
+      #|        { "type": "redacted_thinking", "data": "opaque" },
+      #|        { "type": "tool_use", "id": "call_1", "name": "read_file", "input": { "path": "README.md" } }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  let mapped = claude_request_json_for_upstream(
+    claude_desktop_proxy_request_json_for_upstream(
+      body, provider, "mimo-v2.5-pro", "claude-desktop",
+    ),
+    "mimo-v2.5-pro",
+  )
+  guard mapped is Object(obj) else { fail("expected object") }
+  assert_eq(obj["model"], Json::string("mimo-v2.5-pro"))
+  guard obj["messages"] is Array(messages) else { fail("expected messages") }
+  guard messages[0] is Object(message) else { fail("expected message") }
+  guard message["content"] is Array(content) else { fail("expected content") }
+  guard content[0] is Object(first) else { fail("expected first block") }
+  assert_eq(json_string_from_map(first, "type"), Some("thinking"))
+  assert_eq(
+    json_string_from_map(first, "thinking"),
+    Some("[redacted thinking]"),
+  )
+  guard content[1] is Object(second) else { fail("expected second block") }
+  assert_eq(json_string_from_map(second, "type"), Some("tool_use"))
+}
+
+///|
+test "claude desktop mimo anthropic injects thinking for tool history without one" {
+  let provider = mimo_anthropic_claude_desktop_provider()
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "claude-sonnet-4-6",
+      #|  "messages": [
+      #|    {
+      #|      "role": "assistant",
+      #|      "content": [
+      #|        { "type": "tool_use", "id": "call_1", "name": "read_file", "input": { "path": "README.md" } }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  let mapped = claude_desktop_proxy_request_json_for_upstream(
+    body, provider, "mimo-v2.5-pro", "claude-desktop",
+  )
+  guard mapped is Object(obj) else { fail("expected object") }
+  guard obj["messages"] is Array(messages) else { fail("expected messages") }
+  guard messages[0] is Object(message) else { fail("expected message") }
+  guard message["content"] is Array(content) else { fail("expected content") }
+  guard content[0] is Object(first) else { fail("expected first block") }
+  assert_eq(json_string_from_map(first, "type"), Some("thinking"))
+  assert_eq(json_string_from_map(first, "thinking"), Some("tool call"))
+  guard content[1] is Object(second) else { fail("expected second block") }
+  assert_eq(json_string_from_map(second, "type"), Some("tool_use"))
+}
+
+///|
+test "claude desktop mimo anthropic keeps thinking text but drops signature" {
+  let provider = mimo_anthropic_claude_desktop_provider()
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "claude-sonnet-4-6",
+      #|  "messages": [
+      #|    {
+      #|      "role": "assistant",
+      #|      "content": [
+      #|        { "type": "thinking", "thinking": "Need to inspect the file.", "signature": "anthropic-signature" },
+      #|        { "type": "tool_use", "id": "call_1", "name": "read_file", "input": { "path": "README.md" } }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  let mapped = claude_desktop_proxy_request_json_for_upstream(
+    body, provider, "mimo-v2.5-pro", "claude-desktop",
+  )
+  guard mapped is Object(obj) else { fail("expected object") }
+  guard obj["messages"] is Array(messages) else { fail("expected messages") }
+  guard messages[0] is Object(message) else { fail("expected message") }
+  guard message["content"] is Array(content) else { fail("expected content") }
+  guard content[0] is Object(first) else { fail("expected first block") }
+  assert_eq(
+    json_string_from_map(first, "thinking"),
+    Some("Need to inspect the file."),
+  )
+  assert_true(first.get("signature") is None)
+}
+
+///|
+test "claude desktop mimo normalization is scoped to anthropic mimo providers" {
+  let openai_provider = mimo_anthropic_claude_desktop_provider(
+    api_format=Some("openai_chat"),
+  )
+  let plain_provider = ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="plain",
+    provider_name="Plain",
+    api_format=Some("anthropic"),
+  )
+  let body = @json.parse(
+    (
+      #|{
+      #|  "model": "claude-sonnet-4-6",
+      #|  "messages": [
+      #|    {
+      #|      "role": "assistant",
+      #|      "content": [
+      #|        { "type": "tool_use", "id": "call_1", "name": "read_file", "input": { "path": "README.md" } }
+      #|      ]
+      #|    }
+      #|  ]
+      #|}
+    ),
+  )
+  assert_eq(
+    claude_desktop_proxy_request_json_for_upstream(
+      body, openai_provider, "mimo-v2.5-pro", "claude-desktop",
+    ),
+    body,
+  )
+  assert_eq(
+    claude_desktop_proxy_request_json_for_upstream(
+      body, plain_provider, "plain-model", "claude-desktop",
+    ),
+    body,
+  )
+}
+
+///|
 test "claude desktop status reports ccs profile and proxy route health" {
   let gateway = Gateway::new(port=17111, host="127.0.0.11")
   gateway.provider_router.upsert_provider(

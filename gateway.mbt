@@ -15392,6 +15392,9 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     session_id~,
   )
   let api_format = provider.claude_api_format_for_model(upstream_model)
+  let request_json = claude_desktop_proxy_request_json_for_upstream(
+    request_json, provider, upstream_model, app_type,
+  )
   let upstream_body = prepare_upstream_request_body(
     claude_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
@@ -15619,6 +15622,154 @@ fn claude_request_json_for_upstream(
   guard body is Object(obj) else { return body }
   obj["model"] = Json::string(upstream_model)
   Json::object(obj)
+}
+
+///|
+fn claude_desktop_proxy_request_json_for_upstream(
+  body : Json,
+  provider : ProviderRouteTarget,
+  upstream_model : String,
+  app_type : String,
+) -> Json {
+  guard app_type == "claude-desktop" else { return body }
+  guard provider.should_normalize_mimo_anthropic_thinking_history(
+    upstream_model,
+  ) else {
+    return body
+  }
+  normalize_mimo_anthropic_thinking_history(body)
+}
+
+///|
+fn ProviderRouteTarget::should_normalize_mimo_anthropic_thinking_history(
+  self : ProviderRouteTarget,
+  upstream_model : String,
+) -> Bool {
+  self.uses_anthropic_messages_format() &&
+  (is_mimo_identifier(upstream_model) || self.has_mimo_endpoint())
+}
+
+///|
+fn ProviderRouteTarget::uses_anthropic_messages_format(
+  self : ProviderRouteTarget,
+) -> Bool {
+  let api_format = match self.api_format {
+    Some(api_format) => api_format.trim().to_owned()
+    None =>
+      match provider_settings_api_format(self.settings_config) {
+        Some(api_format) => api_format.trim().to_owned()
+        None => "anthropic"
+      }
+  }
+  api_format.is_empty() || api_format == "anthropic"
+}
+
+///|
+fn ProviderRouteTarget::has_mimo_endpoint(self : ProviderRouteTarget) -> Bool {
+  guard self.settings_config is Some(Object(settings)) else { return false }
+  match settings.get("env") {
+    Some(Object(env)) =>
+      match json_string_from_map(env, "ANTHROPIC_BASE_URL") {
+        Some(value) if is_mimo_identifier(value) => return true
+        _ => ()
+      }
+    _ => ()
+  }
+  match json_string_from_map(settings, "base_url") {
+    Some(value) if is_mimo_identifier(value) => return true
+    _ => ()
+  }
+  match json_string_from_map(settings, "baseURL") {
+    Some(value) if is_mimo_identifier(value) => return true
+    _ => ()
+  }
+  match json_string_from_map(settings, "apiEndpoint") {
+    Some(value) if is_mimo_identifier(value) => return true
+    _ => ()
+  }
+  false
+}
+
+///|
+fn is_mimo_identifier(value : String) -> Bool {
+  let lower = value.to_lower()
+  lower.contains("mimo") || lower.contains("xiaomimimo")
+}
+
+///|
+fn normalize_mimo_anthropic_thinking_history(body : Json) -> Json {
+  guard body is Object(obj) else { return body }
+  guard obj.get("messages") is Some(Array(messages)) else {
+    return Json::object(obj)
+  }
+  for index in 0..<messages.length() {
+    guard messages[index] is Object(message_obj) else { continue }
+    guard json_string_from_map(message_obj, "role") == Some("assistant") else {
+      continue
+    }
+    guard message_obj.get("content") is Some(Array(content)) else { continue }
+    guard content.any(fn(block) {
+      block is Object(block_obj) &&
+      json_string_from_map(block_obj, "type") == Some("tool_use")
+    }) else {
+      continue
+    }
+    message_obj["content"] = Json::array(
+      normalize_mimo_anthropic_content_blocks(content),
+    )
+    messages[index] = Json::object(message_obj)
+  }
+  obj["messages"] = Json::array(messages)
+  Json::object(obj)
+}
+
+///|
+fn normalize_mimo_anthropic_content_blocks(
+  content : Array[Json],
+) -> Array[Json] {
+  let normalized : Array[Json] = []
+  let mut has_thinking = false
+  for block in content {
+    match block {
+      Object(block_obj) =>
+        match json_string_from_map(block_obj, "type") {
+          Some("thinking") => {
+            block_obj.remove("signature")
+            let text = json_string_from_map(block_obj, "thinking").unwrap_or("")
+            if text.trim().is_empty() {
+              block_obj["thinking"] = Json::string("tool call")
+            }
+            has_thinking = true
+            normalized.push(Json::object(block_obj))
+          }
+          Some("redacted_thinking") => {
+            has_thinking = true
+            normalized.push(
+              Json::object({
+                "type": Json::string("thinking"),
+                "thinking": Json::string("[redacted thinking]"),
+              }),
+            )
+          }
+          _ => normalized.push(block)
+        }
+      _ => normalized.push(block)
+    }
+  }
+  if has_thinking {
+    normalized
+  } else {
+    let result : Array[Json] = [
+      Json::object({
+        "type": Json::string("thinking"),
+        "thinking": Json::string("tool call"),
+      }),
+    ]
+    for block in normalized {
+      result.push(block)
+    }
+    result
+  }
 }
 
 ///|
@@ -16550,6 +16701,9 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     session_id~,
   )
   let api_format = provider.claude_api_format_for_model(upstream_model)
+  let request_json = claude_desktop_proxy_request_json_for_upstream(
+    request_json, provider, upstream_model, app_type,
+  )
   let upstream_body = prepare_upstream_request_body(
     claude_stream_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
