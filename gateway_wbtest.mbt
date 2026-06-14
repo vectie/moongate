@@ -28,6 +28,36 @@ test "claude desktop model list matches ccs response shape" {
 }
 
 ///|
+test "claude desktop model list uses ccs provider route metadata" {
+  let routes : Map[String, ClaudeDesktopModelRoute] = {
+    "claude-haiku-4-5": ClaudeDesktopModelRoute::new(
+      model="haiku-upstream",
+      supports_1m=Some(true),
+    ),
+    "gpt-5": ClaudeDesktopModelRoute::new(model="gpt-5-upstream"),
+  }
+  let provider = ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="desktop-routes",
+    provider_name="Desktop Routes",
+    claude_desktop_model_routes=routes,
+  )
+  guard claude_desktop_model_list_json(provider=Some(provider)) is Object(obj) else {
+    fail("expected model list object")
+  }
+  guard obj["data"] is Array(data) else { fail("expected data array") }
+  assert_eq(data.length(), 2)
+  guard data[0] is Object(first) else { fail("expected first model") }
+  guard data[1] is Object(second) else { fail("expected second model") }
+  assert_eq(first["id"], Json::string("claude-haiku-4-5"))
+  assert_eq(first["supports1m"], Json::boolean(true))
+  assert_eq(second["id"], Json::string("claude-sonnet-4-6"))
+  assert_true(second.get("supports1m") is None)
+  assert_eq(obj["first_id"], Json::string("claude-haiku-4-5"))
+  assert_eq(obj["last_id"], Json::string("claude-sonnet-4-6"))
+}
+
+///|
 test "codex compact responses keep compact backend endpoint" {
   assert_eq(
     codex_backend_responses_endpoint(false),
@@ -1984,6 +2014,36 @@ test "gateway uses ccs claude desktop route metadata for upstream model" {
   assert_eq(
     gateway.upstream_claude_model("claude-sonnet-4-6", Some(provider)),
     "mapping-should-not-win",
+  )
+}
+
+///|
+test "gateway repairs unsafe ccs claude desktop route ids" {
+  let gateway = Gateway::new(port=0, model="gpt-default")
+  let routes : Map[String, ClaudeDesktopModelRoute] = {
+    "gpt-5": ClaudeDesktopModelRoute::new(model="gpt-5-upstream [1M]"),
+  }
+  let provider = ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="unsafe-route",
+    provider_name="Unsafe Route",
+    claude_desktop_model_routes=routes,
+  )
+  assert_eq(
+    gateway.upstream_claude_model(
+      "claude-sonnet-4-6",
+      Some(provider),
+      app_type="claude-desktop",
+    ),
+    "gpt-5-upstream",
+  )
+  assert_eq(
+    gateway.upstream_claude_model(
+      "gpt-5",
+      Some(provider),
+      app_type="claude-desktop",
+    ),
+    "gpt-5-upstream",
   )
 }
 

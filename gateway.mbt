@@ -12614,10 +12614,10 @@ async fn Gateway::handle_claude_desktop_models(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.validate_claude_desktop_gateway_auth(r, w) else { return }
-  let _ = self.activate_provider("claude-desktop")
+  let provider = self.activate_provider("claude-desktop")
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  w.write(claude_desktop_model_list_json().stringify())
+  w.write(claude_desktop_model_list_json(provider~).stringify())
   w.flush()
 }
 
@@ -12679,11 +12679,20 @@ async fn write_auth_error(w : @httpx.ResponseWriter, message : String) -> Unit {
 }
 
 ///|
-fn claude_desktop_model_list_json() -> Json {
+fn claude_desktop_model_list_json(
+  provider? : ProviderRouteTarget? = None,
+) -> Json {
+  let routes = match provider {
+    Some(provider) => provider.resolved_claude_desktop_model_routes()
+    None => []
+  }
+  if !routes.is_empty() {
+    return claude_desktop_route_model_list_json(routes)
+  }
   let data = [
-    claude_desktop_model_json("claude-sonnet-4-6"),
-    claude_desktop_model_json("claude-opus-4-8"),
-    claude_desktop_model_json("claude-haiku-4-5"),
+    claude_desktop_model_json("claude-sonnet-4-6", supports_1m=true),
+    claude_desktop_model_json("claude-opus-4-8", supports_1m=true),
+    claude_desktop_model_json("claude-haiku-4-5", supports_1m=true),
   ]
   {
     "data": Json::array(data),
@@ -12694,13 +12703,44 @@ fn claude_desktop_model_list_json() -> Json {
 }
 
 ///|
-fn claude_desktop_model_json(id : String) -> Json {
+fn claude_desktop_route_model_list_json(
+  routes : Array[(String, String, Bool)],
+) -> Json {
+  let data = routes.map(fn(route) {
+    let (route_id, _, supports_1m) = route
+    claude_desktop_model_json(route_id, supports_1m~)
+  })
+  let first_id = match routes.get(0) {
+    Some((route_id, _, _)) => Json::string(route_id)
+    None => Json::null()
+  }
+  let last_id = if routes.is_empty() {
+    Json::null()
+  } else {
+    match routes.get(routes.length() - 1) {
+      Some((route_id, _, _)) => Json::string(route_id)
+      None => Json::null()
+    }
+  }
   {
+    "data": Json::array(data),
+    "has_more": Json::boolean(false),
+    "first_id": first_id,
+    "last_id": last_id,
+  }.to_json()
+}
+
+///|
+fn claude_desktop_model_json(id : String, supports_1m? : Bool = true) -> Json {
+  let obj : Map[String, Json] = {
     "type": Json::string("model"),
     "id": Json::string(id),
     "created_at": Json::string("2024-01-01T00:00:00Z"),
-    "supports1m": Json::boolean(true),
-  }.to_json()
+  }
+  if supports_1m {
+    obj["supports1m"] = Json::boolean(true)
+  }
+  Json::object(obj)
 }
 
 ///|
@@ -12785,6 +12825,92 @@ fn claude_role_keyword(model : String) -> String? {
 }
 
 ///|
+fn ProviderRouteTarget::resolved_claude_desktop_model_routes(
+  self : ProviderRouteTarget,
+) -> Array[(String, String, Bool)] {
+  let routes : Array[(String, String, Bool)] = []
+  if self.claude_desktop_model_routes.is_empty() {
+    return routes
+  }
+  let reserved_route_ids : Array[String] = []
+  for route_id in self.claude_desktop_model_routes.keys() {
+    let trimmed = route_id.trim().to_owned()
+    if is_claude_safe_model_id(trimmed) {
+      reserved_route_ids.push(trimmed)
+    }
+  }
+  let route_ids : Array[String] = []
+  for route_id in self.claude_desktop_model_routes.keys() {
+    route_ids.push(route_id)
+  }
+  route_ids.sort()
+  for route_id in route_ids {
+    let trimmed_route_id = route_id.trim().to_owned()
+    guard self.claude_desktop_model_routes.get(route_id) is Some(route) else {
+      continue
+    }
+    let upstream_model = route.model.trim().to_owned()
+    if trimmed_route_id.is_empty() || upstream_model.is_empty() {
+      continue
+    }
+    let resolved_route_id = if is_claude_safe_model_id(trimmed_route_id) {
+      trimmed_route_id
+    } else {
+      next_claude_desktop_catalog_safe_route_id(routes, reserved_route_ids)
+    }
+    routes.push(
+      (resolved_route_id, upstream_model, route.supports_1m.unwrap_or(false)),
+    )
+  }
+  routes.sort_by(fn(left, right) {
+    let (left_route_id, _, _) = left
+    let (right_route_id, _, _) = right
+    left_route_id.compare(right_route_id)
+  })
+  let deduped : Array[(String, String, Bool)] = []
+  for route in routes {
+    let (route_id, _, _) = route
+    match deduped.last() {
+      Some((previous_route_id, _, _)) if previous_route_id == route_id => ()
+      _ => deduped.push(route)
+    }
+  }
+  deduped
+}
+
+///|
+fn next_claude_desktop_catalog_safe_route_id(
+  existing : Array[(String, String, Bool)],
+  reserved : Array[String],
+) -> String {
+  for route_id in claude_desktop_default_proxy_route_ids() {
+    if !reserved.contains(route_id) &&
+      !existing.any(fn(route) {
+        let (existing_route_id, _, _) = route
+        existing_route_id == route_id
+      }) {
+      return route_id
+    }
+  }
+  for index in 2..<10000 {
+    let route_id = "claude-sonnet-4-6-r\{index}"
+    if !reserved.contains(route_id) &&
+      !existing.any(fn(route) {
+        let (existing_route_id, _, _) = route
+        existing_route_id == route_id
+      }) {
+      return route_id
+    }
+  }
+  "claude-sonnet-4-6-r10000"
+}
+
+///|
+fn claude_desktop_default_proxy_route_ids() -> Array[String] {
+  ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"]
+}
+
+///|
 fn ProviderRouteTarget::claude_desktop_route_upstream_model(
   self : ProviderRouteTarget,
   request_model : String,
@@ -12793,27 +12919,51 @@ fn ProviderRouteTarget::claude_desktop_route_upstream_model(
   if requested.is_empty() || self.claude_desktop_model_routes.is_empty() {
     return None
   }
-  match self.claude_desktop_model_routes.get(requested) {
-    Some(route) => return Some(route.model)
-    None => ()
-  }
-  for route_id in self.claude_desktop_model_routes.keys() {
-    if claude_desktop_opus_route_alias_matches(route_id, requested) {
-      match self.claude_desktop_model_routes.get(route_id) {
-        Some(route) => return Some(route.model)
-        None => ()
-      }
+  let routes = self.resolved_claude_desktop_model_routes()
+  for route in routes {
+    let (route_id, upstream_model, _) = route
+    if route_id == requested {
+      return Some(upstream_model)
     }
+  }
+  for route in routes {
+    let (route_id, upstream_model, _) = route
+    if claude_desktop_opus_route_alias_matches(route_id, requested) {
+      return Some(upstream_model)
+    }
+  }
+  match self.claude_desktop_legacy_raw_route_upstream_model(requested) {
+    Some(upstream) => return Some(upstream)
+    None => ()
   }
   guard is_claude_safe_model_id(requested) else { return None }
   guard claude_role_keyword(requested) is Some(role) else { return None }
-  for route_id in self.claude_desktop_model_routes.keys() {
-    guard is_claude_safe_model_id(route_id) else { continue }
+  for route in routes {
+    let (route_id, upstream_model, _) = route
     if claude_role_keyword(route_id) == Some(role) {
-      match self.claude_desktop_model_routes.get(route_id) {
-        Some(route) => return Some(route.model)
-        None => ()
+      return Some(upstream_model)
+    }
+  }
+  None
+}
+
+///|
+fn ProviderRouteTarget::claude_desktop_legacy_raw_route_upstream_model(
+  self : ProviderRouteTarget,
+  requested : String,
+) -> String? {
+  for route_id in self.claude_desktop_model_routes.keys() {
+    if route_id.trim() != requested {
+      continue
+    }
+    match self.claude_desktop_model_routes.get(route_id) {
+      Some(route) => {
+        let upstream = route.model.trim().to_owned()
+        if !upstream.is_empty() {
+          return Some(upstream)
+        }
       }
+      None => ()
     }
   }
   None
