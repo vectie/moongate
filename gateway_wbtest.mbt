@@ -730,6 +730,90 @@ test "gateway add provider follows ccs current provider semantics" {
 }
 
 ///|
+test "gateway update provider follows ccs rename guards" {
+  let gateway = Gateway::new(port=0)
+  let missing_result = gateway.update_provider_target_ccs(
+    "opencode",
+    ProviderRouteTarget::new(
+      app_type="opencode",
+      provider_id="opencode-next",
+      provider_name="OpenCode Next",
+    ),
+    Some("missing-original"),
+  )
+  assert_eq(
+    missing_result,
+    Err("Original provider 'missing-original' does not exist in app 'opencode'"),
+  )
+  assert_true(
+    gateway.provider_router.provider_by_id("opencode", "opencode-next") is None,
+  )
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="opencode",
+      provider_id="opencode-a",
+      provider_name="OpenCode A",
+    ),
+  )
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="opencode",
+      provider_id="opencode-b",
+      provider_name="OpenCode B",
+    ),
+  )
+  let duplicate_result = gateway.update_provider_target_ccs(
+    "opencode",
+    ProviderRouteTarget::new(
+      app_type="opencode",
+      provider_id="opencode-b",
+      provider_name="OpenCode B Updated",
+    ),
+    Some("opencode-a"),
+  )
+  assert_eq(
+    duplicate_result,
+    Err("Provider 'opencode-b' already exists in app 'opencode'"),
+  )
+  assert_true(
+    gateway.provider_router.provider_by_id("opencode", "opencode-a") is Some(_),
+  )
+  let non_additive_result = gateway.update_provider_target_ccs(
+    "codex",
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-renamed",
+      provider_name="Codex Renamed",
+    ),
+    Some("codex-oauth"),
+  )
+  assert_eq(
+    non_additive_result,
+    Err("Only additive-mode providers support changing provider key"),
+  )
+  assert_true(
+    gateway.provider_router.provider_by_id("codex", "codex-renamed") is None,
+  )
+  let rename_result = gateway.update_provider_target_ccs(
+    "opencode",
+    ProviderRouteTarget::new(
+      app_type="opencode",
+      provider_id="opencode-renamed",
+      provider_name="OpenCode Renamed",
+    ),
+    Some("opencode-a"),
+  )
+  assert_eq(rename_result, Ok(()))
+  assert_true(
+    gateway.provider_router.provider_by_id("opencode", "opencode-a") is None,
+  )
+  assert_true(
+    gateway.provider_router.provider_by_id("opencode", "opencode-renamed")
+    is Some(_),
+  )
+}
+
+///|
 test "provider target resolves ccs app settings credentials" {
   guard provider_target_from_request(
       "/add_provider",

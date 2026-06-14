@@ -9217,25 +9217,46 @@ async fn Gateway::handle_update_provider(
   let original_id = provider_string_from_request(r.path, body, [
     "originalId", "original_id",
   ])
-  let was_current = match original_id {
-    Some(original_id) =>
-      self.provider_router.current_provider_id(app_type) == Some(original_id)
-    None => false
+  match self.update_provider_target_ccs(app_type, target, original_id) {
+    Ok(_) => write_usage_json(w, Json::boolean(true))
+    Err(error) => write_usage_bad_request(w, error)
   }
-  if original_id is Some(original_id) && original_id != target.provider_id {
-    if !provider_app_is_additive(app_type) {
-      write_usage_bad_request(w, "provider_key_change_unsupported")
-      return
-    }
-    ignore(self.provider_router.delete_provider(app_type, original_id))
-  }
+}
+
+///|
+fn Gateway::update_provider_target_ccs(
+  self : Gateway,
+  app_type : String,
+  target : ProviderRouteTarget,
+  original_id : String?,
+) -> Result[Unit, String] {
   let provider_id = target.provider_id
+  let original_provider_id = original_id.unwrap_or(provider_id)
+  let was_current = self.provider_router.current_provider_id(app_type) ==
+    Some(original_provider_id)
+  if original_provider_id != provider_id {
+    if !provider_app_is_additive(app_type) {
+      return Err("Only additive-mode providers support changing provider key")
+    }
+    if self.provider_router.provider_by_id(app_type, original_provider_id)
+      is None {
+      return Err(
+        "Original provider '\{original_provider_id}' does not exist in app '\{app_type}'",
+      )
+    }
+    if self.provider_router.provider_by_id(app_type, provider_id) is Some(_) {
+      return Err(
+        "Provider '\{provider_id}' already exists in app '\{app_type}'",
+      )
+    }
+    ignore(self.provider_router.delete_provider(app_type, original_provider_id))
+  }
   self.sync_provider_limits_from_target(target)
   self.provider_router.upsert_provider(target)
   if was_current {
     self.provider_router.set_current_provider(app_type, provider_id)
   }
-  write_usage_json(w, Json::boolean(true))
+  Ok(())
 }
 
 ///|
