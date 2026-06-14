@@ -676,6 +676,30 @@ test "provider router syncs current live providers with ccs sort order" {
 }
 
 ///|
+test "provider router live sync skips takeover-polluted current provider" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="polluted",
+      provider_name="Polluted",
+      settings_config=Some(
+        {
+          "env": Json::object({
+            "ANTHROPIC_BASE_URL": Json::string("http://127.0.0.1:15721"),
+            "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
+          }),
+        }.to_json(),
+      ),
+    ),
+  )
+  router.set_current_provider("claude", "polluted")
+  let targets = router.sync_current_provider_targets()
+  assert_eq(targets.length(), 0)
+  assert_eq(router.current_provider_id("claude"), Some("polluted"))
+}
+
+///|
 test "provider router syncs universal providers into app providers" {
   let router = ProviderRouter::new()
   assert_true(

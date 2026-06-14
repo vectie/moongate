@@ -832,11 +832,26 @@ fn ProviderRouter::sync_current_provider_targets(
       }
     }
     match app_providers.get(provider_id) {
-      Some(provider) => targets.push(provider)
+      Some(provider) => {
+        if ccs_provider_route_target_has_takeover_placeholder(provider) {
+          continue
+        }
+        targets.push(provider)
+      }
       None => ()
     }
   }
   targets
+}
+
+///|
+fn ccs_provider_route_target_has_takeover_placeholder(
+  provider : ProviderRouteTarget,
+) -> Bool {
+  match provider.settings_config {
+    Some(settings) => ccs_settings_has_proxy_managed_placeholder(settings)
+    None => false
+  }
 }
 
 ///|
