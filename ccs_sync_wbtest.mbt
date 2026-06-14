@@ -169,6 +169,48 @@ test "ccs sync protocol paths match ccs v2 current and legacy layouts" {
 }
 
 ///|
+test "ccs webdav remote manifest url encodes path segments like ccs" {
+  let settings = ccs_webdav_sync_settings_json(
+    {
+      "enabled": Json::boolean(true),
+      "baseUrl": Json::string(
+        "https://dav.example.com/remote.php/dav/files/demo/",
+      ),
+      "username": Json::string("alice"),
+      "password": Json::string("secret"),
+      "remoteRoot": Json::string("cc switch-sync"),
+      "profile": Json::string("default profile"),
+    }.to_json(),
+    None,
+    false,
+  )
+  assert_eq(
+    ccs_webdav_remote_file_url(settings, "current", ccs_sync_remote_manifest()),
+    Ok(
+      "https://dav.example.com/remote.php/dav/files/demo/cc%20switch-sync/v2/db-v6/default%20profile/manifest.json",
+    ),
+  )
+  assert_eq(
+    ccs_webdav_remote_file_url(settings, "legacy", ccs_sync_remote_manifest()),
+    Ok(
+      "https://dav.example.com/remote.php/dav/files/demo/cc%20switch-sync/v2/default%20profile/manifest.json",
+    ),
+  )
+  assert_eq(
+    ccs_webdav_encode_path_segment("space #?汉"),
+    "space%20%23%3F%E6%B1%89",
+  )
+}
+
+///|
+test "ccs webdav basic auth header matches rfc7617" {
+  assert_eq(
+    ccs_webdav_basic_auth_header("alice", "secret"),
+    "Basic YWxpY2U6c2VjcmV0",
+  )
+}
+
+///|
 test "ccs sync manifest compatibility follows current and legacy db versions" {
   let manifest_json = {
     "format": Json::string(ccs_sync_protocol_format()),
@@ -217,6 +259,47 @@ test "ccs sync manifest compatibility follows current and legacy db versions" {
   ).unwrap()
   assert_true(
     ccs_sync_validate_manifest_compat(newer_manifest, "legacy") is Err(_),
+  )
+}
+
+///|
+test "ccs webdav remote info maps manifest body" {
+  let settings = ccs_webdav_sync_settings_json(
+    {
+      "enabled": Json::boolean(true),
+      "baseUrl": Json::string("https://dav.example.com"),
+      "username": Json::string("alice"),
+      "password": Json::string("secret"),
+      "remoteRoot": Json::string("cc-switch-sync"),
+      "profile": Json::string("default"),
+    }.to_json(),
+    None,
+    false,
+  )
+  let body =
+    #|{
+    #|  "format": "cc-switch-webdav-sync",
+    #|  "version": 2,
+    #|  "dbCompatVersion": 6,
+    #|  "deviceName": "My MacBook",
+    #|  "createdAt": "2026-02-12T00:00:00Z",
+    #|  "snapshotId": "snap-1",
+    #|  "artifacts": {
+    #|    "skills.zip": {},
+    #|    "db.sql": {}
+    #|  }
+    #|}
+  guard ccs_webdav_remote_info_from_body(body, "current", settings)
+    is Ok(Object(obj)) else {
+    fail("expected webdav remote info object")
+  }
+  assert_eq(obj["deviceName"], Json::string("My MacBook"))
+  assert_eq(obj["compatible"], Json::boolean(true))
+  assert_eq(obj["layout"], Json::string("current"))
+  assert_eq(obj["remotePath"], Json::string("/cc-switch-sync/v2/db-v6/default"))
+  assert_eq(
+    obj["artifacts"],
+    Json::array([Json::string("db.sql"), Json::string("skills.zip")]),
   )
 }
 

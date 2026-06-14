@@ -60,6 +60,12 @@ priv struct CcsSyncManifestInfo {
 }
 
 ///|
+priv struct CcsWebDavTextResponse {
+  code : Int
+  body : String
+}
+
+///|
 fn ccs_sync_status_json(incoming : Map[String, Json], existing : Json?) -> Json {
   match existing {
     Some(Object(existing_obj)) =>
@@ -427,6 +433,173 @@ fn ccs_sync_remote_file_path(
     segs.push(part)
   }
   segs.join("/")
+}
+
+///|
+fn ccs_webdav_encode_path_segment(segment : String) -> String {
+  let bytes = @encoding/utf8.encode(segment)
+  let builder = StringBuilder::new()
+  for i in 0..<bytes.length() {
+    let value = bytes[i].to_int()
+    if ccs_webdav_is_unreserved_path_byte(value) {
+      builder.write_char(value.unsafe_to_char())
+    } else {
+      builder.write_char('%')
+      builder.write_char(ccs_webdav_hex_digit(value / 16))
+      builder.write_char(ccs_webdav_hex_digit(value % 16))
+    }
+  }
+  builder.to_string()
+}
+
+///|
+fn ccs_webdav_is_unreserved_path_byte(value : Int) -> Bool {
+  (value >= 'A'.to_int() && value <= 'Z'.to_int()) ||
+  (value >= 'a'.to_int() && value <= 'z'.to_int()) ||
+  (value >= '0'.to_int() && value <= '9'.to_int()) ||
+  value == '-'.to_int() ||
+  value == '.'.to_int() ||
+  value == '_'.to_int() ||
+  value == '~'.to_int()
+}
+
+///|
+fn ccs_webdav_hex_digit(value : Int) -> Char {
+  if value < 10 {
+    ('0'.to_int() + value).unsafe_to_char()
+  } else {
+    ('A'.to_int() + value - 10).unsafe_to_char()
+  }
+}
+
+///|
+fn ccs_webdav_encoded_path(segments : Array[String]) -> String {
+  segments.map(ccs_webdav_encode_path_segment).join("/")
+}
+
+///|
+fn ccs_webdav_remote_file_url(
+  settings : Json,
+  layout : String,
+  file_name : String,
+) -> Result[String, String] {
+  guard settings is Object(obj) else {
+    return Err("WebDAV sync is not configured.")
+  }
+  guard json_string_from_map(obj, "baseUrl") is Some(base_url) else {
+    return Err("WebDAV URL is required.")
+  }
+  guard json_string_from_map(obj, "remoteRoot") is Some(remote_root) else {
+    return Err("WebDAV remote root is required.")
+  }
+  guard json_string_from_map(obj, "profile") is Some(profile) else {
+    return Err("WebDAV profile is required.")
+  }
+  let base_url = trim_end_slashes(base_url.trim().to_owned())
+  if base_url.is_empty() {
+    return Err("WebDAV URL is required.")
+  }
+  let remote_segments = ccs_sync_remote_dir_segments(
+    remote_root, profile, layout,
+  )
+  for part in ccs_sync_path_segments(file_name) {
+    remote_segments.push(part)
+  }
+  Ok("\{base_url}/\{ccs_webdav_encoded_path(remote_segments)}")
+}
+
+///|
+fn ccs_webdav_basic_auth_header(username : String, password : String) -> String {
+  let token = @base64.encode(@encoding/utf8.encode("\{username}:\{password}"))
+  "Basic \{token}"
+}
+
+///|
+async fn ccs_webdav_get_text(
+  url : String,
+  username : String,
+  password : String,
+) -> Result[CcsWebDavTextResponse, String] {
+  let (origin, path) = split_origin_and_path(url)
+  let client = @http.Client::new(origin, headers={
+    "Authorization": ccs_webdav_basic_auth_header(username, password),
+    "Accept": "application/json",
+  })
+  defer client.close()
+  let response = client.get(if path.is_empty() { "/" } else { path }) catch {
+    err => return Err("WebDAV GET failed: \{err}")
+  }
+  Ok(CcsWebDavTextResponse::{
+    code: response.code,
+    body: client.read_all().text(),
+  })
+}
+
+///|
+fn ccs_webdav_remote_info_from_body(
+  body : String,
+  layout : String,
+  settings : Json,
+) -> Result[Json, String] {
+  guard settings is Object(obj) else {
+    return Err("WebDAV sync is not configured.")
+  }
+  let remote_root = json_string_from_map(obj, "remoteRoot").unwrap_or(
+    ccs_sync_default_remote_root(),
+  )
+  let profile = json_string_from_map(obj, "profile").unwrap_or(
+    ccs_sync_default_profile(),
+  )
+  let manifest_json = @json.parse(body) catch {
+    _ => return Err("Remote manifest is not valid JSON.")
+  }
+  let manifest = match ccs_sync_manifest_info_from_json(manifest_json) {
+    Ok(manifest) => manifest
+    Err(error) => return Err(error)
+  }
+  Ok(ccs_sync_remote_info_json(manifest, layout, remote_root, profile))
+}
+
+///|
+async fn ccs_webdav_sync_fetch_remote_info_json(
+  settings : Json,
+) -> Result[Json, String] {
+  guard settings is Object(obj) else {
+    return Err("WebDAV sync is not configured.")
+  }
+  let username = json_string_from_map(obj, "username").unwrap_or("")
+  let password = json_string_from_map(obj, "password").unwrap_or("")
+  let current_url = match
+    ccs_webdav_remote_file_url(settings, "current", ccs_sync_remote_manifest()) {
+    Ok(url) => url
+    Err(error) => return Err(error)
+  }
+  let current = match ccs_webdav_get_text(current_url, username, password) {
+    Ok(response) => response
+    Err(error) => return Err(error)
+  }
+  if current.code >= 200 && current.code <= 299 {
+    return ccs_webdav_remote_info_from_body(current.body, "current", settings)
+  }
+  if current.code != 404 {
+    return Err("WebDAV GET failed: HTTP \{current.code}")
+  }
+  let legacy_url = match
+    ccs_webdav_remote_file_url(settings, "legacy", ccs_sync_remote_manifest()) {
+    Ok(url) => url
+    Err(error) => return Err(error)
+  }
+  let legacy = match ccs_webdav_get_text(legacy_url, username, password) {
+    Ok(response) => response
+    Err(error) => return Err(error)
+  }
+  if legacy.code == 404 {
+    return Ok({ "empty": Json::boolean(true) }.to_json())
+  }
+  if legacy.code >= 200 && legacy.code <= 299 {
+    return ccs_webdav_remote_info_from_body(legacy.body, "legacy", settings)
+  }
+  Err("WebDAV GET failed: HTTP \{legacy.code}")
 }
 
 ///|

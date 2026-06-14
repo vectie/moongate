@@ -5347,9 +5347,14 @@ async fn Gateway::handle_webdav_sync_fetch_remote_info(
   match ccs_webdav_sync_required_error(self.app_settings) {
     Some(error) => write_usage_bad_request(w, error)
     None =>
-      write_usage_bad_request(
-        w, "WebDAV sync transport is not implemented in moonstat yet.",
-      )
+      match ccs_app_webdav_sync_json(self.app_settings) {
+        None => write_usage_bad_request(w, "WebDAV sync is not configured.")
+        Some(settings) =>
+          match ccs_webdav_sync_fetch_remote_info_json(settings) {
+            Ok(info) => write_usage_json(w, info)
+            Err(error) => write_usage_bad_request(w, error)
+          }
+      }
   }
 }
 
