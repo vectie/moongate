@@ -643,6 +643,22 @@ test "usage aggregate helpers prefer query params over ccs body args" {
 }
 
 ///|
+async test "ccs open folder helper creates directory and returns boolean success" {
+  @fsx.with_temporary_directory("moonstat-open-folder-XXXXXX", async fn(
+    tmpdir,
+  ) {
+    let target = @pathx.join(tmpdir, "nested/config")
+    assert_false(@fsx.exists(target))
+    guard ccs_open_directory_result_json(target) is Ok(result) else {
+      fail("expected open directory result")
+    }
+    assert_eq(result, Json::boolean(true))
+    assert_true(@fsx.exists(target))
+    assert_true(@fsx.kind(target) is Directory)
+  })
+}
+
+///|
 test "provider selection errors use ccs proxy error codes" {
   assert_eq(
     provider_selection_error_status(AllProvidersCircuitOpen),

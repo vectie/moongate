@@ -4427,6 +4427,14 @@ async fn ccs_ensure_directory(path : String) -> Bool {
 }
 
 ///|
+async fn ccs_open_directory_result_json(path : String) -> Result[Json, String] {
+  if !ccs_ensure_directory(path) {
+    return Err("open_directory_create_failed")
+  }
+  Ok(Json::boolean(true))
+}
+
+///|
 fn ccs_file_mtime(path : String) -> Int64 {
   let stat = @fsx.stat(path) catch { _ => return 0L }
   stat.mtime()
@@ -6335,13 +6343,10 @@ async fn Gateway::handle_open_config_folder(
 ) -> Unit {
   ignore(self)
   let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
-  write_usage_json(
-    w,
-    {
-      "opened": Json::boolean(false),
-      "path": Json::string(ccs_config_dir(app)),
-    }.to_json(),
-  )
+  match ccs_open_directory_result_json(ccs_config_dir(app)) {
+    Ok(result) => write_usage_json(w, result)
+    Err(error) => write_usage_bad_request(w, error)
+  }
 }
 
 ///|
@@ -7389,13 +7394,10 @@ async fn Gateway::handle_open_app_config_folder(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  write_usage_json(
-    w,
-    {
-      "opened": Json::boolean(false),
-      "path": Json::string(ccs_app_config_dir()),
-    }.to_json(),
-  )
+  match ccs_open_directory_result_json(ccs_app_config_dir()) {
+    Ok(result) => write_usage_json(w, result)
+    Err(error) => write_usage_bad_request(w, error)
+  }
 }
 
 ///|
