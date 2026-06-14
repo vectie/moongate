@@ -352,7 +352,9 @@ fn moonstat_suite_routes() -> Array[String] {
     "POST /v1/v1/responses", "POST /codex/v1/responses", "POST /responses/compact",
     "POST /v1/responses/compact", "POST /v1/v1/responses/compact", "POST /codex/v1/responses/compact",
     "POST /chat/completions", "POST /v1/chat/completions", "POST /v1/v1/chat/completions",
-    "POST /codex/v1/chat/completions", "POST /login", "ANY /v1beta/*path", "ANY /gemini/v1beta/*path",
+    "POST /codex/v1/chat/completions", "POST /login", "GET /auth_get_status", "GET /auth_list_accounts",
+    "POST /auth_start_login", "POST /auth_poll_for_account", "POST /auth_remove_account",
+    "POST /auth_set_default_account", "POST /auth_logout", "ANY /v1beta/*path", "ANY /gemini/v1beta/*path",
     "ANY /gemini/v1/*path",
   ]
 }

@@ -87,6 +87,11 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(
     routes.contains(Json::string("GET /usage/request-detail/{request_id}")),
   )
+  assert_true(routes.contains(Json::string("GET /auth_get_status")))
+  assert_true(routes.contains(Json::string("GET /auth_list_accounts")))
+  assert_true(routes.contains(Json::string("POST /auth_start_login")))
+  assert_true(routes.contains(Json::string("POST /auth_poll_for_account")))
+  assert_true(routes.contains(Json::string("POST /auth_logout")))
   assert_true(routes.contains(Json::string("POST /v1/messages")))
   assert_true(routes.contains(Json::string("POST /login")))
   assert_true(routes.contains(Json::string("ANY /v1beta/*path")))

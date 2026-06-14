@@ -4,6 +4,17 @@ pub async fn start(args : ArrayView[String]) -> Unit {
   match arr[1:] {
     ["start", ..] => start_gateway(arr)
     ["login", ..] => do_login(arr)
+    ["auth", "start-login", ..] => auth_start_login(arr)
+    ["auth", "poll", ..] | ["auth", "poll-for-account", ..] =>
+      auth_poll_for_account(arr)
+    ["auth", "list", ..] | ["auth", "list-accounts", ..] =>
+      auth_list_accounts(arr)
+    ["auth", "status", ..] => auth_get_status(arr)
+    ["auth", "remove", ..] | ["auth", "remove-account", ..] =>
+      auth_remove_account(arr)
+    ["auth", "default", ..] | ["auth", "set-default-account", ..] =>
+      auth_set_default_account(arr)
+    ["auth", "logout", ..] => auth_logout(arr)
     ["install", ..] => install_reroute(arr)
     ["uninstall"] | ["remove"] => uninstall_reroute()
     ["claude-desktop", "install", ..] => install_claude_desktop(arr)
@@ -16,6 +27,17 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["models", "candidates", ..] => print_model_candidates(arr)
     ["fetch_models_for_config", ..] | ["fetch-models-for-config", ..] =>
       fetch_provider_models(arr)
+    ["auth_start_login", ..] | ["auth-start-login", ..] => auth_start_login(arr)
+    ["auth_poll_for_account", ..] | ["auth-poll-for-account", ..] =>
+      auth_poll_for_account(arr)
+    ["auth_list_accounts", ..] | ["auth-list-accounts", ..] =>
+      auth_list_accounts(arr)
+    ["auth_get_status", ..] | ["auth-get-status", ..] => auth_get_status(arr)
+    ["auth_remove_account", ..] | ["auth-remove-account", ..] =>
+      auth_remove_account(arr)
+    ["auth_set_default_account", ..] | ["auth-set-default-account", ..] =>
+      auth_set_default_account(arr)
+    ["auth_logout", ..] | ["auth-logout", ..] => auth_logout(arr)
     ["stream-check", "provider", ..]
     | ["stream-check", "stream-check-provider", ..] =>
       stream_check_provider(arr)
@@ -698,6 +720,9 @@ fn print_help() -> Unit {
   )
   println("  fetch_models_for_config   Alias for ccs model fetch command")
   println("  models candidates         Print /v1/models candidate URLs")
+  println("  auth status               Alias for ccs auth_get_status")
+  println("  auth start-login          Alias for ccs auth_start_login")
+  println("  auth poll                 Alias for ccs auth_poll_for_account")
   println("  stream-check provider     Alias for ccs stream_check_provider")
   println(
     "  stream-check all          Alias for ccs stream_check_all_providers",
@@ -1007,6 +1032,72 @@ async fn do_login(_args : Array[String]) -> Unit {
   } catch {
     err => logger.error("Login failed: \{err}")
   }
+}
+
+///|
+async fn auth_start_login(args : Array[String]) -> Unit {
+  check_json_post_endpoint(
+    args,
+    auth_provider_path(args, "/auth_start_login"),
+    "Auth",
+  )
+}
+
+///|
+async fn auth_poll_for_account(args : Array[String]) -> Unit {
+  guard auth_poll_path(args) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required auth poll arg: --device-code")
+    return
+  }
+  check_json_post_endpoint(args, path, "Auth")
+}
+
+///|
+async fn auth_list_accounts(args : Array[String]) -> Unit {
+  check_json_endpoint(
+    args,
+    auth_provider_path(args, "/auth_list_accounts"),
+    "Auth",
+  )
+}
+
+///|
+async fn auth_get_status(args : Array[String]) -> Unit {
+  check_json_endpoint(
+    args,
+    auth_provider_path(args, "/auth_get_status"),
+    "Auth",
+  )
+}
+
+///|
+async fn auth_remove_account(args : Array[String]) -> Unit {
+  guard auth_account_path(args, "/auth_remove_account") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required auth account arg: --account-id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Auth")
+}
+
+///|
+async fn auth_set_default_account(args : Array[String]) -> Unit {
+  guard auth_account_path(args, "/auth_set_default_account") is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required auth account arg: --account-id")
+    return
+  }
+  check_json_post_endpoint(args, path, "Auth")
+}
+
+///|
+async fn auth_logout(args : Array[String]) -> Unit {
+  check_json_post_endpoint(
+    args,
+    auth_provider_path(args, "/auth_logout"),
+    "Auth",
+  )
 }
 
 ///|
@@ -3077,6 +3168,48 @@ fn codex_oauth_models_path(args : Array[String]) -> String {
     None => ()
   }
   cli_path_with_query("/get_codex_oauth_models", query)
+}
+
+///|
+fn auth_provider_path(args : Array[String], path : String) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--auth-provider", "--authProvider") {
+    Some(value) => query.push(cli_query_pair("authProvider", value))
+    None => ()
+  }
+  cli_path_with_query(path, query)
+}
+
+///|
+fn auth_account_path(args : Array[String], path : String) -> String? {
+  guard parse_string_arg_any(args, "--account-id", "--accountId")
+    is Some(account_id) else {
+    return None
+  }
+  let query : Array[String] = [cli_query_pair("accountId", account_id)]
+  match parse_string_arg_any(args, "--auth-provider", "--authProvider") {
+    Some(value) => query.push(cli_query_pair("authProvider", value))
+    None => ()
+  }
+  Some(cli_path_with_query(path, query))
+}
+
+///|
+fn auth_poll_path(args : Array[String]) -> String? {
+  guard parse_string_arg_any(args, "--device-code", "--deviceCode")
+    is Some(device_code) else {
+    return None
+  }
+  let query : Array[String] = [cli_query_pair("deviceCode", device_code)]
+  match parse_string_arg_any(args, "--user-code", "--userCode") {
+    Some(value) => query.push(cli_query_pair("userCode", value))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--auth-provider", "--authProvider") {
+    Some(value) => query.push(cli_query_pair("authProvider", value))
+    None => ()
+  }
+  Some(cli_path_with_query("/auth_poll_for_account", query))
 }
 
 ///|

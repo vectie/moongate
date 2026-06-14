@@ -34,6 +34,7 @@ pub struct Gateway {
   config_snippets : Map[String, String]
   mcp_servers : Map[String, Json]
   prompts : Map[String, Json]
+  auth_device_user_codes : Map[String, String]
   mut app_settings : Json
   mut app_config_dir_override : String?
   mut auto_launch_enabled : Bool
@@ -91,6 +92,7 @@ pub fn Gateway::new(
     config_snippets: Map([], capacity=8),
     mcp_servers: Map([], capacity=16),
     prompts: Map([], capacity=16),
+    auth_device_user_codes: Map([], capacity=8),
     app_settings: ccs_default_app_settings_json(),
     app_config_dir_override: None,
     auto_launch_enabled: false,
@@ -1321,6 +1323,48 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(@httpx.Method::Post, "/fetch_models_for_config", (r, w) => {
     self.handle_fetch_models_for_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/auth_start_login", (r, w) => {
+    self.handle_auth_start_login(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_start_login", (r, w) => {
+    self.handle_auth_start_login(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/auth_poll_for_account", (r, w) => {
+    self.handle_auth_poll_for_account(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_poll_for_account", (r, w) => {
+    self.handle_auth_poll_for_account(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/auth_list_accounts", (r, w) => {
+    self.handle_auth_list_accounts(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_list_accounts", (r, w) => {
+    self.handle_auth_list_accounts(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/auth_get_status", (r, w) => {
+    self.handle_auth_get_status(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_get_status", (r, w) => {
+    self.handle_auth_get_status(r, w)
+  })
+  router.add_handler(@httpx.Method::Delete, "/auth_remove_account", (r, w) => {
+    self.handle_auth_remove_account(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_remove_account", (r, w) => {
+    self.handle_auth_remove_account(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_set_default_account", (r, w) => {
+    self.handle_auth_set_default_account(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/auth_set_default_account", (r, w) => {
+    self.handle_auth_set_default_account(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/auth_logout", (r, w) => {
+    self.handle_auth_logout(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/auth_logout", (r, w) => {
+    self.handle_auth_logout(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
     self.handle_models(w)
@@ -7136,6 +7180,158 @@ async fn Gateway::handle_get_codex_oauth_models(
   ])
   match ccs_get_codex_oauth_models(account_id) {
     Ok(models) => write_usage_json(w, fetched_models_to_json(models))
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+fn managed_auth_provider_request(path : StringView, body : Json?) -> String {
+  proxy_string_request(path, body, ["authProvider", "auth_provider", "provider"]).unwrap_or(
+    managed_auth_default_provider(),
+  )
+}
+
+///|
+async fn Gateway::handle_auth_start_login(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  match managed_auth_start_login(provider) {
+    Ok(flow) => {
+      self.auth_device_user_codes[flow.device_code] = flow.user_code
+      write_usage_json(w, flow.to_json())
+    }
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+async fn Gateway::handle_auth_poll_for_account(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  guard proxy_string_request(r.path, body, [
+      "deviceCode", "device_code", "deviceAuthId", "device_auth_id",
+    ])
+    is Some(device_code) else {
+    write_usage_bad_request(w, "missing_device_code")
+    return
+  }
+  let user_code = match
+    proxy_string_request(r.path, body, ["userCode", "user_code", "code"]) {
+    Some(value) => Some(value)
+    None => self.auth_device_user_codes.get(device_code)
+  }
+  guard user_code is Some(user_code) else {
+    write_usage_bad_request(w, "missing_user_code")
+    return
+  }
+  match managed_auth_poll_for_account(provider, device_code, user_code) {
+    Ok(Some(account)) => {
+      self.auth_device_user_codes.remove(device_code)
+      try @codex.load_credentials() catch {
+        _ => ()
+      } noraise {
+        credentials => self.credentials = Some(credentials)
+      }
+      write_usage_json(w, account)
+    }
+    Ok(None) => write_usage_json(w, Json::null())
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+async fn Gateway::handle_auth_list_accounts(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  match managed_auth_list_accounts(provider) {
+    Ok(accounts) => write_usage_json(w, accounts)
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+async fn Gateway::handle_auth_get_status(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  match managed_auth_get_status(provider) {
+    Ok(status) => write_usage_json(w, status)
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+async fn Gateway::handle_auth_remove_account(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  guard proxy_string_request(r.path, body, ["accountId", "account_id", "id"])
+    is Some(account_id) else {
+    write_usage_bad_request(w, "missing_account_id")
+    return
+  }
+  match managed_auth_remove_account(provider, account_id) {
+    Ok(result) => {
+      self.credentials = None
+      write_usage_json(w, result)
+    }
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+async fn Gateway::handle_auth_set_default_account(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  guard proxy_string_request(r.path, body, ["accountId", "account_id", "id"])
+    is Some(account_id) else {
+    write_usage_bad_request(w, "missing_account_id")
+    return
+  }
+  match managed_auth_set_default_account(provider, account_id) {
+    Ok(result) => write_usage_json(w, result)
+    Err(error) => write_usage_bad_request(w, error)
+  }
+}
+
+///|
+async fn Gateway::handle_auth_logout(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let provider = managed_auth_provider_request(r.path, body)
+  match managed_auth_logout(provider) {
+    Ok(result) => {
+      self.credentials = None
+      write_usage_json(w, result)
+    }
     Err(error) => write_usage_bad_request(w, error)
   }
 }

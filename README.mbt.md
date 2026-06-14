@@ -26,6 +26,9 @@ Login uses Codex OAuth credentials:
 
 ```sh
 moon run cmd/main -- login
+moon run cmd/main -- auth status
+moon run cmd/main -- auth start-login
+moon run cmd/main -- auth poll --device-code dev_... --user-code USER-CODE
 ```
 
 Status and counters:
@@ -258,6 +261,13 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET|POST /get_codex_oauth_quota?accountId=...`
 - `GET|POST /get_codex_oauth_models?accountId=...`
 - `GET|POST /get_coding_plan_quota?baseUrl=https://api.kimi.com/coding/v1&apiKey=...`
+- `GET|POST /auth_get_status?authProvider=codex_oauth`
+- `GET|POST /auth_list_accounts?authProvider=codex_oauth`
+- `GET|POST /auth_start_login?authProvider=codex_oauth`
+- `GET|POST /auth_poll_for_account?authProvider=codex_oauth&deviceCode=...`
+- `DELETE|POST /auth_remove_account?authProvider=codex_oauth&accountId=...`
+- `GET|POST /auth_set_default_account?authProvider=codex_oauth&accountId=...`
+- `GET|POST /auth_logout?authProvider=codex_oauth`
 - `POST /testUsageScript?providerId=codex-oauth&app=codex`
 - `POST /stream_check_provider?appType=codex&providerId=codex-oauth`
 - `POST /stream_check_all_providers?appType=codex&proxyTargetsOnly=true`
@@ -271,7 +281,11 @@ Moonstat currently exposes the ccs-compatible local routes below:
   `GET /check_provider_limits`, `POST /sync_session_usage`,
   `GET /get_usage_data_sources`, `GET /queryProviderUsage`, `GET /get_balance`,
   `GET /get_subscription_quota`, `GET /get_codex_oauth_quota`,
-  `GET /get_coding_plan_quota`, and `POST /testUsageScript`.
+  `GET /get_codex_oauth_models`, `GET /get_coding_plan_quota`,
+  `GET|POST /auth_start_login`, `GET|POST /auth_poll_for_account`,
+  `GET|POST /auth_list_accounts`, `GET|POST /auth_get_status`,
+  `DELETE|POST /auth_remove_account`, `GET|POST /auth_set_default_account`,
+  `GET|POST /auth_logout`, and `POST /testUsageScript`.
   Stream check command aliases `stream_check_provider`,
   `stream_check_all_providers`, `get_stream_check_config`, and
   `save_stream_check_config` expose the ccs camelCase config/result JSON
@@ -411,7 +425,10 @@ CCS `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
 `/get_codex_oauth_quota` mirrors the CCS Codex OAuth quota command over the
 same WHAM usage protocol. `/get_codex_oauth_models` mirrors the CCS Codex OAuth
 model-list command against `chatgpt.com/backend-api/codex/models`, returning the
-same fetched model array shape as provider model fetch. `/get_coding_plan_quota`
+same fetched model array shape as provider model fetch. The `auth_*` endpoints
+mirror CCS managed auth for `codex_oauth`: status/list expose the local
+Moonstat Codex account, start/poll use OpenAI's device-code flow, and
+remove/logout clear `~/.moonstat/codex-credentials.json`. `/get_coding_plan_quota`
 mirrors the CCS coding-plan quota command for Kimi, Zhipu CN/EN, MiniMax CN/EN,
 and ZenMux-compatible quota URLs, returning the same `SubscriptionQuota` tier
 names and fields.

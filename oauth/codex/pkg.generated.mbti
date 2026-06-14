@@ -26,9 +26,13 @@ pub async fn load_credentials() -> Credentials
 
 pub fn parse_query_string(StringView) -> Map[String, String]
 
+pub async fn poll_device_flow(String, String) -> Credentials?
+
 pub async fn refresh_and_save_credentials() -> Credentials
 
 pub async fn save_credentials(Credentials) -> Unit
+
+pub async fn start_device_flow() -> DeviceCodeFlow
 
 pub async fn start_oauth_flow() -> Credentials
 
@@ -41,6 +45,14 @@ pub(all) struct Credentials {
   refreshToken : String
   accountId : String
 } derive(Show, ToJson, @json.FromJson)
+
+pub(all) struct DeviceCodeFlow {
+  device_code : String
+  user_code : String
+  verification_uri : String
+  expires_in : Int
+  interval : Int
+} derive(ToJson)
 
 pub struct IdTokenClaims {
   email : String

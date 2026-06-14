@@ -857,6 +857,45 @@ test "top level ccs codex oauth models command builds models path" {
 }
 
 ///|
+test "ccs auth commands build managed auth paths" {
+  assert_eq(
+    auth_provider_path(
+      ["moonstat", "auth_get_status", "--authProvider", "codex_oauth"],
+      "/auth_get_status",
+    ),
+    "/auth_get_status?authProvider=codex_oauth",
+  )
+  assert_eq(
+    auth_provider_path(["moonstat", "auth", "status"], "/auth_get_status"),
+    "/auth_get_status",
+  )
+  assert_eq(
+    auth_account_path(
+      [
+        "moonstat", "auth_remove_account", "--account-id", "acct 1", "--auth-provider",
+        "codex_oauth",
+      ],
+      "/auth_remove_account",
+    ),
+    Some("/auth_remove_account?accountId=acct%201&authProvider=codex_oauth"),
+  )
+  assert_true(
+    auth_account_path(
+      ["moonstat", "auth_remove_account"],
+      "/auth_remove_account",
+    )
+    is None,
+  )
+  assert_eq(
+    auth_poll_path([
+      "moonstat", "auth_poll_for_account", "--device-code", "dev 1", "--user-code",
+      "USER-CODE",
+    ]),
+    Some("/auth_poll_for_account?deviceCode=dev%201&userCode=USER-CODE"),
+  )
+}
+
+///|
 test "top level ccs coding plan command builds quota path" {
   assert_eq(
     coding_plan_quota_path([

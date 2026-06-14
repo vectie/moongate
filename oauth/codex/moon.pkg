@@ -13,5 +13,6 @@ import {
   "moonbitlang/core/encoding/utf8" @encoding/utf8,
   "moonbitlang/core/json",
   "moonbitlang/core/random",
+  "moonbitlang/core/string",
   "vectie/moonstat/internal/pino",
 }

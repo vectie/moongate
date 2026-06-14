@@ -56,6 +56,26 @@ pub fn fetched_models_to_json(Array[FetchedModel]) -> Json
 
 pub fn find_static_model_pricing(String) -> ModelPricing?
 
+pub fn managed_auth_account_json(String, @codex.Credentials, is_default? : Bool) -> Json
+
+pub fn managed_auth_default_provider() -> String
+
+pub async fn managed_auth_get_status(String) -> Result[Json, String]
+
+pub async fn managed_auth_list_accounts(String) -> Result[Json, String]
+
+pub async fn managed_auth_logout(String) -> Result[Json, String]
+
+pub async fn managed_auth_poll_for_account(String, String, String) -> Result[Json?, String]
+
+pub async fn managed_auth_remove_account(String, String) -> Result[Json, String]
+
+pub async fn managed_auth_set_default_account(String, String) -> Result[Json, String]
+
+pub async fn managed_auth_start_login(String) -> Result[@codex.DeviceCodeFlow, String]
+
+pub fn managed_auth_status_json(String, @codex.Credentials?, migration_error? : String) -> Json
+
 pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
 
 pub fn moonstat_suite_status_json(host? : String, port? : Int, model? : String) -> Json
@@ -338,6 +358,7 @@ pub struct Gateway {
   config_snippets : Map[String, String]
   mcp_servers : Map[String, Json]
   prompts : Map[String, Json]
+  auth_device_user_codes : Map[String, String]
   mut app_settings : Json
   mut app_config_dir_override : String?
   mut auto_launch_enabled : Bool

@@ -6,6 +6,15 @@ pub struct TokenResponse {
 } derive(Show)
 
 ///|
+pub(all) struct DeviceCodeFlow {
+  device_code : String
+  user_code : String
+  verification_uri : String
+  expires_in : Int
+  interval : Int
+} derive(ToJson)
+
+///|
 impl @json.FromJson for TokenResponse with fn from_json(
   json : Json,
   path : @json.JsonPath,
@@ -33,6 +42,62 @@ impl @json.FromJson for TokenResponse with fn from_json(
       )
   }
   { id_token, access_token, refresh_token }
+}
+
+///|
+fn json_string_field(obj : Map[String, Json], key : String) -> String? {
+  match obj.get(key) {
+    Some(String(value)) => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn json_int_field(obj : Map[String, Json], key : String) -> Int? {
+  match obj.get(key) {
+    Some(Number(value, ..)) => Some(value.to_int())
+    Some(String(value)) =>
+      try @string.parse_int(value, base=10) catch {
+        _ => None
+      } noraise {
+        parsed => Some(parsed)
+      }
+    _ => None
+  }
+}
+
+///|
+fn parse_device_flow_response(json : Json) -> DeviceCodeFlow raise Error {
+  guard json is Object(obj) else {
+    raise OAuthError("Device Code response is not an object")
+  }
+  guard json_string_field(obj, "device_auth_id") is Some(device_code) else {
+    raise OAuthError("Device Code response missing device_auth_id")
+  }
+  guard json_string_field(obj, "user_code") is Some(user_code) else {
+    raise OAuthError("Device Code response missing user_code")
+  }
+  DeviceCodeFlow::{
+    device_code,
+    user_code,
+    verification_uri: "\{OAUTH_ISSUER}/codex/device",
+    expires_in: json_int_field(obj, "expires_in").unwrap_or(900),
+    interval: json_int_field(obj, "interval").unwrap_or(5),
+  }
+}
+
+///|
+fn parse_device_poll_response(json : Json) -> (String, String) raise Error {
+  guard json is Object(obj) else {
+    raise OAuthError("Device Code poll response is not an object")
+  }
+  guard json_string_field(obj, "authorization_code") is Some(code) else {
+    raise OAuthError("Device Code poll response missing authorization_code")
+  }
+  guard json_string_field(obj, "code_verifier") is Some(verifier) else {
+    raise OAuthError("Device Code poll response missing code_verifier")
+  }
+  (code, verifier)
 }
 
 ///|
@@ -124,6 +189,97 @@ pub async fn exchange_code_for_tokens(
     raise OAuthError("Token exchange failed: \{response.code} - \{error_text}")
   }
   @json.from_json(data.json())
+}
+
+///|
+async fn exchange_device_code_for_tokens(
+  code : String,
+  code_verifier : String,
+) -> TokenResponse raise Error {
+  let body_params = [
+    ("grant_type", "authorization_code"),
+    ("code", code),
+    ("redirect_uri", "\{OAUTH_ISSUER}/deviceauth/callback"),
+    ("client_id", CLIENT_ID),
+    ("code_verifier", code_verifier),
+  ]
+  let body = body_params
+    .iter()
+    .map(fn(p) { "\{url_encode(p.0)}=\{url_encode(p.1)}" })
+    .collect()
+    .join("&")
+  let (response, data) = @http.post("\{OAUTH_ISSUER}/oauth/token", body, headers={
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": "cc-switch-codex-oauth",
+  })
+  guard response.code is (200..=299) else {
+    let error_text = data.text()
+    raise OAuthError(
+      "Device Code token exchange failed: \{response.code} - \{error_text}",
+    )
+  }
+  @json.from_json(data.json())
+}
+
+///|
+pub async fn start_device_flow() -> DeviceCodeFlow raise Error {
+  let body = Json::object({ "client_id": Json::string(CLIENT_ID) }).stringify()
+  let (response, data) = @http.post(
+    "\{OAUTH_ISSUER}/api/accounts/deviceauth/usercode",
+    body,
+    headers={
+      "Content-Type": "application/json",
+      "User-Agent": "cc-switch-codex-oauth",
+    },
+  )
+  guard response.code is (200..=299) else {
+    let error_text = data.text()
+    raise OAuthError(
+      "Device Code request failed: \{response.code} - \{error_text}",
+    )
+  }
+  parse_device_flow_response(data.json())
+}
+
+///|
+pub async fn poll_device_flow(
+  device_code : String,
+  user_code : String,
+) -> Credentials? raise Error {
+  let body = Json::object({
+    "device_auth_id": Json::string(device_code),
+    "user_code": Json::string(user_code),
+  }).stringify()
+  let (response, data) = @http.post(
+    "\{OAUTH_ISSUER}/api/accounts/deviceauth/token",
+    body,
+    headers={
+      "Content-Type": "application/json",
+      "User-Agent": "cc-switch-codex-oauth",
+    },
+  )
+  match response.code {
+    403 | 404 => return None
+    410 => raise OAuthError("Device Code expired")
+    200..=299 => ()
+    _ => {
+      let error_text = data.text()
+      raise OAuthError(
+        "Device Code poll failed: \{response.code} - \{error_text}",
+      )
+    }
+  }
+  let (code, verifier) = parse_device_poll_response(data.json())
+  let tokens = exchange_device_code_for_tokens(code, verifier)
+  let claims = extract_token_claims(tokens.id_token)
+  let credentials : Credentials = {
+    idToken: tokens.id_token,
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    accountId: claims.chatgptAccountId,
+  }
+  save_credentials(credentials)
+  Some(credentials)
 }
 
 ///|
