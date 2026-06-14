@@ -7959,6 +7959,35 @@ test "claude compatible provider headers honor ccs inferred provider type auth" 
 }
 
 ///|
+test "claude compatible provider headers include ccs copilot fingerprint and overrides" {
+  let headers = claude_compatible_provider_headers(
+    "copilot-token",
+    "openai_responses",
+    provider_type=Some("github_copilot"),
+    extra_headers={
+      "x-initiator": "agent",
+      "x-request-id": "deterministic-request",
+      "x-agent-task-id": "deterministic-request",
+      "x-interaction-id": "deterministic-interaction",
+    },
+  )
+  assert_eq(headers["Authorization"], "Bearer copilot-token")
+  assert_eq(headers["editor-version"], COPILOT_EDITOR_VERSION)
+  assert_eq(headers["editor-plugin-version"], COPILOT_PLUGIN_VERSION)
+  assert_eq(headers["copilot-integration-id"], COPILOT_INTEGRATION_ID)
+  assert_eq(headers["user-agent"], COPILOT_USER_AGENT)
+  assert_eq(headers["x-github-api-version"], COPILOT_API_VERSION)
+  assert_eq(headers["openai-intent"], "conversation-agent")
+  assert_eq(headers["x-initiator"], "agent")
+  assert_eq(headers["x-interaction-type"], "conversation-agent")
+  assert_eq(headers["x-vscode-user-agent-library-version"], "electron-fetch")
+  assert_eq(headers["x-request-id"], "deterministic-request")
+  assert_eq(headers["x-agent-task-id"], "deterministic-request")
+  assert_eq(headers["x-interaction-id"], "deterministic-interaction")
+  assert_true(headers.get("x-api-key") is None)
+}
+
+///|
 test "anthropic claude compatible provider sends ccs claude code beta headers" {
   let headers = claude_compatible_provider_headers("anthropic-key", "anthropic")
   assert_eq(headers["x-api-key"], "anthropic-key")

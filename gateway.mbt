@@ -3192,6 +3192,7 @@ async fn Gateway::post_claude_compatible_provider_json(
   request : Json,
   api_format : String,
   anthropic_beta : String?,
+  copilot_headers? : Map[String, String] = {},
 ) -> Result[(@http.Response, String), String] {
   let _ = self
   let base_url = provider.base_url.unwrap()
@@ -3208,6 +3209,7 @@ async fn Gateway::post_claude_compatible_provider_json(
     anthropic_beta~,
     custom_user_agent=provider_custom_user_agent(provider),
     provider_type=provider.provider_type,
+    extra_headers=copilot_headers,
   )
   match ccs_reject_proxy_managed_placeholder_for_upstream(url, headers) {
     Err(message) => return Err(message)
@@ -3380,12 +3382,27 @@ fn claude_compatible_provider_headers(
   accept? : String = "application/json",
   custom_user_agent? : String? = None,
   provider_type? : String? = None,
+  extra_headers? : Map[String, String] = {},
 ) -> Map[String, String] {
   let headers : Map[String, String] = {
     "Content-Type": "application/json",
     "Accept": accept,
   }
-  if provider_type == Some("gemini_cli") {
+  if provider_type == Some("github_copilot") {
+    let request_id = ccs_copilot_random_uuid()
+    headers["Authorization"] = "Bearer \{api_key}"
+    headers["editor-version"] = COPILOT_EDITOR_VERSION
+    headers["editor-plugin-version"] = COPILOT_PLUGIN_VERSION
+    headers["copilot-integration-id"] = COPILOT_INTEGRATION_ID
+    headers["user-agent"] = COPILOT_USER_AGENT
+    headers["x-github-api-version"] = COPILOT_API_VERSION
+    headers["openai-intent"] = "conversation-agent"
+    headers["x-initiator"] = "user"
+    headers["x-interaction-type"] = "conversation-agent"
+    headers["x-vscode-user-agent-library-version"] = "electron-fetch"
+    headers["x-request-id"] = request_id
+    headers["x-agent-task-id"] = request_id
+  } else if provider_type == Some("gemini_cli") {
     headers["Authorization"] = "Bearer \{gemini_cli_bearer_token(api_key)}"
     headers["x-goog-api-client"] = "GeminiCLI/1.0"
   } else if provider_type == Some("openrouter") ||
@@ -3408,6 +3425,9 @@ fn claude_compatible_provider_headers(
   match custom_user_agent {
     Some(value) => headers["User-Agent"] = value
     None => ()
+  }
+  for key, value in extra_headers {
+    headers[key] = value
   }
   headers
 }
@@ -15389,10 +15409,15 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   let request_json = claude_desktop_proxy_request_json_for_upstream(
     request_json, provider, upstream_model, app_type,
   )
-  let upstream_body = prepare_upstream_request_body(
+  let prepared_upstream = prepare_upstream_request(
     claude_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
+    copilot_config_json=Some(self.copilot_optimizer_config_json),
+    anthropic_beta~,
+    session_id~,
   )
+  let upstream_body = prepared_upstream.body
+  let copilot_headers = prepared_upstream.copilot_headers
   let endpoint = claude_transform_endpoint(
     api_format,
     false,
@@ -15413,7 +15438,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   )
   match
     self.post_claude_compatible_provider_json(
-      provider, endpoint, outbound, api_format, anthropic_beta,
+      provider,
+      endpoint,
+      outbound,
+      api_format,
+      anthropic_beta,
+      copilot_headers~,
     ) {
     Err(error) => {
       let error_body = "{\"error\":{\"message\":\"Claude upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
@@ -15464,7 +15494,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           )
           match
             self.post_claude_compatible_provider_json(
-              provider, endpoint, retry_outbound, api_format, anthropic_beta,
+              provider,
+              endpoint,
+              retry_outbound,
+              api_format,
+              anthropic_beta,
+              copilot_headers~,
             ) {
             Ok((retry_response, retry_response_body)) => {
               response_code = retry_response.code
@@ -15489,7 +15524,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             )
             match
               self.post_claude_compatible_provider_json(
-                provider, endpoint, retry_outbound, api_format, anthropic_beta,
+                provider,
+                endpoint,
+                retry_outbound,
+                api_format,
+                anthropic_beta,
+                copilot_headers~,
               ) {
               Ok((retry_response, retry_response_body)) => {
                 response_code = retry_response.code
@@ -16698,10 +16738,15 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   let request_json = claude_desktop_proxy_request_json_for_upstream(
     request_json, provider, upstream_model, app_type,
   )
-  let upstream_body = prepare_upstream_request_body(
+  let prepared_upstream = prepare_upstream_request(
     claude_stream_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
+    copilot_config_json=Some(self.copilot_optimizer_config_json),
+    anthropic_beta~,
+    session_id~,
   )
+  let upstream_body = prepared_upstream.body
+  let copilot_headers = prepared_upstream.copilot_headers
   let endpoint = claude_transform_endpoint(
     api_format,
     true,
@@ -16739,6 +16784,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       accept="text/event-stream",
       custom_user_agent~,
       provider_type=provider.provider_type,
+      extra_headers=copilot_headers,
     ),
   )
   defer client.close()
@@ -16763,6 +16809,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             accept="text/event-stream",
             custom_user_agent~,
             provider_type=provider.provider_type,
+            extra_headers=copilot_headers,
           ),
         )
         defer retry_client.close()
@@ -16838,6 +16885,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             accept="text/event-stream",
             custom_user_agent~,
             provider_type=provider.provider_type,
+            extra_headers=copilot_headers,
           ),
         )
         defer retry_client.close()
@@ -17023,15 +17071,58 @@ fn claude_stream_request_json_for_upstream(
 }
 
 ///|
+priv struct PreparedUpstreamRequest {
+  body : Json
+  copilot_headers : Map[String, String]
+}
+
+///|
 fn prepare_upstream_request_body(
   body : Json,
   provider? : ProviderRouteTarget? = None,
+  copilot_config_json? : Json? = None,
+  anthropic_beta? : String? = None,
+  session_id? : String? = None,
 ) -> Json {
+  prepare_upstream_request(
+    body,
+    provider~,
+    copilot_config_json~,
+    anthropic_beta~,
+    session_id~,
+  ).body
+}
+
+///|
+fn prepare_upstream_request(
+  body : Json,
+  provider? : ProviderRouteTarget? = None,
+  copilot_config_json? : Json? = None,
+  anthropic_beta? : String? = None,
+  session_id? : String? = None,
+) -> PreparedUpstreamRequest {
   let filtered = filter_private_params_for_upstream(body, None, [])
-  let optimized = apply_ccs_optimizer_for_provider(filtered, provider)
-  canonicalize_json_value(
-    replace_images_for_text_only_model(optimized, provider~).body,
+  let copilot_optimization = match copilot_config_json {
+    Some(config) =>
+      apply_ccs_copilot_optimizer_for_provider(
+        filtered,
+        provider,
+        config,
+        anthropic_beta is Some(_),
+        client_session_id=session_id,
+      )
+    None => { body: filtered, headers: {} }
+  }
+  let optimized = apply_ccs_optimizer_for_provider(
+    copilot_optimization.body,
+    provider,
   )
+  {
+    body: canonicalize_json_value(
+      replace_images_for_text_only_model(optimized, provider~).body,
+    ),
+    copilot_headers: copilot_optimization.headers,
+  }
 }
 
 ///|
