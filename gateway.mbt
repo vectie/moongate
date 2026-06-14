@@ -3508,6 +3508,13 @@ fn claude_transform_endpoint(
   is_stream : Bool,
   request_path? : StringView = "/v1/messages",
 ) -> String {
+  let request_path_only = match request_path.find("?") {
+    Some(index) => request_path[:index]
+    None => request_path
+  }
+  if !is_claude_messages_path(request_path_only) {
+    return request_path.to_owned()
+  }
   let query = claude_transform_passthrough_query(
     request_path, api_format, is_stream,
   )
@@ -3529,6 +3536,11 @@ fn claude_transform_endpoint(
 }
 
 ///|
+fn is_claude_messages_path(path : StringView) -> Bool {
+  path == "/v1/messages" || path == "/claude/v1/messages"
+}
+
+///|
 fn claude_transform_passthrough_query(
   request_path : StringView,
   api_format : String,
@@ -3538,7 +3550,7 @@ fn claude_transform_passthrough_query(
     Some(index) => {
       let path = request_path[:index]
       let query = request_path[index + 1:]
-      let stripped = if path == "/v1/messages" || path == "/claude/v1/messages" {
+      let stripped = if is_claude_messages_path(path) {
         strip_claude_beta_query(query)
       } else {
         Some(query.to_owned())

@@ -3829,6 +3829,22 @@ test "claude compatible provider endpoints preserve ccs query semantics" {
     ),
     "/v1beta/models/__MODEL__:streamGenerateContent?key=abc&alt=sse",
   )
+  assert_eq(
+    claude_transform_endpoint(
+      "openai_chat",
+      false,
+      request_path="/v1/models?beta=true&conversation=abc",
+    ),
+    "/v1/models?beta=true&conversation=abc",
+  )
+  assert_eq(
+    claude_transform_endpoint(
+      "gemini_native",
+      true,
+      request_path="/v1/models?alt=json&key=abc",
+    ),
+    "/v1/models?alt=json&key=abc",
+  )
 }
 
 ///|
