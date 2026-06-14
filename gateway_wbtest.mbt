@@ -135,6 +135,20 @@ test "usage query helpers parse ccs provider limit parameters" {
 }
 
 ///|
+test "usage script request accepts raw ccs script output" {
+  let path = "/testUsageScript?providerId=p1&app=codex&scriptCode=%5B%7B%22planName%22%3A%22Team%22%2C%22total%22%3A100%2C%22used%22%3A40%2C%22remaining%22%3A60%2C%22unit%22%3A%22%25%22%7D%5D"
+  guard usage_result_from_request(path, None) is Some(result) else {
+    fail("expected usage result")
+  }
+  assert_true(result.success)
+  guard result.data is Some(rows) else { fail("expected data") }
+  assert_eq(rows.length(), 1)
+  assert_eq(rows[0].plan_name, Some("Team"))
+  assert_eq(rows[0].remaining, Some(60.0))
+  assert_eq(rows[0].unit, Some("%"))
+}
+
+///|
 test "usage query helpers parse ccs auto failover boolean parameters" {
   assert_eq(
     usage_query_bool_any(

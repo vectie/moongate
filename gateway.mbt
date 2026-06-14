@@ -13474,7 +13474,7 @@ fn usage_result_from_request(path : StringView, body : Json?) -> UsageResult? {
       for key in ["result", "usageResult"] {
         match obj.get(key) {
           Some(value) =>
-            match usage_result_from_json(value) {
+            match usage_result_or_script_output_from_json(value) {
               Some(result) => return Some(result)
               None => ()
             }
@@ -13485,6 +13485,11 @@ fn usage_result_from_request(path : StringView, body : Json?) -> UsageResult? {
         match obj.get(key) {
           Some(String(value)) =>
             match usage_result_from_string(value) {
+              Some(result) => return Some(result)
+              None => ()
+            }
+          Some(value) =>
+            match usage_result_or_script_output_from_json(value) {
               Some(result) => return Some(result)
               None => ()
             }
@@ -13504,7 +13509,7 @@ fn usage_result_from_string(value : String) -> UsageResult? {
     return None
   }
   let parsed = @json.parse(trimmed) catch { _ => return None }
-  usage_result_from_json(parsed)
+  usage_result_or_script_output_from_json(parsed)
 }
 
 ///|

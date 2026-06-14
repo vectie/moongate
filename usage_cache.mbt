@@ -108,6 +108,56 @@ fn usage_data_from_json(json : Json) -> UsageData? {
 }
 
 ///|
+fn usage_data_json_has_ccs_field(obj : Map[String, Json]) -> Bool {
+  [
+    "planName", "plan_name", "extra", "isValid", "is_valid", "invalidMessage", "invalid_message",
+    "total", "used", "remaining", "unit",
+  ].any(key => obj.contains(key))
+}
+
+///|
+fn usage_script_output_result_from_json(json : Json) -> UsageResult? {
+  match json {
+    Array(items) => {
+      let rows : Array[UsageData] = []
+      for item in items {
+        guard item is Object(obj) else { return None }
+        if !usage_data_json_has_ccs_field(obj) {
+          return None
+        }
+        match usage_data_from_json(item) {
+          Some(row) => rows.push(row)
+          None => return None
+        }
+      }
+      Some(UsageResult::new(true, data=Some(rows)))
+    }
+    Object(obj) => {
+      if !usage_data_json_has_ccs_field(obj) {
+        return None
+      }
+      match usage_data_from_json(json) {
+        Some(row) => {
+          let rows : Array[UsageData] = []
+          rows.push(row)
+          Some(UsageResult::new(true, data=Some(rows)))
+        }
+        None => None
+      }
+    }
+    _ => None
+  }
+}
+
+///|
+fn usage_result_or_script_output_from_json(json : Json) -> UsageResult? {
+  match usage_result_from_json(json) {
+    Some(result) => Some(result)
+    None => usage_script_output_result_from_json(json)
+  }
+}
+
+///|
 pub struct UsageResult {
   success : Bool
   data : Array[UsageData]?

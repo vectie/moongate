@@ -51,6 +51,52 @@ test "usage result parses ccs usage script json" {
 }
 
 ///|
+test "usage script output wraps raw ccs usage rows" {
+  let json = @json.parse(
+    (
+      #|[
+      #|  {
+      #|    "planName": "Team",
+      #|    "total": 100,
+      #|    "used": 40,
+      #|    "remaining": 60,
+      #|    "unit": "%",
+      #|    "isValid": true,
+      #|    "extra": "resets tomorrow"
+      #|  }
+      #|]
+    ),
+  )
+  guard usage_script_output_result_from_json(json) is Some(result) else {
+    fail("expected wrapped usage result")
+  }
+  assert_true(result.success)
+  guard result.data is Some(rows) else { fail("expected data") }
+  assert_eq(rows.length(), 1)
+  assert_eq(rows[0].plan_name, Some("Team"))
+  assert_eq(rows[0].total, Some(100.0))
+  assert_eq(rows[0].used, Some(40.0))
+  assert_eq(rows[0].remaining, Some(60.0))
+  assert_eq(rows[0].unit, Some("%"))
+  guard result.to_json() is Object(obj) else { fail("expected result object") }
+  assert_eq(obj["success"], Json::boolean(true))
+  guard obj["data"] is Array(data) else { fail("expected data array") }
+  assert_eq(data.length(), 1)
+}
+
+///|
+test "usage script output preserves ccs empty usage arrays" {
+  guard usage_script_output_result_from_json(@json.parse("[]")) is Some(result) else {
+    fail("expected wrapped empty usage result")
+  }
+  assert_true(result.success)
+  guard result.data is Some(rows) else { fail("expected empty data") }
+  assert_eq(rows.length(), 0)
+  guard result.to_json() is Object(obj) else { fail("expected result object") }
+  assert_eq(obj["data"], Json::array([]))
+}
+
+///|
 test "usage cache subscription round trip matches ccs" {
   let cache = UsageCache::new()
   assert_true(
