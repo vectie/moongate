@@ -1372,7 +1372,7 @@ test "proxy lifecycle state matches ccs command aliases" {
 }
 
 ///|
-test "proxy failover unit commands return ccs null success body" {
+test "ccs unit commands return null success body" {
   assert_eq(ccs_unit_success_json(), Json::null())
 }
 

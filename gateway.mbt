@@ -8088,7 +8088,7 @@ async fn Gateway::handle_proxy_stop_server(
     return
   }
   self.proxy_enabled = false
-  write_usage_json(w, { "ok": Json::boolean(true) }.to_json())
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
@@ -8099,7 +8099,7 @@ async fn Gateway::handle_proxy_stop_with_restore(
   self.proxy_enabled = false
   self.proxy_clear_takeover()
   self.proxy_clear_enabled_apps_for_manual_stop()
-  write_usage_json(w, { "ok": Json::boolean(true) }.to_json())
+  write_usage_json(w, ccs_unit_success_json())
 }
 
 ///|
