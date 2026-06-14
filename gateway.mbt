@@ -694,6 +694,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/check_for_updates", (_, w) => {
     self.handle_check_for_updates(w)
   })
+  router.add_handler(@httpx.Method::Post, "/update_tray_menu", (_, w) => {
+    self.handle_update_tray_menu(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/update_tray_menu", (_, w) => {
+    self.handle_update_tray_menu(w)
+  })
   router.add_handler(@httpx.Method::Get, "/is_portable_mode", (_, w) => {
     self.handle_is_portable_mode(w)
   })
@@ -6403,6 +6409,15 @@ async fn Gateway::handle_check_for_updates(
 }
 
 ///|
+async fn Gateway::handle_update_tray_menu(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_update_tray_menu_result())
+}
+
+///|
 async fn Gateway::handle_is_portable_mode(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -11440,6 +11455,11 @@ async fn write_usage_json(w : @httpx.ResponseWriter, body : Json) -> Unit {
 ///|
 fn ccs_unit_success_json() -> Json {
   Json::null()
+}
+
+///|
+fn ccs_update_tray_menu_result() -> Json {
+  Json::boolean(false)
 }
 
 ///|

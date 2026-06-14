@@ -1377,6 +1377,11 @@ test "ccs unit commands return null success body" {
 }
 
 ///|
+test "standalone tray update mirrors ccs no tray result" {
+  assert_eq(ccs_update_tray_menu_result(), Json::boolean(false))
+}
+
+///|
 test "proxy app config state updates ccs app fields" {
   let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
   gateway.proxy_app_enabled.set("codex", false)
