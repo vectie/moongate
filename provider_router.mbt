@@ -802,11 +802,31 @@ fn ProviderRouter::has_configured_app(
 }
 
 ///|
+fn provider_app_is_additive(app_type : String) -> Bool {
+  match app_type {
+    "opencode" | "openclaw" | "hermes" => true
+    _ => false
+  }
+}
+
+///|
 fn ProviderRouter::current_provider_id(
   self : ProviderRouter,
   app_type : String,
 ) -> String? {
   self.current_provider_ids.get(app_type)
+}
+
+///|
+fn ProviderRouter::current_provider_for_ccs_command(
+  self : ProviderRouter,
+  app_type : String,
+) -> String {
+  if provider_app_is_additive(app_type) {
+    ""
+  } else {
+    self.current_provider_ids.get(app_type).unwrap_or("")
+  }
 }
 
 ///|
@@ -1195,6 +1215,10 @@ fn ProviderRouter::delete_provider(
     return false
   }
   guard app_providers.get(provider_id) is Some(_) else { return false }
+  if !provider_app_is_additive(app_type) &&
+    self.current_provider_ids.get(app_type) == Some(provider_id) {
+    return false
+  }
   app_providers.remove(provider_id)
   self.providers.set(app_type, app_providers)
   self.remove_from_failover_queue(app_type, provider_id)
@@ -1224,6 +1248,7 @@ fn ProviderRouter::remove_provider_from_live_config(
   app_type : String,
   provider_id : String,
 ) -> Bool {
+  guard provider_app_is_additive(app_type) else { return false }
   guard self.provider_by_id(app_type, provider_id) is Some(_) else {
     return false
   }

@@ -9134,10 +9134,12 @@ async fn Gateway::handle_get_current_provider(
     write_usage_bad_request(w, "missing_app")
     return
   }
-  match self.provider_router.current_provider_id(app_type) {
-    Some(provider_id) => write_usage_json(w, Json::string(provider_id))
-    None => write_usage_bad_request(w, "current_provider_not_found")
-  }
+  write_usage_json(
+    w,
+    Json::string(
+      self.provider_router.current_provider_for_ccs_command(app_type),
+    ),
+  )
 }
 
 ///|
@@ -9208,6 +9210,10 @@ async fn Gateway::handle_update_provider(
     None => false
   }
   if original_id is Some(original_id) && original_id != target.provider_id {
+    if !provider_app_is_additive(app_type) {
+      write_usage_bad_request(w, "provider_key_change_unsupported")
+      return
+    }
     ignore(self.provider_router.delete_provider(app_type, original_id))
   }
   let provider_id = target.provider_id

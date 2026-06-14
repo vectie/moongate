@@ -725,7 +725,7 @@ test "provider router exposes ccs provider map and current id" {
 }
 
 ///|
-test "provider router delete provider updates current and queue" {
+test "provider router delete provider mirrors ccs current guard" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -743,6 +743,13 @@ test "provider router delete provider updates current and queue" {
   )
   router.set_current_provider("claude", "a")
   router.set_failover_queue("claude", ["a", "b"])
+  assert_false(router.delete_provider("claude", "a"))
+  assert_eq(router.current_provider_id("claude"), Some("a"))
+  json_inspect(router.failover_queue_json("claude"), content=[
+    { "providerId": "a", "providerName": "Provider A", "sortIndex": null },
+    { "providerId": "b", "providerName": "Provider B", "sortIndex": null },
+  ])
+  router.set_current_provider("claude", "b")
   assert_true(router.delete_provider("claude", "a"))
   assert_eq(router.current_provider_id("claude"), Some("b"))
   json_inspect(router.failover_queue_json("claude"), content=[
@@ -752,31 +759,63 @@ test "provider router delete provider updates current and queue" {
 }
 
 ///|
-test "provider router remove live config preserves stored provider" {
+test "provider router delete additive current provider follows ccs mode" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
-      app_type="gemini",
+      app_type="opencode",
+      provider_id="a",
+      provider_name="Provider A",
+    ),
+  )
+  router.set_current_provider("opencode", "a")
+  assert_true(router.delete_provider("opencode", "a"))
+  assert_eq(router.current_provider_id("opencode"), None)
+  guard router.providers_ccs_json("opencode") is Object(providers) else {
+    fail("expected providers object")
+  }
+  assert_true(providers.get("a") is None)
+}
+
+///|
+test "provider router current provider command mirrors ccs additive mode" {
+  let router = ProviderRouter::new()
+  router.set_current_provider("opencode", "a")
+  router.set_current_provider("claude", "b")
+  assert_eq(router.current_provider_for_ccs_command("opencode"), "")
+  assert_eq(router.current_provider_for_ccs_command("openclaw"), "")
+  assert_eq(router.current_provider_for_ccs_command("hermes"), "")
+  assert_eq(router.current_provider_for_ccs_command("claude"), "b")
+  assert_eq(router.current_provider_for_ccs_command("codex"), "")
+}
+
+///|
+test "provider router remove live config preserves stored additive provider" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="opencode",
       provider_id="a",
       provider_name="Provider A",
     ),
   )
   router.upsert_provider(
     ProviderRouteTarget::new(
-      app_type="gemini",
+      app_type="opencode",
       provider_id="b",
       provider_name="Provider B",
     ),
   )
-  router.set_current_provider("gemini", "a")
-  router.set_failover_queue("gemini", ["a"])
-  assert_true(router.remove_provider_from_live_config("gemini", "a"))
-  assert_eq(router.current_provider_id("gemini"), Some("b"))
-  guard router.providers_ccs_json("gemini") is Object(providers) else {
+  router.set_current_provider("opencode", "a")
+  router.set_failover_queue("opencode", ["a"])
+  assert_true(router.remove_provider_from_live_config("opencode", "a"))
+  assert_eq(router.current_provider_id("opencode"), Some("b"))
+  guard router.providers_ccs_json("opencode") is Object(providers) else {
     fail("expected providers object")
   }
   assert_true(providers.get("a") is Some(_))
-  json_inspect(router.failover_queue_json("gemini"), content=[])
+  json_inspect(router.failover_queue_json("opencode"), content=[])
+  assert_false(router.remove_provider_from_live_config("gemini", "a"))
 }
 
 ///|
