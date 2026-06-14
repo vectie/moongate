@@ -61,6 +61,34 @@ test "ccs responses transform uses session cache key" {
 }
 
 ///|
+test "ccs transform strips leading anthropic billing header like ccs" {
+  assert_eq(
+    strip_leading_anthropic_billing_header(
+      "x-anthropic-billing-header: cc_version=2.1; cch=a;\r\n\r\n  You are terse.  ",
+    ),
+    "  You are terse.  ",
+  )
+  assert_eq(
+    strip_leading_anthropic_billing_header(
+      "x-anthropic-billing-header: cc_version=2.1; cch=a;\rYou are terse.",
+    ),
+    "You are terse.",
+  )
+  assert_eq(
+    strip_leading_anthropic_billing_header(
+      "Keep this literal:\nx-anthropic-billing-header: cc_version=2.1",
+    ),
+    "Keep this literal:\nx-anthropic-billing-header: cc_version=2.1",
+  )
+  assert_eq(
+    strip_leading_anthropic_billing_header(
+      "x-anthropic-billing-header: cc_version=2.1; cch=a;",
+    ),
+    "",
+  )
+}
+
+///|
 test "ccs responses output config max maps to reasoning xhigh" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),

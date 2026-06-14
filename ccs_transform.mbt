@@ -1053,9 +1053,26 @@ fn strip_leading_anthropic_billing_header(text : String) -> String {
   if !text.has_prefix(prefix) {
     return text
   }
-  match text.find("\n") {
-    Some(index) => text[index + 1:].trim().to_owned()
-    None => ""
+  let line_end = match (text.find("\r"), text.find("\n")) {
+    (Some(cr), Some(lf)) => Some(if cr < lf { cr } else { lf })
+    (Some(cr), None) => Some(cr)
+    (None, Some(lf)) => Some(lf)
+    (None, None) => None
+  }
+  guard line_end is Some(line_end) else { return "" }
+  let mut rest_start = line_end + 1
+  if text[line_end:line_end + 1] == "\r" &&
+    rest_start < text.length() &&
+    text[rest_start:rest_start + 1] == "\n" {
+    rest_start += 1
+  }
+  let rest = text[rest_start:]
+  if rest.has_prefix("\r\n") {
+    rest[2:].to_owned()
+  } else if rest.has_prefix("\n") || rest.has_prefix("\r") {
+    rest[1:].to_owned()
+  } else {
+    rest.to_owned()
   }
 }
 
