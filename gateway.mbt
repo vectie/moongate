@@ -11618,13 +11618,32 @@ fn provider_body_payload(body : Json?) -> Json? {
 fn provider_settings_config_from_body(body : Json?) -> Json? {
   guard provider_body_payload(body) is Some(Object(obj)) else { return None }
   match obj.get("settingsConfig") {
-    Some(settings) => Some(settings)
+    Some(settings) =>
+      Some(provider_settings_config_with_inline_metadata(settings, obj))
     None =>
       match obj.get("settings_config") {
-        Some(settings) => Some(settings)
+        Some(settings) =>
+          Some(provider_settings_config_with_inline_metadata(settings, obj))
         None => provider_inline_settings_config(obj)
       }
   }
+}
+
+///|
+fn provider_settings_config_with_inline_metadata(
+  settings : Json,
+  obj : Map[String, Json],
+) -> Json {
+  guard settings is Object(settings_obj) else { return settings }
+  let merged : Map[String, Json] = {}
+  for key in settings_obj.keys() {
+    match settings_obj.get(key) {
+      Some(value) => merged[key] = value
+      None => ()
+    }
+  }
+  provider_copy_inline_metadata_fields(merged, obj)
+  Json::object(merged)
 }
 
 ///|
@@ -11849,6 +11868,39 @@ fn provider_settings_bearer_only(settings : Json?) -> Bool {
 }
 
 ///|
+fn provider_settings_prompt_cache_key(settings : Json?) -> String? {
+  guard settings is Some(Object(obj)) else { return None }
+  match
+    json_non_empty_string_from_map_any(obj, [
+      "promptCacheKey", "prompt_cache_key",
+    ]) {
+    Some(value) => return Some(value)
+    None => ()
+  }
+  match obj.get("meta") {
+    Some(Object(meta)) =>
+      json_non_empty_string_from_map_any(meta, [
+        "promptCacheKey", "prompt_cache_key",
+      ])
+    _ => None
+  }
+}
+
+///|
+fn provider_settings_codex_fast_mode(settings : Json?) -> Bool? {
+  guard settings is Some(Object(obj)) else { return None }
+  match json_bool_from_map_any(obj, ["codexFastMode", "codex_fast_mode"]) {
+    Some(value) => return Some(value)
+    None => ()
+  }
+  match obj.get("meta") {
+    Some(Object(meta)) =>
+      json_bool_from_map_any(meta, ["codexFastMode", "codex_fast_mode"])
+    _ => None
+  }
+}
+
+///|
 fn json_non_empty_string_from_map_any(
   obj : Map[String, Json],
   keys : Array[String],
@@ -11911,20 +11963,57 @@ fn codex_toml_string_value(content : String, key : String) -> String? {
 ///|
 fn provider_inline_settings_config(obj : Map[String, Json]) -> Json? {
   let settings : Map[String, Json] = {}
-  for key in ["customUserAgent", "custom_user_agent", "userAgent", "user_agent"] {
+  provider_copy_inline_metadata_fields(settings, obj)
+  if settings.is_empty() {
+    None
+  } else {
+    Some(Json::object(settings))
+  }
+}
+
+///|
+fn provider_copy_inline_metadata_fields(
+  settings : Map[String, Json],
+  obj : Map[String, Json],
+) -> Unit {
+  for
+    key in [
+      "customUserAgent", "custom_user_agent", "userAgent", "user_agent", "apiFormat",
+      "api_format", "promptCacheKey", "prompt_cache_key", "codexFastMode", "codex_fast_mode",
+      "githubAccountId", "github_account_id",
+    ] {
     match obj.get(key) {
       Some(value) => settings[key] = value
       None => ()
     }
   }
   match obj.get("meta") {
-    Some(meta) => settings["meta"] = meta
+    Some(meta) =>
+      settings["meta"] = provider_merge_inline_meta(settings.get("meta"), meta)
     None => ()
   }
-  if settings.is_empty() {
-    None
-  } else {
-    Some(Json::object(settings))
+}
+
+///|
+fn provider_merge_inline_meta(existing : Json?, incoming : Json) -> Json {
+  match (existing, incoming) {
+    (Some(Object(existing_obj)), Object(incoming_obj)) => {
+      let merged : Map[String, Json] = {}
+      for key in existing_obj.keys() {
+        match existing_obj.get(key) {
+          Some(value) => merged[key] = value
+          None => ()
+        }
+      }
+      for key in incoming_obj.keys() {
+        match incoming_obj.get(key) {
+          Some(value) => merged[key] = value
+          None => ()
+        }
+      }
+      Json::object(merged)
+    }
+    (_, value) => value
   }
 }
 
@@ -12392,6 +12481,10 @@ fn provider_target_from_request(
   let provider_type = provider_resolved_provider_type(
     app_type, explicit_provider_type, settings_config, api_format, base_url, api_key,
   )
+  let prompt_cache_key = provider_settings_prompt_cache_key(settings_config)
+  let codex_fast_mode = provider_settings_codex_fast_mode(settings_config).unwrap_or(
+    true,
+  )
   let notes = provider_string_from_request(path, body, ["notes"])
   let is_full_url = provider_bool_from_request(path, body, [
     "is_full_url", "isFullUrl", "fullUrl",
@@ -12408,6 +12501,8 @@ fn provider_target_from_request(
       enabled~,
       provider_type~,
       api_format~,
+      prompt_cache_key~,
+      codex_fast_mode~,
       base_url~,
       api_key~,
       is_full_url~,

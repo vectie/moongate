@@ -688,6 +688,48 @@ test "provider target infers ccs proxy provider type from settings" {
 }
 
 ///|
+test "provider target merges ccs sibling meta with settings config" {
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("codex-oauth-meta"),
+            "name": Json::string("Codex OAuth Meta"),
+            "settingsConfig": {
+              "env": {
+                "ANTHROPIC_BASE_URL": Json::string(
+                  "https://chatgpt.com/backend-api/codex",
+                ),
+                "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
+              }.to_json(),
+            }.to_json(),
+            "meta": {
+              "providerType": Json::string("codex-oauth"),
+              "apiFormat": Json::string("openai_responses"),
+              "promptCacheKey": Json::string("stable-cache-key"),
+              "codexFastMode": Json::boolean(false),
+              "customUserAgent": Json::string("  codex_cli_rs/1.2.3  "),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude",
+    )
+    is Some(provider) else {
+    fail("expected provider")
+  }
+  assert_eq(provider.provider_id, "codex-oauth-meta")
+  assert_eq(provider.provider_type, Some("codex_oauth"))
+  assert_eq(provider.api_format, Some("openai_responses"))
+  assert_eq(provider.prompt_cache_key, Some("stable-cache-key"))
+  assert_false(provider.codex_fast_mode)
+  assert_eq(provider.base_url, Some("https://chatgpt.com/backend-api/codex"))
+  assert_eq(provider.api_key, Some("PROXY_MANAGED"))
+  assert_eq(provider_custom_user_agent(provider), Some("codex_cli_rs/1.2.3"))
+}
+
+///|
 test "provider target keeps ccs custom user agent metadata" {
   guard provider_target_from_request(
       "/add_provider",
