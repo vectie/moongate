@@ -332,6 +332,31 @@ test "usage query helpers parse ccs auto failover boolean parameters" {
 }
 
 ///|
+test "proxy failover command parsers accept ccs json payload keys" {
+  let body = Some(
+    {
+      "appType": Json::string(" codex "),
+      "providerId": Json::string("codex-oauth"),
+      "enabled": Json::boolean(true),
+    }.to_json(),
+  )
+  guard proxy_provider_query_from_request("/reset_circuit_breaker", body)
+    is Some(query) else {
+    fail("expected provider query")
+  }
+  assert_eq(query.app_type, "codex")
+  assert_eq(query.provider_id, "codex-oauth")
+  assert_eq(
+    proxy_app_type_from_request("/get_failover_queue", body),
+    Some("codex"),
+  )
+  assert_eq(
+    proxy_bool_request("/set_auto_failover_enabled", body, ["enabled"]),
+    Some(true),
+  )
+}
+
+///|
 test "ccs settings defaults mirror desktop command payloads" {
   guard ccs_default_app_settings_json() is Object(settings) else {
     fail("expected settings object")

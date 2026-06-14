@@ -8875,7 +8875,8 @@ async fn Gateway::handle_proxy_provider_health(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard proxy_provider_query(r.path) is Some(query) else {
+  let body = proxy_json_body(r)
+  guard proxy_provider_query_from_request(r.path, body) is Some(query) else {
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
@@ -8932,7 +8933,8 @@ async fn Gateway::handle_proxy_circuit_breaker_stats(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard proxy_provider_query(r.path) is Some(query) else {
+  let body = proxy_json_body(r)
+  guard proxy_provider_query_from_request(r.path, body) is Some(query) else {
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
@@ -8967,7 +8969,8 @@ async fn Gateway::handle_proxy_reset_circuit_breaker(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard proxy_provider_query(r.path) is Some(query) else {
+  let body = proxy_json_body(r)
+  guard proxy_provider_query_from_request(r.path, body) is Some(query) else {
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
@@ -8987,7 +8990,8 @@ async fn Gateway::handle_proxy_failover_queue(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
@@ -9000,7 +9004,8 @@ async fn Gateway::handle_proxy_available_failover_providers(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
@@ -9016,7 +9021,8 @@ async fn Gateway::handle_proxy_add_failover_queue(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard proxy_provider_query(r.path) is Some(query) else {
+  let body = proxy_json_body(r)
+  guard proxy_provider_query_from_request(r.path, body) is Some(query) else {
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
@@ -9030,7 +9036,8 @@ async fn Gateway::handle_proxy_remove_failover_queue(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard proxy_provider_query(r.path) is Some(query) else {
+  let body = proxy_json_body(r)
+  guard proxy_provider_query_from_request(r.path, body) is Some(query) else {
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
@@ -9047,7 +9054,8 @@ async fn Gateway::handle_proxy_auto_failover_enabled(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
@@ -9063,11 +9071,12 @@ async fn Gateway::handle_proxy_set_auto_failover_enabled(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "app_type", "appType") is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard proxy_app_type_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  guard proxy_enabled_value(r) is Some(enabled) else {
+  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
     write_usage_bad_request(w, "missing_enabled")
     return
   }
@@ -11786,15 +11795,27 @@ priv struct ProxyProviderQuery {
 }
 
 ///|
-fn proxy_provider_query(path : StringView) -> ProxyProviderQuery? {
-  guard usage_query_value_any(path, "provider_id", "providerId")
+fn proxy_provider_query_from_request(
+  path : StringView,
+  body : Json?,
+) -> ProxyProviderQuery? {
+  guard proxy_string_request(path, body, ["provider_id", "providerId"])
     is Some(provider_id) else {
     return None
   }
-  guard usage_query_value_any(path, "app_type", "appType") is Some(app_type) else {
+  guard proxy_app_type_from_request(path, body) is Some(app_type) else {
     return None
   }
   Some({ provider_id, app_type })
+}
+
+///|
+fn proxy_app_type_from_request(path : StringView, body : Json?) -> String? {
+  match proxy_string_request(path, body, ["app_type", "appType"]) {
+    Some(app_type) if !app_type.trim().is_empty() =>
+      Some(app_type.trim().to_owned())
+    _ => None
+  }
 }
 
 ///|
@@ -13445,21 +13466,6 @@ fn proxy_circuit_config_from_request(
     Some(next)
   } else {
     None
-  }
-}
-
-///|
-async fn proxy_enabled_value(r : @httpx.RequestReader) -> Bool? {
-  match usage_query_bool_any(r.path, "enabled", "enabled") {
-    Some(enabled) => Some(enabled)
-    None => {
-      let body = r.body.read_all().text()
-      if body.trim().is_empty() {
-        return None
-      }
-      let parsed = @json.parse(body) catch { _ => return None }
-      json_bool_field(parsed, "enabled")
-    }
   }
 }
 
