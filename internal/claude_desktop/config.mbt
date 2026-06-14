@@ -26,13 +26,41 @@ pub struct ClaudeDesktopStatus {
   configured : Bool
   profile_path : String
   meta_path : String
+  config_library_path : String
+  applied_id : String?
+  actual_base_url : String?
+  stale_raw_models : Bool
   token_configured : Bool
+}
+
+///|
+pub fn ClaudeDesktopStatus::new(
+  configured~ : Bool,
+  profile_path~ : String,
+  meta_path~ : String,
+  config_library_path~ : String,
+  applied_id? : String? = None,
+  actual_base_url? : String? = None,
+  stale_raw_models? : Bool = false,
+  token_configured? : Bool = false,
+) -> ClaudeDesktopStatus {
+  {
+    configured,
+    profile_path,
+    meta_path,
+    config_library_path,
+    applied_id,
+    actual_base_url,
+    stale_raw_models,
+    token_configured,
+  }
 }
 
 ///|
 priv struct ClaudeDesktopPaths {
   normal_config_path : String
   threep_config_path : String
+  config_library_path : String
   profile_path : String
   meta_path : String
 }
@@ -113,10 +141,16 @@ pub async fn uninstall_proxy_profile() -> Result[Unit, String] {
 ///|
 pub async fn status() -> ClaudeDesktopStatus {
   let paths = claude_desktop_paths()
+  let profile = read_json_or_empty(paths.profile_path)
   {
-    configured: @fsx.exists_as_file(paths.profile_path),
+    configured: @fsx.exists_as_file(paths.profile_path) ||
+    meta_has_profile_entry(paths.meta_path),
     profile_path: paths.profile_path,
     meta_path: paths.meta_path,
+    config_library_path: paths.config_library_path,
+    applied_id: read_applied_id(paths.meta_path),
+    actual_base_url: json_object_string(profile, "inferenceGatewayBaseUrl"),
+    stale_raw_models: profile_has_stale_raw_models(profile),
     token_configured: gateway_token() is Some(_),
   }
 }
@@ -288,6 +322,84 @@ fn meta_entry_has_profile_id(entry : Json) -> Bool {
 }
 
 ///|
+async fn meta_has_profile_entry(path : String) -> Bool {
+  match read_json_or_empty(path) {
+    Object(obj) =>
+      match obj.get("entries") {
+        Some(Array(entries)) => entries.any(meta_entry_has_profile_id)
+        _ => false
+      }
+    _ => false
+  }
+}
+
+///|
+async fn read_applied_id(path : String) -> String? {
+  json_object_string(read_json_or_empty(path), "appliedId")
+}
+
+///|
+fn profile_has_stale_raw_models(profile : Json) -> Bool {
+  match profile {
+    Object(obj) =>
+      match obj.get("inferenceModels") {
+        Some(Array(models)) =>
+          models.any(item => {
+            match inference_model_name(item) {
+              Some(model) => !is_claude_safe_model_id(model)
+              None => false
+            }
+          })
+        _ => false
+      }
+    _ => false
+  }
+}
+
+///|
+fn inference_model_name(item : Json) -> String? {
+  match item {
+    String(model) => Some(model)
+    Object(obj) => json_string_from_map(obj, "name")
+    _ => None
+  }
+}
+
+///|
+fn is_claude_safe_model_id(model : String) -> Bool {
+  let normalized = model.trim().to_lower()
+  if normalized.contains("[1m]") {
+    return false
+  }
+  let tail = if normalized.has_prefix("anthropic/claude-") {
+    normalized["anthropic/claude-".length():]
+  } else if normalized.has_prefix("claude-") {
+    normalized["claude-".length():]
+  } else {
+    return false
+  }
+  ["sonnet-", "opus-", "haiku-"].any(prefix => {
+    tail.has_prefix(prefix) && tail.length() > prefix.length()
+  })
+}
+
+///|
+fn json_object_string(value : Json, key : String) -> String? {
+  match value {
+    Object(obj) => json_string_from_map(obj, key)
+    _ => None
+  }
+}
+
+///|
+fn json_string_from_map(obj : Map[String, Json], key : String) -> String? {
+  match obj.get(key) {
+    Some(String(value)) => Some(value)
+    _ => None
+  }
+}
+
+///|
 async fn remove_gateway_enterprise_config(path : String) -> Unit {
   if !@fsx.exists(path) {
     return
@@ -357,6 +469,7 @@ fn claude_desktop_paths() -> ClaudeDesktopPaths {
   {
     normal_config_path: @pathx.join(normal_dir, CONFIG_FILE),
     threep_config_path: @pathx.join(threep_dir, CONFIG_FILE),
+    config_library_path,
     profile_path: @pathx.join(config_library_path, PROFILE_ID + ".json"),
     meta_path: @pathx.join(config_library_path, "_meta.json"),
   }

@@ -377,6 +377,7 @@ pub struct ProviderRouteTarget {
   enabled : Bool
   provider_type : String?
   api_format : String?
+  claude_desktop_mode : String?
   prompt_cache_key : String?
   codex_fast_mode : Bool
   base_url : String?
@@ -426,6 +427,7 @@ pub fn ProviderRouteTarget::new(
   enabled? : Bool = true,
   provider_type? : String? = None,
   api_format? : String? = None,
+  claude_desktop_mode? : String? = None,
   prompt_cache_key? : String? = None,
   codex_fast_mode? : Bool = false,
   base_url? : String? = None,
@@ -446,6 +448,7 @@ pub fn ProviderRouteTarget::new(
     enabled,
     provider_type,
     api_format,
+    claude_desktop_mode,
     prompt_cache_key,
     codex_fast_mode,
     base_url,
@@ -472,6 +475,9 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
   }
   if self.api_format is Some(api_format) {
     obj["apiFormat"] = Json::string(api_format)
+  }
+  if self.claude_desktop_mode is Some(mode) {
+    obj["claudeDesktopMode"] = Json::string(mode)
   }
   if self.settings_config is Some(settings_config) {
     obj["settingsConfig"] = settings_config
@@ -512,12 +518,19 @@ fn ProviderRouteTarget::to_ccs_provider_json(
   if sort_index is Some(sort_index) {
     obj["sortIndex"] = Json::number(sort_index.to_double())
   }
-  if !self.claude_desktop_model_routes.is_empty() {
-    obj["meta"] = {
-      "claudeDesktopModelRoutes": claude_desktop_model_routes_json(
+  if self.claude_desktop_mode is Some(_) ||
+    !self.claude_desktop_model_routes.is_empty() {
+    let meta : Map[String, Json] = {}
+    match self.claude_desktop_mode {
+      Some(mode) => meta["claudeDesktopMode"] = Json::string(mode)
+      None => ()
+    }
+    if !self.claude_desktop_model_routes.is_empty() {
+      meta["claudeDesktopModelRoutes"] = claude_desktop_model_routes_json(
         self.claude_desktop_model_routes,
-      ),
-    }.to_json()
+      )
+    }
+    obj["meta"] = Json::object(meta)
   }
   Json::object(obj)
 }

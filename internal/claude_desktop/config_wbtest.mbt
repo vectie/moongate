@@ -27,6 +27,36 @@ test "local gateway base url normalizes wildcard host" {
 }
 
 ///|
+test "status stale raw model detection matches ccs profile rules" {
+  assert_false(
+    profile_has_stale_raw_models(
+      Json::object({
+        "inferenceModels": Json::array([
+          Json::string("claude-sonnet-4-6"),
+          Json::object({ "name": Json::string("anthropic/claude-opus-4-8") }),
+        ]),
+      }),
+    ),
+  )
+  assert_true(
+    profile_has_stale_raw_models(
+      Json::object({
+        "inferenceModels": Json::array([Json::string("claude-sonnet-4-6[1m]")]),
+      }),
+    ),
+  )
+  assert_true(
+    profile_has_stale_raw_models(
+      Json::object({
+        "inferenceModels": Json::array([
+          Json::object({ "name": Json::string("deepseek-v4-flash") }),
+        ]),
+      }),
+    ),
+  )
+}
+
+///|
 async test "write meta restores previous applied profile and preserves fields" {
   @fsx.with_temporary_directory("moonstat-claude-meta-XXXXXX", tmpdir => {
     let meta_path = @pathx.join(tmpdir, "_meta.json")

@@ -28,8 +28,13 @@ pub struct ClaudeDesktopStatus {
   configured : Bool
   profile_path : String
   meta_path : String
+  config_library_path : String
+  applied_id : String?
+  actual_base_url : String?
+  stale_raw_models : Bool
   token_configured : Bool
 }
+pub fn ClaudeDesktopStatus::new(configured~ : Bool, profile_path~ : String, meta_path~ : String, config_library_path~ : String, applied_id? : String?, actual_base_url? : String?, stale_raw_models? : Bool, token_configured? : Bool) -> Self
 
 // Type aliases
 

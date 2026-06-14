@@ -678,6 +678,7 @@ test "provider target parses ccs claude desktop route metadata" {
             "notes": Json::string("Pinned fallback"),
             "modelMapping": { "sonnetModel": Json::string("mapping-fallback") }.to_json(),
             "meta": {
+              "claudeDesktopMode": Json::string("proxy"),
               "claudeDesktopModelRoutes": {
                 "claude-sonnet-4-6": {
                   "model": Json::string("deepseek-v4-flash [1M]"),
@@ -697,6 +698,7 @@ test "provider target parses ccs claude desktop route metadata" {
   }
   assert_eq(provider.provider_id, "desktop-provider")
   assert_eq(provider.notes, Some("Pinned fallback"))
+  assert_eq(provider.claude_desktop_mode, Some("proxy"))
   guard provider.model_mapping is Some(mapping) else {
     fail("expected model mapping")
   }
@@ -3576,6 +3578,82 @@ test "gateway repairs unsafe ccs claude desktop route ids" {
     ),
     "gpt-5-upstream",
   )
+}
+
+///|
+test "claude desktop status reports ccs profile and proxy route health" {
+  let gateway = Gateway::new(port=17111, host="127.0.0.11")
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude-desktop",
+      provider_id="broken-proxy",
+      provider_name="Broken Proxy",
+      claude_desktop_mode=Some("proxy"),
+    ),
+  )
+  gateway.provider_router.set_current_provider("claude-desktop", "broken-proxy")
+  let status = @claude_desktop.ClaudeDesktopStatus::new(
+    configured=true,
+    profile_path="/tmp/profile.json",
+    meta_path="/tmp/_meta.json",
+    config_library_path="/tmp/configLibrary",
+    applied_id=Some("00000000-0000-4000-8000-000000157210"),
+    actual_base_url=Some("https://wrong.example"),
+    stale_raw_models=true,
+    token_configured=true,
+  )
+  json_inspect(gateway.claude_desktop_status_json(status), content={
+    "supported": true,
+    "configured": true,
+    "appliedId": "00000000-0000-4000-8000-000000157210",
+    "profilePath": "/tmp/profile.json",
+    "configLibraryPath": "/tmp/configLibrary",
+    "mode": "proxy",
+    "expectedBaseUrl": "http://127.0.0.11:17111/claude-desktop",
+    "actualBaseUrl": "https://wrong.example",
+    "proxyRunning": true,
+    "staleRawModels": true,
+    "missingRouteMappings": true,
+    "gatewayTokenConfigured": true,
+  })
+}
+
+///|
+test "claude desktop status reports direct provider base url" {
+  let gateway = Gateway::new(port=17112, host="127.0.0.12")
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude-desktop",
+      provider_id="direct",
+      provider_name="Direct",
+      claude_desktop_mode=Some("direct"),
+      settings_config=Some(
+        {
+          "env": {
+            "ANTHROPIC_BASE_URL": Json::string("https://direct.example/v1"),
+          }.to_json(),
+        }.to_json(),
+      ),
+    ),
+  )
+  gateway.provider_router.set_current_provider("claude-desktop", "direct")
+  let status = @claude_desktop.ClaudeDesktopStatus::new(
+    configured=true,
+    profile_path="/tmp/profile.json",
+    meta_path="/tmp/_meta.json",
+    config_library_path="/tmp/configLibrary",
+    applied_id=None,
+    actual_base_url=Some("https://direct.example/v1"),
+    stale_raw_models=false,
+    token_configured=false,
+  )
+  guard gateway.claude_desktop_status_json(status) is Object(obj) else {
+    fail("expected status object")
+  }
+  assert_eq(obj["mode"], Json::string("direct"))
+  assert_eq(obj["expectedBaseUrl"], Json::string("https://direct.example/v1"))
+  assert_eq(obj["actualBaseUrl"], Json::string("https://direct.example/v1"))
+  assert_eq(obj["missingRouteMappings"], Json::boolean(false))
 }
 
 ///|
@@ -8317,14 +8395,42 @@ test "ccs imports missing claude providers into claude desktop namespace" {
       provider_name="Claude Extra",
       provider_type=Some("anthropic"),
       base_url=Some("https://example.test"),
+      settings_config=Some(
+        {
+          "env": {
+            "ANTHROPIC_BASE_URL": Json::string("https://example.test"),
+            "ANTHROPIC_AUTH_TOKEN": Json::string("sk-ant"),
+            "ANTHROPIC_MODEL": Json::string("claude-sonnet-4-6"),
+          }.to_json(),
+        }.to_json(),
+      ),
     ),
   )
   assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
-  assert_true(
-    gateway.provider_router.provider_by_id("claude-desktop", "claude-extra")
-    is Some(_),
+  guard gateway.provider_router.provider_by_id("claude-desktop", "claude-extra")
+    is Some(imported) else {
+    fail("expected imported provider")
+  }
+  assert_eq(imported.claude_desktop_mode, Some("direct"))
+  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
+}
+
+///|
+test "ccs import skips claude providers without direct or proxy compatibility" {
+  let gateway = Gateway::new(port=17073)
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="incomplete",
+      provider_name="Incomplete",
+      settings_config=Some({ "env": {}.to_json() }.to_json()),
+    ),
   )
   assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
+  assert_true(
+    gateway.provider_router.provider_by_id("claude-desktop", "incomplete")
+    is None,
+  )
 }
 
 ///|
@@ -8349,6 +8455,7 @@ test "ccs import derives claude desktop routes from claude provider env" {
     is Some(imported) else {
     fail("expected imported provider")
   }
+  assert_eq(imported.claude_desktop_mode, Some("proxy"))
   guard imported.claude_desktop_model_routes.get("claude-sonnet-4-6")
     is Some(route) else {
     fail("expected synthesized route")

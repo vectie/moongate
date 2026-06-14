@@ -9501,29 +9501,112 @@ async fn Gateway::handle_get_claude_desktop_status(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let status = @claude_desktop.status()
-  write_usage_json(
-    w,
-    {
-      "supported": Json::boolean(true),
-      "configured": Json::boolean(status.configured),
-      "appliedId": Json::null(),
-      "profilePath": Json::string(status.profile_path),
-      "configLibraryPath": Json::null(),
-      "mode": if status.configured {
-        Json::string("proxy")
+  write_usage_json(w, self.claude_desktop_status_json(status))
+}
+
+///|
+fn Gateway::claude_desktop_status_json(
+  self : Gateway,
+  status : @claude_desktop.ClaudeDesktopStatus,
+) -> Json {
+  let provider = self.current_claude_desktop_provider()
+  let mode = match provider {
+    Some(provider) => provider.claude_desktop_mode_for_status()
+    None => None
+  }
+  {
+    "supported": Json::boolean(true),
+    "configured": Json::boolean(status.configured),
+    "appliedId": provider_route_optional_string_json(status.applied_id),
+    "profilePath": Json::string(status.profile_path),
+    "configLibraryPath": Json::string(status.config_library_path),
+    "mode": provider_route_optional_string_json(mode),
+    "expectedBaseUrl": provider_route_optional_string_json(
+      self.claude_desktop_expected_base_url(mode, provider),
+    ),
+    "actualBaseUrl": provider_route_optional_string_json(status.actual_base_url),
+    "proxyRunning": Json::boolean(true),
+    "staleRawModels": Json::boolean(status.stale_raw_models),
+    "missingRouteMappings": Json::boolean(
+      claude_desktop_missing_route_mappings(mode, provider),
+    ),
+    "gatewayTokenConfigured": Json::boolean(status.token_configured),
+  }.to_json()
+}
+
+///|
+fn Gateway::current_claude_desktop_provider(
+  self : Gateway,
+) -> ProviderRouteTarget? {
+  match self.provider_router.current_provider_id("claude-desktop") {
+    Some(provider_id) =>
+      self.provider_router.provider_by_id("claude-desktop", provider_id)
+    None => None
+  }
+}
+
+///|
+fn ProviderRouteTarget::claude_desktop_mode_for_status(
+  self : ProviderRouteTarget,
+) -> String? {
+  match self.claude_desktop_mode {
+    Some(mode) => normalize_claude_desktop_mode(mode)
+    None =>
+      if self.app_type == "claude-desktop" {
+        if self.claude_desktop_model_routes.is_empty() {
+          Some("direct")
+        } else {
+          Some("proxy")
+        }
       } else {
-        Json::null()
-      },
-      "expectedBaseUrl": Json::string(
-        @claude_desktop.local_gateway_base_url(self.host, self.port),
-      ),
-      "actualBaseUrl": Json::null(),
-      "proxyRunning": Json::boolean(true),
-      "staleRawModels": Json::boolean(false),
-      "missingRouteMappings": Json::boolean(false),
-      "gatewayTokenConfigured": Json::boolean(status.token_configured),
-    }.to_json(),
-  )
+        None
+      }
+  }
+}
+
+///|
+fn Gateway::claude_desktop_expected_base_url(
+  self : Gateway,
+  mode : String?,
+  provider : ProviderRouteTarget?,
+) -> String? {
+  match mode {
+    Some("proxy") =>
+      Some(@claude_desktop.local_gateway_base_url(self.host, self.port))
+    Some("direct") =>
+      match provider {
+        Some(provider) => provider.claude_desktop_direct_base_url()
+        None => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn ProviderRouteTarget::claude_desktop_direct_base_url(
+  self : ProviderRouteTarget,
+) -> String? {
+  match self.settings_config {
+    Some(Object(obj)) =>
+      match obj.get("env") {
+        Some(Object(env)) =>
+          json_non_empty_string_from_map_any(env, ["ANTHROPIC_BASE_URL"])
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn claude_desktop_missing_route_mappings(
+  mode : String?,
+  provider : ProviderRouteTarget?,
+) -> Bool {
+  guard mode == Some("proxy") else { return false }
+  match provider {
+    Some(provider) => provider.resolved_claude_desktop_model_routes().is_empty()
+    None => true
+  }
 }
 
 ///|
@@ -9620,10 +9703,17 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
       is Some(_) {
       continue
     }
-    let claude_desktop_model_routes = match
-      suggested_claude_desktop_routes(provider) {
-      Some(routes) => routes
-      None => provider.claude_desktop_model_routes
+    let import_decision = if provider.is_compatible_claude_desktop_direct_provider() &&
+      claude_provider_models_are_claude_safe(provider) {
+      Some(("direct", provider.claude_desktop_model_routes))
+    } else {
+      match suggested_claude_desktop_routes(provider) {
+        Some(routes) => Some(("proxy", routes))
+        None => None
+      }
+    }
+    guard import_decision is Some((import_mode, claude_desktop_model_routes)) else {
+      continue
     }
     self.provider_router.upsert_provider(
       ProviderRouteTarget::new(
@@ -9633,6 +9723,7 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
         enabled=provider.enabled,
         provider_type=provider.provider_type,
         api_format=provider.api_format,
+        claude_desktop_mode=Some(import_mode),
         prompt_cache_key=provider.prompt_cache_key,
         codex_fast_mode=provider.codex_fast_mode,
         base_url=provider.base_url,
@@ -9658,6 +9749,98 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
     }
   }
   imported
+}
+
+///|
+fn ProviderRouteTarget::is_compatible_claude_desktop_direct_provider(
+  self : ProviderRouteTarget,
+) -> Bool {
+  match self.api_format {
+    Some(api_format) if !api_format.trim().is_empty() &&
+      api_format.trim() != "anthropic" => return false
+    _ => ()
+  }
+  match self.claude_desktop_mode {
+    Some(mode) if normalize_claude_desktop_mode(mode) == Some("proxy") =>
+      return false
+    _ => ()
+  }
+  match self.provider_type {
+    Some("github_copilot") | Some("codex_oauth") => return false
+    _ => ()
+  }
+  if self.is_full_url {
+    return false
+  }
+  self.claude_desktop_direct_base_url() is Some(_) &&
+  self.claude_desktop_direct_auth_token() is Some(_) &&
+  self.claude_desktop_direct_routes_are_identity()
+}
+
+///|
+fn ProviderRouteTarget::claude_desktop_direct_auth_token(
+  self : ProviderRouteTarget,
+) -> String? {
+  match self.settings_config {
+    Some(Object(obj)) =>
+      match obj.get("env") {
+        Some(Object(env)) =>
+          json_non_empty_string_from_map_any(env, ["ANTHROPIC_AUTH_TOKEN"])
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn ProviderRouteTarget::claude_desktop_direct_routes_are_identity(
+  self : ProviderRouteTarget,
+) -> Bool {
+  for raw_route_id in self.claude_desktop_model_routes.keys() {
+    let route_id = raw_route_id.trim().to_owned()
+    if route_id.is_empty() {
+      continue
+    }
+    if !is_claude_safe_model_id(route_id) {
+      return false
+    }
+    match self.claude_desktop_model_routes.get(raw_route_id) {
+      Some(route) => {
+        let upstream = route.model.trim()
+        if !upstream.is_empty() && upstream != route_id {
+          return false
+        }
+      }
+      None => ()
+    }
+  }
+  true
+}
+
+///|
+fn claude_provider_models_are_claude_safe(
+  provider : ProviderRouteTarget,
+) -> Bool {
+  match provider.settings_config {
+    Some(Object(obj)) =>
+      match obj.get("env") {
+        Some(Object(env)) => {
+          for
+            key in [
+              "ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+              "ANTHROPIC_DEFAULT_OPUS_MODEL",
+            ] {
+            match json_non_empty_string_from_map_any(env, [key]) {
+              Some(model) if !is_claude_safe_model_id(model) => return false
+              _ => ()
+            }
+          }
+          true
+        }
+        _ => true
+      }
+    _ => true
+  }
 }
 
 ///|
@@ -13139,6 +13322,7 @@ fn provider_target_from_request(
   let claude_desktop_model_routes = provider_claude_desktop_model_routes_from_body(
     body,
   )
+  let claude_desktop_mode = provider_claude_desktop_mode_from_body(body)
   Some(
     ProviderRouteTarget::new(
       app_type~,
@@ -13147,6 +13331,7 @@ fn provider_target_from_request(
       enabled~,
       provider_type~,
       api_format~,
+      claude_desktop_mode~,
       prompt_cache_key~,
       codex_fast_mode~,
       base_url~,
@@ -13158,6 +13343,38 @@ fn provider_target_from_request(
       notes~,
     ),
   )
+}
+
+///|
+fn provider_claude_desktop_mode_from_body(body : Json?) -> String? {
+  guard provider_body_payload(body) is Some(Object(obj)) else { return None }
+  match
+    json_non_empty_string_from_map_any(obj, [
+      "claudeDesktopMode", "claude_desktop_mode",
+    ]) {
+    Some(mode) => normalize_claude_desktop_mode(mode)
+    None =>
+      match obj.get("meta") {
+        Some(Object(meta)) =>
+          match
+            json_non_empty_string_from_map_any(meta, [
+              "claudeDesktopMode", "claude_desktop_mode",
+            ]) {
+            Some(mode) => normalize_claude_desktop_mode(mode)
+            None => None
+          }
+        _ => None
+      }
+  }
+}
+
+///|
+fn normalize_claude_desktop_mode(mode : String) -> String? {
+  match mode.trim().to_lower() {
+    "direct" => Some("direct")
+    "proxy" => Some("proxy")
+    _ => None
+  }
 }
 
 ///|

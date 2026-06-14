@@ -378,11 +378,13 @@ test "provider route target serializes ccs claude desktop model routes" {
     provider_id="desktop-provider",
     provider_name="Desktop Provider",
     api_key=Some("sk-hidden"),
+    claude_desktop_mode=Some("proxy"),
     claude_desktop_model_routes=routes,
     notes=Some("Desktop provider notes"),
   )
   guard target.to_json() is Object(json) else { fail("expected target object") }
   assert_eq(json["notes"], Json::string("Desktop provider notes"))
+  assert_eq(json["claudeDesktopMode"], Json::string("proxy"))
   guard json["claudeDesktopModelRoutes"] is Object(route_json) else {
     fail("expected claude desktop routes")
   }
@@ -398,6 +400,7 @@ test "provider route target serializes ccs claude desktop model routes" {
   }
   guard provider["meta"] is Object(meta) else { fail("expected provider meta") }
   assert_eq(provider["notes"], Json::string("Desktop provider notes"))
+  assert_eq(meta["claudeDesktopMode"], Json::string("proxy"))
   guard meta["claudeDesktopModelRoutes"] is Object(meta_routes) else {
     fail("expected ccs route metadata")
   }

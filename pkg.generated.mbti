@@ -470,6 +470,7 @@ pub struct ProviderRouteTarget {
   enabled : Bool
   provider_type : String?
   api_format : String?
+  claude_desktop_mode : String?
   prompt_cache_key : String?
   codex_fast_mode : Bool
   base_url : String?
@@ -481,7 +482,7 @@ pub struct ProviderRouteTarget {
   notes : String?
 }
 pub fn ProviderRouteTarget::map_model_for_upstream(Self, String) -> String
-pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, api_format? : String?, prompt_cache_key? : String?, codex_fast_mode? : Bool, base_url? : String?, api_key? : String?, is_full_url? : Bool, model_mapping? : ModelMapping?, claude_desktop_model_routes? : Map[String, ClaudeDesktopModelRoute], settings_config? : Json?, notes? : String?) -> Self
+pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, api_format? : String?, claude_desktop_mode? : String?, prompt_cache_key? : String?, codex_fast_mode? : Bool, base_url? : String?, api_key? : String?, is_full_url? : Bool, model_mapping? : ModelMapping?, claude_desktop_model_routes? : Map[String, ClaudeDesktopModelRoute], settings_config? : Json?, notes? : String?) -> Self
 pub fn ProviderRouteTarget::to_json(Self) -> Json
 
 pub struct ProviderRouter {
