@@ -1333,6 +1333,120 @@ test "usage trends use ccs hourly buckets for short ranges" {
 }
 
 ///|
+test "usage rollups aggregate old effective rows like ccs daily rollups" {
+  with_test_timezone("UTC", fn() raise {
+    let stats = TrafficStats::new()
+    let session_log = RequestLog::new(
+      request_id="codex_session:rollup:1",
+      provider_id="_codex_session",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=10,
+        cache_read_tokens=40,
+        cache_creation_tokens=0,
+      ),
+      total_cost_usd="9.000000",
+      status_code=200,
+      created_at=100,
+      data_source="codex_session",
+    )
+    let proxy_log = RequestLog::new(
+      request_id="proxy-rollup",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="unknown",
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=10,
+        cache_read_tokens=40,
+        cache_creation_tokens=5,
+      ),
+      total_cost_usd="0.000100",
+      status_code=200,
+      latency_ms=30,
+      created_at=200,
+      data_source="proxy",
+    )
+    let retained_log = RequestLog::new(
+      request_id="retained-detail",
+      provider_id="anthropic",
+      provider_name=Some("Anthropic"),
+      app_type="claude",
+      model="claude-sonnet-4-6",
+      usage=TokenUsage::new(input_tokens=20, output_tokens=5),
+      total_cost_usd="0.000200",
+      status_code=200,
+      latency_ms=60,
+      created_at=TREND_DAY_SECONDS + 100,
+      data_source="proxy",
+    )
+    stats.record_request_log(session_log)
+    stats.record_request_log(proxy_log)
+    stats.record_request_log(retained_log)
+
+    assert_eq(stats.rollup_request_logs_before(1000), 2)
+    assert_eq(stats.request_logs.length(), 1)
+    assert_eq(stats.request_logs[0].request_id, "retained-detail")
+    assert_eq(stats.daily_rollups.length(), 1)
+    let rollup = stats.daily_rollups[0]
+    assert_eq(rollup.date, "1970-01-01")
+    assert_eq(rollup.provider_id, "codex-oauth")
+    assert_eq(rollup.request_count, 1)
+    assert_eq(rollup.input_tokens, 100)
+    assert_eq(usage_daily_rollup_fresh_input_tokens(rollup), 60)
+
+    json_inspect(stats.usage_summary_json(), content={
+      "totalRequests": 2,
+      "totalCost": "0.000300",
+      "totalInputTokens": 80,
+      "totalOutputTokens": 15,
+      "totalCacheCreationTokens": 5,
+      "totalCacheReadTokens": 40,
+      "successRate": 100,
+      "realTotalTokens": 140,
+      "cacheHitRate": 0.32,
+    })
+    json_inspect(stats.provider_stats_json(app_type=Some("codex")), content=[
+      {
+        "providerId": "codex-oauth",
+        "providerName": "Codex OAuth",
+        "requestCount": 1,
+        "totalTokens": 70,
+        "totalCost": "0.000100",
+        "successRate": 100,
+        "avgLatencyMs": 30,
+      },
+    ])
+    json_inspect(stats.model_stats_json(app_type=Some("codex")), content=[
+      {
+        "model": "unknown",
+        "requestCount": 1,
+        "totalTokens": 70,
+        "totalCost": "0.000100",
+        "avgCostPerRequest": "0.000100",
+      },
+    ])
+    guard stats.usage_trends_json(
+        start_ts=Some(0),
+        end_ts=Some(TREND_DAY_SECONDS * 2),
+      )
+      is Array(rows) else {
+      fail("expected daily trend rows")
+    }
+    assert_eq(rows.length(), 3)
+    guard rows[0] is Object(day_zero) else { fail("expected day zero") }
+    guard rows[1] is Object(day_one) else { fail("expected day one") }
+    assert_eq(day_zero["requestCount"], Json::number(1.0))
+    assert_eq(day_zero["totalTokens"], Json::number(70.0))
+    assert_eq(day_one["requestCount"], Json::number(1.0))
+    assert_eq(day_one["totalTokens"], Json::number(25.0))
+  })
+}
+
+///|
 test "usage trends follow process local timezone like ccs" {
   with_test_timezone("UTC", fn() raise {
     assert_eq(trend_timestamp_rfc3339(0), "1970-01-01T00:00:00+00:00")

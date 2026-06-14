@@ -36,6 +36,9 @@ async test "persistent store reloads request logs and session sync state" {
       data_source="proxy",
     ),
   )
+  assert_eq(stats.rollup_request_logs_before(100), 1)
+  assert_eq(stats.request_logs.length(), 0)
+  assert_eq(stats.daily_rollups.length(), 1)
   stats.session_sync_state.set(
     "/tmp/source.jsonl",
     SessionFileSyncState::new(last_modified=7L, last_line_offset=9),
@@ -44,18 +47,15 @@ async test "persistent store reloads request logs and session sync state" {
 
   let loaded = TrafficStats::new()
   loaded.load_persistent_store(storage_dir=dir)
-  assert_eq(loaded.request_logs.length(), 1)
-  let log = loaded.request_logs[0]
-  assert_eq(log.request_id, "req-store-1")
-  assert_eq(log.provider_name, Some("Codex OAuth"))
-  assert_eq(log.app_type, "codex")
-  assert_eq(log.input_tokens, 10)
-  assert_eq(log.cache_read_tokens, 2)
-  assert_eq(log.first_token_ms, Some(3))
-  assert_eq(log.duration_ms, Some(12))
-  assert_eq(log.session_id, Some("session-store"))
-  assert_eq(log.provider_type, Some("codex"))
-  assert_eq(log.data_source, "proxy")
+  assert_eq(loaded.request_logs.length(), 0)
+  assert_eq(loaded.daily_rollups.length(), 1)
+  let rollup = loaded.daily_rollups[0]
+  assert_eq(rollup.provider_id, "codex-oauth")
+  assert_eq(rollup.provider_name, Some("Codex OAuth"))
+  assert_eq(rollup.app_type, "codex")
+  assert_eq(rollup.input_tokens, 10)
+  assert_eq(rollup.cache_read_tokens, 2)
+  assert_eq(rollup.request_count, 1)
   guard loaded.usage_logs_json() is Object(usage_logs) else {
     fail("usage logs json should be an object")
   }

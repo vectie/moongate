@@ -33,6 +33,91 @@ pub struct RequestLog {
 }
 
 ///|
+pub struct UsageDailyRollup {
+  date : String
+  app_type : String
+  provider_id : String
+  provider_name : String?
+  model : String
+  request_model : String?
+  pricing_model : String?
+  mut request_count : Int
+  mut success_count : Int
+  mut input_tokens : Int
+  mut output_tokens : Int
+  mut cache_read_tokens : Int
+  mut cache_creation_tokens : Int
+  mut total_cost_nano : Int64
+  mut avg_latency_ms : Int
+}
+
+///|
+fn UsageDailyRollup::new(log : RequestLog) -> UsageDailyRollup {
+  {
+    date: trend_local_day_key(log.created_at),
+    app_type: log.app_type,
+    provider_id: log.provider_id,
+    provider_name: log.provider_name,
+    model: log.model,
+    request_model: log.request_model,
+    pricing_model: log.pricing_model,
+    request_count: 0,
+    success_count: 0,
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_read_tokens: 0,
+    cache_creation_tokens: 0,
+    total_cost_nano: 0L,
+    avg_latency_ms: 0,
+  }
+}
+
+///|
+fn UsageDailyRollup::add_log(self : UsageDailyRollup, log : RequestLog) -> Unit {
+  let old_count = self.request_count
+  self.request_count += 1
+  if request_log_is_success(log) {
+    self.success_count += 1
+  }
+  self.input_tokens += log.input_tokens
+  self.output_tokens += log.output_tokens
+  self.cache_read_tokens += log.cache_read_tokens
+  self.cache_creation_tokens += log.cache_creation_tokens
+  self.total_cost_nano += request_log_total_cost_nano(log)
+  self.avg_latency_ms = rollup_weighted_average_latency(
+    self.avg_latency_ms,
+    old_count,
+    log.latency_ms,
+    1,
+  )
+}
+
+///|
+fn UsageDailyRollup::to_json(self : UsageDailyRollup) -> Json {
+  {
+    "date": Json::string(self.date),
+    "app_type": Json::string(self.app_type),
+    "provider_id": Json::string(self.provider_id),
+    "provider_name": optional_string_json(self.provider_name),
+    "model": Json::string(self.model),
+    "request_model": optional_string_json(self.request_model),
+    "pricing_model": optional_string_json(self.pricing_model),
+    "request_count": Json::number(self.request_count.to_double()),
+    "success_count": Json::number(self.success_count.to_double()),
+    "input_tokens": Json::number(self.input_tokens.to_double()),
+    "output_tokens": Json::number(self.output_tokens.to_double()),
+    "cache_read_tokens": Json::number(self.cache_read_tokens.to_double()),
+    "cache_creation_tokens": Json::number(
+      self.cache_creation_tokens.to_double(),
+    ),
+    "total_cost_usd": Json::string(
+      format_nano_usd_fixed_6(self.total_cost_nano),
+    ),
+    "avg_latency_ms": Json::number(self.avg_latency_ms.to_double()),
+  }.to_json()
+}
+
+///|
 pub fn RequestLog::new(
   request_id~ : String,
   provider_id~ : String,
@@ -153,6 +238,7 @@ pub struct TrafficStats {
   mut last_request_at : String?
   mut last_error : String?
   request_logs : Array[RequestLog]
+  daily_rollups : Array[UsageDailyRollup]
   mut current_request_id : String?
   mut current_request_started_at_ms : Int?
   mut current_request_app_type : String?
@@ -201,6 +287,7 @@ pub fn TrafficStats::new() -> TrafficStats {
     last_request_at: None,
     last_error: None,
     request_logs: [],
+    daily_rollups: [],
     current_request_id: None,
     current_request_started_at_ms: None,
     current_request_app_type: None,
@@ -504,6 +591,44 @@ pub fn TrafficStats::record_request_log(
 }
 
 ///|
+pub fn TrafficStats::rollup_request_logs_before(
+  self : TrafficStats,
+  cutoff_ts : Int,
+) -> Int {
+  let rollup_indices : Map[String, Int] = Map([], capacity=0)
+  for i in 0..<self.daily_rollups.length() {
+    rollup_indices.set(usage_daily_rollup_key(self.daily_rollups[i]), i)
+  }
+  let retained : Array[RequestLog] = []
+  let mut deleted = 0
+  for log in self.request_logs {
+    if log.created_at >= cutoff_ts {
+      retained.push(log)
+      continue
+    }
+    deleted += 1
+    if !self.request_log_is_effective(log) {
+      continue
+    }
+    let key = usage_daily_rollup_key_from_log(log)
+    match rollup_indices.get(key) {
+      Some(index) => self.daily_rollups[index].add_log(log)
+      None => {
+        let rollup = UsageDailyRollup::new(log)
+        rollup.add_log(log)
+        rollup_indices.set(key, self.daily_rollups.length())
+        self.daily_rollups.push(rollup)
+      }
+    }
+  }
+  self.request_logs.truncate(0)
+  for log in retained {
+    self.request_logs.push(log)
+  }
+  deleted
+}
+
+///|
 fn TrafficStats::backfill_missing_usage_costs_for_model(
   self : TrafficStats,
   model_id : String,
@@ -802,6 +927,13 @@ fn TrafficStats::usage_summary_filtered_json(
       acc.add(log)
     }
   }
+  for rollup in self.daily_rollups {
+    if usage_daily_rollup_matches_aggregate(
+        rollup, start_date, end_date, app_type,
+      ) {
+      acc.add_rollup(rollup)
+    }
+  }
   acc.to_json()
 }
 
@@ -827,6 +959,16 @@ fn TrafficStats::usage_summary_by_app_filtered_json(
       .unwrap_or(UsageSummaryAccumulator::new())
     acc.add(log)
     summaries.set(log.app_type, acc)
+  }
+  for rollup in self.daily_rollups {
+    if !usage_daily_rollup_matches_aggregate(rollup, start_date, end_date, None) {
+      continue
+    }
+    let acc = summaries
+      .get(rollup.app_type)
+      .unwrap_or(UsageSummaryAccumulator::new())
+    acc.add_rollup(rollup)
+    summaries.set(rollup.app_type, acc)
   }
   let rows : Array[UsageSummaryByAppRow] = []
   for app_type in summaries.keys() {
@@ -881,6 +1023,19 @@ fn TrafficStats::provider_stats_filtered_json(
     acc.add(log)
     stats.set(key, acc)
   }
+  for rollup in self.daily_rollups {
+    if !usage_daily_rollup_matches_aggregate(
+        rollup, start_date, end_date, app_type,
+      ) {
+      continue
+    }
+    let key = "\{rollup.provider_id}|\{rollup.app_type}"
+    let acc = stats
+      .get(key)
+      .unwrap_or(ProviderStatsAccumulator::new_rollup(rollup))
+    acc.add_rollup(rollup)
+    stats.set(key, acc)
+  }
   let rows : Array[ProviderStatsAccumulator] = []
   for key in stats.keys() {
     guard stats.get(key) is Some(acc) else { continue }
@@ -921,6 +1076,17 @@ fn TrafficStats::model_stats_filtered_json(
     let model = request_log_pricing_model(log)
     let acc = stats.get(model).unwrap_or(ModelStatsAccumulator::new(model))
     acc.add(log)
+    stats.set(model, acc)
+  }
+  for rollup in self.daily_rollups {
+    if !usage_daily_rollup_matches_aggregate(
+        rollup, start_date, end_date, app_type,
+      ) {
+      continue
+    }
+    let model = usage_daily_rollup_pricing_model(rollup)
+    let acc = stats.get(model).unwrap_or(ModelStatsAccumulator::new(model))
+    acc.add_rollup(rollup)
     stats.set(model, acc)
   }
   let rows : Array[ModelStatsAccumulator] = []
@@ -1072,6 +1238,20 @@ fn UsageSummaryAccumulator::add(
 }
 
 ///|
+fn UsageSummaryAccumulator::add_rollup(
+  self : UsageSummaryAccumulator,
+  rollup : UsageDailyRollup,
+) -> Unit {
+  self.total_requests += rollup.request_count
+  self.success_count += rollup.success_count
+  self.total_input_tokens += usage_daily_rollup_fresh_input_tokens(rollup)
+  self.total_output_tokens += rollup.output_tokens
+  self.total_cache_creation_tokens += rollup.cache_creation_tokens
+  self.total_cache_read_tokens += rollup.cache_read_tokens
+  self.total_cost_nano += rollup.total_cost_nano
+}
+
+///|
 fn UsageSummaryAccumulator::real_total_tokens(
   self : UsageSummaryAccumulator,
 ) -> Int {
@@ -1139,6 +1319,21 @@ fn ProviderStatsAccumulator::new(log : RequestLog) -> ProviderStatsAccumulator {
 }
 
 ///|
+fn ProviderStatsAccumulator::new_rollup(
+  rollup : UsageDailyRollup,
+) -> ProviderStatsAccumulator {
+  {
+    provider_id: rollup.provider_id,
+    provider_name: usage_daily_rollup_provider_name(rollup),
+    request_count: 0,
+    success_count: 0,
+    total_tokens: 0,
+    total_cost_nano: 0L,
+    total_latency_ms: 0,
+  }
+}
+
+///|
 fn ProviderStatsAccumulator::add(
   self : ProviderStatsAccumulator,
   log : RequestLog,
@@ -1150,6 +1345,18 @@ fn ProviderStatsAccumulator::add(
   self.total_tokens += request_log_fresh_input_tokens(log) + log.output_tokens
   self.total_cost_nano += request_log_total_cost_nano(log)
   self.total_latency_ms += log.latency_ms
+}
+
+///|
+fn ProviderStatsAccumulator::add_rollup(
+  self : ProviderStatsAccumulator,
+  rollup : UsageDailyRollup,
+) -> Unit {
+  self.request_count += rollup.request_count
+  self.success_count += rollup.success_count
+  self.total_tokens += usage_daily_rollup_total_tokens(rollup)
+  self.total_cost_nano += rollup.total_cost_nano
+  self.total_latency_ms += rollup.avg_latency_ms * rollup.request_count
 }
 
 ///|
@@ -1200,6 +1407,16 @@ fn ModelStatsAccumulator::add(
   self.request_count += 1
   self.total_tokens += request_log_fresh_input_tokens(log) + log.output_tokens
   self.total_cost_nano += request_log_total_cost_nano(log)
+}
+
+///|
+fn ModelStatsAccumulator::add_rollup(
+  self : ModelStatsAccumulator,
+  rollup : UsageDailyRollup,
+) -> Unit {
+  self.request_count += rollup.request_count
+  self.total_tokens += usage_daily_rollup_total_tokens(rollup)
+  self.total_cost_nano += rollup.total_cost_nano
 }
 
 ///|
@@ -1280,6 +1497,72 @@ fn request_log_matches_usage_aggregate(
     _ => ()
   }
   true
+}
+
+///|
+fn usage_daily_rollup_matches_aggregate(
+  rollup : UsageDailyRollup,
+  start_date : Int?,
+  end_date : Int?,
+  app_type : String?,
+) -> Bool {
+  if !request_app_type_matches(rollup.app_type, app_type) {
+    return false
+  }
+  if rollup_date_bounds_empty(start_date, end_date) {
+    return false
+  }
+  match rollup_start_date_bound(start_date) {
+    Some(start) if rollup.date < start => return false
+    _ => ()
+  }
+  match rollup_end_date_bound(end_date) {
+    Some(end) if rollup.date > end => return false
+    _ => ()
+  }
+  true
+}
+
+///|
+fn request_app_type_matches(value : String, app_type : String?) -> Bool {
+  match app_type {
+    Some(filter) if !filter.is_empty() => value == filter
+    _ => true
+  }
+}
+
+///|
+fn rollup_start_date_bound(start_date : Int?) -> String? {
+  match start_date {
+    Some(start) =>
+      if start == trend_local_day_start_ts(start) {
+        Some(trend_local_day_key(start))
+      } else {
+        Some(trend_local_day_key(trend_local_next_day_start_ts(start)))
+      }
+    None => None
+  }
+}
+
+///|
+fn rollup_end_date_bound(end_date : Int?) -> String? {
+  match end_date {
+    Some(end) =>
+      if trend_local_next_day_start_ts(end) - end <= 60 {
+        Some(trend_local_day_key(end))
+      } else {
+        Some(trend_local_day_key(trend_local_day_start_ts(end) - 1))
+      }
+    None => None
+  }
+}
+
+///|
+fn rollup_date_bounds_empty(start_date : Int?, end_date : Int?) -> Bool {
+  match (rollup_start_date_bound(start_date), rollup_end_date_bound(end_date)) {
+    (Some(start), Some(end)) => start > end
+    _ => false
+  }
 }
 
 ///|
@@ -1488,6 +1771,74 @@ fn request_log_fresh_input_tokens(log : RequestLog) -> Int {
     log.input_tokens - log.cache_read_tokens
   } else {
     log.input_tokens
+  }
+}
+
+///|
+fn usage_daily_rollup_fresh_input_tokens(rollup : UsageDailyRollup) -> Int {
+  if (rollup.app_type == "codex" || rollup.app_type == "gemini") &&
+    rollup.input_tokens >= rollup.cache_read_tokens {
+    rollup.input_tokens - rollup.cache_read_tokens
+  } else {
+    rollup.input_tokens
+  }
+}
+
+///|
+fn usage_daily_rollup_total_tokens(rollup : UsageDailyRollup) -> Int {
+  usage_daily_rollup_fresh_input_tokens(rollup) + rollup.output_tokens
+}
+
+///|
+fn usage_daily_rollup_provider_name(rollup : UsageDailyRollup) -> String {
+  match rollup.provider_name {
+    Some(name) if !name.is_empty() => name
+    _ =>
+      match rollup.provider_id {
+        "_session" => "Claude (Session)"
+        "_codex_session" => "Codex (Session)"
+        "_gemini_session" => "Gemini (Session)"
+        "_opencode_session" => "OpenCode (Session)"
+        provider_id => provider_id
+      }
+  }
+}
+
+///|
+fn usage_daily_rollup_pricing_model(rollup : UsageDailyRollup) -> String {
+  match rollup.pricing_model {
+    Some(model) if !model.is_empty() => model
+    _ => rollup.model
+  }
+}
+
+///|
+fn usage_daily_rollup_key(rollup : UsageDailyRollup) -> String {
+  "\{rollup.date}|\{rollup.app_type}|\{rollup.provider_id}|\{rollup.model}|\{optional_key_part(rollup.request_model)}|\{optional_key_part(rollup.pricing_model)}"
+}
+
+///|
+fn usage_daily_rollup_key_from_log(log : RequestLog) -> String {
+  "\{trend_local_day_key(log.created_at)}|\{log.app_type}|\{log.provider_id}|\{log.model}|\{optional_key_part(log.request_model)}|\{optional_key_part(log.pricing_model)}"
+}
+
+///|
+fn optional_key_part(value : String?) -> String {
+  value.unwrap_or("")
+}
+
+///|
+fn rollup_weighted_average_latency(
+  old_avg : Int,
+  old_count : Int,
+  new_avg : Int,
+  new_count : Int,
+) -> Int {
+  let count = old_count + new_count
+  if count <= 0 {
+    0
+  } else {
+    (old_avg * old_count + new_avg * new_count) / count
   }
 }
 

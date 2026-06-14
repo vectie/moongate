@@ -76,6 +76,21 @@ fn DailyStatsAccumulator::add(
 }
 
 ///|
+fn DailyStatsAccumulator::add_rollup(
+  self : DailyStatsAccumulator,
+  rollup : UsageDailyRollup,
+) -> Unit {
+  let fresh_input_tokens = usage_daily_rollup_fresh_input_tokens(rollup)
+  self.request_count += rollup.request_count
+  self.total_cost_nano += rollup.total_cost_nano
+  self.total_tokens += fresh_input_tokens + rollup.output_tokens
+  self.total_input_tokens += fresh_input_tokens
+  self.total_output_tokens += rollup.output_tokens
+  self.total_cache_creation_tokens += rollup.cache_creation_tokens
+  self.total_cache_read_tokens += rollup.cache_read_tokens
+}
+
+///|
 fn DailyStatsAccumulator::to_json(self : DailyStatsAccumulator) -> Json {
   {
     "date": Json::string(self.date),
@@ -176,6 +191,20 @@ fn TrafficStats::daily_usage_trends_json(
     }
     match bucket_indices.get(trend_local_day_key(log.created_at)) {
       Some(bucket_index) => buckets[bucket_index].add(log)
+      None => ()
+    }
+  }
+  for rollup in self.daily_rollups {
+    if !usage_daily_rollup_matches_aggregate(
+        rollup,
+        Some(start_ts),
+        Some(end_ts),
+        app_type,
+      ) {
+      continue
+    }
+    match bucket_indices.get(rollup.date) {
+      Some(bucket_index) => buckets[bucket_index].add_rollup(rollup)
       None => ()
     }
   }

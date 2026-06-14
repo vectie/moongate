@@ -2,6 +2,9 @@
 const MOONSTAT_REQUEST_LOGS_FILE : String = "proxy_request_logs.jsonl"
 
 ///|
+const MOONSTAT_DAILY_ROLLUPS_FILE : String = "usage_daily_rollups.jsonl"
+
+///|
 const MOONSTAT_SESSION_SYNC_FILE : String = "session_log_sync.jsonl"
 
 ///|
@@ -30,6 +33,7 @@ pub async fn TrafficStats::load_persistent_store(
 ) -> Unit {
   self.enable_persistent_store(storage_dir~)
   self.load_request_logs_from_store()
+  self.load_daily_rollups_from_store()
   self.load_session_sync_state_from_store()
 }
 
@@ -40,6 +44,7 @@ pub async fn TrafficStats::save_persistent_store(self : TrafficStats) -> Unit {
     _ => return
   }
   self.save_request_logs_to_store(storage_dir)
+  self.save_daily_rollups_to_store(storage_dir)
   self.save_session_sync_state_to_store(storage_dir)
 }
 
@@ -76,6 +81,45 @@ async fn TrafficStats::save_request_logs_to_store(
   let lines : Array[String] = []
   for log in self.request_logs {
     lines.push(log.to_json().stringify())
+  }
+  @fsx.write_to_file(path, lines.join("\n")) catch {
+    _ => ()
+  }
+}
+
+///|
+async fn TrafficStats::load_daily_rollups_from_store(
+  self : TrafficStats,
+) -> Unit {
+  guard self.storage_dir is Some(storage_dir) else { return }
+  let path = @pathx.join(storage_dir, MOONSTAT_DAILY_ROLLUPS_FILE)
+  if !@fsx.exists_as_file(path) {
+    return
+  }
+  let content = @fsx.read_file(path) catch { _ => return }
+  self.daily_rollups.truncate(0)
+  for line_view in content.split("\n") {
+    let line = line_view.to_owned().trim()
+    if line.is_empty() {
+      continue
+    }
+    let parsed = @json.parse(line) catch { _ => continue }
+    match usage_daily_rollup_from_store_json(parsed) {
+      Some(rollup) => self.daily_rollups.push(rollup)
+      None => ()
+    }
+  }
+}
+
+///|
+async fn TrafficStats::save_daily_rollups_to_store(
+  self : TrafficStats,
+  storage_dir : String,
+) -> Unit {
+  let path = @pathx.join(storage_dir, MOONSTAT_DAILY_ROLLUPS_FILE)
+  let lines : Array[String] = []
+  for rollup in self.daily_rollups {
+    lines.push(rollup.to_json().stringify())
   }
   @fsx.write_to_file(path, lines.join("\n")) catch {
     _ => ()
@@ -135,6 +179,39 @@ async fn TrafficStats::save_session_sync_state_to_store(
   @fsx.write_to_file(path, lines.join("\n")) catch {
     _ => ()
   }
+}
+
+///|
+fn usage_daily_rollup_from_store_json(json : Json) -> UsageDailyRollup? {
+  guard json is Object(obj) else { return None }
+  guard store_json_string(obj, "date") is Some(date) else { return None }
+  guard store_json_string(obj, "app_type") is Some(app_type) else {
+    return None
+  }
+  guard store_json_string(obj, "provider_id") is Some(provider_id) else {
+    return None
+  }
+  guard store_json_string(obj, "model") is Some(model) else { return None }
+  Some({
+    date,
+    app_type,
+    provider_id,
+    provider_name: store_json_optional_string(obj, "provider_name"),
+    model,
+    request_model: store_json_optional_string(obj, "request_model"),
+    pricing_model: store_json_optional_string(obj, "pricing_model"),
+    request_count: store_json_int_or_zero(obj, "request_count"),
+    success_count: store_json_int_or_zero(obj, "success_count"),
+    input_tokens: store_json_int_or_zero(obj, "input_tokens"),
+    output_tokens: store_json_int_or_zero(obj, "output_tokens"),
+    cache_read_tokens: store_json_int_or_zero(obj, "cache_read_tokens"),
+    cache_creation_tokens: store_json_int_or_zero(obj, "cache_creation_tokens"),
+    total_cost_nano: parse_decimal_scaled(
+      store_json_string_or_default(obj, "total_cost_usd", "0"),
+      NANO_USD_SCALE,
+    ),
+    avg_latency_ms: store_json_int_or_zero(obj, "avg_latency_ms"),
+  })
 }
 
 ///|
