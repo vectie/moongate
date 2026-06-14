@@ -14011,6 +14011,7 @@ priv struct OpenAIChatSseState {
   mut finish_reason : String?
   mut usage : Json?
   mut saw_choice : Bool
+  mut saw_done : Bool
   mut error_seen : Bool
   tool_calls : Map[Int, OpenAIChatSseToolCall]
 }
@@ -14025,6 +14026,7 @@ fn OpenAIChatSseState::new() -> OpenAIChatSseState {
     finish_reason: None,
     usage: None,
     saw_choice: false,
+    saw_done: false,
     error_seen: false,
     tool_calls: Map([], capacity=0),
   }
@@ -14049,7 +14051,9 @@ fn chat_sse_to_response_value(body : String) -> Json? {
     }
   }
   process_chat_sse_block(buffer, false, state)
-  if state.error_seen || !state.saw_choice {
+  if state.error_seen ||
+    !state.saw_choice ||
+    (state.finish_reason is None && !state.saw_done) {
     return None
   }
   Some(state.to_chat_completion_json())
@@ -14082,6 +14086,7 @@ fn process_chat_sse_block(
   }
   let data = data_lines.join("\n")
   if data.trim() == "[DONE]" {
+    state.saw_done = true
     return
   }
   let parsed = @json.parse(data) catch {
@@ -14282,7 +14287,10 @@ fn OpenAIChatSseState::to_chat_completion_json(
   let choice : Map[String, Json] = {
     "index": Json::number(0.0),
     "message": Json::object(message),
-    "finish_reason": Json::string(self.finish_reason.unwrap_or("stop")),
+    "finish_reason": match self.finish_reason {
+      Some(reason) => Json::string(reason)
+      None => Json::null()
+    },
   }
   let response : Map[String, Json] = {
     "id": Json::string(self.id.unwrap_or(generate_chat_completion_id())),

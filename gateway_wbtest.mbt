@@ -4070,6 +4070,44 @@ test "ccs chat sse parser rejects event error" {
 }
 
 ///|
+test "ccs chat sse parser rejects close-truncated stream" {
+  let sse =
+    #|data: {"id":"chatcmpl_partial","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"par"},"finish_reason":null}]}
+    #|
+  assert_true(
+    parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Err(_),
+  )
+}
+
+///|
+test "ccs chat sse parser accepts done without finish reason" {
+  let sse =
+    #|data: {"id":"chatcmpl_done","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}
+    #|
+    #|data: [DONE]
+    #|
+  guard parse_claude_compatible_non_stream_body_with_diagnostics(
+      "openai_chat",
+      sse,
+      {},
+    )
+    is Ok(parsed) else {
+    fail("expected parsed chat")
+  }
+  guard parsed is Object(obj) else { fail("expected object") }
+  guard obj["choices"] is Array(choices) else { fail("expected choices") }
+  guard choices[0] is Object(choice) else { fail("expected choice") }
+  guard choice["message"] is Object(message) else { fail("expected message") }
+  assert_eq(message["content"], Json::string("ok"))
+  assert_eq(choice["finish_reason"], Json::null())
+}
+
+///|
 test "ccs upstream body filter removes private fields" {
   let body = @json.parse(
     (
