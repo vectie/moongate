@@ -36,6 +36,35 @@ pub fn TokenUsage::empty() -> TokenUsage {
 }
 
 ///|
+fn token_usage_or_response_model(
+  usage : TokenUsage?,
+  body : Json,
+  model_keys : Array[String],
+) -> TokenUsage {
+  match usage {
+    Some(usage) => usage
+    None =>
+      TokenUsage::new(
+        input_tokens=0,
+        output_tokens=0,
+        model=response_model_from_json(body, model_keys),
+      )
+  }
+}
+
+///|
+fn response_model_from_json(body : Json, model_keys : Array[String]) -> String? {
+  guard body is Object(obj) else { return None }
+  for key in model_keys {
+    match json_string(obj, key) {
+      Some(model) if !model.is_empty() => return Some(model)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
 pub fn TokenUsage::has_billable_tokens(self : TokenUsage) -> Bool {
   self.input_tokens > 0 ||
   self.output_tokens > 0 ||

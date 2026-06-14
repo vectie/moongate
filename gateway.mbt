@@ -2163,11 +2163,12 @@ async fn Gateway::forward_gemini_post(
     Ok((response, data)) => {
       let response_body = data.text()
       if response.code is (200..=299) {
-        let usage = token_usage_from_gemini_response(@json.parse(response_body)).unwrap_or(
-          TokenUsage::empty(),
-        ) catch {
-          _ => TokenUsage::empty()
-        }
+        let parsed = @json.parse(response_body) catch { _ => Json::null() }
+        let usage = token_usage_or_response_model(
+          token_usage_from_gemini_response(parsed),
+          parsed,
+          ["modelVersion"],
+        )
         self.record_success_usage(usage, response_body.length())
       } else {
         self.record_upstream_error_status(response_body.length(), response.code)
@@ -2268,8 +2269,10 @@ async fn Gateway::forward_non_streaming_chat_completion(
       match parsed {
         Ok(json) => {
           ignore(self.codex_chat_history.record_response(json))
-          let usage = token_usage_from_codex_response_auto(json).unwrap_or(
-            TokenUsage::empty(),
+          let usage = token_usage_or_response_model(
+            token_usage_from_codex_response_auto(json),
+            json,
+            ["model"],
           )
           let chat_response = codex_response_to_openai_chat_completion(
             json, response_model,
@@ -2601,8 +2604,10 @@ async fn Gateway::forward_non_streaming_codex_response(
       let usage = match parsed {
         Ok(json) => {
           ignore(self.codex_chat_history.record_response(json))
-          token_usage_from_codex_response_auto(json).unwrap_or(
-            TokenUsage::empty(),
+          token_usage_or_response_model(
+            token_usage_from_codex_response_auto(json),
+            json,
+            ["model"],
           )
         }
         Err(_) => TokenUsage::empty()
@@ -13409,9 +13414,11 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             return
           }
         }
-        let usage = token_usage_from_claude_compatible_response(
-          parsed, api_format,
-        ).unwrap_or(TokenUsage::empty())
+        let usage = token_usage_or_response_model(
+          token_usage_from_claude_compatible_response(parsed, api_format),
+          parsed,
+          ["model", "modelVersion"],
+        )
         if api_format == "openai_responses" {
           ignore(self.codex_chat_history.record_response(parsed))
         }
@@ -14048,8 +14055,10 @@ fn gemini_native_response_to_anthropic(
   body : Json,
   model : String,
 ) -> AnthropicResponse {
-  let usage = token_usage_from_gemini_response(body).unwrap_or(
-    TokenUsage::empty(),
+  let usage = token_usage_or_response_model(
+    token_usage_from_gemini_response(body),
+    body,
+    ["modelVersion"],
   )
   let content : Array[AnthropicResponseBlock] = []
   let mut finish_reason = "STOP"
@@ -14159,8 +14168,10 @@ fn openai_chat_completion_to_anthropic(
   model : String,
 ) -> AnthropicResponse {
   let content : Array[AnthropicResponseBlock] = []
-  let usage = token_usage_from_openai_response(body).unwrap_or(
-    TokenUsage::empty(),
+  let usage = token_usage_or_response_model(
+    token_usage_from_openai_response(body),
+    body,
+    ["model"],
   )
   let id = openai_chat_completion_id(body).unwrap_or(generate_message_id())
   if body is Object(obj) {
@@ -14345,8 +14356,10 @@ async fn Gateway::handle_non_streaming_request(
   match response_json_result {
     Ok(json) => {
       ignore(self.codex_chat_history.record_response(json))
-      let usage = token_usage_from_codex_response_auto(json).unwrap_or(
-        TokenUsage::empty(),
+      let usage = token_usage_or_response_model(
+        token_usage_from_codex_response_auto(json),
+        json,
+        ["model"],
       )
       self.record_success_usage(usage, response_body.length())
       let anthropic_response = convert_codex_to_anthropic(json, request.model)
