@@ -11322,6 +11322,13 @@ async fn Gateway::handle_usage_update_model_pricing(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
+  match usage_pricing_validation_error_from_request(r.path, body) {
+    Some(error) => {
+      write_usage_bad_request(w, error)
+      return
+    }
+    None => ()
+  }
   guard usage_pricing_from_request(r.path, body) is Some(pricing) else {
     write_usage_bad_request(w, "invalid_model_pricing")
     return
@@ -13764,6 +13771,80 @@ fn usage_pricing_from_request(path : StringView, body : Json?) -> ModelPricing? 
       cache_creation_cost.trim().to_owned(),
     ),
   )
+}
+
+///|
+fn usage_pricing_validation_error_from_request(
+  path : StringView,
+  body : Json?,
+) -> String? {
+  guard usage_string_from_request(path, body, ["model_id", "modelId"])
+    is Some(model_id) else {
+    return Some("Model ID is required")
+  }
+  if model_id.trim().is_empty() {
+    return Some("Model ID is required")
+  }
+  guard usage_string_from_request(path, body, ["display_name", "displayName"])
+    is Some(display_name) else {
+    return Some("Display name is required")
+  }
+  if display_name.trim().is_empty() {
+    return Some("Display name is required")
+  }
+  match
+    usage_decimal_validation_error_from_request(path, body, "input_cost", [
+      "input_cost", "inputCost",
+    ]) {
+    Some(error) => return Some(error)
+    None => ()
+  }
+  match
+    usage_decimal_validation_error_from_request(path, body, "output_cost", [
+      "output_cost", "outputCost",
+    ]) {
+    Some(error) => return Some(error)
+    None => ()
+  }
+  match
+    usage_decimal_validation_error_from_request(path, body, "cache_read_cost", [
+      "cache_read_cost", "cacheReadCost",
+    ]) {
+    Some(error) => return Some(error)
+    None => ()
+  }
+  usage_decimal_validation_error_from_request(
+    path,
+    body,
+    "cache_creation_cost",
+    ["cache_creation_cost", "cacheCreationCost"],
+  )
+}
+
+///|
+fn usage_decimal_validation_error_from_request(
+  path : StringView,
+  body : Json?,
+  label : String,
+  keys : Array[String],
+) -> String? {
+  let value = usage_string_from_request(path, body, keys).unwrap_or("")
+  usage_decimal_validation_error(label, value)
+}
+
+///|
+fn usage_decimal_validation_error(label : String, value : String) -> String? {
+  let trimmed = value.trim().to_owned()
+  if trimmed.is_empty() {
+    return Some("\{label} price is invalid: \{value}")
+  }
+  if trimmed.has_prefix("-") {
+    return Some("\{label} price must be non-negative: \{value}")
+  }
+  if !usage_non_negative_decimal(value) {
+    return Some("\{label} price is invalid: \{value}")
+  }
+  None
 }
 
 ///|

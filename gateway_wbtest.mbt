@@ -2580,6 +2580,52 @@ test "usage pricing helpers prefer query over body args" {
 }
 
 ///|
+test "usage pricing validation mirrors ccs required field messages" {
+  let body = {
+    "displayName": Json::string("Body Model"),
+    "inputCost": Json::string("1"),
+    "outputCost": Json::string("2"),
+    "cacheReadCost": Json::string("3"),
+    "cacheCreationCost": Json::string("4"),
+  }.to_json()
+  assert_eq(
+    usage_pricing_validation_error_from_request(
+      "/update_model_pricing",
+      Some(body),
+    ),
+    Some("Model ID is required"),
+  )
+  let missing_display = {
+    "modelId": Json::string("body-model"),
+    "inputCost": Json::string("1"),
+    "outputCost": Json::string("2"),
+    "cacheReadCost": Json::string("3"),
+    "cacheCreationCost": Json::string("4"),
+  }.to_json()
+  assert_eq(
+    usage_pricing_validation_error_from_request(
+      "/update_model_pricing",
+      Some(missing_display),
+    ),
+    Some("Display name is required"),
+  )
+}
+
+///|
+test "usage pricing validation mirrors ccs invalid price messages" {
+  let negative = "/update_model_pricing?modelId=m&displayName=M&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
+  assert_eq(
+    usage_pricing_validation_error_from_request(negative, None),
+    Some("input_cost price must be non-negative: -1"),
+  )
+  let invalid = "/update_model_pricing?modelId=m&displayName=M&inputCost=abc&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
+  assert_eq(
+    usage_pricing_validation_error_from_request(invalid, None),
+    Some("input_cost price is invalid: abc"),
+  )
+}
+
+///|
 test "usage request detail id accepts ccs get_request_detail query" {
   assert_eq(
     usage_request_detail_id("/get_request_detail?requestId=session%3Amsg%2F1"),
