@@ -55,3 +55,126 @@ test "provider route applies ccs mapping before upstream strip" {
     "deepseek-v4-pro",
   )
 }
+
+///|
+test "ccs copilot model normalizer rewrites claude dash versions" {
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-sonnet-4-6"),
+    Some("claude-sonnet-4.6"),
+  )
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-opus-4-6"),
+    Some("claude-opus-4.6"),
+  )
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-haiku-4-5"),
+    Some("claude-haiku-4.5"),
+  )
+}
+
+///|
+test "ccs copilot model normalizer preserves one million marker as dash suffix" {
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-sonnet-4-6[1m]"),
+    Some("claude-sonnet-4.6-1m"),
+  )
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-sonnet-4.6[1M]"),
+    Some("claude-sonnet-4.6-1m"),
+  )
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-haiku-4-5-20251001[1m]"),
+    Some("claude-haiku-4.5-1m"),
+  )
+}
+
+///|
+test "ccs copilot model normalizer strips trailing date suffix" {
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-haiku-4-5-20251001"),
+    Some("claude-haiku-4.5"),
+  )
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-sonnet-4-5-20250929"),
+    Some("claude-sonnet-4.5"),
+  )
+}
+
+///|
+test "ccs copilot model normalizer leaves already valid and non claude ids" {
+  assert_eq(copilot_normalize_to_upstream_id("claude-sonnet-4.6"), None)
+  assert_eq(copilot_normalize_to_upstream_id("claude-opus-4.6-1m"), None)
+  assert_eq(copilot_normalize_to_upstream_id("gpt-5"), None)
+  assert_eq(copilot_normalize_to_upstream_id(""), None)
+  assert_eq(copilot_normalize_to_upstream_id("claude-3-5-sonnet"), None)
+  assert_eq(
+    copilot_normalize_to_upstream_id("claude-3-5-sonnet-20241022"),
+    None,
+  )
+}
+
+///|
+test "ccs copilot live model resolver exact matches after normalization" {
+  assert_eq(
+    copilot_resolve_against_model_ids("claude-sonnet-4-6", [
+      "claude-sonnet-4.6", "claude-opus-4.6", "claude-haiku-4.5",
+    ]),
+    Some("claude-sonnet-4.6"),
+  )
+  assert_eq(
+    copilot_resolve_against_model_ids("claude-sonnet-4.6", ["claude-sonnet-4.6"]),
+    None,
+  )
+}
+
+///|
+test "ccs copilot live model resolver falls back by family and version" {
+  assert_eq(
+    copilot_resolve_against_model_ids("claude-opus-4.8", [
+      "claude-opus-4.5", "claude-opus-4.6", "claude-sonnet-4.6",
+    ]),
+    Some("claude-opus-4.6"),
+  )
+  assert_eq(
+    copilot_resolve_against_model_ids("claude-sonnet-4-6[1m]", [
+      "claude-sonnet-4.6", "claude-sonnet-4.6-1m", "claude-opus-4.6",
+    ]),
+    Some("claude-sonnet-4.6-1m"),
+  )
+  assert_eq(
+    copilot_resolve_against_model_ids("claude-sonnet-4-6[1m]", [
+      "claude-sonnet-4.6",
+    ]),
+    Some("claude-sonnet-4.6"),
+  )
+  assert_eq(
+    copilot_resolve_against_model_ids("claude-opus-4.6", [
+      "claude-sonnet-4.6", "claude-haiku-4.5",
+    ]),
+    None,
+  )
+}
+
+///|
+test "github copilot provider applies ccs upstream model normalization" {
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot",
+    provider_name="GitHub Copilot",
+    provider_type=Some("github_copilot"),
+  )
+  assert_eq(
+    provider.map_model_for_upstream("claude-sonnet-4-6[1m]"),
+    "claude-sonnet-4.6-1m",
+  )
+  let url_provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot-url",
+    provider_name="GitHub Copilot URL",
+    base_url=Some("https://api.githubcopilot.com/chat/completions"),
+  )
+  assert_eq(
+    url_provider.map_model_for_upstream("claude-haiku-4-5-20251001"),
+    "claude-haiku-4.5",
+  )
+}

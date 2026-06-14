@@ -13166,11 +13166,7 @@ fn Gateway::upstream_claude_model(
           None => strip_one_m_suffix_for_upstream(request_model)
         }
       } else {
-        match provider.model_mapping {
-          Some(mapping) if mapping.has_mapping() =>
-            provider.map_model_for_upstream(request_model)
-          _ => strip_one_m_suffix_for_upstream(request_model)
-        }
+        provider.map_model_for_upstream(request_model)
       }
     None => self.model
   }

@@ -1967,6 +1967,16 @@ test "gateway uses ccs model mapping for upstream claude model" {
     gateway.upstream_claude_model("deepseek-v4-pro [1M]", Some(unmapped)),
     "deepseek-v4-pro",
   )
+  let copilot = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot",
+    provider_name="GitHub Copilot",
+    provider_type=Some("github_copilot"),
+  )
+  assert_eq(
+    gateway.upstream_claude_model("claude-sonnet-4-6[1m]", Some(copilot)),
+    "claude-sonnet-4.6-1m",
+  )
 }
 
 ///|
