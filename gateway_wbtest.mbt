@@ -5594,6 +5594,68 @@ test "ccs prompt helpers keep app-scoped prompt records" {
 }
 
 ///|
+async test "ccs prompt file helpers import and read prompt files" {
+  assert_eq(
+    ccs_prompt_file_path("codex"),
+    Ok(@pathx.join(ccs_config_dir("codex"), "AGENTS.md")),
+  )
+  assert_eq(
+    ccs_prompt_file_path("gemini"),
+    Ok(@pathx.join(ccs_config_dir("gemini"), "GEMINI.md")),
+  )
+  assert_true(ccs_prompt_file_path("claude-desktop") is Err(_))
+  @fsx.with_temporary_directory("moonstat-prompt-XXXXXX", async fn(tmpdir) {
+    let prompt_path = @pathx.join(tmpdir, "AGENTS.md")
+    let content = "# Codex prompt\n\nUse MoonBit."
+    @fsx.write_to_file(prompt_path, content)
+    let body = { "path": Json::string(prompt_path) }.to_json()
+    guard ccs_prompt_file_path_from_request(
+        "/import_prompt_from_file?app=codex",
+        Some(body),
+        "codex",
+      )
+      is Ok(resolved_path) else {
+      fail("expected request path")
+    }
+    assert_eq(resolved_path, prompt_path)
+    let prompts : Map[String, Json] = {}
+    guard ccs_import_prompt_from_file_json(prompts, "codex", prompt_path)
+      is Ok(String(id)) else {
+      fail("expected imported id")
+    }
+    assert_true(id.has_prefix("imported-"))
+    guard prompts.get(ccs_prompt_store_key("codex", id)) is Some(Object(prompt)) else {
+      fail("expected stored prompt")
+    }
+    assert_eq(prompt["content"], Json::string(content))
+    assert_eq(
+      prompt["description"],
+      Json::string("从现有配置文件导入"),
+    )
+    assert_eq(prompt["enabled"], Json::boolean(false))
+    guard ccs_current_prompt_file_content_json(prompt_path) is Ok(current) else {
+      fail("expected current prompt content")
+    }
+    assert_eq(current, Json::string(content))
+    guard ccs_current_prompt_file_content_json(
+        @pathx.join(tmpdir, "missing.md"),
+      )
+      is Ok(missing) else {
+      fail("expected missing prompt file as null")
+    }
+    assert_eq(missing, Json::null())
+    assert_true(
+      ccs_import_prompt_from_file_json(
+        prompts,
+        "codex",
+        @pathx.join(tmpdir, "missing.md"),
+      )
+      is Err(_),
+    )
+  })
+}
+
+///|
 test "gemini native response synthesizes ccs marked missing tool id" {
   let body = @json.parse(
     (

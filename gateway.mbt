@@ -5082,6 +5082,34 @@ fn ccs_prompt_store_key(app : String, id : String) -> String {
 }
 
 ///|
+fn ccs_prompt_file_path(app : String) -> Result[String, String] {
+  let normalized = ccs_normalize_app_type(app)
+  if normalized == "claude-desktop" {
+    return Err("Claude Desktop 暂不支持 Prompts")
+  }
+  let filename = match normalized {
+    "claude" => "CLAUDE.md"
+    "gemini" => "GEMINI.md"
+    "codex" | "opencode" | "openclaw" | "hermes" | "omo" | "omo-slim" =>
+      "AGENTS.md"
+    _ => "CLAUDE.md"
+  }
+  Ok(@pathx.join(ccs_config_dir(normalized), filename))
+}
+
+///|
+fn ccs_prompt_file_path_from_request(
+  path : StringView,
+  body : Json?,
+  app : String,
+) -> Result[String, String] {
+  match proxy_string_request(path, body, ["path", "filePath", "file_path"]) {
+    Some(file_path) => Ok(file_path)
+    None => ccs_prompt_file_path(app)
+  }
+}
+
+///|
 fn ccs_prompt_from_request(
   path : StringView,
   body : Json?,
@@ -5118,6 +5146,49 @@ fn ccs_prompt_from_request(
     None => ()
   }
   Some((app, id, Json::object(prompt)))
+}
+
+///|
+async fn ccs_import_prompt_from_file_json(
+  prompts : Map[String, Json],
+  app : String,
+  file_path : String,
+) -> Result[Json, String] {
+  if !(@fsx.exists_as_file(file_path) catch { _ => false }) {
+    return Err("提示词文件不存在")
+  }
+  let content = @fsx.read_file(file_path) catch {
+    error => return Err("读取提示词文件失败: \{error}")
+  }
+  let timestamp = @async.now().to_int()
+  let timestamp_text = timestamp.to_string()
+  let id = "imported-\{timestamp_text}"
+  let prompt = {
+    "id": Json::string(id),
+    "name": Json::string(
+      "导入的提示词 \{@os.local_rfc3339(timestamp.to_int64())}",
+    ),
+    "content": Json::string(content),
+    "description": Json::string("从现有配置文件导入"),
+    "enabled": Json::boolean(false),
+    "createdAt": Json::string(timestamp_text),
+    "updatedAt": Json::string(timestamp_text),
+  }.to_json()
+  prompts[ccs_prompt_store_key(app, id)] = prompt
+  Ok(Json::string(id))
+}
+
+///|
+async fn ccs_current_prompt_file_content_json(
+  file_path : String,
+) -> Result[Json, String] {
+  if !(@fsx.exists_as_file(file_path) catch { _ => false }) {
+    return Ok(Json::null())
+  }
+  let content = @fsx.read_file(file_path) catch {
+    error => return Err("读取提示词文件失败: \{error}")
+  }
+  Ok(Json::string(content))
 }
 
 ///|
@@ -6912,9 +6983,16 @@ async fn Gateway::handle_import_prompt_from_file(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  ignore(self)
-  ignore(r)
-  write_usage_json(w, Json::string(""))
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
+  match ccs_prompt_file_path_from_request(r.path, body, app) {
+    Ok(file_path) =>
+      match ccs_import_prompt_from_file_json(self.prompts, app, file_path) {
+        Ok(result) => write_usage_json(w, result)
+        Err(error) => write_usage_bad_request(w, error)
+      }
+    Err(error) => write_usage_bad_request(w, error)
+  }
 }
 
 ///|
@@ -6924,8 +7002,16 @@ async fn Gateway::handle_get_current_prompt_file_content(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  ignore(r)
-  write_usage_json(w, Json::null())
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
+  match ccs_prompt_file_path_from_request(r.path, body, app) {
+    Ok(file_path) =>
+      match ccs_current_prompt_file_content_json(file_path) {
+        Ok(result) => write_usage_json(w, result)
+        Err(error) => write_usage_bad_request(w, error)
+      }
+    Err(error) => write_usage_bad_request(w, error)
+  }
 }
 
 ///|
