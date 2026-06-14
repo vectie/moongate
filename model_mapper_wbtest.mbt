@@ -156,6 +156,53 @@ test "ccs copilot live model resolver falls back by family and version" {
 }
 
 ///|
+test "ccs copilot live model resolver accepts raw models json" {
+  let raw = Json::object({
+    "data": Json::array([
+      Json::object({
+        "id": Json::string("claude-sonnet-4.4"),
+        "name": Json::string("disabled"),
+        "vendor": Json::string("anthropic"),
+        "model_picker_enabled": Json::boolean(false),
+      }),
+      Json::object({
+        "id": Json::string("claude-sonnet-4.6"),
+        "name": Json::string("Sonnet"),
+        "vendor": Json::string("anthropic"),
+        "model_picker_enabled": Json::boolean(true),
+      }),
+    ]),
+  })
+  assert_eq(copilot_model_ids_from_models_json(raw), ["claude-sonnet-4.6"])
+  assert_eq(
+    copilot_resolve_against_models_json("claude-sonnet-4-6", raw),
+    Some("claude-sonnet-4.6"),
+  )
+}
+
+///|
+test "ccs copilot live model resolver accepts moonstat models array" {
+  let models = [
+    Json::object({
+      "id": Json::string("claude-opus-4.5"),
+      "name": Json::string("Opus 4.5"),
+      "vendor": Json::string("anthropic"),
+      "model_picker_enabled": Json::boolean(true),
+    }),
+    Json::object({
+      "id": Json::string("claude-opus-4.6"),
+      "name": Json::string("Opus 4.6"),
+      "vendor": Json::string("anthropic"),
+      "model_picker_enabled": Json::boolean(true),
+    }),
+  ]
+  assert_eq(
+    copilot_resolve_against_models_json("claude-opus-4.8", Json::array(models)),
+    Some("claude-opus-4.6"),
+  )
+}
+
+///|
 test "github copilot provider applies ccs upstream model normalization" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",

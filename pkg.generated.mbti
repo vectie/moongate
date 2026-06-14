@@ -42,6 +42,8 @@ pub async fn copilot_list_accounts() -> Json
 
 pub async fn copilot_logout() -> Json
 
+pub fn copilot_model_ids_from_models_json(Json) -> Array[String]
+
 pub fn copilot_normalize_to_upstream_id(String) -> String?
 
 pub async fn copilot_poll_for_account(String, String?) -> Result[Json?, String]
@@ -49,6 +51,8 @@ pub async fn copilot_poll_for_account(String, String?) -> Result[Json?, String]
 pub async fn copilot_remove_account(String) -> Result[Json, String]
 
 pub fn copilot_resolve_against_model_ids(String, Array[String]) -> String?
+
+pub fn copilot_resolve_against_models_json(String, Json) -> String?
 
 pub async fn copilot_set_default_account(String) -> Result[Json, String]
 

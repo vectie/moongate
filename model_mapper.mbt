@@ -196,6 +196,59 @@ pub fn copilot_resolve_against_model_ids(
 }
 
 ///|
+pub fn copilot_resolve_against_models_json(
+  client_id : String,
+  models_json : Json,
+) -> String? {
+  copilot_resolve_against_model_ids(
+    client_id,
+    copilot_model_ids_from_models_json(models_json),
+  )
+}
+
+///|
+pub fn copilot_model_ids_from_models_json(models_json : Json) -> Array[String] {
+  let items = match models_json {
+    Array(items) => items
+    Object(obj) =>
+      match obj.get("data") {
+        Some(Array(items)) => items
+        _ => []
+      }
+    _ => []
+  }
+  let ids : Array[String] = []
+  for item in items {
+    guard item is Object(model_obj) else { continue }
+    if !copilot_model_picker_enabled(model_obj) {
+      continue
+    }
+    match copilot_json_string_value(model_obj, "id") {
+      Some(id) if !id.trim().is_empty() => ids.push(id)
+      _ => ()
+    }
+  }
+  ids
+}
+
+///|
+fn copilot_model_picker_enabled(model_obj : Map[String, Json]) -> Bool {
+  match model_obj.get("model_picker_enabled") {
+    Some(False) => false
+    Some(True) => true
+    _ => true
+  }
+}
+
+///|
+fn copilot_json_string_value(obj : Map[String, Json], key : String) -> String? {
+  match obj.get(key) {
+    Some(String(value)) => Some(value)
+    _ => None
+  }
+}
+
+///|
 fn copilot_split_one_m_suffix(id : String) -> (String, Bool) {
   let lower = id.to_lower()
   if lower.has_suffix("[1m]") {
