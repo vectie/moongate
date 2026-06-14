@@ -8226,6 +8226,86 @@ test "ccs claude desktop default routes match upstream command shape" {
 }
 
 ///|
+test "ccs suggested claude desktop routes derive from provider env" {
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="desktop-routes",
+    provider_name="Desktop Routes",
+    settings_config=Some(
+      {
+        "env": {
+          "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("MiniMax-M2[1M]"),
+          "ANTHROPIC_DEFAULT_OPUS_MODEL": Json::string("MiniMax-M2"),
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL": Json::string("GLM-4-Flash"),
+          "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": Json::string("GLM Flash"),
+        }.to_json(),
+      }.to_json(),
+    ),
+  )
+  guard suggested_claude_desktop_routes(provider) is Some(routes) else {
+    fail("expected routes")
+  }
+  assert_eq(routes.length(), 2)
+  guard routes.get("claude-sonnet-4-6") is Some(sonnet) else {
+    fail("expected merged sonnet route")
+  }
+  assert_eq(sonnet.model, "MiniMax-M2")
+  assert_eq(sonnet.label_override, Some("MiniMax-M2"))
+  assert_eq(sonnet.supports_1m, Some(true))
+  guard routes.get("claude-haiku-4-5") is Some(haiku) else {
+    fail("expected haiku route")
+  }
+  assert_eq(haiku.model, "GLM-4-Flash")
+  assert_eq(haiku.label_override, Some("GLM Flash"))
+  assert_eq(haiku.supports_1m, Some(true))
+}
+
+///|
+test "ccs suggested claude desktop routes keep copilot 1m default false" {
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot-routes",
+    provider_name="Copilot Routes",
+    provider_type=Some("github_copilot"),
+    settings_config=Some(
+      {
+        "env": { "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("gpt-5-codex") }.to_json(),
+      }.to_json(),
+    ),
+  )
+  guard suggested_claude_desktop_routes(provider) is Some(routes) else {
+    fail("expected routes")
+  }
+  guard routes.get("claude-sonnet-4-6") is Some(sonnet) else {
+    fail("expected sonnet route")
+  }
+  assert_eq(sonnet.model, "gpt-5-codex")
+  assert_eq(sonnet.label_override, Some("gpt-5-codex"))
+  assert_eq(sonnet.supports_1m, Some(false))
+}
+
+///|
+test "ccs suggested claude desktop routes fallback to anthropic model" {
+  let provider = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="fallback-routes",
+    provider_name="Fallback Routes",
+    settings_config=Some(
+      { "env": { "ANTHROPIC_MODEL": Json::string("kimi-k2") }.to_json() }.to_json(),
+    ),
+  )
+  guard suggested_claude_desktop_routes(provider) is Some(routes) else {
+    fail("expected routes")
+  }
+  assert_eq(routes.length(), 1)
+  guard routes.get("claude-sonnet-4-6") is Some(sonnet) else {
+    fail("expected fallback sonnet route")
+  }
+  assert_eq(sonnet.model, "kimi-k2")
+  assert_eq(sonnet.label_override, Some("kimi-k2"))
+}
+
+///|
 test "ccs imports missing claude providers into claude desktop namespace" {
   let gateway = Gateway::new(port=17071)
   gateway.provider_router.upsert_provider(
@@ -8243,6 +8323,36 @@ test "ccs imports missing claude providers into claude desktop namespace" {
     is Some(_),
   )
   assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
+}
+
+///|
+test "ccs import derives claude desktop routes from claude provider env" {
+  let gateway = Gateway::new(port=17072)
+  gateway.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="env-routes",
+      provider_name="Env Routes",
+      settings_config=Some(
+        {
+          "env": {
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("kimi-k2[1M]"),
+          }.to_json(),
+        }.to_json(),
+      ),
+    ),
+  )
+  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
+  guard gateway.provider_router.provider_by_id("claude-desktop", "env-routes")
+    is Some(imported) else {
+    fail("expected imported provider")
+  }
+  guard imported.claude_desktop_model_routes.get("claude-sonnet-4-6")
+    is Some(route) else {
+    fail("expected synthesized route")
+  }
+  assert_eq(route.model, "kimi-k2")
+  assert_eq(route.supports_1m, Some(true))
 }
 
 ///|

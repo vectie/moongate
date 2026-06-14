@@ -9620,6 +9620,11 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
       is Some(_) {
       continue
     }
+    let claude_desktop_model_routes = match
+      suggested_claude_desktop_routes(provider) {
+      Some(routes) => routes
+      None => provider.claude_desktop_model_routes
+    }
     self.provider_router.upsert_provider(
       ProviderRouteTarget::new(
         app_type="claude-desktop",
@@ -9634,6 +9639,7 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
         api_key=provider.api_key,
         is_full_url=provider.is_full_url,
         model_mapping=provider.model_mapping,
+        claude_desktop_model_routes~,
         settings_config=provider.settings_config,
       ),
     )
@@ -9652,6 +9658,150 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
     }
   }
   imported
+}
+
+///|
+fn suggested_claude_desktop_routes(
+  provider : ProviderRouteTarget,
+) -> Map[String, ClaudeDesktopModelRoute]? {
+  guard provider.settings_config is Some(Object(settings)) else { return None }
+  guard settings.get("env") is Some(Object(env)) else { return None }
+  let routes : Map[String, ClaudeDesktopModelRoute] = Map([], capacity=0)
+  let supports_1m_default = match provider.provider_type {
+    Some("github_copilot") | Some("codex_oauth") => false
+    _ => true
+  }
+  add_suggested_claude_desktop_route(
+    routes, env, "claude-sonnet-4-6", "ANTHROPIC_DEFAULT_SONNET_MODEL", supports_1m_default,
+  )
+  add_suggested_claude_desktop_route(
+    routes, env, "claude-opus-4-8", "ANTHROPIC_DEFAULT_OPUS_MODEL", supports_1m_default,
+  )
+  add_suggested_claude_desktop_route(
+    routes, env, "claude-haiku-4-5", "ANTHROPIC_DEFAULT_HAIKU_MODEL", supports_1m_default,
+  )
+  if routes.is_empty() {
+    add_suggested_claude_desktop_route(
+      routes, env, "claude-sonnet-4-6", "ANTHROPIC_MODEL", supports_1m_default,
+    )
+  }
+  if routes.is_empty() {
+    None
+  } else {
+    Some(routes)
+  }
+}
+
+///|
+fn add_suggested_claude_desktop_route(
+  routes : Map[String, ClaudeDesktopModelRoute],
+  env : Map[String, Json],
+  route_key : String,
+  env_key : String,
+  supports_1m_default : Bool,
+) -> Unit {
+  guard json_string_from_map(env, env_key) is Some(raw_model) else { return }
+  let raw_model = raw_model.trim().to_owned()
+  if raw_model.is_empty() {
+    return
+  }
+  let (stripped_model, has_1m_marker) = strip_claude_desktop_one_m_marker(
+    raw_model,
+  )
+  if stripped_model.is_empty() {
+    return
+  }
+  let effective_supports_1m = supports_1m_default || has_1m_marker
+  let explicit_label_override = match
+    json_string_from_map(env, "\{env_key}_NAME") {
+    Some(label) => {
+      let label = label.trim().to_owned()
+      if label.is_empty() {
+        None
+      } else {
+        Some(label)
+      }
+    }
+    None => None
+  }
+  let label_override = match explicit_label_override {
+    Some(label) => Some(label)
+    None =>
+      if is_claude_safe_model_id(stripped_model) {
+        None
+      } else {
+        Some(stripped_model)
+      }
+  }
+  match claude_desktop_route_key_for_upstream(routes, stripped_model) {
+    Some(existing_key) => {
+      guard routes.get(existing_key) is Some(existing) else { return }
+      routes[existing_key] = merge_suggested_claude_desktop_route(
+        existing, stripped_model, label_override, explicit_label_override, effective_supports_1m,
+      )
+    }
+    None =>
+      match routes.get(route_key) {
+        Some(existing) =>
+          routes[route_key] = merge_suggested_claude_desktop_route(
+            existing, stripped_model, label_override, explicit_label_override, effective_supports_1m,
+          )
+        None =>
+          routes[route_key] = ClaudeDesktopModelRoute::new(
+            model=stripped_model,
+            label_override~,
+            supports_1m=Some(effective_supports_1m),
+          )
+      }
+  }
+}
+
+///|
+fn strip_claude_desktop_one_m_marker(model : String) -> (String, Bool) {
+  let marker = "[1m]"
+  if model.to_lower().has_suffix(marker) {
+    (model[:model.length() - marker.length()].trim().to_owned(), true)
+  } else {
+    (model.trim().to_owned(), false)
+  }
+}
+
+///|
+fn claude_desktop_route_key_for_upstream(
+  routes : Map[String, ClaudeDesktopModelRoute],
+  model : String,
+) -> String? {
+  for route_key in routes.keys() {
+    match routes.get(route_key) {
+      Some(route) if route.model == model => return Some(route_key)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+fn merge_suggested_claude_desktop_route(
+  existing : ClaudeDesktopModelRoute,
+  stripped_model : String,
+  label_override : String?,
+  explicit_label_override : String?,
+  effective_supports_1m : Bool,
+) -> ClaudeDesktopModelRoute {
+  let merged_supports_1m = existing.supports_1m.unwrap_or(false) ||
+    effective_supports_1m
+  let next_label = if existing.label_override is None ||
+    explicit_label_override is Some(_) ||
+    existing.label_override == Some(stripped_model) {
+    label_override
+  } else {
+    existing.label_override
+  }
+  ClaudeDesktopModelRoute::new(
+    model=existing.model,
+    label_override=next_label,
+    supports_1m=Some(merged_supports_1m),
+  )
 }
 
 ///|
