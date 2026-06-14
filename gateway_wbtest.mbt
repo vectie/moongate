@@ -3856,6 +3856,34 @@ test "claude compatible provider endpoints preserve ccs query semantics" {
 }
 
 ///|
+test "ccs streaming request detection mirrors proxy forwarder" {
+  assert_true(
+    ccs_streaming_request("/v1/responses", @json.parse("{\"stream\":true}"), {}),
+  )
+  assert_true(
+    ccs_streaming_request(
+      "/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse",
+      @json.parse("{\"model\":\"gemini-2.5-pro\"}"),
+      {},
+    ),
+  )
+  assert_true(
+    ccs_streaming_request(
+      "/v1/responses",
+      @json.parse("{\"model\":\"gpt-5\"}"),
+      { "accept": "application/json, text/event-stream" },
+    ),
+  )
+  assert_false(
+    ccs_streaming_request(
+      "/v1/responses",
+      @json.parse("{\"model\":\"gpt-5\"}"),
+      {},
+    ),
+  )
+}
+
+///|
 test "codex compatible provider detects chat completions bridge" {
   let format_provider = ProviderRouteTarget::new(
     app_type="codex",

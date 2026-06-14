@@ -6316,8 +6316,25 @@ fn ccs_prompts_object_for_app(
 
 ///|
 fn gemini_request_is_stream(endpoint : String, body : Json) -> Bool {
-  endpoint.contains("streamGenerateContent") ||
-  json_bool_field(body, "stream").unwrap_or(false)
+  ccs_streaming_request(endpoint, body, {})
+}
+
+///|
+fn ccs_streaming_request(
+  endpoint : String,
+  body : Json,
+  headers : Map[String, String],
+) -> Bool {
+  if json_bool_field(body, "stream").unwrap_or(false) {
+    return true
+  }
+  if endpoint.contains("streamGenerateContent") || endpoint.contains("alt=sse") {
+    return true
+  }
+  match headers.get("accept") {
+    Some(accept) => accept.contains("text/event-stream")
+    None => false
+  }
 }
 
 ///|
