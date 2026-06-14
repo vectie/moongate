@@ -110,6 +110,30 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(
     routes.contains(Json::string("GET /usage/request-detail/{request_id}")),
   )
+  assert_true(routes.contains(Json::string("GET|POST /get_usage_summary")))
+  assert_true(
+    routes.contains(Json::string("GET|POST /get_usage_summary_by_app")),
+  )
+  assert_true(routes.contains(Json::string("GET|POST /get_usage_trends")))
+  assert_true(routes.contains(Json::string("GET|POST /get_provider_stats")))
+  assert_true(routes.contains(Json::string("GET|POST /get_model_stats")))
+  assert_true(routes.contains(Json::string("GET|POST /get_request_logs")))
+  assert_true(routes.contains(Json::string("GET|POST /get_request_detail")))
+  assert_true(routes.contains(Json::string("GET /get_model_pricing")))
+  assert_true(routes.contains(Json::string("POST /update_model_pricing")))
+  assert_true(
+    routes.contains(Json::string("DELETE|POST /delete_model_pricing")),
+  )
+  assert_true(routes.contains(Json::string("GET|POST /check_provider_limits")))
+  assert_true(routes.contains(Json::string("POST /sync_session_usage")))
+  assert_true(routes.contains(Json::string("GET|POST /get_usage_data_sources")))
+  assert_true(routes.contains(Json::string("GET|POST /queryProviderUsage")))
+  assert_true(routes.contains(Json::string("GET|POST /get_balance")))
+  assert_true(routes.contains(Json::string("GET|POST /get_subscription_quota")))
+  assert_true(routes.contains(Json::string("GET|POST /get_codex_oauth_quota")))
+  assert_true(routes.contains(Json::string("GET|POST /get_codex_oauth_models")))
+  assert_true(routes.contains(Json::string("GET|POST /get_coding_plan_quota")))
+  assert_true(routes.contains(Json::string("POST /testUsageScript")))
   assert_true(routes.contains(Json::string("GET|POST /stream_check_provider")))
   assert_true(
     routes.contains(Json::string("GET|POST /stream_check_all_providers")),
