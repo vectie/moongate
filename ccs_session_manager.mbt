@@ -35,6 +35,12 @@ priv struct CcsDeleteSessionOutcome {
 }
 
 ///|
+priv struct CcsSessionTerminalLaunch {
+  program : String
+  args : Array[String]
+}
+
+///|
 let ccs_session_title_max_chars : Int = 80
 
 ///|
@@ -133,17 +139,44 @@ fn ccs_delete_session_requests_from_json(
 }
 
 ///|
-fn ccs_launch_session_terminal_json(
+async fn ccs_launch_session_terminal_json(
   command : String,
   cwd : String?,
   custom_config : String?,
+  preferred_terminal : String?,
 ) -> Result[Json, String] {
-  ignore(cwd)
-  ignore(custom_config)
   if command.trim().is_empty() {
-    return Err("missing_command")
+    return Err("Resume command is empty")
   }
-  Err("launch_session_terminal is not supported in moonstat headless mode.")
+  let target = ccs_session_terminal_target(preferred_terminal)
+  let launch = match
+    ccs_session_terminal_launch(target, command, cwd, custom_config) {
+    Ok(launch) => launch
+    Err(error) => return Err(error)
+  }
+  let result = @spawn.spawn(
+    launch.program,
+    launch.args.map(arg => arg[:]),
+    timeout=5000,
+  ) catch {
+    err => return Err("Failed to launch terminal: \{err}")
+  }
+  if result.status == 0 {
+    Ok(Json::boolean(true))
+  } else {
+    let detail = if result.stderr.trim().is_empty() {
+      result.stdout.trim()
+    } else {
+      result.stderr.trim()
+    }
+    Err(
+      if detail.is_empty() {
+        "Terminal command execution failed"
+      } else {
+        detail.to_owned()
+      },
+    )
+  }
 }
 
 ///|
@@ -229,6 +262,224 @@ fn ccs_delete_session_request_from_json(
     return None
   }
   Some(CcsDeleteSessionRequest::{ provider_id, session_id, source_path })
+}
+
+///|
+fn ccs_session_terminal_target(preferred : String?) -> String {
+  match preferred {
+    Some(value) => {
+      let target = value.trim().to_lower()
+      match target {
+        "" => "terminal"
+        "iterm2" => "iterm"
+        _ => target.to_owned()
+      }
+    }
+    None => "terminal"
+  }
+}
+
+///|
+fn ccs_session_terminal_from_settings(settings : Json) -> String? {
+  match settings {
+    Object(obj) =>
+      match
+        json_string_from_map_any(obj, [
+          "preferredTerminal", "preferred_terminal",
+        ]) {
+        Some(value) if !value.trim().is_empty() => Some(value)
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn ccs_session_terminal_launch(
+  target : String,
+  command : String,
+  cwd : String?,
+  custom_config : String?,
+) -> Result[CcsSessionTerminalLaunch, String] {
+  match target {
+    "terminal" => Ok(ccs_session_terminal_app_launch(command, cwd))
+    "iterm" | "iTerm" => Ok(ccs_session_iterm_launch(command, cwd))
+    "ghostty" => Ok(ccs_session_ghostty_launch(command, cwd))
+    "kitty" => Ok(ccs_session_kitty_launch(command, cwd))
+    "wezterm" => Ok(ccs_session_wezterm_like_launch("WezTerm", command, cwd))
+    "kaku" => Ok(ccs_session_wezterm_like_launch("Kaku", command, cwd))
+    "alacritty" => Ok(ccs_session_alacritty_launch(command, cwd))
+    "custom" => ccs_session_custom_launch(command, cwd, custom_config)
+    "warp" =>
+      Err("Warp session terminal launch is not implemented in moonstat yet.")
+    _ => Err("Unsupported terminal target: \{target}")
+  }
+}
+
+///|
+fn ccs_session_terminal_app_launch(
+  command : String,
+  cwd : String?,
+) -> CcsSessionTerminalLaunch {
+  let full_command = ccs_session_shell_command(command, cwd)
+  let escaped = ccs_session_escape_osascript(full_command)
+  let script = [
+    "tell application \"Terminal\"",
+    "    activate",
+    "    do script \"\{escaped}\"",
+    "end tell",
+  ].join("\n")
+  CcsSessionTerminalLaunch::{ program: "osascript", args: ["-e", script] }
+}
+
+///|
+fn ccs_session_iterm_launch(
+  command : String,
+  cwd : String?,
+) -> CcsSessionTerminalLaunch {
+  let full_command = ccs_session_shell_command(command, cwd)
+  let escaped = ccs_session_escape_osascript(full_command)
+  let script = [
+    "tell application \"iTerm\"",
+    "    activate",
+    "    create window with default profile",
+    "    tell current session of current window",
+    "        write text \"\{escaped}\"",
+    "    end tell",
+    "end tell",
+  ].join("\n")
+  CcsSessionTerminalLaunch::{ program: "osascript", args: ["-e", script] }
+}
+
+///|
+fn ccs_session_ghostty_launch(
+  command : String,
+  cwd : String?,
+) -> CcsSessionTerminalLaunch {
+  let args : Array[String] = [
+    "-na", "Ghostty", "--args", "--quit-after-last-window-closed=true",
+  ]
+  match cwd {
+    Some(dir) if !dir.trim().is_empty() =>
+      args.push("--working-directory=\{dir}")
+    _ => ()
+  }
+  args.push("-e")
+  args.push(ccs_session_shell())
+  args.push("-l")
+  args.push("-c")
+  args.push(command)
+  CcsSessionTerminalLaunch::{ program: "open", args }
+}
+
+///|
+fn ccs_session_kitty_launch(
+  command : String,
+  cwd : String?,
+) -> CcsSessionTerminalLaunch {
+  CcsSessionTerminalLaunch::{
+    program: "open",
+    args: [
+      "-na",
+      "kitty",
+      "--args",
+      "-e",
+      ccs_session_shell(),
+      "-l",
+      "-c",
+      ccs_session_shell_command(command, cwd),
+    ],
+  }
+}
+
+///|
+fn ccs_session_wezterm_like_launch(
+  app_name : String,
+  command : String,
+  cwd : String?,
+) -> CcsSessionTerminalLaunch {
+  let args : Array[String] = ["-na", app_name, "--args", "start"]
+  match cwd {
+    Some(dir) if !dir.trim().is_empty() => {
+      args.push("--cwd")
+      args.push(dir)
+    }
+    _ => ()
+  }
+  args.push("--")
+  args.push(ccs_session_shell())
+  args.push("-c")
+  args.push(ccs_session_shell_command(command, None))
+  CcsSessionTerminalLaunch::{ program: "open", args }
+}
+
+///|
+fn ccs_session_alacritty_launch(
+  command : String,
+  cwd : String?,
+) -> CcsSessionTerminalLaunch {
+  let args : Array[String] = ["-na", "Alacritty", "--args"]
+  match cwd {
+    Some(dir) if !dir.trim().is_empty() => {
+      args.push("--working-directory")
+      args.push(dir)
+    }
+    _ => ()
+  }
+  args.push("-e")
+  args.push(ccs_session_shell())
+  args.push("-c")
+  args.push(ccs_session_shell_command(command, None))
+  CcsSessionTerminalLaunch::{ program: "open", args }
+}
+
+///|
+fn ccs_session_custom_launch(
+  command : String,
+  cwd : String?,
+  custom_config : String?,
+) -> Result[CcsSessionTerminalLaunch, String] {
+  guard custom_config is Some(template) else {
+    return Err("No custom terminal config provided")
+  }
+  if template.trim().is_empty() {
+    return Err("Custom terminal command template is empty")
+  }
+  let dir = cwd.unwrap_or(".")
+  let final_command = template
+    .replace_all(old="{command}", new=command)
+    .replace_all(old="{cwd}", new=dir)
+  Ok(CcsSessionTerminalLaunch::{ program: "sh", args: ["-c", final_command] })
+}
+
+///|
+fn ccs_session_shell_command(command : String, cwd : String?) -> String {
+  match cwd {
+    Some(dir) if !dir.trim().is_empty() =>
+      "cd \{ccs_session_shell_escape(dir)} && \{command}"
+    _ => command
+  }
+}
+
+///|
+fn ccs_session_shell_escape(value : String) -> String {
+  "\"" +
+  value.replace_all(old="\\", new="\\\\").replace_all(old="\"", new="\\\"") +
+  "\""
+}
+
+///|
+fn ccs_session_escape_osascript(value : String) -> String {
+  value.replace_all(old="\\", new="\\\\").replace_all(old="\"", new="\\\"")
+}
+
+///|
+fn ccs_session_shell() -> String {
+  let shell = @os.getenv("SHELL") catch { _ => None }
+  match shell {
+    Some(value) if !value.trim().is_empty() => value
+    _ => "/bin/zsh"
+  }
 }
 
 ///|

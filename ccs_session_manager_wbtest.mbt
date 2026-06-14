@@ -57,3 +57,62 @@ test "ccs delete sessions parser accepts raw arrays and items wrapper" {
   assert_eq(wrapped.unwrap()[0].provider_id, "codex")
   assert_eq(wrapped.unwrap()[0].session_id, "s1")
 }
+
+///|
+test "ccs session terminal target follows CCS preferred terminal aliases" {
+  assert_eq(ccs_session_terminal_target(None), "terminal")
+  assert_eq(ccs_session_terminal_target(Some("iterm2")), "iterm")
+  assert_eq(ccs_session_terminal_target(Some(" Ghostty ")), "ghostty")
+  let settings = { "preferredTerminal": Json::string("wezterm") }.to_json()
+  assert_eq(ccs_session_terminal_from_settings(settings), Some("wezterm"))
+}
+
+///|
+test "ccs session terminal app launch quotes cwd in applescript" {
+  let launch = ccs_session_terminal_launch(
+    "terminal",
+    "claude --resume abc-123",
+    Some("/tmp/project dir"),
+    None,
+  ).unwrap()
+  assert_eq(launch.program, "osascript")
+  assert_true(launch.args[1].contains("tell application \"Terminal\""))
+  assert_true(
+    launch.args[1].contains(
+      "cd \\\"/tmp/project dir\\\" && claude --resume abc-123",
+    ),
+  )
+}
+
+///|
+test "ccs session wezterm launch uses cwd argument and shell command" {
+  let launch = ccs_session_terminal_launch(
+    "wezterm",
+    "claude --resume abc-123",
+    Some("/tmp/project dir"),
+    None,
+  ).unwrap()
+  assert_eq(launch.program, "open")
+  assert_eq(launch.args[0], "-na")
+  assert_eq(launch.args[1], "WezTerm")
+  assert_true(launch.args.contains("--cwd"))
+  assert_true(launch.args.contains("/tmp/project dir"))
+  assert_eq(launch.args[launch.args.length() - 1], "claude --resume abc-123")
+}
+
+///|
+test "ccs session custom terminal expands command and cwd" {
+  let launch = ccs_session_terminal_launch(
+    "custom",
+    "codex resume s1",
+    Some("/tmp/work"),
+    Some("echo {cwd}; run {command}; again {command}"),
+  ).unwrap()
+  assert_eq(launch.program, "sh")
+  assert_eq(launch.args, [
+    "-c", "echo /tmp/work; run codex resume s1; again codex resume s1",
+  ])
+  assert_true(
+    ccs_session_terminal_launch("custom", "cmd", None, None) is Err(_),
+  )
+}

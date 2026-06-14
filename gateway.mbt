@@ -9353,7 +9353,6 @@ async fn Gateway::handle_launch_session_terminal(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  ignore(self)
   let body = proxy_json_body(r)
   guard proxy_string_request(r.path, body, ["command"]) is Some(command) else {
     write_usage_bad_request(w, "missing_command")
@@ -9363,7 +9362,13 @@ async fn Gateway::handle_launch_session_terminal(
   let custom_config = proxy_string_request(r.path, body, [
     "customConfig", "custom_config",
   ])
-  match ccs_launch_session_terminal_json(command, cwd, custom_config) {
+  match
+    ccs_launch_session_terminal_json(
+      command,
+      cwd,
+      custom_config,
+      ccs_session_terminal_from_settings(self.app_settings),
+    ) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
   }

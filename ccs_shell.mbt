@@ -565,7 +565,7 @@ fn ccs_sibling_bin(path : String, exe : String) -> String? {
 
 ///|
 fn ccs_shell_single_quote(value : String) -> String {
-  "'\{value.replace(old="'", new="'\\''")}'"
+  "'" + value.replace_all(old="'", new="'\\''") + "'"
 }
 
 ///|

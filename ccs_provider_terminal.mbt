@@ -153,5 +153,7 @@ fn ccs_is_safe_env_key(key : String) -> Bool {
 
 ///|
 fn ccs_applescript_string(value : String) -> String {
-  "\"\{value.replace(old="\\", new="\\\\").replace(old="\"", new="\\\"")}\""
+  "\"" +
+  value.replace_all(old="\\", new="\\\\").replace_all(old="\"", new="\\\"") +
+  "\""
 }
