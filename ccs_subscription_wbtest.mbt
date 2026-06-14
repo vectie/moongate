@@ -142,6 +142,26 @@ test "ccs subscription credential parsers report deterministic status" {
 }
 
 ///|
+test "ccs codex oauth account resolver matches tauri command fallback" {
+  assert_eq(
+    ccs_resolve_codex_oauth_account(
+      Some(" acct-explicit "),
+      Some("acct-default"),
+    ),
+    Some("acct-explicit"),
+  )
+  assert_eq(
+    ccs_resolve_codex_oauth_account(Some("   "), Some("acct-default")),
+    Some("acct-default"),
+  )
+  assert_eq(
+    ccs_resolve_codex_oauth_account(None, Some("acct-default")),
+    Some("acct-default"),
+  )
+  assert_true(ccs_resolve_codex_oauth_account(Some("   "), None) is None)
+}
+
+///|
 test "ccs subscription gemini oauth client comes from env" {
   let old_id = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
   let old_secret = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {

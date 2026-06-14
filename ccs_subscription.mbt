@@ -235,7 +235,14 @@ fn ccs_resolve_codex_oauth_account(
   fallback : String?,
 ) -> String? {
   match explicit {
-    Some(value) => Some(value)
+    Some(value) => {
+      let trimmed = value.trim().to_owned()
+      if trimmed.is_empty() {
+        fallback
+      } else {
+        Some(trimmed)
+      }
+    }
     None => fallback
   }
 }
