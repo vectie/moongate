@@ -415,7 +415,12 @@ pub fn token_usage_from_gemini_stream_chunks(
 ///|
 fn json_int(obj : Map[String, Json], key : String) -> Int? {
   match obj.get(key) {
-    Some(Number(n, ..)) => Some(n.trunc().to_int())
+    Some(Number(n, ..)) =>
+      if n < 0.0 || n.trunc() != n {
+        None
+      } else {
+        Some(n.to_int())
+      }
     _ => None
   }
 }

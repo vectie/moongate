@@ -84,6 +84,82 @@ test "openrouter usage has ccs named openai format parser" {
 }
 
 ///|
+test "usage parser rejects negative required token counts like ccs" {
+  let claude =
+    #|{
+    #|  "usage": {
+    #|    "input_tokens": -1,
+    #|    "output_tokens": 5
+    #|  }
+    #|}
+  assert_true(
+    token_usage_from_claude_response(parse_json_for_test(claude)) is None,
+  )
+  let openai =
+    #|{
+    #|  "usage": {
+    #|    "prompt_tokens": 10,
+    #|    "completion_tokens": -2
+    #|  }
+    #|}
+  assert_true(
+    token_usage_from_openai_response(parse_json_for_test(openai)) is None,
+  )
+  let gemini =
+    #|{
+    #|  "usageMetadata": {
+    #|    "promptTokenCount": -3,
+    #|    "totalTokenCount": 12
+    #|  }
+    #|}
+  assert_true(
+    token_usage_from_gemini_response(parse_json_for_test(gemini)) is None,
+  )
+}
+
+///|
+test "usage parser rejects fractional required token counts like ccs" {
+  let codex =
+    #|{
+    #|  "usage": {
+    #|    "input_tokens": 10.5,
+    #|    "output_tokens": 2
+    #|  }
+    #|}
+  assert_true(
+    token_usage_from_codex_response(parse_json_for_test(codex)) is None,
+  )
+  let openai =
+    #|{
+    #|  "usage": {
+    #|    "prompt_tokens": 10,
+    #|    "completion_tokens": 2.25
+    #|  }
+    #|}
+  assert_true(
+    token_usage_from_openai_response(parse_json_for_test(openai)) is None,
+  )
+}
+
+///|
+test "usage parser treats invalid optional cache fields as absent like ccs" {
+  let body =
+    #|{
+    #|  "usage": {
+    #|    "input_tokens": 10,
+    #|    "output_tokens": 2,
+    #|    "cache_read_input_tokens": -7,
+    #|    "cache_creation_input_tokens": 1.5
+    #|  }
+    #|}
+  let usage = token_usage_from_codex_response(parse_json_for_test(body)).unwrap()
+  assert_eq(usage.input_tokens, 10)
+  assert_eq(usage.output_tokens, 2)
+  assert_eq(usage.cache_read_tokens, 0)
+  assert_eq(usage.cache_creation_tokens, 0)
+}
+
+///|
 test "codex adjusted usage subtracts cached tokens from details like ccs" {
   let body =
     #|{
