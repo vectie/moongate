@@ -8714,6 +8714,15 @@ fn Gateway::proxy_app_enabled_for_app(
 }
 
 ///|
+fn Gateway::can_set_auto_failover_ccs(
+  self : Gateway,
+  app_type : String,
+  enabled : Bool,
+) -> Bool {
+  !enabled || self.proxy_app_enabled_for_app(app_type)
+}
+
+///|
 async fn Gateway::handle_proxy_provider_health(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -8899,6 +8908,10 @@ async fn Gateway::handle_proxy_set_auto_failover_enabled(
   }
   guard proxy_enabled_value(r) is Some(enabled) else {
     write_usage_bad_request(w, "missing_enabled")
+    return
+  }
+  if !self.can_set_auto_failover_ccs(app_type, enabled) {
+    write_usage_bad_request(w, "auto_failover_requires_proxy_takeover")
     return
   }
   if !self.provider_router.set_auto_failover_ccs(app_type, enabled) {
