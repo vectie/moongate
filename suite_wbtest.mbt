@@ -371,6 +371,16 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(provider_model["id"], Json::string("gpt-5"))
   assert_eq(provider_model["name"], Json::string("moonstat/gpt-5"))
   assert_eq(
+    moonclaw["moonclaw_providers_file_command"],
+    Json::string("moonstat suite moonclaw-providers"),
+  )
+  assert_eq(
+    moonclaw["moonclaw_providers_file_write_command"],
+    Json::string(
+      "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+    ),
+  )
+  assert_eq(
     moonclaw["provider_presets_url"],
     Json::string("http://127.0.0.1:15721/get_provider_presets"),
   )
@@ -412,6 +422,24 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("moonstat"),
   )
   assert_eq(
+    moontown["moonclaw_provider_manifest_full_command"],
+    Json::string(
+      "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+    ),
+  )
+  guard moontown["moonclaw_provider_manifest_args"] is Array(moonclaw_args) else {
+    fail("expected moonclaw provider manifest args")
+  }
+  assert_true(
+    moonclaw_args ==
+    [
+      Json::string("suite"),
+      Json::string("write-moonclaw-providers"),
+      Json::string("--path"),
+      Json::string(".moonclaw/providers.json"),
+    ],
+  )
+  assert_eq(
     moontown["moonclaw_provider_manifest_target"],
     Json::string("moonbook"),
   )
@@ -422,6 +450,24 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(
     moontown["moonbook_provider_manifest_command"],
     Json::string("moonstat"),
+  )
+  assert_eq(
+    moontown["moonbook_provider_manifest_full_command"],
+    Json::string(
+      "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+    ),
+  )
+  guard moontown["moonbook_provider_manifest_args"] is Array(moonbook_args) else {
+    fail("expected moonbook provider manifest args")
+  }
+  assert_true(
+    moonbook_args ==
+    [
+      Json::string("suite"),
+      Json::string("write-moonclaw-providers"),
+      Json::string("--path"),
+      Json::string(".moonclaw/providers.json"),
+    ],
   )
   guard moontown["adapter_packages"] is Array(moontown_adapters) else {
     fail("expected moontown adapters")
@@ -489,6 +535,16 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("moonstat suite write-status"),
   )
   assert_eq(
+    commands["moonclaw_providers"],
+    Json::string("moonstat suite moonclaw-providers"),
+  )
+  assert_eq(
+    commands["moonclaw_providers_write"],
+    Json::string(
+      "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+    ),
+  )
+  assert_eq(
     commands["stream_check_all"],
     Json::string("moonstat stream-check all --app-type <app_type>"),
   )
@@ -497,6 +553,39 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("moonstat provider presets list --app <app_type>"),
   )
   assert_eq(obj["cli"], obj["commands"])
+}
+
+///|
+async test "moonclaw providers file writer materializes suite provider config" {
+  @fsx.with_temporary_directory("moonstat-moonclaw-providers-XXXXXX", tmpdir => {
+    let path = @pathx.join(tmpdir, ".moonclaw/providers.json")
+    let written = write_moonstat_moonclaw_providers_file(
+      path~,
+      host="0.0.0.0",
+      port=18081,
+      model="gpt-5",
+    )
+    assert_eq(written, path)
+    let json = @json.parse(@fsx.read_file(path))
+    assert_eq(
+      json,
+      moonstat_moonclaw_providers_file_json(
+        host="0.0.0.0",
+        port=18081,
+        model="gpt-5",
+      ),
+    )
+    guard json is Object(obj) else { fail("expected providers object") }
+    guard obj["providers"] is Object(providers) else {
+      fail("expected providers map")
+    }
+    guard providers["moonstat"] is Object(provider) else {
+      fail("expected moonstat provider")
+    }
+    assert_eq(provider["baseUrl"], Json::string("http://127.0.0.1:18081/v1"))
+    assert_eq(provider["api"], Json::string("openai"))
+    assert_eq(provider["apiKey"], Json::string("moonstat-local"))
+  })
 }
 
 ///|

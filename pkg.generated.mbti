@@ -70,6 +70,8 @@ pub fn default_codex_config_dir() -> String
 
 pub fn default_gemini_dir() -> String
 
+pub fn default_moonstat_moonclaw_providers_file_path() -> String
+
 pub fn default_moonstat_stats_dir() -> String
 
 pub fn default_moonstat_suite_status_path() -> String
@@ -110,6 +112,8 @@ pub async fn managed_auth_start_login(String, github_domain? : String?) -> Resul
 
 pub fn managed_auth_status_json(String, @codex.Credentials?, migration_error? : String) -> Json
 
+pub fn moonstat_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
+
 pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
 
 pub fn moonstat_suite_status_json(host? : String, port? : Int, model? : String) -> Json
@@ -145,6 +149,8 @@ pub fn token_usage_from_openai_stream_events(Array[Json]) -> TokenUsage?
 pub fn token_usage_from_openrouter_response(Json) -> TokenUsage?
 
 pub fn transform_claude_request_for_api_format(Json, String, session_id? : String?, explicit_prompt_cache_key? : String?, is_codex_oauth? : Bool, codex_fast_mode? : Bool, gemini_shadow_turns? : Array[GeminiAssistantTurn]) -> Json
+
+pub async fn write_moonstat_moonclaw_providers_file(path? : String, host? : String, port? : Int, model? : String) -> String
 
 pub async fn write_moonstat_suite_status(path? : String, host? : String, port? : Int, model? : String) -> String
 

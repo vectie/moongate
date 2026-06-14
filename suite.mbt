@@ -304,6 +304,12 @@ fn moonstat_suite_integrations_json(
       "moonclaw_providers_file_json": moonclaw_providers_file_json(
         openai_base_url, model,
       ),
+      "moonclaw_providers_file_command": Json::string(
+        "moonstat suite moonclaw-providers",
+      ),
+      "moonclaw_providers_file_write_command": Json::string(
+        "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+      ),
       "health_url": Json::string("\{base_url}/health"),
       "usage_summary_url": Json::string("\{base_url}/usage/summary"),
       "usage_logs_url": Json::string("\{base_url}/usage/logs"),
@@ -353,11 +359,29 @@ fn moonstat_suite_integrations_json(
         ".moonclaw/providers.json",
       ),
       "moonclaw_provider_manifest_command": Json::string("moonstat"),
+      "moonclaw_provider_manifest_args": Json::array([
+        Json::string("suite"),
+        Json::string("write-moonclaw-providers"),
+        Json::string("--path"),
+        Json::string(".moonclaw/providers.json"),
+      ]),
+      "moonclaw_provider_manifest_full_command": Json::string(
+        "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+      ),
       "moonclaw_provider_manifest_target": Json::string("moonbook"),
       "moonbook_provider_manifest_path": Json::string(
         ".moonclaw/providers.json",
       ),
       "moonbook_provider_manifest_command": Json::string("moonstat"),
+      "moonbook_provider_manifest_args": Json::array([
+        Json::string("suite"),
+        Json::string("write-moonclaw-providers"),
+        Json::string("--path"),
+        Json::string(".moonclaw/providers.json"),
+      ]),
+      "moonbook_provider_manifest_full_command": Json::string(
+        "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+      ),
       "adapter_packages": Json::array([
         Json::string("vectie/moontown/adapters/moonclaw"),
         Json::string("vectie/moontown/adapters/moonbook"),
@@ -413,6 +437,36 @@ fn moonclaw_providers_file_json(
       }),
     }),
   })
+}
+
+///|
+pub fn moonstat_moonclaw_providers_file_json(
+  host? : String = "127.0.0.1",
+  port? : Int = 15721,
+  model? : String = "gpt-5",
+) -> Json {
+  moonclaw_providers_file_json(moonstat_openai_base_url(host, port), model)
+}
+
+///|
+pub async fn write_moonstat_moonclaw_providers_file(
+  path? : String = default_moonstat_moonclaw_providers_file_path(),
+  host? : String = "127.0.0.1",
+  port? : Int = 15721,
+  model? : String = "gpt-5",
+) -> String {
+  let dir = @pathx.dirname(path)
+  @fsx.make_directory(dir, recursive=true, exists_ok=true)
+  let json = moonstat_moonclaw_providers_file_json(host~, port~, model~).stringify(
+    indent=2,
+  )
+  @fsx.write_to_file(path, json)
+  path
+}
+
+///|
+pub fn default_moonstat_moonclaw_providers_file_path() -> String {
+  ".moonclaw/providers.json"
 }
 
 ///|
@@ -495,6 +549,10 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
     "suite_manifest": Json::string("moonstat suite manifest"),
     "suite_status": Json::string("moonstat suite status"),
     "suite_write_status": Json::string("moonstat suite write-status"),
+    "moonclaw_providers": Json::string("moonstat suite moonclaw-providers"),
+    "moonclaw_providers_write": Json::string(
+      "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
+    ),
   })
 }
 

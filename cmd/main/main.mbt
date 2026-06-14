@@ -135,6 +135,11 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["suite", "manifest", ..] => print_suite_manifest(arr)
     ["suite", "status", ..] => print_suite_status(arr)
     ["suite", "write-status", ..] => write_suite_status(arr)
+    ["suite", "moonclaw-providers", ..] | ["suite", "provider-manifest", ..] =>
+      print_moonclaw_providers_file(arr)
+    ["suite", "write-moonclaw-providers", ..]
+    | ["suite", "write-provider-manifest", ..] =>
+      write_moonclaw_providers_file(arr)
     ["status", ..] => check_status(arr)
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)
@@ -1084,6 +1089,8 @@ fn print_help() -> Unit {
   println("  suite manifest            Print Moon suite service manifest")
   println("  suite status              Print Moon suite status contract")
   println("  suite write-status        Write ~/.moonstat/suite-status.json")
+  println("  suite moonclaw-providers  Print MoonClaw providers.json")
+  println("  suite write-moonclaw-providers  Write .moonclaw/providers.json")
   println("  status      Check reroute and gateway status")
   println("  stats       Show gateway traffic statistics")
   println("  proxy status           Show ccs-style proxy server status")
@@ -4772,6 +4779,36 @@ async fn write_suite_status(args : Array[String]) -> Unit {
     model~,
   )
   logger.info("Moon suite status written: \{written}")
+}
+
+///|
+fn print_moonclaw_providers_file(args : Array[String]) -> Unit {
+  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
+  let port = parse_int_arg(args, "--port", default=15721)
+  let model = parse_string_arg(args, "--model").unwrap_or("gpt-5")
+  println(
+    @moonstat.moonstat_moonclaw_providers_file_json(host~, port~, model~).stringify(
+      indent=2,
+    ),
+  )
+}
+
+///|
+async fn write_moonclaw_providers_file(args : Array[String]) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
+  let port = parse_int_arg(args, "--port", default=15721)
+  let model = parse_string_arg(args, "--model").unwrap_or("gpt-5")
+  let path = parse_string_arg(args, "--path").unwrap_or(
+    @moonstat.default_moonstat_moonclaw_providers_file_path(),
+  )
+  let written = @moonstat.write_moonstat_moonclaw_providers_file(
+    path~,
+    host~,
+    port~,
+    model~,
+  )
+  logger.info("MoonClaw providers file written: \{written}")
 }
 
 ///|
