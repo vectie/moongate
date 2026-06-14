@@ -130,6 +130,123 @@ test "ccs s3 sync validation and guard messages match ccs" {
 }
 
 ///|
+test "ccs s3 object urls and keys match ccs transport layout" {
+  let aws = ccs_s3_sync_settings_json(
+    {
+      "enabled": Json::boolean(true),
+      "region": Json::string("us-west-2"),
+      "bucket": Json::string("moonstat"),
+      "accessKeyId": Json::string("AKID"),
+      "secretAccessKey": Json::string("SECRET"),
+      "remoteRoot": Json::string("cc-switch-sync"),
+      "profile": Json::string("default"),
+    }.to_json(),
+    None,
+    false,
+  )
+  assert_eq(
+    ccs_s3_remote_file_key(aws, ccs_sync_remote_manifest()),
+    Ok("cc-switch-sync/v2/db-v6/default/manifest.json"),
+  )
+  assert_eq(
+    ccs_s3_remote_dir_display(aws),
+    Ok("cc-switch-sync/v2/db-v6/default"),
+  )
+  assert_eq(
+    ccs_s3_bucket_url(aws),
+    Ok("https://moonstat.s3.us-west-2.amazonaws.com/"),
+  )
+  assert_eq(
+    ccs_s3_object_url(aws, "cc-switch-sync/v2/db-v6/default/manifest.json"),
+    Ok(
+      "https://moonstat.s3.us-west-2.amazonaws.com/cc-switch-sync/v2/db-v6/default/manifest.json",
+    ),
+  )
+  let custom = ccs_s3_sync_settings_json(
+    {
+      "enabled": Json::boolean(true),
+      "region": Json::string("us-east-1"),
+      "bucket": Json::string("moonstat"),
+      "accessKeyId": Json::string("AKID"),
+      "secretAccessKey": Json::string("SECRET"),
+      "endpoint": Json::string("http://minio.local:9000/"),
+      "remoteRoot": Json::string("cc switch"),
+      "profile": Json::string("team/default"),
+    }.to_json(),
+    None,
+    false,
+  )
+  assert_eq(
+    ccs_s3_object_url(custom, "cc switch/v2/db-v6/team/default/db.sql"),
+    Ok(
+      "http://minio.local:9000/moonstat/cc%20switch/v2/db-v6/team/default/db.sql",
+    ),
+  )
+}
+
+///|
+test "ccs s3 curl requests use sigv4 and ccs transfer timeouts" {
+  let settings = ccs_s3_sync_settings_json(
+    {
+      "enabled": Json::boolean(true),
+      "region": Json::string("us-east-1"),
+      "bucket": Json::string("moonstat"),
+      "accessKeyId": Json::string("AKID"),
+      "secretAccessKey": Json::string("SECRET"),
+    }.to_json(),
+    None,
+    false,
+  )
+  let head = ccs_s3_curl_head_request(
+    settings, "https://moonstat.s3.us-east-1.amazonaws.com/",
+  ).unwrap()
+  assert_eq(head.program, "curl")
+  assert_eq(head.args, [
+    "-sS", "-L", "--aws-sigv4", "aws:amz:us-east-1:s3", "-u", "AKID:SECRET", "--max-time",
+    "30", "-I", "-o", "/dev/null", "-w", "%{http_code}", "https://moonstat.s3.us-east-1.amazonaws.com/",
+  ])
+  let put = ccs_s3_curl_put_request(
+    settings, "https://moonstat.s3.us-east-1.amazonaws.com/cc-switch-sync/v2/db-v6/default/manifest.json",
+    "/tmp/manifest.json", "application/json",
+  ).unwrap()
+  assert_eq(put.args, [
+    "-sS", "-L", "--aws-sigv4", "aws:amz:us-east-1:s3", "-u", "AKID:SECRET", "--max-time",
+    "300", "-X", "PUT", "-H", "Content-Type: application/json", "--upload-file",
+    "/tmp/manifest.json", "-o", "/dev/null", "-w", "%{http_code}", "https://moonstat.s3.us-east-1.amazonaws.com/cc-switch-sync/v2/db-v6/default/manifest.json",
+  ])
+  let get = ccs_s3_curl_get_request(
+    settings,
+    "https://moonstat.s3.us-east-1.amazonaws.com/cc-switch-sync/v2/db-v6/default/manifest.json",
+    "/tmp/manifest.json",
+    header_path="/tmp/headers",
+  ).unwrap()
+  assert_eq(get.args, [
+    "-sS", "-L", "--aws-sigv4", "aws:amz:us-east-1:s3", "-u", "AKID:SECRET", "--max-time",
+    "300", "-o", "/tmp/manifest.json", "-w", "%{http_code}", "-D", "/tmp/headers",
+    "https://moonstat.s3.us-east-1.amazonaws.com/cc-switch-sync/v2/db-v6/default/manifest.json",
+  ])
+}
+
+///|
+test "ccs s3 status and etag parsing match s3 transport behavior" {
+  assert_true(ccs_s3_status_ok(200))
+  assert_true(ccs_s3_status_ok(204))
+  assert_true(!ccs_s3_status_ok(404))
+  assert_eq(
+    ccs_s3_etag_from_header_text(
+      (
+        #|HTTP/1.1 200 OK
+        #|content-type: application/json
+        #|ETag: "abc123"
+        #|
+      ),
+    ),
+    Some("\"abc123\""),
+  )
+  assert_eq(ccs_s3_etag_from_header_text("HTTP/1.1 404 Not Found\n"), None)
+}
+
+///|
 test "ccs sync protocol paths match ccs v2 current and legacy layouts" {
   assert_eq(
     ccs_sync_remote_dir_segments("cc-switch-sync", "default", "current"),

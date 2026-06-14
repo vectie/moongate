@@ -5384,13 +5384,10 @@ async fn Gateway::handle_s3_test_connection(
   match ccs_validate_s3_sync_settings(normalized) {
     Some(error) => write_usage_bad_request(w, error)
     None =>
-      write_usage_json(
-        w,
-        {
-          "success": Json::boolean(true),
-          "message": Json::string("S3 connection ok"),
-        }.to_json(),
-      )
+      match ccs_s3_sync_test_connection_json(normalized) {
+        Ok(result) => write_usage_json(w, result)
+        Err(error) => write_usage_bad_request(w, error)
+      }
   }
 }
 
@@ -5429,13 +5426,23 @@ async fn Gateway::handle_s3_sync_operation(
   w : @httpx.ResponseWriter,
   operation : String,
 ) -> Unit {
-  ignore(operation)
   match ccs_s3_sync_required_error(self.app_settings) {
     Some(error) => write_usage_bad_request(w, error)
     None =>
-      write_usage_bad_request(
-        w, "S3 sync transport is not implemented in moonstat yet.",
-      )
+      match ccs_app_s3_sync_json(self.app_settings) {
+        None => write_usage_bad_request(w, "S3 sync is not configured.")
+        Some(settings) => {
+          let result = match operation {
+            "upload" => self.ccs_s3_sync_upload_json(settings)
+            "download" => self.ccs_s3_sync_download_json(settings)
+            _ => Err("Unsupported S3 sync operation: \{operation}")
+          }
+          match result {
+            Ok(json) => write_usage_json(w, json)
+            Err(error) => write_usage_bad_request(w, error)
+          }
+        }
+      }
   }
 }
 
@@ -5447,9 +5454,14 @@ async fn Gateway::handle_s3_sync_fetch_remote_info(
   match ccs_s3_sync_required_error(self.app_settings) {
     Some(error) => write_usage_bad_request(w, error)
     None =>
-      write_usage_bad_request(
-        w, "S3 sync transport is not implemented in moonstat yet.",
-      )
+      match ccs_app_s3_sync_json(self.app_settings) {
+        None => write_usage_bad_request(w, "S3 sync is not configured.")
+        Some(settings) =>
+          match ccs_s3_sync_fetch_remote_info_json(settings) {
+            Ok(info) => write_usage_json(w, info)
+            Err(error) => write_usage_bad_request(w, error)
+          }
+      }
   }
 }
 

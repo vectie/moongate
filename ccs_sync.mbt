@@ -92,6 +92,13 @@ priv struct CcsWebDavRemoteSnapshot {
 }
 
 ///|
+priv struct CcsS3RemoteSnapshot {
+  manifest : CcsSyncManifestInfo
+  manifest_bytes : Bytes
+  etag : String?
+}
+
+///|
 priv struct CcsWebDavTextResponse {
   code : Int
   body : String
@@ -691,6 +698,207 @@ fn ccs_webdav_basic_auth_header(username : String, password : String) -> String 
 }
 
 ///|
+fn ccs_s3_is_aws_endpoint(endpoint : String) -> Bool {
+  endpoint.is_empty() || endpoint.contains("amazonaws.com")
+}
+
+///|
+fn ccs_s3_split_scheme_host(endpoint : String) -> (String, String) {
+  let trimmed = trim_end_slashes(endpoint.trim().to_owned())
+  if trimmed.has_prefix("http://") {
+    ("http", trimmed[7:].to_owned())
+  } else if trimmed.has_prefix("https://") {
+    ("https", trimmed[8:].to_owned())
+  } else {
+    ("https", trimmed)
+  }
+}
+
+///|
+fn ccs_s3_remote_file_key(
+  settings : Json,
+  file_name : String,
+) -> Result[String, String] {
+  guard settings is Object(obj) else {
+    return Err("S3 sync is not configured.")
+  }
+  guard json_string_from_map(obj, "remoteRoot") is Some(remote_root) else {
+    return Err("S3 remote root is required.")
+  }
+  guard json_string_from_map(obj, "profile") is Some(profile) else {
+    return Err("S3 profile is required.")
+  }
+  Ok(ccs_sync_remote_file_path(remote_root, profile, "current", file_name))
+}
+
+///|
+fn ccs_s3_remote_dir_display(settings : Json) -> Result[String, String] {
+  guard settings is Object(obj) else {
+    return Err("S3 sync is not configured.")
+  }
+  guard json_string_from_map(obj, "remoteRoot") is Some(remote_root) else {
+    return Err("S3 remote root is required.")
+  }
+  guard json_string_from_map(obj, "profile") is Some(profile) else {
+    return Err("S3 profile is required.")
+  }
+  Ok(ccs_sync_remote_dir_segments(remote_root, profile, "current").join("/"))
+}
+
+///|
+fn ccs_s3_bucket_url(settings : Json) -> Result[String, String] {
+  guard settings is Object(obj) else {
+    return Err("S3 sync is not configured.")
+  }
+  let endpoint = json_string_from_map(obj, "endpoint").unwrap_or("")
+  let bucket = json_string_from_map(obj, "bucket").unwrap_or("")
+  let region = json_string_from_map(obj, "region").unwrap_or("")
+  if bucket.is_empty() {
+    return Err("S3 bucket is required.")
+  }
+  if region.is_empty() {
+    return Err("S3 region is required.")
+  }
+  if ccs_s3_is_aws_endpoint(endpoint) {
+    Ok("https://\{bucket}.s3.\{region}.amazonaws.com/")
+  } else {
+    let (scheme, host) = ccs_s3_split_scheme_host(endpoint)
+    Ok("\{scheme}://\{host}/\{ccs_webdav_encode_path_segment(bucket)}/")
+  }
+}
+
+///|
+fn ccs_s3_object_url(settings : Json, key : String) -> Result[String, String] {
+  guard settings is Object(obj) else {
+    return Err("S3 sync is not configured.")
+  }
+  let endpoint = json_string_from_map(obj, "endpoint").unwrap_or("")
+  let bucket = json_string_from_map(obj, "bucket").unwrap_or("")
+  let region = json_string_from_map(obj, "region").unwrap_or("")
+  if bucket.is_empty() {
+    return Err("S3 bucket is required.")
+  }
+  if region.is_empty() {
+    return Err("S3 region is required.")
+  }
+  let encoded_key = ccs_webdav_encoded_path(ccs_sync_path_segments(key))
+  if ccs_s3_is_aws_endpoint(endpoint) {
+    Ok("https://\{bucket}.s3.\{region}.amazonaws.com/\{encoded_key}")
+  } else {
+    let (scheme, host) = ccs_s3_split_scheme_host(endpoint)
+    Ok(
+      "\{scheme}://\{host}/\{ccs_webdav_encode_path_segment(bucket)}/\{encoded_key}",
+    )
+  }
+}
+
+///|
+fn ccs_s3_curl_common_args(
+  settings : Json,
+  timeout_ms : Int,
+) -> Result[Array[String], String] {
+  guard settings is Object(obj) else {
+    return Err("S3 sync is not configured.")
+  }
+  let region = json_string_from_map(obj, "region").unwrap_or("")
+  let access_key = json_string_from_map(obj, "accessKeyId").unwrap_or("")
+  let secret_key = json_string_from_map(obj, "secretAccessKey").unwrap_or("")
+  if region.is_empty() {
+    return Err("S3 region is required.")
+  }
+  if access_key.is_empty() {
+    return Err("S3 Access Key ID is required.")
+  }
+  if secret_key.is_empty() {
+    return Err("S3 Secret Access Key is required.")
+  }
+  Ok([
+    "-sS",
+    "-L",
+    "--aws-sigv4",
+    "aws:amz:\{region}:s3",
+    "-u",
+    "\{access_key}:\{secret_key}",
+    "--max-time",
+    (timeout_ms / 1000).to_string(),
+  ])
+}
+
+///|
+fn ccs_s3_curl_head_request(
+  settings : Json,
+  url : String,
+  header_path? : String,
+) -> Result[CcsWebDavCurlRequest, String] {
+  let args = match
+    ccs_s3_curl_common_args(settings, ccs_webdav_default_timeout_ms()) {
+    Ok(args) => args
+    Err(error) => return Err(error)
+  }
+  args.push("-I")
+  args.push("-o")
+  args.push("/dev/null")
+  args.push("-w")
+  args.push("%{http_code}")
+  if header_path is Some(path) {
+    args.push("-D")
+    args.push(path)
+  }
+  args.push(url)
+  Ok(CcsWebDavCurlRequest::{ program: "curl", args })
+}
+
+///|
+fn ccs_s3_curl_put_request(
+  settings : Json,
+  url : String,
+  file_path : String,
+  content_type : String,
+) -> Result[CcsWebDavCurlRequest, String] {
+  let args = match
+    ccs_s3_curl_common_args(settings, ccs_webdav_transfer_timeout_ms()) {
+    Ok(args) => args
+    Err(error) => return Err(error)
+  }
+  args.push("-X")
+  args.push("PUT")
+  args.push("-H")
+  args.push("Content-Type: \{content_type}")
+  args.push("--upload-file")
+  args.push(file_path)
+  args.push("-o")
+  args.push("/dev/null")
+  args.push("-w")
+  args.push("%{http_code}")
+  args.push(url)
+  Ok(CcsWebDavCurlRequest::{ program: "curl", args })
+}
+
+///|
+fn ccs_s3_curl_get_request(
+  settings : Json,
+  url : String,
+  output_path : String,
+  header_path? : String,
+) -> Result[CcsWebDavCurlRequest, String] {
+  let args = match
+    ccs_s3_curl_common_args(settings, ccs_webdav_transfer_timeout_ms()) {
+    Ok(args) => args
+    Err(error) => return Err(error)
+  }
+  args.push("-o")
+  args.push(output_path)
+  args.push("-w")
+  args.push("%{http_code}")
+  if header_path is Some(path) {
+    args.push("-D")
+    args.push(path)
+  }
+  args.push(url)
+  Ok(CcsWebDavCurlRequest::{ program: "curl", args })
+}
+
+///|
 async fn ccs_webdav_get_text(
   url : String,
   username : String,
@@ -840,6 +1048,38 @@ async fn ccs_webdav_run_status_request(
 }
 
 ///|
+async fn ccs_s3_run_status_request(
+  request : CcsWebDavCurlRequest,
+  operation : String,
+) -> Result[Int, String] {
+  let result = @spawn.spawn(
+    request.program,
+    request.args.map(fn(arg) { arg[:] }),
+    timeout=ccs_webdav_transfer_timeout_ms(),
+  ) catch {
+    err => return Err("S3 \{operation} failed: \{err}")
+  }
+  if result.status != 0 {
+    let detail = if result.stderr.trim().is_empty() {
+      result.stdout.trim()
+    } else {
+      result.stderr.trim()
+    }
+    return Err(
+      if detail.is_empty() {
+        "S3 \{operation} failed: exit code \{result.status}"
+      } else {
+        "S3 \{operation} failed: \{detail}"
+      },
+    )
+  }
+  let status = @string.parse_int(result.stdout.trim(), base=10) catch {
+    _ => return Err("S3 \{operation} returned an invalid HTTP status.")
+  }
+  Ok(status)
+}
+
+///|
 fn ccs_webdav_status_ok_for_propfind(status : Int) -> Bool {
   (status >= 200 && status <= 299) || status == 207
 }
@@ -856,6 +1096,11 @@ fn ccs_webdav_status_needs_propfind_verify(status : Int) -> Bool {
 
 ///|
 fn ccs_webdav_status_ok_for_transfer(status : Int) -> Bool {
+  status >= 200 && status <= 299
+}
+
+///|
+fn ccs_s3_status_ok(status : Int) -> Bool {
   status >= 200 && status <= 299
 }
 
@@ -937,6 +1182,34 @@ async fn ccs_webdav_sync_test_connection_json(
 }
 
 ///|
+async fn ccs_s3_sync_test_connection_json(
+  settings : Json,
+) -> Result[Json, String] {
+  let bucket_url = match ccs_s3_bucket_url(settings) {
+    Ok(url) => url
+    Err(error) => return Err(error)
+  }
+  let request = match ccs_s3_curl_head_request(settings, bucket_url) {
+    Ok(request) => request
+    Err(error) => return Err(error)
+  }
+  let status = match ccs_s3_run_status_request(request, "HEAD bucket") {
+    Ok(status) => status
+    Err(error) => return Err(error)
+  }
+  if ccs_s3_status_ok(status) {
+    Ok(
+      {
+        "success": Json::boolean(true),
+        "message": Json::string("S3 connection ok"),
+      }.to_json(),
+    )
+  } else {
+    Err("S3 HEAD bucket failed: HTTP \{status}")
+  }
+}
+
+///|
 async fn Gateway::ccs_sync_build_local_snapshot(
   self : Gateway,
 ) -> CcsLocalSyncSnapshot {
@@ -963,13 +1236,24 @@ async fn Gateway::ccs_sync_build_local_snapshot(
 
 ///|
 fn ccs_sync_success_status_json(manifest_hash : String) -> Json {
+  ccs_sync_success_status_json_with_etag(manifest_hash, None)
+}
+
+///|
+fn ccs_sync_success_status_json_with_etag(
+  manifest_hash : String,
+  etag : String?,
+) -> Json {
   {
     "lastSyncAt": Json::number(@os.unix_seconds().to_double()),
     "lastError": Json::null(),
     "lastErrorSource": Json::null(),
     "lastLocalManifestHash": Json::string(manifest_hash),
     "lastRemoteManifestHash": Json::string(manifest_hash),
-    "lastRemoteEtag": Json::null(),
+    "lastRemoteEtag": match etag {
+      Some(value) => Json::string(value)
+      None => Json::null()
+    },
   }.to_json()
 }
 
@@ -993,6 +1277,24 @@ fn Gateway::ccs_persist_webdav_sync_success(
   self.app_settings = ccs_app_settings_with_sync(
     self.app_settings,
     "webdavSync",
+    next,
+  )
+}
+
+///|
+fn Gateway::ccs_persist_s3_sync_success(
+  self : Gateway,
+  settings : Json,
+  manifest_hash : String,
+  etag : String?,
+) -> Unit {
+  let next = ccs_sync_settings_with_status(
+    settings,
+    ccs_sync_success_status_json_with_etag(manifest_hash, etag),
+  )
+  self.app_settings = ccs_app_settings_with_sync(
+    self.app_settings,
+    "s3Sync",
     next,
   )
 }
@@ -1041,6 +1343,100 @@ async fn ccs_webdav_get_file(
   } else {
     Err("WebDAV GET \{artifact_name} failed: HTTP \{status}")
   }
+}
+
+///|
+async fn ccs_s3_put_file(
+  settings : Json,
+  url : String,
+  file_path : String,
+  content_type : String,
+  artifact_name : String,
+) -> Result[Unit, String] {
+  let request = match
+    ccs_s3_curl_put_request(settings, url, file_path, content_type) {
+    Ok(request) => request
+    Err(error) => return Err(error)
+  }
+  let status = match ccs_s3_run_status_request(request, "PUT") {
+    Ok(status) => status
+    Err(error) => return Err(error)
+  }
+  if ccs_s3_status_ok(status) {
+    Ok(())
+  } else {
+    Err("S3 PUT \{artifact_name} failed: HTTP \{status}")
+  }
+}
+
+///|
+async fn ccs_s3_get_file(
+  settings : Json,
+  url : String,
+  output_path : String,
+  artifact_name : String,
+  header_path? : String,
+) -> Result[Int, String] {
+  let request = match
+    ccs_s3_curl_get_request(settings, url, output_path, header_path?) {
+    Ok(request) => request
+    Err(error) => return Err(error)
+  }
+  let status = match ccs_s3_run_status_request(request, "GET") {
+    Ok(status) => status
+    Err(error) => return Err(error)
+  }
+  if status == 404 || ccs_s3_status_ok(status) {
+    Ok(status)
+  } else {
+    Err("S3 GET \{artifact_name} failed: HTTP \{status}")
+  }
+}
+
+///|
+async fn ccs_s3_head_file_etag(
+  settings : Json,
+  url : String,
+  header_path : String,
+) -> Result[String?, String] {
+  let request = match ccs_s3_curl_head_request(settings, url, header_path~) {
+    Ok(request) => request
+    Err(error) => return Err(error)
+  }
+  let status = match ccs_s3_run_status_request(request, "HEAD") {
+    Ok(status) => status
+    Err(error) => return Err(error)
+  }
+  if status == 404 {
+    return Ok(None)
+  }
+  if !ccs_s3_status_ok(status) {
+    return Err("S3 HEAD failed: HTTP \{status}")
+  }
+  Ok(ccs_s3_etag_from_headers(header_path))
+}
+
+///|
+async fn ccs_s3_etag_from_headers(header_path : String) -> String? {
+  let content = @fs.read_file(header_path).text() catch { _ => return None }
+  ccs_s3_etag_from_header_text(content)
+}
+
+///|
+fn ccs_s3_etag_from_header_text(content : String) -> String? {
+  for line_view in content.split("\n") {
+    let line = line_view.to_owned()
+    if line.to_lower().has_prefix("etag:") {
+      let parts = line.split(":").collect()
+      if parts.length() >= 2 {
+        let value = parts[1].trim().to_owned()
+        if !value.is_empty() {
+          return Some(value)
+        }
+      }
+    }
+  }
+  None
 }
 
 ///|
@@ -1139,6 +1535,107 @@ async fn Gateway::ccs_webdav_sync_upload_json(
 }
 
 ///|
+async fn Gateway::ccs_s3_sync_upload_json(
+  self : Gateway,
+  settings : Json,
+) -> Result[Json, String] {
+  match ccs_s3_sync_test_connection_json(settings) {
+    Ok(_) => ()
+    Err(error) => return Err(error)
+  }
+  let snapshot = self.ccs_sync_build_local_snapshot()
+  let manifest_key = match
+    ccs_s3_remote_file_key(settings, ccs_sync_remote_manifest()) {
+    Ok(key) => key
+    Err(error) => return Err(error)
+  }
+  let manifest_url = match ccs_s3_object_url(settings, manifest_key) {
+    Ok(url) => url
+    Err(error) => return Err(error)
+  }
+  let mut etag : String? = None
+  match
+    @fsx.with_temporary_directory("moonstat-s3-upload-XXXXXX", async fn(
+      tmp_dir,
+    ) {
+      let db_path = @pathx.join(tmp_dir, ccs_sync_remote_db_sql())
+      let skills_path = @pathx.join(tmp_dir, ccs_sync_remote_skills_zip())
+      let manifest_path = @pathx.join(tmp_dir, ccs_sync_remote_manifest())
+      @fsx.write_bytes_to_file(db_path, snapshot.db_sql) catch {
+        error => return Err("Failed to stage db.sql: \{error}")
+      }
+      @fsx.write_bytes_to_file(skills_path, snapshot.skills_zip) catch {
+        error => return Err("Failed to stage skills.zip: \{error}")
+      }
+      @fsx.write_bytes_to_file(manifest_path, snapshot.manifest_bytes) catch {
+        error => return Err("Failed to stage manifest.json: \{error}")
+      }
+      let db_key = match
+        ccs_s3_remote_file_key(settings, ccs_sync_remote_db_sql()) {
+        Ok(key) => key
+        Err(error) => return Err(error)
+      }
+      let db_url = match ccs_s3_object_url(settings, db_key) {
+        Ok(url) => url
+        Err(error) => return Err(error)
+      }
+      match
+        ccs_s3_put_file(
+          settings,
+          db_url,
+          db_path,
+          "application/sql",
+          ccs_sync_remote_db_sql(),
+        ) {
+        Ok(_) => ()
+        Err(error) => return Err(error)
+      }
+      let skills_key = match
+        ccs_s3_remote_file_key(settings, ccs_sync_remote_skills_zip()) {
+        Ok(key) => key
+        Err(error) => return Err(error)
+      }
+      let skills_url = match ccs_s3_object_url(settings, skills_key) {
+        Ok(url) => url
+        Err(error) => return Err(error)
+      }
+      match
+        ccs_s3_put_file(
+          settings,
+          skills_url,
+          skills_path,
+          "application/zip",
+          ccs_sync_remote_skills_zip(),
+        ) {
+        Ok(_) => ()
+        Err(error) => return Err(error)
+      }
+      match
+        ccs_s3_put_file(
+          settings,
+          manifest_url,
+          manifest_path,
+          "application/json",
+          ccs_sync_remote_manifest(),
+        ) {
+        Ok(_) => ()
+        Err(error) => return Err(error)
+      }
+      let header_path = @pathx.join(tmp_dir, "manifest.headers")
+      etag = match ccs_s3_head_file_etag(settings, manifest_url, header_path) {
+        Ok(value) => value
+        Err(_) => None
+      }
+      Ok(())
+    }) {
+    Ok(_) => ()
+    Err(error) => return Err(error)
+  }
+  self.ccs_persist_s3_sync_success(settings, snapshot.manifest_hash, etag)
+  Ok({ "status": Json::string("uploaded") }.to_json())
+}
+
+///|
 fn ccs_webdav_remote_info_from_body(
   body : String,
   layout : String,
@@ -1203,6 +1700,103 @@ async fn ccs_webdav_sync_fetch_remote_info_json(
     return ccs_webdav_remote_info_from_body(legacy.body, "legacy", settings)
   }
   Err("WebDAV GET failed: HTTP \{legacy.code}")
+}
+
+///|
+async fn ccs_s3_fetch_manifest_snapshot(
+  settings : Json,
+) -> Result[CcsS3RemoteSnapshot, String]? {
+  let manifest_key = match
+    ccs_s3_remote_file_key(settings, ccs_sync_remote_manifest()) {
+    Ok(key) => key
+    Err(error) => return Some(Err(error))
+  }
+  let manifest_url = match ccs_s3_object_url(settings, manifest_key) {
+    Ok(url) => url
+    Err(error) => return Some(Err(error))
+  }
+  match
+    @fsx.with_temporary_directory("moonstat-s3-remote-info-XXXXXX", async fn(
+      tmp_dir,
+    ) {
+      let manifest_path = @pathx.join(tmp_dir, ccs_sync_remote_manifest())
+      let header_path = @pathx.join(tmp_dir, "manifest.headers")
+      let status = match
+        ccs_s3_get_file(
+          settings,
+          manifest_url,
+          manifest_path,
+          ccs_sync_remote_manifest(),
+          header_path~,
+        ) {
+        Ok(status) => status
+        Err(error) => return Err(error)
+      }
+      if status == 404 {
+        return Ok(None)
+      }
+      let body = @fs.read_file(manifest_path).text() catch {
+        error => return Err("Failed to read remote manifest: \{error}")
+      }
+      let manifest_json = @json.parse(body) catch {
+        _ => return Err("Remote manifest is not valid JSON.")
+      }
+      let manifest = match ccs_sync_manifest_info_from_json(manifest_json) {
+        Ok(manifest) => manifest
+        Err(error) => return Err(error)
+      }
+      Ok(
+        Some(CcsS3RemoteSnapshot::{
+          manifest,
+          manifest_bytes: @encoding/utf8.encode(body),
+          etag: ccs_s3_etag_from_headers(header_path),
+        }),
+      )
+    }) {
+    Ok(Some(snapshot)) => Some(Ok(snapshot))
+    Ok(None) => None
+    Err(error) => Some(Err(error))
+  }
+}
+
+///|
+async fn ccs_s3_sync_fetch_remote_info_json(
+  settings : Json,
+) -> Result[Json, String] {
+  match ccs_s3_fetch_manifest_snapshot(settings) {
+    None => Ok({ "empty": Json::boolean(true) }.to_json())
+    Some(Err(error)) => Err(error)
+    Some(Ok(remote)) => {
+      let remote_path = match ccs_s3_remote_dir_display(settings) {
+        Ok(path) => path
+        Err(error) => return Err(error)
+      }
+      let compatible = ccs_sync_validate_manifest_compat(
+          remote.manifest,
+          "current",
+        )
+        is Ok(_)
+      let db_compat_version = match
+        ccs_sync_effective_db_compat_version(remote.manifest, "current") {
+        Some(value) => Json::number(value.to_double())
+        None => Json::null()
+      }
+      Ok(
+        {
+          "deviceName": Json::string(remote.manifest.device_name),
+          "createdAt": Json::string(remote.manifest.created_at),
+          "snapshotId": Json::string(remote.manifest.snapshot_id),
+          "version": Json::number(remote.manifest.version.to_double()),
+          "protocolVersion": Json::number(remote.manifest.version.to_double()),
+          "dbCompatVersion": db_compat_version,
+          "compatible": Json::boolean(compatible),
+          "artifacts": Json::array(remote.manifest.artifacts.map(Json::string)),
+          "layout": Json::string("current"),
+          "remotePath": Json::string(remote_path),
+        }.to_json(),
+      )
+    }
+  }
 }
 
 ///|
@@ -1296,6 +1890,34 @@ async fn ccs_webdav_download_artifact(
   }
   let status = match
     ccs_webdav_get_file(settings, url, output_path, artifact_name) {
+    Ok(status) => status
+    Err(error) => return Err(error)
+  }
+  if status == 404 {
+    return Err("Remote artifact file missing: \{artifact_name}")
+  }
+  let content = @fs.read_file(output_path).text() catch {
+    error => return Err("Failed to read downloaded \{artifact_name}: \{error}")
+  }
+  Ok(@encoding/utf8.encode(content))
+}
+
+///|
+async fn ccs_s3_download_artifact(
+  settings : Json,
+  artifact_name : String,
+  output_path : String,
+) -> Result[Bytes, String] {
+  let key = match ccs_s3_remote_file_key(settings, artifact_name) {
+    Ok(key) => key
+    Err(error) => return Err(error)
+  }
+  let url = match ccs_s3_object_url(settings, key) {
+    Ok(url) => url
+    Err(error) => return Err(error)
+  }
+  let status = match
+    ccs_s3_get_file(settings, url, output_path, artifact_name) {
     Ok(status) => status
     Err(error) => return Err(error)
   }
@@ -1414,6 +2036,78 @@ async fn Gateway::ccs_webdav_sync_download_json(
       "sourcePath": Json::string(
         ccs_sync_remote_dir_display(remote_root, profile, remote.layout),
       ),
+    }.to_json(),
+  )
+}
+
+///|
+async fn Gateway::ccs_s3_sync_download_json(
+  self : Gateway,
+  settings : Json,
+) -> Result[Json, String] {
+  let remote = match ccs_s3_fetch_manifest_snapshot(settings) {
+    Some(Ok(remote)) => remote
+    Some(Err(error)) => return Err(error)
+    None => return Err("No downloadable sync data found on the remote.")
+  }
+  match ccs_sync_validate_manifest_compat(remote.manifest, "current") {
+    Ok(_) => ()
+    Err(error) => return Err(error)
+  }
+  let manifest_hash = ccs_sync_sha256_hex(remote.manifest_bytes)
+  match
+    @fsx.with_temporary_directory("moonstat-s3-download-XXXXXX", async fn(
+      tmp_dir,
+    ) {
+      let db_path = @pathx.join(tmp_dir, ccs_sync_remote_db_sql())
+      let skills_path = @pathx.join(tmp_dir, ccs_sync_remote_skills_zip())
+      let db_sql = match
+        ccs_s3_download_artifact(settings, ccs_sync_remote_db_sql(), db_path) {
+        Ok(bytes) => bytes
+        Err(error) => return Err(error)
+      }
+      match
+        ccs_sync_validate_artifact(
+          db_sql,
+          ccs_sync_remote_db_sql(),
+          remote.manifest,
+        ) {
+        Ok(_) => ()
+        Err(error) => return Err(error)
+      }
+      let skills_zip = match
+        ccs_s3_download_artifact(
+          settings,
+          ccs_sync_remote_skills_zip(),
+          skills_path,
+        ) {
+        Ok(bytes) => bytes
+        Err(error) => return Err(error)
+      }
+      match
+        ccs_sync_validate_artifact(
+          skills_zip,
+          ccs_sync_remote_skills_zip(),
+          remote.manifest,
+        ) {
+        Ok(_) => ()
+        Err(error) => return Err(error)
+      }
+      self.ccs_apply_webdav_snapshot(db_sql, skills_zip)
+    }) {
+    Ok(_) => ()
+    Err(error) => return Err(error)
+  }
+  self.ccs_persist_s3_sync_success(settings, manifest_hash, remote.etag)
+  let remote_path = match ccs_s3_remote_dir_display(settings) {
+    Ok(path) => path
+    Err(_) => ""
+  }
+  Ok(
+    {
+      "status": Json::string("downloaded"),
+      "sourceLayout": Json::string("current"),
+      "sourcePath": Json::string(remote_path),
     }.to_json(),
   )
 }
