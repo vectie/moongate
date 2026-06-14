@@ -258,6 +258,30 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /get_claude_config_status")))
   assert_true(routes.contains(Json::string("GET /get_config_status")))
   assert_true(routes.contains(Json::string("GET /get_claude_desktop_status")))
+  let control_routes = [
+    "GET /proxy/status", "POST /start_proxy_server", "POST /stop_proxy_server", "POST /stop_proxy_with_restore",
+    "GET|POST /proxy/config", "GET|POST /proxy/global-config", "GET|POST /proxy/app-config",
+    "GET|POST /proxy/default-cost-multiplier", "GET|POST /proxy/pricing-model-source",
+    "GET /proxy/provider-health", "GET|POST /proxy/circuit-breaker-config", "GET /proxy/circuit-breaker-stats",
+    "GET|POST|DELETE /proxy/failover-queue", "GET|POST /proxy/auto-failover-enabled",
+    "GET|POST /proxy/takeover-status", "GET /proxy/running", "POST /set_default_cost_multiplier",
+    "POST /set_pricing_model_source", "POST /switch_proxy_provider", "POST /sync_current_providers_live",
+    "GET /get_providers", "GET /get_current_provider", "POST /add_provider", "POST /update_provider",
+    "POST /switch_provider", "GET /read_live_provider_settings", "GET /get_provider_health",
+    "POST /add_to_failover_queue", "POST|DELETE /remove_from_failover_queue", "GET /get_available_providers_for_failover",
+    "POST /set_auto_failover_enabled", "POST /reset_circuit_breaker", "GET /get_mcp_servers",
+    "POST /upsert_mcp_server", "POST|DELETE /delete_mcp_server", "GET /get_prompts",
+    "POST /upsert_prompt", "POST|DELETE /delete_prompt", "POST /import_opencode_providers_from_live",
+    "GET /get_openclaw_live_provider_ids", "POST /import_openclaw_providers_from_live",
+    "GET /get_openclaw_live_provider", "GET /get_openclaw_default_model", "POST /set_openclaw_default_model",
+    "GET /get_hermes_live_provider_ids", "GET /get_hermes_live_provider", "GET /get_hermes_memory",
+    "POST /import_hermes_providers_from_live", "POST /set_hermes_memory", "GET /get_universal_providers",
+    "GET /get_universal_provider", "POST /upsert_universal_provider", "POST|DELETE /delete_universal_provider",
+    "GET|POST /test_api_endpoints", "GET|POST /fetch_models_for_config",
+  ]
+  for route in control_routes {
+    assert_true(routes.contains(Json::string(route)))
+  }
   assert_true(routes.contains(Json::string("POST /v1/messages")))
   assert_true(routes.contains(Json::string("POST /login")))
   assert_true(routes.contains(Json::string("ANY /v1beta/*path")))
