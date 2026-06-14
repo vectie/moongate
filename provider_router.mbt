@@ -35,6 +35,30 @@ pub fn CircuitBreakerConfig::default() -> CircuitBreakerConfig {
 }
 
 ///|
+fn ccs_proxy_max_retries_default(app_type : String) -> Int {
+  match app_type {
+    "claude" => 6
+    "gemini" => 5
+    _ => 3
+  }
+}
+
+///|
+fn ccs_proxy_circuit_config_default(app_type : String) -> CircuitBreakerConfig {
+  match app_type {
+    "claude" =>
+      {
+        failure_threshold: 8,
+        success_threshold: 3,
+        timeout_seconds: 90,
+        error_rate_threshold: 0.7,
+        min_requests: 15,
+      }
+    _ => CircuitBreakerConfig::default()
+  }
+}
+
+///|
 pub struct AllowResult {
   allowed : Bool
   used_half_open_permit : Bool
@@ -784,7 +808,7 @@ pub fn ProviderRouter::max_attempts_for_app(
   app_type : String,
 ) -> Int {
   if self.auto_failover_enabled.get(app_type).unwrap_or(false) {
-    self.max_retries.get(app_type).unwrap_or(3) + 1
+    self.max_retries_for_app(app_type) + 1
   } else {
     1
   }
@@ -1382,7 +1406,9 @@ fn ProviderRouter::max_retries_for_app(
   self : ProviderRouter,
   app_type : String,
 ) -> Int {
-  self.max_retries.get(app_type).unwrap_or(3)
+  self.max_retries
+  .get(app_type)
+  .unwrap_or(ccs_proxy_max_retries_default(app_type))
 }
 
 ///|
@@ -1624,6 +1650,9 @@ pub fn ProviderRouter::update_all_configs(
   config : CircuitBreakerConfig,
 ) -> Unit {
   self.circuit_config = config
+  for app_type in ["claude", "codex", "gemini"] {
+    self.app_circuit_configs.set(app_type, config)
+  }
   for breaker in self.circuit_breakers.values() {
     breaker.update_config(config)
   }
@@ -1643,6 +1672,16 @@ pub fn ProviderRouter::update_app_configs(
       breaker.update_config(config)
     }
   }
+}
+
+///|
+fn ProviderRouter::circuit_config_for_app(
+  self : ProviderRouter,
+  app_type : String,
+) -> CircuitBreakerConfig {
+  self.app_circuit_configs
+  .get(app_type)
+  .unwrap_or(ccs_proxy_circuit_config_default(app_type))
 }
 
 ///|
@@ -1769,10 +1808,7 @@ fn ProviderRouter::failure_threshold_for_app(
   self : ProviderRouter,
   app_type : String,
 ) -> Int {
-  self.app_circuit_configs
-  .get(app_type)
-  .map(fn(config) { config.failure_threshold })
-  .unwrap_or(self.circuit_config.failure_threshold)
+  self.circuit_config_for_app(app_type).failure_threshold
 }
 
 ///|

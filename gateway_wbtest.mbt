@@ -1546,12 +1546,12 @@ test "proxy config alias matches ccs default shape" {
   }
   assert_eq(config["listen_address"], Json::string("127.0.0.2"))
   assert_eq(config["listen_port"], Json::number(17001.0))
-  assert_eq(config["max_retries"], Json::number(3.0))
+  assert_eq(config["max_retries"], Json::number(6.0))
   assert_eq(config["request_timeout"], Json::number(600.0))
   assert_eq(config["enable_logging"], Json::boolean(true))
   assert_eq(config["live_takeover_active"], Json::boolean(false))
-  assert_eq(config["streaming_first_byte_timeout"], Json::number(60.0))
-  assert_eq(config["streaming_idle_timeout"], Json::number(120.0))
+  assert_eq(config["streaming_first_byte_timeout"], Json::number(90.0))
+  assert_eq(config["streaming_idle_timeout"], Json::number(180.0))
   assert_eq(config["non_streaming_timeout"], Json::number(600.0))
 }
 
@@ -1737,24 +1737,30 @@ test "proxy app config alias matches ccs app config shape" {
   assert_eq(config["enabled"], Json::boolean(true))
   assert_eq(config["autoFailoverEnabled"], Json::boolean(false))
   assert_eq(config["auto_failover_enabled"], Json::boolean(false))
-  assert_eq(config["maxRetries"], Json::number(3.0))
-  assert_eq(config["max_retries"], Json::number(3.0))
-  assert_eq(config["streamingFirstByteTimeout"], Json::number(60.0))
-  assert_eq(config["streaming_first_byte_timeout"], Json::number(60.0))
-  assert_eq(config["streamingIdleTimeout"], Json::number(120.0))
-  assert_eq(config["streaming_idle_timeout"], Json::number(120.0))
+  assert_eq(config["maxRetries"], Json::number(6.0))
+  assert_eq(config["max_retries"], Json::number(6.0))
+  assert_eq(config["streamingFirstByteTimeout"], Json::number(90.0))
+  assert_eq(config["streaming_first_byte_timeout"], Json::number(90.0))
+  assert_eq(config["streamingIdleTimeout"], Json::number(180.0))
+  assert_eq(config["streaming_idle_timeout"], Json::number(180.0))
   assert_eq(config["nonStreamingTimeout"], Json::number(600.0))
   assert_eq(config["non_streaming_timeout"], Json::number(600.0))
-  assert_eq(config["circuitFailureThreshold"], Json::number(4.0))
-  assert_eq(config["circuit_failure_threshold"], Json::number(4.0))
-  assert_eq(config["circuitSuccessThreshold"], Json::number(2.0))
-  assert_eq(config["circuit_success_threshold"], Json::number(2.0))
-  assert_eq(config["circuitTimeoutSeconds"], Json::number(60.0))
-  assert_eq(config["circuit_timeout_seconds"], Json::number(60.0))
-  assert_eq(config["circuitErrorRateThreshold"], Json::number(0.6))
-  assert_eq(config["circuit_error_rate_threshold"], Json::number(0.6))
-  assert_eq(config["circuitMinRequests"], Json::number(10.0))
-  assert_eq(config["circuit_min_requests"], Json::number(10.0))
+  assert_eq(config["circuitFailureThreshold"], Json::number(8.0))
+  assert_eq(config["circuit_failure_threshold"], Json::number(8.0))
+  assert_eq(config["circuitSuccessThreshold"], Json::number(3.0))
+  assert_eq(config["circuit_success_threshold"], Json::number(3.0))
+  assert_eq(config["circuitTimeoutSeconds"], Json::number(90.0))
+  assert_eq(config["circuit_timeout_seconds"], Json::number(90.0))
+  assert_eq(config["circuitErrorRateThreshold"], Json::number(0.7))
+  assert_eq(config["circuit_error_rate_threshold"], Json::number(0.7))
+  assert_eq(config["circuitMinRequests"], Json::number(15.0))
+  assert_eq(config["circuit_min_requests"], Json::number(15.0))
+  guard gateway.proxy_app_config_json("gemini") is Object(gemini) else {
+    fail("expected gemini proxy app config object")
+  }
+  assert_eq(gemini["maxRetries"], Json::number(5.0))
+  assert_eq(gemini["streamingFirstByteTimeout"], Json::number(60.0))
+  assert_eq(gemini["circuitFailureThreshold"], Json::number(4.0))
   guard gateway.proxy_app_config_json("unknown") is Object(unknown) else {
     fail("expected unknown proxy app config object")
   }
@@ -1902,6 +1908,32 @@ test "proxy app config state updates ccs app fields" {
   assert_eq(config["circuitTimeoutSeconds"], Json::number(44.0))
   assert_eq(config["circuitErrorRateThreshold"], Json::number(0.4))
   assert_eq(config["circuitMinRequests"], Json::number(12.0))
+}
+
+///|
+test "proxy app config circuit updates are app scoped" {
+  let gateway = Gateway::new(port=17009, host="127.0.0.10", model="gpt-5")
+  gateway.provider_router.update_app_configs("claude", {
+    failure_threshold: 9,
+    success_threshold: 4,
+    timeout_seconds: 77,
+    error_rate_threshold: 0.5,
+    min_requests: 13,
+  })
+  guard gateway.proxy_app_config_json("claude") is Object(claude) else {
+    fail("expected claude app config object")
+  }
+  guard gateway.proxy_app_config_json("codex") is Object(codex) else {
+    fail("expected codex app config object")
+  }
+  assert_eq(claude["circuitFailureThreshold"], Json::number(9.0))
+  assert_eq(claude["circuitSuccessThreshold"], Json::number(4.0))
+  assert_eq(claude["circuitTimeoutSeconds"], Json::number(77.0))
+  assert_eq(claude["circuitErrorRateThreshold"], Json::number(0.5))
+  assert_eq(claude["circuitMinRequests"], Json::number(13.0))
+  assert_eq(codex["circuitFailureThreshold"], Json::number(4.0))
+  assert_eq(codex["circuitSuccessThreshold"], Json::number(2.0))
+  assert_eq(codex["circuitTimeoutSeconds"], Json::number(60.0))
 }
 
 ///|

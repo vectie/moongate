@@ -8223,17 +8223,52 @@ async fn Gateway::handle_proxy_config(
 
 ///|
 fn Gateway::proxy_config_json(self : Gateway) -> Json {
+  let app_type = "claude"
+  let streaming_first_byte_timeout = self.proxy_streaming_first_byte_timeout
+    .get(app_type)
+    .unwrap_or(ccs_proxy_streaming_first_byte_timeout_default(app_type))
+  let streaming_idle_timeout = self.proxy_streaming_idle_timeout
+    .get(app_type)
+    .unwrap_or(ccs_proxy_streaming_idle_timeout_default(app_type))
+  let non_streaming_timeout = self.proxy_non_streaming_timeout
+    .get(app_type)
+    .unwrap_or(ccs_proxy_non_streaming_timeout_default(app_type))
   {
     "listen_address": Json::string(self.proxy_listen_address),
     "listen_port": Json::number(self.proxy_listen_port.to_double()),
-    "max_retries": Json::number(3.0),
+    "max_retries": Json::number(
+      self.provider_router.max_retries_for_app(app_type).to_double(),
+    ),
     "request_timeout": Json::number(600.0),
     "enable_logging": Json::boolean(self.proxy_enable_logging),
     "live_takeover_active": Json::boolean(self.proxy_takeover_active()),
-    "streaming_first_byte_timeout": Json::number(60.0),
-    "streaming_idle_timeout": Json::number(120.0),
-    "non_streaming_timeout": Json::number(600.0),
+    "streaming_first_byte_timeout": Json::number(
+      streaming_first_byte_timeout.to_double(),
+    ),
+    "streaming_idle_timeout": Json::number(streaming_idle_timeout.to_double()),
+    "non_streaming_timeout": Json::number(non_streaming_timeout.to_double()),
   }.to_json()
+}
+
+///|
+fn ccs_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int {
+  match app_type {
+    "claude" => 90
+    _ => 60
+  }
+}
+
+///|
+fn ccs_proxy_streaming_idle_timeout_default(app_type : String) -> Int {
+  match app_type {
+    "claude" => 180
+    _ => 120
+  }
+}
+
+///|
+fn ccs_proxy_non_streaming_timeout_default(_app_type : String) -> Int {
+  600
 }
 
 ///|
@@ -8449,7 +8484,7 @@ async fn Gateway::handle_proxy_app_config(
 
 ///|
 fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
-  let circuit = self.provider_router.circuit_config
+  let circuit = self.provider_router.circuit_config_for_app(app_type)
   let enabled = self.proxy_app_enabled_for_app(app_type)
   let auto_failover_enabled = self.provider_router.auto_failover_enabled_for_app(
     app_type,
@@ -8457,13 +8492,13 @@ fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
   let max_retries = self.provider_router.max_retries_for_app(app_type)
   let streaming_first_byte_timeout = self.proxy_streaming_first_byte_timeout
     .get(app_type)
-    .unwrap_or(60)
+    .unwrap_or(ccs_proxy_streaming_first_byte_timeout_default(app_type))
   let streaming_idle_timeout = self.proxy_streaming_idle_timeout
     .get(app_type)
-    .unwrap_or(120)
+    .unwrap_or(ccs_proxy_streaming_idle_timeout_default(app_type))
   let non_streaming_timeout = self.proxy_non_streaming_timeout
     .get(app_type)
-    .unwrap_or(600)
+    .unwrap_or(ccs_proxy_non_streaming_timeout_default(app_type))
   {
     "appType": Json::string(app_type),
     "app_type": Json::string(app_type),
@@ -8765,9 +8800,9 @@ async fn Gateway::apply_proxy_app_config_request(
     proxy_circuit_config_from_request(
       r.path,
       config,
-      self.provider_router.circuit_config,
+      self.provider_router.circuit_config_for_app(app_type),
     ) {
-    Some(config) => self.provider_router.update_all_configs(config)
+    Some(config) => self.provider_router.update_app_configs(app_type, config)
     None => ()
   }
   Some(app_type)
