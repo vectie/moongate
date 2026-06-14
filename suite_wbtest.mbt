@@ -511,15 +511,8 @@ fn suite_routes_include_path(routes : Array[Json], path : String) -> Bool {
 }
 
 ///|
-test "suite manifest covers current CCS Tauri command surface" {
-  let manifest = moonstat_suite_manifest_json(
-    host="127.0.0.1",
-    port=15721,
-    model="gpt-5",
-  )
-  guard manifest is Object(obj) else { fail("expected manifest object") }
-  guard obj["routes"] is Array(routes) else { fail("expected routes") }
-  let ccs_commands = [
+fn ccs_tauri_command_surface() -> Array[String] {
+  [
     "get_providers", "get_current_provider", "add_provider", "update_provider", "delete_provider",
     "remove_provider_from_live_config", "switch_provider", "import_default_config",
     "get_claude_desktop_status", "get_claude_desktop_default_routes", "import_claude_desktop_providers_from_claude",
@@ -599,9 +592,42 @@ test "suite manifest covers current CCS Tauri command surface" {
     "search_daily_memory_files", "open_workspace_directory", "enter_lightweight_mode",
     "exit_lightweight_mode", "is_lightweight_mode",
   ]
+}
+
+///|
+test "suite manifest covers current CCS Tauri command surface" {
+  let manifest = moonstat_suite_manifest_json(
+    host="127.0.0.1",
+    port=15721,
+    model="gpt-5",
+  )
+  guard manifest is Object(obj) else { fail("expected manifest object") }
+  guard obj["routes"] is Array(routes) else { fail("expected routes") }
+  let ccs_commands = ccs_tauri_command_surface()
   assert_eq(ccs_commands.length(), 274)
   for command in ccs_commands {
     assert_true(suite_routes_include_path(routes, "/\{command}"))
+  }
+}
+
+///|
+fn gateway_source_registers_path(source : String, path : String) -> Bool {
+  let marker = "\"\{path}\""
+  for segment in source.split("router.add_handler(") {
+    if segment.contains(marker) && segment.contains("=>") {
+      return true
+    }
+  }
+  false
+}
+
+///|
+async test "gateway registers current CCS Tauri command handlers" {
+  let source = @fsx.read_file("gateway.mbt")
+  let ccs_commands = ccs_tauri_command_surface()
+  assert_eq(ccs_commands.length(), 274)
+  for command in ccs_commands {
+    assert_true(gateway_source_registers_path(source, "/\{command}"))
   }
 }
 
