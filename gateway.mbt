@@ -1711,10 +1711,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Delete, "/delete_model_pricing", (r, w) => {
     self.handle_usage_delete_model_pricing(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/delete_model_pricing", (r, w) => {
+    self.handle_usage_delete_model_pricing(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/usage/request-detail/*path", (r, w) => {
     self.handle_usage_request_detail(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_request_detail", (r, w) => {
+    self.handle_usage_request_detail(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_request_detail", (r, w) => {
     self.handle_usage_request_detail(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/stream_check_provider", (r, w) => {
@@ -9569,7 +9575,8 @@ async fn Gateway::handle_usage_update_model_pricing(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_pricing_from_query(r.path) is Some(pricing) else {
+  let body = proxy_json_body(r)
+  guard usage_pricing_from_request(r.path, body) is Some(pricing) else {
     write_usage_bad_request(w, "invalid_model_pricing")
     return
   }
@@ -9594,7 +9601,9 @@ async fn Gateway::handle_usage_delete_model_pricing(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard usage_query_value_any(r.path, "model_id", "modelId") is Some(model_id) else {
+  let body = proxy_json_body(r)
+  guard usage_string_from_request(r.path, body, ["model_id", "modelId"])
+    is Some(model_id) else {
     write_usage_bad_request(w, "missing_model_id")
     return
   }
@@ -9615,7 +9624,8 @@ async fn Gateway::handle_usage_request_detail(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let request_id = usage_request_detail_id(r.path.to_owned())
+  let body = proxy_json_body(r)
+  let request_id = usage_request_detail_id_from_request(r.path, body)
   let pricing_overrides = self.pricing_override_rows()
   let backfilled = self.stats.backfill_missing_usage_costs(
     pricing_overrides,
@@ -9974,6 +9984,17 @@ fn usage_request_detail_id(path : String) -> String {
     None => raw
   }
   usage_url_decode(without_query[:])
+}
+
+///|
+fn usage_request_detail_id_from_request(
+  path : StringView,
+  body : Json?,
+) -> String {
+  match usage_string_from_request(path, body, ["request_id", "requestId"]) {
+    Some(request_id) => request_id
+    None => usage_request_detail_id(path.to_owned())
+  }
 }
 
 ///|
@@ -11032,27 +11053,32 @@ fn usage_hex_value(ch : Char) -> Int? {
 }
 
 ///|
-fn usage_pricing_from_query(path : StringView) -> ModelPricing? {
-  guard usage_query_value_any(path, "model_id", "modelId") is Some(model_id) else {
+fn usage_pricing_from_request(path : StringView, body : Json?) -> ModelPricing? {
+  guard usage_string_from_request(path, body, ["model_id", "modelId"])
+    is Some(model_id) else {
     return None
   }
-  guard usage_query_value_any(path, "display_name", "displayName")
+  guard usage_string_from_request(path, body, ["display_name", "displayName"])
     is Some(display_name) else {
     return None
   }
-  guard usage_query_value_any(path, "input_cost", "inputCost")
+  guard usage_string_from_request(path, body, ["input_cost", "inputCost"])
     is Some(input_cost) else {
     return None
   }
-  guard usage_query_value_any(path, "output_cost", "outputCost")
+  guard usage_string_from_request(path, body, ["output_cost", "outputCost"])
     is Some(output_cost) else {
     return None
   }
-  guard usage_query_value_any(path, "cache_read_cost", "cacheReadCost")
+  guard usage_string_from_request(path, body, [
+      "cache_read_cost", "cacheReadCost",
+    ])
     is Some(cache_read_cost) else {
     return None
   }
-  guard usage_query_value_any(path, "cache_creation_cost", "cacheCreationCost")
+  guard usage_string_from_request(path, body, [
+      "cache_creation_cost", "cacheCreationCost",
+    ])
     is Some(cache_creation_cost) else {
     return None
   }

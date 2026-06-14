@@ -1104,9 +1104,9 @@ test "codex provider forward failures use ccs proxy error shape" {
 }
 
 ///|
-test "usage pricing query helpers parse and validate ccs pricing update" {
+test "usage pricing helpers parse and validate ccs pricing query" {
   let path = "/usage/model-pricing?modelId=test-model&displayName=Test%20Model&inputCost=1.25&outputCost=2&cacheReadCost=0.10&cacheCreationCost=0"
-  guard usage_pricing_from_query(path) is Some(pricing) else {
+  guard usage_pricing_from_request(path, None) is Some(pricing) else {
     fail("expected pricing")
   }
   assert_eq(pricing.model_id, "test-model")
@@ -1116,17 +1116,63 @@ test "usage pricing query helpers parse and validate ccs pricing update" {
   assert_eq(pricing.cache_read_cost_per_million, "0.10")
   assert_eq(pricing.cache_creation_cost_per_million, "0")
   assert_true(
-    usage_pricing_from_query(
+    usage_pricing_from_request(
       "/usage/model-pricing?modelId=test&displayName=Test&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0",
+      None,
     )
     is None,
   )
   assert_true(
-    usage_pricing_from_query(
+    usage_pricing_from_request(
       "/usage/model-pricing?modelId=test&displayName=Test&inputCost=abc&outputCost=2&cacheReadCost=0&cacheCreationCost=0",
+      None,
     )
     is None,
   )
+}
+
+///|
+test "usage pricing helpers parse ccs structured body update" {
+  let body = {
+    "modelId": Json::string("body-model"),
+    "displayName": Json::string("Body Model"),
+    "inputCost": Json::number(1.25),
+    "outputCost": Json::string("2"),
+    "cacheReadCost": Json::string("0.10"),
+    "cacheCreationCost": Json::number(0.0),
+  }.to_json()
+  guard usage_pricing_from_request("/update_model_pricing", Some(body))
+    is Some(pricing) else {
+    fail("expected body pricing")
+  }
+  assert_eq(pricing.model_id, "body-model")
+  assert_eq(pricing.display_name, "Body Model")
+  assert_eq(pricing.input_cost_per_million, "1.25")
+  assert_eq(pricing.output_cost_per_million, "2")
+  assert_eq(pricing.cache_read_cost_per_million, "0.10")
+  assert_eq(pricing.cache_creation_cost_per_million, "0")
+}
+
+///|
+test "usage pricing helpers prefer query over body args" {
+  let body = {
+    "modelId": Json::string("body-model"),
+    "displayName": Json::string("Body Model"),
+    "inputCost": Json::string("1"),
+    "outputCost": Json::string("2"),
+    "cacheReadCost": Json::string("3"),
+    "cacheCreationCost": Json::string("4"),
+  }.to_json()
+  let path = "/update_model_pricing?modelId=query-model&displayName=Query%20Model&inputCost=5&outputCost=6&cacheReadCost=7&cacheCreationCost=8"
+  guard usage_pricing_from_request(path, Some(body)) is Some(pricing) else {
+    fail("expected query pricing")
+  }
+  assert_eq(pricing.model_id, "query-model")
+  assert_eq(pricing.display_name, "Query Model")
+  assert_eq(pricing.input_cost_per_million, "5")
+  assert_eq(pricing.output_cost_per_million, "6")
+  assert_eq(pricing.cache_read_cost_per_million, "7")
+  assert_eq(pricing.cache_creation_cost_per_million, "8")
 }
 
 ///|
@@ -1138,6 +1184,42 @@ test "usage request detail id accepts ccs get_request_detail query" {
   assert_eq(
     usage_request_detail_id("/get_request_detail?request_id=req_123"),
     "req_123",
+  )
+}
+
+///|
+test "usage request detail id accepts ccs structured body" {
+  let body = { "requestId": Json::string("session:body/1") }.to_json()
+  assert_eq(
+    usage_request_detail_id_from_request("/get_request_detail", Some(body)),
+    "session:body/1",
+  )
+  let snake_body = { "request_id": Json::string("req_body_2") }.to_json()
+  assert_eq(
+    usage_request_detail_id_from_request(
+      "/get_request_detail",
+      Some(snake_body),
+    ),
+    "req_body_2",
+  )
+}
+
+///|
+test "usage model id helpers accept body and query precedence" {
+  let body = { "modelId": Json::string("body-model") }.to_json()
+  assert_eq(
+    usage_string_from_request("/delete_model_pricing", Some(body), [
+      "model_id", "modelId",
+    ]),
+    Some("body-model"),
+  )
+  assert_eq(
+    usage_string_from_request(
+      "/delete_model_pricing?modelId=query-model",
+      Some(body),
+      ["model_id", "modelId"],
+    ),
+    Some("query-model"),
   )
 }
 
