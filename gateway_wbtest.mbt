@@ -240,7 +240,12 @@ test "ccs workspace filename validators mirror OpenClaw whitelist" {
   assert_true(ccs_validate_daily_memory_filename("2026-06-14.md"))
   assert_false(ccs_validate_daily_memory_filename("2026-6-14.md"))
   assert_false(ccs_validate_daily_memory_filename("../2026-06-14.md"))
+  assert_false(ccs_validate_daily_memory_filename("2026-06-14xmd"))
+  assert_false(ccs_validate_daily_memory_filename("2026-06-140md"))
   assert_eq(ccs_daily_memory_date("2026-06-14.md"), "2026-06-14")
+  assert_true(ccs_daily_memory_list_filename("notes.md"))
+  assert_false(ccs_validate_daily_memory_filename("notes.md"))
+  assert_eq(ccs_daily_memory_date("notes.md"), "notes")
 }
 
 ///|

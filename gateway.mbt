@@ -4091,7 +4091,13 @@ fn ccs_validate_daily_memory_filename(filename : String) -> Bool {
   ccs_ascii_digit_at(filename, 6) &&
   filename[7] == '-' &&
   ccs_ascii_digit_at(filename, 8) &&
-  ccs_ascii_digit_at(filename, 9)
+  ccs_ascii_digit_at(filename, 9) &&
+  filename[10] == '.'
+}
+
+///|
+fn ccs_daily_memory_list_filename(filename : String) -> Bool {
+  filename.has_suffix(".md")
 }
 
 ///|
@@ -4102,7 +4108,13 @@ fn ccs_ascii_digit_at(value : String, index : Int) -> Bool {
 
 ///|
 fn ccs_daily_memory_date(filename : String) -> String {
-  filename[:10].to_owned()
+  if filename.has_suffix(".md") && filename.length() >= 3 {
+    filename[:filename.length() - 3].to_owned()
+  } else if filename.length() >= 10 {
+    filename[:10].to_owned()
+  } else {
+    filename
+  }
 }
 
 ///|
@@ -4207,7 +4219,7 @@ async fn ccs_list_daily_memory_files_json() -> Json {
   }
   for entry in entries {
     if entry.kind is @fsx.FileKind::Regular &&
-      ccs_validate_daily_memory_filename(entry.name) {
+      ccs_daily_memory_list_filename(entry.name) {
       filenames.push(entry.name)
       rows_by_filename[entry.name] = ccs_daily_memory_info_json(
         entry.path,
@@ -4243,7 +4255,7 @@ async fn ccs_search_daily_memory_files_json(query : String) -> Json {
   }
   for entry in entries {
     if !(entry.kind is @fsx.FileKind::Regular) ||
-      !ccs_validate_daily_memory_filename(entry.name) {
+      !ccs_daily_memory_list_filename(entry.name) {
       continue
     }
     let content = @fsx.read_file(entry.path) catch { _ => "" }
