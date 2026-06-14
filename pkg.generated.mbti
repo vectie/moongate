@@ -507,6 +507,7 @@ pub fn ProviderRouter::set_current_provider(Self, String, String) -> Unit
 pub fn ProviderRouter::set_failover_queue(Self, String, Array[String]) -> Unit
 pub fn ProviderRouter::set_max_retries(Self, String, Int) -> Unit
 pub fn ProviderRouter::update_all_configs(Self, CircuitBreakerConfig) -> Unit
+pub fn ProviderRouter::update_app_configs(Self, String, CircuitBreakerConfig) -> Unit
 pub fn ProviderRouter::upsert_provider(Self, ProviderRouteTarget) -> Unit
 
 pub struct ProviderSelection {

@@ -241,6 +241,66 @@ test "provider router neutral permit release frees half open slot" {
 }
 
 ///|
+test "provider router updates circuit configs per app like ccs" {
+  let router = ProviderRouter::new(circuit_config={
+    failure_threshold: 4,
+    success_threshold: 2,
+    timeout_seconds: 60,
+    error_rate_threshold: 0.6,
+    min_requests: 10,
+  })
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="claude-a",
+      provider_name="Claude A",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-a",
+      provider_name="Codex A",
+    ),
+  )
+  assert_true(router.allow_provider_request("claude-a", "claude").allowed)
+  assert_true(router.allow_provider_request("codex-a", "codex").allowed)
+  router.update_app_configs("claude", {
+    failure_threshold: 1,
+    success_threshold: 1,
+    timeout_seconds: 60,
+    error_rate_threshold: 0.6,
+    min_requests: 10,
+  })
+  router.record_result("claude-a", "claude", false, false, now_ms=1000)
+  router.record_result("codex-a", "codex", false, false, now_ms=1000)
+  guard router.get_circuit_breaker_stats("claude-a", "claude")
+    is Some(claude_stats) else {
+    fail("expected claude stats")
+  }
+  guard router.get_circuit_breaker_stats("codex-a", "codex")
+    is Some(codex_stats) else {
+    fail("expected codex stats")
+  }
+  assert_true(claude_stats.state == Open)
+  assert_true(codex_stats.state == Closed)
+
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="claude-b",
+      provider_name="Claude B",
+    ),
+  )
+  router.record_result("claude-b", "claude", false, false, now_ms=1000)
+  guard router.get_circuit_breaker_stats("claude-b", "claude")
+    is Some(new_claude_stats) else {
+    fail("expected new claude stats")
+  }
+  assert_true(new_claude_stats.state == Open)
+}
+
+///|
 test "provider router reports all providers circuit open" {
   let router = ProviderRouter::new(circuit_config={
     failure_threshold: 1,

@@ -601,6 +601,7 @@ pub struct ProviderRouter {
   auto_failover_enabled : Map[String, Bool]
   max_retries : Map[String, Int]
   circuit_breakers : Map[String, CircuitBreaker]
+  priv app_circuit_configs : Map[String, CircuitBreakerConfig]
   mut circuit_config : CircuitBreakerConfig
 }
 
@@ -618,6 +619,7 @@ pub fn ProviderRouter::new(
     auto_failover_enabled: Map([], capacity=0),
     max_retries: Map([], capacity=0),
     circuit_breakers: Map([], capacity=0),
+    app_circuit_configs: Map([], capacity=0),
     circuit_config,
   }
 }
@@ -1455,6 +1457,22 @@ pub fn ProviderRouter::update_all_configs(
 }
 
 ///|
+pub fn ProviderRouter::update_app_configs(
+  self : ProviderRouter,
+  app_type : String,
+  config : CircuitBreakerConfig,
+) -> Unit {
+  self.app_circuit_configs.set(app_type, config)
+  let prefix = "\{app_type}:"
+  for key in self.circuit_breakers.keys() {
+    if key.has_prefix(prefix) {
+      guard self.circuit_breakers.get(key) is Some(breaker) else { continue }
+      breaker.update_config(config)
+    }
+  }
+}
+
+///|
 pub fn ProviderRouter::get_circuit_breaker_stats(
   self : ProviderRouter,
   provider_id : String,
@@ -1575,7 +1593,10 @@ fn ProviderRouter::breaker_for(
   match self.circuit_breakers.get(key) {
     Some(breaker) => breaker
     None => {
-      let breaker = CircuitBreaker::new(config=self.circuit_config)
+      let config = self.app_circuit_configs
+        .get(app_type)
+        .unwrap_or(self.circuit_config)
+      let breaker = CircuitBreaker::new(config~)
       self.circuit_breakers.set(key, breaker)
       breaker
     }
