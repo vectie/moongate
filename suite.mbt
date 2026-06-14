@@ -414,11 +414,11 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
 ///|
 fn moonstat_suite_routes() -> Array[String] {
   [
-    "GET /participant/register", "GET /health", "GET /status", "GET /stats", "GET /usage/logs",
-    "GET /models", "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
-    "GET /usage/trends", "GET /usage/provider-limits", "GET /usage/model-stats",
+    "GET /participant/register", "GET /health", "GET /status", "GET /stats", "GET|POST /usage/logs",
+    "GET /models", "GET|POST /usage/summary", "GET|POST /usage/summary/by-app", "GET|POST /usage/provider-stats",
+    "GET|POST /usage/trends", "GET|POST /usage/provider-limits", "GET|POST /usage/model-stats",
     "GET|POST /usage/data-sources", "POST /usage/sync-session", "GET /usage/model-pricing",
-    "POST /usage/model-pricing", "DELETE /usage/model-pricing", "GET /usage/request-detail/{request_id}",
+    "POST /usage/model-pricing", "DELETE /usage/model-pricing", "GET /usage/request-detail/*path",
     "GET|POST /get_usage_summary", "GET|POST /get_usage_summary_by_app", "GET|POST /get_usage_trends",
     "GET|POST /get_provider_stats", "GET|POST /get_model_stats", "GET|POST /get_request_logs",
     "GET|POST /get_request_detail", "GET /get_model_pricing", "POST /update_model_pricing",
