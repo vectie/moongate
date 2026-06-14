@@ -5,12 +5,12 @@
 
 MOONBIT_FFI_EXPORT
 void *
-moonbit_moonclaw_c_malloc(uint64_t size) {
+moonbit_moonstat_c_malloc(uint64_t size) {
   return malloc(size);
 }
 
 MOONBIT_FFI_EXPORT
 void
-moonbit_moonclaw_c_free(void *ptr) {
+moonbit_moonstat_c_free(void *ptr) {
   free(ptr);
 }
