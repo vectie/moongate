@@ -69,6 +69,7 @@ test "suite manifest publishes moonstat service contract" {
   }
   assert_true(capabilities.contains(Json::string("openai-compatible-proxy")))
   assert_true(capabilities.contains(Json::string("ccs-usage-statistics")))
+  assert_true(capabilities.contains(Json::string("ccs-skills-management")))
   assert_true(capabilities.contains(Json::string("suite-discovery")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /stats")))
@@ -118,6 +119,13 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET|POST /get_tool_versions")))
   assert_true(routes.contains(Json::string("GET|POST /open_external")))
   assert_true(routes.contains(Json::string("GET /is_lightweight_mode")))
+  assert_true(routes.contains(Json::string("GET /get_installed_skills")))
+  assert_true(routes.contains(Json::string("GET /get_skill_backups")))
+  assert_true(routes.contains(Json::string("POST /install_skill_unified")))
+  assert_true(routes.contains(Json::string("POST /toggle_skill_app")))
+  assert_true(routes.contains(Json::string("GET|POST /search_skills_sh")))
+  assert_true(routes.contains(Json::string("GET /get_skill_repos")))
+  assert_true(routes.contains(Json::string("POST /install_skills_from_zip")))
   assert_true(
     routes.contains(Json::string("GET /get_default_cost_multiplier_test_hook")),
   )
@@ -176,6 +184,11 @@ test "suite manifest publishes moonstat service contract" {
   )
   guard obj["commands"] is Object(commands) else { fail("expected commands") }
   assert_eq(commands["start"], Json::string("moonstat start --port 15721"))
+  assert_eq(
+    commands["skills_list"],
+    Json::string("moonstat get_installed_skills"),
+  )
+  assert_eq(commands["skills_repos"], Json::string("moonstat get_skill_repos"))
   assert_eq(
     commands["suite_write_status"],
     Json::string("moonstat suite write-status"),

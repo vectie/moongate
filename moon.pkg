@@ -7,6 +7,7 @@ import {
   "moonbitlang/core/random",
   "moonbitlang/core/string",
   "moonbitlang/async",
+  "moonbitlang/async/fs",
   "moonbitlang/async/http",
   "moonbitlang/async/io",
   "vectie/moonstat/internal/httpx",

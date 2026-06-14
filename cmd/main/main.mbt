@@ -421,6 +421,86 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_usage_endpoint(arr, "/open_file_dialog")
     ["open_zip_file_dialog", ..] | ["open-zip-file-dialog", ..] =>
       check_usage_endpoint(arr, "/open_zip_file_dialog")
+    ["get_installed_skills", ..] | ["get-installed-skills", ..] =>
+      check_usage_endpoint(arr, "/get_installed_skills")
+    ["get_skill_backups", ..] | ["get-skill-backups", ..] =>
+      check_usage_endpoint(arr, "/get_skill_backups")
+    ["delete_skill_backup", ..] | ["delete-skill-backup", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_backup_id_path(arr, "/delete_skill_backup"),
+        "Skills",
+      )
+    ["restore_skill_backup", ..] | ["restore-skill-backup", ..] =>
+      check_json_post_endpoint(arr, skill_restore_backup_path(arr), "Skills")
+    ["install_skill_unified", ..] | ["install-skill-unified", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_install_path(arr, "/install_skill_unified"),
+        "Skills",
+      )
+    ["uninstall_skill_unified", ..] | ["uninstall-skill-unified", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_id_path(arr, "/uninstall_skill_unified"),
+        "Skills",
+      )
+    ["toggle_skill_app", ..] | ["toggle-skill-app", ..] =>
+      check_json_post_endpoint(arr, skill_toggle_app_path(arr), "Skills")
+    ["scan_unmanaged_skills", ..] | ["scan-unmanaged-skills", ..] =>
+      check_usage_endpoint(arr, "/scan_unmanaged_skills")
+    ["import_skills_from_apps", ..] | ["import-skills-from-apps", ..] =>
+      check_json_post_endpoint(arr, "/import_skills_from_apps", "Skills")
+    ["discover_available_skills", ..] | ["discover-available-skills", ..] =>
+      check_usage_endpoint(arr, "/discover_available_skills")
+    ["check_skill_updates", ..] | ["check-skill-updates", ..] =>
+      check_usage_endpoint(arr, "/check_skill_updates")
+    ["update_skill", ..] | ["update-skill", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_id_path(arr, "/update_skill"),
+        "Skills",
+      )
+    ["migrate_skill_storage", ..] | ["migrate-skill-storage", ..] =>
+      check_json_post_endpoint(arr, "/migrate_skill_storage", "Skills")
+    ["search_skills_sh", ..] | ["search-skills-sh", ..] =>
+      check_usage_endpoint(arr, skill_search_path(arr))
+    ["get_skills", ..] | ["get-skills", ..] =>
+      check_usage_endpoint(arr, "/get_skills")
+    ["get_skills_for_app", ..] | ["get-skills-for-app", ..] =>
+      check_usage_endpoint(arr, skill_app_path(arr, "/get_skills_for_app"))
+    ["install_skill", ..] | ["install-skill", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_install_path(arr, "/install_skill"),
+        "Skills",
+      )
+    ["install_skill_for_app", ..] | ["install-skill-for-app", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_install_path(arr, "/install_skill_for_app"),
+        "Skills",
+      )
+    ["uninstall_skill", ..] | ["uninstall-skill", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_id_path(arr, "/uninstall_skill"),
+        "Skills",
+      )
+    ["uninstall_skill_for_app", ..] | ["uninstall-skill-for-app", ..] =>
+      check_json_post_endpoint(
+        arr,
+        skill_id_path(arr, "/uninstall_skill_for_app"),
+        "Skills",
+      )
+    ["get_skill_repos", ..] | ["get-skill-repos", ..] =>
+      check_usage_endpoint(arr, "/get_skill_repos")
+    ["add_skill_repo", ..] | ["add-skill-repo", ..] =>
+      check_json_post_endpoint(arr, skill_repo_add_path(arr), "Skills")
+    ["remove_skill_repo", ..] | ["remove-skill-repo", ..] =>
+      check_json_post_endpoint(arr, skill_repo_remove_path(arr), "Skills")
+    ["install_skills_from_zip", ..] | ["install-skills-from-zip", ..] =>
+      check_json_post_endpoint(arr, skill_zip_install_path(arr), "Skills")
     ["get_app_config_path", ..] | ["get-app-config-path", ..] =>
       check_usage_endpoint(arr, "/get_app_config_path")
     ["open_app_config_folder", ..] | ["open-app-config-folder", ..] =>
@@ -2522,6 +2602,227 @@ fn save_file_dialog_path(args : Array[String]) -> String {
     Some(name) => "/save_file_dialog?\{cli_query_pair("defaultName", name)}"
     None => "/save_file_dialog"
   }
+}
+
+///|
+fn skill_app_arg(args : Array[String]) -> String {
+  config_app_arg(args)
+}
+
+///|
+fn skill_id_arg(args : Array[String]) -> String? {
+  match parse_string_arg(args, "--id") {
+    Some(id) => Some(id)
+    None =>
+      match parse_string_arg(args, "--directory") {
+        Some(directory) => Some(directory)
+        None => parse_string_arg_any(args, "--skill-id", "--skillId")
+      }
+  }
+}
+
+///|
+fn skill_app_path(args : Array[String], base_path : String) -> String {
+  cli_path_with_query(base_path, [cli_query_pair("app", skill_app_arg(args))])
+}
+
+///|
+fn skill_id_path(args : Array[String], base_path : String) -> String {
+  let query : Array[String] = []
+  match skill_id_arg(args) {
+    Some(id) => query.push(cli_query_pair("id", id))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--app", "--appType") {
+    Some(app) => query.push(cli_query_pair("app", app))
+    None =>
+      match parse_string_arg(args, "--app-type") {
+        Some(app) => query.push(cli_query_pair("app", app))
+        None => ()
+      }
+  }
+  cli_path_with_query(base_path, query)
+}
+
+///|
+fn skill_backup_id_path(args : Array[String], base_path : String) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--backup-id", "--backupId") {
+    Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
+    None =>
+      match parse_string_arg(args, "--id") {
+        Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
+        None => ()
+      }
+  }
+  cli_path_with_query(base_path, query)
+}
+
+///|
+fn skill_restore_backup_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--backup-id", "--backupId") {
+    Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
+    None =>
+      match parse_string_arg(args, "--id") {
+        Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
+        None => ()
+      }
+  }
+  match parse_string_arg_any(args, "--current-app", "--currentApp") {
+    Some(app) => query.push(cli_query_pair("currentApp", app))
+    None =>
+      match parse_string_arg_any(args, "--app", "--appType") {
+        Some(app) => query.push(cli_query_pair("currentApp", app))
+        None =>
+          match parse_string_arg(args, "--app-type") {
+            Some(app) => query.push(cli_query_pair("currentApp", app))
+            None => ()
+          }
+      }
+  }
+  cli_path_with_query("/restore_skill_backup", query)
+}
+
+///|
+fn skill_install_path(args : Array[String], base_path : String) -> String {
+  let query : Array[String] = []
+  match parse_string_arg(args, "--directory") {
+    Some(directory) => query.push(cli_query_pair("directory", directory))
+    None =>
+      match parse_string_arg(args, "--id") {
+        Some(id) => query.push(cli_query_pair("directory", id))
+        None =>
+          match parse_string_arg(args, "--key") {
+            Some(key) => query.push(cli_query_pair("directory", key))
+            None => ()
+          }
+      }
+  }
+  match parse_string_arg(args, "--name") {
+    Some(name) => query.push(cli_query_pair("name", name))
+    None => ()
+  }
+  match parse_string_arg(args, "--description") {
+    Some(description) => query.push(cli_query_pair("description", description))
+    None => ()
+  }
+  match parse_string_arg_any(args, "--current-app", "--currentApp") {
+    Some(app) => query.push(cli_query_pair("currentApp", app))
+    None =>
+      match parse_string_arg_any(args, "--app", "--appType") {
+        Some(app) => query.push(cli_query_pair("app", app))
+        None =>
+          match parse_string_arg(args, "--app-type") {
+            Some(app) => query.push(cli_query_pair("app", app))
+            None => ()
+          }
+      }
+  }
+  cli_path_with_query(base_path, query)
+}
+
+///|
+fn skill_toggle_app_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match skill_id_arg(args) {
+    Some(id) => query.push(cli_query_pair("id", id))
+    None => ()
+  }
+  query.push(cli_query_pair("app", skill_app_arg(args)))
+  match parse_string_arg(args, "--enabled") {
+    Some(enabled) => query.push(cli_query_pair("enabled", enabled))
+    None => ()
+  }
+  cli_path_with_query("/toggle_skill_app", query)
+}
+
+///|
+fn skill_search_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--query", "--q") {
+    Some(value) => query.push(cli_query_pair("query", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--limit") {
+    Some(value) => query.push(cli_query_pair("limit", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--offset") {
+    Some(value) => query.push(cli_query_pair("offset", value))
+    None => ()
+  }
+  cli_path_with_query("/search_skills_sh", query)
+}
+
+///|
+fn skill_repo_add_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg(args, "--owner") {
+    Some(value) => query.push(cli_query_pair("owner", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--name") {
+    Some(value) => query.push(cli_query_pair("name", value))
+    None =>
+      match parse_string_arg(args, "--repo") {
+        Some(value) => query.push(cli_query_pair("name", value))
+        None => ()
+      }
+  }
+  match parse_string_arg(args, "--branch") {
+    Some(value) => query.push(cli_query_pair("branch", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--enabled") {
+    Some(value) => query.push(cli_query_pair("enabled", value))
+    None => ()
+  }
+  cli_path_with_query("/add_skill_repo", query)
+}
+
+///|
+fn skill_repo_remove_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg(args, "--owner") {
+    Some(value) => query.push(cli_query_pair("owner", value))
+    None => ()
+  }
+  match parse_string_arg(args, "--name") {
+    Some(value) => query.push(cli_query_pair("name", value))
+    None =>
+      match parse_string_arg(args, "--repo") {
+        Some(value) => query.push(cli_query_pair("repo", value))
+        None => ()
+      }
+  }
+  cli_path_with_query("/remove_skill_repo", query)
+}
+
+///|
+fn skill_zip_install_path(args : Array[String]) -> String {
+  let query : Array[String] = []
+  match parse_string_arg_any(args, "--file-path", "--filePath") {
+    Some(value) => query.push(cli_query_pair("filePath", value))
+    None =>
+      match parse_string_arg(args, "--path") {
+        Some(value) => query.push(cli_query_pair("filePath", value))
+        None => ()
+      }
+  }
+  match parse_string_arg_any(args, "--current-app", "--currentApp") {
+    Some(app) => query.push(cli_query_pair("currentApp", app))
+    None =>
+      match parse_string_arg_any(args, "--app", "--appType") {
+        Some(app) => query.push(cli_query_pair("currentApp", app))
+        None =>
+          match parse_string_arg(args, "--app-type") {
+            Some(app) => query.push(cli_query_pair("currentApp", app))
+            None => ()
+          }
+      }
+  }
+  cli_path_with_query("/install_skills_from_zip", query)
 }
 
 ///|

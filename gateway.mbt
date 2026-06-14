@@ -726,6 +726,81 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/open_zip_file_dialog", (_, w) => {
     self.handle_open_zip_file_dialog(w)
   })
+  router.add_handler(@httpx.Method::Get, "/get_installed_skills", (_, w) => {
+    self.handle_get_installed_skills(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_skill_backups", (_, w) => {
+    self.handle_get_skill_backups(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/delete_skill_backup", (r, w) => {
+    self.handle_delete_skill_backup(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/restore_skill_backup", (r, w) => {
+    self.handle_restore_skill_backup(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/install_skill_unified", (r, w) => {
+    self.handle_install_skill_unified(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/uninstall_skill_unified", (r, w) => {
+    self.handle_uninstall_skill_unified(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/toggle_skill_app", (r, w) => {
+    self.handle_toggle_skill_app(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/scan_unmanaged_skills", (_, w) => {
+    self.handle_scan_unmanaged_skills(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/import_skills_from_apps", (r, w) => {
+    self.handle_import_skills_from_apps(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/discover_available_skills", (_, w) => {
+    self.handle_discover_available_skills(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/check_skill_updates", (_, w) => {
+    self.handle_check_skill_updates(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/update_skill", (r, w) => {
+    self.handle_update_skill(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/migrate_skill_storage", (_, w) => {
+    self.handle_migrate_skill_storage(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/search_skills_sh", (r, w) => {
+    self.handle_search_skills_sh(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/search_skills_sh", (r, w) => {
+    self.handle_search_skills_sh(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_skills", (_, w) => {
+    self.handle_get_skills(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_skills_for_app", (_, w) => {
+    self.handle_get_skills(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/install_skill", (r, w) => {
+    self.handle_install_skill_legacy(r, w, "claude")
+  })
+  router.add_handler(@httpx.Method::Post, "/install_skill_for_app", (r, w) => {
+    self.handle_install_skill_for_app(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/uninstall_skill", (r, w) => {
+    self.handle_uninstall_skill_legacy(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/uninstall_skill_for_app", (r, w) => {
+    self.handle_uninstall_skill_legacy(r, w)
+  })
+  router.add_handler(@httpx.Method::Get, "/get_skill_repos", (_, w) => {
+    self.handle_get_skill_repos(w)
+  })
+  router.add_handler(@httpx.Method::Post, "/add_skill_repo", (r, w) => {
+    self.handle_add_skill_repo(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/remove_skill_repo", (r, w) => {
+    self.handle_remove_skill_repo(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/install_skills_from_zip", (r, w) => {
+    self.handle_install_skills_from_zip(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_app_config_path", (_, w) => {
     self.handle_get_app_config_path(w)
   })
@@ -4816,6 +4891,421 @@ async fn Gateway::handle_open_zip_file_dialog(
 ) -> Unit {
   ignore(self)
   write_usage_json(w, ccs_dialog_result_json())
+}
+
+///|
+async fn Gateway::handle_get_installed_skills(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_get_installed_skills_json())
+}
+
+///|
+async fn Gateway::handle_get_skill_backups(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_get_skill_backups_json())
+}
+
+///|
+async fn Gateway::handle_delete_skill_backup(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["backupId", "backup_id", "id"])
+    is Some(backup_id) else {
+    write_usage_bad_request(w, "missing_backup_id")
+    return
+  }
+  write_usage_json(w, ccs_delete_skill_backup_json(backup_id))
+}
+
+///|
+async fn Gateway::handle_restore_skill_backup(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["backupId", "backup_id", "id"])
+    is Some(backup_id) else {
+    write_usage_bad_request(w, "missing_backup_id")
+    return
+  }
+  let current_app = proxy_string_request(r.path, body, [
+    "currentApp", "current_app", "app",
+  ]).unwrap_or("claude")
+  write_usage_json(w, ccs_restore_skill_backup_json(backup_id, current_app))
+}
+
+///|
+async fn Gateway::handle_install_skill_unified(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let skill = match ccs_skill_request_payload(body) {
+    Some(skill) => Some(skill)
+    None =>
+      match proxy_string_request(r.path, body, ["directory", "id", "key"]) {
+        Some(directory) => {
+          let install_name = ccs_skill_install_name(directory)
+          if install_name.is_empty() {
+            None
+          } else {
+            Some(
+              {
+                "key": Json::string("local:\{install_name}"),
+                "name": Json::string(
+                  proxy_string_request(r.path, body, ["name"]).unwrap_or(
+                    install_name,
+                  ),
+                ),
+                "description": Json::string(
+                  proxy_string_request(r.path, body, ["description"]).unwrap_or(
+                    "",
+                  ),
+                ),
+                "directory": Json::string(install_name),
+              }.to_json(),
+            )
+          }
+        }
+        None => None
+      }
+  }
+  guard skill is Some(skill) else {
+    write_usage_bad_request(w, "missing_skill")
+    return
+  }
+  let current_app = proxy_string_request(r.path, body, [
+    "currentApp", "current_app", "app",
+  ]).unwrap_or("claude")
+  write_usage_json(w, ccs_install_skill_unified_json(skill, current_app))
+}
+
+///|
+async fn Gateway::handle_uninstall_skill_unified(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["id", "directory"]) is Some(id) else {
+    write_usage_bad_request(w, "missing_skill_id")
+    return
+  }
+  write_usage_json(w, ccs_uninstall_skill_unified_json(id))
+}
+
+///|
+async fn Gateway::handle_toggle_skill_app(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["id", "directory"]) is Some(id) else {
+    write_usage_bad_request(w, "missing_skill_id")
+    return
+  }
+  guard proxy_string_request(r.path, body, ["app", "appType", "app_type"])
+    is Some(app) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
+    write_usage_bad_request(w, "missing_enabled")
+    return
+  }
+  write_usage_json(w, ccs_toggle_skill_app_json(id, app, enabled))
+}
+
+///|
+async fn Gateway::handle_scan_unmanaged_skills(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_scan_unmanaged_skills_json())
+}
+
+///|
+async fn Gateway::handle_import_skills_from_apps(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let imports = match body {
+    Some(Object(obj)) =>
+      match obj.get("imports") {
+        Some(Array(items)) => Json::array(items)
+        _ => Json::array([])
+      }
+    Some(Array(items)) => Json::array(items)
+    _ => Json::array([])
+  }
+  write_usage_json(w, ccs_import_skills_from_apps_json(imports))
+}
+
+///|
+async fn Gateway::handle_discover_available_skills(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_discover_available_skills_json())
+}
+
+///|
+async fn Gateway::handle_check_skill_updates(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_check_skill_updates_json())
+}
+
+///|
+async fn Gateway::handle_update_skill(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["id", "directory"]) is Some(id) else {
+    write_usage_bad_request(w, "missing_skill_id")
+    return
+  }
+  write_usage_json(w, ccs_update_skill_json(id))
+}
+
+///|
+async fn Gateway::handle_migrate_skill_storage(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_migrate_skill_storage_json())
+}
+
+///|
+async fn Gateway::handle_search_skills_sh(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let query = proxy_string_request(r.path, body, ["query", "q"]).unwrap_or("")
+  let limit = proxy_int_request(r.path, body, ["limit"]).unwrap_or(20)
+  let offset = proxy_int_request(r.path, body, ["offset"]).unwrap_or(0)
+  write_usage_json(w, ccs_search_skills_sh_json(query, limit, offset))
+}
+
+///|
+async fn Gateway::handle_get_skills(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_get_skills_json())
+}
+
+///|
+async fn Gateway::handle_install_skill_legacy(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+  app : String,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["directory", "id", "key"])
+    is Some(directory) else {
+    write_usage_bad_request(w, "missing_directory")
+    return
+  }
+  let install_name = ccs_skill_install_name(directory)
+  if install_name.is_empty() {
+    write_usage_bad_request(w, "invalid_directory")
+    return
+  }
+  let skill = {
+    "key": Json::string("local:\{install_name}"),
+    "name": Json::string(install_name),
+    "description": Json::string(""),
+    "directory": Json::string(install_name),
+  }.to_json()
+  ignore(ccs_install_skill_unified_json(skill, app))
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_install_skill_for_app(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let app = proxy_string_request(r.path, body, ["app", "appType", "app_type"]).unwrap_or(
+    "claude",
+  )
+  guard proxy_string_request(r.path, body, ["directory", "id", "key"])
+    is Some(directory) else {
+    write_usage_bad_request(w, "missing_directory")
+    return
+  }
+  let install_name = ccs_skill_install_name(directory)
+  if install_name.is_empty() {
+    write_usage_bad_request(w, "invalid_directory")
+    return
+  }
+  let skill = {
+    "key": Json::string("local:\{install_name}"),
+    "name": Json::string(install_name),
+    "description": Json::string(""),
+    "directory": Json::string(install_name),
+  }.to_json()
+  ignore(ccs_install_skill_unified_json(skill, app))
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
+async fn Gateway::handle_uninstall_skill_legacy(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["directory", "id"]) is Some(id) else {
+    write_usage_bad_request(w, "missing_directory")
+    return
+  }
+  write_usage_json(w, ccs_uninstall_skill_unified_json(id))
+}
+
+///|
+async fn Gateway::handle_get_skill_repos(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  write_usage_json(w, ccs_get_skill_repos_json())
+}
+
+///|
+async fn Gateway::handle_add_skill_repo(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let repo = match body {
+    Some(Object(obj)) =>
+      match obj.get("repo") {
+        Some(Object(repo_obj)) => Json::object(repo_obj)
+        _ =>
+          if obj.get("owner") is Some(_) && obj.get("name") is Some(_) {
+            Json::object(obj)
+          } else {
+            match ccs_skill_repo_request_json(r.path, body) {
+              Some(repo) => repo
+              None => {
+                write_usage_bad_request(w, "missing_owner_or_name")
+                return
+              }
+            }
+          }
+      }
+    _ =>
+      match ccs_skill_repo_request_json(r.path, body) {
+        Some(repo) => repo
+        None => {
+          write_usage_bad_request(w, "missing_owner_or_name")
+          return
+        }
+      }
+  }
+  write_usage_json(w, ccs_add_skill_repo_json(repo))
+}
+
+///|
+fn ccs_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
+  guard proxy_string_request(path, body, ["owner"]) is Some(owner) else {
+    return None
+  }
+  guard proxy_string_request(path, body, ["name", "repo"]) is Some(name) else {
+    return None
+  }
+  Some(
+    {
+      "owner": Json::string(owner),
+      "name": Json::string(name),
+      "branch": Json::string(
+        proxy_string_request(path, body, ["branch"]).unwrap_or("main"),
+      ),
+      "enabled": Json::boolean(
+        proxy_bool_request(path, body, ["enabled"]).unwrap_or(true),
+      ),
+    }.to_json(),
+  )
+}
+
+///|
+async fn Gateway::handle_remove_skill_repo(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["owner"]) is Some(owner) else {
+    write_usage_bad_request(w, "missing_owner")
+    return
+  }
+  guard proxy_string_request(r.path, body, ["name", "repo"]) is Some(name) else {
+    write_usage_bad_request(w, "missing_name")
+    return
+  }
+  write_usage_json(w, ccs_remove_skill_repo_json(owner, name))
+}
+
+///|
+async fn Gateway::handle_install_skills_from_zip(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  guard proxy_string_request(r.path, body, ["filePath", "file_path", "path"])
+    is Some(file_path) else {
+    write_usage_bad_request(w, "missing_file_path")
+    return
+  }
+  let current_app = proxy_string_request(r.path, body, [
+    "currentApp", "current_app", "app",
+  ]).unwrap_or("claude")
+  write_usage_json(w, ccs_install_skills_from_zip_json(file_path, current_app))
 }
 
 ///|

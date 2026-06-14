@@ -1001,6 +1001,55 @@ test "top level ccs app shell commands build paths" {
 }
 
 ///|
+test "top level ccs skill commands build paths" {
+  assert_eq(
+    skill_install_path(
+      [
+        "moonstat", "install_skill_unified", "--directory", "traffic stats", "--name",
+        "Traffic Stats", "--description", "Routes and usage", "--app", "codex",
+      ],
+      "/install_skill_unified",
+    ),
+    "/install_skill_unified?directory=traffic%20stats&name=Traffic%20Stats&description=Routes%20and%20usage&app=codex",
+  )
+  assert_eq(
+    skill_toggle_app_path([
+      "moonstat", "toggle_skill_app", "--id", "traffic-stats", "--app", "hermes",
+      "--enabled", "true",
+    ]),
+    "/toggle_skill_app?id=traffic-stats&app=hermes&enabled=true",
+  )
+  assert_eq(
+    skill_restore_backup_path([
+      "moonstat", "restore_skill_backup", "--backupId", "traffic-stats-1", "--currentApp",
+      "claude",
+    ]),
+    "/restore_skill_backup?backupId=traffic-stats-1&currentApp=claude",
+  )
+  assert_eq(
+    skill_search_path([
+      "moonstat", "search_skills_sh", "--query", "proxy skill", "--limit", "5", "--offset",
+      "10",
+    ]),
+    "/search_skills_sh?query=proxy%20skill&limit=5&offset=10",
+  )
+  assert_eq(
+    skill_repo_add_path([
+      "moonstat", "add_skill_repo", "--owner", "vectie", "--name", "moonstat-skills",
+      "--branch", "main", "--enabled", "true",
+    ]),
+    "/add_skill_repo?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
+  )
+  assert_eq(
+    skill_zip_install_path([
+      "moonstat", "install_skills_from_zip", "--filePath", "/tmp/skill bundle", "--currentApp",
+      "codex",
+    ]),
+    "/install_skills_from_zip?filePath=%2Ftmp%2Fskill%20bundle&currentApp=codex",
+  )
+}
+
+///|
 test "top level ccs provider test hook commands build paths" {
   assert_eq(
     proxy_app_value_update_path(

@@ -5374,3 +5374,36 @@ test "ccs imports missing claude providers into claude desktop namespace" {
   )
   assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
 }
+
+///|
+test "ccs skill repo request accepts query and json body shapes" {
+  guard ccs_skill_repo_request_json(
+      "/add_skill_repo?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
+      Some({}.to_json()),
+    )
+    is Some(Object(query_repo)) else {
+    fail("expected query repo")
+  }
+  assert_eq(query_repo["owner"], Json::string("vectie"))
+  assert_eq(query_repo["name"], Json::string("moonstat-skills"))
+  assert_eq(query_repo["branch"], Json::string("main"))
+  assert_eq(query_repo["enabled"], Json::boolean(true))
+
+  guard ccs_skill_repo_request_json(
+      "/add_skill_repo",
+      Some(
+        {
+          "owner": Json::string("anthropics"),
+          "name": Json::string("skills"),
+          "enabled": Json::boolean(false),
+        }.to_json(),
+      ),
+    )
+    is Some(Object(body_repo)) else {
+    fail("expected body repo")
+  }
+  assert_eq(body_repo["owner"], Json::string("anthropics"))
+  assert_eq(body_repo["name"], Json::string("skills"))
+  assert_eq(body_repo["branch"], Json::string("main"))
+  assert_eq(body_repo["enabled"], Json::boolean(false))
+}

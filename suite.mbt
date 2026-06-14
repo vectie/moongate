@@ -301,7 +301,7 @@ fn moonstat_suite_capabilities() -> Array[String] {
   [
     "openai-compatible-proxy", "anthropic-compatible-proxy", "claude-desktop-gateway",
     "gemini-compatible-proxy", "ccs-usage-statistics", "session-usage-sync", "provider-model-catalog",
-    "suite-discovery", "codex-config-install",
+    "ccs-skills-management", "suite-discovery", "codex-config-install",
   ]
 }
 
@@ -337,6 +337,12 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
     "claude_desktop_install": Json::string(
       "moonstat claude-desktop install --port \{port}",
     ),
+    "skills_list": Json::string("moonstat get_installed_skills"),
+    "skills_search": Json::string("moonstat search_skills_sh --query <query>"),
+    "skills_install": Json::string(
+      "moonstat install_skill_unified --directory <directory> --app <app>",
+    ),
+    "skills_repos": Json::string("moonstat get_skill_repos"),
     "suite_manifest": Json::string("moonstat suite manifest"),
     "suite_status": Json::string("moonstat suite status"),
     "suite_write_status": Json::string("moonstat suite write-status"),
@@ -368,11 +374,18 @@ fn moonstat_suite_routes() -> Array[String] {
     "GET /get_init_error", "GET /get_migration_result", "GET /get_skills_migration_result",
     "GET|POST /get_tool_versions", "GET|POST /set_window_theme", "GET|POST /enter_lightweight_mode",
     "GET|POST /exit_lightweight_mode", "GET /is_lightweight_mode", "GET|POST /save_file_dialog",
-    "GET|POST /open_file_dialog", "GET|POST /open_zip_file_dialog", "GET /get_default_cost_multiplier_test_hook",
-    "POST /set_default_cost_multiplier_test_hook", "GET /get_pricing_model_source_test_hook",
-    "POST /set_pricing_model_source_test_hook", "POST /switch_provider_test_hook",
-    "GET /get_claude_desktop_status", "GET /get_claude_desktop_default_routes", "POST /import_claude_desktop_providers_from_claude",
-    "POST /ensure_claude_desktop_official_provider", "ANY /v1beta/*path", "ANY /gemini/v1beta/*path",
-    "ANY /gemini/v1/*path",
+    "GET|POST /open_file_dialog", "GET|POST /open_zip_file_dialog", "GET /get_installed_skills",
+    "GET /get_skill_backups", "POST /delete_skill_backup", "POST /restore_skill_backup",
+    "POST /install_skill_unified", "POST /uninstall_skill_unified", "POST /toggle_skill_app",
+    "GET /scan_unmanaged_skills", "POST /import_skills_from_apps", "GET /discover_available_skills",
+    "GET /check_skill_updates", "POST /update_skill", "POST /migrate_skill_storage",
+    "GET|POST /search_skills_sh", "GET /get_skills", "GET /get_skills_for_app", "POST /install_skill",
+    "POST /install_skill_for_app", "POST /uninstall_skill", "POST /uninstall_skill_for_app",
+    "GET /get_skill_repos", "POST /add_skill_repo", "POST /remove_skill_repo", "POST /install_skills_from_zip",
+    "GET /get_default_cost_multiplier_test_hook", "POST /set_default_cost_multiplier_test_hook",
+    "GET /get_pricing_model_source_test_hook", "POST /set_pricing_model_source_test_hook",
+    "POST /switch_provider_test_hook", "GET /get_claude_desktop_status", "GET /get_claude_desktop_default_routes",
+    "POST /import_claude_desktop_providers_from_claude", "POST /ensure_claude_desktop_official_provider",
+    "ANY /v1beta/*path", "ANY /gemini/v1beta/*path", "ANY /gemini/v1/*path",
   ]
 }
