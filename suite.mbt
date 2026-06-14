@@ -293,6 +293,17 @@ fn moonstat_suite_integrations_json(
         Json::string(".moonclaw/models/models.json"),
         Json::string("~/.moonclaw/models/models.json"),
       ]),
+      "moonclaw_provider_name": Json::string("moonstat"),
+      "moonclaw_provider_model_id": Json::string(model),
+      "moonclaw_provider_config_paths": Json::array([
+        Json::string(".moonclaw/models/models.json"),
+        Json::string("~/.moonclaw/models/models.json"),
+        Json::string(".moonclaw/config.json"),
+        Json::string("~/.moonclaw/config.json"),
+      ]),
+      "moonclaw_providers_file_json": moonclaw_providers_file_json(
+        openai_base_url, model,
+      ),
       "health_url": Json::string("\{base_url}/health"),
       "usage_summary_url": Json::string("\{base_url}/usage/summary"),
       "usage_logs_url": Json::string("\{base_url}/usage/logs"),
@@ -318,6 +329,13 @@ fn moonstat_suite_integrations_json(
       "usage_model_pricing_file": Json::string(
         @pathx.join(default_moonstat_stats_dir(), MOONSTAT_MODEL_PRICING_FILE),
       ),
+      "cli": Json::string("moon run cmd/main --"),
+      "moondesk_adapter_package": Json::string(
+        "vectie/moondesk/adapters/moonbook",
+      ),
+      "moontown_adapter_package": Json::string(
+        "vectie/moontown/adapters/moonbook",
+      ),
     }),
     "moontown": Json::object({
       "role": Json::string("scheduler-network-watch"),
@@ -331,6 +349,14 @@ fn moonstat_suite_integrations_json(
         "\{base_url}/usage/provider-limits",
       ),
       "suite_status_file": Json::string(default_moonstat_suite_status_path()),
+      "moonbook_provider_manifest_path": Json::string(
+        ".moonclaw/providers.json",
+      ),
+      "moonbook_provider_manifest_command": Json::string("moon run cmd/main --"),
+      "adapter_packages": Json::array([
+        Json::string("vectie/moontown/adapters/moonclaw"),
+        Json::string("vectie/moontown/adapters/moonbook"),
+      ]),
     }),
     "moondesk": Json::object({
       "role": Json::string("operator-dashboard"),
@@ -351,6 +377,35 @@ fn moonstat_suite_integrations_json(
         "\{base_url}/get_stream_check_config",
       ),
       "config_status_url": Json::string("\{base_url}/get_config_status"),
+      "adapter_packages": Json::array([
+        Json::string("vectie/moondesk/adapters/moonclaw"),
+        Json::string("vectie/moondesk/adapters/moonbook"),
+        Json::string("vectie/moondesk/adapters/moontown"),
+      ]),
+    }),
+  })
+}
+
+///|
+fn moonclaw_providers_file_json(
+  openai_base_url : String,
+  model : String,
+) -> Json {
+  Json::object({
+    "providers": Json::object({
+      "moonstat": Json::object({
+        "baseUrl": Json::string(openai_base_url),
+        "api": Json::string("openai"),
+        "apiKey": Json::string("moonstat-local"),
+        "models": Json::array([
+          Json::object({
+            "id": Json::string(model),
+            "name": Json::string("moonstat/\{model}"),
+            "reasoning": Json::boolean(true),
+            "input": Json::array([Json::string("text"), Json::string("image")]),
+          }),
+        ]),
+      }),
     }),
   })
 }

@@ -340,6 +340,36 @@ test "suite manifest publishes moonstat service contract" {
   }
   assert_true(paths.contains(Json::string(".moonclaw/models/models.json")))
   assert_true(paths.contains(Json::string("~/.moonclaw/models/models.json")))
+  assert_eq(moonclaw["moonclaw_provider_name"], Json::string("moonstat"))
+  assert_eq(moonclaw["moonclaw_provider_model_id"], Json::string("gpt-5"))
+  guard moonclaw["moonclaw_provider_config_paths"] is Array(config_paths) else {
+    fail("expected moonclaw provider config paths")
+  }
+  assert_true(config_paths.contains(Json::string(".moonclaw/config.json")))
+  assert_true(config_paths.contains(Json::string("~/.moonclaw/config.json")))
+  guard moonclaw["moonclaw_providers_file_json"] is Object(providers_file) else {
+    fail("expected moonclaw providers file json")
+  }
+  guard providers_file["providers"] is Object(moonclaw_providers) else {
+    fail("expected moonclaw providers map")
+  }
+  guard moonclaw_providers["moonstat"] is Object(moonstat_provider) else {
+    fail("expected moonstat provider")
+  }
+  assert_eq(
+    moonstat_provider["baseUrl"],
+    Json::string("http://127.0.0.1:15721/v1"),
+  )
+  assert_eq(moonstat_provider["api"], Json::string("openai"))
+  assert_eq(moonstat_provider["apiKey"], Json::string("moonstat-local"))
+  guard moonstat_provider["models"] is Array(provider_models) else {
+    fail("expected moonstat provider models")
+  }
+  guard provider_models[0] is Object(provider_model) else {
+    fail("expected moonstat provider model")
+  }
+  assert_eq(provider_model["id"], Json::string("gpt-5"))
+  assert_eq(provider_model["name"], Json::string("moonstat/gpt-5"))
   assert_eq(
     moonclaw["provider_presets_url"],
     Json::string("http://127.0.0.1:15721/get_provider_presets"),
@@ -353,6 +383,15 @@ test "suite manifest publishes moonstat service contract" {
       @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
     ),
   )
+  assert_eq(moonbook["cli"], Json::string("moon run cmd/main --"))
+  assert_eq(
+    moonbook["moondesk_adapter_package"],
+    Json::string("vectie/moondesk/adapters/moonbook"),
+  )
+  assert_eq(
+    moonbook["moontown_adapter_package"],
+    Json::string("vectie/moontown/adapters/moonbook"),
+  )
   guard integrations["moontown"] is Object(moontown) else {
     fail("expected moontown integration")
   }
@@ -363,6 +402,27 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(
     moontown["usage_provider_limits_url"],
     Json::string("http://127.0.0.1:15721/usage/provider-limits"),
+  )
+  assert_eq(
+    moontown["moonbook_provider_manifest_path"],
+    Json::string(".moonclaw/providers.json"),
+  )
+  assert_eq(
+    moontown["moonbook_provider_manifest_command"],
+    Json::string("moon run cmd/main --"),
+  )
+  guard moontown["adapter_packages"] is Array(moontown_adapters) else {
+    fail("expected moontown adapters")
+  }
+  assert_true(
+    moontown_adapters.contains(
+      Json::string("vectie/moontown/adapters/moonclaw"),
+    ),
+  )
+  assert_true(
+    moontown_adapters.contains(
+      Json::string("vectie/moontown/adapters/moonbook"),
+    ),
   )
   guard integrations["moondesk"] is Object(moondesk) else {
     fail("expected moondesk integration")
@@ -382,6 +442,24 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(
     moondesk["config_status_url"],
     Json::string("http://127.0.0.1:15721/get_config_status"),
+  )
+  guard moondesk["adapter_packages"] is Array(moondesk_adapters) else {
+    fail("expected moondesk adapters")
+  }
+  assert_true(
+    moondesk_adapters.contains(
+      Json::string("vectie/moondesk/adapters/moonclaw"),
+    ),
+  )
+  assert_true(
+    moondesk_adapters.contains(
+      Json::string("vectie/moondesk/adapters/moonbook"),
+    ),
+  )
+  assert_true(
+    moondesk_adapters.contains(
+      Json::string("vectie/moondesk/adapters/moontown"),
+    ),
   )
   guard obj["commands"] is Object(commands) else { fail("expected commands") }
   assert_eq(commands["start"], Json::string("moonstat start --port 15721"))
