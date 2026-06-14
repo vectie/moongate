@@ -666,13 +666,22 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_config_status", (r, w) => {
     self.handle_get_config_status_request(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/get_config_status", (r, w) => {
+    self.handle_get_config_status_request(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_claude_code_config_path", (_, w) => {
     self.handle_get_claude_code_config_path(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_config_dir", (r, w) => {
     self.handle_get_config_dir(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/get_config_dir", (r, w) => {
+    self.handle_get_config_dir(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/open_config_folder", (r, w) => {
+    self.handle_open_config_folder(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/open_config_folder", (r, w) => {
     self.handle_open_config_folder(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/pick_directory", (r, w) => {
@@ -975,6 +984,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_common_config_snippet", (r, w) => {
     self.handle_get_common_config_snippet_request(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/get_common_config_snippet", (r, w) => {
+    self.handle_get_common_config_snippet_request(r, w)
+  })
   router.add_handler(@httpx.Method::Post, "/set_common_config_snippet", (r, w) => {
     self.handle_set_common_config_snippet_request(r, w)
   })
@@ -987,6 +999,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     w,
   ) => self.handle_extract_common_config_snippet(r, w))
   router.add_handler(@httpx.Method::Get, "/check_env_conflicts", (r, w) => {
+    self.handle_check_env_conflicts(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/check_env_conflicts", (r, w) => {
     self.handle_check_env_conflicts(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_env_vars", (r, w) => {
@@ -1013,7 +1028,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/validate_mcp_command", (r, w) => {
     self.handle_validate_mcp_command(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/validate_mcp_command", (r, w) => {
+    self.handle_validate_mcp_command(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_mcp_config", (r, w) => {
+    self.handle_get_mcp_config(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_mcp_config", (r, w) => {
     self.handle_get_mcp_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/upsert_mcp_server_in_config", (r, w) => {
@@ -1050,6 +1071,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_prompts", (r, w) => {
     self.handle_get_prompts(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/get_prompts", (r, w) => {
+    self.handle_get_prompts(r, w)
+  })
   router.add_handler(@httpx.Method::Post, "/upsert_prompt", (r, w) => {
     self.handle_upsert_prompt(r, w)
   })
@@ -1066,6 +1090,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_import_prompt_from_file(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_current_prompt_file_content", (
+    r,
+    w,
+  ) => self.handle_get_current_prompt_file_content(r, w))
+  router.add_handler(@httpx.Method::Post, "/get_current_prompt_file_content", (
     r,
     w,
   ) => self.handle_get_current_prompt_file_content(r, w))
@@ -1340,7 +1368,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_providers", (r, w) => {
     self.handle_get_providers(r, w)
   })
+  router.add_handler(@httpx.Method::Post, "/get_providers", (r, w) => {
+    self.handle_get_providers(r, w)
+  })
   router.add_handler(@httpx.Method::Get, "/get_current_provider", (r, w) => {
+    self.handle_get_current_provider(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_current_provider", (r, w) => {
     self.handle_get_current_provider(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/add_provider", (r, w) => {
@@ -1391,6 +1425,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     (_, w) => self.handle_ensure_claude_desktop_official_provider(w),
   )
   router.add_handler(@httpx.Method::Get, "/read_live_provider_settings", (r, w) => {
+    self.handle_read_live_provider_settings(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/read_live_provider_settings", (r, w) => {
     self.handle_read_live_provider_settings(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_plugin_status", (_, w) => {
@@ -1463,6 +1500,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_openclaw_live_provider", (r, w) => {
     self.handle_get_live_provider(r, w, "openclaw")
   })
+  router.add_handler(@httpx.Method::Post, "/get_openclaw_live_provider", (r, w) => {
+    self.handle_get_live_provider(r, w, "openclaw")
+  })
   router.add_handler(@httpx.Method::Get, "/scan_openclaw_config_health", (_, w) => {
     self.handle_scan_openclaw_config_health(w)
   })
@@ -1503,10 +1543,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider", (r, w) => {
     self.handle_get_live_provider(r, w, "hermes")
   })
+  router.add_handler(@httpx.Method::Post, "/get_hermes_live_provider", (r, w) => {
+    self.handle_get_live_provider(r, w, "hermes")
+  })
   router.add_handler(@httpx.Method::Get, "/get_hermes_model_config", (_, w) => {
     self.handle_get_hermes_model_config(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_memory", (r, w) => {
+    self.handle_get_hermes_memory(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_hermes_memory", (r, w) => {
     self.handle_get_hermes_memory(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/set_hermes_memory", (r, w) => {
@@ -1573,6 +1619,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_update_providers_sort_order(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_custom_endpoints", (r, w) => {
+    self.handle_get_custom_endpoints(r, w)
+  })
+  router.add_handler(@httpx.Method::Post, "/get_custom_endpoints", (r, w) => {
     self.handle_get_custom_endpoints(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/add_custom_endpoint", (r, w) => {
@@ -6391,7 +6440,8 @@ async fn Gateway::handle_get_config_status_request(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   write_usage_json(w, ccs_config_status_json(app))
 }
 
@@ -6411,7 +6461,8 @@ async fn Gateway::handle_get_config_dir(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   write_usage_json(w, Json::string(ccs_config_dir(app)))
 }
 
@@ -6422,7 +6473,8 @@ async fn Gateway::handle_open_config_folder(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   match ccs_open_directory_result_json(ccs_config_dir(app)) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
@@ -7733,7 +7785,8 @@ async fn Gateway::handle_get_common_config_snippet_request(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let app_type = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app_type = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   self.handle_get_common_config_snippet(w, app_type)
 }
 
@@ -7822,7 +7875,8 @@ async fn Gateway::handle_check_env_conflicts(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   write_usage_json(w, ccs_env_conflicts_json(app))
 }
 
@@ -7927,7 +7981,8 @@ async fn Gateway::handle_validate_mcp_command(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let command = proxy_string_request(r.path, None, ["cmd", "command"]).unwrap_or(
+  let body = proxy_json_body(r)
+  let command = proxy_string_request(r.path, body, ["cmd", "command"]).unwrap_or(
     "",
   )
   write_usage_json(w, Json::boolean(ccs_validate_mcp_command_name(command)))
@@ -7939,7 +7994,8 @@ async fn Gateway::handle_get_mcp_config(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   write_usage_json(
     w,
     {
@@ -8061,7 +8117,8 @@ async fn Gateway::handle_get_prompts(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let app = ccs_config_app_from_request(r.path, None).unwrap_or("claude")
+  let body = proxy_json_body(r)
+  let app = ccs_config_app_from_request(r.path, body).unwrap_or("claude")
   write_usage_json(w, ccs_prompts_object_for_app(self.prompts, app))
 }
 
@@ -9190,7 +9247,8 @@ async fn Gateway::handle_get_providers(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
@@ -9203,7 +9261,8 @@ async fn Gateway::handle_get_current_provider(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
@@ -9623,7 +9682,8 @@ async fn Gateway::handle_read_live_provider_settings(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
@@ -10093,7 +10153,8 @@ async fn Gateway::handle_get_hermes_memory(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard hermes_memory_kind_from_request(r.path, None) is Some(kind) else {
+  let body = proxy_json_body(r)
+  guard hermes_memory_kind_from_request(r.path, body) is Some(kind) else {
     write_usage_bad_request(w, "invalid_hermes_memory_kind")
     return
   }
@@ -10316,11 +10377,12 @@ async fn Gateway::handle_get_custom_endpoints(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard provider_app_from_request(r.path, None) is Some(app_type) else {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
-  guard provider_id_from_request(r.path, None) is Some(provider_id) else {
+  guard provider_id_from_request(r.path, body) is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }

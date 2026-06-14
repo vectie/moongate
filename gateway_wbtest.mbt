@@ -354,6 +354,46 @@ test "pick directory parser accepts ccs defaultPath payload key" {
 }
 
 ///|
+test "ccs read command parsers accept json payload keys" {
+  let app_body = Some({ "app": Json::string("codex") }.to_json())
+  let app_type_body = Some({ "appType": Json::string("gemini") }.to_json())
+  let provider_body = Some(
+    { "app": Json::string("codex"), "providerId": Json::string("codex-oauth") }.to_json(),
+  )
+  assert_eq(
+    ccs_config_app_from_request("/get_config_dir", app_body),
+    Some("codex"),
+  )
+  assert_eq(
+    ccs_config_app_from_request("/get_common_config_snippet", app_type_body),
+    Some("gemini"),
+  )
+  assert_eq(
+    provider_app_from_request("/get_providers", provider_body),
+    Some("codex"),
+  )
+  assert_eq(
+    provider_id_from_request("/get_custom_endpoints", provider_body),
+    Some("codex-oauth"),
+  )
+  assert_eq(
+    proxy_string_request(
+      "/validate_mcp_command",
+      Some({ "cmd": Json::string("node") }.to_json()),
+      ["cmd", "command"],
+    ),
+    Some("node"),
+  )
+  assert_eq(
+    hermes_memory_kind_from_request(
+      "/get_hermes_memory",
+      Some({ "kind": Json::string("user") }.to_json()),
+    ),
+    Some("user"),
+  )
+}
+
+///|
 test "proxy failover command parsers accept ccs json payload keys" {
   let body = Some(
     {
