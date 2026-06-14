@@ -359,7 +359,38 @@ pub struct ProviderRouteTarget {
   api_key : String?
   is_full_url : Bool
   model_mapping : ModelMapping?
+  claude_desktop_model_routes : Map[String, ClaudeDesktopModelRoute]
   settings_config : Json?
+}
+
+///|
+pub struct ClaudeDesktopModelRoute {
+  model : String
+  label_override : String?
+  supports_1m : Bool?
+}
+
+///|
+pub fn ClaudeDesktopModelRoute::new(
+  model~ : String,
+  label_override? : String? = None,
+  supports_1m? : Bool? = None,
+) -> ClaudeDesktopModelRoute {
+  { model, label_override, supports_1m }
+}
+
+///|
+fn ClaudeDesktopModelRoute::to_json(self : ClaudeDesktopModelRoute) -> Json {
+  let obj : Map[String, Json] = { "model": Json::string(self.model) }
+  match self.label_override {
+    Some(label) => obj["labelOverride"] = Json::string(label)
+    None => ()
+  }
+  match self.supports_1m {
+    Some(value) => obj["supports1m"] = Json::boolean(value)
+    None => ()
+  }
+  Json::object(obj)
 }
 
 ///|
@@ -376,6 +407,10 @@ pub fn ProviderRouteTarget::new(
   api_key? : String? = None,
   is_full_url? : Bool = false,
   model_mapping? : ModelMapping? = None,
+  claude_desktop_model_routes? : Map[String, ClaudeDesktopModelRoute] = Map(
+    [],
+    capacity=0,
+  ),
   settings_config? : Json? = None,
 ) -> ProviderRouteTarget {
   {
@@ -391,6 +426,7 @@ pub fn ProviderRouteTarget::new(
     api_key,
     is_full_url,
     model_mapping,
+    claude_desktop_model_routes,
     settings_config,
   }
 }
@@ -412,6 +448,11 @@ pub fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
   }
   if self.settings_config is Some(settings_config) {
     obj["settingsConfig"] = settings_config
+  }
+  if !self.claude_desktop_model_routes.is_empty() {
+    obj["claudeDesktopModelRoutes"] = claude_desktop_model_routes_json(
+      self.claude_desktop_model_routes,
+    )
   }
   Json::object(obj)
 }
@@ -437,6 +478,27 @@ fn ProviderRouteTarget::to_ccs_provider_json(
   }
   if sort_index is Some(sort_index) {
     obj["sortIndex"] = Json::number(sort_index.to_double())
+  }
+  if !self.claude_desktop_model_routes.is_empty() {
+    obj["meta"] = {
+      "claudeDesktopModelRoutes": claude_desktop_model_routes_json(
+        self.claude_desktop_model_routes,
+      ),
+    }.to_json()
+  }
+  Json::object(obj)
+}
+
+///|
+fn claude_desktop_model_routes_json(
+  routes : Map[String, ClaudeDesktopModelRoute],
+) -> Json {
+  let obj : Map[String, Json] = {}
+  for route_id in routes.keys() {
+    match routes.get(route_id) {
+      Some(route) => obj[route_id] = route.to_json()
+      None => ()
+    }
   }
   Json::object(obj)
 }

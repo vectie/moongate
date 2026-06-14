@@ -297,6 +297,13 @@ pub enum CircuitState {
 } derive(Eq)
 pub fn CircuitState::to_string(Self) -> String
 
+pub struct ClaudeDesktopModelRoute {
+  model : String
+  label_override : String?
+  supports_1m : Bool?
+}
+pub fn ClaudeDesktopModelRoute::new(model~ : String, label_override? : String?, supports_1m? : Bool?) -> Self
+
 type CodexChatHistoryStore
 
 pub struct CodexInput {
@@ -460,10 +467,11 @@ pub struct ProviderRouteTarget {
   api_key : String?
   is_full_url : Bool
   model_mapping : ModelMapping?
+  claude_desktop_model_routes : Map[String, ClaudeDesktopModelRoute]
   settings_config : Json?
 }
 pub fn ProviderRouteTarget::map_model_for_upstream(Self, String) -> String
-pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, api_format? : String?, prompt_cache_key? : String?, codex_fast_mode? : Bool, base_url? : String?, api_key? : String?, is_full_url? : Bool, model_mapping? : ModelMapping?, settings_config? : Json?) -> Self
+pub fn ProviderRouteTarget::new(app_type~ : String, provider_id~ : String, provider_name~ : String, enabled? : Bool, provider_type? : String?, api_format? : String?, prompt_cache_key? : String?, codex_fast_mode? : Bool, base_url? : String?, api_key? : String?, is_full_url? : Bool, model_mapping? : ModelMapping?, claude_desktop_model_routes? : Map[String, ClaudeDesktopModelRoute], settings_config? : Json?) -> Self
 pub fn ProviderRouteTarget::to_json(Self) -> Json
 
 pub struct ProviderRouter {

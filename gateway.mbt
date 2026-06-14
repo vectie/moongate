@@ -11507,6 +11507,10 @@ fn provider_target_from_request(
   let is_full_url = provider_bool_from_request(path, body, [
     "is_full_url", "isFullUrl", "fullUrl",
   ]).unwrap_or(false)
+  let model_mapping = provider_model_mapping_from_request(path, body)
+  let claude_desktop_model_routes = provider_claude_desktop_model_routes_from_body(
+    body,
+  )
   Some(
     ProviderRouteTarget::new(
       app_type~,
@@ -11518,9 +11522,163 @@ fn provider_target_from_request(
       base_url~,
       api_key~,
       is_full_url~,
+      model_mapping~,
+      claude_desktop_model_routes~,
       settings_config=provider_settings_config_from_body(body),
     ),
   )
+}
+
+///|
+fn provider_model_mapping_from_request(
+  path : StringView,
+  body : Json?,
+) -> ModelMapping? {
+  match provider_body_payload(body) {
+    Some(Object(obj)) =>
+      match obj.get("modelMapping") {
+        Some(Object(mapping_obj)) =>
+          return provider_model_mapping_from_json(mapping_obj)
+        _ =>
+          match obj.get("model_mapping") {
+            Some(Object(mapping_obj)) =>
+              return provider_model_mapping_from_json(mapping_obj)
+            _ => ()
+          }
+      }
+    _ => ()
+  }
+  let mapping = ModelMapping::new(
+    haiku_model=provider_string_from_request(path, body, [
+      "haikuModel", "haiku_model",
+    ]),
+    sonnet_model=provider_string_from_request(path, body, [
+      "sonnetModel", "sonnet_model",
+    ]),
+    opus_model=provider_string_from_request(path, body, [
+      "opusModel", "opus_model",
+    ]),
+    default_model=provider_string_from_request(path, body, [
+      "defaultModel", "default_model",
+    ]),
+  )
+  if mapping.has_mapping() {
+    Some(mapping)
+  } else {
+    None
+  }
+}
+
+///|
+fn provider_model_mapping_from_json(obj : Map[String, Json]) -> ModelMapping? {
+  let mapping = ModelMapping::new(
+    haiku_model=json_string_from_map_any(obj, ["haikuModel", "haiku_model"]),
+    sonnet_model=json_string_from_map_any(obj, ["sonnetModel", "sonnet_model"]),
+    opus_model=json_string_from_map_any(obj, ["opusModel", "opus_model"]),
+    default_model=json_string_from_map_any(obj, [
+      "defaultModel", "default_model",
+    ]),
+  )
+  if mapping.has_mapping() {
+    Some(mapping)
+  } else {
+    None
+  }
+}
+
+///|
+fn provider_claude_desktop_model_routes_from_body(
+  body : Json?,
+) -> Map[String, ClaudeDesktopModelRoute] {
+  let routes : Map[String, ClaudeDesktopModelRoute] = Map([], capacity=0)
+  guard provider_body_payload(body) is Some(Object(obj)) else { return routes }
+  match provider_claude_desktop_routes_object(obj) {
+    Some(route_obj) => provider_add_claude_desktop_routes(routes, route_obj)
+    None => ()
+  }
+  routes
+}
+
+///|
+fn provider_claude_desktop_routes_object(
+  obj : Map[String, Json],
+) -> Map[String, Json]? {
+  match obj.get("claudeDesktopModelRoutes") {
+    Some(Object(routes)) => Some(routes)
+    _ =>
+      match obj.get("claude_desktop_model_routes") {
+        Some(Object(routes)) => Some(routes)
+        _ =>
+          match obj.get("meta") {
+            Some(Object(meta)) =>
+              match meta.get("claudeDesktopModelRoutes") {
+                Some(Object(routes)) => Some(routes)
+                _ =>
+                  match meta.get("claude_desktop_model_routes") {
+                    Some(Object(routes)) => Some(routes)
+                    _ => None
+                  }
+              }
+            _ => None
+          }
+      }
+  }
+}
+
+///|
+fn provider_add_claude_desktop_routes(
+  routes : Map[String, ClaudeDesktopModelRoute],
+  obj : Map[String, Json],
+) -> Unit {
+  for route_id in obj.keys() {
+    let trimmed_route_id = route_id.trim().to_owned()
+    if trimmed_route_id.is_empty() {
+      continue
+    }
+    match obj.get(route_id) {
+      Some(route_json) =>
+        match provider_claude_desktop_route_from_json(route_json) {
+          Some(route) => routes[trimmed_route_id] = route
+          None => ()
+        }
+      None => ()
+    }
+  }
+}
+
+///|
+fn provider_claude_desktop_route_from_json(
+  json : Json,
+) -> ClaudeDesktopModelRoute? {
+  match json {
+    String(model) => {
+      let trimmed = model.trim().to_owned()
+      if trimmed.is_empty() {
+        None
+      } else {
+        Some(ClaudeDesktopModelRoute::new(model=trimmed))
+      }
+    }
+    Object(obj) => {
+      guard json_string_from_map(obj, "model") is Some(model) else {
+        return None
+      }
+      let trimmed = model.trim().to_owned()
+      if trimmed.is_empty() {
+        return None
+      }
+      Some(
+        ClaudeDesktopModelRoute::new(
+          model=trimmed,
+          label_override=json_string_from_map_any(obj, [
+            "labelOverride", "label_override",
+          ]),
+          supports_1m=json_bool_from_map_any(obj, ["supports1m", "supports_1m"]),
+        ),
+      )
+    }
+    _ => None
+  }
 }
 
 ///|
@@ -12627,6 +12785,52 @@ fn claude_role_keyword(model : String) -> String? {
 }
 
 ///|
+fn ProviderRouteTarget::claude_desktop_route_upstream_model(
+  self : ProviderRouteTarget,
+  request_model : String,
+) -> String? {
+  let requested = strip_one_m_suffix_for_route_lookup(request_model)
+  if requested.is_empty() || self.claude_desktop_model_routes.is_empty() {
+    return None
+  }
+  match self.claude_desktop_model_routes.get(requested) {
+    Some(route) => return Some(route.model)
+    None => ()
+  }
+  for route_id in self.claude_desktop_model_routes.keys() {
+    if claude_desktop_opus_route_alias_matches(route_id, requested) {
+      match self.claude_desktop_model_routes.get(route_id) {
+        Some(route) => return Some(route.model)
+        None => ()
+      }
+    }
+  }
+  guard is_claude_safe_model_id(requested) else { return None }
+  guard claude_role_keyword(requested) is Some(role) else { return None }
+  for route_id in self.claude_desktop_model_routes.keys() {
+    guard is_claude_safe_model_id(route_id) else { continue }
+    if claude_role_keyword(route_id) == Some(role) {
+      match self.claude_desktop_model_routes.get(route_id) {
+        Some(route) => return Some(route.model)
+        None => ()
+      }
+    }
+  }
+  None
+}
+
+///|
+fn claude_desktop_opus_route_alias_matches(
+  route_id : String,
+  requested : String,
+) -> Bool {
+  let route = strip_one_m_suffix_for_route_lookup(route_id).trim().to_lower()
+  let requested = requested.trim().to_lower()
+  (route == "claude-opus-4-7" && requested == "claude-opus-4-8") ||
+  (route == "claude-opus-4-8" && requested == "claude-opus-4-7")
+}
+
+///|
 fn Gateway::uptime_seconds(self : Gateway) -> Int {
   let elapsed = @async.now().to_int() - self.started_at_ms
   if elapsed < 0 {
@@ -12743,6 +12947,7 @@ async fn Gateway::handle_messages(
           let model = self.upstream_claude_model(
             anthropic_request.model,
             active_provider,
+            app_type~,
           )
           self.logger.debug("Using Codex model: \{model}")
           let stream = anthropic_request.stream.unwrap_or(false)
@@ -12793,13 +12998,21 @@ fn Gateway::upstream_claude_model(
   self : Gateway,
   request_model : String,
   provider : ProviderRouteTarget?,
+  app_type? : String = "claude",
 ) -> String {
   match provider {
     Some(provider) =>
-      match provider.model_mapping {
-        Some(mapping) if mapping.has_mapping() =>
-          provider.map_model_for_upstream(request_model)
-        _ => strip_one_m_suffix_for_upstream(request_model)
+      if app_type == "claude-desktop" {
+        match provider.claude_desktop_route_upstream_model(request_model) {
+          Some(upstream) => strip_one_m_suffix_for_upstream(upstream)
+          None => strip_one_m_suffix_for_upstream(request_model)
+        }
+      } else {
+        match provider.model_mapping {
+          Some(mapping) if mapping.has_mapping() =>
+            provider.map_model_for_upstream(request_model)
+          _ => strip_one_m_suffix_for_upstream(request_model)
+        }
       }
     None => self.model
   }
@@ -12863,7 +13076,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           self.handle_non_streaming_request(
             request,
             request_json,
-            self.upstream_claude_model(request.model, Some(provider)),
+            self.upstream_claude_model(request.model, Some(provider), app_type~),
             request_path,
             Some(provider),
             app_type,
@@ -12985,7 +13198,11 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             self.handle_non_streaming_request(
               request,
               request_json,
-              self.upstream_claude_model(request.model, Some(provider)),
+              self.upstream_claude_model(
+                request.model,
+                Some(provider),
+                app_type~,
+              ),
               request_path,
               Some(provider),
               app_type,
@@ -13998,7 +14215,11 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             self.handle_streaming_request(
               request,
               request_json,
-              self.upstream_claude_model(request.model, Some(provider)),
+              self.upstream_claude_model(
+                request.model,
+                Some(provider),
+                app_type~,
+              ),
               request_path,
               Some(provider),
               app_type,
@@ -14067,7 +14288,11 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             self.handle_streaming_request(
               request,
               request_json,
-              self.upstream_claude_model(request.model, Some(provider)),
+              self.upstream_claude_model(
+                request.model,
+                Some(provider),
+                app_type~,
+              ),
               request_path,
               Some(provider),
               app_type,
@@ -14103,7 +14328,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         self.handle_streaming_request(
           request,
           request_json,
-          self.upstream_claude_model(request.model, Some(provider)),
+          self.upstream_claude_model(request.model, Some(provider), app_type~),
           request_path,
           Some(provider),
           app_type,

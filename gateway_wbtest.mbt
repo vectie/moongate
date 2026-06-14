@@ -347,6 +347,53 @@ test "universal provider helper builds ccs provider shape from query args" {
 }
 
 ///|
+test "provider target parses ccs claude desktop route metadata" {
+  guard provider_target_from_request(
+      "/add_provider",
+      Some(
+        {
+          "provider": {
+            "id": Json::string("desktop-provider"),
+            "name": Json::string("Desktop Provider"),
+            "modelMapping": { "sonnetModel": Json::string("mapping-fallback") }.to_json(),
+            "meta": {
+              "claudeDesktopModelRoutes": {
+                "claude-sonnet-4-6": {
+                  "model": Json::string("deepseek-v4-flash [1M]"),
+                  "labelOverride": Json::string("DeepSeek V4 Flash"),
+                  "supports1m": Json::boolean(true),
+                }.to_json(),
+                "claude-opus-4-8": Json::string("upstream-opus"),
+              }.to_json(),
+            }.to_json(),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "claude-desktop",
+    )
+    is Some(provider) else {
+    fail("expected provider target")
+  }
+  assert_eq(provider.provider_id, "desktop-provider")
+  guard provider.model_mapping is Some(mapping) else {
+    fail("expected model mapping")
+  }
+  assert_eq(mapping.sonnet_model, Some("mapping-fallback"))
+  guard provider.claude_desktop_model_routes.get("claude-sonnet-4-6")
+    is Some(route) else {
+    fail("expected sonnet route")
+  }
+  assert_eq(route.model, "deepseek-v4-flash [1M]")
+  assert_eq(route.label_override, Some("DeepSeek V4 Flash"))
+  assert_eq(route.supports_1m, Some(true))
+  guard provider.claude_desktop_model_routes.get("claude-opus-4-8")
+    is Some(opus_route) else {
+    fail("expected opus route")
+  }
+  assert_eq(opus_route.model, "upstream-opus")
+}
+
+///|
 test "usage query helpers parse ccs request log parameters" {
   let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&end_date=20"
   assert_eq(usage_query_int(path, "page"), Some(2))
@@ -1889,6 +1936,54 @@ test "gateway uses ccs model mapping for upstream claude model" {
   assert_eq(
     gateway.upstream_claude_model("deepseek-v4-pro [1M]", Some(unmapped)),
     "deepseek-v4-pro",
+  )
+}
+
+///|
+test "gateway uses ccs claude desktop route metadata for upstream model" {
+  let gateway = Gateway::new(port=0, model="gpt-default")
+  let routes : Map[String, ClaudeDesktopModelRoute] = {
+    "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(
+      model="deepseek-v4-flash [1M]",
+    ),
+    "claude-opus-4-8": ClaudeDesktopModelRoute::new(model="upstream-opus"),
+  }
+  let provider = ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="desktop",
+    provider_name="Desktop",
+    model_mapping=Some(
+      ModelMapping::new(sonnet_model=Some("mapping-should-not-win")),
+    ),
+    claude_desktop_model_routes=routes,
+  )
+  assert_eq(
+    gateway.upstream_claude_model(
+      "claude-sonnet-4-6",
+      Some(provider),
+      app_type="claude-desktop",
+    ),
+    "deepseek-v4-flash",
+  )
+  assert_eq(
+    gateway.upstream_claude_model(
+      "claude-sonnet-4-6-20251001",
+      Some(provider),
+      app_type="claude-desktop",
+    ),
+    "deepseek-v4-flash",
+  )
+  assert_eq(
+    gateway.upstream_claude_model(
+      "claude-opus-4-7",
+      Some(provider),
+      app_type="claude-desktop",
+    ),
+    "upstream-opus",
+  )
+  assert_eq(
+    gateway.upstream_claude_model("claude-sonnet-4-6", Some(provider)),
+    "mapping-should-not-win",
   )
 }
 

@@ -305,6 +305,46 @@ test "provider route target carries upstream config without serializing key" {
 }
 
 ///|
+test "provider route target serializes ccs claude desktop model routes" {
+  let routes : Map[String, ClaudeDesktopModelRoute] = {
+    "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(
+      model="deepseek-v4-flash [1M]",
+      label_override=Some("DeepSeek V4 Flash"),
+      supports_1m=Some(true),
+    ),
+  }
+  let target = ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="desktop-provider",
+    provider_name="Desktop Provider",
+    api_key=Some("sk-hidden"),
+    claude_desktop_model_routes=routes,
+  )
+  guard target.to_json() is Object(json) else { fail("expected target object") }
+  guard json["claudeDesktopModelRoutes"] is Object(route_json) else {
+    fail("expected claude desktop routes")
+  }
+  guard route_json["claude-sonnet-4-6"] is Object(sonnet) else {
+    fail("expected sonnet route")
+  }
+  assert_eq(sonnet["model"], Json::string("deepseek-v4-flash [1M]"))
+  assert_eq(sonnet["labelOverride"], Json::string("DeepSeek V4 Flash"))
+  assert_eq(sonnet["supports1m"], Json::boolean(true))
+  let ccs_provider = target.to_ccs_provider_json(false)
+  guard ccs_provider is Object(provider) else {
+    fail("expected ccs provider object")
+  }
+  guard provider["meta"] is Object(meta) else { fail("expected provider meta") }
+  guard meta["claudeDesktopModelRoutes"] is Object(meta_routes) else {
+    fail("expected ccs route metadata")
+  }
+  assert_true(meta_routes.get("claude-sonnet-4-6") is Some(_))
+  let serialized = ccs_provider.stringify()
+  assert_false(serialized.contains("apiKey"))
+  assert_false(serialized.contains("sk-hidden"))
+}
+
+///|
 test "provider router exposes ccs failover queue and available providers" {
   let router = ProviderRouter::new()
   router.upsert_provider(
