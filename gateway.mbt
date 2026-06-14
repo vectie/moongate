@@ -8535,8 +8535,9 @@ fn Gateway::proxy_default_cost_multiplier_for_app(
   self : Gateway,
   app_type : String,
 ) -> String {
+  let default_app_type = proxy_pricing_default_app_type(app_type)
   self.proxy_default_cost_multipliers
-  .get(app_type)
+  .get(default_app_type)
   .unwrap_or(default_cost_multiplier_for_app(app_type))
 }
 
@@ -8545,9 +8546,19 @@ fn Gateway::proxy_pricing_model_source_for_app(
   self : Gateway,
   app_type : String,
 ) -> String {
+  let default_app_type = proxy_pricing_default_app_type(app_type)
   self.proxy_pricing_model_sources
-  .get(app_type)
+  .get(default_app_type)
   .unwrap_or(default_pricing_model_source_for_app(app_type))
+}
+
+///|
+fn proxy_pricing_default_app_type(app_type : String) -> String {
+  if app_type == "claude-desktop" {
+    "claude"
+  } else {
+    app_type
+  }
 }
 
 ///|

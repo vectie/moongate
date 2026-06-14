@@ -1216,6 +1216,30 @@ test "proxy pricing config runtime overrides feed provider activation defaults" 
 }
 
 ///|
+test "proxy pricing config makes claude desktop inherit claude defaults like ccs" {
+  let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
+  gateway.proxy_default_cost_multipliers.set("claude", "1.5")
+  gateway.proxy_pricing_model_sources.set("claude", "request")
+  gateway.proxy_default_cost_multipliers.set("claude-desktop", "9.9")
+  gateway.proxy_pricing_model_sources.set("claude-desktop", "response")
+  let provider = ProviderRouteTarget::new(
+    app_type="claude-desktop",
+    provider_id="desktop",
+    provider_name="Claude Desktop",
+  )
+  assert_eq(
+    gateway.proxy_default_cost_multiplier_for_app("claude-desktop"),
+    "1.5",
+  )
+  assert_eq(
+    gateway.proxy_pricing_model_source_for_app("claude-desktop"),
+    "request",
+  )
+  assert_eq(gateway.provider_cost_multiplier(provider), "1.5")
+  assert_eq(gateway.provider_pricing_model_source(provider), "request")
+}
+
+///|
 test "common config snippet validation mirrors ccs formats" {
   assert_eq(
     ccs_validate_common_config_snippet("codex", "# comment only\n"),
