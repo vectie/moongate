@@ -1319,15 +1319,19 @@ fn ProviderRouter::failover_queue_json(
 ) -> Json {
   let queue = self.failover_queues.get(app_type).unwrap_or([])
   let rows : Array[Json] = []
-  for index, provider_id in queue {
+  for provider_id in queue {
     guard self.provider_by_id(app_type, provider_id) is Some(provider) else {
       continue
+    }
+    let sort_index = match self.provider_sort_index(app_type, provider_id) {
+      Some(index) => Json::number(index.to_double())
+      None => Json::null()
     }
     rows.push(
       {
         "providerId": Json::string(provider.provider_id),
         "providerName": Json::string(provider.provider_name),
-        "sortIndex": Json::number(index.to_double()),
+        "sortIndex": sort_index,
       }.to_json(),
     )
   }

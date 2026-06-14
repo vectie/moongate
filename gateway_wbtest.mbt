@@ -957,7 +957,7 @@ test "proxy lifecycle state matches ccs command aliases" {
     {
       "providerId": "codex-oauth",
       "providerName": "Codex OAuth",
-      "sortIndex": 0,
+      "sortIndex": null,
     },
   ])
 }

@@ -425,7 +425,7 @@ test "provider router exposes ccs failover queue and available providers" {
   )
   router.set_failover_queue("codex", ["b"])
   json_inspect(router.failover_queue_json("codex"), content=[
-    { "providerId": "b", "providerName": "Provider B", "sortIndex": 0 },
+    { "providerId": "b", "providerName": "Provider B", "sortIndex": null },
   ])
   guard router.available_failover_providers_json("codex") is Array(available) else {
     fail("expected available providers array")
@@ -441,6 +441,36 @@ test "provider router exposes ccs failover queue and available providers" {
     fail("expected settingsConfig")
   }
   assert_eq(settings["model"], Json::string("gpt-5"))
+}
+
+///|
+test "provider router failover queue uses ccs stored provider sort index" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="a",
+      provider_name="Provider A",
+    ),
+  )
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="b",
+      provider_name="Provider B",
+    ),
+  )
+  assert_true(
+    router.update_providers_sort_order("codex", [
+      { id: "a", sort_index: 3 },
+      { id: "b", sort_index: 7 },
+    ]),
+  )
+  router.set_failover_queue("codex", ["b", "a"])
+  json_inspect(router.failover_queue_json("codex"), content=[
+    { "providerId": "b", "providerName": "Provider B", "sortIndex": 7 },
+    { "providerId": "a", "providerName": "Provider A", "sortIndex": 3 },
+  ])
 }
 
 ///|
@@ -462,7 +492,7 @@ test "provider router add remove failover queue mirrors ccs semantics" {
   router.add_to_failover_queue("claude", "a")
   router.add_to_failover_queue("claude", "a")
   json_inspect(router.failover_queue_json("claude"), content=[
-    { "providerId": "a", "providerName": "Provider A", "sortIndex": 0 },
+    { "providerId": "a", "providerName": "Provider A", "sortIndex": null },
   ])
   router.record_result("a", "claude", false, false, now_ms=1000)
   guard router.get_circuit_breaker_stats("a", "claude") is Some(open_stats) else {
@@ -494,7 +524,7 @@ test "provider router ccs auto failover enable seeds empty queue" {
     {
       "providerId": "current",
       "providerName": "Current Provider",
-      "sortIndex": 0,
+      "sortIndex": null,
     },
   ])
   assert_true(router.set_auto_failover_ccs("codex", false))
@@ -566,7 +596,7 @@ test "provider router delete provider updates current and queue" {
   assert_true(router.delete_provider("claude", "a"))
   assert_eq(router.current_provider_id("claude"), Some("b"))
   json_inspect(router.failover_queue_json("claude"), content=[
-    { "providerId": "b", "providerName": "Provider B", "sortIndex": 0 },
+    { "providerId": "b", "providerName": "Provider B", "sortIndex": null },
   ])
   assert_false(router.delete_provider("claude", "missing"))
 }
