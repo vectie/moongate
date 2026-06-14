@@ -149,6 +149,25 @@ test "usage script request accepts raw ccs script output" {
 }
 
 ///|
+async test "usage script balance template uses standalone ccs native query" {
+  let path = "/testUsageScript?providerId=p1&app=codex&templateType=balance&baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey="
+  guard test_usage_script_template_result(path, None) is Some(result) else {
+    fail("expected template result")
+  }
+  assert_eq(
+    result.to_json(),
+    UsageResult::new(false, error=Some("API key is empty")).to_json(),
+  )
+  assert_true(
+    test_usage_script_template_result(
+      "/testUsageScript?providerId=p1&app=codex&templateType=custom",
+      None,
+    )
+    is None,
+  )
+}
+
+///|
 test "usage query helpers parse ccs auto failover boolean parameters" {
   assert_eq(
     usage_query_bool_any(

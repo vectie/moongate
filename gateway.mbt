@@ -11012,12 +11012,16 @@ async fn Gateway::handle_test_usage_script(
   let result = match usage_result_from_request(r.path, body) {
     Some(result) => result
     None =>
-      UsageResult::new(
-        false,
-        error=Some(
-          "Usage script execution is unavailable in standalone Moonstat; provide a ccs UsageResult JSON object as result or scriptCode.",
-        ),
-      )
+      match test_usage_script_template_result(r.path, body) {
+        Some(result) => result
+        None =>
+          UsageResult::new(
+            false,
+            error=Some(
+              "Usage script execution is unavailable in standalone Moonstat; provide a ccs UsageResult JSON object as result or scriptCode.",
+            ),
+          )
+      }
   }
   self.usage_cache.put_script(app_type, provider_id, result)
   write_usage_json(w, result.to_json())
@@ -13596,6 +13600,29 @@ fn usage_result_from_request(path : StringView, body : Json?) -> UsageResult? {
       None
     }
     None => None
+  }
+}
+
+///|
+async fn test_usage_script_template_result(
+  path : StringView,
+  body : Json?,
+) -> UsageResult? {
+  let template_type = proxy_string_request(path, body, [
+    "templateType", "template_type",
+  ]).unwrap_or("")
+  match template_type {
+    "balance" => {
+      guard proxy_string_request(path, body, ["baseUrl", "base_url"])
+        is Some(base_url) else {
+        return Some(ccs_balance_error("Base URL is empty"))
+      }
+      let api_key = proxy_string_request(path, body, ["apiKey", "api_key"]).unwrap_or(
+        "",
+      )
+      Some(ccs_get_balance(base_url, api_key))
+    }
+    _ => None
   }
 }
 
