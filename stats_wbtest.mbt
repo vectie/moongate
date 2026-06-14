@@ -643,6 +643,52 @@ test "usage summary aggregates ccs token and cost semantics" {
 }
 
 ///|
+test "usage aggregate keeps malformed cache-inclusive input like ccs sql helper" {
+  let stats = TrafficStats::new()
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-codex-cache-overflow",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5",
+      pricing_model=Some("gpt-5"),
+      usage=TokenUsage::new(
+        input_tokens=100,
+        output_tokens=5,
+        cache_read_tokens=999,
+      ),
+      total_cost_usd="0.000100",
+      status_code=200,
+      latency_ms=30,
+      data_source="proxy",
+    ),
+  )
+  let log = stats.request_logs[0]
+  assert_eq(request_log_fresh_input_tokens(log), 100)
+  let summary = stats.usage_summary_json()
+  guard summary is Object(obj) else { fail("expected summary object") }
+  assert_eq(obj["totalInputTokens"], Json::number(100.0))
+  assert_eq(obj["totalOutputTokens"], Json::number(5.0))
+  assert_eq(obj["totalCacheReadTokens"], Json::number(999.0))
+  assert_eq(obj["realTotalTokens"], Json::number(1104.0))
+  guard stats.provider_stats_json() is Array(provider_rows) else {
+    fail("expected provider stats")
+  }
+  guard provider_rows[0] is Object(provider) else {
+    fail("expected provider stat object")
+  }
+  assert_eq(provider["totalTokens"], Json::number(105.0))
+  guard stats.model_stats_json() is Array(model_rows) else {
+    fail("expected model stats")
+  }
+  guard model_rows[0] is Object(model) else {
+    fail("expected model stat object")
+  }
+  assert_eq(model["totalTokens"], Json::number(105.0))
+}
+
+///|
 test "usage aggregate lists match ccs route payloads" {
   let stats = TrafficStats::new()
   stats.record_request_log(

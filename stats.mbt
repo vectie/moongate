@@ -1483,8 +1483,9 @@ fn request_log_is_success(log : RequestLog) -> Bool {
 
 ///|
 fn request_log_fresh_input_tokens(log : RequestLog) -> Int {
-  if log.app_type == "codex" || log.app_type == "gemini" {
-    max_int(log.input_tokens - log.cache_read_tokens, 0)
+  if (log.app_type == "codex" || log.app_type == "gemini") &&
+    log.input_tokens >= log.cache_read_tokens {
+    log.input_tokens - log.cache_read_tokens
   } else {
     log.input_tokens
   }
