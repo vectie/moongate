@@ -5624,6 +5624,48 @@ test "ccs upstream parse diagnostics truncate long body snippets" {
 }
 
 ///|
+test "ccs response header stripping removes hop by hop and connection listed headers" {
+  let headers = {
+    "Content-Type": "application/json",
+    "Connection": "Keep-Alive, X-Trace-Id, x-remove-too",
+    "Keep-Alive": "timeout=5",
+    "Proxy-Connection": "keep-alive",
+    "Transfer-Encoding": "chunked",
+    "Upgrade": "websocket",
+    "X-Trace-Id": "drop",
+    "x-remove-too": "drop",
+    "X-Keep": "ok",
+  }
+  let cleaned = ccs_strip_hop_by_hop_response_headers(headers)
+  assert_eq(cleaned["Content-Type"], "application/json")
+  assert_eq(cleaned["X-Keep"], "ok")
+  assert_true(cleaned.get("Connection") is None)
+  assert_true(cleaned.get("Keep-Alive") is None)
+  assert_true(cleaned.get("Proxy-Connection") is None)
+  assert_true(cleaned.get("Transfer-Encoding") is None)
+  assert_true(cleaned.get("Upgrade") is None)
+  assert_true(cleaned.get("X-Trace-Id") is None)
+  assert_true(cleaned.get("x-remove-too") is None)
+}
+
+///|
+test "ccs rebuilt response header stripping removes stale entity headers" {
+  let headers = {
+    "Content-Type": "application/json",
+    "Content-Encoding": "gzip",
+    "Content-Length": "42",
+    "Transfer-Encoding": "chunked",
+    "X-Keep": "ok",
+  }
+  let cleaned = ccs_strip_entity_headers_for_rebuilt_body(headers)
+  assert_eq(cleaned["Content-Type"], "application/json")
+  assert_eq(cleaned["X-Keep"], "ok")
+  assert_true(cleaned.get("Content-Encoding") is None)
+  assert_true(cleaned.get("Content-Length") is None)
+  assert_true(cleaned.get("Transfer-Encoding") is None)
+}
+
+///|
 test "ccs chat sse parser aggregates text and usage" {
   let sse =
     #|data: {"id":"chatcmpl_1","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"Hel"},"finish_reason":null}]}

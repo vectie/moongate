@@ -26,6 +26,10 @@ pub fn ccs_map_proxy_error_to_status(CcsProxyError) -> Int
 
 pub fn ccs_proxy_error_message(CcsProxyError) -> String
 
+pub fn ccs_strip_entity_headers_for_rebuilt_body(Map[String, String]) -> Map[String, String]
+
+pub fn ccs_strip_hop_by_hop_response_headers(Map[String, String]) -> Map[String, String]
+
 pub fn convert_anthropic_to_codex(AnthropicRequest, String) -> CodexInput
 
 pub async fn copilot_get_auth_status() -> Json

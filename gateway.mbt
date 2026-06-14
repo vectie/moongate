@@ -15969,6 +15969,63 @@ fn body_diagnostics_suffix(
 }
 
 ///|
+fn ccs_hop_by_hop_response_header_names() -> Array[String] {
+  [
+    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "proxy-connection",
+    "te", "trailer", "trailers", "transfer-encoding", "upgrade",
+  ]
+}
+
+///|
+fn ccs_connection_listed_response_headers(
+  headers : Map[String, String],
+) -> Array[String] {
+  let result : Array[String] = []
+  for key, value in headers {
+    if key.to_lower() == "connection" {
+      for name_view in value.split(",") {
+        let name = name_view.trim().to_owned().to_lower()
+        if !name.is_empty() && !result.contains(name) {
+          result.push(name)
+        }
+      }
+    }
+  }
+  result
+}
+
+///|
+pub fn ccs_strip_hop_by_hop_response_headers(
+  headers : Map[String, String],
+) -> Map[String, String] {
+  let hop_by_hop = ccs_hop_by_hop_response_header_names()
+  let connection_listed = ccs_connection_listed_response_headers(headers)
+  let result : Map[String, String] = {}
+  for key, value in headers {
+    let normalized = key.to_lower()
+    if hop_by_hop.contains(normalized) || connection_listed.contains(normalized) {
+      continue
+    }
+    result[key] = value
+  }
+  result
+}
+
+///|
+pub fn ccs_strip_entity_headers_for_rebuilt_body(
+  headers : Map[String, String],
+) -> Map[String, String] {
+  let result : Map[String, String] = {}
+  for key, value in headers {
+    match key.to_lower() {
+      "content-encoding" | "content-length" | "transfer-encoding" => continue
+      _ => result[key] = value
+    }
+  }
+  result
+}
+
+///|
 fn body_snippet(body : String, max_chars : Int) -> String {
   let mut snippet = ""
   let limit = if body.length() < max_chars { body.length() } else { max_chars }
