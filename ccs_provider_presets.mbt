@@ -59,7 +59,7 @@ fn ccs_provider_preset_search_text(obj : Map[String, Json]) -> String {
 
 ///|
 fn ccs_provider_preset_catalog() -> Array[Json] {
-  [
+  let presets = [
     ccs_unity2_claude_preset_json("claude"),
     ccs_unity2_claude_desktop_preset_json(),
     ccs_unity2_codex_preset_json(),
@@ -68,6 +68,80 @@ fn ccs_provider_preset_catalog() -> Array[Json] {
     ccs_unity2_openclaw_preset_json(),
     ccs_unity2_hermes_preset_json(),
   ]
+  for preset in ccs_provider_preset_summary_catalog() {
+    presets.push(preset)
+  }
+  presets
+}
+
+///|
+fn ccs_provider_preset_summary_json(
+  app_type : String,
+  name : String,
+  name_key : String,
+  website_url : String,
+  api_key_url : String,
+  category : String,
+  is_official : Bool,
+  is_partner : Bool,
+  partner_promotion_key : String,
+  icon : String,
+) -> Json {
+  let obj : Map[String, Json] = {
+    "appType": Json::string(app_type),
+    "id": Json::string("\{app_type}:\{ccs_provider_summary_slug(name)}"),
+    "name": Json::string(name),
+    "settingsConfig": Json::object({}),
+  }
+  if !name_key.is_empty() {
+    obj["nameKey"] = Json::string(name_key)
+  }
+  if !website_url.is_empty() {
+    obj["websiteUrl"] = Json::string(website_url)
+  }
+  if !api_key_url.is_empty() {
+    obj["apiKeyUrl"] = Json::string(api_key_url)
+  }
+  if !category.is_empty() {
+    obj["category"] = Json::string(category)
+  }
+  if is_official {
+    obj["isOfficial"] = Json::boolean(true)
+  }
+  if is_partner {
+    obj["isPartner"] = Json::boolean(true)
+  }
+  if !partner_promotion_key.is_empty() {
+    obj["partnerPromotionKey"] = Json::string(partner_promotion_key)
+  }
+  if !icon.is_empty() {
+    obj["icon"] = Json::string(icon)
+  }
+  Json::object(obj)
+}
+
+///|
+fn ccs_provider_summary_slug(name : String) -> String {
+  let out = StringBuilder::new()
+  let lower = name.to_lower()
+  let mut last_dash = false
+  for i in 0..<lower.length() {
+    let ch = lower[i]
+    let ok = (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')
+    if ok {
+      out.write_char(ch.unsafe_to_char())
+      last_dash = false
+    } else if !last_dash {
+      out.write_char('-')
+      last_dash = true
+    }
+  }
+  let slug = out.to_string().trim(chars="-")
+  if slug.is_empty() {
+    "preset"
+  } else {
+    slug.to_owned()
+  }
 }
 
 ///|
