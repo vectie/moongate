@@ -2967,6 +2967,42 @@ fn ProviderRouteTarget::claude_api_format(self : ProviderRouteTarget) -> String 
 }
 
 ///|
+fn ProviderRouteTarget::claude_api_format_for_model(
+  self : ProviderRouteTarget,
+  model : String,
+) -> String {
+  if !self.is_github_copilot_upstream() {
+    return self.claude_api_format()
+  }
+  match self.copilot_model_vendor(model) {
+    Some(vendor) if vendor.to_lower() == "openai" => "openai_responses"
+    _ => "openai_chat"
+  }
+}
+
+///|
+fn ProviderRouteTarget::copilot_model_vendor(
+  self : ProviderRouteTarget,
+  model : String,
+) -> String? {
+  guard self.settings_config is Some(Object(settings)) else { return None }
+  for
+    key in [
+      "copilotModels", "copilot_models", "modelCatalog", "model_catalog", "models",
+    ] {
+    match settings.get(key) {
+      Some(models) =>
+        match copilot_model_vendor_from_models_json(model, models) {
+          Some(vendor) => return Some(vendor)
+          None => ()
+        }
+      None => ()
+    }
+  }
+  None
+}
+
+///|
 fn claude_api_format_needs_transform(api_format : String) -> Bool {
   api_format == "openai_chat" ||
   api_format == "openai_responses" ||
@@ -13200,7 +13236,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let api_format = provider.claude_api_format()
+  let api_format = provider.claude_api_format_for_model(upstream_model)
   let upstream_body = prepare_upstream_request_body(
     claude_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
@@ -14291,7 +14327,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let api_format = provider.claude_api_format()
+  let api_format = provider.claude_api_format_for_model(upstream_model)
   let upstream_body = prepare_upstream_request_body(
     claude_stream_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),

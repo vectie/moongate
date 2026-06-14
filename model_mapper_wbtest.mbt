@@ -203,6 +203,34 @@ test "ccs copilot live model resolver accepts moonstat models array" {
 }
 
 ///|
+test "ccs copilot model vendor lookup accepts arrays data and model maps" {
+  let raw = Json::object({
+    "data": Json::array([
+      Json::object({
+        "id": Json::string("gpt-5.4"),
+        "name": Json::string("GPT"),
+        "vendor": Json::string("OpenAI"),
+      }),
+    ]),
+  })
+  assert_eq(
+    copilot_model_vendor_from_models_json("gpt-5.4", raw),
+    Some("OpenAI"),
+  )
+  let mapped = Json::object({
+    "models": Json::object({
+      "claude-sonnet-4.6": Json::object({
+        "provider": Json::string("Anthropic"),
+      }),
+    }),
+  })
+  assert_eq(
+    copilot_model_vendor_from_models_json("claude-sonnet-4.6", mapped),
+    Some("Anthropic"),
+  )
+}
+
+///|
 test "github copilot provider applies ccs upstream model normalization" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",

@@ -2833,6 +2833,74 @@ test "claude compatible provider api format follows ccs endpoints" {
 }
 
 ///|
+test "github copilot provider api format follows ccs model vendor" {
+  let openai_copilot = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot-openai",
+    provider_name="GitHub Copilot OpenAI",
+    provider_type=Some("github_copilot"),
+    base_url=Some("https://api.githubcopilot.com"),
+    api_key=Some("PROXY_MANAGED"),
+    settings_config=Some(
+      Json::object({
+        "copilotModels": Json::object({
+          "data": Json::array([
+            Json::object({
+              "id": Json::string("gpt-5.4"),
+              "name": Json::string("GPT"),
+              "vendor": Json::string("OpenAI"),
+            }),
+          ]),
+        }),
+      }),
+    ),
+  )
+  assert_eq(
+    openai_copilot.claude_api_format_for_model("gpt-5.4"),
+    "openai_responses",
+  )
+  assert_eq(
+    claude_transform_endpoint(
+      openai_copilot.claude_api_format_for_model("gpt-5.4"),
+      false,
+      request_path="/v1/messages?beta=true&x-id=1",
+    ),
+    "/v1/responses?x-id=1",
+  )
+
+  let anthropic_copilot = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot-anthropic",
+    provider_name="GitHub Copilot Anthropic",
+    provider_type=Some("github_copilot"),
+    settings_config=Some(
+      Json::object({
+        "models": Json::array([
+          Json::object({
+            "id": Json::string("claude-sonnet-4.6"),
+            "vendor": Json::string("Anthropic"),
+          }),
+        ]),
+      }),
+    ),
+  )
+  assert_eq(
+    anthropic_copilot.claude_api_format_for_model("claude-sonnet-4.6"),
+    "openai_chat",
+  )
+  let unknown_copilot = ProviderRouteTarget::new(
+    app_type="claude",
+    provider_id="copilot-unknown",
+    provider_name="GitHub Copilot Unknown",
+    provider_type=Some("github_copilot"),
+  )
+  assert_eq(
+    unknown_copilot.claude_api_format_for_model("gpt-5.4"),
+    "openai_chat",
+  )
+}
+
+///|
 test "claude compatible provider endpoints preserve ccs query semantics" {
   assert_eq(
     claude_transform_endpoint(

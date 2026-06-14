@@ -249,6 +249,80 @@ fn copilot_json_string_value(obj : Map[String, Json], key : String) -> String? {
 }
 
 ///|
+fn copilot_model_vendor_from_models_json(
+  model_id : String,
+  models_json : Json,
+) -> String? {
+  let target = model_id.to_lower()
+  match models_json {
+    Array(models) => {
+      for entry in models {
+        match copilot_model_vendor_from_entry(target, None, entry) {
+          Some(vendor) => return Some(vendor)
+          None => ()
+        }
+      }
+      None
+    }
+    Object(obj) => {
+      match obj.get("data") {
+        Some(Array(models)) =>
+          for entry in models {
+            match copilot_model_vendor_from_entry(target, None, entry) {
+              Some(vendor) => return Some(vendor)
+              None => ()
+            }
+          }
+        _ => ()
+      }
+      match obj.get("models") {
+        Some(models) =>
+          match copilot_model_vendor_from_models_json(model_id, models) {
+            Some(vendor) => return Some(vendor)
+            None => ()
+          }
+        None => ()
+      }
+      for key, entry in obj {
+        match copilot_model_vendor_from_entry(target, Some(key), entry) {
+          Some(vendor) => return Some(vendor)
+          None => ()
+        }
+      }
+      None
+    }
+    _ => None
+  }
+}
+
+///|
+fn copilot_model_vendor_from_entry(
+  target : String,
+  fallback_id : String?,
+  entry : Json,
+) -> String? {
+  guard entry is Object(obj) else { return None }
+  let id = match copilot_json_string_value(obj, "id") {
+    Some(value) => value
+    None =>
+      match copilot_json_string_value(obj, "model") {
+        Some(value) => value
+        None => fallback_id.unwrap_or("")
+      }
+  }
+  if id.to_lower() != target {
+    return None
+  }
+  for key in ["vendor", "provider", "owned_by", "ownedBy", "category", "owner"] {
+    match copilot_json_string_value(obj, key) {
+      Some(value) if !value.trim().is_empty() => return Some(value)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
 fn copilot_split_one_m_suffix(id : String) -> (String, Bool) {
   let lower = id.to_lower()
   if lower.has_suffix("[1m]") {
