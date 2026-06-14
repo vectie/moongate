@@ -14,6 +14,52 @@ fn ccs_sync_default_status_json() -> Json {
 }
 
 ///|
+fn ccs_sync_protocol_format() -> String {
+  "cc-switch-webdav-sync"
+}
+
+///|
+fn ccs_sync_protocol_version() -> Int {
+  2
+}
+
+///|
+fn ccs_sync_db_compat_version() -> Int {
+  6
+}
+
+///|
+fn ccs_sync_legacy_db_compat_version() -> Int {
+  5
+}
+
+///|
+fn ccs_sync_remote_db_sql() -> String {
+  "db.sql"
+}
+
+///|
+fn ccs_sync_remote_skills_zip() -> String {
+  "skills.zip"
+}
+
+///|
+fn ccs_sync_remote_manifest() -> String {
+  "manifest.json"
+}
+
+///|
+priv struct CcsSyncManifestInfo {
+  format : String
+  version : Int
+  db_compat_version : Int?
+  device_name : String
+  created_at : String
+  snapshot_id : String
+  artifacts : Array[String]
+}
+
+///|
 fn ccs_sync_status_json(incoming : Map[String, Json], existing : Json?) -> Json {
   match existing {
     Some(Object(existing_obj)) =>
@@ -329,4 +375,172 @@ fn ccs_s3_sync_required_error(settings : Json) -> String? {
       ccs_validate_s3_sync_settings(normalized)
     }
   }
+}
+
+///|
+fn ccs_sync_path_segments(path : String) -> Array[String] {
+  let result : Array[String] = []
+  for part in path.split("/") {
+    let part = part.trim()
+    if !part.is_empty() {
+      result.push(part.to_owned())
+    }
+  }
+  result
+}
+
+///|
+fn ccs_sync_remote_dir_segments(
+  remote_root : String,
+  profile : String,
+  layout : String,
+) -> Array[String] {
+  let segs = ccs_sync_path_segments(remote_root)
+  segs.push("v\{ccs_sync_protocol_version()}")
+  if layout == "current" {
+    segs.push("db-v\{ccs_sync_db_compat_version()}")
+  }
+  for part in ccs_sync_path_segments(profile) {
+    segs.push(part)
+  }
+  segs
+}
+
+///|
+fn ccs_sync_remote_dir_display(
+  remote_root : String,
+  profile : String,
+  layout : String,
+) -> String {
+  "/\{ccs_sync_remote_dir_segments(remote_root, profile, layout).join("/")}"
+}
+
+///|
+fn ccs_sync_remote_file_path(
+  remote_root : String,
+  profile : String,
+  layout : String,
+  file_name : String,
+) -> String {
+  let segs = ccs_sync_remote_dir_segments(remote_root, profile, layout)
+  for part in ccs_sync_path_segments(file_name) {
+    segs.push(part)
+  }
+  segs.join("/")
+}
+
+///|
+fn ccs_sync_effective_db_compat_version(
+  manifest : CcsSyncManifestInfo,
+  layout : String,
+) -> Int? {
+  match manifest.db_compat_version {
+    Some(value) => Some(value)
+    None =>
+      if layout == "legacy" {
+        Some(ccs_sync_legacy_db_compat_version())
+      } else {
+        None
+      }
+  }
+}
+
+///|
+fn ccs_sync_manifest_info_from_json(
+  manifest_json : Json,
+) -> Result[CcsSyncManifestInfo, String] {
+  guard manifest_json is Object(obj) else {
+    return Err("Remote manifest is not a JSON object.")
+  }
+  guard json_string_from_map(obj, "format") is Some(format) else {
+    return Err("Remote manifest is missing format.")
+  }
+  guard proxy_json_int(obj, "version") is Some(version) else {
+    return Err("Remote manifest is missing protocol version.")
+  }
+  guard json_string_from_map_any(obj, ["deviceName", "device_name"])
+    is Some(device_name) else {
+    return Err("Remote manifest is missing device name.")
+  }
+  guard json_string_from_map_any(obj, ["createdAt", "created_at"])
+    is Some(created_at) else {
+    return Err("Remote manifest is missing creation time.")
+  }
+  guard json_string_from_map_any(obj, ["snapshotId", "snapshot_id"])
+    is Some(snapshot_id) else {
+    return Err("Remote manifest is missing snapshot id.")
+  }
+  guard obj.get("artifacts") is Some(Object(artifact_map)) else {
+    return Err("Remote manifest is missing artifacts.")
+  }
+  let artifacts = artifact_map.keys().collect()
+  artifacts.sort()
+  Ok(CcsSyncManifestInfo::{
+    format,
+    version,
+    db_compat_version: proxy_json_int(obj, "dbCompatVersion"),
+    device_name,
+    created_at,
+    snapshot_id,
+    artifacts,
+  })
+}
+
+///|
+fn ccs_sync_validate_manifest_compat(
+  manifest : CcsSyncManifestInfo,
+  layout : String,
+) -> Result[Unit, String] {
+  if manifest.format != ccs_sync_protocol_format() {
+    return Err("Remote manifest format is incompatible: \{manifest.format}")
+  }
+  if manifest.version != ccs_sync_protocol_version() {
+    return Err(
+      "Remote manifest protocol version is incompatible: v\{manifest.version} (local v\{ccs_sync_protocol_version()})",
+    )
+  }
+  guard ccs_sync_effective_db_compat_version(manifest, layout)
+    is Some(db_compat_version) else {
+    return Err("Remote manifest is missing the database compatibility version.")
+  }
+  if layout == "current" && db_compat_version != ccs_sync_db_compat_version() {
+    return Err(
+      "Remote database snapshot version is incompatible: db-v\{db_compat_version} (local db-v\{ccs_sync_db_compat_version()})",
+    )
+  }
+  if layout == "legacy" && db_compat_version > ccs_sync_db_compat_version() {
+    return Err(
+      "Remote database snapshot version is incompatible: db-v\{db_compat_version} (local supports up to db-v\{ccs_sync_db_compat_version()})",
+    )
+  }
+  Ok(())
+}
+
+///|
+fn ccs_sync_remote_info_json(
+  manifest : CcsSyncManifestInfo,
+  layout : String,
+  remote_root : String,
+  profile : String,
+) -> Json {
+  let compatible = ccs_sync_validate_manifest_compat(manifest, layout) is Ok(_)
+  let db_compat_version = match
+    ccs_sync_effective_db_compat_version(manifest, layout) {
+    Some(value) => Json::number(value.to_double())
+    None => Json::null()
+  }
+  {
+    "deviceName": Json::string(manifest.device_name),
+    "createdAt": Json::string(manifest.created_at),
+    "snapshotId": Json::string(manifest.snapshot_id),
+    "version": Json::number(manifest.version.to_double()),
+    "protocolVersion": Json::number(manifest.version.to_double()),
+    "dbCompatVersion": db_compat_version,
+    "compatible": Json::boolean(compatible),
+    "artifacts": Json::array(manifest.artifacts.map(Json::string)),
+    "layout": Json::string(layout),
+    "remotePath": Json::string(
+      ccs_sync_remote_dir_display(remote_root, profile, layout),
+    ),
+  }.to_json()
 }

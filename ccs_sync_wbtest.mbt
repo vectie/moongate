@@ -128,3 +128,129 @@ test "ccs s3 sync validation and guard messages match ccs" {
     Some("S3 sync is not configured."),
   )
 }
+
+///|
+test "ccs sync protocol paths match ccs v2 current and legacy layouts" {
+  assert_eq(
+    ccs_sync_remote_dir_segments("cc-switch-sync", "default", "current"),
+    ["cc-switch-sync", "v2", "db-v6", "default"],
+  )
+  assert_eq(
+    ccs_sync_remote_dir_segments("/cc-switch-sync/", "/team/default/", "legacy"),
+    ["cc-switch-sync", "v2", "team", "default"],
+  )
+  assert_eq(
+    ccs_sync_remote_file_path(
+      "cc-switch-sync",
+      "default",
+      "current",
+      ccs_sync_remote_manifest(),
+    ),
+    "cc-switch-sync/v2/db-v6/default/manifest.json",
+  )
+  assert_eq(
+    ccs_sync_remote_file_path(
+      "cc-switch-sync",
+      "default",
+      "current",
+      ccs_sync_remote_db_sql(),
+    ),
+    "cc-switch-sync/v2/db-v6/default/db.sql",
+  )
+  assert_eq(
+    ccs_sync_remote_file_path(
+      "cc-switch-sync",
+      "default",
+      "current",
+      ccs_sync_remote_skills_zip(),
+    ),
+    "cc-switch-sync/v2/db-v6/default/skills.zip",
+  )
+}
+
+///|
+test "ccs sync manifest compatibility follows current and legacy db versions" {
+  let manifest_json = {
+    "format": Json::string(ccs_sync_protocol_format()),
+    "version": Json::number(ccs_sync_protocol_version().to_double()),
+    "dbCompatVersion": Json::number(ccs_sync_db_compat_version().to_double()),
+    "deviceName": Json::string("My MacBook"),
+    "createdAt": Json::string("2026-02-12T00:00:00Z"),
+    "snapshotId": Json::string("snap-1"),
+    "artifacts": {
+      "skills.zip": { "sha256": Json::string("def"), "size": Json::number(2) }.to_json(),
+      "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
+    }.to_json(),
+  }.to_json()
+  let manifest = ccs_sync_manifest_info_from_json(manifest_json).unwrap()
+  assert_eq(manifest.artifacts, ["db.sql", "skills.zip"])
+  assert_true(ccs_sync_validate_manifest_compat(manifest, "current") is Ok(_))
+  let legacy_manifest = ccs_sync_manifest_info_from_json(
+    {
+      "format": Json::string(ccs_sync_protocol_format()),
+      "version": Json::number(ccs_sync_protocol_version().to_double()),
+      "deviceName": Json::string("Old Mac"),
+      "createdAt": Json::string("2026-02-12T00:00:00Z"),
+      "snapshotId": Json::string("snap-legacy"),
+      "artifacts": { "db.sql": Json::object({}) }.to_json(),
+    }.to_json(),
+  ).unwrap()
+  assert_eq(
+    ccs_sync_effective_db_compat_version(legacy_manifest, "legacy"),
+    Some(ccs_sync_legacy_db_compat_version()),
+  )
+  assert_true(
+    ccs_sync_validate_manifest_compat(legacy_manifest, "current") is Err(_),
+  )
+  let newer_manifest = ccs_sync_manifest_info_from_json(
+    {
+      "format": Json::string(ccs_sync_protocol_format()),
+      "version": Json::number(ccs_sync_protocol_version().to_double()),
+      "dbCompatVersion": Json::number(
+        (ccs_sync_db_compat_version() + 1).to_double(),
+      ),
+      "deviceName": Json::string("Future Mac"),
+      "createdAt": Json::string("2026-02-12T00:00:00Z"),
+      "snapshotId": Json::string("snap-newer"),
+      "artifacts": { "db.sql": Json::object({}) }.to_json(),
+    }.to_json(),
+  ).unwrap()
+  assert_true(
+    ccs_sync_validate_manifest_compat(newer_manifest, "legacy") is Err(_),
+  )
+}
+
+///|
+test "ccs sync remote info response mirrors ccs fetch remote info shape" {
+  let manifest = ccs_sync_manifest_info_from_json(
+    {
+      "format": Json::string(ccs_sync_protocol_format()),
+      "version": Json::number(ccs_sync_protocol_version().to_double()),
+      "dbCompatVersion": Json::number(ccs_sync_db_compat_version().to_double()),
+      "deviceName": Json::string("My MacBook"),
+      "createdAt": Json::string("2026-02-12T00:00:00Z"),
+      "snapshotId": Json::string("snap-1"),
+      "artifacts": {
+        "skills.zip": Json::object({}),
+        "db.sql": Json::object({}),
+      }.to_json(),
+    }.to_json(),
+  ).unwrap()
+  guard ccs_sync_remote_info_json(
+      manifest, "current", "cc-switch-sync", "default",
+    )
+    is Object(obj) else {
+    fail("expected remote info object")
+  }
+  assert_eq(obj["deviceName"], Json::string("My MacBook"))
+  assert_eq(obj["snapshotId"], Json::string("snap-1"))
+  assert_eq(obj["protocolVersion"], Json::number(2.0))
+  assert_eq(obj["dbCompatVersion"], Json::number(6.0))
+  assert_eq(obj["compatible"], Json::boolean(true))
+  assert_eq(obj["layout"], Json::string("current"))
+  assert_eq(obj["remotePath"], Json::string("/cc-switch-sync/v2/db-v6/default"))
+  assert_eq(
+    obj["artifacts"],
+    Json::array([Json::string("db.sql"), Json::string("skills.zip")]),
+  )
+}
