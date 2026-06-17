@@ -16,6 +16,7 @@ import {
   "moonbitlang/async@0.16.6",
   "moonbitlang/x@0.4.40",
   "moonbitlang/regexp@0.3.5",
+  "vectie/moonlib@0.1.0",
 }
 
 preferred_target = "native"

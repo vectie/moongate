@@ -1,5 +1,5 @@
 import {
-  "vectie/moonstat/internal/fsx",
+  "vectie/moonlib/fsx",
   "vectie/moonstat/internal/claude_desktop",
   "vectie/moonstat/internal/codex_config",
   "moonbitlang/core/json",
@@ -15,10 +15,10 @@ import {
   "vectie/moonstat/internal/httpx",
   "vectie/moonstat/internal/httpx/status",
   "vectie/moonstat/internal/net",
-  "vectie/moonstat/internal/os",
-  "vectie/moonstat/internal/pathx",
+  "vectie/moonlib/os",
+  "vectie/moonlib/pathx",
   "vectie/moonstat/internal/pino",
-  "vectie/moonstat/internal/spawn",
-  "vectie/moonstat/internal/uuid",
+  "vectie/moonlib/spawn",
+  "vectie/moonlib/uuid",
   "vectie/moonstat/oauth/codex",
 }

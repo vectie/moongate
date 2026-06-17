@@ -1,6 +1,6 @@
 ///|
 test "ccs deeplink parser accepts provider urls" {
-  let url = "ccswitch://v1/import?resource=provider&app=codex&name=OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=sk-test&enabled=true&usageAutoInterval=30"
+  let url = "moonstat://v1/import?resource=provider&app=codex&name=OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=sk-test&enabled=true&usageAutoInterval=30"
   guard moon_parse_deeplink_url_json(url) is Some(Object(obj)) else {
     fail("expected provider deeplink request")
   }
@@ -16,7 +16,7 @@ test "ccs deeplink parser accepts provider urls" {
 
 ///|
 test "ccs deeplink parser decodes prompts and validates resources" {
-  let prompt_url = "ccswitch://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8&enabled=false"
+  let prompt_url = "moonstat://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8&enabled=false"
   guard moon_parse_deeplink_url_json(prompt_url) is Some(Object(prompt)) else {
     fail("expected prompt deeplink request")
   }
@@ -27,7 +27,7 @@ test "ccs deeplink parser decodes prompts and validates resources" {
   assert_eq(moon_parse_deeplink_url_json("https://example.com"), None)
   assert_eq(
     moon_parse_deeplink_url_json(
-      "ccswitch://v1/import?resource=skill&repo=missing-owner",
+      "moonstat://v1/import?resource=skill&repo=missing-owner",
     ),
     None,
   )
@@ -35,14 +35,14 @@ test "ccs deeplink parser decodes prompts and validates resources" {
 
 ///|
 test "ccs deeplink parser accepts mcp and skill requests" {
-  let mcp_url = "ccswitch://v1/import?resource=mcp&apps=claude,codex&config=eyJtY3BTZXJ2ZXJzIjp7fX0"
+  let mcp_url = "moonstat://v1/import?resource=mcp&apps=claude,codex&config=eyJtY3BTZXJ2ZXJzIjp7fX0"
   guard moon_parse_deeplink_url_json(mcp_url) is Some(Object(mcp)) else {
     fail("expected mcp deeplink request")
   }
   assert_eq(mcp["resource"], Json::string("mcp"))
   assert_eq(mcp["apps"], Json::string("claude,codex"))
   assert_eq(mcp["configFormat"], Json::string("json"))
-  let skill_url = "ccswitch://v1/import?resource=skill&repo=vectie%2Fskills&branch=main&enabled=true"
+  let skill_url = "moonstat://v1/import?resource=skill&repo=vectie%2Fskills&branch=main&enabled=true"
   guard moon_parse_deeplink_url_json(skill_url) is Some(Object(skill)) else {
     fail("expected skill deeplink request")
   }

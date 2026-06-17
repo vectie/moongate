@@ -7,7 +7,7 @@ fn moon_deeplink_supported_app(app : String) -> Bool {
 
 ///|
 fn moon_parse_deeplink_url_json(url : String) -> Json? {
-  let scheme = "ccswitch://"
+  let scheme = "moonstat://"
   guard url.has_prefix(scheme) else { return None }
   let rest = url[scheme.length():]
   guard rest.find("/") is Some(slash_index) else { return None }

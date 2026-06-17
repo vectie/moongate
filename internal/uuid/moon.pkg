@@ -4,5 +4,5 @@ import {
 }
 
 import {
-  "vectie/moonstat/internal/rand",
+  "vectie/moonlib/rand",
 } for "test"

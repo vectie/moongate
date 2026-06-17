@@ -1,7 +1,7 @@
 import {
   "moonbitlang/async/process",
   "moonbitlang/async/io",
-  "vectie/moonstat/internal/errno",
+  "vectie/moonlib/errno",
   "moonbitlang/async/aqueue",
   "moonbitlang/async",
   "moonbitlang/core/encoding/utf8" @encoding/utf8,

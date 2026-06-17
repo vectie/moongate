@@ -2,7 +2,7 @@ import {
   "vectie/moonstat",
   "vectie/moonstat/internal/claude_desktop",
   "vectie/moonstat/internal/codex_config",
-  "vectie/moonstat/internal/os",
+  "vectie/moonlib/os",
   "vectie/moonstat/internal/pino",
   "vectie/moonstat/internal/hosts",
   "vectie/moonstat/oauth/codex",
