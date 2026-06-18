@@ -58,6 +58,36 @@ pub fn MoonstatClient::from_host(
 }
 
 ///|
+pub fn MoonstatClient::from_suite_status(
+  status : Json,
+  api_key? : String? = None,
+  user_agent? : String? = None,
+) -> MoonstatClient? {
+  match moonstat_base_url_from_suite_status(status) {
+    Some(base_url) =>
+      Some(MoonstatClient::new(base_url~, api_key~, user_agent~))
+    None => None
+  }
+}
+
+///|
+pub async fn MoonstatClient::discover(
+  path? : String = default_moonstat_suite_status_path(),
+  api_key? : String? = None,
+  user_agent? : String? = None,
+) -> MoonstatClient {
+  let content = @fsx.read_file(path) catch { _ => "" }
+  if !content.is_empty() {
+    let parsed = @json.parse(content) catch { _ => Json::null() }
+    match MoonstatClient::from_suite_status(parsed, api_key~, user_agent~) {
+      Some(client) => return client
+      None => ()
+    }
+  }
+  MoonstatClient::new(api_key~, user_agent~)
+}
+
+///|
 pub fn MoonstatClient::endpoint(self : MoonstatClient, path : String) -> String {
   moonstat_client_url(self.base_url, path)
 }
@@ -503,4 +533,52 @@ fn moonstat_usage_query_string(query : MoonstatUsageQuery?) -> String? {
 ///|
 fn moonstat_client_query_pair(key : String, value : String) -> String {
   "\{copilot_url_encode(key)}=\{copilot_url_encode(value)}"
+}
+
+///|
+pub fn moonstat_base_url_from_suite_status(status : Json) -> String? {
+  match status {
+    Object(obj) => {
+      match obj.get("manifest") {
+        Some(Object(manifest)) =>
+          match moonstat_base_url_from_json_object(manifest) {
+            Some(base_url) => return Some(base_url)
+            None => ()
+          }
+        _ => ()
+      }
+      match moonstat_base_url_from_json_object(obj) {
+        Some(base_url) => Some(base_url)
+        None =>
+          match obj.get("health_url") {
+            Some(String(url)) => moonstat_client_strip_suffix(url, "/health")
+            _ => None
+          }
+      }
+    }
+    _ => None
+  }
+}
+
+///|
+fn moonstat_base_url_from_json_object(obj : Map[String, Json]) -> String? {
+  match obj.get("base_url") {
+    Some(String(url)) if !url.trim().is_empty() =>
+      Some(moonstat_client_normalize_base_url(url))
+    _ => None
+  }
+}
+
+///|
+fn moonstat_client_strip_suffix(value : String, suffix : String) -> String? {
+  let trimmed = value.trim().to_owned()
+  if trimmed.has_suffix(suffix) {
+    Some(
+      moonstat_client_normalize_base_url(
+        trimmed[:trimmed.length() - suffix.length()].to_owned(),
+      ),
+    )
+  } else {
+    None
+  }
 }

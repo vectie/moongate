@@ -94,3 +94,46 @@ test "moonstat client omits empty usage query values" {
     "http://127.0.0.1:15721/usage/logs",
   )
 }
+
+///|
+test "moonstat client discovers from suite status manifest" {
+  let status = moonstat_suite_status_json(host="0.0.0.0", port=15722)
+  let client = MoonstatClient::from_suite_status(status).unwrap()
+  assert_eq(client.base_url, "http://127.0.0.1:15722")
+  assert_eq(
+    moonstat_base_url_from_suite_status(status),
+    Some("http://127.0.0.1:15722"),
+  )
+}
+
+///|
+test "moonstat client discovers from root status urls" {
+  let root_base = { "base_url": Json::string("http://127.0.0.1:4199/") }.to_json()
+  assert_eq(
+    MoonstatClient::from_suite_status(root_base).unwrap().base_url,
+    "http://127.0.0.1:4199",
+  )
+  let health_only = {
+    "health_url": Json::string("http://127.0.0.1:4299/health"),
+  }.to_json()
+  assert_eq(
+    MoonstatClient::from_suite_status(health_only).unwrap().base_url,
+    "http://127.0.0.1:4299",
+  )
+}
+
+///|
+async test "moonstat client discover reads status file and falls back" {
+  @fsx.with_temporary_directory("moonstat-client-discover-XXXXXX", tmpdir => {
+    let path = @pathx.join(tmpdir, "suite-status.json")
+    @fsx.write_to_file(
+      path,
+      moonstat_suite_status_json(host="127.0.0.1", port=4307).stringify(),
+    )
+    assert_eq(MoonstatClient::discover(path~).base_url, "http://127.0.0.1:4307")
+    assert_eq(
+      MoonstatClient::discover(path=@pathx.join(tmpdir, "missing.json")).base_url,
+      "http://127.0.0.1:15721",
+    )
+  })
+}

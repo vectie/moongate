@@ -112,6 +112,8 @@ pub fn moon_strip_entity_headers_for_rebuilt_body(Map[String, String]) -> Map[St
 
 pub fn moon_strip_hop_by_hop_response_headers(Map[String, String]) -> Map[String, String]
 
+pub fn moonstat_base_url_from_suite_status(Json) -> String?
+
 pub fn moonstat_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
 
 pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
@@ -459,8 +461,10 @@ pub struct MoonstatClient {
   api_key : String?
   user_agent : String?
 }
+pub async fn MoonstatClient::discover(path? : String, api_key? : String?, user_agent? : String?) -> Self
 pub fn MoonstatClient::endpoint(Self, String) -> String
 pub fn MoonstatClient::from_host(host? : String, port? : Int, api_key? : String?, user_agent? : String?) -> Self
+pub fn MoonstatClient::from_suite_status(Json, api_key? : String?, user_agent? : String?) -> Self?
 pub async fn MoonstatClient::health(Self) -> Result[Json, String]
 pub fn MoonstatClient::health_url(Self) -> String
 pub async fn MoonstatClient::metrics(Self) -> Result[String, String]
