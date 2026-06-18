@@ -966,35 +966,35 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_scan_openclaw_config_health(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_openclaw_default_model", (_, w) => {
-    self.handle_get_openclaw_default_model(w)
+    self.openclaw.handle_get_openclaw_default_model(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_openclaw_default_model", (r, w) => {
-    self.handle_set_openclaw_default_model(r, w)
+    self.openclaw.handle_set_openclaw_default_model(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_openclaw_model_catalog", (_, w) => {
-    self.handle_get_openclaw_model_catalog(w)
+    self.openclaw.handle_get_openclaw_model_catalog(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_openclaw_model_catalog", (r, w) => {
-    self.handle_set_openclaw_model_catalog(r, w)
+    self.openclaw.handle_set_openclaw_model_catalog(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_openclaw_agents_defaults", (_, w) => {
-    self.handle_get_openclaw_agents_defaults(w)
+    self.openclaw.handle_get_openclaw_agents_defaults(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_openclaw_agents_defaults", (
     r,
     w,
-  ) => self.handle_set_openclaw_agents_defaults(r, w))
+  ) => self.openclaw.handle_set_openclaw_agents_defaults(r, w))
   router.add_handler(@httpx.Method::Get, "/get_openclaw_env", (_, w) => {
-    self.handle_get_openclaw_env(w)
+    self.openclaw.handle_get_openclaw_env(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_openclaw_env", (r, w) => {
-    self.handle_set_openclaw_env(r, w)
+    self.openclaw.handle_set_openclaw_env(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_openclaw_tools", (_, w) => {
-    self.handle_get_openclaw_tools(w)
+    self.openclaw.handle_get_openclaw_tools(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_openclaw_tools", (r, w) => {
-    self.handle_set_openclaw_tools(r, w)
+    self.openclaw.handle_set_openclaw_tools(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider_ids", (_, w) => {
     self.handle_get_live_provider_ids(w, "hermes")
@@ -1009,28 +1009,28 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_get_hermes_model_config(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_memory", (r, w) => {
-    self.handle_get_hermes_memory(r, w)
+    self.openclaw.handle_get_hermes_memory(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_hermes_memory", (r, w) => {
-    self.handle_get_hermes_memory(r, w)
+    self.openclaw.handle_get_hermes_memory(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/set_hermes_memory", (r, w) => {
-    self.handle_set_hermes_memory(r, w)
+    self.openclaw.handle_set_hermes_memory(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_memory_limits", (_, w) => {
-    self.handle_get_hermes_memory_limits(w)
+    self.openclaw.handle_get_hermes_memory_limits(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_hermes_memory_enabled", (r, w) => {
-    self.handle_set_hermes_memory_enabled(r, w)
+    self.openclaw.handle_set_hermes_memory_enabled(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/open_hermes_web_ui", (r, w) => {
-    self.handle_open_hermes_web_ui(r, w)
+    self.openclaw.handle_open_hermes_web_ui(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/open_hermes_web_ui", (r, w) => {
-    self.handle_open_hermes_web_ui(r, w)
+    self.openclaw.handle_open_hermes_web_ui(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/launch_hermes_dashboard", (_, w) => {
-    self.handle_launch_hermes_dashboard(w)
+    self.openclaw.handle_launch_hermes_dashboard(w)
   })
   router.add_handler(
     @httpx.Method::Post,
