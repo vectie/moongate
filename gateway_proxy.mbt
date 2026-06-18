@@ -1339,34 +1339,45 @@ async fn ProxyService::handle_proxy_live_takeover_active(
 }
 
 ///|
+async fn ProxyService::switch_provider_from_request(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+) -> Result[ProviderRouteTarget, String] {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
+    return Err("missing_app_type")
+  }
+  guard proxy_string_request(r.path, config, ["provider_id", "providerId"])
+    is Some(provider_id) else {
+    return Err("missing_provider_id")
+  }
+  guard self.provider_router.provider_by_id(app_type, provider_id)
+    is Some(provider) else {
+    return Err("provider_not_found")
+  }
+  if provider.provider_type == Some("official") {
+    return Err("official_provider_blocked_during_takeover")
+  }
+  self.provider_router.set_current_provider(app_type, provider_id)
+  Ok(provider)
+}
+
+///|
 async fn Gateway::handle_proxy_switch_provider(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
-  guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
-    write_usage_bad_request(w, "missing_app_type")
-    return
+  let provider = match self.proxy.switch_provider_from_request(r) {
+    Ok(provider) => provider
+    Err(error) => {
+      write_usage_bad_request(w, error)
+      return
+    }
   }
-  guard proxy_string_request(r.path, config, ["provider_id", "providerId"])
-    is Some(provider_id) else {
-    write_usage_bad_request(w, "missing_provider_id")
-    return
-  }
-  guard self.proxy.provider_router.provider_by_id(app_type, provider_id)
-    is Some(provider) else {
-    write_usage_bad_request(w, "provider_not_found")
-    return
-  }
-  if provider.provider_type == Some("official") {
-    write_usage_bad_request(w, "official_provider_blocked_during_takeover")
-    return
-  }
-  self.proxy.provider_router.set_current_provider(app_type, provider_id)
   self.usage.set_active_target(
-    app_type,
+    provider.app_type,
     provider.provider_id,
     provider.provider_name,
   )
