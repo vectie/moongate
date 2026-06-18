@@ -110,30 +110,21 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("POST /usage/model-pricing")))
   assert_true(routes.contains(Json::string("DELETE /usage/model-pricing")))
   assert_true(routes.contains(Json::string("GET /usage/request-detail/*path")))
-  assert_true(routes.contains(Json::string("GET|POST /get_usage_summary")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /get_usage_summary_by_app")),
-  )
-  assert_true(routes.contains(Json::string("GET|POST /get_usage_trends")))
-  assert_true(routes.contains(Json::string("GET|POST /get_provider_stats")))
-  assert_true(routes.contains(Json::string("GET|POST /get_model_stats")))
-  assert_true(routes.contains(Json::string("GET|POST /get_request_logs")))
-  assert_true(routes.contains(Json::string("GET|POST /get_request_detail")))
-  assert_true(routes.contains(Json::string("GET /get_model_pricing")))
-  assert_true(routes.contains(Json::string("POST /update_model_pricing")))
-  assert_true(
-    routes.contains(Json::string("DELETE|POST /delete_model_pricing")),
-  )
-  assert_true(routes.contains(Json::string("GET|POST /check_provider_limits")))
-  assert_true(routes.contains(Json::string("POST /sync_session_usage")))
-  assert_true(routes.contains(Json::string("GET|POST /get_usage_data_sources")))
   assert_true(routes.contains(Json::string("GET|POST /usage/provider-usage")))
-  assert_true(routes.contains(Json::string("GET|POST /get_balance")))
-  assert_true(routes.contains(Json::string("GET|POST /get_subscription_quota")))
-  assert_true(routes.contains(Json::string("GET|POST /get_codex_oauth_quota")))
-  assert_true(routes.contains(Json::string("GET|POST /get_codex_oauth_models")))
-  assert_true(routes.contains(Json::string("GET|POST /get_coding_plan_quota")))
-  assert_true(routes.contains(Json::string("POST /testUsageScript")))
+  assert_true(routes.contains(Json::string("GET|POST /usage/balance")))
+  assert_true(
+    routes.contains(Json::string("GET|POST /usage/subscription-quota")),
+  )
+  assert_true(
+    routes.contains(Json::string("GET|POST /usage/codex-oauth-quota")),
+  )
+  assert_true(
+    routes.contains(Json::string("GET|POST /usage/codex-oauth-models")),
+  )
+  assert_true(
+    routes.contains(Json::string("GET|POST /usage/coding-plan-quota")),
+  )
+  assert_true(routes.contains(Json::string("POST /usage/test-script")))
   assert_true(routes.contains(Json::string("GET|POST /stream_check_provider")))
   assert_true(
     routes.contains(Json::string("GET|POST /stream_check_all_providers")),
@@ -620,44 +611,39 @@ fn moon_tauri_command_surface() -> Array[String] {
     "read_claude_plugin_config", "apply_claude_plugin_config", "is_claude_plugin_applied",
     "apply_claude_onboarding_skip", "clear_claude_onboarding_skip", "get_claude_mcp_status",
     "read_claude_mcp_config", "upsert_claude_mcp_server", "delete_claude_mcp_server",
-    "validate_mcp_command", "testUsageScript", "get_subscription_quota", "get_codex_oauth_quota",
-    "get_codex_oauth_models", "get_coding_plan_quota", "get_balance", "get_mcp_config",
-    "upsert_mcp_server_in_config", "delete_mcp_server_in_config", "set_mcp_enabled",
-    "get_mcp_servers", "upsert_mcp_server", "delete_mcp_server", "toggle_mcp_app",
-    "import_mcp_from_apps", "get_prompts", "upsert_prompt", "delete_prompt", "enable_prompt",
-    "import_prompt_from_file", "get_current_prompt_file_content", "fetch_models_for_config",
-    "test_api_endpoints", "get_custom_endpoints", "add_custom_endpoint", "remove_custom_endpoint",
-    "update_endpoint_last_used", "get_app_config_dir_override", "set_app_config_dir_override",
-    "update_providers_sort_order", "export_config_to_file", "import_config_from_file",
-    "webdav_test_connection", "webdav_sync_upload", "webdav_sync_download", "webdav_sync_save_settings",
-    "webdav_sync_fetch_remote_info", "s3_test_connection", "s3_sync_upload", "s3_sync_download",
-    "s3_sync_save_settings", "s3_sync_fetch_remote_info", "save_file_dialog", "open_file_dialog",
-    "open_zip_file_dialog", "create_db_backup", "list_db_backups", "restore_db_backup",
-    "rename_db_backup", "delete_db_backup", "sync_current_providers_live", "parse_deeplink",
-    "merge_deeplink_config", "import_from_deeplink", "import_from_deeplink_unified",
-    "update_tray_menu", "check_env_conflicts", "delete_env_vars", "restore_env_backup",
-    "get_installed_skills", "get_skill_backups", "delete_skill_backup", "install_skill_unified",
-    "uninstall_skill_unified", "restore_skill_backup", "toggle_skill_app", "scan_unmanaged_skills",
-    "import_skills_from_apps", "discover_available_skills", "check_skill_updates",
-    "update_skill", "migrate_skill_storage", "search_skills_sh", "get_skills", "get_skills_for_app",
-    "install_skill", "install_skill_for_app", "uninstall_skill", "uninstall_skill_for_app",
-    "get_skill_repos", "add_skill_repo", "remove_skill_repo", "install_skills_from_zip",
-    "set_auto_launch", "get_auto_launch_status", "start_proxy_server", "stop_proxy_server",
-    "stop_proxy_with_restore", "get_proxy_takeover_status", "set_proxy_takeover_for_app",
-    "get_proxy_status", "get_proxy_config", "update_proxy_config", "get_global_proxy_config",
-    "update_global_proxy_config", "get_proxy_config_for_app", "update_proxy_config_for_app",
-    "get_default_cost_multiplier", "set_default_cost_multiplier", "get_pricing_model_source",
-    "set_pricing_model_source", "is_proxy_running", "is_live_takeover_active", "switch_proxy_provider",
-    "get_provider_health", "reset_circuit_breaker", "get_circuit_breaker_config",
+    "validate_mcp_command", "get_mcp_config", "upsert_mcp_server_in_config", "delete_mcp_server_in_config",
+    "set_mcp_enabled", "get_mcp_servers", "upsert_mcp_server", "delete_mcp_server",
+    "toggle_mcp_app", "import_mcp_from_apps", "get_prompts", "upsert_prompt", "delete_prompt",
+    "enable_prompt", "import_prompt_from_file", "get_current_prompt_file_content",
+    "fetch_models_for_config", "test_api_endpoints", "get_custom_endpoints", "add_custom_endpoint",
+    "remove_custom_endpoint", "update_endpoint_last_used", "get_app_config_dir_override",
+    "set_app_config_dir_override", "update_providers_sort_order", "export_config_to_file",
+    "import_config_from_file", "webdav_test_connection", "webdav_sync_upload", "webdav_sync_download",
+    "webdav_sync_save_settings", "webdav_sync_fetch_remote_info", "s3_test_connection",
+    "s3_sync_upload", "s3_sync_download", "s3_sync_save_settings", "s3_sync_fetch_remote_info",
+    "save_file_dialog", "open_file_dialog", "open_zip_file_dialog", "create_db_backup",
+    "list_db_backups", "restore_db_backup", "rename_db_backup", "delete_db_backup",
+    "sync_current_providers_live", "parse_deeplink", "merge_deeplink_config", "import_from_deeplink",
+    "import_from_deeplink_unified", "update_tray_menu", "check_env_conflicts", "delete_env_vars",
+    "restore_env_backup", "get_installed_skills", "get_skill_backups", "delete_skill_backup",
+    "install_skill_unified", "uninstall_skill_unified", "restore_skill_backup", "toggle_skill_app",
+    "scan_unmanaged_skills", "import_skills_from_apps", "discover_available_skills",
+    "check_skill_updates", "update_skill", "migrate_skill_storage", "search_skills_sh",
+    "get_skills", "get_skills_for_app", "install_skill", "install_skill_for_app",
+    "uninstall_skill", "uninstall_skill_for_app", "get_skill_repos", "add_skill_repo",
+    "remove_skill_repo", "install_skills_from_zip", "set_auto_launch", "get_auto_launch_status",
+    "start_proxy_server", "stop_proxy_server", "stop_proxy_with_restore", "get_proxy_takeover_status",
+    "set_proxy_takeover_for_app", "get_proxy_status", "get_proxy_config", "update_proxy_config",
+    "get_global_proxy_config", "update_global_proxy_config", "get_proxy_config_for_app",
+    "update_proxy_config_for_app", "get_default_cost_multiplier", "set_default_cost_multiplier",
+    "get_pricing_model_source", "set_pricing_model_source", "is_proxy_running", "is_live_takeover_active",
+    "switch_proxy_provider", "get_provider_health", "reset_circuit_breaker", "get_circuit_breaker_config",
     "update_circuit_breaker_config", "get_circuit_breaker_stats", "get_failover_queue",
     "get_available_providers_for_failover", "add_to_failover_queue", "remove_from_failover_queue",
-    "get_auto_failover_enabled", "set_auto_failover_enabled", "get_usage_summary",
-    "get_usage_summary_by_app", "get_usage_trends", "get_provider_stats", "get_model_stats",
-    "get_request_logs", "get_request_detail", "get_model_pricing", "update_model_pricing",
-    "delete_model_pricing", "check_provider_limits", "sync_session_usage", "get_usage_data_sources",
-    "stream_check_provider", "stream_check_all_providers", "get_stream_check_config",
-    "save_stream_check_config", "list_sessions", "get_session_messages", "delete_session",
-    "delete_sessions", "launch_session_terminal", "get_tool_versions", "run_tool_lifecycle_action",
+    "get_auto_failover_enabled", "set_auto_failover_enabled", "stream_check_provider",
+    "stream_check_all_providers", "get_stream_check_config", "save_stream_check_config",
+    "list_sessions", "get_session_messages", "delete_session", "delete_sessions",
+    "launch_session_terminal", "get_tool_versions", "run_tool_lifecycle_action",
     "probe_tool_installations", "open_provider_terminal", "get_universal_providers",
     "get_universal_provider", "upsert_universal_provider", "delete_universal_provider",
     "sync_universal_provider", "import_opencode_providers_from_live", "get_opencode_live_provider_ids",
@@ -695,7 +681,7 @@ test "suite manifest covers current Moonstat command surface" {
   guard manifest is Object(obj) else { fail("expected manifest object") }
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 273)
+  assert_eq(moon_commands.length(), 254)
   for command in moon_commands {
     assert_true(suite_routes_include_path(routes, "/\{command}"))
   }
@@ -716,7 +702,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 async test "gateway registers current Moonstat command handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 273)
+  assert_eq(moon_commands.length(), 254)
   for command in moon_commands {
     assert_true(gateway_source_registers_path(source, "/\{command}"))
   }

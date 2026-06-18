@@ -77,7 +77,8 @@ async fn check_usage_models(args : Array[String]) -> Unit {
 
 ///|
 async fn test_usage_script(args : Array[String]) -> Unit {
-  guard usage_provider_script_path(args, "/testUsageScript", true) is Some(path) else {
+  guard usage_provider_script_path(args, "/usage/test-script", true)
+    is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required usage script args: --provider-id --app")
     return

@@ -138,7 +138,7 @@ test "usage query helpers parse ccs provider limit parameters" {
 
 ///|
 test "usage script request accepts raw ccs script output" {
-  let path = "/testUsageScript?providerId=p1&app=codex&scriptCode=%5B%7B%22planName%22%3A%22Team%22%2C%22total%22%3A100%2C%22used%22%3A40%2C%22remaining%22%3A60%2C%22unit%22%3A%22%25%22%7D%5D"
+  let path = "/usage/test-script?providerId=p1&app=codex&scriptCode=%5B%7B%22planName%22%3A%22Team%22%2C%22total%22%3A100%2C%22used%22%3A40%2C%22remaining%22%3A60%2C%22unit%22%3A%22%25%22%7D%5D"
   guard usage_result_from_request(path, None) is Some(result) else {
     fail("expected usage result")
   }
@@ -152,7 +152,7 @@ test "usage script request accepts raw ccs script output" {
 
 ///|
 async test "usage script github copilot template uses standalone native query" {
-  let path = "/testUsageScript?providerId=p1&app=claude&templateType=github_copilot&accountId=moonstat-missing-account"
+  let path = "/usage/test-script?providerId=p1&app=claude&templateType=github_copilot&accountId=moonstat-missing-account"
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
   }
@@ -202,7 +202,7 @@ test "github copilot usage conversion reports malformed response" {
 
 ///|
 async test "usage script balance template uses standalone ccs native query" {
-  let path = "/testUsageScript?providerId=p1&app=codex&templateType=balance&baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey="
+  let path = "/usage/test-script?providerId=p1&app=codex&templateType=balance&baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey="
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
   }
@@ -212,7 +212,7 @@ async test "usage script balance template uses standalone ccs native query" {
   )
   assert_true(
     test_usage_script_template_result(
-      "/testUsageScript?providerId=p1&app=codex&templateType=custom",
+      "/usage/test-script?providerId=p1&app=codex&templateType=custom",
       None,
     )
     is None,
@@ -221,7 +221,7 @@ async test "usage script balance template uses standalone ccs native query" {
 
 ///|
 async test "usage script token plan template uses standalone ccs native query" {
-  let path = "/testUsageScript?providerId=p1&app=codex&templateType=token_plan&baseUrl=https%3A%2F%2Fapi.kimi.com%2Fcoding&apiKey="
+  let path = "/usage/test-script?providerId=p1&app=codex&templateType=token_plan&baseUrl=https%3A%2F%2Fapi.kimi.com%2Fcoding&apiKey="
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
   }
@@ -230,7 +230,7 @@ async test "usage script token plan template uses standalone ccs native query" {
 
 ///|
 async test "usage script official subscription template uses standalone ccs native query" {
-  let path = "/testUsageScript?providerId=p1&app=unknown&templateType=official_subscription"
+  let path = "/usage/test-script?providerId=p1&app=unknown&templateType=official_subscription"
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
   }
@@ -1469,7 +1469,7 @@ test "usage request log helpers parse ccs structured body filters" {
     "pageSize": Json::number(25.0),
   }.to_json()
   let filters = usage_request_log_filters_from_request(
-    "/get_request_logs",
+    "/usage/logs",
     Some(body),
   )
   assert_eq(filters.app_type, Some("codex"))
@@ -1479,13 +1479,11 @@ test "usage request log helpers parse ccs structured body filters" {
   assert_eq(filters.start_date, Some(10))
   assert_eq(filters.end_date, Some(20))
   assert_eq(
-    usage_int_from_request("/get_request_logs", Some(body), ["page"]),
+    usage_int_from_request("/usage/logs", Some(body), ["page"]),
     Some(2),
   )
   assert_eq(
-    usage_int_from_request("/get_request_logs", Some(body), [
-      "page_size", "pageSize",
-    ]),
+    usage_int_from_request("/usage/logs", Some(body), ["page_size", "pageSize"]),
     Some(25),
   )
 }
@@ -1501,7 +1499,7 @@ test "usage request log helpers let query override ccs body filters" {
     "page": Json::number(9.0),
     "pageSize": Json::number(99.0),
   }.to_json()
-  let path = "/get_request_logs?appType=codex&providerName=OAuth&statusCode=200&page=1&pageSize=10"
+  let path = "/usage/logs?appType=codex&providerName=OAuth&statusCode=200&page=1&pageSize=10"
   let filters = usage_request_log_filters_from_request(path, Some(body))
   assert_eq(filters.app_type, Some("codex"))
   assert_eq(filters.provider_name, Some("OAuth"))
@@ -1523,7 +1521,7 @@ test "usage aggregate helpers parse ccs structured command args" {
     "dailyLimitUsd": Json::string("1.25"),
     "monthlyLimitUsd": Json::number(9.5),
   }.to_json()
-  let path = "/get_usage_summary"
+  let path = "/usage/summary"
   assert_eq(
     usage_int_from_request(path, Some(body), ["start_date", "startDate"]),
     Some(100),
@@ -1561,7 +1559,7 @@ test "usage aggregate helpers prefer query params over ccs body args" {
     "endDate": Json::number(200.0),
     "appType": Json::string("claude"),
   }.to_json()
-  let path = "/get_provider_stats?startDate=10&endDate=20&appType=codex"
+  let path = "/usage/provider-stats?startDate=10&endDate=20&appType=codex"
   assert_eq(
     usage_int_from_request(path, Some(body), ["start_date", "startDate"]),
     Some(10),
@@ -3404,7 +3402,7 @@ test "usage pricing helpers parse ccs structured body update" {
     "cacheReadCost": Json::string("0.10"),
     "cacheCreationCost": Json::number(0.0),
   }.to_json()
-  guard usage_pricing_from_request("/update_model_pricing", Some(body))
+  guard usage_pricing_from_request("/usage/model-pricing", Some(body))
     is Some(pricing) else {
     fail("expected body pricing")
   }
@@ -3426,7 +3424,7 @@ test "usage pricing helpers prefer query over body args" {
     "cacheReadCost": Json::string("3"),
     "cacheCreationCost": Json::string("4"),
   }.to_json()
-  let path = "/update_model_pricing?modelId=query-model&displayName=Query%20Model&inputCost=5&outputCost=6&cacheReadCost=7&cacheCreationCost=8"
+  let path = "/usage/model-pricing?modelId=query-model&displayName=Query%20Model&inputCost=5&outputCost=6&cacheReadCost=7&cacheCreationCost=8"
   guard usage_pricing_from_request(path, Some(body)) is Some(pricing) else {
     fail("expected query pricing")
   }
@@ -3449,7 +3447,7 @@ test "usage pricing validation mirrors ccs required field messages" {
   }.to_json()
   assert_eq(
     usage_pricing_validation_error_from_request(
-      "/update_model_pricing",
+      "/usage/model-pricing",
       Some(body),
     ),
     Some("Model ID is required"),
@@ -3463,7 +3461,7 @@ test "usage pricing validation mirrors ccs required field messages" {
   }.to_json()
   assert_eq(
     usage_pricing_validation_error_from_request(
-      "/update_model_pricing",
+      "/usage/model-pricing",
       Some(missing_display),
     ),
     Some("Display name is required"),
@@ -3472,12 +3470,12 @@ test "usage pricing validation mirrors ccs required field messages" {
 
 ///|
 test "usage pricing validation mirrors ccs invalid price messages" {
-  let negative = "/update_model_pricing?modelId=m&displayName=M&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
+  let negative = "/usage/model-pricing?modelId=m&displayName=M&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
   assert_eq(
     usage_pricing_validation_error_from_request(negative, None),
     Some("input_cost price must be non-negative: -1"),
   )
-  let invalid = "/update_model_pricing?modelId=m&displayName=M&inputCost=abc&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
+  let invalid = "/usage/model-pricing?modelId=m&displayName=M&inputCost=abc&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
   assert_eq(
     usage_pricing_validation_error_from_request(invalid, None),
     Some("input_cost price is invalid: abc"),
@@ -3498,11 +3496,11 @@ test "usage decimal validation mirrors ccs frontend regex" {
 ///|
 test "usage request detail id accepts ccs get_request_detail query" {
   assert_eq(
-    usage_request_detail_id("/get_request_detail?requestId=session%3Amsg%2F1"),
+    usage_request_detail_id("/usage/request-detail?requestId=session%3Amsg%2F1"),
     "session:msg/1",
   )
   assert_eq(
-    usage_request_detail_id("/get_request_detail?request_id=req_123"),
+    usage_request_detail_id("/usage/request-detail?request_id=req_123"),
     "req_123",
   )
 }
@@ -3511,13 +3509,13 @@ test "usage request detail id accepts ccs get_request_detail query" {
 test "usage request detail id accepts ccs structured body" {
   let body = { "requestId": Json::string("session:body/1") }.to_json()
   assert_eq(
-    usage_request_detail_id_from_request("/get_request_detail", Some(body)),
+    usage_request_detail_id_from_request("/usage/request-detail", Some(body)),
     "session:body/1",
   )
   let snake_body = { "request_id": Json::string("req_body_2") }.to_json()
   assert_eq(
     usage_request_detail_id_from_request(
-      "/get_request_detail",
+      "/usage/request-detail",
       Some(snake_body),
     ),
     "req_body_2",
@@ -3528,14 +3526,14 @@ test "usage request detail id accepts ccs structured body" {
 test "usage model id helpers accept body and query precedence" {
   let body = { "modelId": Json::string("body-model") }.to_json()
   assert_eq(
-    usage_string_from_request("/delete_model_pricing", Some(body), [
+    usage_string_from_request("/usage/model-pricing", Some(body), [
       "model_id", "modelId",
     ]),
     Some("body-model"),
   )
   assert_eq(
     usage_string_from_request(
-      "/delete_model_pricing?modelId=query-model",
+      "/usage/model-pricing?modelId=query-model",
       Some(body),
       ["model_id", "modelId"],
     ),

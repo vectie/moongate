@@ -427,11 +427,11 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_usage_summary"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "get_usage_summary_by_app"]) ==
+    registered_cli_command_id(["moonstat", "usage", "apps"]) ==
     Some("get_usage_summary_by_app"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "usage", "get-request-logs"]) ==
+    registered_cli_command_id(["moonstat", "usage", "logs"]) ==
     Some("get_request_logs"),
   )
   assert_true(
@@ -618,8 +618,8 @@ test "usage detail path encodes moonstat request ids" {
 ///|
 test "usage aliases build same paths as moonstat command names" {
   let args = [
-    "moonstat", "usage", "get-usage-summary", "--startDate", "10", "--endDate", "20",
-    "--appType", "codex",
+    "moonstat", "usage", "summary", "--startDate", "10", "--endDate", "20", "--appType",
+    "codex",
   ]
   assert_eq(
     usage_filtered_path(args, "/usage/summary", app_filter=true),
@@ -627,15 +627,14 @@ test "usage aliases build same paths as moonstat command names" {
   )
   assert_eq(
     usage_logs_path([
-      "moonstat", "usage", "get-request-logs", "--page", "1", "--pageSize", "50",
-      "--appType", "claude",
+      "moonstat", "usage", "logs", "--page", "1", "--pageSize", "50", "--appType",
+      "claude",
     ]),
     "/usage/logs?app_type=claude&page=1&pageSize=50",
   )
   assert_eq(
     usage_limits_path([
-      "moonstat", "usage", "check-provider-limits", "--provider-id", "p1", "--app-type",
-      "codex",
+      "moonstat", "usage", "limits", "--provider-id", "p1", "--app-type", "codex",
     ]),
     "/usage/provider-limits?provider_id=p1&app_type=codex",
   )
@@ -656,11 +655,11 @@ test "usage aliases build same paths as moonstat command names" {
         "moonstat", "usage", "test-usage-script", "--provider-id", "p1", "--app",
         "codex", "--script-code", "{\"success\":true}",
       ],
-      "/testUsageScript",
+      "/usage/test-script",
       true,
     ),
     Some(
-      "/testUsageScript?providerId=p1&app=codex&scriptCode=%7B%22success%22%3Atrue%7D",
+      "/usage/test-script?providerId=p1&app=codex&scriptCode=%7B%22success%22%3Atrue%7D",
     ),
   )
 }
@@ -1015,54 +1014,6 @@ test "top level moonstat provider command names build command alias paths" {
       "--sort-mode", "nameAsc",
     ]),
     "/get_provider_presets?appType=gemini&query=unity2&sortMode=nameAsc",
-  )
-}
-
-///|
-test "top level moonstat usage command names build command alias paths" {
-  assert_eq(
-    usage_filtered_path(
-      [
-        "moonstat", "get_usage_summary", "--startDate", "10", "--endDate", "20",
-        "--appType", "codex",
-      ],
-      "/usage/summary",
-      app_filter=true,
-    ),
-    "/usage/summary?start_date=10&end_date=20&app_type=codex",
-  )
-  assert_eq(
-    usage_logs_path([
-      "moonstat", "get_request_logs", "--appType", "claude", "--pageSize", "25",
-      "--providerName", "Provider A", "--statusCode", "200",
-    ]),
-    "/usage/logs?app_type=claude&pageSize=25&providerName=Provider%20A&statusCode=200",
-  )
-  assert_eq(
-    usage_limits_path([
-      "moonstat", "check_provider_limits", "--providerId", "p1", "--appType", "codex",
-    ]),
-    "/usage/provider-limits?provider_id=p1&app_type=codex",
-  )
-  assert_eq(
-    usage_pricing_update_path([
-      "moonstat", "update_model_pricing", "--modelId", "gpt/5", "--displayName",
-      "GPT 5", "--inputCost", "1", "--outputCost", "2", "--cacheReadCost", "0.1",
-      "--cacheCreationCost", "0.2",
-    ]),
-    Some(
-      "/usage/model-pricing?model_id=gpt%2F5&display_name=GPT%205&input_cost=1&output_cost=2&cache_read_cost=0.1&cache_creation_cost=0.2",
-    ),
-  )
-  assert_eq(
-    usage_pricing_delete_path([
-      "moonstat", "delete_model_pricing", "--modelId", "gpt/5",
-    ]),
-    Some("/usage/model-pricing?model_id=gpt%2F5"),
-  )
-  assert_eq(
-    "/usage/request-detail/\{cli_url_encode("req/1")}",
-    "/usage/request-detail/req%2F1",
   )
 }
 
@@ -1466,64 +1417,60 @@ test "top level moonstat prompt command names build prompt paths" {
 }
 
 ///|
-test "top level moonstat balance command builds balance path" {
+test "usage balance command builds balance path" {
   assert_eq(
     balance_path([
-      "moonstat", "get_balance", "--baseUrl", "https://api.deepseek.com", "--apiKey",
+      "moonstat", "usage", "balance", "--baseUrl", "https://api.deepseek.com", "--apiKey",
       "sk test",
     ]),
-    Some("/get_balance?baseUrl=https%3A%2F%2Fapi.deepseek.com&apiKey=sk%20test"),
+    Some(
+      "/usage/balance?baseUrl=https%3A%2F%2Fapi.deepseek.com&apiKey=sk%20test",
+    ),
   )
   assert_true(
     balance_path([
-      "moonstat", "get_balance", "--base-url", "https://api.deepseek.com",
+      "moonstat", "usage", "balance", "--base-url", "https://api.deepseek.com",
     ])
     is None,
   )
 }
 
 ///|
-test "top level moonstat subscription quota command builds quota path" {
-  assert_eq(
-    subscription_quota_path([
-      "moonstat", "get_subscription_quota", "--tool", "codex",
-    ]),
-    Some("/get_subscription_quota?tool=codex"),
-  )
+test "usage subscription quota command builds quota path" {
   assert_eq(
     subscription_quota_path([
       "moonstat", "usage", "quota", "--appType", "gemini",
     ]),
-    Some("/get_subscription_quota?tool=gemini"),
+    Some("/usage/subscription-quota?tool=gemini"),
   )
   assert_true(subscription_quota_path(["moonstat", "usage", "quota"]) is None)
 }
 
 ///|
-test "top level moonstat codex oauth quota command builds quota path" {
+test "usage codex oauth quota command builds quota path" {
   assert_eq(
     codex_oauth_quota_path([
-      "moonstat", "get_codex_oauth_quota", "--accountId", "acct 1",
+      "moonstat", "usage", "codex-oauth-quota", "--accountId", "acct 1",
     ]),
-    "/get_codex_oauth_quota?accountId=acct%201",
+    "/usage/codex-oauth-quota?accountId=acct%201",
   )
   assert_eq(
     codex_oauth_quota_path(["moonstat", "usage", "codex-oauth-quota"]),
-    "/get_codex_oauth_quota",
+    "/usage/codex-oauth-quota",
   )
 }
 
 ///|
-test "top level moonstat codex oauth models command builds models path" {
+test "usage codex oauth models command builds models path" {
   assert_eq(
     codex_oauth_models_path([
-      "moonstat", "get_codex_oauth_models", "--account-id", "acct 1",
+      "moonstat", "usage", "codex-oauth-models", "--account-id", "acct 1",
     ]),
-    "/get_codex_oauth_models?accountId=acct%201",
+    "/usage/codex-oauth-models?accountId=acct%201",
   )
   assert_eq(
     codex_oauth_models_path(["moonstat", "usage", "codex-oauth-models"]),
-    "/get_codex_oauth_models",
+    "/usage/codex-oauth-models",
   )
 }
 
@@ -1567,23 +1514,14 @@ test "moonstat auth commands build managed auth paths" {
 }
 
 ///|
-test "top level moonstat coding plan command builds quota path" {
-  assert_eq(
-    coding_plan_quota_path([
-      "moonstat", "get_coding_plan_quota", "--baseUrl", "https://api.kimi.com/coding/v1",
-      "--apiKey", "sk test",
-    ]),
-    Some(
-      "/get_coding_plan_quota?baseUrl=https%3A%2F%2Fapi.kimi.com%2Fcoding%2Fv1&apiKey=sk%20test",
-    ),
-  )
+test "usage coding plan command builds quota path" {
   assert_eq(
     coding_plan_quota_path([
       "moonstat", "usage", "coding-plan", "--base-url", "https://api.minimax.io",
       "--api-key", "key",
     ]),
     Some(
-      "/get_coding_plan_quota?baseUrl=https%3A%2F%2Fapi.minimax.io&apiKey=key",
+      "/usage/coding-plan-quota?baseUrl=https%3A%2F%2Fapi.minimax.io&apiKey=key",
     ),
   )
   assert_true(

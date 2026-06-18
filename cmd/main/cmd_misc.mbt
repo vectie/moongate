@@ -122,28 +122,19 @@ fn print_help() -> Unit {
     "  workspace memory list/read/write/search/delete  Manage daily memory",
   )
   println("  usage logs  Show recent proxy request logs")
-  println("  usage get-request-logs  Show recent proxy request logs")
   println("  usage summary    Show usage summary")
-  println("  usage get-usage-summary  Show usage summary")
   println("  usage apps       Show usage summary by app")
-  println("  usage get-usage-summary-by-app  Show usage summary by app")
   println("  usage trends     Show hourly/daily usage trends")
-  println("  usage get-usage-trends  Show usage trends")
   println("  usage limits     Show provider limit status")
-  println("  usage check-provider-limits  Show provider limit status")
   println("  usage sync       Sync Claude/Codex/Gemini/OpenCode session logs")
-  println("  usage sync-session-usage  Sync session usage logs")
   println("  list_sessions  List known sessions")
   println("  get_session_messages --provider-id <id> --source-path <path>")
   println(
     "  delete_session --provider-id <id> --session-id <id> --source-path <path>",
   )
   println("  usage providers  Show provider statistics")
-  println("  usage get-provider-stats  Show provider statistics")
   println("  usage models     Show model statistics")
-  println("  usage get-model-stats  Show model statistics")
   println("  usage sources    Show data source breakdown")
-  println("  usage get-usage-data-sources  Show data source breakdown")
   println("  usage query-provider-usage  Query provider account usage")
   println("  usage balance    Query provider balance")
   println("  usage quota      Query subscription quota")
@@ -152,13 +143,9 @@ fn print_help() -> Unit {
   println("  usage codex-oauth-models Query Codex OAuth models")
   println("  usage test-usage-script     Test usage script parsing")
   println("  usage pricing    Show editable model pricing")
-  println("  usage get-model-pricing  Show editable model pricing")
   println("  usage pricing set       Upsert model pricing")
-  println("  usage update-model-pricing  Upsert model pricing")
   println("  usage pricing delete    Delete model pricing")
-  println("  usage delete-model-pricing  Delete model pricing")
   println("  usage detail     Show one request detail by id")
-  println("  usage get-request-detail  Show one request detail by id")
   println("  login       Login to OpenAI Codex OAuth")
   println("  health      Check gateway health")
   println("  version     Show version")
@@ -1346,7 +1333,7 @@ fn balance_path(args : Array[String]) -> String? {
     return None
   }
   Some(
-    "/get_balance?\{cli_query_pair("baseUrl", base_url)}&\{cli_query_pair("apiKey", api_key)}",
+    "/usage/balance?\{cli_query_pair("baseUrl", base_url)}&\{cli_query_pair("apiKey", api_key)}",
   )
 }
 
@@ -1361,7 +1348,7 @@ fn subscription_quota_path(args : Array[String]) -> String? {
       }
   }
   guard tool is Some(tool) else { return None }
-  Some("/get_subscription_quota?\{cli_query_pair("tool", tool)}")
+  Some("/usage/subscription-quota?\{cli_query_pair("tool", tool)}")
 }
 
 ///|
@@ -1373,7 +1360,7 @@ fn coding_plan_quota_path(args : Array[String]) -> String? {
     return None
   }
   Some(
-    "/get_coding_plan_quota?\{cli_query_pair("baseUrl", base_url)}&\{cli_query_pair("apiKey", api_key)}",
+    "/usage/coding-plan-quota?\{cli_query_pair("baseUrl", base_url)}&\{cli_query_pair("apiKey", api_key)}",
   )
 }
 

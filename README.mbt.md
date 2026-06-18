@@ -48,7 +48,7 @@ logic and returns the same frontend wire shape, `[{ "id": "...", "ownedBy":
 ```sh
 moon run cmd/main -- models fetch --base-url https://api.example.com --api-key sk-...
 moon run cmd/main -- fetch_models_for_config --base-url https://api.example.com --api-key sk-...
-moon run cmd/main -- get_codex_oauth_models --account-id acct_...
+moon run cmd/main -- usage codex-oauth-models --account-id acct_...
 moon run cmd/main -- models candidates --base-url https://api.deepseek.com/anthropic
 ```
 
@@ -313,11 +313,11 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `DELETE /usage/model-pricing`
 - `GET /usage/request-detail/{request_id}`
 - `GET|POST /usage/provider-usage?providerId=codex-oauth&app=codex`
-- `GET|POST /get_balance?baseUrl=https://api.deepseek.com&apiKey=...`
-- `GET|POST /get_subscription_quota?tool=codex`
-- `GET|POST /get_codex_oauth_quota?accountId=...`
-- `GET|POST /get_codex_oauth_models?accountId=...`
-- `GET|POST /get_coding_plan_quota?baseUrl=https://api.kimi.com/coding/v1&apiKey=...`
+- `GET|POST /usage/balance?baseUrl=https://api.deepseek.com&apiKey=...`
+- `GET|POST /usage/subscription-quota?tool=codex`
+- `GET|POST /usage/codex-oauth-quota?accountId=...`
+- `GET|POST /usage/codex-oauth-models?accountId=...`
+- `GET|POST /usage/coding-plan-quota?baseUrl=https://api.kimi.com/coding/v1&apiKey=...`
 - `GET|POST /auth_get_status?authProvider=codex_oauth`
 - `GET|POST /auth_list_accounts?authProvider=codex_oauth`
 - `GET|POST /auth_start_login?authProvider=codex_oauth`
@@ -340,22 +340,12 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /copilot_get_token?accountId=...`
 - `GET /copilot_get_models?accountId=...`
 - `GET /copilot_get_usage?accountId=...`
-- `POST /testUsageScript?providerId=codex-oauth&app=codex`
+- `POST /usage/test-script?providerId=codex-oauth&app=codex`
 - `POST /stream_check_provider?appType=codex&providerId=codex-oauth`
 - `POST /stream_check_all_providers?appType=codex&proxyTargetsOnly=true`
 - `GET /get_stream_check_config`
 - `POST /save_stream_check_config?codexModel=gpt-5.5@low&timeoutSecs=45`
-- CCS command-name aliases: `GET|POST /get_usage_summary`,
-  `GET|POST /get_usage_summary_by_app`, `GET|POST /get_usage_trends`,
-  `GET|POST /get_provider_stats`, `GET|POST /get_model_stats`, `GET|POST /get_request_logs`,
-  `GET|POST /get_request_detail?requestId=...`, `GET /get_model_pricing`,
-  `POST /update_model_pricing`, `DELETE|POST /delete_model_pricing`,
-  `GET|POST /check_provider_limits`, `POST /sync_session_usage`,
-  `GET|POST /get_usage_data_sources`, `GET|POST /usage/provider-usage`,
-  `GET|POST /get_balance`, `GET|POST /get_subscription_quota`,
-  `GET|POST /get_codex_oauth_quota`, `GET|POST /get_codex_oauth_models`,
-  `GET|POST /get_coding_plan_quota`,
-  `GET|POST /auth_start_login`, `GET|POST /auth_poll_for_account`,
+- Compatibility auth aliases: `GET|POST /auth_start_login`, `GET|POST /auth_poll_for_account`,
   `GET|POST /auth_list_accounts`, `GET|POST /auth_get_status`,
   `DELETE|POST /auth_remove_account`, `GET|POST /auth_set_default_account`,
   `GET|POST /auth_logout`, `GET|POST /copilot_start_device_flow`,
@@ -364,8 +354,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
   `GET /copilot_get_auth_status`, `GET /copilot_is_authenticated`,
   `GET|POST /copilot_logout`, `DELETE|POST /copilot_remove_account`,
   `GET|POST /copilot_set_default_account`, `GET /copilot_get_token`,
-  `GET /copilot_get_models`, `GET /copilot_get_usage`, and
-  `POST /testUsageScript`.
+  `GET /copilot_get_models`, and `GET /copilot_get_usage`.
   Stream check command aliases `stream_check_provider`,
   `stream_check_all_providers`, `get_stream_check_config`, and
   `save_stream_check_config` expose the ccs camelCase config/result JSON
@@ -414,10 +403,10 @@ existing breakers. `/proxy/failover-queue`,
 `/proxy/available-failover-providers`, and `/proxy/auto-failover-enabled`
 mirror the ccs failover queue and app auto-failover command shapes using
 Moonstat's standalone provider router state. The standalone CLI accepts CCS
-proxy, failover, provider, usage, and stream-check command names directly, for
+proxy, failover, provider, and stream-check command names directly, for
 example `moonstat start_proxy_server`,
 `moonstat update_proxy_config_for_app --appType codex --enabled true`, and
-`moonstat get_usage_summary --appType codex`.
+`moonstat stream_check_provider --appType codex --providerId provider-1`.
 `/get_global_proxy_url`, `/set_global_proxy_url`, `/test_proxy_url`,
 `/get_upstream_proxy_status`, and `/scan_local_proxies` mirror ccs' global
 outbound proxy command shapes; Moonstat stores the configured upstream proxy in
@@ -497,19 +486,19 @@ OpenCode sync reads `opencode.db` directly when `sqlite3` is available, honoring
 `OPENCODE_DB` and `XDG_DATA_HOME` like ccs. It also accepts JSONL rows exported
 from `opencode.db` with `session_id`, `message_id`, and `data` fields as a
 fallback, defaulting to `~/.local/share/opencode/opencode.messages.jsonl`.
-`/get_balance` mirrors the CCS native balance command for DeepSeek, StepFun,
+`/usage/balance` queries provider balance for DeepSeek, StepFun,
 SiliconFlow CN/EN, OpenRouter, and Novita AI by detecting provider from
 `baseUrl`, querying the vendor balance endpoint with `apiKey`, and returning the
 same `UsageResult` shape used by `usage query-provider-usage`.
 
-`/get_subscription_quota` mirrors the CCS native subscription quota command for
+`/usage/subscription-quota` queries native subscription quota for
 `claude`, `codex`, and `gemini`. It reads the same macOS keychain entries and
 fallback credential files, calls the official quota endpoints, and returns the
 CCS `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
 `MOONSTAT_GEMINI_OAUTH_CLIENT_ID` and `MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET`
 (or the `GEMINI_OAUTH_*` / `GEMINI_CLI_OAUTH_*` aliases) at runtime.
-`/get_codex_oauth_quota` mirrors the CCS Codex OAuth quota command over the
-same WHAM usage protocol. `/get_codex_oauth_models` mirrors the CCS Codex OAuth
+`/usage/codex-oauth-quota` queries Codex OAuth quota over the
+same WHAM usage protocol. `/usage/codex-oauth-models` fetches Codex OAuth
 model-list command against `chatgpt.com/backend-api/codex/models`, returning the
 same fetched model array shape as provider model fetch. The `auth_*` endpoints
 mirror CCS managed auth for `codex_oauth`: status/list expose the local
@@ -518,8 +507,8 @@ remove/logout clear `~/.moonsuite/codex-credentials.json`. For
 `github_copilot`, the same `auth_*` surface delegates to the CCS-style Copilot
 device-code flow and `~/.moonsuite/copilot-credentials.json`; the dedicated
 `copilot_*` endpoints mirror CCS Copilot account, token, model, and usage
-commands against GitHub/Copilot APIs. `/get_coding_plan_quota`
-mirrors the CCS coding-plan quota command for Kimi, Zhipu CN/EN, MiniMax CN/EN,
+commands against GitHub/Copilot APIs. `/usage/coding-plan-quota`
+queries coding-plan quota for Kimi, Zhipu CN/EN, MiniMax CN/EN,
 and ZenMux-compatible quota URLs, returning the same `SubscriptionQuota` tier
 names and fields.
 

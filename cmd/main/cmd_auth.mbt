@@ -106,7 +106,7 @@ fn codex_oauth_quota_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("accountId", value))
     None => ()
   }
-  cli_path_with_query("/get_codex_oauth_quota", query)
+  cli_path_with_query("/usage/codex-oauth-quota", query)
 }
 
 ///|
@@ -116,7 +116,7 @@ fn codex_oauth_models_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("accountId", value))
     None => ()
   }
-  cli_path_with_query("/get_codex_oauth_models", query)
+  cli_path_with_query("/usage/codex-oauth-models", query)
 }
 
 ///|
