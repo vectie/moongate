@@ -85,8 +85,8 @@ pub fn MoonstatClient::new(
 
 ///|
 pub fn MoonstatClient::from_host(
-  host? : String = "127.0.0.1",
-  port? : Int = 15721,
+  host? : String = @suite.default_host(),
+  port? : Int = @suite.default_port(),
   api_key? : String? = None,
   user_agent? : String? = None,
 ) -> MoonstatClient {

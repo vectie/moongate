@@ -28,8 +28,8 @@ pub struct Gateway {
 ///|
 pub fn Gateway::new(
   port~ : Int,
-  host? : String = "127.0.0.1",
-  model? : String = "gpt-4o",
+  host? : String = @suite.default_host(),
+  model? : String = @suite.default_model(),
 ) -> Gateway {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   {

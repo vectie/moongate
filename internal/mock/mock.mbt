@@ -110,7 +110,6 @@ pub fn[T : ToJson] Context::json(self : Context, value : T) -> Json {
 
 ///|
 /// Formats a value into a filtered string suited for deterministic snapshots.
-#alias(text)
 pub fn[T : Show] Context::show(self : Context, value : T) -> String {
   self.filter.apply_string(value.to_string())
 }

@@ -286,9 +286,11 @@ fn print_help() -> Unit {
 ///|
 async fn start_gateway(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
-  let port = parse_int_arg(args, "--port", default=15721)
-  let model = parse_string_arg(args, "--model").unwrap_or("gpt-5")
+  let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
+  let model = parse_string_arg(args, "--model").unwrap_or(
+    @suite.default_model(),
+  )
   logger.info("Starting Moonstat Gateway on \{host}:\{port}")
   logger.info("Using Codex model: \{model}")
   let gateway = @moonstat.Gateway::new(port~, host~, model~)
@@ -1421,7 +1423,7 @@ async fn check_json_delete_endpoint(
 ///|
 async fn install_reroute(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let port = parse_int_arg(args, "--port", default=15721)
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
 
   logger.info("Installing hosts reroute for port \{port}...")
   let result = @hosts.install_and_flush(port)
@@ -1450,8 +1452,8 @@ async fn uninstall_reroute() -> Unit {
 ///|
 async fn install_claude_desktop(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
-  let port = parse_int_arg(args, "--port", default=15721)
+  let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let token = parse_string_arg(args, "--token")
   logger.info("Installing Claude Desktop gateway profile...")
   let result = @claude_desktop.install_proxy_profile(host, port, token~)
@@ -1480,9 +1482,11 @@ async fn uninstall_claude_desktop() -> Unit {
 ///|
 async fn install_codex(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
-  let port = parse_int_arg(args, "--port", default=15721)
-  let model = parse_string_arg(args, "--model").unwrap_or("gpt-5")
+  let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
+  let model = parse_string_arg(args, "--model").unwrap_or(
+    @suite.default_model(),
+  )
   logger.info("Installing Codex config.toml Moonstat provider...")
   let result = @codex_config.install_proxy_config(host, port, model)
   match result {

@@ -3,9 +3,9 @@ const SUITE_STATUS_FILE = "suite-status.json"
 
 ///|
 pub fn moonstat_suite_manifest_json(
-  host? : String = "127.0.0.1",
-  port? : Int = 15721,
-  model? : String = "gpt-5",
+  host? : String = @suite.default_host(),
+  port? : Int = @suite.default_port(),
+  model? : String = @suite.default_model(),
 ) -> Json {
   {
     "contract": Json::string(@suite.manifest_contract()),
@@ -118,9 +118,9 @@ pub fn moonstat_suite_manifest_json(
 
 ///|
 pub fn moonstat_suite_status_json(
-  host? : String = "127.0.0.1",
-  port? : Int = 15721,
-  model? : String = "gpt-5",
+  host? : String = @suite.default_host(),
+  port? : Int = @suite.default_port(),
+  model? : String = @suite.default_model(),
   status? : String = "configured",
   ready? : Bool = true,
 ) -> Json {
@@ -214,9 +214,9 @@ pub fn moonstat_suite_status_json(
 ///|
 pub async fn write_moonstat_suite_status(
   path? : String = default_moonstat_suite_status_path(),
-  host? : String = "127.0.0.1",
-  port? : Int = 15721,
-  model? : String = "gpt-5",
+  host? : String = @suite.default_host(),
+  port? : Int = @suite.default_port(),
+  model? : String = @suite.default_model(),
   status? : String = "configured",
   ready? : Bool = true,
 ) -> String {
@@ -441,9 +441,9 @@ fn moonclaw_providers_file_json(
 
 ///|
 pub fn moonstat_moonclaw_providers_file_json(
-  host? : String = "127.0.0.1",
-  port? : Int = 15721,
-  model? : String = "gpt-5",
+  host? : String = @suite.default_host(),
+  port? : Int = @suite.default_port(),
+  model? : String = @suite.default_model(),
 ) -> Json {
   moonclaw_providers_file_json(moonstat_openai_base_url(host, port), model)
 }
@@ -451,9 +451,9 @@ pub fn moonstat_moonclaw_providers_file_json(
 ///|
 pub async fn write_moonstat_moonclaw_providers_file(
   path? : String = default_moonstat_moonclaw_providers_file_path(),
-  host? : String = "127.0.0.1",
-  port? : Int = 15721,
-  model? : String = "gpt-5",
+  host? : String = @suite.default_host(),
+  port? : Int = @suite.default_port(),
+  model? : String = @suite.default_model(),
 ) -> String {
   let dir = @pathx.dirname(path)
   @fsx.make_directory(dir, recursive=true, exists_ok=true)

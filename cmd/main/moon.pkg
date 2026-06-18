@@ -1,5 +1,6 @@
 import {
   "vectie/moonstat",
+  "vectie/moonstat/suite",
   "vectie/moonstat/internal/claude_desktop",
   "vectie/moonstat/internal/codex_config",
   "vectie/moonlib/os",

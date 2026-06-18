@@ -2918,6 +2918,13 @@ test "standalone tray update mirrors moonstat no tray result" {
 }
 
 ///|
+test "gateway defaults are owned by suite contract" {
+  let gateway = Gateway::new(port=@suite.default_port())
+  assert_eq(gateway.host, @suite.default_host())
+  assert_eq(gateway.model, @suite.default_model())
+}
+
+///|
 test "standalone external open records moonstat normalized target" {
   let proxy = ProxyService::new("127.0.0.9", 17008)
   assert_eq(proxy.last_external_url, None)

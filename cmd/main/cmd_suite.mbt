@@ -66,9 +66,11 @@ fn suite_json_config_path(
 
 ///|
 fn print_suite_manifest(args : Array[String]) -> Unit {
-  let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
-  let port = parse_int_arg(args, "--port", default=15721)
-  let model = parse_string_arg(args, "--model").unwrap_or("gpt-5")
+  let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
+  let model = parse_string_arg(args, "--model").unwrap_or(
+    @suite.default_model(),
+  )
   println(
     @moonstat.moonstat_suite_manifest_json(host~, port~, model~).stringify(
       indent=2,

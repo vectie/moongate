@@ -5,7 +5,6 @@
 /// point to a value (or array of values) of type `T`. All operations on
 /// pointers are inherently unsafe and should be used with care.
 #external
-#alias(Ptr)
 pub type Pointer[_]
 
 ///|
