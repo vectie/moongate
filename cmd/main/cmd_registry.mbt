@@ -629,6 +629,85 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
       ],
     },
     {
+      id: "fetch_models",
+      patterns: [
+        "models fetch", "fetch_models_for_config", "fetch-models-for-config",
+      ],
+    },
+    { id: "model_candidates", patterns: ["models candidates"] },
+    {
+      id: "scan_openclaw_config_health",
+      patterns: ["scan_openclaw_config_health", "scan-openclaw-config-health"],
+    },
+    {
+      id: "get_openclaw_default_model",
+      patterns: ["get_openclaw_default_model", "get-openclaw-default-model"],
+    },
+    {
+      id: "set_openclaw_default_model",
+      patterns: ["set_openclaw_default_model", "set-openclaw-default-model"],
+    },
+    {
+      id: "get_openclaw_model_catalog",
+      patterns: ["get_openclaw_model_catalog", "get-openclaw-model-catalog"],
+    },
+    {
+      id: "set_openclaw_model_catalog",
+      patterns: ["set_openclaw_model_catalog", "set-openclaw-model-catalog"],
+    },
+    {
+      id: "get_openclaw_agents_defaults",
+      patterns: ["get_openclaw_agents_defaults", "get-openclaw-agents-defaults"],
+    },
+    {
+      id: "set_openclaw_agents_defaults",
+      patterns: ["set_openclaw_agents_defaults", "set-openclaw-agents-defaults"],
+    },
+    {
+      id: "get_openclaw_env",
+      patterns: ["get_openclaw_env", "get-openclaw-env"],
+    },
+    {
+      id: "set_openclaw_env",
+      patterns: ["set_openclaw_env", "set-openclaw-env"],
+    },
+    {
+      id: "get_openclaw_tools",
+      patterns: ["get_openclaw_tools", "get-openclaw-tools"],
+    },
+    {
+      id: "set_openclaw_tools",
+      patterns: ["set_openclaw_tools", "set-openclaw-tools"],
+    },
+    {
+      id: "get_hermes_model_config",
+      patterns: ["get_hermes_model_config", "get-hermes-model-config"],
+    },
+    {
+      id: "get_hermes_memory",
+      patterns: ["get_hermes_memory", "get-hermes-memory"],
+    },
+    {
+      id: "set_hermes_memory",
+      patterns: ["set_hermes_memory", "set-hermes-memory"],
+    },
+    {
+      id: "get_hermes_memory_limits",
+      patterns: ["get_hermes_memory_limits", "get-hermes-memory-limits"],
+    },
+    {
+      id: "set_hermes_memory_enabled",
+      patterns: ["set_hermes_memory_enabled", "set-hermes-memory-enabled"],
+    },
+    {
+      id: "open_hermes_web_ui",
+      patterns: ["open_hermes_web_ui", "open-hermes-web-ui"],
+    },
+    {
+      id: "launch_hermes_dashboard",
+      patterns: ["launch_hermes_dashboard", "launch-hermes-dashboard"],
+    },
+    {
       id: "get_settings",
       patterns: ["settings get", "get_settings", "get-settings"],
     },
@@ -1517,6 +1596,86 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("update_endpoint_last_used") => {
       update_provider_endpoint_last_used(args)
+      true
+    }
+    Some("fetch_models") => {
+      fetch_provider_models(args)
+      true
+    }
+    Some("model_candidates") => {
+      print_model_candidates(args)
+      true
+    }
+    Some("scan_openclaw_config_health") => {
+      check_usage_endpoint(args, "/scan_openclaw_config_health")
+      true
+    }
+    Some("get_openclaw_default_model") => {
+      check_usage_endpoint(args, "/get_openclaw_default_model")
+      true
+    }
+    Some("set_openclaw_default_model") => {
+      set_openclaw_default_model(args)
+      true
+    }
+    Some("get_openclaw_model_catalog") => {
+      check_usage_endpoint(args, "/get_openclaw_model_catalog")
+      true
+    }
+    Some("set_openclaw_model_catalog") => {
+      set_suite_json_config(args, "/set_openclaw_model_catalog", "--catalog")
+      true
+    }
+    Some("get_openclaw_agents_defaults") => {
+      check_usage_endpoint(args, "/get_openclaw_agents_defaults")
+      true
+    }
+    Some("set_openclaw_agents_defaults") => {
+      set_openclaw_agents_defaults(args)
+      true
+    }
+    Some("get_openclaw_env") => {
+      check_usage_endpoint(args, "/get_openclaw_env")
+      true
+    }
+    Some("set_openclaw_env") => {
+      set_openclaw_env(args)
+      true
+    }
+    Some("get_openclaw_tools") => {
+      check_usage_endpoint(args, "/get_openclaw_tools")
+      true
+    }
+    Some("set_openclaw_tools") => {
+      set_openclaw_tools(args)
+      true
+    }
+    Some("get_hermes_model_config") => {
+      check_usage_endpoint(args, "/get_hermes_model_config")
+      true
+    }
+    Some("get_hermes_memory") => {
+      check_hermes_memory(args)
+      true
+    }
+    Some("set_hermes_memory") => {
+      set_hermes_memory(args)
+      true
+    }
+    Some("get_hermes_memory_limits") => {
+      check_usage_endpoint(args, "/get_hermes_memory_limits")
+      true
+    }
+    Some("set_hermes_memory_enabled") => {
+      set_hermes_memory_enabled(args)
+      true
+    }
+    Some("open_hermes_web_ui") => {
+      check_usage_endpoint(args, hermes_web_ui_path(args))
+      true
+    }
+    Some("launch_hermes_dashboard") => {
+      check_json_post_endpoint(args, "/launch_hermes_dashboard", "Hermes")
       true
     }
     Some("get_settings") => {

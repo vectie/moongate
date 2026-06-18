@@ -14,46 +14,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["codex", "install", ..] => install_codex(arr)
     ["codex", "uninstall" | "remove", ..] => uninstall_codex()
     ["codex", "status", ..] => status_codex()
-    ["models", "fetch", ..] => fetch_provider_models(arr)
-    ["models", "candidates", ..] => print_model_candidates(arr)
-    ["fetch_models_for_config", ..] | ["fetch-models-for-config", ..] =>
-      fetch_provider_models(arr)
-    ["scan_openclaw_config_health", ..] | ["scan-openclaw-config-health", ..] =>
-      check_usage_endpoint(arr, "/scan_openclaw_config_health")
-    ["get_openclaw_default_model", ..] | ["get-openclaw-default-model", ..] =>
-      check_usage_endpoint(arr, "/get_openclaw_default_model")
-    ["set_openclaw_default_model", ..] | ["set-openclaw-default-model", ..] =>
-      set_openclaw_default_model(arr)
-    ["get_openclaw_model_catalog", ..] | ["get-openclaw-model-catalog", ..] =>
-      check_usage_endpoint(arr, "/get_openclaw_model_catalog")
-    ["set_openclaw_model_catalog", ..] | ["set-openclaw-model-catalog", ..] =>
-      set_suite_json_config(arr, "/set_openclaw_model_catalog", "--catalog")
-    ["get_openclaw_agents_defaults", ..]
-    | ["get-openclaw-agents-defaults", ..] =>
-      check_usage_endpoint(arr, "/get_openclaw_agents_defaults")
-    ["set_openclaw_agents_defaults", ..]
-    | ["set-openclaw-agents-defaults", ..] => set_openclaw_agents_defaults(arr)
-    ["get_openclaw_env", ..] | ["get-openclaw-env", ..] =>
-      check_usage_endpoint(arr, "/get_openclaw_env")
-    ["set_openclaw_env", ..] | ["set-openclaw-env", ..] => set_openclaw_env(arr)
-    ["get_openclaw_tools", ..] | ["get-openclaw-tools", ..] =>
-      check_usage_endpoint(arr, "/get_openclaw_tools")
-    ["set_openclaw_tools", ..] | ["set-openclaw-tools", ..] =>
-      set_openclaw_tools(arr)
-    ["get_hermes_model_config", ..] | ["get-hermes-model-config", ..] =>
-      check_usage_endpoint(arr, "/get_hermes_model_config")
-    ["get_hermes_memory", ..] | ["get-hermes-memory", ..] =>
-      check_hermes_memory(arr)
-    ["set_hermes_memory", ..] | ["set-hermes-memory", ..] =>
-      set_hermes_memory(arr)
-    ["get_hermes_memory_limits", ..] | ["get-hermes-memory-limits", ..] =>
-      check_usage_endpoint(arr, "/get_hermes_memory_limits")
-    ["set_hermes_memory_enabled", ..] | ["set-hermes-memory-enabled", ..] =>
-      set_hermes_memory_enabled(arr)
-    ["open_hermes_web_ui", ..] | ["open-hermes-web-ui", ..] =>
-      check_usage_endpoint(arr, hermes_web_ui_path(arr))
-    ["launch_hermes_dashboard", ..] | ["launch-hermes-dashboard", ..] =>
-      check_json_post_endpoint(arr, "/launch_hermes_dashboard", "Hermes")
     ["get_claude_config_status", ..] | ["get-claude-config-status", ..] =>
       check_usage_endpoint(arr, "/get_claude_config_status")
     ["get_config_status", ..] | ["get-config-status", ..] =>

@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 165)
+  assert_true(registered_cli_commands().length() >= 185)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -146,6 +146,46 @@ test "registered cli commands match suite command aliases and status commands" {
       "moonstat", "ensure_claude_desktop_official_provider",
     ]) ==
     Some("ensure_claude_desktop_official_provider"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "models", "fetch"]) ==
+    Some("fetch_models"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "fetch_models_for_config"]) ==
+    Some("fetch_models"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "models", "candidates"]) ==
+    Some("model_candidates"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "scan_openclaw_config_health"]) ==
+    Some("scan_openclaw_config_health"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "set_openclaw_model_catalog"]) ==
+    Some("set_openclaw_model_catalog"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get-openclaw-agents-defaults"]) ==
+    Some("get_openclaw_agents_defaults"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "set_openclaw_tools"]) ==
+    Some("set_openclaw_tools"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get_hermes_memory"]) ==
+    Some("get_hermes_memory"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "open-hermes-web-ui"]) ==
+    Some("open_hermes_web_ui"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "launch_hermes_dashboard"]) ==
+    Some("launch_hermes_dashboard"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "settings", "get"]) ==
