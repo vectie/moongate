@@ -59,25 +59,6 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "add_skill_repo", patterns: ["skills repo add"] },
     { id: "remove_skill_repo", patterns: ["skills repo remove"] },
     { id: "install_skills_from_zip", patterns: ["skills install-zip"] },
-    { id: "get_app_config_path", patterns: ["config app-path"] },
-    { id: "open_app_config_folder", patterns: ["config open-app-folder"] },
-    {
-      id: "set_claude_common_config_snippet",
-      patterns: ["config claude-snippet set"],
-    },
-    {
-      id: "get_claude_common_config_snippet",
-      patterns: ["config claude-snippet"],
-    },
-    { id: "set_common_config_snippet", patterns: ["config snippet set"] },
-    { id: "get_common_config_snippet", patterns: ["config snippet"] },
-    {
-      id: "extract_common_config_snippet",
-      patterns: ["config snippet extract"],
-    },
-    { id: "check_env_conflicts", patterns: ["config env-conflicts"] },
-    { id: "delete_env_vars", patterns: ["config env-delete"] },
-    { id: "restore_env_backup", patterns: ["config env-restore"] },
     { id: "stream_check_provider", patterns: ["stream-check provider"] },
     { id: "stream_check_all_providers", patterns: ["stream-check all"] },
     { id: "save_stream_check_config", patterns: ["stream-check config set"] },
@@ -112,11 +93,6 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "set_hermes_memory_enabled", patterns: ["hermes memory-enabled set"] },
     { id: "open_hermes_web_ui", patterns: ["hermes web-ui"] },
     { id: "launch_hermes_dashboard", patterns: ["hermes dashboard"] },
-    { id: "get_claude_config_status", patterns: ["config claude status"] },
-    { id: "get_config_status", patterns: ["config status"] },
-    { id: "get_claude_code_config_path", patterns: ["config claude-code path"] },
-    { id: "get_config_dir", patterns: ["config dir"] },
-    { id: "open_config_folder", patterns: ["config folder open"] },
     { id: "pick_directory", patterns: ["files directory pick"] },
     { id: "open_external", patterns: ["runtime open-external"] },
     { id: "copy_text_to_clipboard", patterns: ["runtime copy-text"] },
@@ -176,45 +152,10 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "parse_deeplink", patterns: ["deeplink parse"] },
     { id: "merge_deeplink_config", patterns: ["deeplink merge"] },
     { id: "import_from_deeplink", patterns: ["deeplink import"] },
-    { id: "get_settings", patterns: ["settings get"] },
-    { id: "save_settings", patterns: ["settings save"] },
     { id: "restart_app", patterns: ["runtime restart"] },
     {
       id: "install_update_and_restart",
       patterns: ["runtime updates install-restart"],
-    },
-    {
-      id: "set_app_config_dir_override",
-      patterns: ["settings app-config-dir set"],
-    },
-    { id: "get_app_config_dir_override", patterns: ["settings app-config-dir"] },
-    { id: "set_auto_launch", patterns: ["settings auto-launch set"] },
-    { id: "get_auto_launch_status", patterns: ["settings auto-launch"] },
-    { id: "set_rectifier_config", patterns: ["settings rectifier set"] },
-    { id: "get_rectifier_config", patterns: ["settings rectifier"] },
-    { id: "set_optimizer_config", patterns: ["settings optimizer set"] },
-    { id: "get_optimizer_config", patterns: ["settings optimizer"] },
-    {
-      id: "set_copilot_optimizer_config",
-      patterns: ["settings copilot-optimizer set"],
-    },
-    {
-      id: "get_copilot_optimizer_config",
-      patterns: ["settings copilot-optimizer"],
-    },
-    { id: "set_log_config", patterns: ["settings log set"] },
-    { id: "get_log_config", patterns: ["settings log"] },
-    { id: "get_claude_plugin_status", patterns: ["plugin claude status"] },
-    { id: "read_claude_plugin_config", patterns: ["plugin claude config"] },
-    { id: "apply_claude_plugin_config", patterns: ["plugin claude apply"] },
-    { id: "is_claude_plugin_applied", patterns: ["plugin claude applied"] },
-    {
-      id: "apply_claude_onboarding_skip",
-      patterns: ["plugin claude onboarding-skip"],
-    },
-    {
-      id: "clear_claude_onboarding_skip",
-      patterns: ["plugin claude onboarding-clear"],
     },
     { id: "list_daily_memory_files", patterns: ["workspace memory list"] },
     { id: "read_daily_memory_file", patterns: ["workspace memory read"] },
@@ -224,24 +165,6 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "read_workspace_file", patterns: ["workspace read"] },
     { id: "write_workspace_file", patterns: ["workspace write"] },
     { id: "open_workspace_directory", patterns: ["workspace open"] },
-    { id: "get_claude_mcp_status", patterns: ["mcp status"] },
-    { id: "read_claude_mcp_config", patterns: ["mcp read-config"] },
-    { id: "upsert_claude_mcp_server", patterns: ["mcp claude upsert"] },
-    { id: "delete_claude_mcp_server", patterns: ["mcp claude delete"] },
-    { id: "validate_mcp_command", patterns: ["mcp validate"] },
-    { id: "get_mcp_config", patterns: ["mcp config"] },
-    { id: "upsert_mcp_server_in_config", patterns: ["mcp upsert-config"] },
-    { id: "delete_mcp_server_in_config", patterns: ["mcp delete-config"] },
-    { id: "set_mcp_enabled", patterns: ["mcp set-enabled"] },
-    { id: "get_mcp_servers", patterns: ["mcp list"] },
-    { id: "upsert_mcp_server", patterns: ["mcp upsert"] },
-    { id: "delete_mcp_server", patterns: ["mcp delete"] },
-    { id: "toggle_mcp_app", patterns: ["mcp toggle"] },
-    { id: "import_mcp_from_apps", patterns: ["mcp import"] },
-    { id: "get_prompts", patterns: ["prompt list", "prompts list"] },
-    { id: "upsert_prompt", patterns: ["prompt upsert", "prompts upsert"] },
-    { id: "delete_prompt", patterns: ["prompt delete", "prompts delete"] },
-    { id: "enable_prompt", patterns: ["prompt enable", "prompts enable"] },
     {
       id: "import_prompt_from_file",
       patterns: ["prompt import", "prompts import"],
@@ -257,6 +180,9 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     commands.push(command)
   }
   for command in proxy_cli_commands() {
+    commands.push(command)
+  }
+  for command in config_cli_commands() {
     commands.push(command)
   }
   for command in usage_cli_commands() {

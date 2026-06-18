@@ -392,7 +392,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_prompts"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "prompts", "upsert"]) ==
+    registered_cli_command_id(["moonstat", "prompt", "upsert"]) ==
     Some("upsert_prompt"),
   )
   assert_true(
