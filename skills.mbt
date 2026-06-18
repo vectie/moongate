@@ -1,8 +1,8 @@
 ///|
-const CCS_SKILLS_STATE_FILE = "skills_state.json"
+const MOONSTAT_SKILLS_STATE_FILE = "skills_state.json"
 
 ///|
-const CCS_SKILLS_BACKUP_RETAIN_COUNT = 20
+const MOONSTAT_SKILLS_BACKUP_RETAIN_COUNT = 20
 
 ///|
 fn moon_skill_supported_apps() -> Array[String] {
@@ -11,7 +11,7 @@ fn moon_skill_supported_apps() -> Array[String] {
 
 ///|
 fn moon_skill_state_path() -> String {
-  @pathx.join(moon_app_config_dir(), CCS_SKILLS_STATE_FILE)
+  @pathx.join(moon_app_config_dir(), MOONSTAT_SKILLS_STATE_FILE)
 }
 
 ///|
@@ -582,7 +582,7 @@ fn moon_skill_prepend_backup(existing : Json?, entry : Json) -> Json {
   match existing {
     Some(Array(items)) =>
       for item in items {
-        if backups.length() < CCS_SKILLS_BACKUP_RETAIN_COUNT {
+        if backups.length() < MOONSTAT_SKILLS_BACKUP_RETAIN_COUNT {
           backups.push(item)
         }
       }

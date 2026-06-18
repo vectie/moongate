@@ -240,7 +240,7 @@ async fn write_gateway_token(token : String) -> Unit {
 ///|
 fn generate_gateway_token() -> String {
   let gen = @uuid.generator(@random.Rand::new())
-  "ccs-\{gen.v4()}"
+  "moonstat-\{gen.v4()}"
 }
 
 ///|

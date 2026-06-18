@@ -154,7 +154,7 @@ fn moon_unity2_base_preset(
     "id": Json::string("\{app_type}:unity2"),
     "name": Json::string("Unity2.ai"),
     "websiteUrl": Json::string("https://unity2.ai"),
-    "apiKeyUrl": Json::string("https://unity2.ai/register?source=ccs"),
+    "apiKeyUrl": Json::string("https://unity2.ai/register?source=moonstat"),
     "settingsConfig": settings_config,
     "category": Json::string("aggregator"),
     "isPartner": Json::boolean(true),

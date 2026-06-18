@@ -1,5 +1,5 @@
 ///|
-const CCS_DB_BACKUP_DIR = "backups"
+const MOONSTAT_DB_BACKUP_DIR = "backups"
 
 ///|
 fn moon_suite_app_types() -> Array[String] {
@@ -10,7 +10,7 @@ fn moon_suite_app_types() -> Array[String] {
 
 ///|
 fn moon_db_backup_dir() -> String {
-  @pathx.join(moon_app_config_dir(), CCS_DB_BACKUP_DIR)
+  @pathx.join(moon_app_config_dir(), MOONSTAT_DB_BACKUP_DIR)
 }
 
 ///|

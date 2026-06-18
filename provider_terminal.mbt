@@ -13,7 +13,7 @@ fn moon_import_default_config_json(
 ///|
 fn moon_settings_has_proxy_managed_placeholder(settings : Json) -> Bool {
   match settings {
-    String(value) => value == CCS_PROXY_MANAGED_PLACEHOLDER
+    String(value) => value == MOONSTAT_PROXY_MANAGED_PLACEHOLDER
     Array(items) => {
       for item in items {
         if moon_settings_has_proxy_managed_placeholder(item) {

@@ -1247,7 +1247,7 @@ fn claude_api_format_needs_transform(api_format : String) -> Bool {
 }
 
 ///|
-const CCS_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
+const MOONSTAT_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
 
 ///|
 const HERMES_WEB_OFFLINE_ERROR = "hermes_web_offline"
@@ -4717,13 +4717,13 @@ fn split_endpoint_urls(value : String) -> Array[String] {
 }
 
 ///|
-const CCS_ENDPOINT_DEFAULT_TIMEOUT_SECS = 8
+const MOONSTAT_ENDPOINT_DEFAULT_TIMEOUT_SECS = 8
 
 ///|
-const CCS_ENDPOINT_MIN_TIMEOUT_SECS = 2
+const MOONSTAT_ENDPOINT_MIN_TIMEOUT_SECS = 2
 
 ///|
-const CCS_ENDPOINT_MAX_TIMEOUT_SECS = 30
+const MOONSTAT_ENDPOINT_MAX_TIMEOUT_SECS = 30
 
 ///|
 fn moon_endpoint_invalid_url_error(url : String) -> String {

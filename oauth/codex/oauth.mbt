@@ -203,7 +203,7 @@ async fn exchange_device_code_for_tokens(
     .join("&")
   let (response, data) = @http.post("\{OAUTH_ISSUER}/oauth/token", body, headers={
     "Content-Type": "application/x-www-form-urlencoded",
-    "User-Agent": "cc-switch-codex-oauth",
+    "User-Agent": "moonstat-codex-oauth",
   })
   guard response.code is (200..=299) else {
     let error_text = data.text()
@@ -222,7 +222,7 @@ pub async fn start_device_flow() -> DeviceCodeFlow raise Error {
     body,
     headers={
       "Content-Type": "application/json",
-      "User-Agent": "cc-switch-codex-oauth",
+      "User-Agent": "moonstat-codex-oauth",
     },
   )
   guard response.code is (200..=299) else {
@@ -248,7 +248,7 @@ pub async fn poll_device_flow(
     body,
     headers={
       "Content-Type": "application/json",
-      "User-Agent": "cc-switch-codex-oauth",
+      "User-Agent": "moonstat-codex-oauth",
     },
   )
   match response.code {

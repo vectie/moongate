@@ -42,7 +42,7 @@ fn moon_headers_contain_proxy_managed_placeholder(
   headers : Map[String, String],
 ) -> Bool {
   for _, value in headers {
-    if value.contains(CCS_PROXY_MANAGED_PLACEHOLDER) {
+    if value.contains(MOONSTAT_PROXY_MANAGED_PLACEHOLDER) {
       return true
     }
   }
@@ -846,7 +846,7 @@ async fn ProxyService::apply_app_config_request(
       "auto_failover_enabled", "autoFailoverEnabled",
     ]) {
     Some(enabled) =>
-      if !self.provider_router.set_auto_failover_ccs(app_type, enabled) {
+      if !self.provider_router.set_auto_failover_moonstat(app_type, enabled) {
         return None
       }
     None => ()
@@ -920,7 +920,7 @@ fn ProxyService::app_enabled_for_app(
 }
 
 ///|
-fn ProxyService::can_set_auto_failover_ccs(
+fn ProxyService::can_set_auto_failover_moonstat(
   self : ProxyService,
   app_type : String,
   enabled : Bool,
@@ -1020,7 +1020,7 @@ async fn ProxyService::handle_proxy_reset_circuit_breaker(
     return
   }
   let app_enabled = self.app_enabled_for_app(query.app_type)
-  let _switched = self.provider_router.reset_provider_breaker_ccs(
+  let _switched = self.provider_router.reset_provider_breaker_moonstat(
     query.provider_id,
     query.app_type,
     app_enabled~,
@@ -1125,11 +1125,11 @@ async fn ProxyService::handle_proxy_set_auto_failover_enabled(
     write_usage_bad_request(w, "missing_enabled")
     return
   }
-  if !self.can_set_auto_failover_ccs(app_type, enabled) {
+  if !self.can_set_auto_failover_moonstat(app_type, enabled) {
     write_usage_bad_request(w, "auto_failover_requires_proxy_takeover")
     return
   }
-  if !self.provider_router.set_auto_failover_command_ccs(app_type, enabled) {
+  if !self.provider_router.set_auto_failover_command_moonstat(app_type, enabled) {
     write_usage_bad_request(w, "auto_failover_unavailable")
     return
   }
@@ -1344,11 +1344,11 @@ fn proxy_embedded_config(body : Json?) -> Json? {
 
 ///|
 fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int?) -> Int {
-  let secs = timeout_secs.unwrap_or(CCS_ENDPOINT_DEFAULT_TIMEOUT_SECS)
-  if secs < CCS_ENDPOINT_MIN_TIMEOUT_SECS {
-    CCS_ENDPOINT_MIN_TIMEOUT_SECS
-  } else if secs > CCS_ENDPOINT_MAX_TIMEOUT_SECS {
-    CCS_ENDPOINT_MAX_TIMEOUT_SECS
+  let secs = timeout_secs.unwrap_or(MOONSTAT_ENDPOINT_DEFAULT_TIMEOUT_SECS)
+  if secs < MOONSTAT_ENDPOINT_MIN_TIMEOUT_SECS {
+    MOONSTAT_ENDPOINT_MIN_TIMEOUT_SECS
+  } else if secs > MOONSTAT_ENDPOINT_MAX_TIMEOUT_SECS {
+    MOONSTAT_ENDPOINT_MAX_TIMEOUT_SECS
   } else {
     secs
   }

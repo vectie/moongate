@@ -745,7 +745,7 @@ pub fn ProviderRouter::set_auto_failover(
 }
 
 ///|
-fn ProviderRouter::set_auto_failover_ccs(
+fn ProviderRouter::set_auto_failover_moonstat(
   self : ProviderRouter,
   app_type : String,
   enabled : Bool,
@@ -767,7 +767,7 @@ fn ProviderRouter::set_auto_failover_ccs(
 }
 
 ///|
-fn ProviderRouter::set_auto_failover_command_ccs(
+fn ProviderRouter::set_auto_failover_command_moonstat(
   self : ProviderRouter,
   app_type : String,
   enabled : Bool,
@@ -1648,7 +1648,7 @@ pub fn ProviderRouter::reset_provider_breaker(
 }
 
 ///|
-fn ProviderRouter::reset_provider_breaker_ccs(
+fn ProviderRouter::reset_provider_breaker_moonstat(
   self : ProviderRouter,
   provider_id : String,
   app_type : String,
