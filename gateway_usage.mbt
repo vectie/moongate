@@ -148,6 +148,24 @@ async fn UsageService::record_internal_error(self : UsageService) -> Unit {
 }
 
 ///|
+async fn UsageService::load_and_reconcile_persistent_store(
+  self : UsageService,
+  pricing_overrides : Array[ModelPricing],
+  storage_dir? : String = default_moonstat_stats_dir(),
+) -> (Int, Int) {
+  self.stats.load_persistent_store(storage_dir~)
+  let backfilled = self.stats.backfill_missing_usage_costs(
+    pricing_overrides,
+    self.pricing_deleted_model_ids,
+  )
+  let pruned = self.stats.rollup_and_prune()
+  if backfilled > 0 || pruned > 0 {
+    self.stats.save_persistent_store()
+  }
+  (backfilled, pruned)
+}
+
+///|
 async fn UsageService::usage_logs_json(
   self : UsageService,
   filters : RequestLogFilters,

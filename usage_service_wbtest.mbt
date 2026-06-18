@@ -148,3 +148,50 @@ async test "usage service owns completion and error accounting without gateway" 
   assert_eq(usage.stats.upstream_errors, 1)
   assert_eq(usage.stats.last_error, Some("internal_error"))
 }
+
+///|
+async test "usage service owns startup persistent store reconciliation" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-usage-service-startup-\{@async.now().to_int()}",
+  )
+  let seed = TrafficStats::new()
+  seed.enable_persistent_store(storage_dir=dir)
+  seed.record_request_log(
+    RequestLog::new(
+      request_id="req-startup-rollup",
+      provider_id="codex-oauth",
+      provider_name=Some("Codex OAuth"),
+      app_type="codex",
+      model="gpt-5",
+      request_model=Some("gpt-5"),
+      pricing_model=Some("gpt-5"),
+      usage=TokenUsage::new(
+        input_tokens=2,
+        output_tokens=3,
+        model=Some("gpt-5"),
+      ),
+      status_code=200,
+      latency_ms=7,
+      created_at=1,
+      data_source="proxy",
+    ),
+  )
+  seed.save_persistent_store()
+
+  let usage = UsageService::new()
+  let (backfilled, pruned) = usage.load_and_reconcile_persistent_store(
+    [],
+    storage_dir=dir,
+  )
+  assert_eq(backfilled, 1)
+  assert_eq(pruned, 1)
+  assert_eq(usage.stats.request_logs.length(), 0)
+  assert_eq(usage.stats.daily_rollups.length(), 1)
+
+  let loaded = TrafficStats::new()
+  loaded.load_persistent_store(storage_dir=dir)
+  assert_eq(loaded.request_logs.length(), 0)
+  assert_eq(loaded.daily_rollups.length(), 1)
+  assert_eq(loaded.daily_rollups[0].request_count, 1)
+}
