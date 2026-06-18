@@ -76,33 +76,36 @@ fn moonstat_default_provider_router() -> ProviderRouter {
 }
 
 ///|
-fn Gateway::activate_provider(
-  self : Gateway,
+fn ProxyService::activate_provider(
+  self : ProxyService,
+  usage : UsageService,
   app_type : String,
 ) -> ProviderRouteTarget? {
-  let selected = self.proxy.provider_router.select_providers(app_type)
+  let selected = self.provider_router.select_providers(app_type)
   guard selected.error is None else { return None }
-  self.activate_first_available_provider(app_type, selected.providers)
+  self.activate_first_available_provider(usage, app_type, selected.providers)
 }
 
 ///|
-fn Gateway::activate_first_available_provider(
-  self : Gateway,
+fn ProxyService::activate_first_available_provider(
+  self : ProxyService,
+  usage : UsageService,
   app_type : String,
   providers : Array[ProviderRouteTarget],
 ) -> ProviderRouteTarget? {
-  self.activate_first_available_provider_excluding(app_type, providers, [])
+  self.activate_first_available_provider_excluding(usage, app_type, providers, [])
 }
 
 ///|
-fn Gateway::activate_first_available_provider_excluding(
-  self : Gateway,
+fn ProxyService::activate_first_available_provider_excluding(
+  self : ProxyService,
+  usage : UsageService,
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
 ) -> ProviderRouteTarget? {
   let bypass_circuit_breaker = providers.length() == 1
-  let max_attempts = self.proxy.provider_router.max_attempts_for_app(app_type)
+  let max_attempts = self.provider_router.max_attempts_for_app(app_type)
   if attempted_provider_ids.length() >= max_attempts {
     return None
   }
@@ -114,6 +117,7 @@ fn Gateway::activate_first_available_provider_excluding(
       continue
     }
     if self.activate_provider_target(
+        usage,
         app_type,
         provider,
         bypass_circuit_breaker~,
@@ -125,8 +129,9 @@ fn Gateway::activate_first_available_provider_excluding(
 }
 
 ///|
-fn Gateway::activate_provider_target(
-  self : Gateway,
+fn ProxyService::activate_provider_target(
+  self : ProxyService,
+  usage : UsageService,
   app_type : String,
   provider : ProviderRouteTarget,
   bypass_circuit_breaker? : Bool = false,
@@ -134,13 +139,10 @@ fn Gateway::activate_provider_target(
   let allow = if bypass_circuit_breaker {
     { allowed: true, used_half_open_permit: false }
   } else {
-    self.proxy.provider_router.allow_provider_request(
-      provider.provider_id,
-      app_type,
-    )
+    self.provider_router.allow_provider_request(provider.provider_id, app_type)
   }
   guard allow.allowed else { return false }
-  self.usage.activate_provider_target(
+  usage.activate_provider_target(
     app_type,
     provider.provider_id,
     provider.provider_name,
@@ -173,8 +175,11 @@ fn Gateway::activate_next_provider_after_upstream_status(
       false,
     )
     self.usage.set_last_error("upstream_error")
-    self.activate_first_available_provider_excluding(
-      app_type, providers, attempted_provider_ids,
+    self.proxy.activate_first_available_provider_excluding(
+      self.usage,
+      app_type,
+      providers,
+      attempted_provider_ids,
     )
   } else {
     self.proxy.provider_router.release_permit_neutral(
@@ -266,6 +271,39 @@ fn Gateway::active_provider_target(
     Some(provider) => Some(provider)
     None => None
   }
+}
+
+///|
+async fn ProxyService::handle_models(
+  _self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(
+    moon_models_endpoint_response_json(
+      @codex_config.active_model_catalog_json(),
+    ).stringify(),
+  )
+  w.flush()
+}
+
+///|
+async fn ProxyService::handle_claude_desktop_models(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  guard auth.validate_claude_desktop_gateway_auth(self, usage, r, w) else {
+    return
+  }
+  let provider = self.activate_provider(usage, "claude-desktop")
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(claude_desktop_model_list_json(provider~).stringify())
+  w.flush()
 }
 
 ///|

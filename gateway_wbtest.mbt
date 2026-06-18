@@ -2372,11 +2372,16 @@ async test "external utility endpoints are owned by proxy service" {
 ///|
 async test "provider config endpoints are owned by proxy service" {
   let provider_source = @fsx.read_file("gateway_provider.mbt")
+  let proxy_source = @fsx.read_file("gateway_proxy.mbt")
   let config_source = @fsx.read_file("gateway_config.mbt")
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   let omo_source = @fsx.read_file("omo.mbt")
   let usage_source = @fsx.read_file("gateway_usage.mbt")
-  let sources = provider_source + config_source + misc_source + omo_source
+  let sources = provider_source +
+    proxy_source +
+    config_source +
+    misc_source +
+    omo_source
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
@@ -2386,6 +2391,7 @@ async test "provider config endpoints are owned by proxy service" {
       "handle_remove_custom_endpoint", "handle_update_endpoint_last_used", "handle_get_claude_desktop_status",
       "handle_get_claude_desktop_default_routes", "handle_get_current_omo_provider_id",
       "handle_disable_current_omo", "handle_stream_check_provider", "handle_stream_check_all_providers",
+      "handle_models", "handle_claude_desktop_models",
     ] {
     assert_true(sources.contains("async fn ProxyService::\{handler}("))
     assert_false(sources.contains("async fn Gateway::\{handler}("))
@@ -2393,11 +2399,25 @@ async test "provider config endpoints are owned by proxy service" {
   for
     helper in [
       "post_codex_compatible_provider_json", "post_codex_compatible_provider_stream",
-      "post_claude_compatible_provider_json",
+      "post_claude_compatible_provider_json", "activate_provider", "activate_first_available_provider",
+      "activate_first_available_provider_excluding", "activate_provider_target",
     ] {
-    assert_true(provider_source.contains("async fn ProxyService::\{helper}("))
-    assert_false(provider_source.contains("async fn Gateway::\{helper}("))
+    assert_true(sources.contains("fn ProxyService::\{helper}("))
+    assert_false(sources.contains("async fn Gateway::\{helper}("))
+    assert_false(sources.contains("fn Gateway::\{helper}("))
   }
+  assert_true(
+    proxy_source.contains("fn ProxyService::provider_cost_multiplier("),
+  )
+  assert_true(
+    proxy_source.contains("fn ProxyService::provider_pricing_model_source("),
+  )
+  assert_true(core_source.contains("self.proxy.handle_models(w)"))
+  assert_true(
+    core_source.contains(
+      "self.proxy.handle_claude_desktop_models(self.auth, self.usage, r, w)",
+    ),
+  )
   assert_true(
     usage_source.contains(
       "async fn UsageService::write_provider_selection_error(",
@@ -2943,8 +2963,8 @@ test "proxy pricing config runtime overrides feed provider activation defaults" 
   )
   assert_eq(gateway.proxy.default_cost_multiplier_for_app("codex"), "1.75")
   assert_eq(gateway.proxy.pricing_model_source_for_app("codex"), "request")
-  assert_eq(gateway.provider_cost_multiplier(provider), "1.75")
-  assert_eq(gateway.provider_pricing_model_source(provider), "request")
+  assert_eq(gateway.proxy.provider_cost_multiplier(provider), "1.75")
+  assert_eq(gateway.proxy.provider_pricing_model_source(provider), "request")
 }
 
 ///|
@@ -2967,8 +2987,8 @@ test "proxy pricing config makes claude desktop inherit claude defaults like ccs
     gateway.proxy.pricing_model_source_for_app("claude-desktop"),
     "request",
   )
-  assert_eq(gateway.provider_cost_multiplier(provider), "1.5")
-  assert_eq(gateway.provider_pricing_model_source(provider), "request")
+  assert_eq(gateway.proxy.provider_cost_multiplier(provider), "1.5")
+  assert_eq(gateway.proxy.provider_pricing_model_source(provider), "request")
 }
 
 ///|
@@ -4144,7 +4164,7 @@ test "gateway records upstream failures into provider router before finish" {
     min_requests: 10,
   })
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   gateway.usage.stats.record_request_context(
     "codex",
     "gpt-5",
@@ -4581,7 +4601,8 @@ async test "gateway applies ccs provider cost multiplier to request log" {
   )
   gateway.usage.stats.record_inbound(10)
   assert_true(
-    gateway.activate_provider_target(
+    gateway.proxy.activate_provider_target(
+      gateway.usage,
       "claude",
       provider,
       bypass_circuit_breaker=true,
@@ -4634,7 +4655,8 @@ async test "gateway ignores invalid ccs provider cost multiplier" {
   )
   gateway.usage.stats.record_inbound(10)
   assert_true(
-    gateway.activate_provider_target(
+    gateway.proxy.activate_provider_target(
+      gateway.usage,
       "claude",
       provider,
       bypass_circuit_breaker=true,
@@ -4691,7 +4713,8 @@ async test "gateway applies ccs request pricing model source" {
   )
   gateway.usage.stats.record_inbound(10)
   assert_true(
-    gateway.activate_provider_target(
+    gateway.proxy.activate_provider_target(
+      gateway.usage,
       "claude",
       provider,
       bypass_circuit_breaker=true,
@@ -4719,7 +4742,7 @@ async test "gateway applies ccs request pricing model source" {
 async test "gateway records billable ccs stream usage once" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   gateway.usage.stats.record_request_context(
     "codex",
     "gpt-5",
@@ -4759,7 +4782,7 @@ async test "gateway records billable ccs stream usage once" {
 async test "gateway records all zero ccs stream usage request log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   gateway.usage.stats.record_request_context(
     "codex",
     "gpt-5",
@@ -4787,7 +4810,7 @@ async test "gateway records all zero ccs stream usage request log" {
 async test "gateway skips all zero ccs transformed stream usage log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   gateway.usage.stats.record_request_context(
     "codex",
     "gpt-5",
@@ -4810,7 +4833,7 @@ async test "gateway skips all zero ccs transformed stream usage log" {
 async test "gateway records all zero ccs nonstream usage request log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   gateway.usage.stats.record_request_context(
     "codex",
     "gpt-5",
@@ -4870,7 +4893,7 @@ async test "gateway nonretryable upstream errors release half open permit" {
   gateway.proxy.provider_router.set_auto_failover("codex", true)
 
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   gateway.usage.stats.record_request_context(
     "codex",
     "gpt-5",
@@ -4880,7 +4903,7 @@ async test "gateway nonretryable upstream errors release half open permit" {
   gateway.usage.stats.record_upstream_error_status(0, 502)
 
   gateway.usage.stats.record_inbound(10)
-  let _ = gateway.activate_provider("codex")
+  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
   assert_true(gateway.usage.stats.current_request_used_half_open_permit)
   gateway.usage.stats.record_request_context(
     "codex",
@@ -4904,7 +4927,7 @@ async test "gateway nonretryable upstream errors release half open permit" {
   assert_eq(stats.failed_requests, 1)
 
   gateway.usage.stats.record_inbound(10)
-  let third = gateway.activate_provider("codex")
+  let third = gateway.proxy.activate_provider(gateway.usage, "codex")
   assert_true(third is Some(_))
   assert_true(gateway.usage.stats.current_request_used_half_open_permit)
 }
@@ -4926,7 +4949,7 @@ async test "gateway streaming success records provider health before request com
     provider_type=Some("codex"),
   )
   gateway.usage.stats.record_stream_mode(true)
-  let selected = gateway.activate_provider("codex")
+  let selected = gateway.proxy.activate_provider(gateway.usage, "codex")
   guard selected is Some(provider) else { fail("expected provider") }
   assert_true(provider.provider_id == "codex-oauth")
 
@@ -5010,7 +5033,7 @@ test "gateway activation skips occupied half open provider in failover chain" {
   assert_true(occupied.allowed)
   assert_true(occupied.used_half_open_permit)
 
-  let selected = gateway.activate_provider("codex")
+  let selected = gateway.proxy.activate_provider(gateway.usage, "codex")
   guard selected is Some(provider) else { fail("expected fallback provider") }
   assert_eq(provider.provider_id, "codex-alt")
   assert_eq(gateway.usage.stats.current_provider_id, Some("codex-alt"))
@@ -5036,7 +5059,8 @@ test "gateway activation can exclude already attempted failover providers" {
     gateway.proxy.provider_router.upsert_provider(provider)
   }
   gateway.proxy.provider_router.set_auto_failover("codex", true)
-  let selected = gateway.activate_first_available_provider_excluding(
+  let selected = gateway.proxy.activate_first_available_provider_excluding(
+    gateway.usage,
     "codex",
     providers,
     ["primary"],
@@ -5088,7 +5112,8 @@ test "gateway retryable upstream status activates next failover provider" {
     "gpt-5",
     provider_type=Some("codex"),
   )
-  let first = gateway.activate_first_available_provider(
+  let first = gateway.proxy.activate_first_available_provider(
+    gateway.usage,
     "codex",
     selection.providers,
   )
@@ -5173,7 +5198,8 @@ test "gateway retryable upstream status respects ccs max retries cap before perm
     "gpt-5",
     provider_type=Some("codex"),
   )
-  let first = gateway.activate_first_available_provider(
+  let first = gateway.proxy.activate_first_available_provider(
+    gateway.usage,
     "codex",
     selection.providers,
   )
@@ -5224,7 +5250,8 @@ test "gateway retryable final provider remains active for final upstream error" 
     "gpt-5",
     provider_type=Some("codex"),
   )
-  let selected = gateway.activate_first_available_provider(
+  let selected = gateway.proxy.activate_first_available_provider(
+    gateway.usage,
     "codex",
     selection.providers,
   )
@@ -5296,7 +5323,8 @@ test "gateway nonretryable upstream status does not activate failover provider" 
     "gpt-5",
     provider_type=Some("codex"),
   )
-  let selected = gateway.activate_first_available_provider(
+  let selected = gateway.proxy.activate_first_available_provider(
+    gateway.usage,
     "codex",
     selection.providers,
   )
@@ -5353,7 +5381,7 @@ test "gateway activation bypasses circuit breaker for single provider" {
   }
   assert_true(stats.state == Open)
 
-  let selected = gateway.activate_provider("codex")
+  let selected = gateway.proxy.activate_provider(gateway.usage, "codex")
   guard selected is Some(provider) else {
     fail("single provider should bypass circuit gating")
   }

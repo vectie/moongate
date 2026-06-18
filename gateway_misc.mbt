@@ -134,7 +134,7 @@ async fn Gateway::handle_codex_responses(
   let body = r.body.read_all()
   let body_str = body.text()
   self.usage.record_inbound(body_str.length())
-  let _ = self.activate_provider("codex")
+  let _ = self.proxy.activate_provider(self.usage, "codex")
   self.usage.record_request_context("codex", self.model)
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
@@ -194,7 +194,7 @@ async fn Gateway::handle_chat_completions(
   let body = r.body.read_all()
   let body_str = body.text()
   self.usage.record_inbound(body_str.length())
-  let _ = self.activate_provider(app_type)
+  let _ = self.proxy.activate_provider(self.usage, app_type)
   self.usage.record_request_context(app_type, self.model)
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
@@ -260,7 +260,7 @@ async fn Gateway::handle_gemini(
   let body = r.body.read_all()
   let body_str = body.text()
   self.usage.record_inbound(body_str.length())
-  let _ = self.activate_provider("gemini")
+  let _ = self.proxy.activate_provider(self.usage, "gemini")
   self.usage.record_request_context("gemini", "gemini")
   let request_json : Json = if body_str.is_empty() {
     Json::null()
@@ -4933,42 +4933,6 @@ fn parse_non_negative_decimal_to_double(value : String) -> Double? {
 }
 
 ///|
-async fn Gateway::handle_models(
-  _self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(
-    moon_models_endpoint_response_json(
-      @codex_config.active_model_catalog_json(),
-    ).stringify(),
-  )
-  w.flush()
-}
-
-///|
-async fn Gateway::handle_claude_desktop_models(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  guard self.auth.validate_claude_desktop_gateway_auth(
-    self.proxy,
-    self.usage,
-    r,
-    w,
-  ) else {
-    return
-  }
-  let provider = self.activate_provider("claude-desktop")
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(claude_desktop_model_list_json(provider~).stringify())
-  w.flush()
-}
-
-///|
 fn claude_desktop_model_list_json(
   provider? : ProviderRouteTarget? = None,
 ) -> Json {
@@ -5322,7 +5286,7 @@ async fn Gateway::handle_messages(
   let body = r.body.read_all()
   let body_str = body.text()
   self.usage.record_inbound(body_str.length())
-  let active_provider = self.activate_provider(app_type)
+  let active_provider = self.proxy.activate_provider(self.usage, app_type)
   self.usage.record_request_context(app_type, self.model)
   if active_provider is None && self.all_provider_circuits_open(app_type) {
     self.usage.write_provider_selection_error(

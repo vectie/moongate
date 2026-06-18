@@ -72,13 +72,13 @@ fn gemini_proxy_url(endpoint : String) -> String? {
 }
 
 ///|
-fn Gateway::provider_cost_multiplier(
-  self : Gateway,
+fn ProxyService::provider_cost_multiplier(
+  self : ProxyService,
   provider : ProviderRouteTarget,
 ) -> String {
   provider_cost_multiplier_from_default(
     provider,
-    self.proxy.default_cost_multiplier_for_app(provider.app_type),
+    self.default_cost_multiplier_for_app(provider.app_type),
   )
 }
 
@@ -152,13 +152,13 @@ fn default_cost_multiplier_for_app(app_type : String) -> String {
 }
 
 ///|
-fn Gateway::provider_pricing_model_source(
-  self : Gateway,
+fn ProxyService::provider_pricing_model_source(
+  self : ProxyService,
   provider : ProviderRouteTarget,
 ) -> String {
   provider_pricing_model_source_from_default(
     provider,
-    self.proxy.pricing_model_source_for_app(provider.app_type),
+    self.pricing_model_source_for_app(provider.app_type),
   )
 }
 

@@ -1509,13 +1509,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     w,
   ) => self.auth.handle_copilot_get_usage(r, w))
   router.add_handler(@httpx.Method::Get, "/models", (_, w) => {
-    self.handle_models(w)
+    self.proxy.handle_models(w)
   })
   router.add_handler(@httpx.Method::Get, "/v1/models", (_, w) => {
-    self.handle_models(w)
+    self.proxy.handle_models(w)
   })
   router.add_handler(@httpx.Method::Get, "/claude-desktop/v1/models", (r, w) => {
-    self.handle_claude_desktop_models(r, w)
+    self.proxy.handle_claude_desktop_models(self.auth, self.usage, r, w)
   })
   router.add_handler(@httpx.Method::Post, "/login", (r, w) => {
     self.auth.handle_login(r, w, self.logger)
