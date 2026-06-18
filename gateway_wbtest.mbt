@@ -2131,14 +2131,16 @@ async test "usage accounting is owned by usage service" {
       "self.usage.register_routes(router, self.auth, self.proxy.provider_router)",
     ),
   )
+  assert_true(core_source.contains("self.usage.register_status_routes("))
   for
     handler in [
-      "handle_usage_logs", "handle_usage_summary", "handle_usage_summary_by_app",
-      "handle_usage_trends", "handle_usage_provider_limits", "handle_usage_provider_stats",
-      "handle_usage_model_stats", "handle_usage_data_sources", "handle_query_provider_usage",
-      "handle_get_balance", "handle_get_subscription_quota", "handle_get_coding_plan_quota",
-      "handle_test_usage_script", "handle_usage_sync_session", "handle_usage_model_pricing",
-      "handle_usage_update_model_pricing", "handle_usage_delete_model_pricing", "handle_usage_request_detail",
+      "handle_health", "handle_status", "handle_stats", "handle_metrics", "handle_usage_logs",
+      "handle_usage_summary", "handle_usage_summary_by_app", "handle_usage_trends",
+      "handle_usage_provider_limits", "handle_usage_provider_stats", "handle_usage_model_stats",
+      "handle_usage_data_sources", "handle_query_provider_usage", "handle_get_balance",
+      "handle_get_subscription_quota", "handle_get_coding_plan_quota", "handle_test_usage_script",
+      "handle_usage_sync_session", "handle_usage_model_pricing", "handle_usage_update_model_pricing",
+      "handle_usage_delete_model_pricing", "handle_usage_request_detail",
     ] {
     assert_true(route_source.contains("self.\{handler}("))
   }

@@ -43,27 +43,14 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.model,
     self.logger,
   )
-  router.add_handler(Get, "/health", (_, w) => {
-    self.usage.handle_health(w, self.auth.credentials_loaded())
-  })
-  router.add_handler(Get, "/status", (_, w) => {
-    self.usage.handle_status(
-      w,
-      self.host,
-      self.port,
-      self.runtime.uptime_seconds(self.started_at_ms),
-      provider_routes=Some(self.proxy.provider_router.route_stats_json()),
-    )
-  })
-  router.add_handler(Get, "/stats", (_, w) => self.usage.handle_stats(w))
-  router.add_handler(Get, "/metrics", (_, w) => {
-    self.usage.handle_metrics(
-      w,
-      provider_metrics=provider_router_prometheus_metrics(
-        self.proxy.provider_router,
-      ),
-    )
-  })
+  self.usage.register_status_routes(
+    router,
+    self.auth,
+    self.proxy.provider_router,
+    self.host,
+    self.port,
+    self.runtime.uptime_seconds(self.started_at_ms),
+  )
   self.config.register_routes(router, self.proxy, self.host, self.port)
   self.runtime.register_routes(router, self.proxy)
   self.workspace.register_routes(router, self.config, self.proxy, self.logger)

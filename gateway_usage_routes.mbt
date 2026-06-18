@@ -1,4 +1,35 @@
 ///|
+fn UsageService::register_status_routes(
+  self : UsageService,
+  router : @httpx.Router,
+  auth : AuthService,
+  provider_router : ProviderRouter,
+  host : String,
+  port : Int,
+  uptime_seconds : Int,
+) -> Unit {
+  router.add_handler(Get, "/health", (_, w) => {
+    self.handle_health(w, auth.credentials_loaded())
+  })
+  router.add_handler(Get, "/status", (_, w) => {
+    self.handle_status(
+      w,
+      host,
+      port,
+      uptime_seconds,
+      provider_routes=Some(provider_router.route_stats_json()),
+    )
+  })
+  router.add_handler(Get, "/stats", (_, w) => self.handle_stats(w))
+  router.add_handler(Get, "/metrics", (_, w) => {
+    self.handle_metrics(
+      w,
+      provider_metrics=provider_router_prometheus_metrics(provider_router),
+    )
+  })
+}
+
+///|
 fn UsageService::register_routes(
   self : UsageService,
   router : @httpx.Router,
