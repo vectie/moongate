@@ -1163,7 +1163,7 @@ fn claude_provider_models_are_claude_safe(
               "ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
               "ANTHROPIC_DEFAULT_OPUS_MODEL",
             ] {
-            match json_non_empty_string_from_map_any(env, [key]) {
+            match json_non_empty_string_from_map(env, key) {
               Some(model) if !is_claude_safe_model_id(model) => return false
               _ => ()
             }
@@ -1918,7 +1918,7 @@ fn provider_target_from_request(
 ///|
 fn provider_claude_desktop_mode_from_body(body : Json?) -> String? {
   guard provider_body_payload(body) is Some(Object(obj)) else { return None }
-  match json_non_empty_string_from_map_any(obj, ["claudeDesktopMode"]) {
+  match json_non_empty_string_from_map(obj, "claudeDesktopMode") {
     Some(mode) => normalize_claude_desktop_mode(mode)
     None => None
   }
@@ -2079,7 +2079,7 @@ fn provider_sort_updates_from_array(
   let updates : Array[ProviderSortUpdate] = []
   for item in items {
     guard item is Object(obj) else { continue }
-    guard json_string_from_map_any(obj, ["id"]) is Some(id) else { continue }
+    guard json_string_from_map(obj, "id") is Some(id) else { continue }
     let sort_index = match obj.get("sortIndex") {
       Some(Number(value, ..)) => value.trunc().to_int()
       Some(String(value)) =>

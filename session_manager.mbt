@@ -1032,10 +1032,10 @@ fn moon_parse_codex_session_lines(
           return None
         }
         if session_id is None {
-          session_id = json_string_from_map_any(payload, ["id"])
+          session_id = json_string_from_map(payload, "id")
         }
         if project_dir is None {
-          project_dir = json_string_from_map_any(payload, ["cwd"])
+          project_dir = json_string_from_map(payload, "cwd")
         }
         match moon_json_timestamp_ms(payload.get("timestamp")) {
           Some(ts) if created_at is None => created_at = Some(ts)
@@ -1047,8 +1047,8 @@ fn moon_parse_codex_session_lines(
       json_string_from_json(moon_json_get(value, "type")) ==
       Some("response_item") &&
       moon_json_get(value, "payload") is Some(Object(payload)) &&
-      json_string_from_map_any(payload, ["type"]) == Some("message") &&
-      json_string_from_map_any(payload, ["role"]) == Some("user") {
+      json_string_from_map(payload, "type") == Some("message") &&
+      json_string_from_map(payload, "role") == Some("user") {
       let text = moon_extract_json_text(payload.get("content"))
       match moon_codex_title_candidate(text) {
         Some(title) => first_user_message = Some(title)
@@ -1067,7 +1067,7 @@ fn moon_parse_codex_session_lines(
       json_string_from_json(moon_json_get(value, "type")) ==
       Some("response_item") &&
       moon_json_get(value, "payload") is Some(Object(payload)) &&
-      json_string_from_map_any(payload, ["type"]) == Some("message") {
+      json_string_from_map(payload, "type") == Some("message") {
       let text = moon_extract_json_text(payload.get("content"))
       if !text.trim().is_empty() {
         summary = Some(moon_truncate_summary(text, 160))
@@ -1142,7 +1142,7 @@ fn moon_parse_claude_session_lines(
         Some("user") ||
         (
           moon_json_get(value, "message") is Some(Object(message)) &&
-          json_string_from_map_any(message, ["role"]) == Some("user")
+          json_string_from_map(message, "role") == Some("user")
         )
       if is_user && moon_json_get(value, "message") is Some(Object(message)) {
         let text = moon_extract_json_text(message.get("content"))
@@ -1264,7 +1264,7 @@ fn moon_parse_gemini_session_lines(
     let role = moon_first_string(
       json_string_from_json(moon_json_get(value, "role")),
       match moon_json_get(value, "message") {
-        Some(Object(message)) => json_string_from_map_any(message, ["role"])
+        Some(Object(message)) => json_string_from_map(message, "role")
         _ => None
       },
     )
@@ -1340,22 +1340,22 @@ fn moon_parse_generic_json_session_lines(
         ])
       }
       if title is None {
-        title = json_string_from_map_any(obj, ["title"])
+        title = json_string_from_map(obj, "title")
       }
       if project_dir is None {
         project_dir = json_string_from_map_any(obj, [
           "cwd", "directory", "projectDir", "project_dir",
         ])
       }
-      let value_type = json_string_from_map_any(obj, ["type"])
+      let value_type = json_string_from_map(obj, "type")
       let message = match obj.get("message") {
         Some(Object(message)) => Some(message)
         _ => None
       }
       let role = moon_first_string(
-        json_string_from_map_any(obj, ["role"]),
+        json_string_from_map(obj, "role"),
         match message {
-          Some(message) => json_string_from_map_any(message, ["role"])
+          Some(message) => json_string_from_map(message, "role")
           None => None
         },
       )
@@ -1464,7 +1464,7 @@ fn moon_opencode_sqlite_rows_to_messages(
     }
     let message_value = @json.parse(message_data) catch { _ => Json::null() }
     let role = (match message_value {
-      Object(message) => json_string_from_map_any(message, ["role"])
+      Object(message) => json_string_from_map(message, "role")
       _ => None
     }).unwrap_or("unknown")
     let parts = match moon_json_string(obj.get("parts")) {
@@ -1502,16 +1502,14 @@ fn moon_opencode_parts_text(parts_json : String) -> String {
 ///|
 fn moon_opencode_part_text(part : Json) -> String? {
   guard part is Object(obj) else { return None }
-  match json_string_from_map_any(obj, ["type"]) {
+  match json_string_from_map(obj, "type") {
     Some("text") =>
-      match json_string_from_map_any(obj, ["text"]) {
+      match json_string_from_map(obj, "text") {
         Some(text) if !text.trim().is_empty() => Some(text)
         _ => None
       }
     Some("tool") =>
-      Some(
-        "[Tool: \{json_string_from_map_any(obj, ["tool"]).unwrap_or("unknown")}]",
-      )
+      Some("[Tool: \{json_string_from_map(obj, "tool").unwrap_or("unknown")}]")
     _ => None
   }
 }
@@ -1833,20 +1831,20 @@ fn moon_load_codex_messages(content : String) -> Array[MoonSessionMessage] {
     guard moon_json_get(value, "payload") is Some(Object(payload)) else {
       continue
     }
-    let payload_type = json_string_from_map_any(payload, ["type"]).unwrap_or("")
+    let payload_type = json_string_from_map(payload, "type").unwrap_or("")
     let (role, message) = match payload_type {
       "message" =>
         (
-          json_string_from_map_any(payload, ["role"]).unwrap_or("unknown"),
+          json_string_from_map(payload, "role").unwrap_or("unknown"),
           moon_extract_json_text(payload.get("content")),
         )
       "function_call" =>
         (
           "assistant",
-          "[Tool: \{json_string_from_map_any(payload, ["name"]).unwrap_or("unknown")}]",
+          "[Tool: \{json_string_from_map(payload, "name").unwrap_or("unknown")}]",
         )
       "function_call_output" =>
-        ("tool", json_string_from_map_any(payload, ["output"]).unwrap_or(""))
+        ("tool", json_string_from_map(payload, "output").unwrap_or(""))
       _ => continue
     }
     if message.trim().is_empty() {
@@ -1872,15 +1870,13 @@ fn moon_load_claude_messages(content : String) -> Array[MoonSessionMessage] {
     guard moon_json_get(value, "message") is Some(Object(message)) else {
       continue
     }
-    let mut role = json_string_from_map_any(message, ["role"]).unwrap_or(
-      "unknown",
-    )
+    let mut role = json_string_from_map(message, "role").unwrap_or("unknown")
     match message.get("content") {
       Some(Array(items)) if role == "user" &&
         !items.is_empty() &&
         items.all(fn(item) {
           item is Object(obj) &&
-          json_string_from_map_any(obj, ["type"]) == Some("tool_result")
+          json_string_from_map(obj, "type") == Some("tool_result")
         }) => role = "tool"
       _ => ()
     }
@@ -1911,16 +1907,16 @@ fn moon_load_generic_json_messages(
     guard moon_parse_json_line(line) is Some(value) else { continue }
     let (role, content_value, ts_value) = match value {
       Object(obj) =>
-        if json_string_from_map_any(obj, ["type"]) == Some("message") &&
+        if json_string_from_map(obj, "type") == Some("message") &&
           obj.get("message") is Some(Object(message)) {
           (
-            json_string_from_map_any(message, ["role"]),
+            json_string_from_map(message, "role"),
             message.get("content"),
             moon_first_json(obj.get("timestamp"), message.get("ts")),
           )
         } else {
           (
-            json_string_from_map_any(obj, ["role"]),
+            json_string_from_map(obj, "role"),
             obj.get("content"),
             moon_first_json(obj.get("timestamp"), obj.get("ts")),
           )
@@ -2115,7 +2111,7 @@ fn moon_extract_json_text(content : Json?) -> String {
       }
       parts.join("\n")
     }
-    Some(Object(obj)) => json_string_from_map_any(obj, ["text"]).unwrap_or("")
+    Some(Object(obj)) => json_string_from_map(obj, "text").unwrap_or("")
     _ => ""
   }
 }
@@ -2123,10 +2119,10 @@ fn moon_extract_json_text(content : Json?) -> String {
 ///|
 fn moon_extract_json_text_item(item : Json) -> String? {
   guard item is Object(obj) else { return None }
-  let item_type = json_string_from_map_any(obj, ["type"]).unwrap_or("")
+  let item_type = json_string_from_map(obj, "type").unwrap_or("")
   if item_type == "tool_use" {
     return Some(
-      "[Tool: \{json_string_from_map_any(obj, ["name"]).unwrap_or("unknown")}]",
+      "[Tool: \{json_string_from_map(obj, "name").unwrap_or("unknown")}]",
     )
   }
   if item_type == "tool_result" {

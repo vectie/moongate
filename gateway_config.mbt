@@ -238,7 +238,7 @@ fn moon_log_config_from_request(
 ///|
 fn moon_optimizer_cache_ttl_valid(config : Json) -> Bool {
   guard config is Object(obj) else { return true }
-  match json_string_from_map_any(obj, ["cacheTtl"]) {
+  match json_string_from_map(obj, "cacheTtl") {
     Some("5m") | Some("1h") | None => true
     _ => false
   }
@@ -581,7 +581,7 @@ fn moon_extract_claude_common_config(settings : Json) -> String {
 ///|
 fn moon_extract_codex_common_config(settings : Json) -> String {
   guard settings is Object(config) else { return "" }
-  let toml = json_string_from_map_any(config, ["config"]).unwrap_or("")
+  let toml = json_string_from_map(config, "config").unwrap_or("")
   if toml.is_empty() {
     return ""
   }

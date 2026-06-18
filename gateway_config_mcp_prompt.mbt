@@ -262,7 +262,7 @@ fn moon_mcp_server_from_request(
 ) -> (String, Json)? {
   match moon_json_request(path, body, ["server"]) {
     Some(Object(server)) =>
-      match json_string_from_map_any(server, ["id"]) {
+      match json_string_from_map(server, "id") {
         Some(id) =>
           return Some(
             (
@@ -284,7 +284,7 @@ fn moon_mcp_server_from_request(
 ///|
 fn moon_mcp_server_from_spec(id : String, spec : Json, app : String) -> Json {
   let name = match spec {
-    Object(obj) => json_string_from_map_any(obj, ["name"]).unwrap_or(id)
+    Object(obj) => json_string_from_map(obj, "name").unwrap_or(id)
     _ => id
   }
   Json::object({
@@ -351,12 +351,11 @@ fn moon_mcp_servers_object_for_app(
 ///|
 fn moon_mcp_valid_server_spec(spec : Json) -> Bool {
   guard spec is Object(obj) else { return false }
-  let typ = json_string_from_map_any(obj, ["type"]).unwrap_or("stdio")
+  let typ = json_string_from_map(obj, "type").unwrap_or("stdio")
   match typ {
-    "stdio" =>
-      json_string_from_map_any(obj, ["command"]).unwrap_or("").trim() != ""
+    "stdio" => json_string_from_map(obj, "command").unwrap_or("").trim() != ""
     "http" | "sse" =>
-      json_string_from_map_any(obj, ["url"]).unwrap_or("").trim() != ""
+      json_string_from_map(obj, "url").unwrap_or("").trim() != ""
     _ => false
   }
 }
@@ -539,7 +538,7 @@ fn moon_codex_mcp_section(section : String) -> (String, String)? {
 ///|
 fn moon_codex_mcp_unified_spec(raw_spec : Json) -> Json {
   guard raw_spec is Object(raw) else { return Json::object({}) }
-  let typ = json_string_from_map_any(raw, ["type"]).unwrap_or("stdio")
+  let typ = json_string_from_map(raw, "type").unwrap_or("stdio")
   let spec : Map[String, Json] = { "type": Json::string(typ) }
   match typ {
     "stdio" => {
@@ -783,7 +782,7 @@ fn moon_prompt_from_request(
   let app = moon_config_app_from_request(path, body).unwrap_or("claude")
   match moon_json_request(path, body, ["prompt"]) {
     Some(Object(prompt)) =>
-      match json_string_from_map_any(prompt, ["id"]) {
+      match json_string_from_map(prompt, "id") {
         Some(id) =>
           return Some(
             (app, id, moon_normalize_prompt(id, Json::object(prompt))),
@@ -829,13 +828,11 @@ async fn moon_enable_prompt_json(
       continue
     }
     guard prompts.get(key) is Some(Object(prompt)) else { continue }
-    guard json_string_from_map_any(prompt, ["id"]) is Some(prompt_id) else {
+    guard json_string_from_map(prompt, "id") is Some(prompt_id) else {
       continue
     }
     if prompt_id == id {
-      selected_content = json_string_from_map_any(prompt, ["content"]).unwrap_or(
-        "",
-      )
+      selected_content = json_string_from_map(prompt, "content").unwrap_or("")
       found = true
       break
     }
@@ -856,7 +853,7 @@ async fn moon_enable_prompt_json(
     }
     guard prompts.get(key) is Some(Object(prompt)) else { continue }
     let next = prompt
-    let enabled = match json_string_from_map_any(next, ["id"]) {
+    let enabled = match json_string_from_map(next, "id") {
       Some(prompt_id) => prompt_id == id
       None => false
     }
@@ -908,7 +905,7 @@ fn moon_prompts_object_for_app(
   for key in prompts.keys() {
     if key.has_prefix(prefix) {
       guard prompts.get(key) is Some(Object(prompt)) else { continue }
-      match json_string_from_map_any(prompt, ["id"]) {
+      match json_string_from_map(prompt, "id") {
         Some(id) => result[id] = Json::object(prompt)
         None => ()
       }

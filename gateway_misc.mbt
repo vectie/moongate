@@ -1051,12 +1051,23 @@ fn json_non_empty_string_from_map_any(
   keys : Array[String],
 ) -> String? {
   for key in keys {
-    match json_string_from_map(obj, key) {
-      Some(value) if !value.trim().is_empty() => return Some(value)
-      _ => ()
+    match json_non_empty_string_from_map(obj, key) {
+      Some(value) => return Some(value)
+      None => ()
     }
   }
   None
+}
+
+///|
+fn json_non_empty_string_from_map(
+  obj : Map[String, Json],
+  key : String,
+) -> String? {
+  match json_string_from_map(obj, key) {
+    Some(value) if !value.trim().is_empty() => Some(value)
+    _ => None
+  }
 }
 
 ///|

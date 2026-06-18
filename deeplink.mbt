@@ -528,13 +528,11 @@ fn ConfigService::moon_import_prompt_deeplink(
   self : ConfigService,
   request : Map[String, Json],
 ) -> Json? {
-  guard json_string_from_map_any(request, ["appType"]) is Some(app) else {
+  guard json_string_from_map(request, "appType") is Some(app) else {
     return None
   }
-  guard json_string_from_map_any(request, ["name"]) is Some(name) else {
-    return None
-  }
-  guard json_string_from_map_any(request, ["content"]) is Some(encoded) else {
+  guard json_string_from_map(request, "name") is Some(name) else { return None }
+  guard json_string_from_map(request, "content") is Some(encoded) else {
     return None
   }
   guard moon_deeplink_decode_utf8(encoded) is Some(content) else { return None }
@@ -549,7 +547,7 @@ fn ConfigService::moon_import_prompt_deeplink(
     "createdAt": now,
     "updatedAt": now,
   }
-  match json_string_from_map_any(request, ["description"]) {
+  match json_string_from_map(request, "description") {
     Some(value) => prompt["description"] = Json::string(value)
     None => ()
   }
@@ -564,10 +562,8 @@ fn ConfigService::moon_import_mcp_deeplink(
   self : ConfigService,
   request : Map[String, Json],
 ) -> Json? {
-  guard json_string_from_map_any(request, ["apps"]) is Some(apps) else {
-    return None
-  }
-  guard json_string_from_map_any(request, ["config"]) is Some(encoded) else {
+  guard json_string_from_map(request, "apps") is Some(apps) else { return None }
+  guard json_string_from_map(request, "config") is Some(encoded) else {
     return None
   }
   guard moon_deeplink_decode_json(encoded) is Some(Object(config)) else {
@@ -604,12 +600,12 @@ async fn ConfigService::moon_import_skill_deeplink(
   request : Map[String, Json],
 ) -> Json? {
   ignore(self)
-  guard json_string_from_map_any(request, ["repo"]) is Some(repo) &&
+  guard json_string_from_map(request, "repo") is Some(repo) &&
     moon_deeplink_valid_repo(repo) else {
     return None
   }
   let parts = moon_deeplink_repo_parts(repo)
-  let branch = json_string_from_map_any(request, ["branch"]).unwrap_or("main")
+  let branch = json_string_from_map(request, "branch").unwrap_or("main")
   let repo_json = Json::object({
     "owner": Json::string(parts[0]),
     "name": Json::string(parts[1]),

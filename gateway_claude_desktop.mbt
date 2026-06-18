@@ -111,7 +111,7 @@ fn ProviderRouteTarget::claude_desktop_direct_base_url(
     Some(Object(obj)) =>
       match obj.get("env") {
         Some(Object(env)) =>
-          json_non_empty_string_from_map_any(env, ["ANTHROPIC_BASE_URL"])
+          json_non_empty_string_from_map(env, "ANTHROPIC_BASE_URL")
         _ => None
       }
     _ => None
@@ -201,7 +201,7 @@ fn ProviderRouteTarget::claude_desktop_direct_auth_token(
     Some(Object(obj)) =>
       match obj.get("env") {
         Some(Object(env)) =>
-          json_non_empty_string_from_map_any(env, ["ANTHROPIC_AUTH_TOKEN"])
+          json_non_empty_string_from_map(env, "ANTHROPIC_AUTH_TOKEN")
         _ => None
       }
     _ => None
