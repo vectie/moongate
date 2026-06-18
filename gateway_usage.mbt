@@ -47,13 +47,23 @@ async fn Gateway::record_success_stream_usage(
 }
 
 ///|
+fn UsageService::stats_json(self : UsageService) -> Json {
+  self.stats.to_json()
+}
+
+///|
+fn UsageService::metrics_text(self : UsageService) -> String {
+  self.stats.prometheus_metrics()
+}
+
+///|
 async fn Gateway::handle_stats(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  w.write(self.usage.stats.to_json().stringify(indent=2))
+  w.write(self.usage.stats_json().stringify(indent=2))
   w.flush()
 }
 
@@ -64,7 +74,7 @@ async fn Gateway::handle_metrics(
 ) -> Unit {
   w.header().set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
   w.write_header(@status.Ok)
-  w.write(self.usage.stats.prometheus_metrics())
+  w.write(self.usage.metrics_text())
   w.flush()
 }
 
