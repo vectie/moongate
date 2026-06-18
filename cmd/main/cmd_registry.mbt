@@ -57,19 +57,6 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "exit_lightweight_mode", patterns: ["runtime lightweight exit"] },
     { id: "is_lightweight_mode", patterns: ["runtime lightweight status"] },
     { id: "save_file_dialog", patterns: ["files save-dialog"] },
-    { id: "webdav_test_connection", patterns: ["sync webdav test"] },
-    { id: "webdav_sync_upload", patterns: ["sync webdav upload"] },
-    { id: "webdav_sync_download", patterns: ["sync webdav download"] },
-    { id: "webdav_sync_save_settings", patterns: ["sync webdav settings"] },
-    {
-      id: "webdav_sync_fetch_remote_info",
-      patterns: ["sync webdav remote-info"],
-    },
-    { id: "s3_test_connection", patterns: ["sync s3 test"] },
-    { id: "s3_sync_upload", patterns: ["sync s3 upload"] },
-    { id: "s3_sync_download", patterns: ["sync s3 download"] },
-    { id: "s3_sync_save_settings", patterns: ["sync s3 settings"] },
-    { id: "s3_sync_fetch_remote_info", patterns: ["sync s3 remote-info"] },
     { id: "list_sessions", patterns: ["sessions list"] },
     { id: "get_session_messages", patterns: ["sessions messages"] },
     { id: "launch_session_terminal", patterns: ["sessions terminal"] },
@@ -148,6 +135,9 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     commands.push(command)
   }
   for command in stream_check_cli_commands() {
+    commands.push(command)
+  }
+  for command in sync_cli_commands() {
     commands.push(command)
   }
   commands
