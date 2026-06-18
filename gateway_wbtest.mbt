@@ -2286,6 +2286,7 @@ async test "settings mcp and prompt endpoints are owned by config service" {
 ///|
 async test "workspace endpoints are owned by workspace service" {
   let workspace_source = @fsx.read_file("gateway_workspace.mbt")
+  let route_source = @fsx.read_file("gateway_workspace_routes.mbt")
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
@@ -2302,29 +2303,24 @@ async test "workspace endpoints are owned by workspace service" {
     assert_false(workspace_source.contains("async fn Gateway::\{handler}("))
   }
   assert_true(
-    core_source.contains("self.workspace.handle_save_file_dialog(r, w)"),
-  )
-  assert_true(
     core_source.contains(
-      "self.workspace.handle_read_omo_local_file(w, slim=false)",
+      "self.workspace.register_routes(router, self.config, self.proxy, self.logger)",
     ),
   )
+  assert_true(route_source.contains("self.handle_save_file_dialog(r, w)"))
   assert_true(
-    core_source.contains("self.workspace.handle_open_workspace_directory(r, w)"),
+    route_source.contains("self.handle_read_omo_local_file(w, slim=false)"),
   )
   assert_true(
-    core_source.contains(
-      "self.workspace.handle_import_prompt_from_file(self.config, r, w)",
-    ),
+    route_source.contains("self.handle_open_workspace_directory(r, w)"),
   )
   assert_true(
-    core_source.contains(
-      "self.workspace.handle_get_current_prompt_file_content(r, w)",
-    ),
+    route_source.contains("self.handle_import_prompt_from_file(config, r, w)"),
   )
   assert_true(
-    core_source.contains("self.workspace.handle_register_page(self.logger, w)"),
+    route_source.contains("self.handle_get_current_prompt_file_content(r, w)"),
   )
+  assert_true(route_source.contains("self.handle_register_page(logger, w)"))
 }
 
 ///|
@@ -2384,6 +2380,7 @@ async test "provider config endpoints are owned by proxy service" {
   let config_source = @fsx.read_file("gateway_config.mbt")
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   let route_source = @fsx.read_file("gateway_proxy_routes.mbt")
+  let workspace_route_source = @fsx.read_file("gateway_workspace_routes.mbt")
   let omo_source = @fsx.read_file("omo.mbt")
   let usage_source = @fsx.read_file("gateway_usage.mbt")
   let sources = provider_source +
@@ -2513,20 +2510,24 @@ async test "provider config endpoints are owned by proxy service" {
     route_source.contains("self.handle_get_claude_desktop_default_routes(w)"),
   )
   assert_true(
-    core_source.contains(
-      "self.proxy.handle_get_current_omo_provider_id(w, slim=false)",
+    workspace_route_source.contains(
+      "proxy.handle_get_current_omo_provider_id(w, slim=false)",
     ),
   )
   assert_true(
-    core_source.contains(
-      "self.proxy.handle_get_current_omo_provider_id(w, slim=true)",
+    workspace_route_source.contains(
+      "proxy.handle_get_current_omo_provider_id(w, slim=true)",
     ),
   )
   assert_true(
-    core_source.contains("self.proxy.handle_disable_current_omo(w, slim=false)"),
+    workspace_route_source.contains(
+      "proxy.handle_disable_current_omo(w, slim=false)",
+    ),
   )
   assert_true(
-    core_source.contains("self.proxy.handle_disable_current_omo(w, slim=true)"),
+    workspace_route_source.contains(
+      "proxy.handle_disable_current_omo(w, slim=true)",
+    ),
   )
 }
 
