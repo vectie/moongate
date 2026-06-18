@@ -18,18 +18,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["models", "candidates", ..] => print_model_candidates(arr)
     ["fetch_models_for_config", ..] | ["fetch-models-for-config", ..] =>
       fetch_provider_models(arr)
-    ["stream-check", "provider", ..]
-    | ["stream-check", "stream-check-provider", ..] =>
-      stream_check_provider(arr)
-    ["stream-check", "all", ..]
-    | ["stream-check", "stream-check-all-providers", ..] =>
-      stream_check_all_providers(arr)
-    ["stream-check", "config", "set", ..]
-    | ["stream-check", "save-stream-check-config", ..] =>
-      save_stream_check_config(arr)
-    ["stream-check", "config", ..]
-    | ["stream-check", "get-stream-check-config", ..] =>
-      check_usage_endpoint(arr, "/get_stream_check_config")
     ["get_proxy_status", ..] | ["get-proxy-status", ..] =>
       check_proxy_status(arr)
     ["start_proxy_server", ..] | ["start-proxy-server", ..] =>
@@ -660,14 +648,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["testUsageScript", ..]
     | ["test_usage_script", ..]
     | ["test-usage-script", ..] => test_usage_script(arr)
-    ["stream_check_provider", ..] | ["stream-check-provider", ..] =>
-      stream_check_provider(arr)
-    ["stream_check_all_providers", ..] | ["stream-check-all-providers", ..] =>
-      stream_check_all_providers(arr)
-    ["get_stream_check_config", ..] | ["get-stream-check-config", ..] =>
-      check_usage_endpoint(arr, "/get_stream_check_config")
-    ["save_stream_check_config", ..] | ["save-stream-check-config", ..] =>
-      save_stream_check_config(arr)
     ["mcp", "status", ..] => check_usage_endpoint(arr, "/get_claude_mcp_status")
     ["mcp", "read-config", ..] =>
       check_usage_endpoint(arr, "/read_claude_mcp_config")

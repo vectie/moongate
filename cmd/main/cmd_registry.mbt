@@ -127,6 +127,34 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
         "copilot_get_usage_for_account", "copilot-get-usage-for-account",
       ],
     },
+    {
+      id: "stream_check_provider",
+      patterns: [
+        "stream-check provider", "stream-check stream-check-provider", "stream_check_provider",
+        "stream-check-provider",
+      ],
+    },
+    {
+      id: "stream_check_all_providers",
+      patterns: [
+        "stream-check all", "stream-check stream-check-all-providers", "stream_check_all_providers",
+        "stream-check-all-providers",
+      ],
+    },
+    {
+      id: "save_stream_check_config",
+      patterns: [
+        "stream-check config set", "stream-check save-stream-check-config", "save_stream_check_config",
+        "save-stream-check-config",
+      ],
+    },
+    {
+      id: "get_stream_check_config",
+      patterns: [
+        "stream-check config", "stream-check get-stream-check-config", "get_stream_check_config",
+        "get-stream-check-config",
+      ],
+    },
     { id: "suite_manifest", patterns: ["suite manifest"] },
     { id: "suite_status", patterns: ["suite status"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
@@ -294,6 +322,22 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
         args,
         copilot_account_optional_path(args, "/copilot_get_usage_for_account"),
       )
+      true
+    }
+    Some("stream_check_provider") => {
+      stream_check_provider(args)
+      true
+    }
+    Some("stream_check_all_providers") => {
+      stream_check_all_providers(args)
+      true
+    }
+    Some("get_stream_check_config") => {
+      check_usage_endpoint(args, "/get_stream_check_config")
+      true
+    }
+    Some("save_stream_check_config") => {
+      save_stream_check_config(args)
       true
     }
     Some("suite_manifest") => {

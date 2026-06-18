@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 31)
+  assert_true(registered_cli_commands().length() >= 35)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -44,6 +44,24 @@ test "registered cli commands match suite command aliases and status commands" {
   assert_true(
     registered_cli_command_id(["moonstat", "copilot-get-token-for-account"]) ==
     Some("copilot_get_token_for_account"),
+  )
+  assert_true(
+    registered_cli_command_id([
+      "moonstat", "stream-check", "provider", "--provider-id", "codex",
+    ]) ==
+    Some("stream_check_provider"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "stream_check_all_providers"]) ==
+    Some("stream_check_all_providers"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "stream-check", "config", "set"]) ==
+    Some("save_stream_check_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get-stream-check-config"]) ==
+    Some("get_stream_check_config"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "usage", "summary"]) == None,
