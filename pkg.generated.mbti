@@ -454,6 +454,58 @@ pub enum MoonProxyError {
 }
 pub fn MoonProxyError::to_string(Self) -> String
 
+pub struct MoonstatClient {
+  base_url : String
+  api_key : String?
+  user_agent : String?
+}
+pub fn MoonstatClient::endpoint(Self, String) -> String
+pub fn MoonstatClient::from_host(host? : String, port? : Int, api_key? : String?, user_agent? : String?) -> Self
+pub async fn MoonstatClient::health(Self) -> Result[Json, String]
+pub fn MoonstatClient::health_url(Self) -> String
+pub async fn MoonstatClient::metrics(Self) -> Result[String, String]
+pub fn MoonstatClient::metrics_url(Self) -> String
+pub async fn MoonstatClient::models(Self) -> Result[Json, String]
+pub fn MoonstatClient::models_url(Self) -> String
+pub fn MoonstatClient::new(base_url? : String, api_key? : String?, user_agent? : String?) -> Self
+pub async fn MoonstatClient::route_chat(Self, Json) -> Result[Json, String]
+pub async fn MoonstatClient::route_messages(Self, Json) -> Result[Json, String]
+pub async fn MoonstatClient::route_response(Self, Json) -> Result[Json, String]
+pub async fn MoonstatClient::stats(Self) -> Result[Json, String]
+pub fn MoonstatClient::stats_url(Self) -> String
+pub async fn MoonstatClient::status(Self) -> Result[Json, String]
+pub fn MoonstatClient::status_url(Self) -> String
+pub async fn MoonstatClient::usage_data_sources(Self) -> Result[Json, String]
+pub fn MoonstatClient::usage_data_sources_url(Self) -> String
+pub async fn MoonstatClient::usage_logs(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
+pub fn MoonstatClient::usage_logs_url(Self, query? : MoonstatUsageQuery?) -> String
+pub async fn MoonstatClient::usage_model_pricing(Self) -> Result[Json, String]
+pub fn MoonstatClient::usage_model_pricing_url(Self) -> String
+pub async fn MoonstatClient::usage_model_stats(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
+pub fn MoonstatClient::usage_model_stats_url(Self, query? : MoonstatUsageQuery?) -> String
+pub async fn MoonstatClient::usage_provider_limits(Self, String, String) -> Result[Json, String]
+pub fn MoonstatClient::usage_provider_limits_url(Self, String, String) -> String
+pub async fn MoonstatClient::usage_provider_stats(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
+pub fn MoonstatClient::usage_provider_stats_url(Self, query? : MoonstatUsageQuery?) -> String
+pub async fn MoonstatClient::usage_request_detail(Self, String) -> Result[Json, String]
+pub fn MoonstatClient::usage_request_detail_url(Self, String) -> String
+pub async fn MoonstatClient::usage_summary(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
+pub async fn MoonstatClient::usage_summary_by_app(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
+pub fn MoonstatClient::usage_summary_by_app_url(Self, query? : MoonstatUsageQuery?) -> String
+pub fn MoonstatClient::usage_summary_url(Self, query? : MoonstatUsageQuery?) -> String
+pub async fn MoonstatClient::usage_trends(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
+pub fn MoonstatClient::usage_trends_url(Self, query? : MoonstatUsageQuery?) -> String
+
+pub struct MoonstatUsageQuery {
+  start_date : String?
+  end_date : String?
+  app_type : String?
+  provider_id : String?
+  page : Int?
+  page_size : Int?
+}
+pub fn MoonstatUsageQuery::empty() -> Self
+
 pub struct OpenClawService {
   mut openclaw_default_model : Json?
   mut openclaw_model_catalog : Json?

@@ -1,0 +1,506 @@
+///|
+const MOONSTAT_DEFAULT_CLIENT_BASE_URL = "http://127.0.0.1:15721"
+
+///|
+pub struct MoonstatUsageQuery {
+  start_date : String?
+  end_date : String?
+  app_type : String?
+  provider_id : String?
+  page : Int?
+  page_size : Int?
+}
+
+///|
+pub fn MoonstatUsageQuery::empty() -> MoonstatUsageQuery {
+  {
+    start_date: None,
+    end_date: None,
+    app_type: None,
+    provider_id: None,
+    page: None,
+    page_size: None,
+  }
+}
+
+///|
+pub struct MoonstatClient {
+  base_url : String
+  api_key : String?
+  user_agent : String?
+}
+
+///|
+pub fn MoonstatClient::new(
+  base_url? : String = MOONSTAT_DEFAULT_CLIENT_BASE_URL,
+  api_key? : String? = None,
+  user_agent? : String? = None,
+) -> MoonstatClient {
+  {
+    base_url: moonstat_client_normalize_base_url(base_url),
+    api_key,
+    user_agent,
+  }
+}
+
+///|
+pub fn MoonstatClient::from_host(
+  host? : String = "127.0.0.1",
+  port? : Int = 15721,
+  api_key? : String? = None,
+  user_agent? : String? = None,
+) -> MoonstatClient {
+  MoonstatClient::new(
+    base_url=moonstat_base_url(host, port),
+    api_key~,
+    user_agent~,
+  )
+}
+
+///|
+pub fn MoonstatClient::endpoint(self : MoonstatClient, path : String) -> String {
+  moonstat_client_url(self.base_url, path)
+}
+
+///|
+pub fn MoonstatClient::health_url(self : MoonstatClient) -> String {
+  self.endpoint("/health")
+}
+
+///|
+pub fn MoonstatClient::status_url(self : MoonstatClient) -> String {
+  self.endpoint("/status")
+}
+
+///|
+pub fn MoonstatClient::stats_url(self : MoonstatClient) -> String {
+  self.endpoint("/stats")
+}
+
+///|
+pub fn MoonstatClient::metrics_url(self : MoonstatClient) -> String {
+  self.endpoint("/metrics")
+}
+
+///|
+pub fn MoonstatClient::models_url(self : MoonstatClient) -> String {
+  self.endpoint("/v1/models")
+}
+
+///|
+pub fn MoonstatClient::usage_logs_url(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> String {
+  moonstat_client_url_with_query(self.base_url, "/usage/logs", query)
+}
+
+///|
+pub fn MoonstatClient::usage_summary_url(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> String {
+  moonstat_client_url_with_query(self.base_url, "/usage/summary", query)
+}
+
+///|
+pub fn MoonstatClient::usage_summary_by_app_url(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> String {
+  moonstat_client_url_with_query(self.base_url, "/usage/summary/by-app", query)
+}
+
+///|
+pub fn MoonstatClient::usage_trends_url(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> String {
+  moonstat_client_url_with_query(self.base_url, "/usage/trends", query)
+}
+
+///|
+pub fn MoonstatClient::usage_provider_limits_url(
+  self : MoonstatClient,
+  app_type : String,
+  provider_id : String,
+) -> String {
+  let query = {
+    start_date: None,
+    end_date: None,
+    app_type: Some(app_type),
+    provider_id: Some(provider_id),
+    page: None,
+    page_size: None,
+  }
+  moonstat_client_url_with_query(
+    self.base_url,
+    "/usage/provider-limits",
+    Some(query),
+  )
+}
+
+///|
+pub fn MoonstatClient::usage_provider_stats_url(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> String {
+  moonstat_client_url_with_query(self.base_url, "/usage/provider-stats", query)
+}
+
+///|
+pub fn MoonstatClient::usage_model_stats_url(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> String {
+  moonstat_client_url_with_query(self.base_url, "/usage/model-stats", query)
+}
+
+///|
+pub fn MoonstatClient::usage_data_sources_url(self : MoonstatClient) -> String {
+  self.endpoint("/usage/data-sources")
+}
+
+///|
+pub fn MoonstatClient::usage_model_pricing_url(self : MoonstatClient) -> String {
+  self.endpoint("/usage/model-pricing")
+}
+
+///|
+pub fn MoonstatClient::usage_request_detail_url(
+  self : MoonstatClient,
+  request_id : String,
+) -> String {
+  self.endpoint("/usage/request-detail/\{copilot_url_encode(request_id)}")
+}
+
+///|
+pub async fn MoonstatClient::health(
+  self : MoonstatClient,
+) -> Result[Json, String] {
+  self.get_json_path("/health")
+}
+
+///|
+pub async fn MoonstatClient::status(
+  self : MoonstatClient,
+) -> Result[Json, String] {
+  self.get_json_path("/status")
+}
+
+///|
+pub async fn MoonstatClient::stats(
+  self : MoonstatClient,
+) -> Result[Json, String] {
+  self.get_json_path("/stats")
+}
+
+///|
+pub async fn MoonstatClient::metrics(
+  self : MoonstatClient,
+) -> Result[String, String] {
+  self.get_text_path("/metrics")
+}
+
+///|
+pub async fn MoonstatClient::models(
+  self : MoonstatClient,
+) -> Result[Json, String] {
+  self.get_json_path("/v1/models")
+}
+
+///|
+pub async fn MoonstatClient::usage_logs(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> Result[Json, String] {
+  self.get_json_path(moonstat_client_path_with_query("/usage/logs", query))
+}
+
+///|
+pub async fn MoonstatClient::usage_summary(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> Result[Json, String] {
+  self.get_json_path(moonstat_client_path_with_query("/usage/summary", query))
+}
+
+///|
+pub async fn MoonstatClient::usage_summary_by_app(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> Result[Json, String] {
+  self.get_json_path(
+    moonstat_client_path_with_query("/usage/summary/by-app", query),
+  )
+}
+
+///|
+pub async fn MoonstatClient::usage_trends(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> Result[Json, String] {
+  self.get_json_path(moonstat_client_path_with_query("/usage/trends", query))
+}
+
+///|
+pub async fn MoonstatClient::usage_provider_limits(
+  self : MoonstatClient,
+  app_type : String,
+  provider_id : String,
+) -> Result[Json, String] {
+  let query = {
+    start_date: None,
+    end_date: None,
+    app_type: Some(app_type),
+    provider_id: Some(provider_id),
+    page: None,
+    page_size: None,
+  }
+  self.get_json_path(
+    moonstat_client_path_with_query("/usage/provider-limits", Some(query)),
+  )
+}
+
+///|
+pub async fn MoonstatClient::usage_provider_stats(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> Result[Json, String] {
+  self.get_json_path(
+    moonstat_client_path_with_query("/usage/provider-stats", query),
+  )
+}
+
+///|
+pub async fn MoonstatClient::usage_model_stats(
+  self : MoonstatClient,
+  query? : MoonstatUsageQuery? = None,
+) -> Result[Json, String] {
+  self.get_json_path(
+    moonstat_client_path_with_query("/usage/model-stats", query),
+  )
+}
+
+///|
+pub async fn MoonstatClient::usage_data_sources(
+  self : MoonstatClient,
+) -> Result[Json, String] {
+  self.get_json_path("/usage/data-sources")
+}
+
+///|
+pub async fn MoonstatClient::usage_model_pricing(
+  self : MoonstatClient,
+) -> Result[Json, String] {
+  self.get_json_path("/usage/model-pricing")
+}
+
+///|
+pub async fn MoonstatClient::usage_request_detail(
+  self : MoonstatClient,
+  request_id : String,
+) -> Result[Json, String] {
+  self.get_json_path("/usage/request-detail/\{copilot_url_encode(request_id)}")
+}
+
+///|
+pub async fn MoonstatClient::route_chat(
+  self : MoonstatClient,
+  request : Json,
+) -> Result[Json, String] {
+  self.post_json_path("/v1/chat/completions", request)
+}
+
+///|
+pub async fn MoonstatClient::route_response(
+  self : MoonstatClient,
+  request : Json,
+) -> Result[Json, String] {
+  self.post_json_path("/v1/responses", request)
+}
+
+///|
+pub async fn MoonstatClient::route_messages(
+  self : MoonstatClient,
+  request : Json,
+) -> Result[Json, String] {
+  self.post_json_path("/v1/messages", request)
+}
+
+///|
+async fn MoonstatClient::get_json_path(
+  self : MoonstatClient,
+  path : String,
+) -> Result[Json, String] {
+  match self.get_text_path(path) {
+    Ok(body) =>
+      Ok(@json.parse(body)) catch {
+        err => Err("Invalid JSON from moonstat: \{err}")
+      }
+    Err(err) => Err(err)
+  }
+}
+
+///|
+async fn MoonstatClient::post_json_path(
+  self : MoonstatClient,
+  path : String,
+  request : Json,
+) -> Result[Json, String] {
+  let body = request.stringify()
+  match self.request_text_path("POST", path, Some(body)) {
+    Ok(body) =>
+      Ok(@json.parse(body)) catch {
+        err => Err("Invalid JSON from moonstat: \{err}")
+      }
+    Err(err) => Err(err)
+  }
+}
+
+///|
+async fn MoonstatClient::get_text_path(
+  self : MoonstatClient,
+  path : String,
+) -> Result[String, String] {
+  self.request_text_path("GET", path, None)
+}
+
+///|
+async fn MoonstatClient::request_text_path(
+  self : MoonstatClient,
+  http_method : String,
+  path : String,
+  body : String?,
+) -> Result[String, String] {
+  let target = match models_url_target(self.endpoint(path)) {
+    Ok(target) => target
+    Err(err) => return Err(err)
+  }
+  let headers = self.headers(http_method)
+  let client = @http.Client::new(target.origin, headers~)
+  defer client.close()
+  let response = match http_method {
+    "GET" =>
+      client.get(target.path) catch {
+        err => return Err("Network error: \{err}")
+      }
+    "POST" =>
+      client.post(target.path, body.unwrap_or("")) catch {
+        err => return Err("Network error: \{err}")
+      }
+    _ => return Err("Unsupported moonstat client method: \{http_method}")
+  }
+  let response_body = client.read_all().text()
+  if response.code is (200..=299) {
+    Ok(response_body)
+  } else {
+    Err(
+      "Moonstat HTTP \{response.code}: \{truncate_model_fetch_error_body(response_body)}",
+    )
+  }
+}
+
+///|
+fn MoonstatClient::headers(
+  self : MoonstatClient,
+  http_method : String,
+) -> Map[String, String] {
+  let headers : Map[String, String] = { "Accept": "application/json" }
+  match self.api_key {
+    Some(api_key) if !api_key.trim().is_empty() =>
+      headers["Authorization"] = "Bearer \{api_key}"
+    _ => ()
+  }
+  match self.user_agent {
+    Some(user_agent) if !user_agent.trim().is_empty() =>
+      headers["User-Agent"] = user_agent.trim().to_owned()
+    _ => ()
+  }
+  if http_method == "POST" {
+    headers["Content-Type"] = "application/json"
+  }
+  headers
+}
+
+///|
+fn moonstat_client_normalize_base_url(base_url : String) -> String {
+  let trimmed = trim_end_slashes(base_url.trim().to_owned())
+  if trimmed.is_empty() {
+    MOONSTAT_DEFAULT_CLIENT_BASE_URL
+  } else {
+    trimmed
+  }
+}
+
+///|
+fn moonstat_client_url(base_url : String, path : String) -> String {
+  let normalized = moonstat_client_normalize_base_url(base_url)
+  let path = if path.has_prefix("/") { path } else { "/\{path}" }
+  "\{normalized}\{path}"
+}
+
+///|
+fn moonstat_client_url_with_query(
+  base_url : String,
+  path : String,
+  query : MoonstatUsageQuery?,
+) -> String {
+  moonstat_client_url(base_url, moonstat_client_path_with_query(path, query))
+}
+
+///|
+fn moonstat_client_path_with_query(
+  path : String,
+  query : MoonstatUsageQuery?,
+) -> String {
+  match moonstat_usage_query_string(query) {
+    Some(query_string) => "\{path}?\{query_string}"
+    None => path
+  }
+}
+
+///|
+fn moonstat_usage_query_string(query : MoonstatUsageQuery?) -> String? {
+  guard query is Some(query) else { return None }
+  let parts : Array[String] = []
+  match query.start_date {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("startDate", value))
+    _ => ()
+  }
+  match query.end_date {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("endDate", value))
+    _ => ()
+  }
+  match query.app_type {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("appType", value))
+    _ => ()
+  }
+  match query.provider_id {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("providerId", value))
+    _ => ()
+  }
+  match query.page {
+    Some(value) => parts.push(moonstat_client_query_pair("page", "\{value}"))
+    None => ()
+  }
+  match query.page_size {
+    Some(value) =>
+      parts.push(moonstat_client_query_pair("pageSize", "\{value}"))
+    None => ()
+  }
+  if parts.is_empty() {
+    None
+  } else {
+    Some(parts.join("&"))
+  }
+}
+
+///|
+fn moonstat_client_query_pair(key : String, value : String) -> String {
+  "\{copilot_url_encode(key)}=\{copilot_url_encode(value)}"
+}
