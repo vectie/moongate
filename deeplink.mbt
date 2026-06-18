@@ -38,12 +38,12 @@ fn moon_parse_provider_deeplink_params(
   query_path : String,
   request : Map[String, Json],
 ) -> Json? {
-  guard usage_query_value(query_path, "app") is Some(app) &&
+  guard usage_query_value(query_path, "appType") is Some(app) &&
     moon_deeplink_supported_app(app) else {
     return None
   }
   guard usage_query_value(query_path, "name") is Some(name) else { return None }
-  request["app"] = Json::string(moon_normalize_app_type(app))
+  request["appType"] = Json::string(moon_normalize_app_type(app))
   request["name"] = Json::string(name)
   for
     key in [
@@ -64,7 +64,7 @@ fn moon_parse_prompt_deeplink_params(
   query_path : String,
   request : Map[String, Json],
 ) -> Json? {
-  guard usage_query_value(query_path, "app") is Some(app) &&
+  guard usage_query_value(query_path, "appType") is Some(app) &&
     moon_deeplink_supported_app(app) else {
     return None
   }
@@ -72,7 +72,7 @@ fn moon_parse_prompt_deeplink_params(
   guard usage_query_value(query_path, "content") is Some(content) else {
     return None
   }
-  request["app"] = Json::string(moon_normalize_app_type(app))
+  request["appType"] = Json::string(moon_normalize_app_type(app))
   request["name"] = Json::string(name)
   request["content"] = Json::string(content)
   moon_deeplink_put_query_string(request, query_path, "description")
@@ -110,7 +110,7 @@ fn moon_parse_skill_deeplink_params(
   guard usage_query_value(query_path, "repo") is Some(repo) else { return None }
   guard moon_deeplink_valid_repo(repo) else { return None }
   request["repo"] = Json::string(repo)
-  request["app"] = Json::string("claude")
+  request["appType"] = Json::string("claude")
   moon_deeplink_put_query_string(request, query_path, "directory")
   moon_deeplink_put_query_string(request, query_path, "branch")
   moon_deeplink_put_query_bool(request, query_path, "enabled")
@@ -210,7 +210,7 @@ fn moon_merge_deeplink_config_json(request : Json) -> Json? {
   guard format == "json" else { return None }
   guard moon_deeplink_decode_json(encoded) is Some(decoded) else { return None }
   guard decoded is Object(config_obj) else { return None }
-  let app = json_string_from_map(next, "app").unwrap_or("")
+  let app = json_string_from_map(next, "appType").unwrap_or("")
   match moon_normalize_app_type(app) {
     "claude" | "claude-desktop" =>
       moon_merge_claude_deeplink_config(next, config_obj)
@@ -383,7 +383,9 @@ fn ConfigService::moon_import_provider_deeplink(
   request : Map[String, Json],
 ) -> Json? {
   ignore(self)
-  guard json_string_from_map(request, "app") is Some(app) else { return None }
+  guard json_string_from_map(request, "appType") is Some(app) else {
+    return None
+  }
   guard json_string_from_map(request, "name") is Some(name) else { return None }
   guard json_string_from_map(request, "apiKey") is Some(api_key) else {
     return None
@@ -526,7 +528,7 @@ fn ConfigService::moon_import_prompt_deeplink(
   self : ConfigService,
   request : Map[String, Json],
 ) -> Json? {
-  guard json_string_from_map_any(request, ["app"]) is Some(app) else {
+  guard json_string_from_map_any(request, ["appType"]) is Some(app) else {
     return None
   }
   guard json_string_from_map_any(request, ["name"]) is Some(name) else {

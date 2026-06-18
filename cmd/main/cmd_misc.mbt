@@ -169,7 +169,7 @@ fn print_help() -> Unit {
   println("  --api-key <key>    Provider API key for provider add/update")
   println("  --category <kind>  Provider category for provider add/update")
   println("  --endpoint-url <url> Provider custom endpoint URL")
-  println("  --app <app>         App id for usage commands")
+  println("  --app-type <app>         App id for usage commands")
   println("  --server <json>     MCP server JSON for MCP upsert commands")
   println("  --command <cmd>     MCP command name for validation/upsert")
   println("  --content <text>    Prompt content for prompt upsert commands")
@@ -212,13 +212,13 @@ fn print_help() -> Unit {
   println(
     "  moonstat proxy switch-proxy-provider --app-type codex --provider-id codex-oauth",
   )
-  println("  moonstat provider list --app codex")
+  println("  moonstat provider list --app-type codex")
   println(
-    "  moonstat provider add --app codex --id custom --name Custom --base-url https://api.example.com/v1 --api-key sk-...",
+    "  moonstat provider add --app-type codex --id custom --name Custom --base-url https://api.example.com/v1 --api-key sk-...",
   )
-  println("  moonstat provider switch --app codex --id custom")
+  println("  moonstat provider switch --app-type codex --id custom")
   println(
-    "  moonstat provider endpoints add --app codex --id custom --endpoint-url https://api.backup.example.com/v1",
+    "  moonstat provider endpoints add --app-type codex --id custom --endpoint-url https://api.backup.example.com/v1",
   )
   println(
     "  moonstat stream-check provider --app-type codex --provider-id codex-oauth",
@@ -232,9 +232,11 @@ fn print_help() -> Unit {
   println(
     "  moonstat mcp upsert --id filesystem --command npx --name Filesystem",
   )
-  println("  moonstat mcp toggle --id filesystem --app codex --enabled true")
   println(
-    "  moonstat prompt upsert --app codex --id review --name Review --content 'Review this change'",
+    "  moonstat mcp toggle --id filesystem --app-type codex --enabled true",
+  )
+  println(
+    "  moonstat prompt upsert --app-type codex --id review --name Review --content 'Review this change'",
   )
   println("  moonstat proxy app-config --app-type codex")
   println(
@@ -528,14 +530,12 @@ async fn test_api_endpoints(args : Array[String]) -> Unit {
 
 ///|
 fn config_app_arg(args : Array[String]) -> String {
-  parse_string_arg(args, "--app").unwrap_or(
-    parse_string_arg(args, "--app-type").unwrap_or("claude"),
-  )
+  parse_string_arg(args, "--app-type").unwrap_or("claude")
 }
 
 ///|
 fn config_app_path(args : Array[String], base_path : String) -> String {
-  "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
+  "\{base_path}?\{cli_query_pair("appType", config_app_arg(args))}"
 }
 
 ///|
@@ -827,7 +827,9 @@ fn skill_id_arg(args : Array[String]) -> String? {
 
 ///|
 fn skill_app_path(args : Array[String], base_path : String) -> String {
-  cli_path_with_query(base_path, [cli_query_pair("app", skill_app_arg(args))])
+  cli_path_with_query(base_path, [
+    cli_query_pair("appType", skill_app_arg(args)),
+  ])
 }
 
 ///|
@@ -837,13 +839,9 @@ fn skill_id_path(args : Array[String], base_path : String) -> String {
     Some(id) => query.push(cli_query_pair("id", id))
     None => ()
   }
-  match parse_string_arg(args, "--app") {
-    Some(app) => query.push(cli_query_pair("app", app))
-    None =>
-      match parse_string_arg(args, "--app-type") {
-        Some(app) => query.push(cli_query_pair("app", app))
-        None => ()
-      }
+  match parse_string_arg(args, "--app-type") {
+    Some(app) => query.push(cli_query_pair("appType", app))
+    None => ()
   }
   cli_path_with_query(base_path, query)
 }
@@ -876,13 +874,9 @@ fn skill_restore_backup_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--current-app") {
     Some(app) => query.push(cli_query_pair("currentApp", app))
     None =>
-      match parse_string_arg(args, "--app") {
+      match parse_string_arg(args, "--app-type") {
         Some(app) => query.push(cli_query_pair("currentApp", app))
-        None =>
-          match parse_string_arg(args, "--app-type") {
-            Some(app) => query.push(cli_query_pair("currentApp", app))
-            None => ()
-          }
+        None => ()
       }
   }
   cli_path_with_query("/skills/backups/restore", query)
@@ -914,13 +908,9 @@ fn skill_install_path(args : Array[String], base_path : String) -> String {
   match parse_string_arg(args, "--current-app") {
     Some(app) => query.push(cli_query_pair("currentApp", app))
     None =>
-      match parse_string_arg(args, "--app") {
-        Some(app) => query.push(cli_query_pair("app", app))
-        None =>
-          match parse_string_arg(args, "--app-type") {
-            Some(app) => query.push(cli_query_pair("app", app))
-            None => ()
-          }
+      match parse_string_arg(args, "--app-type") {
+        Some(app) => query.push(cli_query_pair("appType", app))
+        None => ()
       }
   }
   cli_path_with_query(base_path, query)
@@ -933,7 +923,7 @@ fn skill_toggle_app_path(args : Array[String]) -> String {
     Some(id) => query.push(cli_query_pair("id", id))
     None => ()
   }
-  query.push(cli_query_pair("app", skill_app_arg(args)))
+  query.push(cli_query_pair("appType", skill_app_arg(args)))
   match parse_string_arg(args, "--enabled") {
     Some(enabled) => query.push(cli_query_pair("enabled", enabled))
     None => ()
@@ -1017,13 +1007,9 @@ fn skill_zip_install_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--current-app") {
     Some(app) => query.push(cli_query_pair("currentApp", app))
     None =>
-      match parse_string_arg(args, "--app") {
+      match parse_string_arg(args, "--app-type") {
         Some(app) => query.push(cli_query_pair("currentApp", app))
-        None =>
-          match parse_string_arg(args, "--app-type") {
-            Some(app) => query.push(cli_query_pair("currentApp", app))
-            None => ()
-          }
+        None => ()
       }
   }
   cli_path_with_query("/skills/install-zip", query)
@@ -1065,7 +1051,7 @@ fn restore_env_backup_path(args : Array[String]) -> String? {
 
 ///|
 fn mcp_app_path(args : Array[String], base_path : String) -> String {
-  "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
+  "\{base_path}?\{cli_query_pair("appType", config_app_arg(args))}"
 }
 
 ///|
@@ -1129,7 +1115,7 @@ fn mcp_upsert_path(args : Array[String], base_path : String) -> String? {
         None => return None
       }
   }
-  query.push(cli_query_pair("app", config_app_arg(args)))
+  query.push(cli_query_pair("appType", config_app_arg(args)))
   match parse_string_arg(args, "--sync-other-side") {
     Some(value) => query.push(cli_query_pair("syncOtherSide", value))
     None => ()
@@ -1144,26 +1130,26 @@ fn mcp_enabled_path(args : Array[String], base_path : String) -> String? {
     return None
   }
   Some(
-    "\{base_path}?\{cli_query_pair("id", id)}&\{cli_query_pair("app", config_app_arg(args))}&\{cli_query_pair("enabled", enabled)}",
+    "\{base_path}?\{cli_query_pair("id", id)}&\{cli_query_pair("appType", config_app_arg(args))}&\{cli_query_pair("enabled", enabled)}",
   )
 }
 
 ///|
 fn prompt_app_path(args : Array[String], base_path : String) -> String {
-  "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
+  "\{base_path}?\{cli_query_pair("appType", config_app_arg(args))}"
 }
 
 ///|
 fn prompt_id_path(args : Array[String], base_path : String) -> String? {
   guard parse_string_arg(args, "--id") is Some(id) else { return None }
   Some(
-    "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}&\{cli_query_pair("id", id)}",
+    "\{base_path}?\{cli_query_pair("appType", config_app_arg(args))}&\{cli_query_pair("id", id)}",
   )
 }
 
 ///|
 fn prompt_upsert_path(args : Array[String]) -> String? {
-  let query : Array[String] = [cli_query_pair("app", config_app_arg(args))]
+  let query : Array[String] = [cli_query_pair("appType", config_app_arg(args))]
   match parse_string_arg(args, "--prompt") {
     Some(prompt) => query.push(cli_query_pair("prompt", prompt))
     None => {
@@ -1193,10 +1179,7 @@ fn prompt_upsert_path(args : Array[String]) -> String? {
 
 ///|
 fn stream_check_all_path(args : Array[String]) -> String {
-  let app_type = match parse_string_arg(args, "--app-type") {
-    Some(value) => value
-    None => parse_string_arg(args, "--app").unwrap_or("claude")
-  }
+  let app_type = parse_string_arg(args, "--app-type").unwrap_or("claude")
   let query : Array[String] = [cli_query_pair("appType", app_type)]
   match parse_string_arg(args, "--proxy-targets-only") {
     Some(value) => query.push(cli_query_pair("proxyTargetsOnly", value))
@@ -1321,14 +1304,7 @@ fn balance_path(args : Array[String]) -> String? {
 
 ///|
 fn subscription_quota_path(args : Array[String]) -> String? {
-  let tool = match parse_string_arg(args, "--tool") {
-    Some(value) => Some(value)
-    None =>
-      match parse_string_arg_any(args, "--app", "--app-type") {
-        Some(value) => Some(value)
-        None => None
-      }
-  }
+  let tool = parse_string_arg(args, "--tool")
   guard tool is Some(tool) else { return None }
   Some("/usage/subscription-quota?\{cli_query_pair("tool", tool)}")
 }

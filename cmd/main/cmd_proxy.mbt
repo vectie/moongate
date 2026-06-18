@@ -661,7 +661,7 @@ fn proxy_provider_endpoint_path(args : Array[String], path : String) -> String? 
 
 ///|
 fn proxy_app_arg(args : Array[String]) -> String {
-  match parse_string_arg_any(args, "--app", "--app-type") {
+  match parse_string_arg(args, "--app-type") {
     Some(value) => value
     None => "claude"
   }
@@ -669,7 +669,7 @@ fn proxy_app_arg(args : Array[String]) -> String {
 
 ///|
 fn provider_app_arg(args : Array[String]) -> String {
-  match parse_string_arg_any(args, "--app", "--app-type") {
+  match parse_string_arg(args, "--app-type") {
     Some(value) => value
     None => "claude"
   }
@@ -685,14 +685,14 @@ fn provider_id_arg(args : Array[String]) -> String? {
 
 ///|
 fn provider_app_path(args : Array[String], path : String) -> String {
-  "\{path}?app=\{cli_url_encode(provider_app_arg(args))}"
+  "\{path}?appType=\{cli_url_encode(provider_app_arg(args))}"
 }
 
 ///|
 fn provider_id_path(args : Array[String], path : String) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   Some(
-    "\{path}?app=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}",
+    "\{path}?appType=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}",
   )
 }
 
@@ -700,7 +700,7 @@ fn provider_id_path(args : Array[String], path : String) -> String? {
 fn open_provider_terminal_path(args : Array[String]) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   let query : Array[String] = [
-    cli_query_pair("app", provider_app_arg(args)),
+    cli_query_pair("appType", provider_app_arg(args)),
     cli_query_pair("providerId", provider_id),
   ]
   match parse_string_arg(args, "--cwd") {
@@ -712,7 +712,7 @@ fn open_provider_terminal_path(args : Array[String]) -> String? {
 
 ///|
 fn provider_live_ids_path(app_type : String) -> String {
-  "/providers/live-ids?app=\{cli_url_encode(app_type)}"
+  "/providers/live-ids?appType=\{cli_url_encode(app_type)}"
 }
 
 ///|
@@ -722,13 +722,13 @@ fn provider_live_provider_path(
 ) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   Some(
-    "/providers/live-provider?app=\{cli_url_encode(app_type)}&providerId=\{cli_url_encode(provider_id)}",
+    "/providers/live-provider?appType=\{cli_url_encode(app_type)}&providerId=\{cli_url_encode(provider_id)}",
   )
 }
 
 ///|
 fn provider_import_live_path(app_type : String) -> String {
-  "/providers/import-live?app=\{cli_url_encode(app_type)}"
+  "/providers/import-live?appType=\{cli_url_encode(app_type)}"
 }
 
 ///|
@@ -803,7 +803,7 @@ fn provider_endpoint_url_path(args : Array[String], path : String) -> String? {
     return None
   }
   Some(
-    "\{path}?app=\{cli_url_encode(provider_app_arg(args))}&providerId=\{cli_url_encode(provider_id)}&url=\{cli_url_encode(endpoint_url)}",
+    "\{path}?appType=\{cli_url_encode(provider_app_arg(args))}&providerId=\{cli_url_encode(provider_id)}&url=\{cli_url_encode(endpoint_url)}",
   )
 }
 
@@ -832,7 +832,7 @@ fn provider_sort_order_path(args : Array[String]) -> String? {
     return None
   }
   Some(
-    "/providers/sort-order?app=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}&sortIndex=\{cli_url_encode(sort_index)}",
+    "/providers/sort-order?appType=\{cli_url_encode(provider_app_arg(args))}&id=\{cli_url_encode(provider_id)}&sortIndex=\{cli_url_encode(sort_index)}",
   )
 }
 
@@ -848,7 +848,7 @@ fn provider_upsert_path(
     return None
   }
   let query : Array[String] = [
-    cli_query_pair("app", provider_app_arg(args)),
+    cli_query_pair("appType", provider_app_arg(args)),
     cli_query_pair("id", provider_id),
     cli_query_pair("name", name),
   ]
@@ -1027,10 +1027,7 @@ fn proxy_auto_failover_enabled_path(args : Array[String]) -> String? {
 
 ///|
 fn stream_check_provider_path(args : Array[String]) -> String? {
-  let app_type = match parse_string_arg(args, "--app-type") {
-    Some(value) => Some(value)
-    None => parse_string_arg(args, "--app")
-  }
+  let app_type = parse_string_arg(args, "--app-type")
   guard app_type is Some(app_type) else { return None }
   let provider_id = match parse_string_arg(args, "--provider-id") {
     Some(value) => Some(value)
@@ -1070,7 +1067,7 @@ async fn check_usage_provider_script(args : Array[String]) -> Unit {
   guard usage_provider_script_path(args, "/usage/provider-usage", false)
     is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
-    logger.error("Missing required usage script args: --provider-id --app")
+    logger.error("Missing required usage script args: --provider-id --app-type")
     return
   }
   check_usage_endpoint(args, path)
@@ -1085,14 +1082,11 @@ fn usage_provider_script_path(
   guard parse_string_arg(args, "--provider-id") is Some(provider_id) else {
     return None
   }
-  let app = match parse_string_arg_any(args, "--app", "--app-type") {
-    Some(value) => Some(value)
-    None => None
-  }
+  let app = parse_string_arg(args, "--app-type")
   guard app is Some(app) else { return None }
   let query = [
     cli_query_pair("providerId", provider_id),
-    cli_query_pair("app", app),
+    cli_query_pair("appType", app),
   ]
   if include_script {
     match parse_string_arg(args, "--script-code") {

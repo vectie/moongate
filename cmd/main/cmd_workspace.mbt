@@ -528,7 +528,7 @@ fn db_backup_filename_path(args : Array[String], base_path : String) -> String {
 
 ///|
 fn prompt_file_path(args : Array[String], base_path : String) -> String {
-  let query : Array[String] = [cli_query_pair("app", config_app_arg(args))]
+  let query : Array[String] = [cli_query_pair("appType", config_app_arg(args))]
   match parse_string_arg(args, "--path") {
     Some(path) => query.push(cli_query_pair("filePath", path))
     None => ()

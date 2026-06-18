@@ -1,12 +1,12 @@
 ///|
 test "moonstat deeplink parser accepts provider urls" {
-  let url = "moonstat://v1/import?resource=provider&app=codex&name=OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=sk-test&enabled=true&usageAutoInterval=30"
+  let url = "moonstat://v1/import?resource=provider&appType=codex&name=OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=sk-test&enabled=true&usageAutoInterval=30"
   guard moon_parse_deeplink_url_json(url) is Some(Object(obj)) else {
     fail("expected provider deeplink request")
   }
   assert_eq(obj["version"], Json::string("v1"))
   assert_eq(obj["resource"], Json::string("provider"))
-  assert_eq(obj["app"], Json::string("codex"))
+  assert_eq(obj["appType"], Json::string("codex"))
   assert_eq(obj["name"], Json::string("OpenAI"))
   assert_eq(obj["endpoint"], Json::string("https://api.openai.com/v1"))
   assert_eq(obj["apiKey"], Json::string("sk-test"))
@@ -16,7 +16,7 @@ test "moonstat deeplink parser accepts provider urls" {
 
 ///|
 test "moonstat deeplink parser decodes prompts and validates resources" {
-  let prompt_url = "moonstat://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8&enabled=false"
+  let prompt_url = "moonstat://v1/import?resource=prompt&appType=codex&name=Daily&content=SGVsbG8&enabled=false"
   guard moon_parse_deeplink_url_json(prompt_url) is Some(Object(prompt)) else {
     fail("expected prompt deeplink request")
   }
@@ -48,7 +48,7 @@ test "moonstat deeplink parser accepts mcp and skill requests" {
   }
   assert_eq(skill["resource"], Json::string("skill"))
   assert_eq(skill["repo"], Json::string("vectie/skills"))
-  assert_eq(skill["app"], Json::string("claude"))
+  assert_eq(skill["appType"], Json::string("claude"))
   assert_eq(skill["branch"], Json::string("main"))
 }
 
@@ -57,7 +57,7 @@ test "moonstat deeplink merge imports claude env config fields" {
   let encoded = "eyJlbnYiOnsiQU5USFJPUElDX0FVVEhfVE9LRU4iOiJzay1tb29uc3RhdCIsIkFOVEhST1BJQ19CQVNFX1VSTCI6Imh0dHBzOi8vYXBpLmFudGhyb3BpYy5jb20vdjEvIiwiQU5USFJPUElDX01PREVMIjoiY2xhdWRlLXNvbm5ldCJ9fQ=="
   let request = {
     "resource": Json::string("provider"),
-    "app": Json::string("claude"),
+    "appType": Json::string("claude"),
     "name": Json::string("Anthropic"),
     "config": Json::string(encoded),
     "configFormat": Json::string("json"),
@@ -77,7 +77,7 @@ test "moonstat deeplink merge ignores legacy provider config keys" {
   guard moon_merge_deeplink_config_json(
       {
         "resource": Json::string("provider"),
-        "app": Json::string("openclaw"),
+        "appType": Json::string("openclaw"),
         "name": Json::string("OpenClaw"),
         "config": Json::string(encoded),
         "configFormat": Json::string("json"),
@@ -91,7 +91,7 @@ test "moonstat deeplink merge ignores legacy provider config keys" {
   guard moon_merge_deeplink_config_json(
       {
         "resource": Json::string("provider"),
-        "app": Json::string("openclaw"),
+        "appType": Json::string("openclaw"),
         "name": Json::string("OpenClaw"),
         "config": Json::string(encoded),
         "config_format": Json::string("toml"),
@@ -108,7 +108,7 @@ test "moonstat deeplink merge ignores legacy provider config keys" {
     ConfigService::new().moon_import_provider_deeplink(
       ProxyService::new("127.0.0.1", 0),
       {
-        "app": Json::string("openclaw"),
+        "appType": Json::string("openclaw"),
         "name": Json::string("Legacy"),
         "endpoint": Json::string("https://legacy.example/v1"),
         "api_key": Json::string("sk-legacy"),

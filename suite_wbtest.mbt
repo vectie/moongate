@@ -541,7 +541,7 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_eq(
     commands["provider_presets"],
-    Json::string("moonstat provider presets list --app <app_type>"),
+    Json::string("moonstat provider presets list --app-type <app_type>"),
   )
   assert_eq(obj["cli"], obj["commands"])
 }
@@ -772,7 +772,7 @@ async test "suite status writes discovery file" {
     )
     assert_eq(
       commands["provider_presets"],
-      Json::string("moonstat provider presets list --app <app_type>"),
+      Json::string("moonstat provider presets list --app-type <app_type>"),
     )
     guard obj["manifest"] is Object(manifest) else {
       fail("expected manifest object")

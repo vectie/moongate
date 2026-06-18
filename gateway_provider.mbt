@@ -1526,7 +1526,7 @@ fn stream_check_provider_from_request(
 
 ///|
 fn provider_app_from_request(path : StringView, body : Json?) -> String? {
-  provider_string_from_request(path, body, ["app"])
+  provider_string_from_request(path, body, ["appType"])
 }
 
 ///|

@@ -526,7 +526,7 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
       "moonstat usage detail --request-id <request_id>",
     ),
     "provider_presets": Json::string(
-      "moonstat provider presets list --app <app_type>",
+      "moonstat provider presets list --app-type <app_type>",
     ),
     "stream_check_provider": Json::string(
       "moonstat stream-check provider --app-type <app_type> --provider-id <provider_id>",
@@ -549,7 +549,7 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
     "skills_list": Json::string("moonstat skills installed"),
     "skills_search": Json::string("moonstat skills search --query <query>"),
     "skills_install": Json::string(
-      "moonstat skills install-unified --directory <directory> --app <app>",
+      "moonstat skills install-unified --directory <directory> --app-type <app_type>",
     ),
     "skills_repos": Json::string("moonstat skills repos"),
     "update_tray_menu": Json::string("moonstat runtime tray-menu update"),

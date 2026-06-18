@@ -238,27 +238,27 @@ fn ProxyService::register_management_routes(
   router.add_handler(Get, "/providers/live-ids", (r, w) => {
     self.handle_get_live_provider_ids(
       w,
-      usage_query_value(r.path, "app").unwrap_or("opencode"),
+      usage_query_value(r.path, "appType").unwrap_or("opencode"),
     )
   })
   router.add_handler(Get, "/providers/live-provider", (r, w) => {
     self.handle_get_live_provider(
       r,
       w,
-      usage_query_value(r.path, "app").unwrap_or("openclaw"),
+      usage_query_value(r.path, "appType").unwrap_or("openclaw"),
     )
   })
   router.add_handler(Post, "/providers/live-provider", (r, w) => {
     self.handle_get_live_provider(
       r,
       w,
-      usage_query_value(r.path, "app").unwrap_or("openclaw"),
+      usage_query_value(r.path, "appType").unwrap_or("openclaw"),
     )
   })
   router.add_handler(Post, "/providers/import-live", (r, w) => {
     self.handle_import_live_providers(
       w,
-      usage_query_value(r.path, "app").unwrap_or("opencode"),
+      usage_query_value(r.path, "appType").unwrap_or("opencode"),
     )
   })
   router.add_handler(Get, "/providers/universal", (_, w) => {

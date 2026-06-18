@@ -381,10 +381,13 @@ test "pick directory parser accepts defaultPath payload key" {
 
 ///|
 test "moonstat read command parsers accept canonical json payload keys" {
-  let app_body = Some({ "app": Json::string("codex") }.to_json())
-  let app_type_body = Some({ "app": Json::string("gemini") }.to_json())
+  let app_body = Some({ "appType": Json::string("codex") }.to_json())
+  let app_type_body = Some({ "appType": Json::string("gemini") }.to_json())
   let provider_body = Some(
-    { "app": Json::string("codex"), "providerId": Json::string("codex-oauth") }.to_json(),
+    {
+      "appType": Json::string("codex"),
+      "providerId": Json::string("codex-oauth"),
+    }.to_json(),
   )
   assert_eq(
     moon_config_app_from_request("/config/dir", app_body),
@@ -405,7 +408,7 @@ test "moonstat read command parsers accept canonical json payload keys" {
   assert_eq(
     provider_app_from_request(
       "/providers",
-      Some({ "appType": Json::string("codex") }.to_json()),
+      Some({ "app": Json::string("codex") }.to_json()),
     ),
     None,
   )
@@ -747,7 +750,7 @@ test "moonstat daily memory search helpers count and snippet matches" {
 ///|
 test "provider command helpers parse moonstat sort and endpoint test payloads" {
   let updates = provider_sort_updates_from_request(
-    "/providers/sort-order?app=codex&id=custom&sortIndex=2",
+    "/providers/sort-order?appType=codex&id=custom&sortIndex=2",
     None,
   )
   assert_eq(updates.length(), 1)
@@ -3278,8 +3281,11 @@ test "proxy config request parsers accept canonical moonstat fields" {
     Some("gemini"),
   )
   assert_eq(
-    proxy_app_type_from_request("/providers/switch?app=codex&id=custom", None),
-    None,
+    proxy_app_type_from_request(
+      "/providers/switch?appType=codex&id=custom",
+      None,
+    ),
+    Some("codex"),
   )
   assert_eq(
     proxy_app_type_from_request("/proxy/app-config?app_type=codex", None),
@@ -9612,7 +9618,7 @@ test "moonstat mcp request parser accepts canonical server JSON" {
     }.to_json(),
   }.to_json()
   guard moon_mcp_server_from_request(
-      "/mcp/servers?app=codex",
+      "/mcp/servers?appType=codex",
       Some(body),
       "codex",
     )
@@ -9743,7 +9749,7 @@ test "moonstat mcp import parses codex legacy toml servers" {
 ///|
 test "moonstat prompt helpers keep app-scoped prompt records" {
   guard moon_prompt_from_request(
-      "/prompts?app=codex&id=review&name=Review&content=Check%20this&description=Code%20review",
+      "/prompts?appType=codex&id=review&name=Review&content=Check%20this&description=Code%20review",
       None,
     )
     is Some((app, id, prompt)) else {
@@ -9757,7 +9763,7 @@ test "moonstat prompt helpers keep app-scoped prompt records" {
   assert_eq(obj["enabled"], Json::boolean(true))
   assert_true(
     moon_prompt_from_request(
-      "/prompts?app=codex&prompt_id=legacy&name=Legacy",
+      "/prompts?appType=codex&prompt_id=legacy&name=Legacy",
       None,
     )
     is None,
@@ -9795,7 +9801,7 @@ async test "moonstat prompt file helpers import and read prompt files" {
     @fsx.write_to_file(prompt_path, content)
     let body = { "filePath": Json::string(prompt_path) }.to_json()
     guard moon_prompt_file_path_from_request(
-        "/prompts/import-file?app=codex",
+        "/prompts/import-file?appType=codex",
         Some(body),
         "codex",
       )
