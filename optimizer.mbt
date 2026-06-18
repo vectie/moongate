@@ -36,28 +36,10 @@ priv struct CopilotOptimizationResult {
 ///|
 fn moonstat_optimizer_config_from_env() -> OptimizerConfig {
   {
-    enabled: env_bool_default(
-      [
-        "MOONSTAT_OPTIMIZER_ENABLED", "MOONSTAT_CCS_OPTIMIZER_ENABLED", "CCS_OPTIMIZER_ENABLED",
-      ],
-      false,
-    ),
-    thinking_optimizer: env_bool_default(
-      [
-        "MOONSTAT_THINKING_OPTIMIZER", "MOONSTAT_CCS_THINKING_OPTIMIZER", "CCS_THINKING_OPTIMIZER",
-      ],
-      true,
-    ),
-    cache_injection: env_bool_default(
-      [
-        "MOONSTAT_CACHE_INJECTION", "MOONSTAT_CCS_CACHE_INJECTION", "CCS_CACHE_INJECTION",
-      ],
-      true,
-    ),
-    cache_ttl: env_cache_ttl_default(
-      ["MOONSTAT_CACHE_TTL", "MOONSTAT_CCS_CACHE_TTL", "CCS_CACHE_TTL"],
-      "1h",
-    ),
+    enabled: env_bool_default(["MOONSTAT_OPTIMIZER_ENABLED"], false),
+    thinking_optimizer: env_bool_default(["MOONSTAT_THINKING_OPTIMIZER"], true),
+    cache_injection: env_bool_default(["MOONSTAT_CACHE_INJECTION"], true),
+    cache_ttl: env_cache_ttl_default(["MOONSTAT_CACHE_TTL"], "1h"),
   }
 }
 

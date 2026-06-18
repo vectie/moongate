@@ -62,38 +62,21 @@ fn default_rectifier_config() -> RectifierConfig {
 fn moonstat_rectifier_config_from_env() -> RectifierConfig {
   let defaults = default_rectifier_config()
   {
-    enabled: env_bool_default(
-      [
-        "MOONSTAT_RECTIFIER_ENABLED", "MOONSTAT_CCS_RECTIFIER_ENABLED", "CCS_RECTIFIER_ENABLED",
-      ],
-      defaults.enabled,
-    ),
+    enabled: env_bool_default(["MOONSTAT_RECTIFIER_ENABLED"], defaults.enabled),
     request_thinking_signature: env_bool_default(
-      [
-        "MOONSTAT_RECTIFIER_THINKING_SIGNATURE", "MOONSTAT_CCS_RECTIFIER_THINKING_SIGNATURE",
-        "CCS_RECTIFIER_THINKING_SIGNATURE",
-      ],
+      ["MOONSTAT_RECTIFIER_THINKING_SIGNATURE"],
       defaults.request_thinking_signature,
     ),
     request_thinking_budget: env_bool_default(
-      [
-        "MOONSTAT_RECTIFIER_THINKING_BUDGET", "MOONSTAT_CCS_RECTIFIER_THINKING_BUDGET",
-        "CCS_RECTIFIER_THINKING_BUDGET",
-      ],
+      ["MOONSTAT_RECTIFIER_THINKING_BUDGET"],
       defaults.request_thinking_budget,
     ),
     request_media_fallback: env_bool_default(
-      [
-        "MOONSTAT_RECTIFIER_MEDIA_FALLBACK", "MOONSTAT_CCS_RECTIFIER_MEDIA_FALLBACK",
-        "CCS_RECTIFIER_MEDIA_FALLBACK",
-      ],
+      ["MOONSTAT_RECTIFIER_MEDIA_FALLBACK"],
       defaults.request_media_fallback,
     ),
     request_media_heuristic: env_bool_default(
-      [
-        "MOONSTAT_RECTIFIER_MEDIA_HEURISTIC", "MOONSTAT_CCS_RECTIFIER_MEDIA_HEURISTIC",
-        "CCS_RECTIFIER_MEDIA_HEURISTIC",
-      ],
+      ["MOONSTAT_RECTIFIER_MEDIA_HEURISTIC"],
       defaults.request_media_heuristic,
     ),
   }

@@ -199,8 +199,8 @@ fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
 ///|
 fn provider_selection_error_code(error : ProviderSelectionError) -> String {
   match error {
-    NoProvidersConfigured => "cc_switch_no_providers_configured"
-    AllProvidersCircuitOpen => "cc_switch_all_providers_circuit_open"
+    NoProvidersConfigured => "moonstat_no_providers_configured"
+    AllProvidersCircuitOpen => "moonstat_all_providers_circuit_open"
   }
 }
 

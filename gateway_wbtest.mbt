@@ -1656,14 +1656,14 @@ test "provider selection errors use moonstat proxy error codes" {
   )
   assert_eq(
     provider_selection_error_code(AllProvidersCircuitOpen),
-    "cc_switch_all_providers_circuit_open",
+    "moonstat_all_providers_circuit_open",
   )
   guard provider_selection_error_json(AllProvidersCircuitOpen, "codex")
     is Object(body) else {
     fail("expected provider selection error body")
   }
   guard body["error"] is Object(error) else { fail("expected error object") }
-  assert_eq(error["code"], Json::string("cc_switch_all_providers_circuit_open"))
+  assert_eq(error["code"], Json::string("moonstat_all_providers_circuit_open"))
   assert_eq(error["type"], Json::string("proxy_error"))
   assert_eq(error["param"], Json::null())
   assert_eq(error["app_type"], Json::string("codex"))
@@ -7497,10 +7497,9 @@ test "ccs media sanitizer can disable curated text-only heuristic" {
 }
 
 ///|
-test "ccs media sanitizer honors global heuristic toggle" {
+test "moonstat media sanitizer honors global heuristic toggle" {
   let keys = [
-    "MOONSTAT_RECTIFIER_ENABLED", "MOONSTAT_RECTIFIER_MEDIA_HEURISTIC", "MOONSTAT_CCS_RECTIFIER_MEDIA_HEURISTIC",
-    "CCS_RECTIFIER_MEDIA_HEURISTIC",
+    "MOONSTAT_RECTIFIER_ENABLED", "MOONSTAT_RECTIFIER_MEDIA_HEURISTIC",
   ]
   for key in keys {
     @os.unsetenv(key) catch {
