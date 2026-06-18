@@ -820,8 +820,8 @@ async fn ProxyService::handle_delete_provider(
 }
 
 ///|
-async fn Gateway::handle_remove_provider_from_live_config(
-  self : Gateway,
+async fn ProxyService::handle_remove_provider_from_live_config(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -834,7 +834,7 @@ async fn Gateway::handle_remove_provider_from_live_config(
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  if !self.proxy.provider_router.remove_provider_from_live_config(
+  if !self.provider_router.remove_provider_from_live_config(
       app_type, provider_id,
     ) {
     write_usage_bad_request(w, "provider_not_found")
@@ -874,8 +874,8 @@ async fn ProxyService::handle_switch_provider(
 }
 
 ///|
-async fn Gateway::handle_open_provider_terminal(
-  self : Gateway,
+async fn ProxyService::handle_open_provider_terminal(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -892,7 +892,7 @@ async fn Gateway::handle_open_provider_terminal(
   let cwd = proxy_string_request(r.path, body, ["cwd"])
   match
     moon_open_provider_terminal_json(
-      self.proxy.provider_router,
+      self.provider_router,
       app_type,
       provider_id,
       cwd,
@@ -1051,13 +1051,14 @@ fn claude_provider_models_are_claude_safe(
 }
 
 ///|
-async fn Gateway::handle_sync_current_providers_live(
-  self : Gateway,
+async fn ProxyService::handle_sync_current_providers_live(
+  self : ProxyService,
+  usage : UsageService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let targets = self.proxy.provider_router.sync_current_provider_targets()
+  let targets = self.provider_router.sync_current_provider_targets()
   for target in targets {
-    self.usage.set_active_target(
+    usage.set_active_target(
       target.app_type,
       target.provider_id,
       target.provider_name,
@@ -1073,8 +1074,8 @@ async fn Gateway::handle_sync_current_providers_live(
 }
 
 ///|
-async fn Gateway::handle_read_live_provider_settings(
-  self : Gateway,
+async fn ProxyService::handle_read_live_provider_settings(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1085,25 +1086,22 @@ async fn Gateway::handle_read_live_provider_settings(
   }
   write_usage_json(
     w,
-    self.proxy.provider_router.read_live_provider_settings(app_type),
+    self.provider_router.read_live_provider_settings(app_type),
   )
 }
 
 ///|
-async fn Gateway::handle_get_live_provider_ids(
-  self : Gateway,
+async fn ProxyService::handle_get_live_provider_ids(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
   app_type : String,
 ) -> Unit {
-  write_usage_json(
-    w,
-    self.proxy.provider_router.live_provider_ids_json(app_type),
-  )
+  write_usage_json(w, self.provider_router.live_provider_ids_json(app_type))
 }
 
 ///|
-async fn Gateway::handle_get_live_provider(
-  self : Gateway,
+async fn ProxyService::handle_get_live_provider(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
   app_type : String,
@@ -1115,35 +1113,35 @@ async fn Gateway::handle_get_live_provider(
   }
   write_usage_json(
     w,
-    self.proxy.provider_router.live_provider_json(app_type, provider_id),
+    self.provider_router.live_provider_json(app_type, provider_id),
   )
 }
 
 ///|
-async fn Gateway::handle_import_live_providers(
-  self : Gateway,
+async fn ProxyService::handle_import_live_providers(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
   app_type : String,
 ) -> Unit {
   write_usage_json(
     w,
     Json::number(
-      self.proxy.provider_router.import_live_providers(app_type).to_double(),
+      self.provider_router.import_live_providers(app_type).to_double(),
     ),
   )
 }
 
 ///|
-async fn Gateway::handle_get_universal_providers(
-  self : Gateway,
+async fn ProxyService::handle_get_universal_providers(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.proxy.provider_router.universal_providers_json())
+  write_usage_json(w, self.provider_router.universal_providers_json())
 }
 
 ///|
-async fn Gateway::handle_get_universal_provider(
-  self : Gateway,
+async fn ProxyService::handle_get_universal_provider(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1152,12 +1150,12 @@ async fn Gateway::handle_get_universal_provider(
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  write_usage_json(w, self.proxy.provider_router.universal_provider_json(id))
+  write_usage_json(w, self.provider_router.universal_provider_json(id))
 }
 
 ///|
-async fn Gateway::handle_upsert_universal_provider(
-  self : Gateway,
+async fn ProxyService::handle_upsert_universal_provider(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1168,15 +1166,13 @@ async fn Gateway::handle_upsert_universal_provider(
   }
   write_usage_json(
     w,
-    Json::boolean(
-      self.proxy.provider_router.upsert_universal_provider(provider),
-    ),
+    Json::boolean(self.provider_router.upsert_universal_provider(provider)),
   )
 }
 
 ///|
-async fn Gateway::handle_delete_universal_provider(
-  self : Gateway,
+async fn ProxyService::handle_delete_universal_provider(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1187,13 +1183,13 @@ async fn Gateway::handle_delete_universal_provider(
   }
   write_usage_json(
     w,
-    Json::boolean(self.proxy.provider_router.delete_universal_provider(id)),
+    Json::boolean(self.provider_router.delete_universal_provider(id)),
   )
 }
 
 ///|
-async fn Gateway::handle_sync_universal_provider(
-  self : Gateway,
+async fn ProxyService::handle_sync_universal_provider(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1204,13 +1200,13 @@ async fn Gateway::handle_sync_universal_provider(
   }
   write_usage_json(
     w,
-    Json::boolean(self.proxy.provider_router.sync_universal_provider(id)),
+    Json::boolean(self.provider_router.sync_universal_provider(id)),
   )
 }
 
 ///|
-async fn Gateway::handle_get_provider_presets(
-  self : Gateway,
+async fn ProxyService::handle_get_provider_presets(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1219,8 +1215,8 @@ async fn Gateway::handle_get_provider_presets(
 }
 
 ///|
-async fn Gateway::handle_update_providers_sort_order(
-  self : Gateway,
+async fn ProxyService::handle_update_providers_sort_order(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1233,7 +1229,7 @@ async fn Gateway::handle_update_providers_sort_order(
   write_usage_json(
     w,
     Json::boolean(
-      self.proxy.provider_router.update_providers_sort_order(app_type, updates),
+      self.provider_router.update_providers_sort_order(app_type, updates),
     ),
   )
 }

@@ -821,7 +821,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_proxy_switch_provider(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/sync_current_providers_live", (_, w) => {
-    self.handle_sync_current_providers_live(w)
+    self.proxy.handle_sync_current_providers_live(self.usage, w)
   })
   router.add_handler(@httpx.Method::Post, "/import_default_config", (r, w) => {
     self.handle_import_default_config(r, w)
@@ -857,12 +857,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(
     @httpx.Method::Delete,
     "/remove_provider_from_live_config",
-    (r, w) => self.handle_remove_provider_from_live_config(r, w),
+    (r, w) => self.proxy.handle_remove_provider_from_live_config(r, w),
   )
   router.add_handler(@httpx.Method::Post, "/remove_provider_from_live_config", (
     r,
     w,
-  ) => self.handle_remove_provider_from_live_config(r, w))
+  ) => self.proxy.handle_remove_provider_from_live_config(r, w))
   router.add_handler(@httpx.Method::Post, "/switch_provider", (r, w) => {
     self.proxy.handle_switch_provider(r, w, self.usage)
   })
@@ -870,7 +870,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.proxy.handle_switch_provider(r, w, self.usage)
   })
   router.add_handler(@httpx.Method::Post, "/open_provider_terminal", (r, w) => {
-    self.handle_open_provider_terminal(r, w)
+    self.proxy.handle_open_provider_terminal(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_desktop_status", (_, w) => {
     self.handle_get_claude_desktop_status(w)
@@ -890,10 +890,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     (_, w) => self.handle_ensure_claude_desktop_official_provider(w),
   )
   router.add_handler(@httpx.Method::Get, "/read_live_provider_settings", (r, w) => {
-    self.handle_read_live_provider_settings(r, w)
+    self.proxy.handle_read_live_provider_settings(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/read_live_provider_settings", (r, w) => {
-    self.handle_read_live_provider_settings(r, w)
+    self.proxy.handle_read_live_provider_settings(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_plugin_status", (_, w) => {
     self.handle_get_claude_plugin_status(w)
@@ -957,16 +957,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_opencode_live_provider_ids", (
     _,
     w,
-  ) => self.handle_get_live_provider_ids(w, "opencode"))
+  ) => self.proxy.handle_get_live_provider_ids(w, "opencode"))
   router.add_handler(@httpx.Method::Get, "/get_openclaw_live_provider_ids", (
     _,
     w,
-  ) => self.handle_get_live_provider_ids(w, "openclaw"))
+  ) => self.proxy.handle_get_live_provider_ids(w, "openclaw"))
   router.add_handler(@httpx.Method::Get, "/get_openclaw_live_provider", (r, w) => {
-    self.handle_get_live_provider(r, w, "openclaw")
+    self.proxy.handle_get_live_provider(r, w, "openclaw")
   })
   router.add_handler(@httpx.Method::Post, "/get_openclaw_live_provider", (r, w) => {
-    self.handle_get_live_provider(r, w, "openclaw")
+    self.proxy.handle_get_live_provider(r, w, "openclaw")
   })
   router.add_handler(@httpx.Method::Get, "/scan_openclaw_config_health", (_, w) => {
     self.handle_scan_openclaw_config_health(w)
@@ -1003,13 +1003,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.openclaw.handle_set_openclaw_tools(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider_ids", (_, w) => {
-    self.handle_get_live_provider_ids(w, "hermes")
+    self.proxy.handle_get_live_provider_ids(w, "hermes")
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_live_provider", (r, w) => {
-    self.handle_get_live_provider(r, w, "hermes")
+    self.proxy.handle_get_live_provider(r, w, "hermes")
   })
   router.add_handler(@httpx.Method::Post, "/get_hermes_live_provider", (r, w) => {
-    self.handle_get_live_provider(r, w, "hermes")
+    self.proxy.handle_get_live_provider(r, w, "hermes")
   })
   router.add_handler(@httpx.Method::Get, "/get_hermes_model_config", (_, w) => {
     self.handle_get_hermes_model_config(w)
@@ -1041,38 +1041,38 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(
     @httpx.Method::Post,
     "/import_opencode_providers_from_live",
-    (_, w) => self.handle_import_live_providers(w, "opencode"),
+    (_, w) => self.proxy.handle_import_live_providers(w, "opencode"),
   )
   router.add_handler(
     @httpx.Method::Post,
     "/import_openclaw_providers_from_live",
-    (_, w) => self.handle_import_live_providers(w, "openclaw"),
+    (_, w) => self.proxy.handle_import_live_providers(w, "openclaw"),
   )
   router.add_handler(
     @httpx.Method::Post,
     "/import_hermes_providers_from_live",
-    (_, w) => self.handle_import_live_providers(w, "hermes"),
+    (_, w) => self.proxy.handle_import_live_providers(w, "hermes"),
   )
   router.add_handler(@httpx.Method::Get, "/get_universal_providers", (_, w) => {
-    self.handle_get_universal_providers(w)
+    self.proxy.handle_get_universal_providers(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_universal_provider", (r, w) => {
-    self.handle_get_universal_provider(r, w)
+    self.proxy.handle_get_universal_provider(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/upsert_universal_provider", (r, w) => {
-    self.handle_upsert_universal_provider(r, w)
+    self.proxy.handle_upsert_universal_provider(r, w)
   })
   router.add_handler(@httpx.Method::Delete, "/delete_universal_provider", (r, w) => {
-    self.handle_delete_universal_provider(r, w)
+    self.proxy.handle_delete_universal_provider(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_universal_provider", (r, w) => {
-    self.handle_delete_universal_provider(r, w)
+    self.proxy.handle_delete_universal_provider(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/sync_universal_provider", (r, w) => {
-    self.handle_sync_universal_provider(r, w)
+    self.proxy.handle_sync_universal_provider(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_provider_presets", (r, w) => {
-    self.handle_get_provider_presets(r, w)
+    self.proxy.handle_get_provider_presets(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/test_api_endpoints", (r, w) => {
     self.handle_test_api_endpoints(r, w)
@@ -1081,7 +1081,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_test_api_endpoints(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/update_providers_sort_order", (r, w) => {
-    self.handle_update_providers_sort_order(r, w)
+    self.proxy.handle_update_providers_sort_order(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_custom_endpoints", (r, w) => {
     self.handle_get_custom_endpoints(r, w)
