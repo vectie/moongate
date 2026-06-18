@@ -195,3 +195,41 @@ async test "usage service owns startup persistent store reconciliation" {
   assert_eq(loaded.daily_rollups.length(), 1)
   assert_eq(loaded.daily_rollups[0].request_count, 1)
 }
+
+///|
+async test "usage service owns session sync persistence" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-usage-service-sync-\{@async.now().to_int()}",
+  )
+  let claude_dir = @pathx.join(dir, "claude-projects")
+  let codex_dir = @pathx.join(dir, "codex")
+  let gemini_dir = @pathx.join(dir, "gemini")
+  @fsx.make_directory(claude_dir, recursive=true, exists_ok=true)
+  @fsx.make_directory(codex_dir, recursive=true, exists_ok=true)
+  @fsx.make_directory(gemini_dir, recursive=true, exists_ok=true)
+
+  let usage = UsageService::new()
+  usage.stats.enable_persistent_store(storage_dir=dir)
+  usage.stats.session_sync_state.set(
+    "/tmp/moonstat-sync-service/source.jsonl",
+    SessionFileSyncState::new(last_modified=7L, last_line_offset=9),
+  )
+  let result = usage.sync_session_logs(
+    claude_dir,
+    codex_dir,
+    gemini_dir,
+    @pathx.join(dir, "opencode.db"),
+    @pathx.join(dir, "opencode.jsonl"),
+  )
+  assert_eq(result.imported, 0)
+
+  let loaded = TrafficStats::new()
+  loaded.load_persistent_store(storage_dir=dir)
+  guard loaded.session_sync_state.get("/tmp/moonstat-sync-service/source.jsonl")
+    is Some(state) else {
+    fail("expected sync state to be persisted")
+  }
+  assert_eq(state.last_modified, 7L)
+  assert_eq(state.last_line_offset, 9)
+}

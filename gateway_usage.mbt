@@ -260,6 +260,26 @@ fn UsageService::data_sources_json(self : UsageService) -> Json {
 }
 
 ///|
+async fn UsageService::sync_session_logs(
+  self : UsageService,
+  claude_projects_dir : String,
+  codex_dir : String,
+  gemini_dir : String,
+  opencode_db_path : String,
+  opencode_export_path : String,
+) -> SessionSyncResult {
+  let result = self.stats.sync_session_logs(
+    claude_projects_dir~,
+    codex_dir~,
+    gemini_dir~,
+    opencode_db_path~,
+    opencode_export_path~,
+  )
+  self.stats.save_persistent_store()
+  result
+}
+
+///|
 async fn UsageService::request_detail_json(
   self : UsageService,
   request_id : String,
@@ -582,14 +602,9 @@ async fn Gateway::handle_usage_sync_session(
     "opencode_db_path",
     "opencodeDbPath",
   ).unwrap_or(default_opencode_db_path())
-  let result = self.usage.stats.sync_session_logs(
-    claude_projects_dir~,
-    codex_dir~,
-    gemini_dir~,
-    opencode_db_path~,
-    opencode_export_path~,
+  let result = self.usage.sync_session_logs(
+    claude_projects_dir, codex_dir, gemini_dir, opencode_db_path, opencode_export_path,
   )
-  self.usage.stats.save_persistent_store()
   write_usage_json(w, result.to_json())
 }
 
