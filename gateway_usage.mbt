@@ -44,6 +44,37 @@ fn UsageService::metrics_text(self : UsageService) -> String {
 }
 
 ///|
+fn UsageService::record_inbound(
+  self : UsageService,
+  request_bytes : Int,
+) -> Unit {
+  self.stats.record_inbound(request_bytes)
+}
+
+///|
+fn UsageService::record_request_context(
+  self : UsageService,
+  app_type : String,
+  model : String,
+  outbound_model? : String? = None,
+  session_id? : String? = None,
+  provider_type? : String? = None,
+) -> Unit {
+  self.stats.record_request_context(
+    app_type,
+    model,
+    outbound_model~,
+    session_id~,
+    provider_type~,
+  )
+}
+
+///|
+fn UsageService::record_stream_mode(self : UsageService, stream : Bool) -> Unit {
+  self.stats.record_stream_mode(stream)
+}
+
+///|
 async fn UsageService::record_success_usage(
   self : UsageService,
   usage : TokenUsage,

@@ -1,7 +1,7 @@
 ///|
 test "usage service exposes stats and metrics without gateway" {
   let usage = UsageService::new()
-  usage.stats.record_inbound(120)
+  usage.record_inbound(120)
   usage.stats.record_success(11, 17, 240)
   usage.stats.last_request_at = Some("test-timestamp")
   let json = usage.stats_json()
@@ -37,15 +37,15 @@ test "usage service exposes stats and metrics without gateway" {
 ///|
 async test "usage service owns usage report json without gateway" {
   let usage = UsageService::new()
-  usage.stats.record_inbound(64)
-  usage.stats.record_request_context(
+  usage.record_inbound(64)
+  usage.record_request_context(
     "codex",
     "gpt-5",
     outbound_model=Some("gpt-5-upstream"),
     session_id=Some("session-1"),
     provider_type=Some("openai_chat"),
   )
-  usage.stats.record_stream_mode(false)
+  usage.record_stream_mode(false)
   usage.stats.record_success_usage(
     TokenUsage::new(
       input_tokens=5,
@@ -106,14 +106,14 @@ async test "usage service owns usage report json without gateway" {
 ///|
 async test "usage service owns completion and error accounting without gateway" {
   let usage = UsageService::new()
-  usage.stats.record_inbound(32)
+  usage.record_inbound(32)
   usage.stats.set_active_target("codex", "openai", "OpenAI")
-  usage.stats.record_request_context(
+  usage.record_request_context(
     "codex",
     "gpt-5",
     provider_type=Some("openai_chat"),
   )
-  usage.stats.record_stream_mode(false)
+  usage.record_stream_mode(false)
   usage.record_success_usage(
     TokenUsage::new(input_tokens=3, output_tokens=5, model=Some("gpt-5")),
     64,
@@ -125,21 +125,21 @@ async test "usage service owns completion and error accounting without gateway" 
   assert_eq(usage.stats.output_tokens, 5)
   assert_eq(usage.stats.request_logs.length(), 1)
 
-  usage.stats.record_inbound(16)
-  usage.stats.record_request_context("codex", "gpt-5")
-  usage.stats.record_stream_mode(true)
+  usage.record_inbound(16)
+  usage.record_request_context("codex", "gpt-5")
+  usage.record_stream_mode(true)
   usage.record_success_stream_usage(None, 24, [], skip_empty_usage=true)
   assert_eq(usage.stats.total_requests, 2)
   assert_eq(usage.stats.successful_responses, 2)
   assert_eq(usage.stats.request_logs.length(), 1)
 
-  usage.stats.record_inbound(8)
+  usage.record_inbound(8)
   usage.record_bad_request()
-  usage.stats.record_inbound(8)
+  usage.record_inbound(8)
   usage.record_unauthorized()
-  usage.stats.record_inbound(8)
+  usage.record_inbound(8)
   usage.record_upstream_error_status(19, 502)
-  usage.stats.record_inbound(8)
+  usage.record_inbound(8)
   usage.record_internal_error()
   assert_eq(usage.stats.total_requests, 6)
   assert_eq(usage.stats.failed_responses, 4)

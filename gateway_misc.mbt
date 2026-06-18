@@ -179,9 +179,9 @@ async fn Gateway::handle_codex_responses(
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  self.usage.stats.record_inbound(body_str.length())
+  self.usage.record_inbound(body_str.length())
   let _ = self.activate_provider("codex")
-  self.usage.stats.record_request_context("codex", self.model)
+  self.usage.record_request_context("codex", self.model)
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -196,7 +196,7 @@ async fn Gateway::handle_codex_responses(
     }
     Ok(json) => {
       let stream = json_bool_field(json, "stream").unwrap_or(false)
-      self.usage.stats.record_stream_mode(stream)
+      self.usage.record_stream_mode(stream)
       let request = normalize_codex_oauth_request(json)
       let client_format = moon_client_format_for_request(
         r.path.to_owned(),
@@ -208,7 +208,7 @@ async fn Gateway::handle_codex_responses(
         client_format,
       )
       let upstream_session_id = session.upstream_session_id()
-      self.usage.stats.record_request_context(
+      self.usage.record_request_context(
         "codex",
         json_string_field(json, "model").unwrap_or(self.model),
         session_id=Some(session.session_id),
@@ -238,9 +238,9 @@ async fn Gateway::handle_chat_completions(
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  self.usage.stats.record_inbound(body_str.length())
+  self.usage.record_inbound(body_str.length())
   let _ = self.activate_provider("codex")
-  self.usage.stats.record_request_context("codex", self.model)
+  self.usage.record_request_context("codex", self.model)
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
@@ -256,7 +256,7 @@ async fn Gateway::handle_chat_completions(
     Ok(json) => {
       let response_model = openai_chat_model(json).unwrap_or(self.model)
       let stream = json_bool_field(json, "stream").unwrap_or(false)
-      self.usage.stats.record_stream_mode(stream)
+      self.usage.record_stream_mode(stream)
       let client_format = moon_client_format_for_request(
         r.path.to_owned(),
         Some(json),
@@ -267,7 +267,7 @@ async fn Gateway::handle_chat_completions(
         client_format,
       )
       let upstream_session_id = session.upstream_session_id()
-      self.usage.stats.record_request_context(
+      self.usage.record_request_context(
         "codex",
         response_model,
         session_id=Some(session.session_id),
@@ -304,9 +304,9 @@ async fn Gateway::handle_gemini(
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  self.usage.stats.record_inbound(body_str.length())
+  self.usage.record_inbound(body_str.length())
   let _ = self.activate_provider("gemini")
-  self.usage.stats.record_request_context("gemini", "gemini")
+  self.usage.record_request_context("gemini", "gemini")
   let request_json : Json = if body_str.is_empty() {
     Json::null()
   } else {
@@ -324,11 +324,11 @@ async fn Gateway::handle_gemini(
     }
   }
   let endpoint = normalize_gemini_endpoint(r.path)
-  self.usage.stats.record_request_context(
+  self.usage.record_request_context(
     "gemini",
     gemini_model_from_endpoint(endpoint),
   )
-  self.usage.stats.record_stream_mode(
+  self.usage.record_stream_mode(
     gemini_request_is_stream(endpoint, request_json),
   )
   let url = match gemini_proxy_url(endpoint) {
@@ -5274,9 +5274,9 @@ async fn Gateway::handle_messages(
   }
   let body = r.body.read_all()
   let body_str = body.text()
-  self.usage.stats.record_inbound(body_str.length())
+  self.usage.record_inbound(body_str.length())
   let active_provider = self.activate_provider(app_type)
-  self.usage.stats.record_request_context(app_type, self.model)
+  self.usage.record_request_context(app_type, self.model)
   if active_provider is None && self.all_provider_circuits_open(app_type) {
     self.write_provider_selection_error(app_type, AllProvidersCircuitOpen, w)
     return
@@ -5329,8 +5329,8 @@ async fn Gateway::handle_messages(
           )
           self.logger.debug("Using Codex model: \{model}")
           let stream = anthropic_request.stream.unwrap_or(false)
-          self.usage.stats.record_stream_mode(stream)
-          self.usage.stats.record_request_context(
+          self.usage.record_stream_mode(stream)
+          self.usage.record_request_context(
             app_type,
             anthropic_request.model,
             outbound_model=Some(model),
@@ -5407,7 +5407,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.usage.stats.record_request_context(
+  self.usage.record_request_context(
     app_type,
     request.model,
     outbound_model=Some(upstream_model),
@@ -6716,7 +6716,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.usage.stats.record_request_context(
+  self.usage.record_request_context(
     app_type,
     request.model,
     outbound_model=Some(upstream_model),
