@@ -2579,13 +2579,23 @@ async test "session endpoints are owned by session service" {
 ///|
 async test "openclaw endpoints are owned by openclaw service" {
   let config_source = @fsx.read_file("gateway_config.mbt")
+  let openclaw_source = @fsx.read_file("gateway_openclaw.mbt")
+  let route_source = @fsx.read_file("gateway_openclaw_routes.mbt")
+  let sources = config_source + openclaw_source
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
-      "handle_scan_openclaw_config_health", "handle_get_hermes_model_config",
+      "handle_scan_openclaw_config_health", "handle_get_openclaw_default_model",
+      "handle_set_openclaw_default_model", "handle_get_openclaw_model_catalog", "handle_set_openclaw_model_catalog",
+      "handle_get_openclaw_agents_defaults", "handle_set_openclaw_agents_defaults",
+      "handle_get_openclaw_env", "handle_set_openclaw_env", "handle_get_openclaw_tools",
+      "handle_set_openclaw_tools", "handle_get_hermes_model_config", "handle_get_hermes_memory",
+      "handle_set_hermes_memory", "handle_get_hermes_memory_limits", "handle_set_hermes_memory_enabled",
+      "handle_open_hermes_web_ui", "handle_launch_hermes_dashboard",
     ] {
-    assert_true(config_source.contains("async fn OpenClawService::\{handler}("))
-    assert_false(config_source.contains("async fn Gateway::\{handler}("))
+    assert_true(sources.contains("async fn OpenClawService::\{handler}("))
+    assert_false(sources.contains("async fn Gateway::\{handler}("))
+    assert_true(route_source.contains("self.\{handler}("))
   }
   assert_true(
     config_source.contains("fn OpenClawService::openclaw_config_health_json("),
@@ -2593,12 +2603,7 @@ async test "openclaw endpoints are owned by openclaw service" {
   assert_false(
     config_source.contains("fn Gateway::openclaw_config_health_json("),
   )
-  assert_true(
-    core_source.contains("self.openclaw.handle_scan_openclaw_config_health(w)"),
-  )
-  assert_true(
-    core_source.contains("self.openclaw.handle_get_hermes_model_config(w)"),
-  )
+  assert_true(core_source.contains("self.openclaw.register_routes(router)"))
 }
 
 ///|
