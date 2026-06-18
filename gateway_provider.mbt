@@ -636,22 +636,13 @@ fn provider_custom_user_agent(provider : ProviderRouteTarget) -> String? {
     return None
   }
   guard provider.settings_config is Some(Object(obj)) else { return None }
-  match
-    parse_custom_user_agent(
-      json_string_from_map_any(obj, [
-        "customUserAgent", "custom_user_agent", "userAgent", "user_agent",
-      ]),
-    ) {
+  match parse_custom_user_agent(json_string_from_map(obj, "customUserAgent")) {
     Some(value) => return Some(value)
     None => ()
   }
   match obj.get("meta") {
     Some(Object(meta)) =>
-      parse_custom_user_agent(
-        json_string_from_map_any(meta, [
-          "customUserAgent", "custom_user_agent", "userAgent", "user_agent",
-        ]),
-      )
+      parse_custom_user_agent(json_string_from_map(meta, "customUserAgent"))
     _ => None
   }
 }
@@ -1726,8 +1717,8 @@ fn provider_copy_inline_metadata_fields(
 ) -> Unit {
   for
     key in [
-      "customUserAgent", "userAgent", "apiFormat", "promptCacheKey", "codexFastMode",
-      "githubAccountId", "limitDailyUsd", "limitMonthlyUsd",
+      "customUserAgent", "apiFormat", "promptCacheKey", "codexFastMode", "githubAccountId",
+      "limitDailyUsd", "limitMonthlyUsd",
     ] {
     match obj.get(key) {
       Some(value) => settings[key] = value

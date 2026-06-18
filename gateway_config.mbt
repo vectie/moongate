@@ -116,17 +116,11 @@ fn moon_merge_settings_for_save(incoming : Json, existing : Json) -> Json {
   guard existing is Object(existing_obj) else { return incoming }
   let next = incoming_obj
   moon_preserve_missing_settings_object(next, existing_obj, "webdavSync")
-  moon_preserve_missing_settings_object(next, existing_obj, "webdav_sync")
   moon_preserve_missing_settings_object(next, existing_obj, "s3Sync")
-  moon_preserve_missing_settings_object(next, existing_obj, "s3_sync")
   moon_preserve_missing_settings_object(next, existing_obj, "localMigrations")
   moon_preserve_missing_settings_object(next, existing_obj, "local_migrations")
   moon_preserve_secret_if_empty(next, existing_obj, "webdavSync", "password")
-  moon_preserve_secret_if_empty(next, existing_obj, "webdav_sync", "password")
   moon_preserve_secret_if_empty(next, existing_obj, "s3Sync", "secretAccessKey")
-  moon_preserve_secret_if_empty(
-    next, existing_obj, "s3_sync", "secret_access_key",
-  )
   Json::object(next)
 }
 

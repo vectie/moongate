@@ -326,19 +326,13 @@ fn moon_validate_s3_sync_settings(settings : Json) -> String? {
 ///|
 fn moon_app_webdav_sync_json(settings : Json) -> Json? {
   guard settings is Object(obj) else { return None }
-  match obj.get("webdavSync") {
-    Some(value) => Some(value)
-    None => obj.get("webdav_sync")
-  }
+  obj.get("webdavSync")
 }
 
 ///|
 fn moon_app_s3_sync_json(settings : Json) -> Json? {
   guard settings is Object(obj) else { return None }
-  match obj.get("s3Sync") {
-    Some(value) => Some(value)
-    None => obj.get("s3_sync")
-  }
+  obj.get("s3Sync")
 }
 
 ///|

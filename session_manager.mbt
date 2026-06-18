@@ -280,10 +280,7 @@ fn moon_session_terminal_target(preferred : String?) -> String {
 fn moon_session_terminal_from_settings(settings : Json) -> String? {
   match settings {
     Object(obj) =>
-      match
-        json_string_from_map_any(obj, [
-          "preferredTerminal", "preferred_terminal",
-        ]) {
+      match json_string_from_map(obj, "preferredTerminal") {
         Some(value) if !value.trim().is_empty() => Some(value)
         _ => None
       }
