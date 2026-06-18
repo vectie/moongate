@@ -1,12 +1,12 @@
 ///|
-test "gateway profile matches ccs profile shape" {
+test "gateway profile matches moonstat profile shape" {
   let profile = gateway_profile_json(
-    "http://127.0.0.1:15721/claude-desktop", "ccs-test-token",
+    "http://127.0.0.1:15721/claude-desktop", "moonstat-test-token",
   )
   json_inspect(profile, content={
     "coworkEgressAllowedHosts": ["*"],
     "disableDeploymentModeChooser": true,
-    "inferenceGatewayApiKey": "ccs-test-token",
+    "inferenceGatewayApiKey": "moonstat-test-token",
     "inferenceGatewayAuthScheme": "bearer",
     "inferenceGatewayBaseUrl": "http://127.0.0.1:15721/claude-desktop",
     "inferenceProvider": "gateway",
@@ -27,7 +27,7 @@ test "local gateway base url normalizes wildcard host" {
 }
 
 ///|
-test "status stale raw model detection matches ccs profile rules" {
+test "status stale raw model detection matches moonstat profile rules" {
   assert_false(
     profile_has_stale_raw_models(
       Json::object({
@@ -90,7 +90,7 @@ async test "write meta restores previous applied profile and preserves fields" {
 }
 
 ///|
-async test "write meta recovers non object meta file like ccs" {
+async test "write meta recovers non object meta file like moonstat" {
   @fsx.with_temporary_directory("moonstat-claude-meta-shape-XXXXXX", tmpdir => {
     let meta_path = @pathx.join(tmpdir, "_meta.json")
     @fsx.write_to_file(meta_path, "[]")
@@ -149,7 +149,7 @@ async test "install proxy profile rolls back when profile write fails" {
       paths,
       "127.0.0.1",
       15721,
-      token=Some("ccs-token"),
+      token=Some("moonstat-token"),
     )
 
     assert_true(result is Err(_))
@@ -204,7 +204,9 @@ async test "uninstall proxy profile rolls back when meta write fails" {
     )
     write_json_file(
       paths.profile_path,
-      gateway_profile_json("http://127.0.0.1:15721/claude-desktop", "ccs-token"),
+      gateway_profile_json(
+        "http://127.0.0.1:15721/claude-desktop", "moonstat-token",
+      ),
     )
     @fsx.write_to_file(blocked_meta_dir, "not a directory")
 
@@ -233,7 +235,7 @@ async test "remove gateway enterprise config keeps unrelated enterprise fields" 
         "deploymentMode": Json::string("1p"),
         "enterpriseConfig": Json::object({
           "disableDeploymentModeChooser": Json::boolean(true),
-          "inferenceGatewayApiKey": Json::string("ccs-token"),
+          "inferenceGatewayApiKey": Json::string("moonstat-token"),
           "inferenceGatewayAuthScheme": Json::string("bearer"),
           "inferenceGatewayBaseUrl": Json::string(
             "http://127.0.0.1:15721/claude-desktop",

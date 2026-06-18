@@ -213,7 +213,7 @@ test "gemini url merges base and endpoint queries" {
 }
 
 ///|
-test "gemini url drops empty query fragments like ccs" {
+test "gemini url drops empty query fragments like moonstat" {
   assert_eq(
     build_gemini_native_url(
       "https://generativelanguage.googleapis.com/v1beta?", "/v1beta/models/gemini-2.5-pro:generateContent?",
@@ -236,7 +236,7 @@ test "gemini url drops empty query fragments like ccs" {
 }
 
 ///|
-test "gemini model id normalization matches ccs" {
+test "gemini model id normalization matches moonstat" {
   assert_eq(
     normalize_gemini_model_id("models/gemini-2.5-pro"),
     "gemini-2.5-pro",

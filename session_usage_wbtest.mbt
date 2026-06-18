@@ -1,5 +1,5 @@
 ///|
-test "claude session jsonl import mirrors ccs replacement and request log shape" {
+test "claude session jsonl import mirrors moonstat replacement and request log shape" {
   let stats = TrafficStats::new()
   let content =
     #|{"type":"system","sessionId":"session-abc"}
@@ -41,7 +41,7 @@ test "claude session jsonl import mirrors ccs replacement and request log shape"
 }
 
 ///|
-test "claude session import keeps cache-only billable rows like ccs" {
+test "claude session import keeps cache-only billable rows like moonstat" {
   let stats = TrafficStats::new()
   let content =
     #|{"type":"assistant","sessionId":"session-cache","message":{"id":"msg_cache","model":"claude-sonnet-4-20250514","usage":{"input_tokens":0,"output_tokens":0,"cache_read_input_tokens":42,"cache_creation_input_tokens":0}},"timestamp":"1970-01-01T00:00:20+00:00"}
@@ -61,7 +61,7 @@ test "claude session import keeps cache-only billable rows like ccs" {
 }
 
 ///|
-test "claude session import ignores non-u64 token fields like ccs" {
+test "claude session import ignores non-u64 token fields like moonstat" {
   let stats = TrafficStats::new()
   let content =
     #|{"type":"assistant","sessionId":"session-invalid","message":{"id":"msg_invalid","model":"claude-sonnet-4-20250514","usage":{"input_tokens":-3,"output_tokens":5,"cache_read_input_tokens":7.5,"cache_creation_input_tokens":-9}},"timestamp":"1970-01-01T00:00:22Z"}
@@ -114,7 +114,7 @@ test "claude session import stores offsets and skips duplicate session rows" {
 }
 
 ///|
-test "codex session import computes cumulative deltas like ccs" {
+test "codex session import computes cumulative deltas like moonstat" {
   let stats = TrafficStats::new()
   let content =
     #|{"type":"session_meta","payload":{"session_id":"codex-s1"}}
@@ -199,7 +199,7 @@ test "codex session import restores state before offset skip" {
 }
 
 ///|
-test "codex session import accepts last token usage deltas like ccs" {
+test "codex session import accepts last token usage deltas like moonstat" {
   let stats = TrafficStats::new()
   let content =
     #|{"type":"session_meta","payload":{"session_id":"codex-last"}}
@@ -228,7 +228,7 @@ test "codex session import accepts last token usage deltas like ccs" {
 }
 
 ///|
-test "gemini session import merges thoughts into output like ccs" {
+test "gemini session import merges thoughts into output like moonstat" {
   let stats = TrafficStats::new()
   let content =
     #|{
@@ -262,7 +262,7 @@ test "gemini session import merges thoughts into output like ccs" {
 }
 
 ///|
-test "gemini session import ignores non-u64 token fields like ccs" {
+test "gemini session import ignores non-u64 token fields like moonstat" {
   let stats = TrafficStats::new()
   let content =
     #|{
@@ -285,7 +285,7 @@ test "gemini session import ignores non-u64 token fields like ccs" {
 }
 
 ///|
-test "opencode message import mirrors ccs request log shape" {
+test "opencode message import mirrors moonstat request log shape" {
   let stats = TrafficStats::new()
   let data =
     #|{
@@ -393,7 +393,7 @@ test "opencode message import defaults missing cache and skips incomplete rows" 
 }
 
 ///|
-test "opencode message import ignores non-u64 token fields like ccs" {
+test "opencode message import ignores non-u64 token fields like moonstat" {
   let stats = TrafficStats::new()
   let data =
     #|{
@@ -475,7 +475,7 @@ test "opencode export jsonl import stores offsets and supports string data" {
 }
 
 ///|
-test "opencode database rows import uses ccs session watermarks" {
+test "opencode database rows import uses moonstat session watermarks" {
   let stats = TrafficStats::new()
   let db_path = "/tmp/opencode/opencode.db"
   let first_rows =
@@ -581,7 +581,7 @@ test "session imports skip matching proxy log fingerprints" {
 }
 
 ///|
-test "session imports treat missing proxy data source like ccs" {
+test "session imports treat missing proxy data source like moonstat" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -658,7 +658,7 @@ test "opencode session import skips matching proxy log fingerprints" {
 }
 
 ///|
-test "opencode session import treats missing cache write like ccs" {
+test "opencode session import treats missing cache write like moonstat" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(

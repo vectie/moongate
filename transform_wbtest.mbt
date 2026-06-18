@@ -1,5 +1,5 @@
 ///|
-test "ccs openai chat streaming injects include usage" {
+test "moonstat openai chat streaming injects include usage" {
   let body = Json::object({
     "model": Json::string("moonshotai/kimi-k2"),
     "messages": Json::array([
@@ -21,7 +21,7 @@ test "ccs openai chat streaming injects include usage" {
 }
 
 ///|
-test "ccs openai chat non streaming omits stream options" {
+test "moonstat openai chat non streaming omits stream options" {
   let body = Json::object({
     "model": Json::string("moonshotai/kimi-k2"),
     "messages": Json::array([
@@ -38,7 +38,7 @@ test "ccs openai chat non streaming omits stream options" {
 }
 
 ///|
-test "ccs responses transform uses session cache key" {
+test "moonstat responses transform uses session cache key" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -61,7 +61,7 @@ test "ccs responses transform uses session cache key" {
 }
 
 ///|
-test "ccs transform strips leading anthropic billing header like ccs" {
+test "moonstat transform strips leading anthropic billing header like moonstat" {
   assert_eq(
     strip_leading_anthropic_billing_header(
       "x-anthropic-billing-header: cc_version=2.1; cch=a;\r\n\r\n  You are terse.  ",
@@ -89,7 +89,7 @@ test "ccs transform strips leading anthropic billing header like ccs" {
 }
 
 ///|
-test "ccs responses output config max maps to reasoning xhigh" {
+test "moonstat responses output config max maps to reasoning xhigh" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -112,7 +112,7 @@ test "ccs responses output config max maps to reasoning xhigh" {
 }
 
 ///|
-test "ccs responses output config takes priority over thinking" {
+test "moonstat responses output config takes priority over thinking" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -135,7 +135,7 @@ test "ccs responses output config takes priority over thinking" {
 }
 
 ///|
-test "ccs responses thinking budget maps to reasoning effort" {
+test "moonstat responses thinking budget maps to reasoning effort" {
   let low = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([]),
@@ -187,7 +187,7 @@ test "ccs responses thinking budget maps to reasoning effort" {
 }
 
 ///|
-test "ccs responses thinking adaptive skips non reasoning models" {
+test "moonstat responses thinking adaptive skips non reasoning models" {
   let reasoning_body = Json::object({
     "model": Json::string("o3-mini"),
     "messages": Json::array([]),
@@ -216,7 +216,7 @@ test "ccs responses thinking adaptive skips non reasoning models" {
 }
 
 ///|
-test "ccs codex oauth responses constraints match ccs" {
+test "moonstat codex oauth responses constraints match moonstat" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -253,7 +253,7 @@ test "ccs codex oauth responses constraints match ccs" {
 }
 
 ///|
-test "ccs codex oauth responses defaults fast mode off" {
+test "moonstat codex oauth responses defaults fast mode off" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -275,7 +275,7 @@ test "ccs codex oauth responses defaults fast mode off" {
 }
 
 ///|
-test "ccs transform maps anthropic tool choice" {
+test "moonstat transform maps anthropic tool choice" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([]),
@@ -296,7 +296,7 @@ test "ccs transform maps anthropic tool choice" {
 }
 
 ///|
-test "ccs openai chat transform canonicalizes tool arguments" {
+test "moonstat openai chat transform canonicalizes tool arguments" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -329,7 +329,7 @@ test "ccs openai chat transform canonicalizes tool arguments" {
 }
 
 ///|
-test "ccs responses transform canonicalizes tool arguments" {
+test "moonstat responses transform canonicalizes tool arguments" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -359,7 +359,7 @@ test "ccs responses transform canonicalizes tool arguments" {
 }
 
 ///|
-test "ccs gemini native transform maps anthropic request" {
+test "moonstat gemini native transform maps anthropic request" {
   let body = Json::object({
     "model": Json::string("claude-sonnet-4-6"),
     "system": Json::string("You are terse."),
@@ -485,7 +485,7 @@ test "ccs gemini native transform maps anthropic request" {
 }
 
 ///|
-test "ccs gemini native transform resolves tool result names" {
+test "moonstat gemini native transform resolves tool result names" {
   let body = Json::object({
     "model": Json::string("claude-sonnet-4-6"),
     "messages": Json::array([
@@ -534,7 +534,7 @@ test "ccs gemini native transform resolves tool result names" {
 }
 
 ///|
-test "ccs gemini native transform strips synthesized tool ids" {
+test "moonstat gemini native transform strips synthesized tool ids" {
   let synth = "gemini_synth_0"
   let body = Json::object({
     "messages": Json::array([
@@ -595,7 +595,7 @@ test "ccs gemini native transform strips synthesized tool ids" {
 }
 
 ///|
-test "ccs gemini native shadow replay preserves thought signature by id" {
+test "moonstat gemini native shadow replay preserves thought signature by id" {
   let shadow_turns = [
     {
       assistant_content: Json::object({
@@ -681,7 +681,7 @@ test "ccs gemini native shadow replay preserves thought signature by id" {
 }
 
 ///|
-test "ccs gemini native shadow replay prefers exact id over name collision" {
+test "moonstat gemini native shadow replay prefers exact id over name collision" {
   let shadow_turns = [
     {
       assistant_content: Json::object({
@@ -792,7 +792,7 @@ test "ccs gemini native shadow replay prefers exact id over name collision" {
 }
 
 ///|
-test "ccs gemini native shadow store records synthetic ids and replays without leaking them" {
+test "moonstat gemini native shadow store records synthetic ids and replays without leaking them" {
   let store = GeminiShadowStore::with_limits(8, 4)
   store.record_gemini_response(
     "provider-a",

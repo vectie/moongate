@@ -4,7 +4,7 @@ fn moon_skill_test_state_path(name : String) -> String {
 }
 
 ///|
-async test "ccs skill repos install toggle backup and restore" {
+async test "moonstat skill repos install toggle backup and restore" {
   let path = moon_skill_test_state_path("skills-flow")
   let repos = moon_get_skill_repos_json(path~)
   guard repos is Array(default_repos) else { fail("expected default repos") }
@@ -89,7 +89,7 @@ async test "ccs skill repos install toggle backup and restore" {
 }
 
 ///|
-async test "ccs skills discovery and search expose ccs compatible shapes" {
+async test "moonstat skills discovery and search expose moonstat compatible shapes" {
   let path = moon_skill_test_state_path("skills-discovery")
   guard moon_discover_available_skills_json(state_path=path)
     is Array(discovered) else {

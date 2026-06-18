@@ -20,7 +20,7 @@ fn fake_usage_result() -> UsageResult {
 }
 
 ///|
-test "usage result parses ccs usage script json" {
+test "usage result parses moonstat usage script json" {
   let json = @json.parse(
     (
       #|{
@@ -51,7 +51,7 @@ test "usage result parses ccs usage script json" {
 }
 
 ///|
-test "usage script output wraps raw ccs usage rows" {
+test "usage script output wraps raw moonstat usage rows" {
   let json = @json.parse(
     (
       #|[
@@ -85,7 +85,7 @@ test "usage script output wraps raw ccs usage rows" {
 }
 
 ///|
-test "usage script output preserves ccs empty usage arrays" {
+test "usage script output preserves moonstat empty usage arrays" {
   guard usage_script_output_result_from_json(@json.parse("[]")) is Some(result) else {
     fail("expected wrapped empty usage result")
   }
@@ -97,7 +97,7 @@ test "usage script output preserves ccs empty usage arrays" {
 }
 
 ///|
-test "usage cache subscription round trip matches ccs" {
+test "usage cache subscription round trip matches moonstat" {
   let cache = UsageCache::new()
   assert_true(
     cache.with_subscription("claude", fn(quota) { quota.success }) is None,
@@ -113,7 +113,7 @@ test "usage cache subscription round trip matches ccs" {
 }
 
 ///|
-test "usage cache script round trip and invalidate match ccs" {
+test "usage cache script round trip and invalidate match moonstat" {
   let cache = UsageCache::new()
   assert_true(
     cache.with_script("codex", "pid", fn(result) { result.success }) is None,
@@ -130,7 +130,7 @@ test "usage cache script round trip and invalidate match ccs" {
 }
 
 ///|
-test "usage cache script keys are isolated by app type like ccs" {
+test "usage cache script keys are isolated by app type like moonstat" {
   let cache = UsageCache::new()
   cache.put_script("claude", "same", fake_usage_result())
   assert_true(cache.get_script("claude", "same") is Some(_))
@@ -138,7 +138,7 @@ test "usage cache script keys are isolated by app type like ccs" {
 }
 
 ///|
-test "usage cache subscription invalidation matches ccs" {
+test "usage cache subscription invalidation matches moonstat" {
   let cache = UsageCache::new()
   cache.put_subscription("claude", fake_quota())
   assert_true(cache.get_subscription("claude") is Some(_))
@@ -149,7 +149,7 @@ test "usage cache subscription invalidation matches ccs" {
 }
 
 ///|
-test "usage cache result json matches ccs usage result shape" {
+test "usage cache result json matches moonstat usage result shape" {
   guard fake_usage_result().to_json() is Object(result) else {
     fail("expected usage result object")
   }

@@ -1,5 +1,5 @@
 ///|
-test "ccs subscription claude parser preserves known and unknown tiers" {
+test "moonstat subscription claude parser preserves known and unknown tiers" {
   guard moon_parse_claude_quota(
       {
         "five_hour": {
@@ -50,7 +50,7 @@ test "ccs subscription claude parser preserves known and unknown tiers" {
 }
 
 ///|
-test "ccs subscription codex parser maps wham windows to tier names" {
+test "moonstat subscription codex parser maps wham windows to tier names" {
   guard moon_parse_codex_quota(
       {
         "rate_limit": {
@@ -82,7 +82,7 @@ test "ccs subscription codex parser maps wham windows to tier names" {
 }
 
 ///|
-test "ccs subscription gemini parser groups buckets by model family" {
+test "moonstat subscription gemini parser groups buckets by model family" {
   guard moon_parse_gemini_quota(
       {
         "buckets": Json::array([
@@ -124,7 +124,7 @@ test "ccs subscription gemini parser groups buckets by model family" {
 }
 
 ///|
-test "ccs subscription credential parsers report deterministic status" {
+test "moonstat subscription credential parsers report deterministic status" {
   let missing_claude = moon_parse_claude_credentials_json("{}")
   assert_true(missing_claude.status == ParseError)
   assert_eq(missing_claude.message, Some("No OAuth entry found in credentials"))
@@ -142,7 +142,7 @@ test "ccs subscription credential parsers report deterministic status" {
 }
 
 ///|
-test "ccs codex oauth account resolver matches tauri command fallback" {
+test "moonstat codex oauth account resolver matches tauri command fallback" {
   assert_eq(
     moon_resolve_codex_oauth_account(
       Some(" acct-explicit "),
@@ -170,7 +170,7 @@ test "moonstat codex oauth relogin message is branded" {
 }
 
 ///|
-test "ccs subscription gemini oauth client comes from env" {
+test "moonstat subscription gemini oauth client comes from env" {
   let old_id = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
   let old_secret = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {
     _ => None

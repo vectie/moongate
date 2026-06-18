@@ -1,5 +1,5 @@
 ///|
-test "ccs codex chat history restores tool output from previous response" {
+test "moonstat codex chat history restores tool output from previous response" {
   let history = CodexChatHistoryStore::new()
   ignore(
     history.record_response(
@@ -42,7 +42,7 @@ test "ccs codex chat history restores tool output from previous response" {
 }
 
 ///|
-test "ccs codex chat history restores unique call id without matching previous response" {
+test "moonstat codex chat history restores unique call id without matching previous response" {
   let history = CodexChatHistoryStore::new()
   ignore(
     history.record_response(
@@ -93,7 +93,7 @@ test "ccs codex chat history restores unique call id without matching previous r
 }
 
 ///|
-test "ccs codex chat history does not restore ambiguous call id without previous response" {
+test "moonstat codex chat history does not restore ambiguous call id without previous response" {
   let history = CodexChatHistoryStore::new()
   for
     pair in [
@@ -134,7 +134,7 @@ test "ccs codex chat history does not restore ambiguous call id without previous
 }
 
 ///|
-test "ccs codex chat history enriches existing function call reasoning" {
+test "moonstat codex chat history enriches existing function call reasoning" {
   let history = CodexChatHistoryStore::new()
   ignore(
     history.record_response(
@@ -180,7 +180,7 @@ test "ccs codex chat history enriches existing function call reasoning" {
 }
 
 ///|
-test "ccs codex chat history restores parallel calls as one assistant group" {
+test "moonstat codex chat history restores parallel calls as one assistant group" {
   let history = CodexChatHistoryStore::new()
   ignore(
     history.record_response(
@@ -231,7 +231,7 @@ test "ccs codex chat history restores parallel calls as one assistant group" {
 }
 
 ///|
-test "ccs codex chat history restores custom and tool search calls" {
+test "moonstat codex chat history restores custom and tool search calls" {
   let history = CodexChatHistoryStore::new()
   ignore(
     history.record_response(
@@ -282,7 +282,7 @@ test "ccs codex chat history restores custom and tool search calls" {
 }
 
 ///|
-test "ccs codex chat history records streamed function call done items" {
+test "moonstat codex chat history records streamed function call done items" {
   let history = CodexChatHistoryStore::new()
   ignore(
     history.record_stream_events([

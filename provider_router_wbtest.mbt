@@ -85,7 +85,7 @@ test "provider router failover disabled uses current provider" {
 }
 
 ///|
-test "provider router current selection ignores metadata enabled flag like ccs" {
+test "provider router current selection ignores metadata enabled flag like moonstat" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -170,7 +170,7 @@ test "provider router exports prometheus provider and circuit metrics" {
 }
 
 ///|
-test "provider router failover enabled uses ccs sorted queue ignoring current" {
+test "provider router failover enabled uses moonstat sorted queue ignoring current" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -197,7 +197,7 @@ test "provider router failover enabled uses ccs sorted queue ignoring current" {
 }
 
 ///|
-test "provider router failover queue ignores metadata enabled flag like ccs" {
+test "provider router failover queue ignores metadata enabled flag like moonstat" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -307,7 +307,7 @@ test "provider router neutral permit release frees half open slot" {
 }
 
 ///|
-test "provider router updates circuit configs per app like ccs" {
+test "provider router updates circuit configs per app like moonstat" {
   let router = ProviderRouter::new(circuit_config={
     failure_threshold: 4,
     success_threshold: 2,
@@ -431,7 +431,7 @@ test "provider route target carries upstream config without serializing key" {
 }
 
 ///|
-test "provider route target serializes ccs claude desktop model routes" {
+test "provider route target serializes moonstat claude desktop model routes" {
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(
       model="deepseek-v4-flash [1M]",
@@ -462,13 +462,13 @@ test "provider route target serializes ccs claude desktop model routes" {
   assert_eq(sonnet["supports1m"], Json::boolean(true))
   let moon_provider = target.to_moon_provider_json(false)
   guard moon_provider is Object(provider) else {
-    fail("expected ccs provider object")
+    fail("expected moonstat provider object")
   }
   guard provider["meta"] is Object(meta) else { fail("expected provider meta") }
   assert_eq(provider["notes"], Json::string("Desktop provider notes"))
   assert_eq(meta["claudeDesktopMode"], Json::string("proxy"))
   guard meta["claudeDesktopModelRoutes"] is Object(meta_routes) else {
-    fail("expected ccs route metadata")
+    fail("expected moonstat route metadata")
   }
   assert_true(meta_routes.get("claude-sonnet-4-6") is Some(_))
   let serialized = moon_provider.stringify()
@@ -477,7 +477,7 @@ test "provider route target serializes ccs claude desktop model routes" {
 }
 
 ///|
-test "provider router exposes ccs failover queue and available providers" {
+test "provider router exposes moonstat failover queue and available providers" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -524,7 +524,7 @@ test "provider router exposes ccs failover queue and available providers" {
 }
 
 ///|
-test "provider router failover queue uses ccs stored provider sort index" {
+test "provider router failover queue uses moonstat stored provider sort index" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -554,7 +554,7 @@ test "provider router failover queue uses ccs stored provider sort index" {
 }
 
 ///|
-test "provider router add remove failover queue mirrors ccs semantics" {
+test "provider router add remove failover queue mirrors moonstat semantics" {
   let router = ProviderRouter::new(circuit_config={
     failure_threshold: 1,
     success_threshold: 2,
@@ -588,7 +588,7 @@ test "provider router add remove failover queue mirrors ccs semantics" {
 }
 
 ///|
-test "provider router ccs auto failover enable seeds empty queue" {
+test "provider router moonstat auto failover enable seeds empty queue" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -613,7 +613,7 @@ test "provider router ccs auto failover enable seeds empty queue" {
 }
 
 ///|
-test "provider router ccs auto failover command switches to p1" {
+test "provider router moonstat auto failover command switches to p1" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -643,7 +643,7 @@ test "provider router ccs auto failover command switches to p1" {
 }
 
 ///|
-test "provider router ccs auto failover command rolls back auto added official p1" {
+test "provider router moonstat auto failover command rolls back auto added official p1" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -661,7 +661,7 @@ test "provider router ccs auto failover command rolls back auto added official p
 }
 
 ///|
-test "provider router ccs reset switches back to recovered higher priority provider" {
+test "provider router moonstat reset switches back to recovered higher priority provider" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -697,7 +697,7 @@ test "provider router ccs reset switches back to recovered higher priority provi
 }
 
 ///|
-test "provider router ccs reset does not switch without takeover auto failover and priority" {
+test "provider router moonstat reset does not switch without takeover auto failover and priority" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -758,7 +758,7 @@ test "provider router ccs reset does not switch without takeover auto failover a
 }
 
 ///|
-test "provider router exposes ccs provider map and current id" {
+test "provider router exposes moonstat provider map and current id" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -800,7 +800,7 @@ test "provider router exposes ccs provider map and current id" {
 }
 
 ///|
-test "provider router delete provider mirrors ccs current guard" {
+test "provider router delete provider mirrors moonstat current guard" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -834,7 +834,7 @@ test "provider router delete provider mirrors ccs current guard" {
 }
 
 ///|
-test "provider router delete additive current provider follows ccs mode" {
+test "provider router delete additive current provider follows moonstat mode" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -853,7 +853,7 @@ test "provider router delete additive current provider follows ccs mode" {
 }
 
 ///|
-test "provider router current provider command mirrors ccs additive mode" {
+test "provider router current provider command mirrors moonstat additive mode" {
   let router = ProviderRouter::new()
   router.set_current_provider("opencode", "a")
   router.set_current_provider("claude", "b")
@@ -894,7 +894,7 @@ test "provider router remove live config preserves stored additive provider" {
 }
 
 ///|
-test "provider router custom endpoints mirror ccs metadata semantics" {
+test "provider router custom endpoints mirror moonstat metadata semantics" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -942,7 +942,7 @@ test "provider router custom endpoints mirror ccs metadata semantics" {
 }
 
 ///|
-test "provider router mirrors ccs live settings and sort updates" {
+test "provider router mirrors moonstat live settings and sort updates" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -995,7 +995,7 @@ test "provider router mirrors ccs live settings and sort updates" {
 }
 
 ///|
-test "provider router syncs current live providers with ccs sort order" {
+test "provider router syncs current live providers with moonstat sort order" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(

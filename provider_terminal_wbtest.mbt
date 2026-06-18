@@ -1,5 +1,5 @@
 ///|
-test "ccs provider terminal env extracts app-specific fields" {
+test "moonstat provider terminal env extracts app-specific fields" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",
     provider_id="p1",
@@ -20,7 +20,7 @@ test "ccs provider terminal env extracts app-specific fields" {
 }
 
 ///|
-test "ccs provider terminal command quotes cwd and env values" {
+test "moonstat provider terminal command quotes cwd and env values" {
   let env : Map[String, String] = {
     "GOOD_KEY": "value with space",
     "BAD-KEY": "skip",
@@ -38,7 +38,7 @@ test "ccs provider terminal command quotes cwd and env values" {
 }
 
 ///|
-test "ccs import default config accepts clean live provider settings" {
+test "moonstat import default config accepts clean live provider settings" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -62,7 +62,7 @@ test "ccs import default config accepts clean live provider settings" {
 }
 
 ///|
-test "ccs import default config rejects takeover placeholder residue" {
+test "moonstat import default config rejects takeover placeholder residue" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(

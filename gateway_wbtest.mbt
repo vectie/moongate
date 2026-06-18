@@ -1,5 +1,5 @@
 ///|
-test "claude desktop model list matches ccs response shape" {
+test "claude desktop model list matches moonstat response shape" {
   json_inspect(claude_desktop_model_list_json(), content={
     "data": [
       {
@@ -28,7 +28,7 @@ test "claude desktop model list matches ccs response shape" {
 }
 
 ///|
-test "claude desktop model list uses ccs provider route metadata" {
+test "claude desktop model list uses moonstat provider route metadata" {
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "claude-haiku-4-5": ClaudeDesktopModelRoute::new(
       model="haiku-upstream",
@@ -72,7 +72,7 @@ test "codex compact responses keep compact backend endpoint" {
 }
 
 ///|
-test "gemini model extraction trims ccs query and action suffixes" {
+test "gemini model extraction trims moonstat query and action suffixes" {
   assert_eq(
     gemini_model_from_endpoint(
       "/v1beta/models/gemini-pro:generateContent?key=abc",
@@ -94,7 +94,7 @@ test "gemini model extraction trims ccs query and action suffixes" {
 }
 
 ///|
-test "usage request detail route extracts ccs request id" {
+test "usage request detail route extracts moonstat request id" {
   assert_eq(usage_request_detail_id("/usage/request-detail/req_123"), "req_123")
   assert_eq(usage_request_detail_id("req_123"), "req_123")
   assert_eq(
@@ -129,7 +129,7 @@ test "usage query helpers parse moonstat provider limit parameters" {
 }
 
 ///|
-test "usage script request accepts raw ccs script output" {
+test "usage script request accepts raw moonstat script output" {
   let path = "/usage/test-script?providerId=p1&app=codex&scriptCode=%5B%7B%22planName%22%3A%22Team%22%2C%22total%22%3A100%2C%22used%22%3A40%2C%22remaining%22%3A60%2C%22unit%22%3A%22%25%22%7D%5D"
   guard usage_result_from_request(path, None) is Some(result) else {
     fail("expected usage result")
@@ -153,7 +153,7 @@ async test "usage script github copilot template uses standalone native query" {
 }
 
 ///|
-test "github copilot usage conversion mirrors ccs premium row" {
+test "github copilot usage conversion mirrors moonstat premium row" {
   let result = moon_copilot_usage_result_from_json(
     {
       "copilot_plan": Json::string("Individual"),
@@ -193,7 +193,7 @@ test "github copilot usage conversion reports malformed response" {
 }
 
 ///|
-async test "usage script balance template uses standalone ccs native query" {
+async test "usage script balance template uses standalone moonstat native query" {
   let path = "/usage/test-script?providerId=p1&app=codex&templateType=balance&baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey="
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
@@ -212,7 +212,7 @@ async test "usage script balance template uses standalone ccs native query" {
 }
 
 ///|
-async test "usage script token plan template uses standalone ccs native query" {
+async test "usage script token plan template uses standalone moonstat native query" {
   let path = "/usage/test-script?providerId=p1&app=codex&templateType=token_plan&baseUrl=https%3A%2F%2Fapi.kimi.com%2Fcoding&apiKey="
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
@@ -221,7 +221,7 @@ async test "usage script token plan template uses standalone ccs native query" {
 }
 
 ///|
-async test "usage script official subscription template uses standalone ccs native query" {
+async test "usage script official subscription template uses standalone moonstat native query" {
   let path = "/usage/test-script?providerId=p1&app=unknown&templateType=official_subscription"
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
@@ -230,7 +230,7 @@ async test "usage script official subscription template uses standalone ccs nati
 }
 
 ///|
-test "official subscription quota usage conversion mirrors ccs rows" {
+test "official subscription quota usage conversion mirrors moonstat rows" {
   let result = moon_subscription_usage_result_from_quota(
     SubscriptionQuota::new("claude", tiers=[
       moon_quota_tier_json("five_hour", 12.5, resets_at=Some("five-reset")),
@@ -265,7 +265,7 @@ test "official subscription quota usage conversion falls back to credential mess
 }
 
 ///|
-test "token plan quota usage conversion mirrors ccs rows" {
+test "token plan quota usage conversion mirrors moonstat rows" {
   let result = moon_token_plan_usage_result_from_quota(
     SubscriptionQuota::new(
       "coding_plan",
@@ -593,7 +593,7 @@ test "auth and copilot request helpers accept only moonstat canonical keys" {
 }
 
 ///|
-test "ccs save settings merge preserves omitted sync secrets" {
+test "moonstat save settings merge preserves omitted sync secrets" {
   let existing = {
     "webdavSync": {
       "baseUrl": Json::string("https://dav.example.com"),
@@ -636,7 +636,7 @@ test "ccs save settings merge preserves omitted sync secrets" {
 }
 
 ///|
-test "ccs settings config query builders update defaults" {
+test "moonstat settings config query builders update defaults" {
   let default_rectifier = moon_default_rectifier_config_json()
   guard moon_rectifier_config_from_request(
       "/settings/rectifier?requestThinkingSignature=false",
@@ -686,14 +686,14 @@ test "ccs settings config query builders update defaults" {
 }
 
 ///|
-test "ccs claude plugin detection matches managed primary api key" {
+test "moonstat claude plugin detection matches managed primary api key" {
   assert_true(moon_json_primary_api_key_any("{\"primaryApiKey\":\"any\"}"))
   assert_false(moon_json_primary_api_key_any("{\"primaryApiKey\":\"real\"}"))
   assert_false(moon_json_primary_api_key_any("not-json"))
 }
 
 ///|
-test "ccs workspace filename validators mirror OpenClaw whitelist" {
+test "moonstat workspace filename validators mirror OpenClaw whitelist" {
   assert_true(moon_validate_workspace_filename("AGENTS.md"))
   assert_true(moon_validate_workspace_filename("BOOTSTRAP.md"))
   assert_false(moon_validate_workspace_filename("../AGENTS.md"))
@@ -711,7 +711,7 @@ test "ccs workspace filename validators mirror OpenClaw whitelist" {
 }
 
 ///|
-test "ccs daily memory search helpers count and snippet matches" {
+test "moonstat daily memory search helpers count and snippet matches" {
   let (count, first) = moon_count_case_insensitive_matches(
     "Plan today. plan tomorrow. PLAN later.", "plan",
   )
@@ -724,7 +724,7 @@ test "ccs daily memory search helpers count and snippet matches" {
 }
 
 ///|
-test "provider command helpers parse ccs sort and endpoint test payloads" {
+test "provider command helpers parse moonstat sort and endpoint test payloads" {
   let updates = provider_sort_updates_from_request(
     "/providers/sort-order?app=codex&id=custom&sortIndex=2",
     None,
@@ -832,7 +832,7 @@ test "universal provider helper builds moonstat provider shape from query args" 
 }
 
 ///|
-test "provider target parses ccs claude desktop route metadata" {
+test "provider target parses moonstat claude desktop route metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1100,7 +1100,7 @@ test "gateway update provider follows moonstat rename guards" {
 }
 
 ///|
-test "provider target resolves ccs app settings credentials" {
+test "provider target resolves moonstat app settings credentials" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1255,7 +1255,7 @@ test "provider target resolves ccs app settings credentials" {
 }
 
 ///|
-test "provider target infers ccs proxy provider type from settings" {
+test "provider target infers moonstat proxy provider type from settings" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1446,7 +1446,7 @@ test "provider target requires explicit moonstat api format" {
 }
 
 ///|
-test "provider target merges ccs sibling meta with settings config" {
+test "provider target merges moonstat sibling meta with settings config" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1488,7 +1488,7 @@ test "provider target merges ccs sibling meta with settings config" {
 }
 
 ///|
-test "provider target defaults missing ccs codex fast mode to false" {
+test "provider target defaults missing moonstat codex fast mode to false" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1522,7 +1522,7 @@ test "provider target defaults missing ccs codex fast mode to false" {
 }
 
 ///|
-test "provider target keeps ccs custom user agent metadata" {
+test "provider target keeps moonstat custom user agent metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1551,7 +1551,7 @@ test "provider target keeps ccs custom user agent metadata" {
 }
 
 ///|
-test "official provider ignores ccs custom user agent metadata" {
+test "official provider ignores moonstat custom user agent metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1575,7 +1575,7 @@ test "official provider ignores ccs custom user agent metadata" {
 }
 
 ///|
-test "ccs custom user agent parser matches header value validation" {
+test "moonstat custom user agent parser matches header value validation" {
   assert_eq(
     parse_custom_user_agent(Some("  CodexBot/1.0  ")),
     Some("CodexBot/1.0"),
@@ -1788,7 +1788,7 @@ async test "provider usage query falls back to native balance credentials" {
 }
 
 ///|
-async test "ccs open folder helper creates directory and returns boolean success" {
+async test "moonstat open folder helper creates directory and returns boolean success" {
   @fsx.with_temporary_directory("moonstat-open-folder-XXXXXX", async fn(
     tmpdir,
   ) {
@@ -1849,7 +1849,7 @@ test "proxy global config exposes standalone moonstat shape" {
 }
 
 ///|
-test "global proxy url helpers use ccs response shapes" {
+test "global proxy url helpers use moonstat response shapes" {
   assert_true(upstream_proxy_url_is_valid("http://127.0.0.1:7890"))
   assert_true(upstream_proxy_url_is_valid("socks5://127.0.0.1:1080"))
   assert_false(upstream_proxy_url_is_valid("ftp://127.0.0.1:21"))
@@ -1871,7 +1871,7 @@ test "global proxy url helpers use ccs response shapes" {
 }
 
 ///|
-test "ccs local proxy scan catalog mirrors ccs common ports" {
+test "moonstat local proxy scan catalog mirrors moonstat common ports" {
   let ports = moon_local_proxy_ports()
   assert_eq(ports.length(), 8)
   assert_eq(ports[0], (7890, "http", true))
@@ -1885,7 +1885,7 @@ test "ccs local proxy scan catalog mirrors ccs common ports" {
 }
 
 ///|
-test "ccs local proxy scan expands mixed ports into http and socks5 entries" {
+test "moonstat local proxy scan expands mixed ports into http and socks5 entries" {
   json_inspect(
     Json::array(moon_detected_proxy_entries_json(7890, "http", true)),
     content=[
@@ -1902,7 +1902,7 @@ test "ccs local proxy scan expands mixed ports into http and socks5 entries" {
 }
 
 ///|
-test "suite config helpers mirror ccs openclaw hermes shapes" {
+test "suite config helpers mirror moonstat openclaw hermes shapes" {
   json_inspect(openclaw_default_tools_json(), content={
     "allow": [],
     "deny": [],
@@ -2074,7 +2074,7 @@ test "proxy global config state updates standalone config shape" {
 }
 
 ///|
-test "proxy lifecycle state matches ccs command aliases" {
+test "proxy lifecycle state matches moonstat command aliases" {
   let gateway = Gateway::new(port=17016, host="127.0.0.16", model="gpt-5")
   gateway.proxy.proxy_enabled = false
   guard gateway.proxy.server_info_json(gateway.started_at_ms)
@@ -2114,7 +2114,7 @@ test "proxy lifecycle state matches ccs command aliases" {
 }
 
 ///|
-test "ccs auto failover enable requires proxy takeover" {
+test "moonstat auto failover enable requires proxy takeover" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   assert_true(gateway.proxy.can_set_auto_failover_moonstat("codex", true))
   assert_true(gateway.proxy.can_set_auto_failover_moonstat("codex", false))
@@ -2126,7 +2126,7 @@ test "ccs auto failover enable requires proxy takeover" {
 }
 
 ///|
-test "ccs unit commands return null success body" {
+test "moonstat unit commands return null success body" {
   assert_eq(moon_unit_success_json(), Json::null())
 }
 
@@ -2150,7 +2150,7 @@ fn service_handler_uses_unit_success(
 }
 
 ///|
-async test "ccs proxy mutation command handlers return unit success bodies" {
+async test "moonstat proxy mutation command handlers return unit success bodies" {
   let source = @fsx.read_file("gateway_proxy.mbt")
   for
     entry in [
@@ -2878,12 +2878,12 @@ async test "openclaw endpoints are owned by openclaw service" {
 }
 
 ///|
-test "standalone tray update mirrors ccs no tray result" {
+test "standalone tray update mirrors moonstat no tray result" {
   assert_eq(moon_update_tray_menu_result(), Json::boolean(false))
 }
 
 ///|
-test "standalone external open records ccs normalized target" {
+test "standalone external open records moonstat normalized target" {
   let proxy = ProxyService::new("127.0.0.9", 17008)
   assert_eq(proxy.last_external_url, None)
   assert_eq(
@@ -2909,7 +2909,7 @@ test "standalone update check records moonstat release target" {
 }
 
 ///|
-test "proxy app config state updates ccs app fields" {
+test "proxy app config state updates moonstat app fields" {
   let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
   gateway.proxy.proxy_app_enabled.set("codex", false)
   gateway.proxy.provider_router.set_max_retries("codex", 5)
@@ -3005,7 +3005,7 @@ test "stream check config accepts moonstat canonical body and query fields" {
 }
 
 ///|
-test "stream check result uses ccs camelCase shape" {
+test "stream check result uses moonstat camelCase shape" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3031,7 +3031,7 @@ test "stream check result uses ccs camelCase shape" {
 }
 
 ///|
-test "stream check strips ccs codex effort suffix from result model" {
+test "stream check strips moonstat codex effort suffix from result model" {
   let gateway = Gateway::new(port=17018, host="127.0.0.18", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3057,7 +3057,7 @@ test "stream check strips ccs codex effort suffix from result model" {
 }
 
 ///|
-test "stream check provider test config overrides global config like ccs" {
+test "stream check provider test config overrides global config like moonstat" {
   let gateway = Gateway::new(port=17019, host="127.0.0.19", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3114,7 +3114,7 @@ test "stream check provider test config overrides global config like ccs" {
 }
 
 ///|
-test "stream check codex effort parser follows ccs separators" {
+test "stream check codex effort parser follows moonstat separators" {
   assert_eq(
     stream_check_parse_model_with_effort("gpt-5.1-codex@low").0,
     "gpt-5.1-codex",
@@ -3134,7 +3134,7 @@ test "stream check codex effort parser follows ccs separators" {
 }
 
 ///|
-test "stream check all provider ids follow ccs proxy target filter" {
+test "stream check all provider ids follow moonstat proxy target filter" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -3277,7 +3277,7 @@ test "proxy circuit config request parser merges partial app config" {
 }
 
 ///|
-test "proxy pricing config aliases use ccs env-backed defaults" {
+test "proxy pricing config aliases use moonstat env-backed defaults" {
   let cost_key = "MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER"
   let source_key = "MOONSTAT_CODEX_PRICING_MODEL_SOURCE"
   @os.unsetenv(cost_key) catch {
@@ -3315,7 +3315,7 @@ test "proxy pricing config runtime overrides feed provider activation defaults" 
 }
 
 ///|
-test "proxy pricing config makes claude desktop inherit claude defaults like ccs" {
+test "proxy pricing config makes claude desktop inherit claude defaults like moonstat" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   gateway.proxy.proxy_default_cost_multipliers.set("claude", "1.5")
   gateway.proxy.proxy_pricing_model_sources.set("claude", "request")
@@ -3339,7 +3339,7 @@ test "proxy pricing config makes claude desktop inherit claude defaults like ccs
 }
 
 ///|
-test "common config snippet validation mirrors ccs formats" {
+test "common config snippet validation mirrors moonstat formats" {
   assert_eq(
     moon_validate_common_config_snippet("codex", "# comment only\n"),
     None,
@@ -3357,7 +3357,7 @@ test "common config snippet validation mirrors ccs formats" {
 }
 
 ///|
-test "common config extraction strips ccs provider-specific fields" {
+test "common config extraction strips moonstat provider-specific fields" {
   let claude = moon_extract_common_config_snippet_json(
     "claude",
     Json::object({
@@ -3445,7 +3445,7 @@ test "proxy circuit breaker config update accepts moonstat body and query shapes
     "{\"failureThreshold\":5,\"successThreshold\":3,\"timeoutSeconds\":30,\"errorRateThreshold\":0.4,\"minRequests\":12}",
   )
   guard circuit_breaker_config_from_json(direct) is Some(config) else {
-    fail("expected direct ccs circuit config")
+    fail("expected direct moonstat circuit config")
   }
   assert_eq(config.failure_threshold, 5)
   assert_eq(config.success_threshold, 3)
@@ -3457,7 +3457,7 @@ test "proxy circuit breaker config update accepts moonstat body and query shapes
     "{\"config\":{\"failureThreshold\":6,\"successThreshold\":2,\"timeoutSeconds\":0,\"errorRateThreshold\":0.75,\"minRequests\":20}}",
   )
   guard circuit_breaker_config_from_json(wrapped) is Some(wrapped_config) else {
-    fail("expected wrapped ccs circuit config")
+    fail("expected wrapped moonstat circuit config")
   }
   assert_eq(wrapped_config.failure_threshold, 6)
   assert_eq(wrapped_config.timeout_seconds, 0)
@@ -3587,7 +3587,7 @@ test "proxy provider health alias mirrors circuit breaker state" {
 }
 
 ///|
-test "proxy status alias matches ccs proxy status shape" {
+test "proxy status alias matches moonstat proxy status shape" {
   let gateway = Gateway::new(port=17002, host="127.0.0.3", model="gpt-5")
   gateway.usage.stats.record_inbound(16)
   gateway.usage.stats.record_bad_request()
@@ -3620,7 +3620,7 @@ test "proxy status alias matches ccs proxy status shape" {
 }
 
 ///|
-test "proxy status running follows ccs start stop state" {
+test "proxy status running follows moonstat start stop state" {
   let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
   gateway.proxy.proxy_enabled = false
   guard gateway.proxy.status_json(
@@ -3647,7 +3647,7 @@ test "proxy status running follows ccs start stop state" {
 }
 
 ///|
-test "proxy takeover status alias is ccs-compatible standalone false state" {
+test "proxy takeover status alias is moonstat-compatible standalone false state" {
   let gateway = Gateway::new(port=17003, host="127.0.0.4", model="gpt-5")
   guard gateway.proxy.takeover_status_json() is Object(status) else {
     fail("expected takeover status object")
@@ -3689,7 +3689,7 @@ test "codex provider forward failures use moonstat proxy error shape" {
 }
 
 ///|
-test "usage pricing helpers parse and validate ccs pricing query" {
+test "usage pricing helpers parse and validate moonstat pricing query" {
   let path = "/usage/model-pricing?modelId=test-model&displayName=Test%20Model&inputCost=1.25&outputCost=2&cacheReadCost=0.10&cacheCreationCost=0"
   guard usage_pricing_from_request(path, None) is Some(pricing) else {
     fail("expected pricing")
@@ -3717,7 +3717,7 @@ test "usage pricing helpers parse and validate ccs pricing query" {
 }
 
 ///|
-test "usage pricing helpers parse ccs structured body update" {
+test "usage pricing helpers parse moonstat structured body update" {
   let body = {
     "modelId": Json::string("body-model"),
     "displayName": Json::string("Body Model"),
@@ -3761,7 +3761,7 @@ test "usage pricing helpers prefer query over body args" {
 }
 
 ///|
-test "usage pricing validation mirrors ccs required field messages" {
+test "usage pricing validation mirrors moonstat required field messages" {
   let body = {
     "displayName": Json::string("Body Model"),
     "inputCost": Json::string("1"),
@@ -3793,7 +3793,7 @@ test "usage pricing validation mirrors ccs required field messages" {
 }
 
 ///|
-test "usage pricing validation mirrors ccs invalid price messages" {
+test "usage pricing validation mirrors moonstat invalid price messages" {
   let negative = "/usage/model-pricing?modelId=m&displayName=M&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
   assert_eq(
     usage_pricing_validation_error_from_request(negative, None),
@@ -3807,7 +3807,7 @@ test "usage pricing validation mirrors ccs invalid price messages" {
 }
 
 ///|
-test "usage decimal validation mirrors ccs frontend regex" {
+test "usage decimal validation mirrors moonstat frontend regex" {
   assert_true(usage_non_negative_decimal("0"))
   assert_true(usage_non_negative_decimal("1.25"))
   assert_true(usage_non_negative_decimal(" 10 "))
@@ -3871,7 +3871,7 @@ test "usage model id helpers accept body and query precedence" {
 }
 
 ///|
-test "usage pricing store rows use ccs field names" {
+test "usage pricing store rows use moonstat field names" {
   let row = model_pricing_store_json(
     mp("test-model", "Test Model", "1", "2", "0.1", "0"),
     deleted=false,
@@ -3927,7 +3927,7 @@ test "claude desktop gateway bearer token validation" {
 }
 
 ///|
-test "claude desktop model normalization matches ccs aliases" {
+test "claude desktop model normalization matches moonstat aliases" {
   assert_eq(
     normalize_claude_desktop_model_id("claude-opus-4-7"),
     "claude-opus-4-8",
@@ -3952,7 +3952,7 @@ test "claude desktop model normalization matches ccs aliases" {
 }
 
 ///|
-test "claude safe model id rejects ccs unsafe ids" {
+test "claude safe model id rejects moonstat unsafe ids" {
   assert_false(is_claude_safe_model_id("claude-sonnet-4-6 [1m]"))
   assert_false(is_claude_safe_model_id("claude-old"))
   assert_false(is_claude_safe_model_id("claude-3-5-sonnet-20241022"))
@@ -3964,7 +3964,7 @@ test "claude safe model id rejects ccs unsafe ids" {
 }
 
 ///|
-test "ccs session extraction uses claude metadata and headers" {
+test "moonstat session extraction uses claude metadata and headers" {
   let body = @json.parse(
     (
       #|{
@@ -3992,7 +3992,7 @@ test "ccs session extraction uses claude metadata and headers" {
 }
 
 ///|
-test "ccs session context generates log id without upstream session" {
+test "moonstat session context generates log id without upstream session" {
   let body = @json.parse(
     (
       #|{
@@ -4009,7 +4009,7 @@ test "ccs session context generates log id without upstream session" {
 }
 
 ///|
-test "ccs session context keeps client session for upstream" {
+test "moonstat session context keeps client session for upstream" {
   let body = @json.parse(
     (
       #|{
@@ -4026,7 +4026,7 @@ test "ccs session context keeps client session for upstream" {
 }
 
 ///|
-test "ccs client format detects proxy path shapes" {
+test "moonstat client format detects proxy path shapes" {
   assert_true(moon_client_format_from_path("/v1/messages") == Claude)
   assert_true(moon_client_format_from_path("/api/v1/messages") == Claude)
   assert_true(moon_client_format_from_path("/v1/responses") == Codex)
@@ -4050,7 +4050,7 @@ test "ccs client format detects proxy path shapes" {
 }
 
 ///|
-test "ccs client format falls back to body shape" {
+test "moonstat client format falls back to body shape" {
   let claude_body = @json.parse(
     (
       #|{
@@ -4099,7 +4099,7 @@ test "ccs client format falls back to body shape" {
 }
 
 ///|
-test "ccs session extraction prefixes codex client ids" {
+test "moonstat session extraction prefixes codex client ids" {
   let body = @json.parse(
     (
       #|{
@@ -4134,7 +4134,7 @@ test "ccs session extraction prefixes codex client ids" {
 }
 
 ///|
-test "codex oauth headers propagate ccs session headers" {
+test "codex oauth headers propagate moonstat session headers" {
   let creds = @codex.Credentials::{
     idToken: "id",
     accessToken: "access",
@@ -4155,7 +4155,7 @@ test "codex oauth headers propagate ccs session headers" {
 }
 
 ///|
-test "codex oauth headers trim empty ccs session ids" {
+test "codex oauth headers trim empty moonstat session ids" {
   let creds = @codex.Credentials::{
     idToken: "id",
     accessToken: "access",
@@ -4177,7 +4177,7 @@ test "codex oauth headers trim empty ccs session ids" {
 }
 
 ///|
-test "ccs managed account guard rejects copilot proxy placeholder" {
+test "moonstat managed account guard rejects copilot proxy placeholder" {
   let result = moon_reject_proxy_managed_placeholder_for_upstream(
     "https://api.githubcopilot.com/chat/completions",
     { "Authorization": "Bearer PROXY_MANAGED" },
@@ -4190,7 +4190,7 @@ test "ccs managed account guard rejects copilot proxy placeholder" {
 }
 
 ///|
-test "ccs managed account guard rejects codex proxy placeholder" {
+test "moonstat managed account guard rejects codex proxy placeholder" {
   let result = moon_reject_proxy_managed_placeholder_for_upstream(
     "https://chatgpt.com/backend-api/codex/responses",
     { "Authorization": "Bearer PROXY_MANAGED" },
@@ -4203,7 +4203,7 @@ test "ccs managed account guard rejects codex proxy placeholder" {
 }
 
 ///|
-test "ccs managed account guard is scoped to managed upstreams" {
+test "moonstat managed account guard is scoped to managed upstreams" {
   let result = moon_reject_proxy_managed_placeholder_for_upstream(
     "https://api.example.com/v1/messages",
     { "Authorization": "Bearer PROXY_MANAGED" },
@@ -4212,7 +4212,7 @@ test "ccs managed account guard is scoped to managed upstreams" {
 }
 
 ///|
-test "codex to anthropic response emits ccs cache usage buckets" {
+test "codex to anthropic response emits moonstat cache usage buckets" {
   let body = @json.parse(
     (
       #|{
@@ -4274,7 +4274,7 @@ test "moonstat default provider router selects suite app targets" {
 }
 
 ///|
-test "claude provider env carries ccs settings config" {
+test "claude provider env carries moonstat settings config" {
   let keys = [
     "MOONSTAT_CLAUDE_BASE_URL", "MOONSTAT_CLAUDE_API_KEY", "MOONSTAT_CLAUDE_SETTINGS_CONFIG",
   ]
@@ -4313,7 +4313,7 @@ test "claude provider env carries ccs settings config" {
 }
 
 ///|
-test "ccs default cost multiplier env falls back per app" {
+test "moonstat default cost multiplier env falls back per app" {
   let keys = [
     "MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER", "MOONSTAT_DEFAULT_COST_MULTIPLIER",
   ]
@@ -4344,7 +4344,7 @@ test "ccs default cost multiplier env falls back per app" {
 }
 
 ///|
-test "ccs provider cost multiplier overrides default env" {
+test "moonstat provider cost multiplier overrides default env" {
   let key = "MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER"
   @os.unsetenv(key) catch {
     _ => ()
@@ -4377,7 +4377,7 @@ test "ccs provider cost multiplier overrides default env" {
 }
 
 ///|
-test "invalid ccs provider cost multiplier falls back to default env" {
+test "invalid moonstat provider cost multiplier falls back to default env" {
   let key = "MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER"
   @os.unsetenv(key) catch {
     _ => ()
@@ -4410,7 +4410,7 @@ test "invalid ccs provider cost multiplier falls back to default env" {
 }
 
 ///|
-test "ccs default pricing model source env falls back per app" {
+test "moonstat default pricing model source env falls back per app" {
   let keys = [
     "MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE", "MOONSTAT_PRICING_MODEL_SOURCE",
   ]
@@ -4441,7 +4441,7 @@ test "ccs default pricing model source env falls back per app" {
 }
 
 ///|
-test "ccs provider pricing model source overrides default env" {
+test "moonstat provider pricing model source overrides default env" {
   let key = "MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE"
   @os.unsetenv(key) catch {
     _ => ()
@@ -4474,7 +4474,7 @@ test "ccs provider pricing model source overrides default env" {
 }
 
 ///|
-test "invalid ccs provider pricing model source falls back to default env" {
+test "invalid moonstat provider pricing model source falls back to default env" {
   let key = "MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE"
   @os.unsetenv(key) catch {
     _ => ()
@@ -4867,7 +4867,7 @@ test "claude desktop mimo normalization is scoped to anthropic mimo providers" {
 }
 
 ///|
-test "claude desktop status reports ccs profile and proxy route health" {
+test "claude desktop status reports moonstat profile and proxy route health" {
   let gateway = Gateway::new(port=17111, host="127.0.0.11")
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -4953,7 +4953,7 @@ test "claude desktop status reports direct provider base url" {
 }
 
 ///|
-async test "gateway applies ccs provider cost multiplier to request log" {
+async test "gateway applies moonstat provider cost multiplier to request log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.pricing_overrides.set("test-model", {
     model_id: "test-model",
@@ -5007,7 +5007,7 @@ async test "gateway applies ccs provider cost multiplier to request log" {
 }
 
 ///|
-async test "gateway ignores invalid ccs provider cost multiplier" {
+async test "gateway ignores invalid moonstat provider cost multiplier" {
   let gateway = Gateway::new(port=0)
   gateway.usage.pricing_overrides.set("test-model", {
     model_id: "test-model",
@@ -5057,7 +5057,7 @@ async test "gateway ignores invalid ccs provider cost multiplier" {
 }
 
 ///|
-async test "gateway applies ccs request pricing model source" {
+async test "gateway applies moonstat request pricing model source" {
   let gateway = Gateway::new(port=0)
   gateway.usage.pricing_overrides.set("request-model", {
     model_id: "request-model",
@@ -5117,7 +5117,7 @@ async test "gateway applies ccs request pricing model source" {
 }
 
 ///|
-async test "gateway records billable ccs stream usage once" {
+async test "gateway records billable moonstat stream usage once" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
   let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
@@ -5157,7 +5157,7 @@ async test "gateway records billable ccs stream usage once" {
 }
 
 ///|
-async test "gateway records all zero ccs stream usage request log" {
+async test "gateway records all zero moonstat stream usage request log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
   let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
@@ -5185,7 +5185,7 @@ async test "gateway records all zero ccs stream usage request log" {
 }
 
 ///|
-async test "gateway skips all zero ccs transformed stream usage log" {
+async test "gateway skips all zero moonstat transformed stream usage log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
   let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
@@ -5208,7 +5208,7 @@ async test "gateway skips all zero ccs transformed stream usage log" {
 }
 
 ///|
-async test "gateway records all zero ccs nonstream usage request log" {
+async test "gateway records all zero moonstat nonstream usage request log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.record_inbound(10)
   let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
@@ -5530,7 +5530,7 @@ test "gateway retryable upstream status activates next failover provider" {
 }
 
 ///|
-test "gateway retryable upstream status respects ccs max retries cap before permits" {
+test "gateway retryable upstream status respects moonstat max retries cap before permits" {
   let gateway = Gateway::new(port=0)
   gateway.proxy.provider_router.update_all_configs({
     failure_threshold: 1,
@@ -5773,7 +5773,7 @@ test "gateway activation bypasses circuit breaker for single provider" {
 }
 
 ///|
-test "codex compatible provider url follows ccs base url rules" {
+test "codex compatible provider url follows moonstat base url rules" {
   assert_true(
     codex_compatible_provider_url("https://api.openai.com", "/responses") ==
     "https://api.openai.com/v1/responses",
@@ -5799,7 +5799,7 @@ test "codex compatible provider url follows ccs base url rules" {
 }
 
 ///|
-test "claude compatible provider api format follows ccs endpoints" {
+test "claude compatible provider api format follows moonstat endpoints" {
   let chat_provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="openai-chat",
@@ -5845,7 +5845,7 @@ test "claude compatible provider api format follows ccs endpoints" {
 }
 
 ///|
-test "github copilot provider api format follows ccs model vendor" {
+test "github copilot provider api format follows moonstat model vendor" {
   let openai_copilot = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="copilot-openai",
@@ -5913,7 +5913,7 @@ test "github copilot provider api format follows ccs model vendor" {
 }
 
 ///|
-test "claude compatible provider endpoints preserve ccs query semantics" {
+test "claude compatible provider endpoints preserve moonstat query semantics" {
   assert_eq(
     claude_transform_endpoint(
       "openai_chat",
@@ -5973,7 +5973,7 @@ test "claude compatible provider endpoints preserve ccs query semantics" {
 }
 
 ///|
-test "ccs streaming request detection mirrors proxy forwarder" {
+test "moonstat streaming request detection mirrors proxy forwarder" {
   assert_true(
     moon_streaming_request("/v1/responses", @json.parse("{\"stream\":true}"), {}),
   )
@@ -6088,7 +6088,7 @@ test "claude stream upstream request forces stream true" {
 }
 
 ///|
-test "ccs responses sse parser handles missing trailing blank line" {
+test "moonstat responses sse parser handles missing trailing blank line" {
   let sse =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_tail","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
@@ -6109,7 +6109,7 @@ test "ccs responses sse parser handles missing trailing blank line" {
 }
 
 ///|
-test "ccs responses sse parser strips bom before parsing" {
+test "moonstat responses sse parser strips bom before parsing" {
   let sse = "\u{feff}event: response.completed\n" +
     "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_bom\",\"status\":\"completed\",\"model\":\"gpt-5.4\",\"output\":[],\"usage\":{\"input_tokens\":3,\"output_tokens\":1}}}"
   guard parse_claude_compatible_non_stream_body_with_diagnostics(
@@ -6125,7 +6125,7 @@ test "ccs responses sse parser strips bom before parsing" {
 }
 
 ///|
-test "ccs responses stream parser accepts data field without space" {
+test "moonstat responses stream parser accepts data field without space" {
   let block = "event:response.output_text.delta\n" +
     "data:{\"type\":\"response.output_text.delta\",\"delta\":\"hi\"}\n\n"
   let (done, parsed, event) = codex_stream_event_from_sse_block(
@@ -6144,7 +6144,7 @@ test "ccs responses stream parser accepts data field without space" {
 }
 
 ///|
-test "ccs responses stream parser skips non emitting lifecycle blocks" {
+test "moonstat responses stream parser skips non emitting lifecycle blocks" {
   let block =
     #|event: response.in_progress
     #|data: {"type":"response.in_progress"}
@@ -6158,7 +6158,7 @@ test "ccs responses stream parser skips non emitting lifecycle blocks" {
 }
 
 ///|
-test "ccs responses stream parser converts response created to message start" {
+test "moonstat responses stream parser converts response created to message start" {
   let block =
     #|event: response.created
     #|data: {"type":"response.created","response":{"id":"resp_start","status":"in_progress","model":"gpt-5.4","usage":{"input_tokens":12,"output_tokens":0,"input_tokens_details":{"cached_tokens":4}}}}
@@ -6184,7 +6184,7 @@ test "ccs responses stream parser converts response created to message start" {
 }
 
 ///|
-test "ccs responses stream parser preserves completed usage" {
+test "moonstat responses stream parser preserves completed usage" {
   let block =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_done","status":"completed","model":"gpt-5.4","output":[],"usage":{"prompt_tokens":11,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":3}}}}
@@ -6210,7 +6210,7 @@ test "ccs responses stream parser preserves completed usage" {
 }
 
 ///|
-test "ccs responses stream parser maps incomplete max output to max tokens" {
+test "moonstat responses stream parser maps incomplete max output to max tokens" {
   let block =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_max","status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},"model":"gpt-5.4","output":[],"usage":{"input_tokens":6,"output_tokens":2}}}
@@ -6230,7 +6230,7 @@ test "ccs responses stream parser maps incomplete max output to max tokens" {
 }
 
 ///|
-test "ccs responses stream parser maps completed function output to tool use" {
+test "moonstat responses stream parser maps completed function output to tool use" {
   let block =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_tool","status":"completed","model":"gpt-5.4","output":[{"type":"function_call","call_id":"call_1","name":"lookup","arguments":"{}"}],"usage":{"input_tokens":6,"output_tokens":2}}}
@@ -6250,7 +6250,7 @@ test "ccs responses stream parser maps completed function output to tool use" {
 }
 
 ///|
-test "ccs responses stream state starts text block before text delta" {
+test "moonstat responses stream state starts text block before text delta" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let block =
     #|event: response.output_text.delta
@@ -6281,7 +6281,7 @@ test "ccs responses stream state starts text block before text delta" {
 }
 
 ///|
-test "ccs responses stream state closes dangling text on completed" {
+test "moonstat responses stream state closes dangling text on completed" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let text_block =
     #|event: response.output_text.delta
@@ -6311,7 +6311,7 @@ test "ccs responses stream state closes dangling text on completed" {
 }
 
 ///|
-test "ccs responses stream state merges keyed text parts" {
+test "moonstat responses stream state merges keyed text parts" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let first_added =
     #|event: response.content_part.added
@@ -6372,7 +6372,7 @@ test "ccs responses stream state merges keyed text parts" {
 }
 
 ///|
-test "ccs responses stream state closes keyed text without current index" {
+test "moonstat responses stream state closes keyed text without current index" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added =
     #|event: response.content_part.added
@@ -6396,7 +6396,7 @@ test "ccs responses stream state closes keyed text without current index" {
 }
 
 ///|
-test "ccs responses stream state emits reasoning thinking blocks" {
+test "moonstat responses stream state emits reasoning thinking blocks" {
   let state = ResponsesStreamState::new("o3")
   let reasoning_block =
     #|event: response.reasoning.delta
@@ -6446,7 +6446,7 @@ test "ccs responses stream state emits reasoning thinking blocks" {
 }
 
 ///|
-test "ccs responses stream state closes reasoning before text on completed" {
+test "moonstat responses stream state closes reasoning before text on completed" {
   let state = ResponsesStreamState::new("o3")
   let reasoning_block =
     #|event: response.reasoning.delta
@@ -6474,7 +6474,7 @@ test "ccs responses stream state closes reasoning before text on completed" {
 }
 
 ///|
-test "ccs responses stream state emits function call argument deltas" {
+test "moonstat responses stream state emits function call argument deltas" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added_block =
     #|event: response.output_item.added
@@ -6544,7 +6544,7 @@ test "ccs responses stream state emits function call argument deltas" {
 }
 
 ///|
-test "ccs responses stream state sanitizes read tool empty pages" {
+test "moonstat responses stream state sanitizes read tool empty pages" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added_block =
     #|event: response.output_item.added
@@ -6593,7 +6593,7 @@ test "ccs responses stream state sanitizes read tool empty pages" {
 }
 
 ///|
-test "ccs responses stream state read duplicate start preserves buffered args" {
+test "moonstat responses stream state read duplicate start preserves buffered args" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added_block =
     #|event: response.output_item.added
@@ -6639,7 +6639,7 @@ test "ccs responses stream state read duplicate start preserves buffered args" {
 }
 
 ///|
-test "ccs responses sse parser ignores truncated trailing block" {
+test "moonstat responses sse parser ignores truncated trailing block" {
   let sse =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_ok","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
@@ -6659,7 +6659,7 @@ test "ccs responses sse parser ignores truncated trailing block" {
 }
 
 ///|
-test "ccs responses sse parser collects output items" {
+test "moonstat responses sse parser collects output items" {
   let sse =
     #|event: response.output_item.done
     #|data: {"type":"response.output_item.done","item":{"type":"function_call","call_id":"call_1","name":"lookup","arguments":"{\"q\":\"moon\"}"}}
@@ -6684,14 +6684,14 @@ test "ccs responses sse parser collects output items" {
 }
 
 ///|
-test "ccs sse body sniffing accepts bom and indented fields" {
+test "moonstat sse body sniffing accepts bom and indented fields" {
   assert_true(body_looks_like_sse("\u{feff}\n  data: {}\n\n"))
   assert_true(body_looks_like_sse(": PROCESSING\n\ndata: {}\n\n"))
   assert_false(body_looks_like_sse("<html><body>blocked</body></html>"))
 }
 
 ///|
-test "ccs upstream parse diagnostics include headers and body snippet" {
+test "moonstat upstream parse diagnostics include headers and body snippet" {
   let headers = { "content-type": "text/html", "content-encoding": "gzip" }
   let suffix = body_diagnostics_suffix(headers, "<html>\r\nblocked\u{0}</html>")
   assert_true(suffix.contains("content-type: text/html"))
@@ -6700,7 +6700,7 @@ test "ccs upstream parse diagnostics include headers and body snippet" {
 }
 
 ///|
-test "ccs upstream parse diagnostics mark missing headers" {
+test "moonstat upstream parse diagnostics mark missing headers" {
   let result = parse_claude_compatible_non_stream_body_with_diagnostics(
     "anthropic",
     "data: oops",
@@ -6714,13 +6714,13 @@ test "ccs upstream parse diagnostics mark missing headers" {
 }
 
 ///|
-test "ccs upstream parse diagnostics truncate long body snippets" {
+test "moonstat upstream parse diagnostics truncate long body snippets" {
   let body = "abcdefghijklmnopqrstuvwxyz"
   assert_eq(body_snippet(body, 5), "abcde\u{2026}")
 }
 
 ///|
-test "ccs response header stripping removes hop by hop and connection listed headers" {
+test "moonstat response header stripping removes hop by hop and connection listed headers" {
   let headers = {
     "Content-Type": "application/json",
     "Connection": "Keep-Alive, X-Trace-Id, x-remove-too",
@@ -6745,7 +6745,7 @@ test "ccs response header stripping removes hop by hop and connection listed hea
 }
 
 ///|
-test "ccs rebuilt response header stripping removes stale entity headers" {
+test "moonstat rebuilt response header stripping removes stale entity headers" {
   let headers = {
     "Content-Type": "application/json",
     "Content-Encoding": "gzip",
@@ -6762,7 +6762,7 @@ test "ccs rebuilt response header stripping removes stale entity headers" {
 }
 
 ///|
-test "ccs chat sse parser aggregates text and usage" {
+test "moonstat chat sse parser aggregates text and usage" {
   let sse =
     #|data: {"id":"chatcmpl_1","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"Hel"},"finish_reason":null}]}
     #|
@@ -6790,7 +6790,7 @@ test "ccs chat sse parser aggregates text and usage" {
 }
 
 ///|
-test "codex response conversion ignores invalid direct cache tokens like ccs" {
+test "codex response conversion ignores invalid direct cache tokens like moonstat" {
   let body = @json.parse(
     (
       #|{
@@ -6820,7 +6820,7 @@ test "codex response conversion ignores invalid direct cache tokens like ccs" {
 }
 
 ///|
-test "ccs chat sse parser merges tool call argument fragments" {
+test "moonstat chat sse parser merges tool call argument fragments" {
   let sse =
     #|data: {"id":"chatcmpl_tool","model":"gpt-4o","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{\"q\""}}]},"finish_reason":null}]}
     #|
@@ -6854,7 +6854,7 @@ test "ccs chat sse parser merges tool call argument fragments" {
 }
 
 ///|
-test "ccs chat sse parser preserves object form tool arguments" {
+test "moonstat chat sse parser preserves object form tool arguments" {
   let sse =
     #|data: {"id":"chatcmpl_obj_args","model":"gpt-4o","choices":[{"index":0,"message":{"role":"assistant","tool_calls":[{"id":"call_1","type":"function","function":{"name":"lookup","arguments":{"q":"moon","limit":2}}}]},"finish_reason":"tool_calls"}]}
     #|
@@ -6920,7 +6920,7 @@ test "moonstat chat sse parser maps function call snapshots" {
 }
 
 ///|
-test "ccs chat sse parser ignores truncated trailing block after done" {
+test "moonstat chat sse parser ignores truncated trailing block after done" {
   let sse =
     #|data: {"id":"chatcmpl_ok","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}
     #|
@@ -6942,7 +6942,7 @@ test "ccs chat sse parser ignores truncated trailing block after done" {
 }
 
 ///|
-test "ccs chat sse parser rejects stream without choices" {
+test "moonstat chat sse parser rejects stream without choices" {
   let sse =
     #|: keepalive
     #|
@@ -6959,7 +6959,7 @@ test "ccs chat sse parser rejects stream without choices" {
 }
 
 ///|
-test "ccs chat sse parser rejects event error" {
+test "moonstat chat sse parser rejects event error" {
   let sse =
     #|data: {"id":"chatcmpl_ok","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}
     #|
@@ -6977,7 +6977,7 @@ test "ccs chat sse parser rejects event error" {
 }
 
 ///|
-test "ccs chat sse parser rejects close-truncated stream" {
+test "moonstat chat sse parser rejects close-truncated stream" {
   let sse =
     #|data: {"id":"chatcmpl_partial","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"par"},"finish_reason":null}]}
     #|
@@ -6992,7 +6992,7 @@ test "ccs chat sse parser rejects close-truncated stream" {
 }
 
 ///|
-test "ccs chat sse parser accepts done without finish reason" {
+test "moonstat chat sse parser accepts done without finish reason" {
   let sse =
     #|data: {"id":"chatcmpl_done","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}
     #|
@@ -7015,7 +7015,7 @@ test "ccs chat sse parser accepts done without finish reason" {
 }
 
 ///|
-test "ccs upstream body filter removes private fields" {
+test "moonstat upstream body filter removes private fields" {
   let body = @json.parse(
     (
       #|{
@@ -7061,7 +7061,7 @@ test "ccs upstream body filter removes private fields" {
 }
 
 ///|
-test "ccs json canonical string sorts nested object keys" {
+test "moonstat json canonical string sorts nested object keys" {
   let left = @json.parse(
     (
       #|{
@@ -7092,7 +7092,7 @@ test "ccs json canonical string sorts nested object keys" {
 }
 
 ///|
-test "ccs upstream body filter supports private whitelist" {
+test "moonstat upstream body filter supports private whitelist" {
   let body = @json.parse(
     (
       #|{
@@ -7116,7 +7116,7 @@ test "ccs upstream body filter supports private whitelist" {
 }
 
 ///|
-test "ccs upstream body preparation canonicalizes object order" {
+test "moonstat upstream body preparation canonicalizes object order" {
   let body = @json.parse(
     (
       #|{
@@ -7144,7 +7144,7 @@ test "ccs upstream body preparation canonicalizes object order" {
 }
 
 ///|
-test "ccs upstream body filter preserves all schema name maps" {
+test "moonstat upstream body filter preserves all schema name maps" {
   let body = @json.parse(
     (
       #|{
@@ -7190,7 +7190,7 @@ test "ccs upstream body filter preserves all schema name maps" {
 }
 
 ///|
-test "ccs thinking signature rectifier detects ccs error phrases" {
+test "moonstat thinking signature rectifier detects moonstat error phrases" {
   let config = default_rectifier_config()
   assert_true(config.request_media_fallback)
   assert_true(config.request_media_heuristic)
@@ -7243,7 +7243,7 @@ test "ccs thinking signature rectifier detects ccs error phrases" {
 }
 
 ///|
-test "ccs thinking signature rectifier removes legacy blocks and signatures" {
+test "moonstat thinking signature rectifier removes legacy blocks and signatures" {
   let body = @json.parse(
     (
       #|{
@@ -7279,7 +7279,7 @@ test "ccs thinking signature rectifier removes legacy blocks and signatures" {
 }
 
 ///|
-test "ccs thinking signature rectifier removes top level thinking for tool chain" {
+test "moonstat thinking signature rectifier removes top level thinking for tool chain" {
   let body = @json.parse(
     (
       #|{
@@ -7304,7 +7304,7 @@ test "ccs thinking signature rectifier removes top level thinking for tool chain
 }
 
 ///|
-test "ccs thinking budget rectifier detects and normalizes budget errors" {
+test "moonstat thinking budget rectifier detects and normalizes budget errors" {
   let config = default_rectifier_config()
   assert_true(
     should_rectify_thinking_budget(
@@ -7349,7 +7349,7 @@ test "ccs thinking budget rectifier detects and normalizes budget errors" {
 }
 
 ///|
-test "ccs thinking budget rectifier skips adaptive requests" {
+test "moonstat thinking budget rectifier skips adaptive requests" {
   let body = @json.parse(
     (
       #|{
@@ -7371,7 +7371,7 @@ test "ccs thinking budget rectifier skips adaptive requests" {
 }
 
 ///|
-test "ccs rectifier retry body selects signature before budget" {
+test "moonstat rectifier retry body selects signature before budget" {
   let body = @json.parse(
     (
       #|{
@@ -7399,7 +7399,7 @@ test "ccs rectifier retry body selects signature before budget" {
 }
 
 ///|
-test "ccs thinking optimizer uses adaptive mode for newer opus and sonnet" {
+test "moonstat thinking optimizer uses adaptive mode for newer opus and sonnet" {
   let body = @json.parse(
     (
       #|{
@@ -7426,7 +7426,7 @@ test "ccs thinking optimizer uses adaptive mode for newer opus and sonnet" {
 }
 
 ///|
-test "ccs thinking optimizer injects legacy budget and beta" {
+test "moonstat thinking optimizer injects legacy budget and beta" {
   let body = @json.parse(
     (
       #|{
@@ -7449,7 +7449,7 @@ test "ccs thinking optimizer injects legacy budget and beta" {
 }
 
 ///|
-test "ccs thinking optimizer upgrades small enabled legacy budget" {
+test "moonstat thinking optimizer upgrades small enabled legacy budget" {
   let body = @json.parse(
     (
       #|{
@@ -7472,7 +7472,7 @@ test "ccs thinking optimizer upgrades small enabled legacy budget" {
 }
 
 ///|
-test "ccs thinking optimizer skips haiku models" {
+test "moonstat thinking optimizer skips haiku models" {
   let body = @json.parse(
     (
       #|{
@@ -7486,7 +7486,7 @@ test "ccs thinking optimizer skips haiku models" {
 }
 
 ///|
-test "ccs thinking optimizer can be disabled for bedrock provider" {
+test "moonstat thinking optimizer can be disabled for bedrock provider" {
   let keys = [
     "MOONSTAT_OPTIMIZER_ENABLED", "MOONSTAT_THINKING_OPTIMIZER", "MOONSTAT_CACHE_INJECTION",
   ]
@@ -7533,7 +7533,7 @@ test "ccs thinking optimizer can be disabled for bedrock provider" {
 }
 
 ///|
-test "ccs cache injector adds cache breakpoints at provider send sites" {
+test "moonstat cache injector adds cache breakpoints at provider send sites" {
   let body = @json.parse(
     (
       #|{
@@ -7583,7 +7583,7 @@ test "ccs cache injector adds cache breakpoints at provider send sites" {
 }
 
 ///|
-test "ccs cache injector only upgrades ttl after four existing breakpoints" {
+test "moonstat cache injector only upgrades ttl after four existing breakpoints" {
   let body = @json.parse(
     (
       #|{
@@ -7623,7 +7623,7 @@ test "ccs cache injector only upgrades ttl after four existing breakpoints" {
 }
 
 ///|
-test "ccs optimizer runs only for enabled bedrock providers" {
+test "moonstat optimizer runs only for enabled bedrock providers" {
   let keys = ["MOONSTAT_OPTIMIZER_ENABLED", "MOONSTAT_CACHE_TTL"]
   for key in keys {
     @os.unsetenv(key) catch {
@@ -7679,7 +7679,7 @@ test "ccs optimizer runs only for enabled bedrock providers" {
 }
 
 ///|
-test "ccs media sanitizer replaces images for known text-only models" {
+test "moonstat media sanitizer replaces images for known text-only models" {
   let body = @json.parse(
     (
       #|{
@@ -7727,7 +7727,7 @@ test "ccs media sanitizer replaces images for known text-only models" {
 }
 
 ///|
-test "ccs media sanitizer preserves images for unknown models" {
+test "moonstat media sanitizer preserves images for unknown models" {
   let body = @json.parse(
     (
       #|{
@@ -7757,7 +7757,7 @@ test "ccs media sanitizer preserves images for unknown models" {
 }
 
 ///|
-test "ccs media sanitizer can disable curated text-only heuristic" {
+test "moonstat media sanitizer can disable curated text-only heuristic" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="heuristic-off",
@@ -7851,7 +7851,7 @@ test "moonstat media sanitizer honors global heuristic toggle" {
 }
 
 ///|
-test "ccs media sanitizer honors explicit provider text-only capability" {
+test "moonstat media sanitizer honors explicit provider text-only capability" {
   let settings = @json.parse(
     (
       #|{
@@ -7901,7 +7901,7 @@ test "ccs media sanitizer honors explicit provider text-only capability" {
 }
 
 ///|
-test "ccs media sanitizer honors explicit provider image capability" {
+test "moonstat media sanitizer honors explicit provider image capability" {
   let settings = @json.parse(
     (
       #|{
@@ -7955,7 +7955,7 @@ test "ccs media sanitizer honors explicit provider image capability" {
 }
 
 ///|
-test "ccs media sanitizer replaces nested and responses image blocks" {
+test "moonstat media sanitizer replaces nested and responses image blocks" {
   let nested_body = @json.parse(
     (
       #|{
@@ -8033,7 +8033,7 @@ test "ccs media sanitizer replaces nested and responses image blocks" {
 }
 
 ///|
-test "ccs media retry detects unsupported image upstream errors" {
+test "moonstat media retry detects unsupported image upstream errors" {
   let body = @json.parse(
     (
       #|{
@@ -8118,7 +8118,7 @@ test "ccs media retry detects unsupported image upstream errors" {
 }
 
 ///|
-test "ccs media retry ignores non media errors and bodies without images" {
+test "moonstat media retry ignores non media errors and bodies without images" {
   let image_body = @json.parse(
     (
       #|{
@@ -8172,7 +8172,7 @@ test "ccs media retry ignores non media errors and bodies without images" {
 }
 
 ///|
-test "ccs media retry replacement is unconditional" {
+test "moonstat media retry replacement is unconditional" {
   let body = @json.parse(
     (
       #|{
@@ -8207,7 +8207,7 @@ test "ccs media retry replacement is unconditional" {
 }
 
 ///|
-test "ccs media retry handles streaming upstream bodies" {
+test "moonstat media retry handles streaming upstream bodies" {
   let body = @json.parse(
     (
       #|{
@@ -8549,7 +8549,7 @@ test "openai chat stream message delta includes zero usage without usage chunk" 
 }
 
 ///|
-test "openai chat stream subtracts cache creation from prompt usage like ccs" {
+test "openai chat stream subtracts cache creation from prompt usage like moonstat" {
   let state = OpenAIChatAnthropicStreamState::new()
   let chunk = @json.parse(
     (
@@ -8653,7 +8653,7 @@ test "openai chat stream clamps fresh input when cache exceeds prompt" {
 }
 
 ///|
-test "openai chat stream ignores invalid direct cache tokens like ccs" {
+test "openai chat stream ignores invalid direct cache tokens like moonstat" {
   let state = OpenAIChatAnthropicStreamState::new()
   let chunk = @json.parse(
     (
@@ -9114,7 +9114,7 @@ test "gemini native claude compatible provider uses gemini url and headers" {
 }
 
 ///|
-test "claude compatible provider headers honor ccs inferred provider type auth" {
+test "claude compatible provider headers honor moonstat inferred provider type auth" {
   let openrouter = claude_compatible_provider_headers(
     "sk-or",
     "anthropic",
@@ -9155,7 +9155,7 @@ test "claude compatible provider headers honor ccs inferred provider type auth" 
 }
 
 ///|
-test "claude compatible provider headers include ccs copilot fingerprint and overrides" {
+test "claude compatible provider headers include moonstat copilot fingerprint and overrides" {
   let headers = claude_compatible_provider_headers(
     "copilot-token",
     "openai_responses",
@@ -9184,7 +9184,7 @@ test "claude compatible provider headers include ccs copilot fingerprint and ove
 }
 
 ///|
-test "anthropic claude compatible provider sends ccs claude code beta headers" {
+test "anthropic claude compatible provider sends moonstat claude code beta headers" {
   let headers = claude_compatible_provider_headers("anthropic-key", "anthropic")
   assert_eq(headers["x-api-key"], "anthropic-key")
   assert_eq(headers["anthropic-version"], "2023-06-01")
@@ -9263,7 +9263,7 @@ test "gemini native response converts to anthropic message with usage" {
 }
 
 ///|
-test "ccs config helpers normalize suite app paths" {
+test "moonstat config helpers normalize suite app paths" {
   assert_eq(moon_normalize_app_type("claude_desktop"), "claude-desktop")
   assert_eq(moon_normalize_app_type("open-code"), "opencode")
   assert_eq(moon_normalize_app_type("omo_slim"), "omo-slim")
@@ -9280,7 +9280,7 @@ test "ccs config helpers normalize suite app paths" {
 }
 
 ///|
-async test "ccs config status keeps ccs object shape" {
+async test "moonstat config status keeps moonstat object shape" {
   guard moon_config_status_json("hermes") is Object(status) else {
     fail("expected status object")
   }
@@ -9292,7 +9292,7 @@ async test "ccs config status keeps ccs object shape" {
 }
 
 ///|
-test "ccs env helpers preserve conflicts and known keys" {
+test "moonstat env helpers preserve conflicts and known keys" {
   assert_eq(moon_env_conflict_keys("codex")[0], "OPENAI_API_KEY")
   assert_eq(moon_env_conflict_keys("hermes")[1], "HERMES_WEB_PORT")
   assert_eq(moon_env_conflict_keys("unknown")[0], "ANTHROPIC_API_KEY")
@@ -9323,7 +9323,7 @@ test "ccs env helpers preserve conflicts and known keys" {
 }
 
 ///|
-async test "ccs env helpers scan delete and restore file conflicts" {
+async test "moonstat env helpers scan delete and restore file conflicts" {
   @fsx.with_temporary_directory("moonstat-env-XXXXXX", async fn(tmpdir) {
     let shell_path = @pathx.join(tmpdir, ".zshrc")
     @fsx.write_to_file(
@@ -9371,7 +9371,7 @@ async test "ccs env helpers scan delete and restore file conflicts" {
 }
 
 ///|
-test "ccs mcp helpers preserve server apps and config shape" {
+test "moonstat mcp helpers preserve server apps and config shape" {
   let spec = {
     "name": Json::string("Filesystem"),
     "command": Json::string("npx"),
@@ -9424,7 +9424,7 @@ test "moonstat mcp request parser accepts canonical server JSON" {
 }
 
 ///|
-test "ccs mcp import helpers merge app configs" {
+test "moonstat mcp import helpers merge app configs" {
   let servers : Map[String, Json] = {}
   let claude_root = {
     "mcpServers": {
@@ -9449,7 +9449,7 @@ test "ccs mcp import helpers merge app configs" {
 }
 
 ///|
-test "ccs mcp import normalizes gemini httpUrl specs" {
+test "moonstat mcp import normalizes gemini httpUrl specs" {
   let servers : Map[String, Json] = {}
   let gemini_root = {
     "mcpServers": {
@@ -9469,7 +9469,7 @@ test "ccs mcp import normalizes gemini httpUrl specs" {
 }
 
 ///|
-test "ccs mcp import parses codex official toml servers" {
+test "moonstat mcp import parses codex official toml servers" {
   let servers : Map[String, Json] = {}
   let content =
     #|[mcp_servers.filesystem]
@@ -9500,7 +9500,7 @@ test "ccs mcp import parses codex official toml servers" {
 }
 
 ///|
-test "ccs mcp import parses codex legacy toml servers" {
+test "moonstat mcp import parses codex legacy toml servers" {
   let servers : Map[String, Json] = {}
   let content =
     #|[mcp.servers.web]
@@ -9573,7 +9573,7 @@ test "moonstat prompt helpers keep app-scoped prompt records" {
 }
 
 ///|
-async test "ccs prompt file helpers import and read prompt files" {
+async test "moonstat prompt file helpers import and read prompt files" {
   assert_eq(
     moon_prompt_file_path("codex"),
     Ok(@pathx.join(moon_config_dir("codex"), "AGENTS.md")),
@@ -9636,7 +9636,7 @@ async test "ccs prompt file helpers import and read prompt files" {
 }
 
 ///|
-async test "ccs prompt enable writes prompt file and disables app siblings" {
+async test "moonstat prompt enable writes prompt file and disables app siblings" {
   @fsx.with_temporary_directory("moonstat-prompt-enable-XXXXXX", async fn(
     tmpdir,
   ) {
@@ -9691,7 +9691,7 @@ async test "ccs prompt enable writes prompt file and disables app siblings" {
 }
 
 ///|
-test "gemini native response synthesizes ccs marked missing tool id" {
+test "gemini native response synthesizes moonstat marked missing tool id" {
   let body = @json.parse(
     (
       #|{
@@ -9746,7 +9746,7 @@ test "gemini native prompt block converts to anthropic refusal" {
 }
 
 ///|
-test "ccs claude desktop default routes match upstream command shape" {
+test "moonstat claude desktop default routes match upstream command shape" {
   guard claude_desktop_default_routes_json() is Array(routes) else {
     fail("expected default routes")
   }
@@ -9758,7 +9758,7 @@ test "ccs claude desktop default routes match upstream command shape" {
 }
 
 ///|
-test "ccs suggested claude desktop routes derive from provider env" {
+test "moonstat suggested claude desktop routes derive from provider env" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="desktop-routes",
@@ -9793,7 +9793,7 @@ test "ccs suggested claude desktop routes derive from provider env" {
 }
 
 ///|
-test "ccs suggested claude desktop routes keep copilot 1m default false" {
+test "moonstat suggested claude desktop routes keep copilot 1m default false" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="copilot-routes",
@@ -9817,7 +9817,7 @@ test "ccs suggested claude desktop routes keep copilot 1m default false" {
 }
 
 ///|
-test "ccs suggested claude desktop routes fallback to anthropic model" {
+test "moonstat suggested claude desktop routes fallback to anthropic model" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="fallback-routes",
@@ -9838,7 +9838,7 @@ test "ccs suggested claude desktop routes fallback to anthropic model" {
 }
 
 ///|
-test "ccs imports missing claude providers into claude desktop namespace" {
+test "moonstat imports missing claude providers into claude desktop namespace" {
   let gateway = Gateway::new(port=17071)
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -9899,7 +9899,7 @@ fn moon_direct_compatible_claude_desktop_provider(
 }
 
 ///|
-test "ccs claude desktop direct compatibility filters unsafe providers" {
+test "moonstat claude desktop direct compatibility filters unsafe providers" {
   assert_true(
     moon_direct_compatible_claude_desktop_provider().is_compatible_claude_desktop_direct_provider(),
   )
@@ -9927,7 +9927,7 @@ test "ccs claude desktop direct compatibility filters unsafe providers" {
 }
 
 ///|
-test "ccs import skips claude providers without direct or proxy compatibility" {
+test "moonstat import skips claude providers without direct or proxy compatibility" {
   let gateway = Gateway::new(port=17073)
   let empty_env : Map[String, Json] = {}
   gateway.proxy.provider_router.upsert_provider(
@@ -9946,7 +9946,7 @@ test "ccs import skips claude providers without direct or proxy compatibility" {
 }
 
 ///|
-test "ccs import derives claude desktop routes from claude provider env" {
+test "moonstat import derives claude desktop routes from claude provider env" {
   let gateway = Gateway::new(port=17072)
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -9979,7 +9979,7 @@ test "ccs import derives claude desktop routes from claude provider env" {
 }
 
 ///|
-test "ccs skill repo request accepts query and json body shapes" {
+test "moonstat skill repo request accepts query and json body shapes" {
   let empty_body : Map[String, Json] = {}
   guard moon_skill_repo_request_json(
       "/skills/repos?owner=vectie&name=moonstat-skills&branch=main&enabled=true",

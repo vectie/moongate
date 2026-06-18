@@ -1,5 +1,5 @@
 ///|
-test "ccs omo local file data parses jsonc and preserves other fields" {
+test "moonstat omo local file data parses jsonc and preserves other fields" {
   let content =
     #|{
     #|  // OMO agents
@@ -44,7 +44,7 @@ test "ccs omo local file data parses jsonc and preserves other fields" {
 }
 
 ///|
-test "ccs omo slim local file omits categories" {
+test "moonstat omo slim local file omits categories" {
   let content =
     #|{
     #|  "agents": {"slim": {}},
@@ -64,7 +64,7 @@ test "ccs omo slim local file omits categories" {
 }
 
 ///|
-test "ccs omo current provider helpers use opencode category" {
+test "moonstat omo current provider helpers use opencode category" {
   let gateway = Gateway::new(port=17777)
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(

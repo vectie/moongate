@@ -1,5 +1,5 @@
 ///|
-test "ccs codex session parser extracts metadata and messages" {
+test "moonstat codex session parser extracts metadata and messages" {
   let lines = [
     "{\"timestamp\":\"2026-03-06T21:50:12Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"codex-s1\",\"cwd\":\"/tmp/project\"}}",
     "{\"timestamp\":\"2026-03-06T21:50:13Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":\"hello codex\"}}",
@@ -20,7 +20,7 @@ test "ccs codex session parser extracts metadata and messages" {
 }
 
 ///|
-test "ccs claude session parser reclassifies tool result messages" {
+test "moonstat claude session parser reclassifies tool result messages" {
   let content = [
     "{\"sessionId\":\"claude-s1\",\"cwd\":\"/tmp/claude\",\"timestamp\":\"2026-03-06T21:50:12Z\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"hello claude\"}}",
     "{\"timestamp\":\"2026-03-06T21:50:13Z\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\"}]}}",
@@ -43,7 +43,7 @@ test "ccs claude session parser reclassifies tool result messages" {
 }
 
 ///|
-test "ccs delete sessions parser accepts raw arrays and items wrapper" {
+test "moonstat delete sessions parser accepts raw arrays and items wrapper" {
   let item = {
     "providerId": Json::string("codex"),
     "sessionId": Json::string("s1"),
@@ -59,7 +59,7 @@ test "ccs delete sessions parser accepts raw arrays and items wrapper" {
 }
 
 ///|
-async test "ccs opencode sqlite sessions scan load and delete" {
+async test "moonstat opencode sqlite sessions scan load and delete" {
   @fsx.with_temporary_directory("moonstat-opencode-sqlite-XXXXXX", tmpdir => {
     let db_path = @pathx.join(tmpdir, "opencode.db")
     let setup =
@@ -111,7 +111,7 @@ async test "ccs opencode sqlite sessions scan load and delete" {
 }
 
 ///|
-async test "ccs hermes sqlite sessions scan load and delete" {
+async test "moonstat hermes sqlite sessions scan load and delete" {
   @fsx.with_temporary_directory("moonstat-hermes-sqlite-XXXXXX", tmpdir => {
     let db_path = @pathx.join(tmpdir, "state.db")
     let setup =
@@ -157,7 +157,7 @@ async test "ccs hermes sqlite sessions scan load and delete" {
 }
 
 ///|
-test "ccs session terminal target follows CCS preferred terminal aliases" {
+test "moonstat session terminal target follows Moonstat preferred terminal aliases" {
   assert_eq(moon_session_terminal_target(None), "terminal")
   assert_eq(moon_session_terminal_target(Some("iterm2")), "iterm")
   assert_eq(moon_session_terminal_target(Some(" Ghostty ")), "ghostty")
@@ -166,7 +166,7 @@ test "ccs session terminal target follows CCS preferred terminal aliases" {
 }
 
 ///|
-async test "ccs session terminal app launch quotes cwd in applescript" {
+async test "moonstat session terminal app launch quotes cwd in applescript" {
   let launch = moon_session_terminal_launch(
     "terminal",
     "claude --resume abc-123",
@@ -183,7 +183,7 @@ async test "ccs session terminal app launch quotes cwd in applescript" {
 }
 
 ///|
-async test "ccs session wezterm launch uses cwd argument and shell command" {
+async test "moonstat session wezterm launch uses cwd argument and shell command" {
   let launch = moon_session_terminal_launch(
     "wezterm",
     "claude --resume abc-123",
@@ -199,7 +199,7 @@ async test "ccs session wezterm launch uses cwd argument and shell command" {
 }
 
 ///|
-async test "ccs session custom terminal expands command and cwd" {
+async test "moonstat session custom terminal expands command and cwd" {
   let launch = moon_session_terminal_launch(
     "custom",
     "codex resume s1",
@@ -216,7 +216,7 @@ async test "ccs session custom terminal expands command and cwd" {
 }
 
 ///|
-async test "ccs session warp launch writes self removing script and URL" {
+async test "moonstat session warp launch writes self removing script and URL" {
   @fsx.with_temporary_directory("moonstat-warp-session-XXXXXX", tmpdir => {
     let launch = moon_session_terminal_launch(
       "warp",

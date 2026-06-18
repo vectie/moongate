@@ -1,5 +1,5 @@
 ///|
-test "ccs copilot classifier marks tool result continuations as agent before sanitize" {
+test "moonstat copilot classifier marks tool result continuations as agent before sanitize" {
   let body = @json.parse(
     (
       #|{
@@ -24,7 +24,7 @@ test "ccs copilot classifier marks tool result continuations as agent before san
 }
 
 ///|
-test "ccs copilot sanitizer converts only orphan tool results" {
+test "moonstat copilot sanitizer converts only orphan tool results" {
   let body = @json.parse(
     (
       #|{
@@ -61,7 +61,7 @@ test "ccs copilot sanitizer converts only orphan tool results" {
 }
 
 ///|
-test "ccs copilot optimizer merges tool result text and strips assistant thinking" {
+test "moonstat copilot optimizer merges tool result text and strips assistant thinking" {
   let body = @json.parse(
     (
       #|{
@@ -129,7 +129,7 @@ test "ccs copilot optimizer merges tool result text and strips assistant thinkin
 }
 
 ///|
-test "ccs copilot optimizer merges valid tool result text blocks" {
+test "moonstat copilot optimizer merges valid tool result text blocks" {
   let body = @json.parse(
     (
       #|{
@@ -167,7 +167,7 @@ test "ccs copilot optimizer merges valid tool result text blocks" {
 }
 
 ///|
-test "ccs copilot optimizer downgrades warmup model for anthropic beta probes" {
+test "moonstat copilot optimizer downgrades warmup model for anthropic beta probes" {
   let body = @json.parse(
     (
       #|{
@@ -197,7 +197,7 @@ test "ccs copilot optimizer downgrades warmup model for anthropic beta probes" {
 }
 
 ///|
-test "ccs copilot optimizer emits deterministic interaction headers" {
+test "moonstat copilot optimizer emits deterministic interaction headers" {
   let body = @json.parse(
     (
       #|{
@@ -232,7 +232,7 @@ test "ccs copilot optimizer emits deterministic interaction headers" {
 }
 
 ///|
-test "ccs copilot optimizer marks subagent interaction header" {
+test "moonstat copilot optimizer marks subagent interaction header" {
   let body = @json.parse(
     (
       #|{

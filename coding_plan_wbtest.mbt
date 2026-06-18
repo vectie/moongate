@@ -1,5 +1,5 @@
 ///|
-test "ccs coding plan detects supported providers" {
+test "moonstat coding plan detects supported providers" {
   assert_true(
     moon_detect_coding_plan_provider("https://api.kimi.com/coding/v1")
     is Some(Kimi),
@@ -28,7 +28,7 @@ test "ccs coding plan detects supported providers" {
 }
 
 ///|
-test "ccs coding plan parses kimi five hour and weekly tiers" {
+test "moonstat coding plan parses kimi five hour and weekly tiers" {
   guard moon_parse_kimi_coding_plan(
       {
         "limits": Json::array([
@@ -61,7 +61,7 @@ test "ccs coding plan parses kimi five hour and weekly tiers" {
 }
 
 ///|
-test "ccs coding plan parses zhipu token windows by unit" {
+test "moonstat coding plan parses zhipu token windows by unit" {
   let tiers = moon_parse_zhipu_token_tiers(
     {
       "limits": Json::array([
@@ -91,7 +91,7 @@ test "ccs coding plan parses zhipu token windows by unit" {
 }
 
 ///|
-test "ccs coding plan parses minimax general model only" {
+test "moonstat coding plan parses minimax general model only" {
   let tiers = moon_parse_minimax_tiers(
     {
       "model_remains": Json::array([
@@ -118,7 +118,7 @@ test "ccs coding plan parses minimax general model only" {
 }
 
 ///|
-test "ccs coding plan parses zenmux value tiers and plan message" {
+test "moonstat coding plan parses zenmux value tiers and plan message" {
   guard moon_parse_zenmux_coding_plan(
       {
         "success": Json::boolean(true),

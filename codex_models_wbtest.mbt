@@ -1,5 +1,5 @@
 ///|
-test "ccs models endpoint hides stale catalog" {
+test "moonstat models endpoint hides stale catalog" {
   let body = moon_models_endpoint_response_json(None)
   guard body is Object(obj) else { fail("expected object") }
   guard obj["models"] is Array(models) else { fail("expected models array") }
@@ -8,7 +8,7 @@ test "ccs models endpoint hides stale catalog" {
 }
 
 ///|
-test "ccs models endpoint serves active catalog directly" {
+test "moonstat models endpoint serves active catalog directly" {
   let catalog = {
     "models": Json::array([{ "slug": Json::string("gpt-5.7") }.to_json()]),
     "provider": Json::string("moonstat"),

@@ -36,7 +36,7 @@ test "traffic stats records proxy counters" {
 }
 
 ///|
-test "traffic status json matches ccs proxy status shape" {
+test "traffic status json matches moonstat proxy status shape" {
   let stats = TrafficStats::new()
   stats.record_inbound(10)
   stats.record_bad_request()
@@ -69,7 +69,7 @@ test "traffic status json matches ccs proxy status shape" {
 }
 
 ///|
-test "traffic status tracks ccs active targets by app type" {
+test "traffic status tracks moonstat active targets by app type" {
   let stats = TrafficStats::new()
   stats.set_active_target("claude", "codex-oauth", "Codex OAuth")
   stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
@@ -94,7 +94,7 @@ test "traffic status tracks ccs active targets by app type" {
 }
 
 ///|
-test "request log json matches ccs proxy_request_logs shape" {
+test "request log json matches moonstat proxy_request_logs shape" {
   let usage = TokenUsage::new(
     input_tokens=13,
     output_tokens=21,
@@ -199,7 +199,7 @@ test "traffic stats writes request logs from request context" {
 }
 
 ///|
-test "traffic stats uses ccs session request id for message usage" {
+test "traffic stats uses moonstat session request id for message usage" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("claude", "anthropic", "Anthropic")
@@ -226,7 +226,7 @@ test "traffic stats uses ccs session request id for message usage" {
 }
 
 ///|
-test "traffic stats request pricing uses ccs outbound model context" {
+test "traffic stats request pricing uses moonstat outbound model context" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target(
@@ -257,7 +257,7 @@ test "traffic stats request pricing uses ccs outbound model context" {
 }
 
 ///|
-test "traffic stats empty usage falls back to ccs outbound model context" {
+test "traffic stats empty usage falls back to moonstat outbound model context" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("claude", "router", "Router")
@@ -278,7 +278,7 @@ test "traffic stats empty usage falls back to ccs outbound model context" {
 }
 
 ///|
-test "traffic stats leaves ccs error pricing model empty" {
+test "traffic stats leaves moonstat error pricing model empty" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target(
@@ -314,7 +314,7 @@ test "traffic stats leaves ccs error pricing model empty" {
 }
 
 ///|
-test "traffic stats can price gateway requests with ccs model pricing overrides" {
+test "traffic stats can price gateway requests with moonstat model pricing overrides" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
@@ -338,7 +338,7 @@ test "traffic stats can price gateway requests with ccs model pricing overrides"
 }
 
 ///|
-test "traffic stats honors ccs model pricing delete tombstones" {
+test "traffic stats honors moonstat model pricing delete tombstones" {
   let stats = TrafficStats::new()
   let deleted : Map[String, Bool] = Map([], capacity=0)
   deleted.set("gpt-5", true)
@@ -378,7 +378,7 @@ test "traffic stats keeps request log retention bounded" {
 }
 
 ///|
-test "request log default created_at uses ccs unix seconds" {
+test "request log default created_at uses moonstat unix seconds" {
   let before = @os.unix_seconds()
   let log = RequestLog::new(
     request_id="req-time",
@@ -399,7 +399,7 @@ test "request log default created_at uses ccs unix seconds" {
 }
 
 ///|
-test "usage logs paginated json matches ccs filters and ordering" {
+test "usage logs paginated json matches moonstat filters and ordering" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -520,7 +520,7 @@ test "usage logs paginated json matches ccs filters and ordering" {
 }
 
 ///|
-test "usage logs paginated json defaults to ccs page size" {
+test "usage logs paginated json defaults to moonstat page size" {
   let stats = TrafficStats::new()
   for i in 0..<25 {
     stats.record_request_log(
@@ -549,7 +549,7 @@ test "usage logs paginated json defaults to ccs page size" {
 }
 
 ///|
-test "usage logs provider name filter matches ccs joined provider name semantics" {
+test "usage logs provider name filter matches moonstat joined provider name semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -655,7 +655,7 @@ test "request detail lookup returns retained proxy request log" {
 }
 
 ///|
-test "usage summary aggregates ccs token and cost semantics" {
+test "usage summary aggregates moonstat token and cost semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -725,7 +725,7 @@ test "usage summary aggregates ccs token and cost semantics" {
 }
 
 ///|
-test "usage aggregate keeps malformed cache-inclusive input like ccs sql helper" {
+test "usage aggregate keeps malformed cache-inclusive input like moonstat sql helper" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -771,7 +771,7 @@ test "usage aggregate keeps malformed cache-inclusive input like ccs sql helper"
 }
 
 ///|
-test "usage summary excludes partial rollup boundary days like ccs" {
+test "usage summary excludes partial rollup boundary days like moonstat" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -823,7 +823,7 @@ test "usage summary excludes partial rollup boundary days like ccs" {
 }
 
 ///|
-test "usage summary includes end day rollup for minute precision end time like ccs" {
+test "usage summary includes end day rollup for minute precision end time like moonstat" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -860,7 +860,7 @@ test "usage summary includes end day rollup for minute precision end time like c
 }
 
 ///|
-test "provider stats exclude partial rollup boundary days like ccs" {
+test "provider stats exclude partial rollup boundary days like moonstat" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -917,7 +917,7 @@ test "provider stats exclude partial rollup boundary days like ccs" {
 }
 
 ///|
-test "usage trends combine boundary details with full-day rollups like ccs" {
+test "usage trends combine boundary details with full-day rollups like moonstat" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.record_request_log(
@@ -980,7 +980,7 @@ test "usage trends combine boundary details with full-day rollups like ccs" {
 }
 
 ///|
-test "model stats exclude partial rollup boundary days like ccs" {
+test "model stats exclude partial rollup boundary days like moonstat" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -1034,7 +1034,7 @@ test "model stats exclude partial rollup boundary days like ccs" {
 }
 
 ///|
-test "usage aggregate lists match ccs route payloads" {
+test "usage aggregate lists match moonstat route payloads" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1148,7 +1148,7 @@ test "usage aggregate lists match ccs route payloads" {
 }
 
 ///|
-test "provider stats average latency truncates like ccs" {
+test "provider stats average latency truncates like moonstat" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1186,7 +1186,7 @@ test "provider stats average latency truncates like ccs" {
 }
 
 ///|
-test "usage aggregate filters match ccs date and app semantics" {
+test "usage aggregate filters match moonstat date and app semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1344,7 +1344,7 @@ test "usage aggregate filters match ccs date and app semantics" {
 }
 
 ///|
-test "usage aggregates deduplicate ccs session imports against proxy logs" {
+test "usage aggregates deduplicate moonstat session imports against proxy logs" {
   let stats = TrafficStats::new()
   let session_log = RequestLog::new(
     request_id="codex_session:session-1:0",
@@ -1476,7 +1476,7 @@ test "usage aggregates deduplicate ccs session imports against proxy logs" {
 }
 
 ///|
-test "ccs session proxy dedup only relaxes cache creation for supported sources" {
+test "moonstat session proxy dedup only relaxes cache creation for supported sources" {
   let stats = TrafficStats::new()
   let claude_session = RequestLog::new(
     request_id="session:claude-cache-missing",
@@ -1560,7 +1560,7 @@ test "ccs session proxy dedup only relaxes cache creation for supported sources"
 }
 
 ///|
-test "provider stats use ccs session provider fallback names" {
+test "provider stats use moonstat session provider fallback names" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1654,7 +1654,7 @@ fn restore_test_timezone(old_tz : String?) -> Unit {
 }
 
 ///|
-test "usage trends use ccs hourly buckets for short ranges" {
+test "usage trends use moonstat hourly buckets for short ranges" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1713,7 +1713,7 @@ test "usage trends use ccs hourly buckets for short ranges" {
 }
 
 ///|
-test "usage rollups aggregate old effective rows like ccs daily rollups" {
+test "usage rollups aggregate old effective rows like moonstat daily rollups" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     let session_log = RequestLog::new(
@@ -1862,7 +1862,7 @@ test "usage rollup cutoff aligns to local midnight after retained target day" {
 }
 
 ///|
-test "usage trends follow process local timezone like ccs" {
+test "usage trends follow process local timezone like moonstat" {
   with_test_timezone("UTC", fn() raise {
     assert_eq(trend_timestamp_rfc3339(0), "1970-01-01T00:00:00+00:00")
     assert_eq(trend_local_day_key(-1), "1969-12-31")
@@ -1941,7 +1941,7 @@ test "usage trends use local daily buckets for long ranges" {
 }
 
 ///|
-test "provider limit status matches ccs daily and monthly semantics" {
+test "provider limit status matches moonstat daily and monthly semantics" {
   let stats = TrafficStats::new()
   let now = TREND_DAY_SECONDS * 10
   stats.set_provider_limits(
@@ -2036,7 +2036,7 @@ test "provider limit status allows standalone query limits" {
 }
 
 ///|
-test "traffic stats backfills missing costs after ccs pricing update" {
+test "traffic stats backfills missing costs after moonstat pricing update" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2075,7 +2075,7 @@ test "traffic stats backfills missing costs after ccs pricing update" {
 }
 
 ///|
-test "traffic stats backfill keeps ccs claude fresh input with cache read" {
+test "traffic stats backfill keeps moonstat claude fresh input with cache read" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2102,7 +2102,7 @@ test "traffic stats backfill keeps ccs claude fresh input with cache read" {
 }
 
 ///|
-test "traffic stats backfill uses persisted ccs pricing model" {
+test "traffic stats backfill uses persisted moonstat pricing model" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2130,7 +2130,7 @@ test "traffic stats backfill uses persisted ccs pricing model" {
 }
 
 ///|
-test "usage logs lazily backfill missing costs like ccs reads" {
+test "usage logs lazily backfill missing costs like moonstat reads" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2167,7 +2167,7 @@ test "usage logs lazily backfill missing costs like ccs reads" {
 }
 
 ///|
-test "request detail lazily backfills missing costs like ccs reads" {
+test "request detail lazily backfills missing costs like moonstat reads" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(

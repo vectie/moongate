@@ -72,7 +72,7 @@ test "openai usage maps prompt and completion tokens" {
 }
 
 ///|
-test "openrouter usage has ccs named openai format parser" {
+test "openrouter usage has moonstat named openai format parser" {
   let body =
     #|{
     #|  "usage": {
@@ -88,7 +88,7 @@ test "openrouter usage has ccs named openai format parser" {
 }
 
 ///|
-test "usage parser rejects negative required token counts like ccs" {
+test "usage parser rejects negative required token counts like moonstat" {
   let claude =
     #|{
     #|  "usage": {
@@ -122,7 +122,7 @@ test "usage parser rejects negative required token counts like ccs" {
 }
 
 ///|
-test "usage parser rejects fractional required token counts like ccs" {
+test "usage parser rejects fractional required token counts like moonstat" {
   let codex =
     #|{
     #|  "usage": {
@@ -146,7 +146,7 @@ test "usage parser rejects fractional required token counts like ccs" {
 }
 
 ///|
-test "usage parser treats invalid optional cache fields as absent like ccs" {
+test "usage parser treats invalid optional cache fields as absent like moonstat" {
   let body =
     #|{
     #|  "usage": {
@@ -164,7 +164,7 @@ test "usage parser treats invalid optional cache fields as absent like ccs" {
 }
 
 ///|
-test "codex adjusted usage subtracts cached tokens from details like ccs" {
+test "codex adjusted usage subtracts cached tokens from details like moonstat" {
   let body =
     #|{
     #|  "model": "gpt-5",
@@ -184,7 +184,7 @@ test "codex adjusted usage subtracts cached tokens from details like ccs" {
 }
 
 ///|
-test "codex adjusted usage prefers cache_read_input_tokens like ccs" {
+test "codex adjusted usage prefers cache_read_input_tokens like moonstat" {
   let body =
     #|{
     #|  "usage": {
@@ -202,7 +202,7 @@ test "codex adjusted usage prefers cache_read_input_tokens like ccs" {
 }
 
 ///|
-test "codex adjusted usage saturates when cache exceeds input like ccs" {
+test "codex adjusted usage saturates when cache exceeds input like moonstat" {
   let body =
     #|{
     #|  "usage": {
@@ -249,7 +249,7 @@ test "gemini usage derives output from total minus prompt" {
 }
 
 ///|
-test "claude stream usage uses smaller positive delta input like ccs" {
+test "claude stream usage uses smaller positive delta input like moonstat" {
   let events = [
     parse_json_for_test(
       (
@@ -365,7 +365,7 @@ test "codex stream auto parses response completed usage" {
 }
 
 ///|
-test "codex auto parser returns synthetic all-zero usage like ccs" {
+test "codex auto parser returns synthetic all-zero usage like moonstat" {
   let body =
     #|{
     #|  "usage": {
@@ -381,7 +381,7 @@ test "codex auto parser returns synthetic all-zero usage like ccs" {
 }
 
 ///|
-test "codex stream adjusted parser returns ccs adjusted input" {
+test "codex stream adjusted parser returns moonstat adjusted input" {
   let events = [
     parse_json_for_test(
       (
@@ -471,7 +471,7 @@ test "gemini stream usage derives output from latest usage chunk" {
 }
 
 ///|
-test "gemini stream usage skips cache-only chunks like ccs" {
+test "gemini stream usage skips cache-only chunks like moonstat" {
   let chunks = [
     parse_json_for_test(
       (

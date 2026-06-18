@@ -1,5 +1,5 @@
 ///|
-async test "codex config install writes ccs-style local provider block" {
+async test "codex config install writes moonstat-style local provider block" {
   @fsx.with_temporary_directory("moonstat-codex-config-XXXXXX", tmpdir => {
     let result = install_proxy_config_at(tmpdir, "0.0.0.0", 15721, "gpt-5")
     guard result is Ok(installed) else {
@@ -140,7 +140,7 @@ async test "codex config status reports managed values" {
 }
 
 ///|
-async test "codex config active catalog follows ccs stale guard" {
+async test "codex config active catalog follows moonstat stale guard" {
   @fsx.with_temporary_directory("moonstat-codex-catalog-XXXXXX", tmpdir => {
     assert_true(active_model_catalog_json_at(tmpdir) is None)
     let result = install_proxy_config_at(tmpdir, "127.0.0.1", 15721, "gpt-5.1")
@@ -165,7 +165,7 @@ async test "codex config active catalog follows ccs stale guard" {
 }
 
 ///|
-test "codex model catalog uses ccs modelCatalog models and context" {
+test "codex model catalog uses moonstat modelCatalog models and context" {
   let catalog = codex_model_catalog_json_from_settings(
     {
       "modelCatalog": {
@@ -205,7 +205,7 @@ test "codex model catalog uses ccs modelCatalog models and context" {
 }
 
 ///|
-test "codex model catalog falls back to standalone model without ccs catalog" {
+test "codex model catalog falls back to standalone model without moonstat catalog" {
   let catalog = codex_model_catalog_json_from_settings(
     { "modelCatalog": { "models": [] } },
     "model_context_window = 64000\n",

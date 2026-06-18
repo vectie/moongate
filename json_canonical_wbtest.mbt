@@ -1,5 +1,5 @@
 ///|
-test "ccs short value hash uses canonical json sha256 prefix" {
+test "moonstat short value hash uses canonical json sha256 prefix" {
   let left = @json.parse(
     (
       #|{
@@ -15,7 +15,7 @@ test "ccs short value hash uses canonical json sha256 prefix" {
 }
 
 ///|
-test "ccs prompt cache trace message mirrors forwarder diagnostic" {
+test "moonstat prompt cache trace message mirrors forwarder diagnostic" {
   let body = @json.parse(
     (
       #|{

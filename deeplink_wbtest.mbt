@@ -54,7 +54,7 @@ test "moonstat deeplink parser accepts mcp and skill requests" {
 
 ///|
 test "moonstat deeplink merge imports claude env config fields" {
-  let encoded = "eyJlbnYiOnsiQU5USFJPUElDX0FVVEhfVE9LRU4iOiJzay1jY3MiLCJBTlRIUk9QSUNfQkFTRV9VUkwiOiJodHRwczovL2FwaS5hbnRocm9waWMuY29tL3YxLyIsIkFOVEhST1BJQ19NT0RFTCI6ImNsYXVkZS1zb25uZXQifX0="
+  let encoded = "eyJlbnYiOnsiQU5USFJPUElDX0FVVEhfVE9LRU4iOiJzay1tb29uc3RhdCIsIkFOVEhST1BJQ19CQVNFX1VSTCI6Imh0dHBzOi8vYXBpLmFudGhyb3BpYy5jb20vdjEvIiwiQU5USFJPUElDX01PREVMIjoiY2xhdWRlLXNvbm5ldCJ9fQ=="
   let request = {
     "resource": Json::string("provider"),
     "app": Json::string("claude"),
@@ -65,7 +65,7 @@ test "moonstat deeplink merge imports claude env config fields" {
   guard moon_merge_deeplink_config_json(request) is Some(Object(merged)) else {
     fail("expected merged provider deeplink")
   }
-  assert_eq(merged["apiKey"], Json::string("sk-ccs"))
+  assert_eq(merged["apiKey"], Json::string("sk-moonstat"))
   assert_eq(merged["endpoint"], Json::string("https://api.anthropic.com/v1/"))
   assert_eq(merged["model"], Json::string("claude-sonnet"))
   assert_eq(merged["homepage"], Json::string("https://anthropic.com"))
