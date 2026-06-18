@@ -2138,7 +2138,7 @@ fn moon_extract_json_text_item(item : Json) -> String? {
     }
   }
   for key in ["text", "input_text", "output_text"] {
-    match json_string_from_map_any(obj, [key]) {
+    match json_string_from_map(obj, key) {
       Some(text) => return Some(text)
       None => ()
     }

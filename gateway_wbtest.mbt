@@ -838,25 +838,31 @@ test "provider command helpers parse moonstat sort and endpoint test payloads" {
 ///|
 test "provider mutation helpers reject retired snake case aliases" {
   assert_eq(
-    provider_bool_from_request("/providers?addToLive=false", None, ["addToLive"]),
+    provider_bool_from_request("/providers?addToLive=false", None, "addToLive"),
     Some(false),
   )
   assert_eq(
-    provider_bool_from_request("/providers?add_to_live=false", None, [
+    provider_bool_from_request(
+      "/providers?add_to_live=false",
+      None,
       "addToLive",
-    ]),
+    ),
     None,
   )
   assert_eq(
-    provider_string_from_request("/providers/update?originalId=old", None, [
+    provider_string_from_request(
+      "/providers/update?originalId=old",
+      None,
       "originalId",
-    ]),
+    ),
     Some("old"),
   )
   assert_eq(
-    provider_string_from_request("/providers/update?original_id=old", None, [
+    provider_string_from_request(
+      "/providers/update?original_id=old",
+      None,
       "originalId",
-    ]),
+    ),
     None,
   )
 }

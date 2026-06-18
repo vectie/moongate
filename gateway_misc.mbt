@@ -1046,20 +1046,6 @@ priv struct ProxyProviderQuery {
 }
 
 ///|
-fn json_non_empty_string_from_map_any(
-  obj : Map[String, Json],
-  keys : Array[String],
-) -> String? {
-  for key in keys {
-    match json_non_empty_string_from_map(obj, key) {
-      Some(value) => return Some(value)
-      None => ()
-    }
-  }
-  None
-}
-
-///|
 fn json_non_empty_string_from_map(
   obj : Map[String, Json],
   key : String,

@@ -1222,21 +1222,6 @@ fn proxy_bool_request(path : StringView, config : Json?, key : String) -> Bool? 
 }
 
 ///|
-fn proxy_bool_request_any(
-  path : StringView,
-  config : Json?,
-  keys : Array[String],
-) -> Bool? {
-  for key in keys {
-    match proxy_bool_request(path, config, key) {
-      Some(value) => return Some(value)
-      None => ()
-    }
-  }
-  None
-}
-
-///|
 fn proxy_string_request(
   path : StringView,
   config : Json?,
@@ -1254,21 +1239,6 @@ fn proxy_string_request(
       }
     _ => None
   }
-}
-
-///|
-fn proxy_string_request_any(
-  path : StringView,
-  config : Json?,
-  keys : Array[String],
-) -> String? {
-  for key in keys {
-    match proxy_string_request(path, config, key) {
-      Some(value) => return Some(value)
-      None => ()
-    }
-  }
-  None
 }
 
 ///|

@@ -837,7 +837,7 @@ async fn ProxyService::handle_add_provider(
     write_usage_bad_request(w, "invalid_provider")
     return
   }
-  let add_to_live = provider_bool_from_request(r.path, body, ["addToLive"]).unwrap_or(
+  let add_to_live = provider_bool_from_request(r.path, body, "addToLive").unwrap_or(
     true,
   )
   self.add_provider_target(usage, app_type, target, add_to_live)
@@ -879,7 +879,7 @@ async fn ProxyService::handle_update_provider(
     write_usage_bad_request(w, "invalid_provider")
     return
   }
-  let original_id = provider_string_from_request(r.path, body, ["originalId"])
+  let original_id = provider_string_from_request(r.path, body, "originalId")
   match self.update_provider_target(usage, app_type, target, original_id) {
     Ok(_) => write_usage_json(w, Json::boolean(true))
     Err(error) => write_usage_bad_request(w, error)
@@ -1516,12 +1516,12 @@ fn stream_check_provider_from_request(
 
 ///|
 fn provider_app_from_request(path : StringView, body : Json?) -> String? {
-  provider_string_from_request(path, body, ["appType"])
+  provider_string_from_request(path, body, "appType")
 }
 
 ///|
 fn provider_id_from_request(path : StringView, body : Json?) -> String? {
-  provider_string_from_request(path, body, ["id"])
+  provider_string_from_request(path, body, "id")
 }
 
 ///|
@@ -1529,26 +1529,26 @@ fn provider_route_provider_id_from_request(
   path : StringView,
   body : Json?,
 ) -> String? {
-  provider_string_from_request(path, body, ["providerId"])
+  provider_string_from_request(path, body, "providerId")
 }
 
 ///|
 fn provider_url_from_request(path : StringView, body : Json?) -> String? {
-  provider_string_from_request(path, body, ["url"])
+  provider_string_from_request(path, body, "url")
 }
 
 ///|
 fn provider_string_from_request(
   path : StringView,
   body : Json?,
-  keys : Array[String],
+  key : String,
 ) -> String? {
-  match proxy_string_request_any(path, body, keys) {
+  match proxy_string_request(path, body, key) {
     Some(value) => return Some(value)
     None => ()
   }
   match provider_body_payload(body) {
-    Some(payload) => proxy_string_request_any(path, Some(payload), keys)
+    Some(payload) => proxy_string_request(path, Some(payload), key)
     None => None
   }
 }
@@ -1557,14 +1557,14 @@ fn provider_string_from_request(
 fn provider_bool_from_request(
   path : StringView,
   body : Json?,
-  keys : Array[String],
+  key : String,
 ) -> Bool? {
-  match proxy_bool_request_any(path, body, keys) {
+  match proxy_bool_request(path, body, key) {
     Some(value) => return Some(value)
     None => ()
   }
   match provider_body_payload(body) {
-    Some(payload) => proxy_bool_request_any(path, Some(payload), keys)
+    Some(payload) => proxy_bool_request(path, Some(payload), key)
     None => None
   }
 }
@@ -1687,8 +1687,8 @@ fn provider_limit_config_from_settings(
   settings : Json?,
 ) -> ProviderLimitConfig? {
   guard settings is Some(Object(obj)) else { return None }
-  let daily = provider_limit_string_from_settings(obj, ["limitDailyUsd"])
-  let monthly = provider_limit_string_from_settings(obj, ["limitMonthlyUsd"])
+  let daily = provider_limit_string_from_settings(obj, "limitDailyUsd")
+  let monthly = provider_limit_string_from_settings(obj, "limitMonthlyUsd")
   if daily is None && monthly is None {
     None
   } else {
@@ -1701,9 +1701,9 @@ fn provider_limit_config_from_settings(
 ///|
 fn provider_limit_string_from_settings(
   obj : Map[String, Json],
-  keys : Array[String],
+  key : String,
 ) -> String? {
-  json_non_empty_string_from_map_any(obj, keys)
+  json_non_empty_string_from_map(obj, key)
 }
 
 ///|
@@ -1778,21 +1778,21 @@ fn universal_provider_from_request(path : StringView, body : Json?) -> Json? {
   let provider : Map[String, Json] = {
     "id": Json::string(id.trim().to_owned()),
     "name": Json::string(
-      provider_string_from_request(path, body, ["name"]).unwrap_or(id),
+      provider_string_from_request(path, body, "name").unwrap_or(id),
     ),
     "providerType": Json::string(
-      provider_string_from_request(path, body, ["providerType"]).unwrap_or(
+      provider_string_from_request(path, body, "providerType").unwrap_or(
         "custom",
       ),
     ),
     "apps": universal_provider_apps_from_request(path, body),
     "models": universal_provider_models_from_request(path, body),
   }
-  match provider_string_from_request(path, body, ["baseUrl"]) {
+  match provider_string_from_request(path, body, "baseUrl") {
     Some(value) => provider["baseUrl"] = Json::string(value)
     None => ()
   }
-  match provider_string_from_request(path, body, ["apiKey"]) {
+  match provider_string_from_request(path, body, "apiKey") {
     Some(value) => provider["apiKey"] = Json::string(value)
     None => ()
   }
@@ -1804,7 +1804,7 @@ fn universal_provider_apps_from_request(
   path : StringView,
   body : Json?,
 ) -> Json {
-  let apps_value = provider_string_from_request(path, body, ["apps"]).unwrap_or(
+  let apps_value = provider_string_from_request(path, body, "apps").unwrap_or(
     "claude,codex,gemini",
   )
   let enabled = universal_provider_enabled_apps(apps_value)
@@ -1837,23 +1837,23 @@ fn universal_provider_models_from_request(
   body : Json?,
 ) -> Json {
   let models : Map[String, Json] = {}
-  match provider_string_from_request(path, body, ["claudeModel"]) {
+  match provider_string_from_request(path, body, "claudeModel") {
     Some(model) => models["claude"] = { "model": Json::string(model) }.to_json()
     None => ()
   }
   let codex : Map[String, Json] = {}
-  match provider_string_from_request(path, body, ["codexModel"]) {
+  match provider_string_from_request(path, body, "codexModel") {
     Some(model) => codex["model"] = Json::string(model)
     None => ()
   }
-  match provider_string_from_request(path, body, ["reasoningEffort"]) {
+  match provider_string_from_request(path, body, "reasoningEffort") {
     Some(value) => codex["reasoningEffort"] = Json::string(value)
     None => ()
   }
   if !codex.is_empty() {
     models["codex"] = Json::object(codex)
   }
-  match provider_string_from_request(path, body, ["geminiModel"]) {
+  match provider_string_from_request(path, body, "geminiModel") {
     Some(model) => models["gemini"] = { "model": Json::string(model) }.to_json()
     None => ()
   }
@@ -1869,30 +1869,30 @@ fn provider_target_from_request(
   guard provider_id_from_request(path, body) is Some(provider_id) else {
     return None
   }
-  let provider_name = provider_string_from_request(path, body, ["name"]).unwrap_or(
+  let provider_name = provider_string_from_request(path, body, "name").unwrap_or(
     provider_id,
   )
-  let enabled = provider_bool_from_request(path, body, ["enabled"]).unwrap_or(
+  let enabled = provider_bool_from_request(path, body, "enabled").unwrap_or(
     true,
   )
   let settings_config = provider_settings_config_from_body(body)
-  let explicit_provider_type = provider_string_from_request(path, body, [
-    "providerType",
-  ])
-  let api_format = provider_string_from_request(path, body, ["apiFormat"])
-  let base_url = provider_string_from_request(path, body, ["baseUrl"])
-  let api_key = provider_string_from_request(path, body, ["apiKey"])
+  let explicit_provider_type = provider_string_from_request(
+    path, body, "providerType",
+  )
+  let api_format = provider_string_from_request(path, body, "apiFormat")
+  let base_url = provider_string_from_request(path, body, "baseUrl")
+  let api_key = provider_string_from_request(path, body, "apiKey")
   let provider_type = provider_resolved_provider_type(
     app_type, explicit_provider_type, api_format, base_url, api_key,
   )
-  let prompt_cache_key = provider_string_from_request(path, body, [
-    "promptCacheKey",
-  ])
-  let codex_fast_mode = provider_bool_from_request(path, body, ["codexFastMode"]).unwrap_or(
+  let prompt_cache_key = provider_string_from_request(
+    path, body, "promptCacheKey",
+  )
+  let codex_fast_mode = provider_bool_from_request(path, body, "codexFastMode").unwrap_or(
     false,
   )
-  let notes = provider_string_from_request(path, body, ["notes"])
-  let is_full_url = provider_bool_from_request(path, body, ["isFullUrl"]).unwrap_or(
+  let notes = provider_string_from_request(path, body, "notes")
+  let is_full_url = provider_bool_from_request(path, body, "isFullUrl").unwrap_or(
     false,
   )
   let model_mapping = provider_model_mapping_from_request(path, body)
@@ -1946,10 +1946,10 @@ fn provider_model_mapping_from_request(
     _ => ()
   }
   let mapping = ModelMapping::new(
-    haiku_model=provider_string_from_request(path, body, ["haikuModel"]),
-    sonnet_model=provider_string_from_request(path, body, ["sonnetModel"]),
-    opus_model=provider_string_from_request(path, body, ["opusModel"]),
-    default_model=provider_string_from_request(path, body, ["defaultModel"]),
+    haiku_model=provider_string_from_request(path, body, "haikuModel"),
+    sonnet_model=provider_string_from_request(path, body, "sonnetModel"),
+    opus_model=provider_string_from_request(path, body, "opusModel"),
+    default_model=provider_string_from_request(path, body, "defaultModel"),
   )
   if mapping.has_mapping() {
     Some(mapping)
