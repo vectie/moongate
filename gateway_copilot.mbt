@@ -21,22 +21,14 @@ fn moon_copilot_optimizer_config_from_request(
 ) -> Json {
   moon_json_config_from_request(path, body, current, [
     ("enabled", ["enabled"], "bool"),
-    (
-      "requestClassification",
-      ["requestClassification", "request_classification"],
-      "bool",
-    ),
-    ("toolResultMerging", ["toolResultMerging", "tool_result_merging"], "bool"),
-    ("compactDetection", ["compactDetection", "compact_detection"], "bool"),
-    (
-      "deterministicRequestId",
-      ["deterministicRequestId", "deterministic_request_id"],
-      "bool",
-    ),
-    ("subagentDetection", ["subagentDetection", "subagent_detection"], "bool"),
-    ("warmupDowngrade", ["warmupDowngrade", "warmup_downgrade"], "bool"),
-    ("warmupModel", ["warmupModel", "warmup_model"], "string"),
-    ("stripThinking", ["stripThinking", "strip_thinking"], "bool"),
+    ("requestClassification", ["requestClassification"], "bool"),
+    ("toolResultMerging", ["toolResultMerging"], "bool"),
+    ("compactDetection", ["compactDetection"], "bool"),
+    ("deterministicRequestId", ["deterministicRequestId"], "bool"),
+    ("subagentDetection", ["subagentDetection"], "bool"),
+    ("warmupDowngrade", ["warmupDowngrade"], "bool"),
+    ("warmupModel", ["warmupModel"], "string"),
+    ("stripThinking", ["stripThinking"], "bool"),
   ])
 }
 
@@ -65,12 +57,12 @@ async fn ConfigService::handle_set_copilot_optimizer_config(
 
 ///|
 fn copilot_github_domain_request(path : StringView, body : Json?) -> String? {
-  proxy_string_request(path, body, ["githubDomain", "github_domain", "domain"])
+  proxy_string_request(path, body, ["githubDomain"])
 }
 
 ///|
 fn copilot_account_id_request(path : StringView, body : Json?) -> String? {
-  proxy_string_request(path, body, ["accountId", "account_id", "id"])
+  proxy_string_request(path, body, ["accountId"])
 }
 
 ///|
@@ -81,8 +73,7 @@ async fn AuthService::handle_copilot_poll_for_account(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["deviceCode", "device_code"])
-    is Some(device_code) else {
+  guard proxy_string_request(r.path, body, ["deviceCode"]) is Some(device_code) else {
     write_usage_bad_request(w, "missing_device_code")
     return
   }

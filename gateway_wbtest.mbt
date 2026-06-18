@@ -507,6 +507,77 @@ test "moonstat settings defaults mirror desktop command payloads" {
 }
 
 ///|
+test "auth and copilot request helpers accept only moonstat canonical keys" {
+  let canonical = Some(
+    {
+      "accountId": Json::string("ghe:42"),
+      "authProvider": Json::string("github_copilot"),
+      "githubDomain": Json::string("ghe.example.com"),
+      "deviceCode": Json::string("dev-1"),
+      "userCode": Json::string("user-1"),
+      "warmupModel": Json::string("gpt-5-mini"),
+      "stripThinking": Json::boolean(false),
+    }.to_json(),
+  )
+  assert_eq(
+    copilot_account_id_request("/copilot/token", canonical),
+    Some("ghe:42"),
+  )
+  assert_eq(
+    copilot_github_domain_request("/copilot/device-flow", canonical),
+    Some("ghe.example.com"),
+  )
+  assert_eq(
+    managed_auth_provider_request("/auth/login", canonical),
+    "github_copilot",
+  )
+  let configured = moon_copilot_optimizer_config_from_request(
+    "/settings/copilot-optimizer",
+    canonical,
+    moon_default_copilot_optimizer_config_json(),
+  )
+  guard configured is Object(configured_obj) else {
+    fail("expected configured copilot optimizer")
+  }
+  assert_eq(
+    json_string_from_map(configured_obj, "warmupModel"),
+    Some("gpt-5-mini"),
+  )
+  assert_eq(proxy_json_bool(configured_obj, "stripThinking"), Some(false))
+
+  let legacy = Some(
+    {
+      "account_id": Json::string("legacy-account"),
+      "auth_provider": Json::string("github_copilot"),
+      "github_domain": Json::string("legacy.example.com"),
+      "device_code": Json::string("legacy-dev"),
+      "user_code": Json::string("legacy-user"),
+      "warmup_model": Json::string("legacy-model"),
+      "strip_thinking": Json::boolean(false),
+    }.to_json(),
+  )
+  assert_eq(copilot_account_id_request("/copilot/token", legacy), None)
+  assert_eq(copilot_github_domain_request("/copilot/device-flow", legacy), None)
+  assert_eq(
+    managed_auth_provider_request("/auth/login", legacy),
+    managed_auth_default_provider(),
+  )
+  let unchanged = moon_copilot_optimizer_config_from_request(
+    "/settings/copilot-optimizer",
+    legacy,
+    moon_default_copilot_optimizer_config_json(),
+  )
+  guard unchanged is Object(unchanged_obj) else {
+    fail("expected unchanged copilot optimizer")
+  }
+  assert_eq(
+    json_string_from_map(unchanged_obj, "warmupModel"),
+    Some("gpt-5-mini"),
+  )
+  assert_eq(proxy_json_bool(unchanged_obj, "stripThinking"), Some(true))
+}
+
+///|
 test "ccs save settings merge preserves omitted sync secrets" {
   let existing = {
     "webdavSync": {

@@ -166,10 +166,15 @@ fn moon_json_config_from_request(
   current : Json,
   setters : Array[(String, Array[String], String)],
 ) -> Json {
-  let base = match proxy_embedded_config(body) {
-    Some(Object(obj)) => Json::object(obj)
-    Some(json) => json
-    None => current
+  let source = proxy_embedded_config(body)
+  let base = match current {
+    Object(_) => moon_json_deep_copy(current)
+    _ =>
+      match source {
+        Some(Object(_)) => Json::object({})
+        Some(json) => json
+        None => current
+      }
   }
   match base {
     Object(obj) => {
@@ -177,12 +182,12 @@ fn moon_json_config_from_request(
         let (field, keys, kind) = setter
         match kind {
           "bool" =>
-            match proxy_bool_request(path, body, keys) {
+            match proxy_bool_request(path, source, keys) {
               Some(value) => obj[field] = Json::boolean(value)
               None => ()
             }
           "string" =>
-            match proxy_string_request(path, body, keys) {
+            match proxy_string_request(path, source, keys) {
               Some(value) => obj[field] = Json::string(value)
               None => ()
             }

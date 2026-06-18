@@ -90,9 +90,7 @@ async fn AuthService::handle_get_codex_oauth_quota(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let account_id = proxy_string_request(r.path, body, [
-    "accountId", "account_id", "account",
-  ])
+  let account_id = proxy_string_request(r.path, body, ["accountId"])
   let quota = moon_get_codex_oauth_quota(account_id)
   usage.usage_cache.put_subscription(quota.tool, quota)
   write_usage_json(w, quota.to_json())
@@ -106,9 +104,7 @@ async fn AuthService::handle_get_codex_oauth_models(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let account_id = proxy_string_request(r.path, body, [
-    "accountId", "account_id", "account",
-  ])
+  let account_id = proxy_string_request(r.path, body, ["accountId"])
   match moon_get_codex_oauth_models(account_id) {
     Ok(models) => write_usage_json(w, fetched_models_to_json(models))
     Err(error) => write_usage_bad_request(w, error)
@@ -117,7 +113,7 @@ async fn AuthService::handle_get_codex_oauth_models(
 
 ///|
 fn managed_auth_provider_request(path : StringView, body : Json?) -> String {
-  proxy_string_request(path, body, ["authProvider", "auth_provider", "provider"]).unwrap_or(
+  proxy_string_request(path, body, ["authProvider"]).unwrap_or(
     managed_auth_default_provider(),
   )
 }
@@ -155,15 +151,11 @@ async fn AuthService::handle_auth_poll_for_account(
 ) -> Unit {
   let body = proxy_json_body(r)
   let provider = managed_auth_provider_request(r.path, body)
-  guard proxy_string_request(r.path, body, [
-      "deviceCode", "device_code", "deviceAuthId", "device_auth_id",
-    ])
-    is Some(device_code) else {
+  guard proxy_string_request(r.path, body, ["deviceCode"]) is Some(device_code) else {
     write_usage_bad_request(w, "missing_device_code")
     return
   }
-  let user_code = match
-    proxy_string_request(r.path, body, ["userCode", "user_code", "code"]) {
+  let user_code = match proxy_string_request(r.path, body, ["userCode"]) {
     Some(value) => Some(value)
     None => self.auth_device_user_codes.get(device_code)
   }
@@ -230,8 +222,7 @@ async fn AuthService::handle_auth_remove_account(
 ) -> Unit {
   let body = proxy_json_body(r)
   let provider = managed_auth_provider_request(r.path, body)
-  guard proxy_string_request(r.path, body, ["accountId", "account_id", "id"])
-    is Some(account_id) else {
+  guard proxy_string_request(r.path, body, ["accountId"]) is Some(account_id) else {
     write_usage_bad_request(w, "missing_account_id")
     return
   }
@@ -253,8 +244,7 @@ async fn AuthService::handle_auth_set_default_account(
   ignore(self)
   let body = proxy_json_body(r)
   let provider = managed_auth_provider_request(r.path, body)
-  guard proxy_string_request(r.path, body, ["accountId", "account_id", "id"])
-    is Some(account_id) else {
+  guard proxy_string_request(r.path, body, ["accountId"]) is Some(account_id) else {
     write_usage_bad_request(w, "missing_account_id")
     return
   }
@@ -303,8 +293,7 @@ async fn AuthService::handle_copilot_poll_for_auth(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["deviceCode", "device_code"])
-    is Some(device_code) else {
+  guard proxy_string_request(r.path, body, ["deviceCode"]) is Some(device_code) else {
     write_usage_bad_request(w, "missing_device_code")
     return
   }
