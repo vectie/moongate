@@ -679,96 +679,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/hermes/dashboard", (_, w) => {
     self.openclaw.handle_launch_hermes_dashboard(w)
   })
-  router.add_handler(Get, "/usage/logs", (r, w) => {
-    self.usage.handle_usage_logs(r, w, self.usage.pricing_override_rows())
-  })
-  router.add_handler(Post, "/usage/logs", (r, w) => {
-    self.usage.handle_usage_logs(r, w, self.usage.pricing_override_rows())
-  })
-  router.add_handler(Get, "/usage/summary", (r, w) => {
-    self.usage.handle_usage_summary(r, w)
-  })
-  router.add_handler(Post, "/usage/summary", (r, w) => {
-    self.usage.handle_usage_summary(r, w)
-  })
-  router.add_handler(Get, "/usage/summary/by-app", (r, w) => {
-    self.usage.handle_usage_summary_by_app(r, w)
-  })
-  router.add_handler(Post, "/usage/summary/by-app", (r, w) => {
-    self.usage.handle_usage_summary_by_app(r, w)
-  })
-  router.add_handler(Get, "/usage/trends", (r, w) => {
-    self.usage.handle_usage_trends(r, w)
-  })
-  router.add_handler(Post, "/usage/trends", (r, w) => {
-    self.usage.handle_usage_trends(r, w)
-  })
-  router.add_handler(Get, "/usage/provider-limits", (r, w) => {
-    self.usage.handle_usage_provider_limits(r, w, self.proxy.provider_router)
-  })
-  router.add_handler(Post, "/usage/provider-limits", (r, w) => {
-    self.usage.handle_usage_provider_limits(r, w, self.proxy.provider_router)
-  })
-  router.add_handler(Get, "/usage/provider-stats", (r, w) => {
-    self.usage.handle_usage_provider_stats(r, w)
-  })
-  router.add_handler(Post, "/usage/provider-stats", (r, w) => {
-    self.usage.handle_usage_provider_stats(r, w)
-  })
-  router.add_handler(Get, "/usage/model-stats", (r, w) => {
-    self.usage.handle_usage_model_stats(r, w)
-  })
-  router.add_handler(Post, "/usage/model-stats", (r, w) => {
-    self.usage.handle_usage_model_stats(r, w)
-  })
-  router.add_handler(Get, "/usage/data-sources", (_, w) => {
-    self.usage.handle_usage_data_sources(w)
-  })
-  router.add_handler(Post, "/usage/data-sources", (_, w) => {
-    self.usage.handle_usage_data_sources(w)
-  })
-  router.add_handler(Get, "/usage/provider-usage", (r, w) => {
-    self.usage.handle_query_provider_usage(r, w, self.proxy.provider_router)
-  })
-  router.add_handler(Post, "/usage/provider-usage", (r, w) => {
-    self.usage.handle_query_provider_usage(r, w, self.proxy.provider_router)
-  })
-  router.add_handler(Get, "/usage/balance", (r, w) => {
-    self.usage.handle_get_balance(r, w)
-  })
-  router.add_handler(Post, "/usage/balance", (r, w) => {
-    self.usage.handle_get_balance(r, w)
-  })
-  router.add_handler(Get, "/usage/subscription-quota", (r, w) => {
-    self.usage.handle_get_subscription_quota(r, w)
-  })
-  router.add_handler(Post, "/usage/subscription-quota", (r, w) => {
-    self.usage.handle_get_subscription_quota(r, w)
-  })
-  router.add_handler(Get, "/usage/codex-oauth-quota", (r, w) => {
-    self.auth.handle_get_codex_oauth_quota(r, w, self.usage)
-  })
-  router.add_handler(Post, "/usage/codex-oauth-quota", (r, w) => {
-    self.auth.handle_get_codex_oauth_quota(r, w, self.usage)
-  })
-  router.add_handler(Get, "/usage/codex-oauth-models", (r, w) => {
-    self.auth.handle_get_codex_oauth_models(r, w)
-  })
-  router.add_handler(Post, "/usage/codex-oauth-models", (r, w) => {
-    self.auth.handle_get_codex_oauth_models(r, w)
-  })
-  router.add_handler(Get, "/usage/coding-plan-quota", (r, w) => {
-    self.usage.handle_get_coding_plan_quota(r, w)
-  })
-  router.add_handler(Post, "/usage/coding-plan-quota", (r, w) => {
-    self.usage.handle_get_coding_plan_quota(r, w)
-  })
-  router.add_handler(Post, "/usage/test-script", (r, w) => {
-    self.usage.handle_test_usage_script(r, w)
-  })
-  router.add_handler(Post, "/usage/sync-session", (r, w) => {
-    self.usage.handle_usage_sync_session(r, w)
-  })
+  self.usage.register_routes(router, self.auth, self.proxy.provider_router)
   router.add_handler(Get, "/sessions", (_, w) => {
     self.session.handle_list_sessions(w)
   })
@@ -793,22 +704,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(Post, "/sessions/delete-many", (r, w) => {
     self.session.handle_delete_sessions(r, w)
-  })
-  router.add_handler(Get, "/usage/model-pricing", (_, w) => {
-    self.usage.handle_usage_model_pricing(w)
-  })
-  router.add_handler(Post, "/usage/model-pricing", (r, w) => {
-    self.usage.handle_usage_update_model_pricing(r, w)
-  })
-  router.add_handler(Delete, "/usage/model-pricing", (r, w) => {
-    self.usage.handle_usage_delete_model_pricing(r, w)
-  })
-  router.add_handler(Get, "/usage/request-detail/*path", (r, w) => {
-    self.usage.handle_usage_request_detail(
-      r,
-      w,
-      self.usage.pricing_override_rows(),
-    )
   })
   router.add_handler(Get, "/proxy/stream-check/config", (_, w) => {
     self.config.handle_get_stream_check_config(w)

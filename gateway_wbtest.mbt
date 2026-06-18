@@ -2100,6 +2100,8 @@ async test "auth endpoints are owned by auth service" {
 ///|
 async test "usage accounting is owned by usage service" {
   let usage_source = @fsx.read_file("gateway_usage.mbt")
+  let route_source = @fsx.read_file("gateway_usage_routes.mbt")
+  let core_source = @fsx.read_file("gateway_core.mbt")
   let auth_source = @fsx.read_file("gateway_auth.mbt")
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   let provider_source = @fsx.read_file("gateway_provider.mbt")
@@ -2121,6 +2123,24 @@ async test "usage accounting is owned by usage service" {
     ] {
     assert_false(old_gateway_sources.contains("Gateway::\{helper}("))
   }
+  assert_true(
+    core_source.contains(
+      "self.usage.register_routes(router, self.auth, self.proxy.provider_router)",
+    ),
+  )
+  for
+    handler in [
+      "handle_usage_logs", "handle_usage_summary", "handle_usage_summary_by_app",
+      "handle_usage_trends", "handle_usage_provider_limits", "handle_usage_provider_stats",
+      "handle_usage_model_stats", "handle_usage_data_sources", "handle_query_provider_usage",
+      "handle_get_balance", "handle_get_subscription_quota", "handle_get_coding_plan_quota",
+      "handle_test_usage_script", "handle_usage_sync_session", "handle_usage_model_pricing",
+      "handle_usage_update_model_pricing", "handle_usage_delete_model_pricing", "handle_usage_request_detail",
+    ] {
+    assert_true(route_source.contains("self.\{handler}("))
+  }
+  assert_true(route_source.contains("auth.handle_get_codex_oauth_quota("))
+  assert_true(route_source.contains("auth.handle_get_codex_oauth_models("))
 }
 
 ///|
