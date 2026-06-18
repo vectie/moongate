@@ -290,7 +290,7 @@ pub fn MoonstatClient::usage_delete_model_pricing_url(
   model_id : String,
 ) -> String {
   self.endpoint(
-    "/delete_model_pricing?\{moonstat_client_query_pair("modelId", model_id)}",
+    "/usage/model-pricing?\{moonstat_client_query_pair("model_id", model_id)}",
   )
 }
 
@@ -489,9 +489,8 @@ pub async fn MoonstatClient::usage_delete_model_pricing(
   self : MoonstatClient,
   model_id : String,
 ) -> Result[Json, String] {
-  self.post_json_path(
-    "/delete_model_pricing",
-    { "modelId": Json::string(model_id) }.to_json(),
+  self.delete_json_path(
+    "/usage/model-pricing?\{moonstat_client_query_pair("model_id", model_id)}",
   )
 }
 
@@ -585,6 +584,20 @@ async fn MoonstatClient::post_json_path(
 }
 
 ///|
+async fn MoonstatClient::delete_json_path(
+  self : MoonstatClient,
+  path : String,
+) -> Result[Json, String] {
+  match self.request_text_path("DELETE", path, None) {
+    Ok(body) =>
+      Ok(@json.parse(body)) catch {
+        err => Err("Invalid JSON from moonstat: \{err}")
+      }
+    Err(err) => Err(err)
+  }
+}
+
+///|
 async fn MoonstatClient::get_text_path(
   self : MoonstatClient,
   path : String,
@@ -613,6 +626,10 @@ async fn MoonstatClient::request_text_path(
       }
     "POST" =>
       client.post(target.path, body.unwrap_or("")) catch {
+        err => return Err("Network error: \{err}")
+      }
+    "DELETE" =>
+      client..request(Delete, target.path).end_request() catch {
         err => return Err("Network error: \{err}")
       }
     _ => return Err("Unsupported moonstat client method: \{http_method}")
