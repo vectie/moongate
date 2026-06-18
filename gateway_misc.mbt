@@ -1349,16 +1349,7 @@ fn normalize_claude_desktop_request_model(
 ///|
 fn normalize_claude_desktop_model_id(model : String) -> String {
   let trimmed = model.trim().to_owned()
-  let route_id = strip_one_m_suffix_for_route_lookup(trimmed)
-  if !is_claude_safe_model_id(route_id) {
-    return model.trim().to_owned()
-  }
-  match claude_role_keyword(route_id) {
-    Some("opus") => "claude-opus-4-8"
-    Some("haiku") => "claude-haiku-4-5"
-    Some("sonnet") => "claude-sonnet-4-6"
-    _ => route_id
-  }
+  strip_one_m_suffix_for_route_lookup(trimmed)
 }
 
 ///|
@@ -1388,20 +1379,6 @@ fn is_claude_safe_model_id(model : String) -> Bool {
   ["sonnet-", "opus-", "haiku-"].any(prefix => {
     tail.has_prefix(prefix) && tail.length() > prefix.length()
   })
-}
-
-///|
-fn claude_role_keyword(model : String) -> String? {
-  let normalized = model.to_lower()
-  if normalized.contains("opus") {
-    Some("opus")
-  } else if normalized.contains("haiku") {
-    Some("haiku")
-  } else if normalized.contains("sonnet") {
-    Some("sonnet")
-  } else {
-    None
-  }
 }
 
 ///|
@@ -1518,30 +1495,5 @@ fn ProviderRouteTarget::claude_desktop_route_upstream_model(
       return Some(upstream_model)
     }
   }
-  for route in routes {
-    let (route_id, upstream_model, _, _) = route
-    if claude_desktop_opus_route_alias_matches(route_id, requested) {
-      return Some(upstream_model)
-    }
-  }
-  guard is_claude_safe_model_id(requested) else { return None }
-  guard claude_role_keyword(requested) is Some(role) else { return None }
-  for route in routes {
-    let (route_id, upstream_model, _, _) = route
-    if claude_role_keyword(route_id) == Some(role) {
-      return Some(upstream_model)
-    }
-  }
   None
-}
-
-///|
-fn claude_desktop_opus_route_alias_matches(
-  route_id : String,
-  requested : String,
-) -> Bool {
-  let route = strip_one_m_suffix_for_route_lookup(route_id).trim().to_lower()
-  let requested = requested.trim().to_lower()
-  (route == "claude-opus-4-7" && requested == "claude-opus-4-8") ||
-  (route == "claude-opus-4-8" && requested == "claude-opus-4-7")
 }

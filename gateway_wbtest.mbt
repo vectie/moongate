@@ -4023,10 +4023,10 @@ test "claude desktop gateway bearer token validation" {
 }
 
 ///|
-test "claude desktop model normalization matches moonstat aliases" {
+test "claude desktop model normalization keeps route ids strict" {
   assert_eq(
     normalize_claude_desktop_model_id("claude-opus-4-7"),
-    "claude-opus-4-8",
+    "claude-opus-4-7",
   )
   assert_eq(
     normalize_claude_desktop_model_id("claude-opus-4-8[1m]"),
@@ -4038,13 +4038,13 @@ test "claude desktop model normalization matches moonstat aliases" {
   )
   assert_eq(
     normalize_claude_desktop_model_id("claude-haiku-4-5-20251001"),
-    "claude-haiku-4-5",
+    "claude-haiku-4-5-20251001",
   )
   assert_eq(
     normalize_claude_desktop_model_id("anthropic/claude-opus-4-8"),
-    "claude-opus-4-8",
+    "anthropic/claude-opus-4-8",
   )
-  assert_eq(normalize_claude_desktop_model_id("gpt-5[1m]"), "gpt-5[1m]")
+  assert_eq(normalize_claude_desktop_model_id("gpt-5[1m]"), "gpt-5")
 }
 
 ///|
@@ -4912,7 +4912,16 @@ test "proxy service uses moonstat claude desktop route metadata for upstream mod
       default_model=gateway.model,
       app_type="claude-desktop",
     ),
-    "deepseek-v4-flash",
+    "claude-sonnet-4-6-20251001",
+  )
+  assert_eq(
+    gateway.proxy.upstream_claude_model(
+      "claude-opus-4-8",
+      Some(provider),
+      default_model=gateway.model,
+      app_type="claude-desktop",
+    ),
+    "upstream-opus",
   )
   assert_eq(
     gateway.proxy.upstream_claude_model(
@@ -4921,7 +4930,7 @@ test "proxy service uses moonstat claude desktop route metadata for upstream mod
       default_model=gateway.model,
       app_type="claude-desktop",
     ),
-    "upstream-opus",
+    "claude-opus-4-7",
   )
   assert_eq(
     gateway.proxy.upstream_claude_model(
