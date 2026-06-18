@@ -396,79 +396,77 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Get, "/open_zip_file_dialog", (_, w) => {
     self.workspace.handle_open_zip_file_dialog(w)
   })
-  router.add_handler(Get, "/get_installed_skills", (_, w) => {
+  router.add_handler(Get, "/skills/installed", (_, w) => {
     self.skills.handle_get_installed_skills(w)
   })
-  router.add_handler(Get, "/get_skill_backups", (_, w) => {
+  router.add_handler(Get, "/skills/backups", (_, w) => {
     self.config.handle_get_skill_backups(w)
   })
-  router.add_handler(Post, "/delete_skill_backup", (r, w) => {
+  router.add_handler(Post, "/skills/backups/delete", (r, w) => {
     self.config.handle_delete_skill_backup(r, w)
   })
-  router.add_handler(Post, "/restore_skill_backup", (r, w) => {
+  router.add_handler(Post, "/skills/backups/restore", (r, w) => {
     self.config.handle_restore_skill_backup(r, w)
   })
-  router.add_handler(Post, "/install_skill_unified", (r, w) => {
+  router.add_handler(Post, "/skills/install-unified", (r, w) => {
     self.skills.handle_install_skill_unified(r, w)
   })
-  router.add_handler(Post, "/uninstall_skill_unified", (r, w) => {
+  router.add_handler(Post, "/skills/uninstall-unified", (r, w) => {
     self.skills.handle_uninstall_skill_unified(r, w)
   })
-  router.add_handler(Post, "/toggle_skill_app", (r, w) => {
+  router.add_handler(Post, "/skills/toggle-app", (r, w) => {
     self.skills.handle_toggle_skill_app(r, w)
   })
-  router.add_handler(Get, "/scan_unmanaged_skills", (_, w) => {
+  router.add_handler(Get, "/skills/unmanaged", (_, w) => {
     self.skills.handle_scan_unmanaged_skills(w)
   })
-  router.add_handler(Post, "/import_skills_from_apps", (r, w) => {
+  router.add_handler(Post, "/skills/import-apps", (r, w) => {
     self.skills.handle_import_skills_from_apps(r, w)
   })
-  router.add_handler(Get, "/discover_available_skills", (_, w) => {
+  router.add_handler(Get, "/skills/discover", (_, w) => {
     self.skills.handle_discover_available_skills(w)
   })
-  router.add_handler(Get, "/check_skill_updates", (_, w) => {
+  router.add_handler(Get, "/skills/updates", (_, w) => {
     self.skills.handle_check_skill_updates(w)
   })
-  router.add_handler(Post, "/update_skill", (r, w) => {
+  router.add_handler(Post, "/skills/update", (r, w) => {
     self.skills.handle_update_skill(r, w)
   })
-  router.add_handler(Post, "/migrate_skill_storage", (r, w) => {
+  router.add_handler(Post, "/skills/migrate-storage", (r, w) => {
     self.skills.handle_migrate_skill_storage(r, w)
   })
-  router.add_handler(Get, "/search_skills_sh", (r, w) => {
+  router.add_handler(Get, "/skills/search", (r, w) => {
     self.skills.handle_search_skills_sh(r, w)
   })
-  router.add_handler(Post, "/search_skills_sh", (r, w) => {
+  router.add_handler(Post, "/skills/search", (r, w) => {
     self.skills.handle_search_skills_sh(r, w)
   })
-  router.add_handler(Get, "/get_skills", (_, w) => {
+  router.add_handler(Get, "/skills", (_, w) => self.skills.handle_get_skills(w))
+  router.add_handler(Get, "/skills/app", (_, w) => {
     self.skills.handle_get_skills(w)
   })
-  router.add_handler(Get, "/get_skills_for_app", (_, w) => {
-    self.skills.handle_get_skills(w)
-  })
-  router.add_handler(Post, "/install_skill", (r, w) => {
+  router.add_handler(Post, "/skills/install", (r, w) => {
     self.skills.handle_install_skill_legacy(r, w, "claude")
   })
-  router.add_handler(Post, "/install_skill_for_app", (r, w) => {
+  router.add_handler(Post, "/skills/install-for-app", (r, w) => {
     self.skills.handle_install_skill_for_app(r, w)
   })
-  router.add_handler(Post, "/uninstall_skill", (r, w) => {
+  router.add_handler(Post, "/skills/uninstall", (r, w) => {
     self.skills.handle_uninstall_skill_legacy(r, w)
   })
-  router.add_handler(Post, "/uninstall_skill_for_app", (r, w) => {
+  router.add_handler(Post, "/skills/uninstall-for-app", (r, w) => {
     self.skills.handle_uninstall_skill_legacy(r, w)
   })
-  router.add_handler(Get, "/get_skill_repos", (_, w) => {
+  router.add_handler(Get, "/skills/repos", (_, w) => {
     self.skills.handle_get_skill_repos(w)
   })
-  router.add_handler(Post, "/add_skill_repo", (r, w) => {
+  router.add_handler(Post, "/skills/repos", (r, w) => {
     self.skills.handle_add_skill_repo(r, w)
   })
-  router.add_handler(Post, "/remove_skill_repo", (r, w) => {
+  router.add_handler(Post, "/skills/repos/remove", (r, w) => {
     self.skills.handle_remove_skill_repo(r, w)
   })
-  router.add_handler(Post, "/install_skills_from_zip", (r, w) => {
+  router.add_handler(Post, "/skills/install-zip", (r, w) => {
     self.skills.handle_install_skills_from_zip(r, w)
   })
   router.add_handler(Get, "/get_app_config_path", (_, w) => {

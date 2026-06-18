@@ -39,125 +39,30 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "copilot_get_token", patterns: ["copilot token"] },
     { id: "copilot_get_models", patterns: ["copilot models"] },
     { id: "copilot_get_usage", patterns: ["copilot usage"] },
-    {
-      id: "get_installed_skills",
-      patterns: [
-        "skills installed", "get_installed_skills", "get-installed-skills",
-      ],
-    },
-    {
-      id: "get_skill_backups",
-      patterns: ["skills backups", "get_skill_backups", "get-skill-backups"],
-    },
-    {
-      id: "delete_skill_backup",
-      patterns: [
-        "skills backup delete", "delete_skill_backup", "delete-skill-backup",
-      ],
-    },
-    {
-      id: "restore_skill_backup",
-      patterns: [
-        "skills backup restore", "restore_skill_backup", "restore-skill-backup",
-      ],
-    },
-    {
-      id: "install_skill_unified",
-      patterns: [
-        "skills install-unified", "install_skill_unified", "install-skill-unified",
-      ],
-    },
-    {
-      id: "uninstall_skill_unified",
-      patterns: [
-        "skills uninstall-unified", "uninstall_skill_unified", "uninstall-skill-unified",
-      ],
-    },
-    {
-      id: "toggle_skill_app",
-      patterns: ["skills toggle-app", "toggle_skill_app", "toggle-skill-app"],
-    },
-    {
-      id: "scan_unmanaged_skills",
-      patterns: [
-        "skills scan-unmanaged", "scan_unmanaged_skills", "scan-unmanaged-skills",
-      ],
-    },
-    {
-      id: "import_skills_from_apps",
-      patterns: [
-        "skills import-apps", "import_skills_from_apps", "import-skills-from-apps",
-      ],
-    },
-    {
-      id: "discover_available_skills",
-      patterns: [
-        "skills discover", "discover_available_skills", "discover-available-skills",
-      ],
-    },
-    {
-      id: "check_skill_updates",
-      patterns: [
-        "skills check-updates", "check_skill_updates", "check-skill-updates",
-      ],
-    },
-    {
-      id: "update_skill",
-      patterns: ["skills update", "update_skill", "update-skill"],
-    },
-    {
-      id: "migrate_skill_storage",
-      patterns: [
-        "skills migrate-storage", "migrate_skill_storage", "migrate-skill-storage",
-      ],
-    },
-    {
-      id: "search_skills_sh",
-      patterns: ["skills search", "search_skills_sh", "search-skills-sh"],
-    },
-    { id: "get_skills", patterns: ["skills list", "get_skills", "get-skills"] },
-    {
-      id: "get_skills_for_app",
-      patterns: ["skills app", "get_skills_for_app", "get-skills-for-app"],
-    },
-    {
-      id: "install_skill",
-      patterns: ["skills install", "install_skill", "install-skill"],
-    },
-    {
-      id: "install_skill_for_app",
-      patterns: [
-        "skills install-for-app", "install_skill_for_app", "install-skill-for-app",
-      ],
-    },
-    {
-      id: "uninstall_skill",
-      patterns: ["skills uninstall", "uninstall_skill", "uninstall-skill"],
-    },
-    {
-      id: "uninstall_skill_for_app",
-      patterns: [
-        "skills uninstall-for-app", "uninstall_skill_for_app", "uninstall-skill-for-app",
-      ],
-    },
-    {
-      id: "get_skill_repos",
-      patterns: ["skills repos", "get_skill_repos", "get-skill-repos"],
-    },
-    {
-      id: "add_skill_repo",
-      patterns: ["skills repo add", "add_skill_repo", "add-skill-repo"],
-    },
-    {
-      id: "remove_skill_repo",
-      patterns: ["skills repo remove", "remove_skill_repo", "remove-skill-repo"],
-    },
-    {
-      id: "install_skills_from_zip",
-      patterns: [
-        "skills install-zip", "install_skills_from_zip", "install-skills-from-zip",
-      ],
-    },
+    { id: "get_installed_skills", patterns: ["skills installed"] },
+    { id: "get_skill_backups", patterns: ["skills backups"] },
+    { id: "delete_skill_backup", patterns: ["skills backup delete"] },
+    { id: "restore_skill_backup", patterns: ["skills backup restore"] },
+    { id: "install_skill_unified", patterns: ["skills install-unified"] },
+    { id: "uninstall_skill_unified", patterns: ["skills uninstall-unified"] },
+    { id: "toggle_skill_app", patterns: ["skills toggle-app"] },
+    { id: "scan_unmanaged_skills", patterns: ["skills scan-unmanaged"] },
+    { id: "import_skills_from_apps", patterns: ["skills import-apps"] },
+    { id: "discover_available_skills", patterns: ["skills discover"] },
+    { id: "check_skill_updates", patterns: ["skills check-updates"] },
+    { id: "update_skill", patterns: ["skills update"] },
+    { id: "migrate_skill_storage", patterns: ["skills migrate-storage"] },
+    { id: "search_skills_sh", patterns: ["skills search"] },
+    { id: "get_skills", patterns: ["skills list"] },
+    { id: "get_skills_for_app", patterns: ["skills app"] },
+    { id: "install_skill_for_app", patterns: ["skills install-for-app"] },
+    { id: "install_skill", patterns: ["skills install"] },
+    { id: "uninstall_skill_for_app", patterns: ["skills uninstall-for-app"] },
+    { id: "uninstall_skill", patterns: ["skills uninstall"] },
+    { id: "get_skill_repos", patterns: ["skills repos"] },
+    { id: "add_skill_repo", patterns: ["skills repo add"] },
+    { id: "remove_skill_repo", patterns: ["skills repo remove"] },
+    { id: "install_skills_from_zip", patterns: ["skills install-zip"] },
     {
       id: "get_app_config_path",
       patterns: [
@@ -1126,17 +1031,17 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_installed_skills") => {
-      check_usage_endpoint(args, "/get_installed_skills")
+      check_usage_endpoint(args, "/skills/installed")
       true
     }
     Some("get_skill_backups") => {
-      check_usage_endpoint(args, "/get_skill_backups")
+      check_usage_endpoint(args, "/skills/backups")
       true
     }
     Some("delete_skill_backup") => {
       check_json_post_endpoint(
         args,
-        skill_backup_id_path(args, "/delete_skill_backup"),
+        skill_backup_id_path(args, "/skills/backups/delete"),
         "Skills",
       )
       true
@@ -1148,7 +1053,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("install_skill_unified") => {
       check_json_post_endpoint(
         args,
-        skill_install_path(args, "/install_skill_unified"),
+        skill_install_path(args, "/skills/install-unified"),
         "Skills",
       )
       true
@@ -1156,7 +1061,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("uninstall_skill_unified") => {
       check_json_post_endpoint(
         args,
-        skill_id_path(args, "/uninstall_skill_unified"),
+        skill_id_path(args, "/skills/uninstall-unified"),
         "Skills",
       )
       true
@@ -1166,7 +1071,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("scan_unmanaged_skills") => {
-      check_usage_endpoint(args, "/scan_unmanaged_skills")
+      check_usage_endpoint(args, "/skills/unmanaged")
       true
     }
     Some("import_skills_from_apps") => {
@@ -1174,17 +1079,17 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("discover_available_skills") => {
-      check_usage_endpoint(args, "/discover_available_skills")
+      check_usage_endpoint(args, "/skills/discover")
       true
     }
     Some("check_skill_updates") => {
-      check_usage_endpoint(args, "/check_skill_updates")
+      check_usage_endpoint(args, "/skills/updates")
       true
     }
     Some("update_skill") => {
       check_json_post_endpoint(
         args,
-        skill_id_path(args, "/update_skill"),
+        skill_id_path(args, "/skills/update"),
         "Skills",
       )
       true
@@ -1198,17 +1103,17 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_skills") => {
-      check_usage_endpoint(args, "/get_skills")
+      check_usage_endpoint(args, "/skills")
       true
     }
     Some("get_skills_for_app") => {
-      check_usage_endpoint(args, skill_app_path(args, "/get_skills_for_app"))
+      check_usage_endpoint(args, skill_app_path(args, "/skills/app"))
       true
     }
     Some("install_skill") => {
       check_json_post_endpoint(
         args,
-        skill_install_path(args, "/install_skill"),
+        skill_install_path(args, "/skills/install"),
         "Skills",
       )
       true
@@ -1216,7 +1121,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("install_skill_for_app") => {
       check_json_post_endpoint(
         args,
-        skill_install_path(args, "/install_skill_for_app"),
+        skill_install_path(args, "/skills/install-for-app"),
         "Skills",
       )
       true
@@ -1224,7 +1129,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("uninstall_skill") => {
       check_json_post_endpoint(
         args,
-        skill_id_path(args, "/uninstall_skill"),
+        skill_id_path(args, "/skills/uninstall"),
         "Skills",
       )
       true
@@ -1232,13 +1137,13 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("uninstall_skill_for_app") => {
       check_json_post_endpoint(
         args,
-        skill_id_path(args, "/uninstall_skill_for_app"),
+        skill_id_path(args, "/skills/uninstall-for-app"),
         "Skills",
       )
       true
     }
     Some("get_skill_repos") => {
-      check_usage_endpoint(args, "/get_skill_repos")
+      check_usage_endpoint(args, "/skills/repos")
       true
     }
     Some("add_skill_repo") => {

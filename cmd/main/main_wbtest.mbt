@@ -54,16 +54,8 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_installed_skills"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "get-installed-skills"]) ==
-    Some("get_installed_skills"),
-  )
-  assert_true(
     registered_cli_command_id(["moonstat", "skills", "backup", "restore"]) ==
     Some("restore_skill_backup"),
-  )
-  assert_true(
-    registered_cli_command_id(["moonstat", "install-skill-unified"]) ==
-    Some("install_skill_unified"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "skills", "import-apps"]) ==
@@ -924,30 +916,30 @@ test "proxy grouped commands build canonical paths" {
   )
   assert_eq(
     import_skills_from_apps_body([
-      "moonstat", "import_skills_from_apps", "--imports", "[{\"directory\":\"traffic-stats\",\"apps\":{\"codex\":true}}]",
+      "moonstat", "skills", "import-apps", "--imports", "[{\"directory\":\"traffic-stats\",\"apps\":{\"codex\":true}}]",
     ]),
     Some("[{\"directory\":\"traffic-stats\",\"apps\":{\"codex\":true}}]"),
   )
   assert_eq(
     import_skills_from_apps_body([
-      "moonstat", "import_skills_from_apps", "--body", "{\"imports\":[]}",
+      "moonstat", "skills", "import-apps", "--body", "{\"imports\":[]}",
     ]),
     Some("{\"imports\":[]}"),
   )
   assert_eq(
     migrate_skill_storage_path([
-      "moonstat", "migrate_skill_storage", "--target", "unified",
+      "moonstat", "skills", "migrate-storage", "--target", "unified",
     ]),
-    Some("/migrate_skill_storage?target=unified"),
+    Some("/skills/migrate-storage?target=unified"),
   )
   assert_eq(
     migrate_skill_storage_path([
-      "moonstat", "migrate_skill_storage", "--target", "cc switch",
+      "moonstat", "skills", "migrate-storage", "--target", "cc switch",
     ]),
-    Some("/migrate_skill_storage?target=cc%20switch"),
+    Some("/skills/migrate-storage?target=cc%20switch"),
   )
   assert_eq(
-    migrate_skill_storage_path(["moonstat", "migrate_skill_storage"]),
+    migrate_skill_storage_path(["moonstat", "skills", "migrate-storage"]),
     None,
   )
   assert_eq(
@@ -1512,46 +1504,47 @@ test "top level moonstat skill commands build paths" {
   assert_eq(
     skill_install_path(
       [
-        "moonstat", "install_skill_unified", "--directory", "traffic stats", "--name",
-        "Traffic Stats", "--description", "Routes and usage", "--app", "codex",
+        "moonstat", "skills", "install-unified", "--directory", "traffic stats",
+        "--name", "Traffic Stats", "--description", "Routes and usage", "--app",
+        "codex",
       ],
-      "/install_skill_unified",
+      "/skills/install-unified",
     ),
-    "/install_skill_unified?directory=traffic%20stats&name=Traffic%20Stats&description=Routes%20and%20usage&app=codex",
+    "/skills/install-unified?directory=traffic%20stats&name=Traffic%20Stats&description=Routes%20and%20usage&app=codex",
   )
   assert_eq(
     skill_toggle_app_path([
-      "moonstat", "toggle_skill_app", "--id", "traffic-stats", "--app", "hermes",
+      "moonstat", "skills", "toggle-app", "--id", "traffic-stats", "--app", "hermes",
       "--enabled", "true",
     ]),
-    "/toggle_skill_app?id=traffic-stats&app=hermes&enabled=true",
+    "/skills/toggle-app?id=traffic-stats&app=hermes&enabled=true",
   )
   assert_eq(
     skill_restore_backup_path([
-      "moonstat", "restore_skill_backup", "--backupId", "traffic-stats-1", "--currentApp",
-      "claude",
+      "moonstat", "skills", "backup", "restore", "--backupId", "traffic-stats-1",
+      "--currentApp", "claude",
     ]),
-    "/restore_skill_backup?backupId=traffic-stats-1&currentApp=claude",
+    "/skills/backups/restore?backupId=traffic-stats-1&currentApp=claude",
   )
   assert_eq(
     skill_search_path([
-      "moonstat", "search_skills_sh", "--query", "proxy skill", "--limit", "5", "--offset",
+      "moonstat", "skills", "search", "--query", "proxy skill", "--limit", "5", "--offset",
       "10",
     ]),
-    "/search_skills_sh?query=proxy%20skill&limit=5&offset=10",
+    "/skills/search?query=proxy%20skill&limit=5&offset=10",
   )
   assert_eq(
     skill_repo_add_path([
-      "moonstat", "add_skill_repo", "--owner", "vectie", "--name", "moonstat-skills",
+      "moonstat", "skills", "repo", "add", "--owner", "vectie", "--name", "moonstat-skills",
       "--branch", "main", "--enabled", "true",
     ]),
-    "/add_skill_repo?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
+    "/skills/repos?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
   )
   assert_eq(
     skill_zip_install_path([
-      "moonstat", "install_skills_from_zip", "--filePath", "/tmp/skill bundle", "--currentApp",
+      "moonstat", "skills", "install-zip", "--filePath", "/tmp/skill bundle", "--currentApp",
       "codex",
     ]),
-    "/install_skills_from_zip?filePath=%2Ftmp%2Fskill%20bundle&currentApp=codex",
+    "/skills/install-zip?filePath=%2Ftmp%2Fskill%20bundle&currentApp=codex",
   )
 }

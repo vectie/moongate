@@ -341,7 +341,7 @@ async fn import_skills_from_apps(args : Array[String]) -> Unit {
     logger.error("Missing required --imports JSON")
     return
   }
-  post_json_body_endpoint(args, "/import_skills_from_apps", body, "Skills")
+  post_json_body_endpoint(args, "/skills/import-apps", body, "Skills")
 }
 
 ///|
@@ -363,7 +363,7 @@ async fn migrate_skill_storage(args : Array[String]) -> Unit {
 fn migrate_skill_storage_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--target") is Some(target) else { return None }
   Some(
-    cli_path_with_query("/migrate_skill_storage", [
+    cli_path_with_query("/skills/migrate-storage", [
       cli_query_pair("target", target),
     ]),
   )
@@ -884,7 +884,7 @@ fn skill_restore_backup_path(args : Array[String]) -> String {
           }
       }
   }
-  cli_path_with_query("/restore_skill_backup", query)
+  cli_path_with_query("/skills/backups/restore", query)
 }
 
 ///|
@@ -937,7 +937,7 @@ fn skill_toggle_app_path(args : Array[String]) -> String {
     Some(enabled) => query.push(cli_query_pair("enabled", enabled))
     None => ()
   }
-  cli_path_with_query("/toggle_skill_app", query)
+  cli_path_with_query("/skills/toggle-app", query)
 }
 
 ///|
@@ -955,7 +955,7 @@ fn skill_search_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("offset", value))
     None => ()
   }
-  cli_path_with_query("/search_skills_sh", query)
+  cli_path_with_query("/skills/search", query)
 }
 
 ///|
@@ -981,7 +981,7 @@ fn skill_repo_add_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("enabled", value))
     None => ()
   }
-  cli_path_with_query("/add_skill_repo", query)
+  cli_path_with_query("/skills/repos", query)
 }
 
 ///|
@@ -999,7 +999,7 @@ fn skill_repo_remove_path(args : Array[String]) -> String {
         None => ()
       }
   }
-  cli_path_with_query("/remove_skill_repo", query)
+  cli_path_with_query("/skills/repos/remove", query)
 }
 
 ///|
@@ -1025,7 +1025,7 @@ fn skill_zip_install_path(args : Array[String]) -> String {
           }
       }
   }
-  cli_path_with_query("/install_skills_from_zip", query)
+  cli_path_with_query("/skills/install-zip", query)
 }
 
 ///|

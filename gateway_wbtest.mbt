@@ -9638,7 +9638,7 @@ test "ccs import derives claude desktop routes from claude provider env" {
 test "ccs skill repo request accepts query and json body shapes" {
   let empty_body : Map[String, Json] = {}
   guard moon_skill_repo_request_json(
-      "/add_skill_repo?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
+      "/skills/repos?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
       Some(empty_body.to_json()),
     )
     is Some(Object(query_repo)) else {
@@ -9650,7 +9650,7 @@ test "ccs skill repo request accepts query and json body shapes" {
   assert_eq(query_repo["enabled"], Json::boolean(true))
 
   guard moon_skill_repo_request_json(
-      "/add_skill_repo",
+      "/skills/repos",
       Some(
         {
           "owner": Json::string("anthropics"),

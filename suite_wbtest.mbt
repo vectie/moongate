@@ -205,13 +205,13 @@ test "suite manifest publishes moonstat service contract" {
     routes.contains(Json::string("GET|POST /get_current_omo_slim_provider_id")),
   )
   assert_true(routes.contains(Json::string("POST /disable_current_omo_slim")))
-  assert_true(routes.contains(Json::string("GET /get_installed_skills")))
-  assert_true(routes.contains(Json::string("GET /get_skill_backups")))
-  assert_true(routes.contains(Json::string("POST /install_skill_unified")))
-  assert_true(routes.contains(Json::string("POST /toggle_skill_app")))
-  assert_true(routes.contains(Json::string("GET|POST /search_skills_sh")))
-  assert_true(routes.contains(Json::string("GET /get_skill_repos")))
-  assert_true(routes.contains(Json::string("POST /install_skills_from_zip")))
+  assert_true(routes.contains(Json::string("GET /skills/installed")))
+  assert_true(routes.contains(Json::string("GET /skills/backups")))
+  assert_true(routes.contains(Json::string("POST /skills/install-unified")))
+  assert_true(routes.contains(Json::string("POST /skills/toggle-app")))
+  assert_true(routes.contains(Json::string("GET|POST /skills/search")))
+  assert_true(routes.contains(Json::string("GET /skills/repos")))
+  assert_true(routes.contains(Json::string("POST /skills/install-zip")))
   assert_true(routes.contains(Json::string("GET /proxy/status")))
   assert_true(routes.contains(Json::string("POST /proxy/start")))
   assert_true(routes.contains(Json::string("POST /proxy/stop")))
@@ -518,11 +518,8 @@ test "suite manifest publishes moonstat service contract" {
   )
   guard obj["commands"] is Object(commands) else { fail("expected commands") }
   assert_eq(commands["start"], Json::string("moonstat start --port 15721"))
-  assert_eq(
-    commands["skills_list"],
-    Json::string("moonstat get_installed_skills"),
-  )
-  assert_eq(commands["skills_repos"], Json::string("moonstat get_skill_repos"))
+  assert_eq(commands["skills_list"], Json::string("moonstat skills installed"))
+  assert_eq(commands["skills_repos"], Json::string("moonstat skills repos"))
   assert_eq(
     commands["update_tray_menu"],
     Json::string("moonstat update_tray_menu"),
@@ -624,13 +621,7 @@ fn moon_tauri_command_surface() -> Array[String] {
     "open_zip_file_dialog", "create_db_backup", "list_db_backups", "restore_db_backup",
     "rename_db_backup", "delete_db_backup", "parse_deeplink", "merge_deeplink_config",
     "import_from_deeplink", "import_from_deeplink_unified", "update_tray_menu", "check_env_conflicts",
-    "delete_env_vars", "restore_env_backup", "get_installed_skills", "get_skill_backups",
-    "delete_skill_backup", "install_skill_unified", "uninstall_skill_unified", "restore_skill_backup",
-    "toggle_skill_app", "scan_unmanaged_skills", "import_skills_from_apps", "discover_available_skills",
-    "check_skill_updates", "update_skill", "migrate_skill_storage", "search_skills_sh",
-    "get_skills", "get_skills_for_app", "install_skill", "install_skill_for_app",
-    "uninstall_skill", "uninstall_skill_for_app", "get_skill_repos", "add_skill_repo",
-    "remove_skill_repo", "install_skills_from_zip", "set_auto_launch", "get_auto_launch_status",
+    "delete_env_vars", "restore_env_backup", "set_auto_launch", "get_auto_launch_status",
     "list_sessions", "get_session_messages", "delete_session", "delete_sessions",
     "launch_session_terminal", "get_tool_versions", "run_tool_lifecycle_action",
     "probe_tool_installations", "set_window_theme", "read_omo_local_file", "get_current_omo_provider_id",
@@ -652,7 +643,7 @@ test "suite manifest covers current Moonstat command surface" {
   guard manifest is Object(obj) else { fail("expected manifest object") }
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 145)
+  assert_eq(moon_commands.length(), 121)
   for command in moon_commands {
     assert_true(suite_routes_include_path(routes, "/\{command}"))
   }
@@ -673,7 +664,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 async test "gateway registers current Moonstat command handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 145)
+  assert_eq(moon_commands.length(), 121)
   for command in moon_commands {
     assert_true(gateway_source_registers_path(source, "/\{command}"))
   }
