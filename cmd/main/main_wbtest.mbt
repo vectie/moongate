@@ -536,6 +536,19 @@ test "suite cli dispatcher owns suite discovery commands" {
 }
 
 ///|
+test "config cli dispatcher owns config settings and mcp commands" {
+  assert_true(cli_config_command_id("get_config_status"))
+  assert_true(cli_config_command_id("save_settings"))
+  assert_true(cli_config_command_id("set_rectifier_config"))
+  assert_true(cli_config_command_id("get_claude_plugin_status"))
+  assert_true(cli_config_command_id("upsert_mcp_server"))
+  assert_true(cli_config_command_id("enable_prompt"))
+  assert_false(cli_config_command_id("auth_get_status"))
+  assert_false(cli_config_command_id("get_usage_summary"))
+  assert_false(cli_config_command_id("read_workspace_file"))
+}
+
+///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),

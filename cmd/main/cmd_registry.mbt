@@ -580,44 +580,8 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       run_skill_cli_command(command_id, args)
       true
     }
-    Some("get_app_config_path") => {
-      check_usage_endpoint(args, "/config/app-path")
-      true
-    }
-    Some("open_app_config_folder") => {
-      check_usage_endpoint(args, "/config/app-folder/open")
-      true
-    }
-    Some("get_claude_common_config_snippet") => {
-      check_usage_endpoint(args, "/config/snippets/claude")
-      true
-    }
-    Some("set_claude_common_config_snippet") => {
-      set_config_snippet(args, "/config/snippets/claude", app_required=false)
-      true
-    }
-    Some("get_common_config_snippet") => {
-      check_usage_endpoint(args, config_app_path(args, "/config/snippets"))
-      true
-    }
-    Some("set_common_config_snippet") => {
-      set_config_snippet(args, "/config/snippets", app_required=true)
-      true
-    }
-    Some("extract_common_config_snippet") => {
-      check_usage_endpoint(args, extract_common_config_snippet_path(args))
-      true
-    }
-    Some("check_env_conflicts") => {
-      check_usage_endpoint(args, config_app_path(args, "/config/env/conflicts"))
-      true
-    }
-    Some("delete_env_vars") => {
-      delete_env_vars(args)
-      true
-    }
-    Some("restore_env_backup") => {
-      restore_env_backup(args)
+    Some(command_id) if cli_config_command_id(command_id) => {
+      run_config_cli_command(command_id, args)
       true
     }
     Some("stream_check_provider") => {
@@ -808,26 +772,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       run_workspace_cli_command(command_id, args)
       true
     }
-    Some("get_claude_config_status") => {
-      check_usage_endpoint(args, "/config/claude/status")
-      true
-    }
-    Some("get_config_status") => {
-      check_usage_endpoint(args, config_app_path(args, "/config/status"))
-      true
-    }
-    Some("get_claude_code_config_path") => {
-      check_usage_endpoint(args, "/config/claude-code/path")
-      true
-    }
-    Some("get_config_dir") => {
-      check_usage_endpoint(args, config_app_path(args, "/config/dir"))
-      true
-    }
-    Some("open_config_folder") => {
-      check_usage_endpoint(args, config_app_path(args, "/config/folder/open"))
-      true
-    }
     Some("pick_directory") => {
       check_usage_endpoint(args, pick_directory_path(args))
       true
@@ -1000,14 +944,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       check_json_post_endpoint(args, "/providers/omo-slim/disable", "OMO")
       true
     }
-    Some("get_settings") => {
-      check_usage_endpoint(args, "/settings")
-      true
-    }
-    Some("save_settings") => {
-      save_settings(args)
-      true
-    }
     Some("restart_app") => {
       check_json_post_endpoint(args, "/runtime/restart", "Settings")
       true
@@ -1016,154 +952,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       check_json_post_endpoint(
         args, "/runtime/updates/install-restart", "Settings",
       )
-      true
-    }
-    Some("set_app_config_dir_override") => {
-      set_app_config_dir_override(args)
-      true
-    }
-    Some("get_app_config_dir_override") => {
-      check_usage_endpoint(args, "/settings/app-config-dir")
-      true
-    }
-    Some("set_auto_launch") => {
-      set_auto_launch(args)
-      true
-    }
-    Some("get_auto_launch_status") => {
-      check_usage_endpoint(args, "/settings/auto-launch")
-      true
-    }
-    Some("set_rectifier_config") => {
-      set_moon_json_config(args, "/settings/rectifier", "--config", "Settings")
-      true
-    }
-    Some("get_rectifier_config") => {
-      check_usage_endpoint(args, "/settings/rectifier")
-      true
-    }
-    Some("set_optimizer_config") => {
-      set_moon_json_config(args, "/settings/optimizer", "--config", "Settings")
-      true
-    }
-    Some("get_optimizer_config") => {
-      check_usage_endpoint(args, "/settings/optimizer")
-      true
-    }
-    Some("set_copilot_optimizer_config") => {
-      set_moon_json_config(
-        args, "/settings/copilot-optimizer", "--config", "Settings",
-      )
-      true
-    }
-    Some("get_copilot_optimizer_config") => {
-      check_usage_endpoint(args, "/settings/copilot-optimizer")
-      true
-    }
-    Some("set_log_config") => {
-      set_moon_json_config(args, "/settings/log", "--config", "Settings")
-      true
-    }
-    Some("get_log_config") => {
-      check_usage_endpoint(args, "/settings/log")
-      true
-    }
-    Some("get_claude_plugin_status") => {
-      check_usage_endpoint(args, "/plugin/claude/status")
-      true
-    }
-    Some("read_claude_plugin_config") => {
-      check_usage_endpoint(args, "/plugin/claude/config")
-      true
-    }
-    Some("apply_claude_plugin_config") => {
-      apply_claude_plugin_config(args)
-      true
-    }
-    Some("is_claude_plugin_applied") => {
-      check_usage_endpoint(args, "/plugin/claude/applied")
-      true
-    }
-    Some("apply_claude_onboarding_skip") => {
-      check_json_post_endpoint(args, "/plugin/claude/onboarding-skip", "Plugin")
-      true
-    }
-    Some("clear_claude_onboarding_skip") => {
-      check_json_post_endpoint(
-        args, "/plugin/claude/onboarding-skip/clear", "Plugin",
-      )
-      true
-    }
-    Some("get_claude_mcp_status") => {
-      check_usage_endpoint(args, "/mcp/claude/status")
-      true
-    }
-    Some("read_claude_mcp_config") => {
-      check_usage_endpoint(args, "/mcp/claude/config")
-      true
-    }
-    Some("upsert_claude_mcp_server") => {
-      upsert_mcp_server(args, "/mcp/claude/servers")
-      true
-    }
-    Some("delete_claude_mcp_server") => {
-      delete_mcp_server(args, "/mcp/claude/servers")
-      true
-    }
-    Some("validate_mcp_command") => {
-      check_usage_endpoint(args, mcp_validate_command_path(args))
-      true
-    }
-    Some("get_mcp_config") => {
-      check_usage_endpoint(args, mcp_app_path(args, "/mcp/config"))
-      true
-    }
-    Some("upsert_mcp_server_in_config") => {
-      upsert_mcp_server(args, "/mcp/config/servers")
-      true
-    }
-    Some("delete_mcp_server_in_config") => {
-      delete_mcp_server(args, "/mcp/config/servers")
-      true
-    }
-    Some("set_mcp_enabled") => {
-      set_mcp_enabled(args)
-      true
-    }
-    Some("get_mcp_servers") => {
-      check_usage_endpoint(args, "/mcp/servers")
-      true
-    }
-    Some("upsert_mcp_server") => {
-      upsert_mcp_server(args, "/mcp/servers")
-      true
-    }
-    Some("delete_mcp_server") => {
-      delete_mcp_server(args, "/mcp/servers")
-      true
-    }
-    Some("toggle_mcp_app") => {
-      toggle_mcp_app(args)
-      true
-    }
-    Some("import_mcp_from_apps") => {
-      check_json_post_endpoint(args, "/mcp/import-apps", "MCP")
-      true
-    }
-    Some("get_prompts") => {
-      check_usage_endpoint(args, prompt_app_path(args, "/prompts"))
-      true
-    }
-    Some("upsert_prompt") => {
-      upsert_prompt(args)
-      true
-    }
-    Some("delete_prompt") => {
-      delete_prompt(args)
-      true
-    }
-    Some("enable_prompt") => {
-      enable_prompt(args)
       true
     }
     Some(command_id) if cli_usage_command_id(command_id) => {
