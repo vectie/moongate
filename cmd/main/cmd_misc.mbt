@@ -316,7 +316,7 @@ async fn save_settings(args : Array[String]) -> Unit {
     logger.error("Missing required --settings JSON")
     return
   }
-  post_json_body_endpoint(args, "/save_settings", settings, "Settings")
+  post_json_body_endpoint(args, "/settings", settings, "Settings")
 }
 
 ///|
@@ -376,7 +376,7 @@ async fn delete_env_vars(args : Array[String]) -> Unit {
     logger.error("Missing required --conflicts JSON")
     return
   }
-  post_json_body_endpoint(args, "/delete_env_vars", body, "Env")
+  post_json_body_endpoint(args, "/config/env/delete", body, "Env")
 }
 
 ///|
@@ -548,12 +548,12 @@ fn config_app_path(args : Array[String], base_path : String) -> String {
 fn app_config_dir_override_path(args : Array[String]) -> String? {
   match parse_string_arg(args, "--path") {
     Some(path) =>
-      Some("/set_app_config_dir_override?\{cli_query_pair("path", path)}")
+      Some("/settings/app-config-dir?\{cli_query_pair("path", path)}")
     None =>
       match parse_string_arg(args, "--clear") {
         Some(value) =>
           if value == "true" || value == "1" || value == "yes" {
-            Some("/set_app_config_dir_override?path=")
+            Some("/settings/app-config-dir?path=")
           } else {
             None
           }
@@ -566,7 +566,7 @@ fn app_config_dir_override_path(args : Array[String]) -> String? {
 fn set_auto_launch_path(args : Array[String]) -> String? {
   match parse_string_arg(args, "--enabled") {
     Some(enabled) =>
-      Some("/set_auto_launch?\{cli_query_pair("enabled", enabled)}")
+      Some("/settings/auto-launch?\{cli_query_pair("enabled", enabled)}")
     None => None
   }
 }
@@ -1051,7 +1051,7 @@ fn extract_common_config_snippet_path(args : Array[String]) -> String {
     Some(settings) => query.push(cli_query_pair("settingsConfig", settings))
     None => ()
   }
-  "/extract_common_config_snippet?\{query.join("&")}"
+  "/config/snippets/extract?\{query.join("&")}"
 }
 
 ///|
@@ -1060,7 +1060,7 @@ fn restore_env_backup_path(args : Array[String]) -> String? {
     is Some(path) else {
     return None
   }
-  Some("/restore_env_backup?\{cli_query_pair("backupPath", path)}")
+  Some("/config/env/restore?\{cli_query_pair("backupPath", path)}")
 }
 
 ///|

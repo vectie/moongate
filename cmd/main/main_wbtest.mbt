@@ -74,7 +74,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("set_common_config_snippet"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "check-env-conflicts"]) ==
+    registered_cli_command_id(["moonstat", "config", "env-conflicts"]) ==
     Some("check_env_conflicts"),
   )
   assert_true(
@@ -305,7 +305,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_settings"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "save_settings"]) ==
+    registered_cli_command_id(["moonstat", "settings", "save"]) ==
     Some("save_settings"),
   )
   assert_true(
@@ -333,11 +333,13 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_rectifier_config"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "set_copilot_optimizer_config"]) ==
+    registered_cli_command_id([
+      "moonstat", "settings", "copilot-optimizer", "set",
+    ]) ==
     Some("set_copilot_optimizer_config"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "restart_app"]) ==
+    registered_cli_command_id(["moonstat", "runtime", "restart"]) ==
     Some("restart_app"),
   )
   assert_true(
@@ -1062,34 +1064,34 @@ test "top level moonstat config command names build config paths" {
   assert_eq(
     config_snippet_path(
       [
-        "moonstat", "set_common_config_snippet", "--appType", "codex", "--snippet",
+        "moonstat", "config", "snippet", "set", "--appType", "codex", "--snippet",
         "model=\"gpt-5\"",
       ],
-      "/set_common_config_snippet",
+      "/config/snippets",
       app_required=true,
     ),
-    Some("/set_common_config_snippet?snippet=model%3D%22gpt-5%22&appType=codex"),
+    Some("/config/snippets?snippet=model%3D%22gpt-5%22&appType=codex"),
   )
   assert_eq(
     config_snippet_path(
-      ["moonstat", "set_claude_common_config_snippet", "--snippet", "{}"],
-      "/set_claude_common_config_snippet",
+      ["moonstat", "config", "claude-snippet", "set", "--snippet", "{}"],
+      "/config/snippets/claude",
       app_required=false,
     ),
-    Some("/set_claude_common_config_snippet?snippet=%7B%7D"),
+    Some("/config/snippets/claude?snippet=%7B%7D"),
   )
   assert_eq(
     extract_common_config_snippet_path([
-      "moonstat", "extract_common_config_snippet", "--appType", "claude", "--settingsConfig",
+      "moonstat", "config", "snippet", "extract", "--appType", "claude", "--settingsConfig",
       "{\"env\":{}}",
     ]),
-    "/extract_common_config_snippet?appType=claude&settingsConfig=%7B%22env%22%3A%7B%7D%7D",
+    "/config/snippets/extract?appType=claude&settingsConfig=%7B%22env%22%3A%7B%7D%7D",
   )
   assert_eq(
     restore_env_backup_path([
-      "moonstat", "restore_env_backup", "--backupPath", "/tmp/env backup.json",
+      "moonstat", "config", "env-restore", "--backupPath", "/tmp/env backup.json",
     ]),
-    Some("/restore_env_backup?backupPath=%2Ftmp%2Fenv%20backup.json"),
+    Some("/config/env/restore?backupPath=%2Ftmp%2Fenv%20backup.json"),
   )
   assert_eq(
     config_file_path(
@@ -1179,49 +1181,54 @@ test "top level moonstat config command names build config paths" {
 test "top level moonstat settings command names build settings paths" {
   assert_eq(
     app_config_dir_override_path([
-      "moonstat", "set_app_config_dir_override", "--path", "/tmp/cc switch",
+      "moonstat", "settings", "app-config-dir", "set", "--path", "/tmp/cc switch",
     ]),
-    Some("/set_app_config_dir_override?path=%2Ftmp%2Fcc%20switch"),
+    Some("/settings/app-config-dir?path=%2Ftmp%2Fcc%20switch"),
   )
   assert_eq(
     app_config_dir_override_path([
-      "moonstat", "set_app_config_dir_override", "--clear", "true",
+      "moonstat", "settings", "app-config-dir", "set", "--clear", "true",
     ]),
-    Some("/set_app_config_dir_override?path="),
+    Some("/settings/app-config-dir?path="),
   )
   assert_eq(
-    set_auto_launch_path(["moonstat", "set_auto_launch", "--enabled", "true"]),
-    Some("/set_auto_launch?enabled=true"),
+    set_auto_launch_path([
+      "moonstat", "settings", "auto-launch", "set", "--enabled", "true",
+    ]),
+    Some("/settings/auto-launch?enabled=true"),
   )
   assert_eq(
     moon_json_config_path(
       [
-        "moonstat", "set_rectifier_config", "--requestThinkingSignature", "false",
+        "moonstat", "settings", "rectifier", "set", "--requestThinkingSignature",
+        "false",
       ],
-      "/set_rectifier_config",
+      "/settings/rectifier",
       "--config",
     ),
-    Some("/set_rectifier_config?requestThinkingSignature=false"),
-  )
-  assert_eq(
-    moon_json_config_path(
-      ["moonstat", "set_optimizer_config", "--config", "{\"cacheTtl\":\"5m\"}"],
-      "/set_optimizer_config",
-      "--config",
-    ),
-    Some("/set_optimizer_config?config=%7B%22cacheTtl%22%3A%225m%22%7D"),
+    Some("/settings/rectifier?requestThinkingSignature=false"),
   )
   assert_eq(
     moon_json_config_path(
       [
-        "moonstat", "set_copilot_optimizer_config", "--warmupModel", "gpt-5-mini",
+        "moonstat", "settings", "optimizer", "set", "--config", "{\"cacheTtl\":\"5m\"}",
+      ],
+      "/settings/optimizer",
+      "--config",
+    ),
+    Some("/settings/optimizer?config=%7B%22cacheTtl%22%3A%225m%22%7D"),
+  )
+  assert_eq(
+    moon_json_config_path(
+      [
+        "moonstat", "settings", "copilot-optimizer", "set", "--warmupModel", "gpt-5-mini",
         "--stripThinking", "true",
       ],
-      "/set_copilot_optimizer_config",
+      "/settings/copilot-optimizer",
       "--config",
     ),
     Some(
-      "/set_copilot_optimizer_config?warmupModel=gpt-5-mini&stripThinking=true",
+      "/settings/copilot-optimizer?warmupModel=gpt-5-mini&stripThinking=true",
     ),
   )
 }

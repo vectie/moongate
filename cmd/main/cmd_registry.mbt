@@ -63,64 +63,25 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "add_skill_repo", patterns: ["skills repo add"] },
     { id: "remove_skill_repo", patterns: ["skills repo remove"] },
     { id: "install_skills_from_zip", patterns: ["skills install-zip"] },
-    {
-      id: "get_app_config_path",
-      patterns: [
-        "config app-path", "get_app_config_path", "get-app-config-path",
-      ],
-    },
-    {
-      id: "open_app_config_folder",
-      patterns: [
-        "config open-app-folder", "open_app_config_folder", "open-app-config-folder",
-      ],
-    },
+    { id: "get_app_config_path", patterns: ["config app-path"] },
+    { id: "open_app_config_folder", patterns: ["config open-app-folder"] },
     {
       id: "set_claude_common_config_snippet",
-      patterns: [
-        "config claude-snippet set", "set_claude_common_config_snippet", "set-claude-common-config-snippet",
-      ],
+      patterns: ["config claude-snippet set"],
     },
     {
       id: "get_claude_common_config_snippet",
-      patterns: [
-        "config claude-snippet", "get_claude_common_config_snippet", "get-claude-common-config-snippet",
-      ],
+      patterns: ["config claude-snippet"],
     },
-    {
-      id: "set_common_config_snippet",
-      patterns: [
-        "config snippet set", "set_common_config_snippet", "set-common-config-snippet",
-      ],
-    },
-    {
-      id: "get_common_config_snippet",
-      patterns: [
-        "config snippet", "get_common_config_snippet", "get-common-config-snippet",
-      ],
-    },
+    { id: "set_common_config_snippet", patterns: ["config snippet set"] },
+    { id: "get_common_config_snippet", patterns: ["config snippet"] },
     {
       id: "extract_common_config_snippet",
-      patterns: [
-        "config snippet extract", "extract_common_config_snippet", "extract-common-config-snippet",
-      ],
+      patterns: ["config snippet extract"],
     },
-    {
-      id: "check_env_conflicts",
-      patterns: [
-        "config env-conflicts", "check_env_conflicts", "check-env-conflicts",
-      ],
-    },
-    {
-      id: "delete_env_vars",
-      patterns: ["config env-delete", "delete_env_vars", "delete-env-vars"],
-    },
-    {
-      id: "restore_env_backup",
-      patterns: [
-        "config env-restore", "restore_env_backup", "restore-env-backup",
-      ],
-    },
+    { id: "check_env_conflicts", patterns: ["config env-conflicts"] },
+    { id: "delete_env_vars", patterns: ["config env-delete"] },
+    { id: "restore_env_backup", patterns: ["config env-restore"] },
     { id: "stream_check_provider", patterns: ["stream-check provider"] },
     { id: "stream_check_all_providers", patterns: ["stream-check all"] },
     { id: "save_stream_check_config", patterns: ["stream-check config set"] },
@@ -529,87 +490,34 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
       id: "import_from_deeplink_unified",
       patterns: ["import_from_deeplink_unified", "import-from-deeplink-unified"],
     },
-    {
-      id: "get_settings",
-      patterns: ["settings get", "get_settings", "get-settings"],
-    },
-    {
-      id: "save_settings",
-      patterns: ["settings save", "save_settings", "save-settings"],
-    },
-    { id: "restart_app", patterns: ["restart_app", "restart-app"] },
+    { id: "get_settings", patterns: ["settings get"] },
+    { id: "save_settings", patterns: ["settings save"] },
+    { id: "restart_app", patterns: ["runtime restart"] },
     {
       id: "install_update_and_restart",
-      patterns: ["install_update_and_restart", "install-update-and-restart"],
+      patterns: ["runtime updates install-restart"],
     },
     {
       id: "set_app_config_dir_override",
-      patterns: [
-        "settings app-config-dir set", "set_app_config_dir_override", "set-app-config-dir-override",
-      ],
+      patterns: ["settings app-config-dir set"],
     },
-    {
-      id: "get_app_config_dir_override",
-      patterns: [
-        "settings app-config-dir", "get_app_config_dir_override", "get-app-config-dir-override",
-      ],
-    },
-    {
-      id: "set_auto_launch",
-      patterns: [
-        "settings auto-launch set", "set_auto_launch", "set-auto-launch",
-      ],
-    },
-    {
-      id: "get_auto_launch_status",
-      patterns: [
-        "settings auto-launch", "get_auto_launch_status", "get-auto-launch-status",
-      ],
-    },
-    {
-      id: "set_rectifier_config",
-      patterns: [
-        "settings rectifier set", "set_rectifier_config", "set-rectifier-config",
-      ],
-    },
-    {
-      id: "get_rectifier_config",
-      patterns: [
-        "settings rectifier", "get_rectifier_config", "get-rectifier-config",
-      ],
-    },
-    {
-      id: "set_optimizer_config",
-      patterns: [
-        "settings optimizer set", "set_optimizer_config", "set-optimizer-config",
-      ],
-    },
-    {
-      id: "get_optimizer_config",
-      patterns: [
-        "settings optimizer", "get_optimizer_config", "get-optimizer-config",
-      ],
-    },
+    { id: "get_app_config_dir_override", patterns: ["settings app-config-dir"] },
+    { id: "set_auto_launch", patterns: ["settings auto-launch set"] },
+    { id: "get_auto_launch_status", patterns: ["settings auto-launch"] },
+    { id: "set_rectifier_config", patterns: ["settings rectifier set"] },
+    { id: "get_rectifier_config", patterns: ["settings rectifier"] },
+    { id: "set_optimizer_config", patterns: ["settings optimizer set"] },
+    { id: "get_optimizer_config", patterns: ["settings optimizer"] },
     {
       id: "set_copilot_optimizer_config",
-      patterns: [
-        "settings copilot-optimizer set", "set_copilot_optimizer_config", "set-copilot-optimizer-config",
-      ],
+      patterns: ["settings copilot-optimizer set"],
     },
     {
       id: "get_copilot_optimizer_config",
-      patterns: [
-        "settings copilot-optimizer", "get_copilot_optimizer_config", "get-copilot-optimizer-config",
-      ],
+      patterns: ["settings copilot-optimizer"],
     },
-    {
-      id: "set_log_config",
-      patterns: ["settings log set", "set_log_config", "set-log-config"],
-    },
-    {
-      id: "get_log_config",
-      patterns: ["settings log", "get_log_config", "get-log-config"],
-    },
+    { id: "set_log_config", patterns: ["settings log set"] },
+    { id: "get_log_config", patterns: ["settings log"] },
     {
       id: "get_claude_plugin_status",
       patterns: [
@@ -1053,34 +961,27 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_app_config_path") => {
-      check_usage_endpoint(args, "/get_app_config_path")
+      check_usage_endpoint(args, "/config/app-path")
       true
     }
     Some("open_app_config_folder") => {
-      check_usage_endpoint(args, "/open_app_config_folder")
+      check_usage_endpoint(args, "/config/app-folder/open")
       true
     }
     Some("get_claude_common_config_snippet") => {
-      check_usage_endpoint(args, "/get_claude_common_config_snippet")
+      check_usage_endpoint(args, "/config/snippets/claude")
       true
     }
     Some("set_claude_common_config_snippet") => {
-      set_config_snippet(
-        args,
-        "/set_claude_common_config_snippet",
-        app_required=false,
-      )
+      set_config_snippet(args, "/config/snippets/claude", app_required=false)
       true
     }
     Some("get_common_config_snippet") => {
-      check_usage_endpoint(
-        args,
-        config_app_path(args, "/get_common_config_snippet"),
-      )
+      check_usage_endpoint(args, config_app_path(args, "/config/snippets"))
       true
     }
     Some("set_common_config_snippet") => {
-      set_config_snippet(args, "/set_common_config_snippet", app_required=true)
+      set_config_snippet(args, "/config/snippets", app_required=true)
       true
     }
     Some("extract_common_config_snippet") => {
@@ -1088,7 +989,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("check_env_conflicts") => {
-      check_usage_endpoint(args, config_app_path(args, "/check_env_conflicts"))
+      check_usage_endpoint(args, config_app_path(args, "/config/env/conflicts"))
       true
     }
     Some("delete_env_vars") => {
@@ -1636,7 +1537,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_settings") => {
-      check_usage_endpoint(args, "/get_settings")
+      check_usage_endpoint(args, "/settings")
       true
     }
     Some("save_settings") => {
@@ -1644,11 +1545,13 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("restart_app") => {
-      check_json_post_endpoint(args, "/restart_app", "Settings")
+      check_json_post_endpoint(args, "/runtime/restart", "Settings")
       true
     }
     Some("install_update_and_restart") => {
-      check_json_post_endpoint(args, "/install_update_and_restart", "Settings")
+      check_json_post_endpoint(
+        args, "/runtime/updates/install-restart", "Settings",
+      )
       true
     }
     Some("set_app_config_dir_override") => {
@@ -1656,7 +1559,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_app_config_dir_override") => {
-      check_usage_endpoint(args, "/get_app_config_dir_override")
+      check_usage_endpoint(args, "/settings/app-config-dir")
       true
     }
     Some("set_auto_launch") => {
@@ -1664,45 +1567,41 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_auto_launch_status") => {
-      check_usage_endpoint(args, "/get_auto_launch_status")
+      check_usage_endpoint(args, "/settings/auto-launch")
       true
     }
     Some("set_rectifier_config") => {
-      set_moon_json_config(
-        args, "/set_rectifier_config", "--config", "Settings",
-      )
+      set_moon_json_config(args, "/settings/rectifier", "--config", "Settings")
       true
     }
     Some("get_rectifier_config") => {
-      check_usage_endpoint(args, "/get_rectifier_config")
+      check_usage_endpoint(args, "/settings/rectifier")
       true
     }
     Some("set_optimizer_config") => {
-      set_moon_json_config(
-        args, "/set_optimizer_config", "--config", "Settings",
-      )
+      set_moon_json_config(args, "/settings/optimizer", "--config", "Settings")
       true
     }
     Some("get_optimizer_config") => {
-      check_usage_endpoint(args, "/get_optimizer_config")
+      check_usage_endpoint(args, "/settings/optimizer")
       true
     }
     Some("set_copilot_optimizer_config") => {
       set_moon_json_config(
-        args, "/set_copilot_optimizer_config", "--config", "Settings",
+        args, "/settings/copilot-optimizer", "--config", "Settings",
       )
       true
     }
     Some("get_copilot_optimizer_config") => {
-      check_usage_endpoint(args, "/get_copilot_optimizer_config")
+      check_usage_endpoint(args, "/settings/copilot-optimizer")
       true
     }
     Some("set_log_config") => {
-      set_moon_json_config(args, "/set_log_config", "--config", "Settings")
+      set_moon_json_config(args, "/settings/log", "--config", "Settings")
       true
     }
     Some("get_log_config") => {
-      check_usage_endpoint(args, "/get_log_config")
+      check_usage_endpoint(args, "/settings/log")
       true
     }
     Some("get_claude_plugin_status") => {

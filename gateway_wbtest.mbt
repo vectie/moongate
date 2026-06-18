@@ -368,7 +368,7 @@ test "ccs read command parsers accept json payload keys" {
     Some("codex"),
   )
   assert_eq(
-    moon_config_app_from_request("/get_common_config_snippet", app_type_body),
+    moon_config_app_from_request("/config/snippets", app_type_body),
     Some("gemini"),
   )
   assert_eq(
@@ -521,7 +521,7 @@ test "ccs save settings merge preserves omitted sync secrets" {
 ///|
 test "ccs settings config query builders update defaults" {
   guard moon_rectifier_config_from_request(
-      "/set_rectifier_config?requestThinkingSignature=false",
+      "/settings/rectifier?requestThinkingSignature=false",
       None,
       moon_default_rectifier_config_json(),
     )
@@ -531,13 +531,13 @@ test "ccs settings config query builders update defaults" {
   assert_eq(proxy_json_bool(rectifier, "requestThinkingSignature"), Some(false))
 
   let optimizer = moon_optimizer_config_from_request(
-    "/set_optimizer_config?enabled=true&cacheTtl=5m",
+    "/settings/optimizer?enabled=true&cacheTtl=5m",
     None,
     moon_default_optimizer_config_json(),
   )
   assert_true(moon_optimizer_cache_ttl_valid(optimizer))
   let invalid = moon_optimizer_config_from_request(
-    "/set_optimizer_config?cacheTtl=30m",
+    "/settings/optimizer?cacheTtl=30m",
     None,
     moon_default_optimizer_config_json(),
   )

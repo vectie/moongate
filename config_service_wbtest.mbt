@@ -16,7 +16,7 @@ test "config service owns settings and config blob mutations" {
   assert_true(config.claude_onboarding_skipped)
 
   config.set_app_config_dir_override_from_request(
-    "/set_app_config_dir_override?path=/tmp/moonstat-config",
+    "/settings/app-config-dir?path=/tmp/moonstat-config",
     None,
   )
   assert_eq(
@@ -24,13 +24,13 @@ test "config service owns settings and config blob mutations" {
     Json::string("/tmp/moonstat-config"),
   )
   config.set_app_config_dir_override_from_request(
-    "/set_app_config_dir_override?path=",
+    "/settings/app-config-dir?path=",
     None,
   )
   assert_eq(config.app_config_dir_override_json(), Json::null())
 
   config.set_rectifier_from_request(
-    "/set_rectifier_config?requestThinkingSignature=false",
+    "/settings/rectifier?requestThinkingSignature=false",
     None,
   )
   guard config.rectifier_json() is Object(rectifier) else {
@@ -40,7 +40,7 @@ test "config service owns settings and config blob mutations" {
 
   assert_true(
     config.set_optimizer_from_request(
-      "/set_optimizer_config?enabled=true&cacheTtl=5m",
+      "/settings/optimizer?enabled=true&cacheTtl=5m",
       None,
     ),
   )
@@ -50,10 +50,7 @@ test "config service owns settings and config blob mutations" {
   assert_eq(proxy_json_bool(optimizer, "enabled"), Some(true))
   assert_eq(json_string_from_map(optimizer, "cacheTtl"), Some("5m"))
   assert_false(
-    config.set_optimizer_from_request(
-      "/set_optimizer_config?cacheTtl=30m",
-      None,
-    ),
+    config.set_optimizer_from_request("/settings/optimizer?cacheTtl=30m", None),
   )
   guard config.optimizer_json() is Object(optimizer_after_invalid) else {
     fail("expected optimizer after invalid update")
@@ -63,7 +60,7 @@ test "config service owns settings and config blob mutations" {
     Some("5m"),
   )
 
-  config.set_log_from_request("/set_log_config?enabled=false&level=debug", None)
+  config.set_log_from_request("/settings/log?enabled=false&level=debug", None)
   guard config.log_json() is Object(log_config) else {
     fail("expected log config")
   }

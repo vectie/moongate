@@ -599,28 +599,21 @@ fn moon_tauri_command_surface() -> Array[String] {
     "get_claude_desktop_status", "get_claude_desktop_default_routes", "import_claude_desktop_providers_from_claude",
     "ensure_claude_desktop_official_provider", "get_claude_config_status", "get_config_status",
     "get_claude_code_config_path", "get_config_dir", "open_config_folder", "pick_directory",
-    "get_app_config_path", "open_app_config_folder", "get_claude_common_config_snippet",
-    "set_claude_common_config_snippet", "get_common_config_snippet", "set_common_config_snippet",
-    "extract_common_config_snippet", "get_settings", "save_settings", "get_rectifier_config",
-    "set_rectifier_config", "get_optimizer_config", "set_optimizer_config", "get_copilot_optimizer_config",
-    "set_copilot_optimizer_config", "get_log_config", "set_log_config", "restart_app",
-    "install_update_and_restart", "get_claude_plugin_status", "read_claude_plugin_config",
-    "apply_claude_plugin_config", "is_claude_plugin_applied", "apply_claude_onboarding_skip",
-    "clear_claude_onboarding_skip", "fetch_models_for_config", "get_app_config_dir_override",
-    "set_app_config_dir_override", "export_config_to_file", "import_config_from_file",
+    "get_claude_plugin_status", "read_claude_plugin_config", "apply_claude_plugin_config",
+    "is_claude_plugin_applied", "apply_claude_onboarding_skip", "clear_claude_onboarding_skip",
+    "fetch_models_for_config", "export_config_to_file", "import_config_from_file",
     "webdav_test_connection", "webdav_sync_upload", "webdav_sync_download", "webdav_sync_save_settings",
     "webdav_sync_fetch_remote_info", "s3_test_connection", "s3_sync_upload", "s3_sync_download",
     "s3_sync_save_settings", "s3_sync_fetch_remote_info", "save_file_dialog", "open_file_dialog",
     "open_zip_file_dialog", "create_db_backup", "list_db_backups", "restore_db_backup",
     "rename_db_backup", "delete_db_backup", "parse_deeplink", "merge_deeplink_config",
-    "import_from_deeplink", "import_from_deeplink_unified", "check_env_conflicts",
-    "delete_env_vars", "restore_env_backup", "set_auto_launch", "get_auto_launch_status",
-    "list_sessions", "get_session_messages", "delete_session", "delete_sessions",
-    "launch_session_terminal", "read_omo_local_file", "get_current_omo_provider_id",
-    "disable_current_omo", "read_omo_slim_local_file", "get_current_omo_slim_provider_id",
-    "disable_current_omo_slim", "read_workspace_file", "write_workspace_file", "list_daily_memory_files",
-    "read_daily_memory_file", "write_daily_memory_file", "delete_daily_memory_file",
-    "search_daily_memory_files", "open_workspace_directory",
+    "import_from_deeplink", "import_from_deeplink_unified", "list_sessions", "get_session_messages",
+    "delete_session", "delete_sessions", "launch_session_terminal", "read_omo_local_file",
+    "get_current_omo_provider_id", "disable_current_omo", "read_omo_slim_local_file",
+    "get_current_omo_slim_provider_id", "disable_current_omo_slim", "read_workspace_file",
+    "write_workspace_file", "list_daily_memory_files", "read_daily_memory_file",
+    "write_daily_memory_file", "delete_daily_memory_file", "search_daily_memory_files",
+    "open_workspace_directory",
   ]
 }
 
@@ -634,7 +627,7 @@ test "suite manifest covers current Moonstat command surface" {
   guard manifest is Object(obj) else { fail("expected manifest object") }
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 86)
+  assert_eq(moon_commands.length(), 60)
   for command in moon_commands {
     assert_true(suite_routes_include_path(routes, "/\{command}"))
   }
@@ -655,7 +648,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 async test "gateway registers current Moonstat command handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 86)
+  assert_eq(moon_commands.length(), 60)
   for command in moon_commands {
     assert_true(gateway_source_registers_path(source, "/\{command}"))
   }

@@ -469,43 +469,40 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/skills/install-zip", (r, w) => {
     self.skills.handle_install_skills_from_zip(r, w)
   })
-  router.add_handler(Get, "/get_app_config_path", (_, w) => {
+  router.add_handler(Get, "/config/app-path", (_, w) => {
     self.config.handle_get_app_config_path(w)
   })
-  router.add_handler(Get, "/open_app_config_folder", (_, w) => {
+  router.add_handler(Get, "/config/app-folder/open", (_, w) => {
     self.config.handle_open_app_config_folder(w)
   })
-  router.add_handler(Get, "/get_claude_common_config_snippet", (_, w) => {
+  router.add_handler(Get, "/config/snippets/claude", (_, w) => {
     self.config.handle_get_common_config_snippet(w, "claude")
   })
-  router.add_handler(Post, "/set_claude_common_config_snippet", (r, w) => {
+  router.add_handler(Post, "/config/snippets/claude", (r, w) => {
     self.config.handle_set_common_config_snippet(r, w, "claude")
   })
-  router.add_handler(Get, "/get_common_config_snippet", (r, w) => {
+  router.add_handler(Get, "/config/snippets", (r, w) => {
     self.config.handle_get_common_config_snippet_request(r, w)
   })
-  router.add_handler(Post, "/get_common_config_snippet", (r, w) => {
-    self.config.handle_get_common_config_snippet_request(r, w)
-  })
-  router.add_handler(Post, "/set_common_config_snippet", (r, w) => {
+  router.add_handler(Post, "/config/snippets", (r, w) => {
     self.config.handle_set_common_config_snippet_request(r, w)
   })
-  router.add_handler(Get, "/extract_common_config_snippet", (r, w) => {
+  router.add_handler(Get, "/config/snippets/extract", (r, w) => {
     self.config.handle_extract_common_config_snippet(r, w)
   })
-  router.add_handler(Post, "/extract_common_config_snippet", (r, w) => {
+  router.add_handler(Post, "/config/snippets/extract", (r, w) => {
     self.config.handle_extract_common_config_snippet(r, w)
   })
-  router.add_handler(Get, "/check_env_conflicts", (r, w) => {
+  router.add_handler(Get, "/config/env/conflicts", (r, w) => {
     self.config.handle_check_env_conflicts(r, w)
   })
-  router.add_handler(Post, "/check_env_conflicts", (r, w) => {
+  router.add_handler(Post, "/config/env/conflicts", (r, w) => {
     self.config.handle_check_env_conflicts(r, w)
   })
-  router.add_handler(Post, "/delete_env_vars", (r, w) => {
+  router.add_handler(Post, "/config/env/delete", (r, w) => {
     self.config.handle_delete_env_vars(r, w)
   })
-  router.add_handler(Post, "/restore_env_backup", (r, w) => {
+  router.add_handler(Post, "/config/env/restore", (r, w) => {
     self.config.handle_restore_env_backup(r, w)
   })
   router.add_handler(Get, "/mcp/claude/status", (_, w) => {
@@ -607,52 +604,52 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/proxy/global-config", (r, w) => {
     self.proxy.handle_proxy_update_global_config(r, w)
   })
-  router.add_handler(Get, "/get_settings", (_, w) => {
+  router.add_handler(Get, "/settings", (_, w) => {
     self.config.handle_get_settings(w)
   })
-  router.add_handler(Post, "/save_settings", (r, w) => {
+  router.add_handler(Post, "/settings", (r, w) => {
     self.config.handle_save_settings(r, w)
   })
-  router.add_handler(Post, "/restart_app", (_, w) => {
+  router.add_handler(Post, "/runtime/restart", (_, w) => {
     self.runtime.handle_restart_app(w)
   })
-  router.add_handler(Post, "/install_update_and_restart", (_, w) => {
+  router.add_handler(Post, "/runtime/updates/install-restart", (_, w) => {
     self.runtime.handle_install_update_and_restart(w)
   })
-  router.add_handler(Get, "/get_app_config_dir_override", (_, w) => {
+  router.add_handler(Get, "/settings/app-config-dir", (_, w) => {
     self.config.handle_get_app_config_dir_override(w)
   })
-  router.add_handler(Post, "/set_app_config_dir_override", (r, w) => {
+  router.add_handler(Post, "/settings/app-config-dir", (r, w) => {
     self.config.handle_set_app_config_dir_override(r, w)
   })
-  router.add_handler(Post, "/set_auto_launch", (r, w) => {
+  router.add_handler(Post, "/settings/auto-launch", (r, w) => {
     self.config.handle_set_auto_launch(r, w)
   })
-  router.add_handler(Get, "/get_auto_launch_status", (_, w) => {
+  router.add_handler(Get, "/settings/auto-launch", (_, w) => {
     self.config.handle_get_auto_launch_status(w)
   })
-  router.add_handler(Get, "/get_rectifier_config", (_, w) => {
+  router.add_handler(Get, "/settings/rectifier", (_, w) => {
     self.config.handle_get_rectifier_config(w)
   })
-  router.add_handler(Post, "/set_rectifier_config", (r, w) => {
+  router.add_handler(Post, "/settings/rectifier", (r, w) => {
     self.config.handle_set_rectifier_config(r, w)
   })
-  router.add_handler(Get, "/get_optimizer_config", (_, w) => {
+  router.add_handler(Get, "/settings/optimizer", (_, w) => {
     self.config.handle_get_optimizer_config(w)
   })
-  router.add_handler(Post, "/set_optimizer_config", (r, w) => {
+  router.add_handler(Post, "/settings/optimizer", (r, w) => {
     self.config.handle_set_optimizer_config(r, w)
   })
-  router.add_handler(Get, "/get_copilot_optimizer_config", (_, w) => {
+  router.add_handler(Get, "/settings/copilot-optimizer", (_, w) => {
     self.config.handle_get_copilot_optimizer_config(w)
   })
-  router.add_handler(Post, "/set_copilot_optimizer_config", (r, w) => {
+  router.add_handler(Post, "/settings/copilot-optimizer", (r, w) => {
     self.config.handle_set_copilot_optimizer_config(r, w)
   })
-  router.add_handler(Get, "/get_log_config", (_, w) => {
+  router.add_handler(Get, "/settings/log", (_, w) => {
     self.config.handle_get_log_config(w)
   })
-  router.add_handler(Post, "/set_log_config", (r, w) => {
+  router.add_handler(Post, "/settings/log", (r, w) => {
     self.config.handle_set_log_config(r, w)
   })
   router.add_handler(Get, "/proxy/global-url", (_, w) => {

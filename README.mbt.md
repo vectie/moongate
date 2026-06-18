@@ -202,32 +202,32 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /get_claude_desktop_default_routes`
 - `POST /import_claude_desktop_providers_from_claude`
 - `POST /ensure_claude_desktop_official_provider`
-- `GET /get_app_config_path`
-- `GET /open_app_config_folder`
-- `GET /get_settings`
-- `POST /save_settings`
-- `POST /restart_app`
-- `POST /install_update_and_restart`
-- `GET /get_app_config_dir_override`
-- `POST /set_app_config_dir_override?path=/tmp/moonstat`
-- `POST /set_auto_launch?enabled=true`
-- `GET /get_auto_launch_status`
-- `GET /get_rectifier_config`
-- `POST /set_rectifier_config?enabled=true`
-- `GET /get_optimizer_config`
-- `POST /set_optimizer_config?cacheTtl=5m`
-- `GET /get_copilot_optimizer_config`
-- `POST /set_copilot_optimizer_config?warmupModel=gpt-5-mini`
-- `GET /get_log_config`
-- `POST /set_log_config?level=debug`
-- `GET /get_claude_common_config_snippet`
-- `POST /set_claude_common_config_snippet?snippet={}`
-- `GET /get_common_config_snippet?appType=codex`
-- `POST /set_common_config_snippet?appType=codex&snippet=model=gpt-5`
-- `GET|POST /extract_common_config_snippet?appType=claude&settingsConfig={}`
-- `GET /check_env_conflicts?app=claude`
-- `POST /delete_env_vars`
-- `POST /restore_env_backup?backupPath=...`
+- `GET /config/app-path`
+- `GET /config/app-folder/open`
+- `GET /settings`
+- `POST /settings`
+- `POST /runtime/restart`
+- `POST /runtime/updates/install-restart`
+- `GET /settings/app-config-dir`
+- `POST /settings/app-config-dir?path=/tmp/moonstat`
+- `POST /settings/auto-launch?enabled=true`
+- `GET /settings/auto-launch`
+- `GET /settings/rectifier`
+- `POST /settings/rectifier?enabled=true`
+- `GET /settings/optimizer`
+- `POST /settings/optimizer?cacheTtl=5m`
+- `GET /settings/copilot-optimizer`
+- `POST /settings/copilot-optimizer?warmupModel=gpt-5-mini`
+- `GET /settings/log`
+- `POST /settings/log?level=debug`
+- `GET /config/snippets/claude`
+- `POST /config/snippets/claude?snippet={}`
+- `GET /config/snippets?appType=codex`
+- `POST /config/snippets?appType=codex&snippet=model=gpt-5`
+- `GET|POST /config/snippets/extract?appType=claude&settingsConfig={}`
+- `GET /config/env/conflicts?app=claude`
+- `POST /config/env/delete`
+- `POST /config/env/restore?backupPath=...`
 - `GET /mcp/claude/status`
 - `GET /mcp/claude/config`
 - `POST /mcp/claude/servers?server={"id":"filesystem"}`
@@ -390,18 +390,15 @@ model/memory/dashboard routes keep their JSON state in Moonstat, returning
 `null` or defaults before a standalone caller sets them. CCS config-folder,
 common-snippet, and environment
 conflict commands are mirrored by `/get_config_status`, `/get_config_dir`,
-`/get_common_config_snippet`, `/set_common_config_snippet`,
-`/extract_common_config_snippet`, `/check_env_conflicts`, `/delete_env_vars`,
-and `/restore_env_backup`; standalone folder open/pick and env delete/restore
+`/config/snippets`, `/config/snippets/extract`, `/config/env/conflicts`,
+`/config/env/delete`, and `/config/env/restore`; standalone folder open/pick
+and env delete/restore
 routes keep CCS-compatible shapes. File-sourced env conflicts are backed up under
 `.moonsuite/backups`, removed from shell config files, and restored from that
 backup JSON; process environment conflicts remain non-destructive like CCS Unix
 system entries. Snippets are kept in gateway memory.
-CCS settings and Claude plugin commands are mirrored by `/get_settings`,
-`/save_settings`, `/get_rectifier_config`, `/set_rectifier_config`,
-`/get_optimizer_config`, `/set_optimizer_config`,
-`/get_copilot_optimizer_config`, `/set_copilot_optimizer_config`,
-`/get_log_config`, `/set_log_config`, and the Claude plugin/onboarding routes.
+Settings and Claude plugin commands use `/settings...` routes plus the Claude
+plugin/onboarding routes.
 Moonstat keeps these settings in standalone gateway state, preserves hidden
 WebDAV/S3 secrets during `save_settings` like CCS, validates optimizer
 `cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
