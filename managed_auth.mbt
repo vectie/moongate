@@ -28,7 +28,7 @@ fn managed_auth_account_login(credentials : @codex.Credentials) -> String {
 }
 
 ///|
-pub fn managed_auth_account_json(
+fn managed_auth_account_json(
   provider : String,
   credentials : @codex.Credentials,
   is_default? : Bool = true,
@@ -51,7 +51,7 @@ pub fn managed_auth_account_json(
 }
 
 ///|
-pub fn managed_auth_status_json(
+fn managed_auth_status_json(
   provider : String,
   credentials : @codex.Credentials?,
   migration_error? : String,

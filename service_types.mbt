@@ -1,12 +1,12 @@
 ///|
 /// AuthService handles authentication, OAuth flows, and credential management.
-pub struct AuthService {
+priv struct AuthService {
   mut credentials : @codex.Credentials?
   auth_device_user_codes : Map[String, String]
 }
 
 ///|
-pub fn AuthService::new() -> AuthService {
+fn AuthService::new() -> AuthService {
   { credentials: None, auth_device_user_codes: Map([], capacity=8) }
 }
 
@@ -17,7 +17,7 @@ fn AuthService::credentials_loaded(self : AuthService) -> Bool {
 
 ///|
 /// ProxyService handles provider routing, circuit breakers, failover, and proxy config.
-pub struct ProxyService {
+priv struct ProxyService {
   provider_router : ProviderRouter
   gemini_shadow : GeminiShadowStore
   mut proxy_enabled : Bool
@@ -36,7 +36,7 @@ pub struct ProxyService {
 }
 
 ///|
-pub fn ProxyService::new(host : String, port : Int) -> ProxyService {
+fn ProxyService::new(host : String, port : Int) -> ProxyService {
   {
     provider_router: moonstat_default_provider_router(),
     gemini_shadow: GeminiShadowStore::new(),
@@ -58,7 +58,7 @@ pub fn ProxyService::new(host : String, port : Int) -> ProxyService {
 
 ///|
 /// UsageService handles usage tracking, cost calculation, and statistics.
-pub struct UsageService {
+priv struct UsageService {
   stats : TrafficStats
   usage_cache : UsageCache
   pricing_overrides : Map[String, ModelPricing]
@@ -66,7 +66,7 @@ pub struct UsageService {
 }
 
 ///|
-pub fn UsageService::new() -> UsageService {
+fn UsageService::new() -> UsageService {
   {
     stats: TrafficStats::new(),
     usage_cache: UsageCache::new(),
@@ -77,7 +77,7 @@ pub fn UsageService::new() -> UsageService {
 
 ///|
 /// ConfigService handles settings, presets, import/export, and app configuration.
-pub struct ConfigService {
+priv struct ConfigService {
   mut app_settings : Json
   mut rectifier_config_json : Json
   mut optimizer_config_json : Json
@@ -97,7 +97,7 @@ pub struct ConfigService {
 }
 
 ///|
-pub fn ConfigService::new() -> ConfigService {
+fn ConfigService::new() -> ConfigService {
   {
     app_settings: moon_default_app_settings_json(),
     rectifier_config_json: moon_default_rectifier_config_json(),
@@ -120,51 +120,51 @@ pub fn ConfigService::new() -> ConfigService {
 
 ///|
 /// SessionService handles session listing, messages, and terminal management.
-pub struct SessionService {
+priv struct SessionService {
   codex_chat_history : CodexChatHistoryStore
 }
 
 ///|
-pub fn SessionService::new() -> SessionService {
+fn SessionService::new() -> SessionService {
   { codex_chat_history: CodexChatHistoryStore::new() }
 }
 
 ///|
 /// WorkspaceService handles local workspace, memory, and file-dialog endpoints.
-pub struct WorkspaceService {
-  priv _unit : Unit
+priv struct WorkspaceService {
+  _unit : Unit
 }
 
 ///|
-pub fn WorkspaceService::new() -> WorkspaceService {
+fn WorkspaceService::new() -> WorkspaceService {
   { _unit: () }
 }
 
 ///|
 /// RuntimeService handles app runtime status and local tool lifecycle endpoints.
-pub struct RuntimeService {
-  priv _unit : Unit
+priv struct RuntimeService {
+  _unit : Unit
 }
 
 ///|
-pub fn RuntimeService::new() -> RuntimeService {
+fn RuntimeService::new() -> RuntimeService {
   { _unit: () }
 }
 
 ///|
 /// SkillService handles skill discovery, install, migration, and repository endpoints.
-pub struct SkillService {
-  priv _unit : Unit
+priv struct SkillService {
+  _unit : Unit
 }
 
 ///|
-pub fn SkillService::new() -> SkillService {
+fn SkillService::new() -> SkillService {
   { _unit: () }
 }
 
 ///|
 /// OpenClawService handles OpenClaw and Hermes provider configuration.
-pub struct OpenClawService {
+priv struct OpenClawService {
   mut openclaw_default_model : Json?
   mut openclaw_model_catalog : Json?
   mut openclaw_agents_defaults : Json?
@@ -176,7 +176,7 @@ pub struct OpenClawService {
 }
 
 ///|
-pub fn OpenClawService::new() -> OpenClawService {
+fn OpenClawService::new() -> OpenClawService {
   {
     openclaw_default_model: None,
     openclaw_model_catalog: None,

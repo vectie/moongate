@@ -19,7 +19,7 @@ priv struct CodexChatLookup {
 }
 
 ///|
-struct CodexChatHistoryStore {
+priv struct CodexChatHistoryStore {
   max_responses : Int
   responses : Map[String, CachedCodexChatResponse]
   response_order : Array[String]

@@ -8,6 +8,7 @@ async fn ConfigService::handle_set_window_theme(
   self.window_theme = proxy_string_request(r.path, body, ["theme"]).unwrap_or(
     "system",
   )
+  ignore(self.window_theme)
   write_usage_json(w, Json::null())
 }
 
@@ -295,6 +296,7 @@ async fn ConfigService::handle_apply_claude_onboarding_skip(
     "skipClaudeOnboarding",
     true,
   )
+  ignore(self.claude_onboarding_skipped)
   write_usage_json(w, Json::boolean(true))
 }
 
@@ -309,5 +311,6 @@ async fn ConfigService::handle_clear_claude_onboarding_skip(
     "skipClaudeOnboarding",
     false,
   )
+  ignore(self.claude_onboarding_skipped)
   write_usage_json(w, Json::boolean(true))
 }

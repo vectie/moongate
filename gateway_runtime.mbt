@@ -49,7 +49,7 @@ fn ProxyService::record_external_open(
 ) -> String {
   let normalized = moon_normalize_external_url(raw_url)
   self.last_external_url = Some(normalized)
-  normalized
+  self.last_external_url.unwrap()
 }
 
 ///|

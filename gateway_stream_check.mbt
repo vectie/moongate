@@ -1,5 +1,5 @@
 ///|
-struct StreamCheckConfig {
+priv struct StreamCheckConfig {
   timeout_secs : Int
   max_retries : Int
   degraded_threshold_ms : Int

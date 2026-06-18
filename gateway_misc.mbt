@@ -1,28 +1,28 @@
 ///|
 pub struct Gateway {
-  host : String
-  port : Int
-  model : String
-  logger : @pino.Logger
-  started_at_ms : Int
+  priv host : String
+  priv port : Int
+  priv model : String
+  priv logger : @pino.Logger
+  priv started_at_ms : Int
   /// Auth
-  auth : AuthService
+  priv auth : AuthService
   /// Proxy routing and circuit breakers
-  proxy : ProxyService
+  priv proxy : ProxyService
   /// Usage tracking and cost calculation
-  usage : UsageService
+  priv usage : UsageService
   /// App configuration and settings
-  config : ConfigService
+  priv config : ConfigService
   /// Session management
-  session : SessionService
+  priv session : SessionService
   /// Local workspace and file dialog operations
-  workspace : WorkspaceService
+  priv workspace : WorkspaceService
   /// App runtime status and local tool lifecycle operations
-  runtime : RuntimeService
+  priv runtime : RuntimeService
   /// Skill discovery, installation, migration, and repository operations
-  skills : SkillService
+  priv skills : SkillService
   /// OpenClaw and Hermes provider config
-  openclaw : OpenClawService
+  priv openclaw : OpenClawService
 }
 
 ///|

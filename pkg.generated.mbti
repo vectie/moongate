@@ -4,8 +4,6 @@ package "vectie/moonstat"
 import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "vectie/moonstat/internal/pino",
-  "vectie/moonstat/oauth/codex",
 }
 
 // Values
@@ -79,8 +77,6 @@ pub fn fetched_models_to_json(Array[FetchedModel]) -> Json
 
 pub fn find_static_model_pricing(String) -> ModelPricing?
 
-pub fn managed_auth_account_json(String, @codex.Credentials, is_default? : Bool) -> Json
-
 pub fn managed_auth_default_provider() -> String
 
 pub async fn managed_auth_get_status(String) -> Result[Json, String]
@@ -96,8 +92,6 @@ pub async fn managed_auth_remove_account(String, String) -> Result[Json, String]
 pub async fn managed_auth_set_default_account(String, String) -> Result[Json, String]
 
 pub async fn managed_auth_start_login(String, github_domain? : String?) -> Result[Json, String]
-
-pub fn managed_auth_status_json(String, @codex.Credentials?, migration_error? : String) -> Json
 
 pub let moon_fwd_all_providers_failed : String
 
@@ -254,12 +248,6 @@ pub struct AnthropicUsage {
 } derive(@debug.Debug, @json.FromJson)
 pub impl ToJson for AnthropicUsage
 
-pub struct AuthService {
-  mut credentials : @codex.Credentials?
-  auth_device_user_codes : Map[String, String]
-}
-pub fn AuthService::new() -> Self
-
 pub struct CircuitBreaker {
   mut state : CircuitState
   mut consecutive_failures : Int
@@ -312,8 +300,6 @@ pub struct ClaudeDesktopModelRoute {
 }
 pub fn ClaudeDesktopModelRoute::new(model~ : String, label_override? : String?, supports_1m? : Bool?) -> Self
 
-type CodexChatHistoryStore
-
 pub struct CodexInput {
   messages : Array[CodexMessage]
   tools : Array[CodexTool]?
@@ -335,26 +321,6 @@ pub struct CodexTool {
   parameters : Json
 }
 pub impl ToJson for CodexTool
-
-pub struct ConfigService {
-  mut app_settings : Json
-  mut rectifier_config_json : Json
-  mut optimizer_config_json : Json
-  mut copilot_optimizer_config_json : Json
-  mut log_config_json : Json
-  config_snippets : Map[String, String]
-  mcp_servers : Map[String, Json]
-  prompts : Map[String, Json]
-  mut lightweight_mode : Bool
-  mut window_theme : String
-  mut app_config_dir_override : String?
-  mut auto_launch_enabled : Bool
-  mut claude_plugin_config : String?
-  mut claude_plugin_applied : Bool
-  mut claude_onboarding_skipped : Bool
-  mut stream_check_config : StreamCheckConfig
-}
-pub fn ConfigService::new() -> Self
 
 pub struct CostBreakdown {
   input_cost_usd : String
@@ -381,20 +347,7 @@ pub struct FetchedModel {
 pub fn FetchedModel::to_json(Self) -> Json
 
 pub struct Gateway {
-  host : String
-  port : Int
-  model : String
-  logger : @pino.Logger
-  started_at_ms : Int
-  auth : AuthService
-  proxy : ProxyService
-  usage : UsageService
-  config : ConfigService
-  session : SessionService
-  workspace : WorkspaceService
-  runtime : RuntimeService
-  skills : SkillService
-  openclaw : OpenClawService
+  // private fields
 }
 pub fn Gateway::host(Self) -> String
 pub fn Gateway::new(port~ : Int, host? : String, model? : String) -> Self
@@ -560,18 +513,6 @@ pub struct MoonstatUsageSummary {
 }
 pub fn MoonstatUsageSummary::from_json(Json) -> Result[Self, String]
 
-pub struct OpenClawService {
-  mut openclaw_default_model : Json?
-  mut openclaw_model_catalog : Json?
-  mut openclaw_agents_defaults : Json?
-  mut openclaw_env : Json
-  mut openclaw_tools : Json
-  hermes_model_config : Json?
-  hermes_memory : Map[String, String]
-  hermes_memory_enabled : Map[String, Bool]
-}
-pub fn OpenClawService::new() -> Self
-
 pub struct ProviderLimitConfig {
   daily_limit_usd : String?
   monthly_limit_usd : String?
@@ -642,25 +583,6 @@ pub enum ProviderSelectionError {
 } derive(Eq)
 pub fn ProviderSelectionError::to_string(Self) -> String
 
-pub struct ProxyService {
-  provider_router : ProviderRouter
-  gemini_shadow : GeminiShadowStore
-  mut proxy_enabled : Bool
-  mut proxy_listen_address : String
-  mut proxy_listen_port : Int
-  mut proxy_enable_logging : Bool
-  proxy_takeover_enabled : Map[String, Bool]
-  proxy_app_enabled : Map[String, Bool]
-  proxy_streaming_first_byte_timeout : Map[String, Int]
-  proxy_streaming_idle_timeout : Map[String, Int]
-  proxy_non_streaming_timeout : Map[String, Int]
-  proxy_default_cost_multipliers : Map[String, String]
-  proxy_pricing_model_sources : Map[String, String]
-  mut upstream_proxy_url : String?
-  mut last_external_url : String?
-}
-pub fn ProxyService::new(String, Int) -> Self
-
 pub struct RequestLog {
   request_id : String
   provider_id : String
@@ -693,21 +615,11 @@ pub struct RequestLog {
 pub fn RequestLog::new(request_id~ : String, provider_id~ : String, app_type~ : String, model~ : String, usage~ : TokenUsage, status_code~ : Int, latency_ms? : Int, first_token_ms? : Int?, duration_ms? : Int?, error_message? : String?, session_id? : String?, provider_name? : String?, provider_type? : String?, request_model? : String?, pricing_model? : String?, input_cost_usd? : String, output_cost_usd? : String, cache_read_cost_usd? : String, cache_creation_cost_usd? : String, total_cost_usd? : String, is_streaming? : Bool, cost_multiplier? : String, created_at? : Int, data_source? : String) -> Self
 pub fn RequestLog::to_json(Self) -> Json
 
-pub struct RuntimeService {
-  // private fields
-}
-pub fn RuntimeService::new() -> Self
-
 pub struct SessionFileSyncState {
   last_modified : Int64
   last_line_offset : Int
 }
 pub fn SessionFileSyncState::new(last_modified~ : Int64, last_line_offset~ : Int) -> Self
-
-pub struct SessionService {
-  codex_chat_history : CodexChatHistoryStore
-}
-pub fn SessionService::new() -> Self
 
 pub struct SessionSyncResult {
   mut imported : Int
@@ -717,13 +629,6 @@ pub struct SessionSyncResult {
 }
 pub fn SessionSyncResult::new() -> Self
 pub fn SessionSyncResult::to_json(Self) -> Json
-
-pub struct SkillService {
-  // private fields
-}
-pub fn SkillService::new() -> Self
-
-type StreamCheckConfig
 
 pub struct SubscriptionQuota {
   tool : String
@@ -894,19 +799,6 @@ pub struct UsageResult {
 }
 pub fn UsageResult::new(Bool, data? : Array[UsageData]?, error? : String?) -> Self
 pub fn UsageResult::to_json(Self) -> Json
-
-pub struct UsageService {
-  stats : TrafficStats
-  usage_cache : UsageCache
-  pricing_overrides : Map[String, ModelPricing]
-  pricing_deleted_model_ids : Map[String, Bool]
-}
-pub fn UsageService::new() -> Self
-
-pub struct WorkspaceService {
-  // private fields
-}
-pub fn WorkspaceService::new() -> Self
 
 // Type aliases
 
