@@ -138,10 +138,11 @@ async fn run_workspace_cli_command(
     "launch_hermes_dashboard" =>
       check_json_post_endpoint(args, "/hermes/dashboard", "Hermes")
     "save_file_dialog" =>
-      check_usage_endpoint(args, save_file_dialog_path(args))
-    "open_file_dialog" => check_usage_endpoint(args, "/files/dialogs/open")
+      check_json_post_endpoint(args, save_file_dialog_path(args), "App shell")
+    "open_file_dialog" =>
+      check_json_post_endpoint(args, "/files/dialogs/open", "App shell")
     "open_zip_file_dialog" =>
-      check_usage_endpoint(args, "/files/dialogs/open-zip")
+      check_json_post_endpoint(args, "/files/dialogs/open-zip", "App shell")
     "export_config_to_file" =>
       check_json_post_endpoint(
         args,

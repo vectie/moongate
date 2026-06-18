@@ -164,9 +164,9 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /runtime/lightweight-mode/enter`
 - `POST /runtime/lightweight-mode/exit`
 - `GET /runtime/lightweight-mode`
-- `GET|POST /files/dialogs/save?defaultName=config.json`
-- `GET|POST /files/dialogs/open`
-- `GET|POST /files/dialogs/open-zip`
+- `POST /files/dialogs/save?defaultName=config.json`
+- `POST /files/dialogs/open`
+- `POST /files/dialogs/open-zip`
 - `GET /skills/installed`
 - `GET /skills/backups`
 - `POST /skills/backups/delete?backupId=traffic-stats-1`
@@ -240,12 +240,12 @@ Moonstat currently exposes the standalone local routes below:
 - `GET /workspace/memory`
 - `GET /workspace/memory/file?filename=2026-06-14.md`
 - `POST /workspace/memory/write?filename=2026-06-14.md&content=...`
-- `GET|POST /workspace/memory/search?query=plan`
+- `GET /workspace/memory/search?query=plan`
 - `DELETE /workspace/memory/file?filename=2026-06-14.md`
 - `POST /workspace/memory/delete?filename=2026-06-14.md`
 - `GET /workspace/files?filename=AGENTS.md`
 - `POST /workspace/files?filename=AGENTS.md&content=...`
-- `GET|POST /workspace/open?subdir=memory`
+- `POST /workspace/open?subdir=memory`
 - `GET /prompts?appType=codex`
 - `POST /prompts?appType=codex&id=review&content=Check`
 - `DELETE /prompts?appType=codex&id=review`

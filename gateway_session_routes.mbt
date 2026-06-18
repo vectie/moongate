@@ -5,11 +5,7 @@ fn SessionService::register_routes(
   terminal : String?,
 ) -> Unit {
   router.add_handler(Get, "/sessions", (_, w) => self.handle_list_sessions(w))
-  router.add_handler(Post, "/sessions", (_, w) => self.handle_list_sessions(w))
   router.add_handler(Get, "/sessions/messages", (r, w) => {
-    self.handle_get_session_messages(r, w)
-  })
-  router.add_handler(Post, "/sessions/messages", (r, w) => {
     self.handle_get_session_messages(r, w)
   })
   router.add_handler(Post, "/sessions/terminal", (r, w) => {

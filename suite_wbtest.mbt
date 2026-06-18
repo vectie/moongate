@@ -172,20 +172,16 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("POST /sync/s3/download")))
   assert_true(routes.contains(Json::string("POST /sync/s3/settings")))
   assert_true(routes.contains(Json::string("GET /sync/s3/remote-info")))
-  assert_true(routes.contains(Json::string("GET|POST /sessions")))
-  assert_true(routes.contains(Json::string("GET|POST /sessions/messages")))
+  assert_true(routes.contains(Json::string("GET /sessions")))
+  assert_true(routes.contains(Json::string("GET /sessions/messages")))
   assert_true(routes.contains(Json::string("POST /sessions/terminal")))
   assert_true(routes.contains(Json::string("POST /sessions/delete")))
   assert_true(routes.contains(Json::string("POST /sessions/delete-many")))
-  assert_true(routes.contains(Json::string("GET|POST /providers/omo/file")))
-  assert_true(routes.contains(Json::string("GET|POST /providers/omo/current")))
+  assert_true(routes.contains(Json::string("GET /providers/omo/file")))
+  assert_true(routes.contains(Json::string("GET /providers/omo/current")))
   assert_true(routes.contains(Json::string("POST /providers/omo/disable")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /providers/omo-slim/file")),
-  )
-  assert_true(
-    routes.contains(Json::string("GET|POST /providers/omo-slim/current")),
-  )
+  assert_true(routes.contains(Json::string("GET /providers/omo-slim/file")))
+  assert_true(routes.contains(Json::string("GET /providers/omo-slim/current")))
   assert_true(routes.contains(Json::string("POST /providers/omo-slim/disable")))
   assert_true(routes.contains(Json::string("GET /skills/installed")))
   assert_true(routes.contains(Json::string("GET /skills/backups")))
