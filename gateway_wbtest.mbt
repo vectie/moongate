@@ -2219,6 +2219,24 @@ async test "settings mcp and prompt endpoints are owned by config service" {
     )
     assert_false(misc_source.contains("async fn ConfigService::\{handler}("))
   }
+  for
+    helper in [
+      "moon_mcp_apps_json", "moon_mcp_app_enabled", "moon_mcp_server_with_app", "moon_mcp_server_from_request",
+      "moon_mcp_server_from_spec", "moon_mcp_normalize_server", "moon_mcp_servers_object_for_app",
+      "moon_mcp_valid_server_spec", "moon_mcp_import_spec_for_app", "moon_import_mcp_servers_map",
+      "moon_import_mcp_from_root_json", "moon_import_mcp_from_codex_toml_text", "moon_codex_raw_mcp_spec",
+      "moon_codex_mcp_section", "moon_codex_mcp_unified_spec", "moon_codex_mcp_core_field",
+      "moon_toml_strip_comment", "moon_toml_assignment", "moon_toml_value", "moon_toml_split_csv",
+      "moon_clean_blank_lines", "moon_validate_mcp_command_name", "moon_prompt_store_key",
+      "moon_prompt_from_request", "moon_normalize_prompt", "moon_prompts_object_for_app",
+    ] {
+    assert_true(mcp_prompt_source.contains("fn \{helper}("))
+    assert_false(misc_source.contains("fn \{helper}("))
+  }
+  for helper in ["moon_import_mcp_from_apps_count", "moon_enable_prompt_json"] {
+    assert_true(mcp_prompt_source.contains("async fn \{helper}("))
+    assert_false(misc_source.contains("async fn \{helper}("))
+  }
   assert_true(route_source.contains("self.handle_parse_deeplink(r, w)"))
   assert_true(
     route_source.contains("self.handle_import_from_deeplink(proxy, r, w)"),
