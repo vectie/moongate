@@ -4997,38 +4997,12 @@ fn ProviderRouteTarget::claude_desktop_route_upstream_model(
       return Some(upstream_model)
     }
   }
-  match self.claude_desktop_legacy_raw_route_upstream_model(requested) {
-    Some(upstream) => return Some(upstream)
-    None => ()
-  }
   guard is_claude_safe_model_id(requested) else { return None }
   guard claude_role_keyword(requested) is Some(role) else { return None }
   for route in routes {
     let (route_id, upstream_model, _, _) = route
     if claude_role_keyword(route_id) == Some(role) {
       return Some(upstream_model)
-    }
-  }
-  None
-}
-
-///|
-fn ProviderRouteTarget::claude_desktop_legacy_raw_route_upstream_model(
-  self : ProviderRouteTarget,
-  requested : String,
-) -> String? {
-  for route_id in self.claude_desktop_model_routes.keys() {
-    if route_id.trim() != requested {
-      continue
-    }
-    match self.claude_desktop_model_routes.get(route_id) {
-      Some(route) => {
-        let upstream = route.model.trim().to_owned()
-        if !upstream.is_empty() {
-          return Some(upstream)
-        }
-      }
-      None => ()
     }
   }
   None

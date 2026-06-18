@@ -4355,7 +4355,7 @@ test "proxy service uses moonstat claude desktop route metadata for upstream mod
 }
 
 ///|
-test "proxy service repairs unsafe ccs claude desktop route ids" {
+test "proxy service repairs unsafe moonstat claude desktop route ids" {
   let gateway = Gateway::new(port=0, model="gpt-default")
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "gpt-5": ClaudeDesktopModelRoute::new(model="gpt-5-upstream [1M]"),
@@ -4382,7 +4382,7 @@ test "proxy service repairs unsafe ccs claude desktop route ids" {
       default_model=gateway.model,
       app_type="claude-desktop",
     ),
-    "gpt-5-upstream",
+    "gpt-5",
   )
 }
 
