@@ -211,13 +211,7 @@ fn ProxyService::register_management_routes(
   router.add_handler(Delete, "/providers", (r, w) => {
     self.handle_delete_provider(r, w)
   })
-  router.add_handler(Post, "/providers/delete", (r, w) => {
-    self.handle_delete_provider(r, w)
-  })
   router.add_handler(Delete, "/providers/live", (r, w) => {
-    self.handle_remove_provider_from_live_config(r, w)
-  })
-  router.add_handler(Post, "/providers/live/remove", (r, w) => {
     self.handle_remove_provider_from_live_config(r, w)
   })
   router.add_handler(Post, "/providers/switch", (r, w) => {
@@ -282,9 +276,6 @@ fn ProxyService::register_management_routes(
   router.add_handler(Delete, "/providers/universal", (r, w) => {
     self.handle_delete_universal_provider(r, w)
   })
-  router.add_handler(Post, "/providers/universal/delete", (r, w) => {
-    self.handle_delete_universal_provider(r, w)
-  })
   router.add_handler(Post, "/providers/universal/sync", (r, w) => {
     self.handle_sync_universal_provider(r, w)
   })
@@ -310,9 +301,6 @@ fn ProxyService::register_management_routes(
     self.handle_add_custom_endpoint(r, w)
   })
   router.add_handler(Delete, "/providers/endpoints", (r, w) => {
-    self.handle_remove_custom_endpoint(r, w)
-  })
-  router.add_handler(Post, "/providers/endpoints/remove", (r, w) => {
     self.handle_remove_custom_endpoint(r, w)
   })
   router.add_handler(Post, "/providers/endpoints/touch", (r, w) => {

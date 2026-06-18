@@ -8,7 +8,7 @@ suite. It is a standalone app and also fits beside:
 - Moontown: scheduler and town control plane
 - Moondesk: desktop operator shell
 
-The proxy listens on the same default address as ccs: `127.0.0.1:15721`.
+The proxy listens on `127.0.0.1:15721` by default.
 
 ## Run
 
@@ -41,9 +41,8 @@ curl http://127.0.0.1:15721/metrics
 moon run cmd/main -- usage logs
 ```
 
-Provider model discovery uses the same ccs-compatible `/v1/models` candidate
-logic and returns the same frontend wire shape, `[{ "id": "...", "ownedBy":
-"..." }]`:
+Provider model discovery probes `/v1/models`-style catalogs and returns the
+Moonstat frontend wire shape, `[{ "id": "...", "ownedBy": "..." }]`:
 
 ```sh
 moon run cmd/main -- models fetch --base-url https://api.example.com --api-key sk-...
@@ -81,7 +80,7 @@ when the gateway boots. The contract also includes a machine-readable
 
 ## Proxy Surface
 
-Moonstat currently exposes the ccs-compatible local routes below:
+Moonstat currently exposes the standalone local routes below:
 
 - `GET /health`
 - `GET /status`
@@ -337,22 +336,23 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `ANY /gemini/v1beta/*path`
 - `ANY /gemini/v1/*path`
 
-`/status`, `/proxy/status`, and `/stats` include ccs-style request counts,
+`/status`, `/proxy/status`, and `/stats` include Moonstat request counts,
 success/failure counts, active connections, token totals, cache token totals,
 last request time, last error, current provider metadata, and success rate.
 `/proxy/config`, `/proxy/takeover-status`, and `/proxy/running` expose
-standalone HTTP aliases for the ccs proxy command shapes. Their POST aliases
-accept either ccs camelCase JSON bodies or query parameters for standalone
+standalone HTTP endpoints for proxy control. Their POST endpoints
+accept either camelCase JSON bodies or query parameters for standalone
 scripts. `/proxy/global-config`, `/proxy/app-config`,
 `/proxy/default-cost-multiplier`, and `/proxy/pricing-model-source` expose the
-ccs v3 global/app config and pricing defaults using the same env-backed
+Moonstat global/app config and pricing defaults using the same env-backed
 settings that request accounting uses. Global/app config and takeover setters
-mutate Moonstat's standalone runtime state without requiring the CCS database.
+mutate Moonstat's standalone runtime state without requiring an external
+database.
 `/proxy/provider-health`, `/proxy/circuit-breaker-config`,
 `/proxy/circuit-breaker-stats`, and `/proxy/reset-circuit-breaker` expose
-ccs-style failover health and circuit-breaker control over Moonstat's in-memory
+failover health and circuit-breaker control over Moonstat's in-memory
 router state. The circuit-breaker config update accepts the same camelCase
-shape as ccs, including `failureThreshold`, `successThreshold`,
+shape across CLI and HTTP callers, including `failureThreshold`, `successThreshold`,
 `timeoutSeconds`, `errorRateThreshold`, and `minRequests`, and hot-applies it to
 existing breakers. `/proxy/failover-queue`,
 `/proxy/available-failover-providers`, and `/proxy/auto-failover-enabled`
@@ -384,7 +384,7 @@ common-snippet, and environment routes use `/config/status`, `/config/dir`,
 use `/config/folder/open` and `/files/directories/pick`. File-sourced env
 conflicts are backed up under
 `.moonsuite/backups`, removed from shell config files, and restored from that
-backup JSON; process environment conflicts remain non-destructive like CCS Unix
+backup JSON; process environment conflicts remain non-destructive for Unix
 system entries. Snippets are kept in gateway memory.
 Settings and Claude plugin commands use `/settings...` routes plus the Claude
 plugin/onboarding routes.
@@ -395,14 +395,14 @@ as deterministic local state changes instead of mutating the desktop OS.
 OpenClaw workspace commands are exposed as `/workspace/memory...` and
 `/workspace/files...` routes. Standalone mode stores the same whitelisted
 workspace files and `memory/YYYY-MM-DD.md` daily memory files under
-`~/.moonsuite/openclaw/workspace`, returns CCS camelCase metadata, and keeps
+`~/.moonsuite/openclaw/workspace`, returns Moonstat camelCase metadata, and keeps
 directory opening non-destructive while still ensuring the target directory
 exists.
 MCP and prompt commands are exposed through `/mcp/...` and `/prompts...`
 routes. Standalone mode stores MCP servers and prompts in gateway memory,
 exports the Claude `mcpServers` JSON text shape, validates command names, and
 imports Claude/Gemini JSON MCP server maps plus Codex `config.toml`
-`mcp_servers` entries. It also imports, reads, and enables CCS prompt files
+`mcp_servers` entries. It also imports, reads, and enables suite prompt files
 (`CLAUDE.md`, `AGENTS.md`, or `GEMINI.md`); enabling a prompt writes the
 selected content to that app's prompt file.
 `/providers/universal`, `/providers/universal/item`, and
@@ -413,15 +413,15 @@ Claude/Codex/Gemini apps into concrete router providers named
 `/providers/endpoints/touch` manage provider custom endpoint metadata, including
 URL normalization, newest-first listing, and best-effort last-used updates.
 `/usage/logs` returns
-recent `proxy_request_logs` rows with ccs-style provider/app/model, token,
+recent `proxy_request_logs` rows with Moonstat provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.
 Gateway startup loads file-backed usage state from
 `~/.moonsuite/proxy_request_logs.jsonl` and session sync offsets from
-`~/.moonsuite/session_log_sync.jsonl`; editable ccs-style model pricing is stored
+`~/.moonsuite/session_log_sync.jsonl`; editable model pricing is stored
 in `~/.moonsuite/model_pricing.jsonl`. Manual `moonstat usage sync` saves usage
 state after importing Claude, Codex, Gemini, and OpenCode-compatible session logs.
 OpenCode sync reads `opencode.db` directly when `sqlite3` is available, honoring
-`OPENCODE_DB` and `XDG_DATA_HOME` like ccs. It also accepts JSONL rows exported
+`OPENCODE_DB` and `XDG_DATA_HOME`. It also accepts JSONL rows exported
 from `opencode.db` with `session_id`, `message_id`, and `data` fields as a
 fallback, defaulting to `~/.local/share/opencode/opencode.messages.jsonl`.
 `/usage/balance` queries provider balance for DeepSeek, StepFun,
@@ -432,7 +432,7 @@ same `UsageResult` shape used by `usage query-provider-usage`.
 `/usage/subscription-quota` queries native subscription quota for
 `claude`, `codex`, and `gemini`. It reads the same macOS keychain entries and
 fallback credential files, calls the official quota endpoints, and returns the
-CCS `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
+Moonstat `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
 `MOONSTAT_GEMINI_OAUTH_CLIENT_ID` and `MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET`
 (or the `GEMINI_OAUTH_*` / `GEMINI_CLI_OAUTH_*` aliases) at runtime.
 `/usage/codex-oauth-quota` queries Codex OAuth quota over the
@@ -453,17 +453,17 @@ names and fields.
 Claude Desktop gateway routes are open by default for standalone local use. Set
 `MOONSTAT_CLAUDE_DESKTOP_TOKEN` or `CLAUDE_DESKTOP_GATEWAY_TOKEN` to require
 `Authorization: Bearer <token>` on `/claude-desktop/v1/models` and
-`/claude-desktop/v1/messages`, matching ccs gateway-token behavior without the
-ccs database dependency.
+`/claude-desktop/v1/messages`, using Moonstat gateway-token behavior without an
+external database dependency.
 
 For Claude Desktop standalone setup, run
 `moonstat claude-desktop install --port 15721`. Moonstat writes the same gateway
-profile shape as ccs under Claude Desktop's `Claude-3p/configLibrary`, stores a
+profile shape under Claude Desktop's `Claude-3p/configLibrary`, stores a
 local token at `~/.moonsuite/claude_desktop_gateway_token`, and the gateway reads
 that token automatically. Use `moonstat claude-desktop uninstall` to restore the
 profile mode.
 
-Claude model rerouting honors the same ccs environment names:
+Claude model rerouting honors the standard Anthropic environment names:
 `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`,
 `ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_OPUS_MODEL`.
 `MOONSTAT_`-prefixed aliases are also accepted. When present, Moonstat maps the
@@ -474,7 +474,7 @@ For Codex standalone setup, run
 `moonstat codex install --port 15721 --model gpt-5`. Moonstat writes a managed
 Moonstat provider block to `~/.codex/config.toml` using
 `wire_api = "responses"` and `base_url = "http://127.0.0.1:15721/v1"`, matching
-ccs proxy takeover expectations while preserving unrelated user config. Use
+local proxy takeover expectations while preserving unrelated user config. Use
 `moonstat codex uninstall` to remove only the managed block.
 
 Gemini routes proxy to `https://generativelanguage.googleapis.com` by default

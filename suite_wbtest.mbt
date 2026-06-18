@@ -225,9 +225,9 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("POST /providers")))
   assert_true(routes.contains(Json::string("POST /providers/update")))
   assert_true(routes.contains(Json::string("DELETE /providers")))
-  assert_true(routes.contains(Json::string("POST /providers/delete")))
   assert_true(routes.contains(Json::string("DELETE /providers/live")))
-  assert_true(routes.contains(Json::string("POST /providers/live/remove")))
+  assert_false(routes.contains(Json::string("POST /providers/delete")))
+  assert_false(routes.contains(Json::string("POST /providers/live/remove")))
   assert_true(routes.contains(Json::string("POST /providers/switch")))
   assert_true(
     routes.contains(Json::string("GET|POST /providers/live-settings")),
@@ -242,7 +242,9 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /providers/universal/item")))
   assert_true(routes.contains(Json::string("POST /providers/universal")))
   assert_true(routes.contains(Json::string("DELETE /providers/universal")))
-  assert_true(routes.contains(Json::string("POST /providers/universal/delete")))
+  assert_false(
+    routes.contains(Json::string("POST /providers/universal/delete")),
+  )
   assert_true(routes.contains(Json::string("POST /providers/universal/sync")))
   assert_true(
     routes.contains(Json::string("GET|POST /providers/test-endpoints")),
@@ -253,7 +255,9 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_true(routes.contains(Json::string("POST /providers/endpoints")))
   assert_true(routes.contains(Json::string("DELETE /providers/endpoints")))
-  assert_true(routes.contains(Json::string("POST /providers/endpoints/remove")))
+  assert_false(
+    routes.contains(Json::string("POST /providers/endpoints/remove")),
+  )
   assert_true(routes.contains(Json::string("POST /providers/endpoints/touch")))
   assert_true(routes.contains(Json::string("GET /config/claude/status")))
   assert_true(routes.contains(Json::string("GET|POST /config/status")))
@@ -643,6 +647,14 @@ async test "gateway omits legacy Moonstat command route handlers" {
   assert_eq(moon_commands.length(), 59)
   for command in moon_commands {
     assert_false(gateway_source_registers_path(source, "/\{command}"))
+  }
+  let proxy_routes = @fsx.read_file("gateway_proxy_routes.mbt")
+  for
+    path in [
+      "/providers/delete", "/providers/live/remove", "/providers/universal/delete",
+      "/providers/endpoints/remove",
+    ] {
+    assert_false(gateway_source_registers_path(proxy_routes, path))
   }
 }
 
