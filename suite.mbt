@@ -497,9 +497,9 @@ fn moonclaw_model_config_json(openai_base_url : String, model : String) -> Json 
 fn moonstat_suite_capabilities() -> Array[String] {
   [
     "openai-compatible-proxy", "anthropic-compatible-proxy", "claude-desktop-gateway",
-    "gemini-compatible-proxy", "ccs-usage-statistics", "ccs-stream-check", "session-usage-sync",
-    "provider-model-catalog", "provider-presets", "ccs-skills-management", "suite-discovery",
-    "codex-config-install",
+    "gemini-compatible-proxy", "moonstat-usage-statistics", "moonstat-stream-check",
+    "session-usage-sync", "provider-model-catalog", "provider-presets", "moonstat-skills-management",
+    "suite-discovery", "codex-config-install",
   ]
 }
 

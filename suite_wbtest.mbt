@@ -89,9 +89,9 @@ test "suite manifest publishes moonstat service contract" {
     fail("expected capabilities")
   }
   assert_true(capabilities.contains(Json::string("openai-compatible-proxy")))
-  assert_true(capabilities.contains(Json::string("ccs-usage-statistics")))
-  assert_true(capabilities.contains(Json::string("ccs-stream-check")))
-  assert_true(capabilities.contains(Json::string("ccs-skills-management")))
+  assert_true(capabilities.contains(Json::string("moonstat-usage-statistics")))
+  assert_true(capabilities.contains(Json::string("moonstat-stream-check")))
+  assert_true(capabilities.contains(Json::string("moonstat-skills-management")))
   assert_true(capabilities.contains(Json::string("provider-presets")))
   assert_true(capabilities.contains(Json::string("suite-discovery")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
@@ -686,7 +686,7 @@ fn moon_tauri_command_surface() -> Array[String] {
 }
 
 ///|
-test "suite manifest covers current CCS Tauri command surface" {
+test "suite manifest covers current Moonstat command surface" {
   let manifest = moonstat_suite_manifest_json(
     host="127.0.0.1",
     port=15721,
@@ -713,7 +713,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 }
 
 ///|
-async test "gateway registers current CCS Tauri command handlers" {
+async test "gateway registers current Moonstat command handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let moon_commands = moon_tauri_command_surface()
   assert_eq(moon_commands.length(), 274)
@@ -797,7 +797,7 @@ async test "suite status writes discovery file" {
       fail("expected capabilities")
     }
     assert_true(capabilities.contains(Json::string("session-usage-sync")))
-    assert_true(capabilities.contains(Json::string("ccs-stream-check")))
+    assert_true(capabilities.contains(Json::string("moonstat-stream-check")))
     assert_true(capabilities.contains(Json::string("provider-presets")))
     guard obj["suite_integrations"] is Object(integrations) else {
       fail("expected suite integrations")
