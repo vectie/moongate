@@ -1,4 +1,33 @@
 ///|
+fn usage_cli_commands() -> Array[CliCommandSpec] {
+  [
+    { id: "get_usage_summary", patterns: ["usage summary"] },
+    { id: "get_usage_summary_by_app", patterns: ["usage apps"] },
+    { id: "get_usage_trends", patterns: ["usage trends"] },
+    { id: "get_provider_stats", patterns: ["usage providers"] },
+    { id: "get_model_stats", patterns: ["usage models"] },
+    { id: "get_request_logs", patterns: ["usage logs"] },
+    { id: "get_request_detail", patterns: ["usage detail"] },
+    { id: "update_model_pricing", patterns: ["usage pricing set"] },
+    { id: "delete_model_pricing", patterns: ["usage pricing delete"] },
+    { id: "get_model_pricing", patterns: ["usage pricing"] },
+    { id: "check_provider_limits", patterns: ["usage limits"] },
+    { id: "sync_session_usage", patterns: ["usage sync"] },
+    { id: "get_usage_data_sources", patterns: ["usage sources"] },
+    { id: "query_provider_usage", patterns: ["usage query-provider-usage"] },
+    { id: "get_balance", patterns: ["usage balance"] },
+    { id: "get_subscription_quota", patterns: ["usage quota"] },
+    { id: "get_codex_oauth_quota", patterns: ["usage codex-oauth-quota"] },
+    { id: "get_codex_oauth_models", patterns: ["usage codex-oauth-models"] },
+    { id: "get_coding_plan_quota", patterns: ["usage coding-plan"] },
+    { id: "test_usage_script", patterns: ["usage test-usage-script"] },
+    { id: "status", patterns: ["status"] },
+    { id: "health", patterns: ["health"] },
+    { id: "stats", patterns: ["stats"] },
+  ]
+}
+
+///|
 async fn check_health(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
