@@ -91,7 +91,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_codex_responses(r, w, compact=true)
   })
   router.add_handler(@httpx.Method::Get, "/participant/register", (_, w) => {
-    self.handle_register_page(w)
+    self.workspace.handle_register_page(self.logger, w)
   })
   router.add_handler(@httpx.Method::Get, "/health", (_, w) => {
     self.usage.handle_health(w, self.auth.credentials_loaded())
@@ -875,7 +875,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.proxy.handle_proxy_set_takeover_for_app(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/switch_proxy_provider", (r, w) => {
-    self.handle_proxy_switch_provider(r, w)
+    self.proxy.handle_proxy_switch_provider(self.usage, r, w)
   })
   router.add_handler(@httpx.Method::Post, "/sync_current_providers_live", (_, w) => {
     self.proxy.handle_sync_current_providers_live(self.usage, w)

@@ -125,19 +125,6 @@ fn moon_first_stream_event_ms(current : Int?, started_at_ms : Int?) -> Int? {
 }
 
 ///|
-async fn Gateway::handle_register_page(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.workspace.write_static_file(
-    self.logger,
-    w,
-    "public/participant-register.html",
-    "text/html; charset=utf-8",
-  )
-}
-
-///|
 async fn Gateway::handle_codex_responses(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4966,7 +4953,14 @@ async fn Gateway::handle_claude_desktop_models(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  guard self.validate_claude_desktop_gateway_auth(r, w) else { return }
+  guard self.auth.validate_claude_desktop_gateway_auth(
+    self.proxy,
+    self.usage,
+    r,
+    w,
+  ) else {
+    return
+  }
   let provider = self.activate_provider("claude-desktop")
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
@@ -5313,7 +5307,14 @@ async fn Gateway::handle_messages(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let app_type = if r.path.has_prefix("/claude-desktop") {
-    guard self.validate_claude_desktop_gateway_auth(r, w) else { return }
+    guard self.auth.validate_claude_desktop_gateway_auth(
+      self.proxy,
+      self.usage,
+      r,
+      w,
+    ) else {
+      return
+    }
     "claude-desktop"
   } else {
     "claude"

@@ -1263,19 +1263,20 @@ async fn ProxyService::switch_provider_from_request(
 }
 
 ///|
-async fn Gateway::handle_proxy_switch_provider(
-  self : Gateway,
+async fn ProxyService::handle_proxy_switch_provider(
+  self : ProxyService,
+  usage : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let provider = match self.proxy.switch_provider_from_request(r) {
+  let provider = match self.switch_provider_from_request(r) {
     Ok(provider) => provider
     Err(error) => {
       write_usage_bad_request(w, error)
       return
     }
   }
-  self.usage.set_active_target(
+  usage.set_active_target(
     provider.app_type,
     provider.provider_id,
     provider.provider_name,

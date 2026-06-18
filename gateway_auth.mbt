@@ -436,19 +436,21 @@ fn moon_token_plan_usage_extra(
 }
 
 ///|
-async fn Gateway::validate_claude_desktop_gateway_auth(
-  self : Gateway,
+async fn AuthService::validate_claude_desktop_gateway_auth(
+  self : AuthService,
+  proxy : ProxyService,
+  usage : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Bool {
-  let _ = self
+  ignore(self)
   match @claude_desktop.gateway_token() {
     None => true
     Some(expected) =>
       if claude_desktop_authorization_valid(r.headers, expected) {
         true
       } else {
-        self.usage.record_unauthorized_with_provider(self.proxy)
+        usage.record_unauthorized_with_provider(proxy)
         write_auth_error(w, "Claude Desktop gateway token invalid or missing")
         false
       }

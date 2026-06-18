@@ -584,3 +584,14 @@ async fn WorkspaceService::write_static_file(
   }
   w.flush()
 }
+
+///|
+async fn WorkspaceService::handle_register_page(
+  self : WorkspaceService,
+  logger : @pino.Logger,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.write_static_file(
+    logger, w, "public/participant-register.html", "text/html; charset=utf-8",
+  )
+}

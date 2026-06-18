@@ -2038,7 +2038,7 @@ async test "ccs proxy mutation command handlers return unit success bodies" {
       ("ProxyService", "handle_proxy_set_pricing_model_source"),
       ("ProxyService", "handle_proxy_update_circuit_breaker_config"),
       ("ProxyService", "handle_proxy_set_takeover_for_app"),
-      ("Gateway", "handle_proxy_switch_provider"),
+      ("ProxyService", "handle_proxy_switch_provider"),
     ] {
     let (owner, handler) = entry
     if handler == "handle_proxy_status" ||
@@ -2052,10 +2052,16 @@ async test "ccs proxy mutation command handlers return unit success bodies" {
   for
     handler in [
       "handle_proxy_status", "handle_proxy_start_server", "handle_proxy_stop_server",
-      "handle_proxy_stop_with_restore", "handle_proxy_running",
+      "handle_proxy_stop_with_restore", "handle_proxy_running", "handle_proxy_switch_provider",
     ] {
     assert_false(source.contains("async fn Gateway::\{handler}("))
   }
+  let core_source = @fsx.read_file("gateway_core.mbt")
+  assert_true(
+    core_source.contains(
+      "self.proxy.handle_proxy_switch_provider(self.usage, r, w)",
+    ),
+  )
 }
 
 ///|
@@ -2070,6 +2076,7 @@ async test "auth endpoints are owned by auth service" {
       "handle_auth_logout", "handle_copilot_get_auth_status", "handle_copilot_get_token",
       "handle_copilot_poll_for_account", "handle_copilot_list_accounts", "handle_copilot_remove_account",
       "handle_copilot_set_default_account", "handle_copilot_get_models", "handle_copilot_get_usage",
+      "validate_claude_desktop_gateway_auth",
     ] {
     assert_true(auth_sources.contains("async fn AuthService::\{handler}("))
     assert_false(auth_sources.contains("async fn Gateway::\{handler}("))
@@ -2083,6 +2090,12 @@ async test "auth endpoints are owned by auth service" {
   assert_true(core_source.contains("self.auth.handle_copilot_list_accounts(w)"))
   assert_true(core_source.contains("self.auth.handle_copilot_get_models(r, w)"))
   assert_true(core_source.contains("self.auth.handle_copilot_get_usage(r, w)"))
+  let misc_source = @fsx.read_file("gateway_misc.mbt")
+  assert_true(
+    misc_source.contains("self.auth.validate_claude_desktop_gateway_auth("),
+  )
+  assert_true(misc_source.contains("self.proxy,"))
+  assert_true(misc_source.contains("self.usage,"))
 }
 
 ///|
@@ -2284,7 +2297,7 @@ async test "workspace endpoints are owned by workspace service" {
       "handle_write_daily_memory_file", "handle_search_daily_memory_files", "handle_delete_daily_memory_file",
       "handle_read_workspace_file", "handle_write_workspace_file", "handle_open_workspace_directory",
       "handle_import_prompt_from_file", "handle_get_current_prompt_file_content",
-      "write_static_file",
+      "write_static_file", "handle_register_page",
     ] {
     assert_true(
       workspace_source.contains("async fn WorkspaceService::\{handler}("),
@@ -2311,6 +2324,9 @@ async test "workspace endpoints are owned by workspace service" {
     core_source.contains(
       "self.workspace.handle_get_current_prompt_file_content(r, w)",
     ),
+  )
+  assert_true(
+    core_source.contains("self.workspace.handle_register_page(self.logger, w)"),
   )
 }
 
