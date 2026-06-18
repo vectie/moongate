@@ -887,6 +887,133 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
         "prompt current", "prompts current", "get_current_prompt_file_content", "get-current-prompt-file-content",
       ],
     },
+    {
+      id: "get_usage_summary",
+      patterns: [
+        "usage summary", "usage get-usage-summary", "get_usage_summary", "get-usage-summary",
+      ],
+    },
+    {
+      id: "get_usage_summary_by_app",
+      patterns: [
+        "usage apps", "usage get-usage-summary-by-app", "get_usage_summary_by_app",
+        "get-usage-summary-by-app",
+      ],
+    },
+    {
+      id: "get_usage_trends",
+      patterns: [
+        "usage trends", "usage get-usage-trends", "get_usage_trends", "get-usage-trends",
+      ],
+    },
+    {
+      id: "get_provider_stats",
+      patterns: [
+        "usage providers", "usage get-provider-stats", "get_provider_stats", "get-provider-stats",
+      ],
+    },
+    {
+      id: "get_model_stats",
+      patterns: [
+        "usage models", "usage get-model-stats", "get_model_stats", "get-model-stats",
+      ],
+    },
+    {
+      id: "get_request_logs",
+      patterns: [
+        "usage logs", "usage get-request-logs", "get_request_logs", "get-request-logs",
+      ],
+    },
+    {
+      id: "get_request_detail",
+      patterns: [
+        "usage detail", "usage get-request-detail", "get_request_detail", "get-request-detail",
+      ],
+    },
+    {
+      id: "update_model_pricing",
+      patterns: [
+        "usage pricing set", "usage update-model-pricing", "update_model_pricing",
+        "update-model-pricing",
+      ],
+    },
+    {
+      id: "delete_model_pricing",
+      patterns: [
+        "usage pricing delete", "usage delete-model-pricing", "delete_model_pricing",
+        "delete-model-pricing",
+      ],
+    },
+    {
+      id: "get_model_pricing",
+      patterns: [
+        "usage pricing", "usage get-model-pricing", "get_model_pricing", "get-model-pricing",
+      ],
+    },
+    {
+      id: "check_provider_limits",
+      patterns: [
+        "usage limits", "usage check-provider-limits", "check_provider_limits", "check-provider-limits",
+      ],
+    },
+    {
+      id: "sync_session_usage",
+      patterns: [
+        "usage sync", "usage sync-session-usage", "sync_session_usage", "sync-session-usage",
+      ],
+    },
+    {
+      id: "get_usage_data_sources",
+      patterns: [
+        "usage sources", "usage get-usage-data-sources", "get_usage_data_sources",
+        "get-usage-data-sources",
+      ],
+    },
+    {
+      id: "query_provider_usage",
+      patterns: [
+        "usage query-provider-usage", "queryProviderUsage", "query_provider_usage",
+        "query-provider-usage",
+      ],
+    },
+    {
+      id: "get_balance",
+      patterns: ["usage balance", "get_balance", "get-balance"],
+    },
+    {
+      id: "get_subscription_quota",
+      patterns: [
+        "usage quota", "usage get-subscription-quota", "get_subscription_quota",
+        "get-subscription-quota",
+      ],
+    },
+    {
+      id: "get_codex_oauth_quota",
+      patterns: [
+        "usage codex-oauth-quota", "usage get-codex-oauth-quota", "get_codex_oauth_quota",
+        "get-codex-oauth-quota",
+      ],
+    },
+    {
+      id: "get_codex_oauth_models",
+      patterns: [
+        "usage codex-oauth-models", "usage get-codex-oauth-models", "get_codex_oauth_models",
+        "get-codex-oauth-models",
+      ],
+    },
+    {
+      id: "get_coding_plan_quota",
+      patterns: [
+        "usage coding-plan", "usage get-coding-plan-quota", "get_coding_plan_quota",
+        "get-coding-plan-quota",
+      ],
+    },
+    {
+      id: "test_usage_script",
+      patterns: [
+        "usage test-usage-script", "testUsageScript", "test_usage_script", "test-usage-script",
+      ],
+    },
     { id: "suite_manifest", patterns: ["suite manifest"] },
     { id: "suite_status", patterns: ["suite status"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
@@ -1612,6 +1739,86 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
         args,
         prompt_file_path(args, "/get_current_prompt_file_content"),
       )
+      true
+    }
+    Some("get_usage_summary") => {
+      check_usage_summary(args)
+      true
+    }
+    Some("get_usage_summary_by_app") => {
+      check_usage_apps(args)
+      true
+    }
+    Some("get_usage_trends") => {
+      check_usage_trends(args)
+      true
+    }
+    Some("get_provider_stats") => {
+      check_usage_providers(args)
+      true
+    }
+    Some("get_model_stats") => {
+      check_usage_models(args)
+      true
+    }
+    Some("get_request_logs") => {
+      check_usage_logs(args)
+      true
+    }
+    Some("get_request_detail") => {
+      check_usage_detail(args)
+      true
+    }
+    Some("get_model_pricing") => {
+      check_usage_endpoint(args, "/usage/model-pricing")
+      true
+    }
+    Some("update_model_pricing") => {
+      update_usage_pricing(args)
+      true
+    }
+    Some("delete_model_pricing") => {
+      delete_usage_pricing(args)
+      true
+    }
+    Some("check_provider_limits") => {
+      check_usage_limits(args)
+      true
+    }
+    Some("sync_session_usage") => {
+      sync_session_usage(args)
+      true
+    }
+    Some("get_usage_data_sources") => {
+      check_usage_endpoint(args, "/usage/data-sources")
+      true
+    }
+    Some("query_provider_usage") => {
+      check_usage_provider_script(args)
+      true
+    }
+    Some("get_balance") => {
+      check_balance(args)
+      true
+    }
+    Some("get_subscription_quota") => {
+      check_subscription_quota(args)
+      true
+    }
+    Some("get_codex_oauth_quota") => {
+      check_codex_oauth_quota(args)
+      true
+    }
+    Some("get_codex_oauth_models") => {
+      check_codex_oauth_models(args)
+      true
+    }
+    Some("get_coding_plan_quota") => {
+      check_coding_plan_quota(args)
+      true
+    }
+    Some("test_usage_script") => {
+      test_usage_script(args)
       true
     }
     Some("suite_manifest") => {

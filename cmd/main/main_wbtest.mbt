@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 145)
+  assert_true(registered_cli_commands().length() >= 165)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -246,7 +246,52 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_current_prompt_file_content"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "usage", "summary"]) == None,
+    registered_cli_command_id(["moonstat", "usage", "summary"]) ==
+    Some("get_usage_summary"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get_usage_summary_by_app"]) ==
+    Some("get_usage_summary_by_app"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "get-request-logs"]) ==
+    Some("get_request_logs"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "pricing", "set"]) ==
+    Some("update_model_pricing"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "pricing", "delete"]) ==
+    Some("delete_model_pricing"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "pricing"]) ==
+    Some("get_model_pricing"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "query-provider-usage"]) ==
+    Some("query_provider_usage"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "queryProviderUsage"]) ==
+    Some("query_provider_usage"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "quota"]) ==
+    Some("get_subscription_quota"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "codex-oauth-models"]) ==
+    Some("get_codex_oauth_models"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "test-usage-script"]) ==
+    Some("test_usage_script"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "detail"]) ==
+    Some("get_request_detail"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "status"]) == Some("status"),
