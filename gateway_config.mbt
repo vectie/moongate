@@ -1284,11 +1284,11 @@ async fn Gateway::handle_import_default_config(
 }
 
 ///|
-async fn Gateway::handle_read_claude_plugin_config(
-  self : Gateway,
+async fn ConfigService::handle_read_claude_plugin_config(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  match self.config.claude_plugin_config {
+  match self.claude_plugin_config {
     Some(content) => write_usage_json(w, Json::string(content))
     None =>
       if @fsx.exists_as_file(moon_claude_plugin_config_path()) {
@@ -1306,21 +1306,19 @@ async fn Gateway::handle_read_claude_plugin_config(
 }
 
 ///|
-async fn Gateway::handle_apply_claude_plugin_config(
-  self : Gateway,
+async fn ConfigService::handle_apply_claude_plugin_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   let official = proxy_bool_request(r.path, body, ["official"]).unwrap_or(false)
   if official {
-    self.config.claude_plugin_applied = false
-    self.config.claude_plugin_config = None
+    self.claude_plugin_applied = false
+    self.claude_plugin_config = None
   } else {
-    self.config.claude_plugin_applied = true
-    self.config.claude_plugin_config = Some(
-      "{\n  \"primaryApiKey\": \"any\"\n}\n",
-    )
+    self.claude_plugin_applied = true
+    self.claude_plugin_config = Some("{\n  \"primaryApiKey\": \"any\"\n}\n")
   }
   write_usage_json(w, Json::boolean(true))
 }

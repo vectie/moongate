@@ -900,25 +900,25 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.proxy.handle_read_live_provider_settings(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_plugin_status", (_, w) => {
-    self.handle_get_claude_plugin_status(w)
+    self.config.handle_get_claude_plugin_status(w)
   })
   router.add_handler(@httpx.Method::Get, "/read_claude_plugin_config", (_, w) => {
-    self.handle_read_claude_plugin_config(w)
+    self.config.handle_read_claude_plugin_config(w)
   })
   router.add_handler(@httpx.Method::Post, "/apply_claude_plugin_config", (r, w) => {
-    self.handle_apply_claude_plugin_config(r, w)
+    self.config.handle_apply_claude_plugin_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/is_claude_plugin_applied", (_, w) => {
-    self.handle_is_claude_plugin_applied(w)
+    self.config.handle_is_claude_plugin_applied(w)
   })
   router.add_handler(@httpx.Method::Post, "/apply_claude_onboarding_skip", (
     _,
     w,
-  ) => self.handle_apply_claude_onboarding_skip(w))
+  ) => self.config.handle_apply_claude_onboarding_skip(w))
   router.add_handler(@httpx.Method::Post, "/clear_claude_onboarding_skip", (
     _,
     w,
-  ) => self.handle_clear_claude_onboarding_skip(w))
+  ) => self.config.handle_clear_claude_onboarding_skip(w))
   router.add_handler(@httpx.Method::Get, "/list_daily_memory_files", (_, w) => {
     self.workspace.handle_list_daily_memory_files(w)
   })

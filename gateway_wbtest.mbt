@@ -2127,6 +2127,8 @@ async test "settings mcp and prompt endpoints are owned by config service" {
       "handle_import_mcp_from_apps", "handle_get_prompts", "handle_upsert_prompt",
       "handle_delete_prompt", "handle_enable_prompt", "handle_parse_deeplink", "handle_webdav_sync_save_settings",
       "handle_s3_sync_save_settings", "handle_get_stream_check_config", "handle_save_stream_check_config",
+      "handle_get_claude_plugin_status", "handle_read_claude_plugin_config", "handle_apply_claude_plugin_config",
+      "handle_is_claude_plugin_applied", "handle_apply_claude_onboarding_skip", "handle_clear_claude_onboarding_skip",
     ] {
     assert_true(config_sources.contains("async fn ConfigService::\{handler}("))
     assert_false(config_sources.contains("async fn Gateway::\{handler}("))
@@ -2151,6 +2153,24 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   )
   assert_true(
     core_source.contains("self.config.handle_save_stream_check_config(r, w)"),
+  )
+  assert_true(
+    core_source.contains("self.config.handle_get_claude_plugin_status(w)"),
+  )
+  assert_true(
+    core_source.contains("self.config.handle_read_claude_plugin_config(w)"),
+  )
+  assert_true(
+    core_source.contains("self.config.handle_apply_claude_plugin_config(r, w)"),
+  )
+  assert_true(
+    core_source.contains("self.config.handle_is_claude_plugin_applied(w)"),
+  )
+  assert_true(
+    core_source.contains("self.config.handle_apply_claude_onboarding_skip(w)"),
+  )
+  assert_true(
+    core_source.contains("self.config.handle_clear_claude_onboarding_skip(w)"),
   )
   assert_true(
     core_source.contains("self.config.handle_get_auto_launch_status(w)"),

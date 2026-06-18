@@ -4343,15 +4343,15 @@ fn merge_suggested_claude_desktop_route(
 }
 
 ///|
-async fn Gateway::handle_get_claude_plugin_status(
-  self : Gateway,
+async fn ConfigService::handle_get_claude_plugin_status(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(
     w,
     {
       "exists": Json::boolean(
-        self.config.claude_plugin_config is Some(_) ||
+        self.claude_plugin_config is Some(_) ||
         @fsx.exists_as_file(moon_claude_plugin_config_path()),
       ),
       "path": Json::string(moon_claude_plugin_config_path()),
@@ -4360,11 +4360,11 @@ async fn Gateway::handle_get_claude_plugin_status(
 }
 
 ///|
-async fn Gateway::handle_is_claude_plugin_applied(
-  self : Gateway,
+async fn ConfigService::handle_is_claude_plugin_applied(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  match self.config.claude_plugin_config {
+  match self.claude_plugin_config {
     Some(content) =>
       write_usage_json(w, Json::boolean(moon_json_primary_api_key_any(content)))
     None =>
@@ -4380,19 +4380,19 @@ async fn Gateway::handle_is_claude_plugin_applied(
           Json::boolean(moon_json_primary_api_key_any(content)),
         )
       } else {
-        write_usage_json(w, Json::boolean(self.config.claude_plugin_applied))
+        write_usage_json(w, Json::boolean(self.claude_plugin_applied))
       }
   }
 }
 
 ///|
-async fn Gateway::handle_apply_claude_onboarding_skip(
-  self : Gateway,
+async fn ConfigService::handle_apply_claude_onboarding_skip(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.config.claude_onboarding_skipped = true
-  self.config.app_settings = moon_settings_with_bool(
-    self.config.app_settings,
+  self.claude_onboarding_skipped = true
+  self.app_settings = moon_settings_with_bool(
+    self.app_settings,
     "skipClaudeOnboarding",
     true,
   )
@@ -4400,13 +4400,13 @@ async fn Gateway::handle_apply_claude_onboarding_skip(
 }
 
 ///|
-async fn Gateway::handle_clear_claude_onboarding_skip(
-  self : Gateway,
+async fn ConfigService::handle_clear_claude_onboarding_skip(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.config.claude_onboarding_skipped = false
-  self.config.app_settings = moon_settings_with_bool(
-    self.config.app_settings,
+  self.claude_onboarding_skipped = false
+  self.app_settings = moon_settings_with_bool(
+    self.app_settings,
     "skipClaudeOnboarding",
     false,
   )
