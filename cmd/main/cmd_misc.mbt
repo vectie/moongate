@@ -308,7 +308,7 @@ async fn import_default_config(args : Array[String]) -> Unit {
 
 ///|
 async fn save_settings(args : Array[String]) -> Unit {
-  guard parse_string_arg_any(args, "--settings", "--config") is Some(settings) else {
+  guard parse_string_arg(args, "--settings") is Some(settings) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required --settings JSON")
     return
@@ -328,7 +328,7 @@ async fn delete_sessions(args : Array[String]) -> Unit {
 
 ///|
 fn delete_sessions_body(args : Array[String]) -> String? {
-  parse_string_arg_any(args, "--items", "--body")
+  parse_string_arg(args, "--items")
 }
 
 ///|
@@ -343,7 +343,7 @@ async fn import_skills_from_apps(args : Array[String]) -> Unit {
 
 ///|
 fn import_skills_from_apps_body(args : Array[String]) -> String? {
-  parse_string_arg_any(args, "--imports", "--body")
+  parse_string_arg(args, "--imports")
 }
 
 ///|
@@ -378,7 +378,7 @@ async fn delete_env_vars(args : Array[String]) -> Unit {
 
 ///|
 fn delete_env_vars_body(args : Array[String]) -> String? {
-  parse_string_arg_any(args, "--conflicts", "--body")
+  parse_string_arg(args, "--conflicts")
 }
 
 ///|
@@ -700,19 +700,11 @@ fn db_backup_rename_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--old-filename") {
     Some(filename) => query.push(cli_query_pair("oldFilename", filename))
-    None =>
-      match parse_string_arg(args, "--filename") {
-        Some(filename) => query.push(cli_query_pair("oldFilename", filename))
-        None => ()
-      }
+    None => ()
   }
   match parse_string_arg(args, "--new-name") {
     Some(name) => query.push(cli_query_pair("newName", name))
-    None =>
-      match parse_string_arg(args, "--name") {
-        Some(name) => query.push(cli_query_pair("newName", name))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query("/backups/db/rename", query)
 }
@@ -732,11 +724,7 @@ fn deeplink_request_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--request") {
     Some(request) => query.push(cli_query_pair("request", request))
-    None =>
-      match parse_string_arg(args, "--url") {
-        Some(url) => query.push(cli_query_pair("url", url))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query(base_path, query)
 }
@@ -744,7 +732,7 @@ fn deeplink_request_path(args : Array[String], base_path : String) -> String {
 ///|
 fn sync_settings_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
-  match parse_string_arg_any(args, "--settings", "--config") {
+  match parse_string_arg(args, "--settings") {
     Some(settings) => query.push(cli_query_pair("settings", settings))
     None => ()
   }
@@ -816,14 +804,7 @@ fn skill_app_arg(args : Array[String]) -> String {
 
 ///|
 fn skill_id_arg(args : Array[String]) -> String? {
-  match parse_string_arg(args, "--id") {
-    Some(id) => Some(id)
-    None =>
-      match parse_string_arg(args, "--directory") {
-        Some(directory) => Some(directory)
-        None => parse_string_arg(args, "--skill-id")
-      }
-  }
+  parse_string_arg(args, "--id")
 }
 
 ///|
@@ -852,11 +833,7 @@ fn skill_backup_id_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--backup-id") {
     Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
-    None =>
-      match parse_string_arg(args, "--id") {
-        Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query(base_path, query)
 }
@@ -866,19 +843,11 @@ fn skill_restore_backup_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--backup-id") {
     Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
-    None =>
-      match parse_string_arg(args, "--id") {
-        Some(backup_id) => query.push(cli_query_pair("backupId", backup_id))
-        None => ()
-      }
+    None => ()
   }
   match parse_string_arg(args, "--current-app") {
     Some(app) => query.push(cli_query_pair("currentApp", app))
-    None =>
-      match parse_string_arg(args, "--app-type") {
-        Some(app) => query.push(cli_query_pair("currentApp", app))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query("/skills/backups/restore", query)
 }
@@ -888,15 +857,7 @@ fn skill_install_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--directory") {
     Some(directory) => query.push(cli_query_pair("directory", directory))
-    None =>
-      match parse_string_arg(args, "--id") {
-        Some(id) => query.push(cli_query_pair("directory", id))
-        None =>
-          match parse_string_arg(args, "--key") {
-            Some(key) => query.push(cli_query_pair("directory", key))
-            None => ()
-          }
-      }
+    None => ()
   }
   match parse_string_arg(args, "--name") {
     Some(name) => query.push(cli_query_pair("name", name))
@@ -908,11 +869,7 @@ fn skill_install_path(args : Array[String], base_path : String) -> String {
   }
   match parse_string_arg(args, "--current-app") {
     Some(app) => query.push(cli_query_pair("currentApp", app))
-    None =>
-      match parse_string_arg(args, "--app-type") {
-        Some(app) => query.push(cli_query_pair("appType", app))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query(base_path, query)
 }
@@ -935,7 +892,7 @@ fn skill_toggle_app_path(args : Array[String]) -> String {
 ///|
 fn skill_search_path(args : Array[String]) -> String {
   let query : Array[String] = []
-  match parse_string_arg_any(args, "--query", "--q") {
+  match parse_string_arg(args, "--query") {
     Some(value) => query.push(cli_query_pair("query", value))
     None => ()
   }
@@ -959,11 +916,7 @@ fn skill_repo_add_path(args : Array[String]) -> String {
   }
   match parse_string_arg(args, "--name") {
     Some(value) => query.push(cli_query_pair("name", value))
-    None =>
-      match parse_string_arg(args, "--repo") {
-        Some(value) => query.push(cli_query_pair("name", value))
-        None => ()
-      }
+    None => ()
   }
   match parse_string_arg(args, "--branch") {
     Some(value) => query.push(cli_query_pair("branch", value))
@@ -985,11 +938,7 @@ fn skill_repo_remove_path(args : Array[String]) -> String {
   }
   match parse_string_arg(args, "--name") {
     Some(value) => query.push(cli_query_pair("name", value))
-    None =>
-      match parse_string_arg(args, "--repo") {
-        Some(value) => query.push(cli_query_pair("repo", value))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query("/skills/repos/remove", query)
 }
@@ -999,19 +948,11 @@ fn skill_zip_install_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--file-path") {
     Some(value) => query.push(cli_query_pair("filePath", value))
-    None =>
-      match parse_string_arg(args, "--path") {
-        Some(value) => query.push(cli_query_pair("filePath", value))
-        None => ()
-      }
+    None => ()
   }
   match parse_string_arg(args, "--current-app") {
     Some(app) => query.push(cli_query_pair("currentApp", app))
-    None =>
-      match parse_string_arg(args, "--app-type") {
-        Some(app) => query.push(cli_query_pair("currentApp", app))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query("/skills/install-zip", query)
 }
@@ -1057,10 +998,7 @@ fn mcp_app_path(args : Array[String], base_path : String) -> String {
 
 ///|
 fn mcp_server_id_arg(args : Array[String]) -> String? {
-  match parse_string_arg(args, "--id") {
-    Some(id) => Some(id)
-    None => parse_string_arg(args, "--server-id")
-  }
+  parse_string_arg(args, "--id")
 }
 
 ///|
@@ -1071,7 +1009,7 @@ fn mcp_id_path(args : Array[String], base_path : String) -> String? {
 
 ///|
 fn mcp_validate_command_path(args : Array[String]) -> String {
-  match parse_string_arg_any(args, "--command", "--cmd") {
+  match parse_string_arg(args, "--command") {
     Some(command) => "/mcp/validate?\{cli_query_pair("command", command)}"
     None => "/mcp/validate"
   }
@@ -1081,7 +1019,7 @@ fn mcp_validate_command_path(args : Array[String]) -> String {
 fn mcp_server_json_from_args(args : Array[String], id : String) -> String {
   let name = parse_string_arg(args, "--name").unwrap_or(id)
   let spec : Map[String, Json] = {}
-  match parse_string_arg_any(args, "--command", "--cmd") {
+  match parse_string_arg(args, "--command") {
     Some(command) => spec["command"] = Json::string(command)
     None => ()
   }
@@ -1542,18 +1480,6 @@ fn parse_string_arg(args : Array[String], name : String) -> String? {
     i = i + 1
   }
   None
-}
-
-///|
-fn parse_string_arg_any(
-  args : Array[String],
-  left_name : String,
-  right_name : String,
-) -> String? {
-  match parse_string_arg(args, left_name) {
-    Some(value) => Some(value)
-    None => parse_string_arg(args, right_name)
-  }
 }
 
 ///|

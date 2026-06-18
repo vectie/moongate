@@ -353,14 +353,7 @@ fn hermes_kind_path(args : Array[String], base_path : String) -> String? {
 ///|
 fn hermes_memory_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--kind") is Some(kind) else { return None }
-  let content = match parse_string_arg(args, "--content") {
-    Some(value) => value
-    None =>
-      match parse_string_arg(args, "--value") {
-        Some(value) => value
-        None => parse_string_arg(args, "--text").unwrap_or("")
-      }
-  }
+  let content = parse_string_arg(args, "--content").unwrap_or("")
   Some(
     "/hermes/memory?\{cli_query_pair("kind", kind)}&\{cli_query_pair("content", content)}",
   )
@@ -393,7 +386,7 @@ fn hermes_web_ui_path(args : Array[String]) -> String {
 
 ///|
 fn workspace_filename_arg(args : Array[String]) -> String? {
-  parse_string_arg_any(args, "--filename", "--file")
+  parse_string_arg(args, "--filename")
 }
 
 ///|
@@ -453,21 +446,14 @@ fn config_file_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--file-path") {
     Some(file_path) => query.push(cli_query_pair("filePath", file_path))
-    None =>
-      match parse_string_arg(args, "--path") {
-        Some(file_path) => query.push(cli_query_pair("filePath", file_path))
-        None => ()
-      }
+    None => ()
   }
   cli_path_with_query(base_path, query)
 }
 
 ///|
 fn db_backup_filename_arg(args : Array[String]) -> String? {
-  match parse_string_arg(args, "--filename") {
-    Some(filename) => Some(filename)
-    None => parse_string_arg(args, "--name")
-  }
+  parse_string_arg(args, "--filename")
 }
 
 ///|

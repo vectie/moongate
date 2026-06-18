@@ -27,10 +27,12 @@ test "registered cli commands match suite command aliases and status commands" {
   assert_true(
     registered_cli_command_id(["moonstat", "claude-desktop", "remove"]) is None,
   )
-  assert_true(registered_cli_command_id(["moonstat", "--help"]) == Some("help"))
+  assert_true(registered_cli_command_id(["moonstat", "help"]) == Some("help"))
+  assert_true(registered_cli_command_id(["moonstat", "--help"]) is None)
   assert_true(
-    registered_cli_command_id(["moonstat", "--version"]) == Some("version"),
+    registered_cli_command_id(["moonstat", "version"]) == Some("version"),
   )
+  assert_true(registered_cli_command_id(["moonstat", "--version"]) is None)
   assert_true(
     registered_cli_command_id(["moonstat", "sync", "webdav", "upload"]) ==
     Some("webdav_sync_upload"),
@@ -479,9 +481,10 @@ test "cli command route owns command family dispatch" {
     Some(("install", "start")),
   )
   assert_eq(
-    registered_cli_command_route(["moonstat", "--help"]),
+    registered_cli_command_route(["moonstat", "help"]),
     Some(("core", "help")),
   )
+  assert_true(registered_cli_command_route(["moonstat", "--help"]) is None)
   assert_true(registered_cli_command_route(["moonstat", "not-real"]) is None)
   assert_eq(
     registered_cli_command_route(["moonstat", "usage", "summary"]),
@@ -954,7 +957,7 @@ test "proxy grouped commands build canonical paths" {
     delete_sessions_body([
       "moonstat", "sessions", "delete-many", "--body", "{\"items\":[]}",
     ]),
-    Some("{\"items\":[]}"),
+    None,
   )
   assert_eq(
     import_skills_from_apps_body([
@@ -966,7 +969,7 @@ test "proxy grouped commands build canonical paths" {
     import_skills_from_apps_body([
       "moonstat", "skills", "import-apps", "--body", "{\"imports\":[]}",
     ]),
-    Some("{\"imports\":[]}"),
+    None,
   )
   assert_eq(
     migrate_skill_storage_path([
@@ -994,7 +997,7 @@ test "proxy grouped commands build canonical paths" {
     delete_env_vars_body([
       "moonstat", "config", "env-delete", "--body", "{\"conflicts\":[]}",
     ]),
-    Some("{\"conflicts\":[]}"),
+    None,
   )
 }
 
@@ -1145,7 +1148,7 @@ test "top level moonstat config command names build config paths" {
   )
   assert_eq(
     config_file_path(
-      ["moonstat", "config", "file", "import", "--path", "/tmp/in.json"],
+      ["moonstat", "config", "file", "import", "--file-path", "/tmp/in.json"],
       "/config/files/import",
     ),
     "/config/files/import?filePath=%2Ftmp%2Fin.json",
@@ -1166,7 +1169,7 @@ test "top level moonstat config command names build config paths" {
   )
   assert_eq(
     db_backup_filename_path(
-      ["moonstat", "backups", "db", "delete", "--name", "renamed.db"],
+      ["moonstat", "backups", "db", "delete", "--filename", "renamed.db"],
       "/backups/db/delete",
     ),
     "/backups/db/delete?filename=renamed.db",
@@ -1192,11 +1195,11 @@ test "top level moonstat config command names build config paths" {
   assert_eq(
     deeplink_request_path(
       [
-        "moonstat", "deeplink", "import", "--url", "moonstat://v1/import?resource=prompt&appType=codex&name=Daily&content=SGVsbG8",
+        "moonstat", "deeplink", "import", "--request", "moonstat://v1/import?resource=prompt&appType=codex&name=Daily&content=SGVsbG8",
       ],
       "/deeplinks/import",
     ),
-    "/deeplinks/import?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dprompt%26appType%3Dcodex%26name%3DDaily%26content%3DSGVsbG8",
+    "/deeplinks/import?request=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dprompt%26appType%3Dcodex%26name%3DDaily%26content%3DSGVsbG8",
   )
   assert_eq(
     sync_settings_path(
@@ -1211,7 +1214,7 @@ test "top level moonstat config command names build config paths" {
   assert_eq(
     sync_settings_path(
       [
-        "moonstat", "sync", "s3", "test", "--config", "{\"bucket\":\"moonstat\"}",
+        "moonstat", "sync", "s3", "test", "--settings", "{\"bucket\":\"moonstat\"}",
         "--preserve-empty-password", "true",
       ],
       "/sync/s3/test",
@@ -1342,7 +1345,7 @@ test "top level moonstat mcp command names build mcp paths" {
   )
   assert_eq(
     mcp_id_path(
-      ["moonstat", "mcp", "delete", "--server-id", "filesystem server"],
+      ["moonstat", "mcp", "delete", "--id", "filesystem server"],
       "/mcp/servers",
     ),
     Some("/mcp/servers?id=filesystem%20server"),
@@ -1557,12 +1560,12 @@ test "top level moonstat skill commands build paths" {
     skill_install_path(
       [
         "moonstat", "skills", "install-unified", "--directory", "traffic stats",
-        "--name", "Traffic Stats", "--description", "Routes and usage", "--app-type",
+        "--name", "Traffic Stats", "--description", "Routes and usage", "--current-app",
         "codex",
       ],
       "/skills/install-unified",
     ),
-    "/skills/install-unified?directory=traffic%20stats&name=Traffic%20Stats&description=Routes%20and%20usage&appType=codex",
+    "/skills/install-unified?directory=traffic%20stats&name=Traffic%20Stats&description=Routes%20and%20usage&currentApp=codex",
   )
   assert_eq(
     skill_toggle_app_path([

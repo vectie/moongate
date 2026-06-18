@@ -16,8 +16,8 @@ fn registered_cli_command_groups() -> Array[CliCommandGroup] {
     {
       family: "core",
       commands: [
-        { id: "help", patterns: ["help", "--help", "-h"] },
-        { id: "version", patterns: ["version", "--version", "-v"] },
+        { id: "help", patterns: ["help"] },
+        { id: "version", patterns: ["version"] },
       ],
     },
     { family: "provider", commands: provider_cli_commands() },
