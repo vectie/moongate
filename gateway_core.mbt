@@ -93,7 +93,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_health(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/status", (_, w) => {
-    self.handle_status(w)
+    self.usage.handle_status(
+      w,
+      self.host,
+      self.port,
+      self.uptime_seconds(),
+      provider_routes=Some(self.proxy.provider_router.route_stats_json()),
+    )
   })
   router.add_handler(@httpx.Method::Get, "/stats", (_, w) => {
     self.usage.handle_stats(w)

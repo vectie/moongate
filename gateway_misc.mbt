@@ -2866,26 +2866,6 @@ fn moon_streaming_request(
 }
 
 ///|
-async fn Gateway::handle_status(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(
-    self.usage
-    .status_json(
-      self.host,
-      self.port,
-      self.uptime_seconds(),
-      provider_routes=Some(self.proxy.provider_router.route_stats_json()),
-    )
-    .stringify(indent=2),
-  )
-  w.flush()
-}
-
-///|
 async fn Gateway::handle_pick_directory(
   self : Gateway,
   r : @httpx.RequestReader,

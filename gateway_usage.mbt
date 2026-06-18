@@ -606,6 +606,21 @@ async fn UsageService::handle_health(
 }
 
 ///|
+async fn UsageService::handle_status(
+  self : UsageService,
+  w : @httpx.ResponseWriter,
+  address : String,
+  port : Int,
+  uptime_seconds : Int,
+  provider_routes? : Json? = None,
+) -> Unit {
+  write_usage_json(
+    w,
+    self.status_json(address, port, uptime_seconds, provider_routes~),
+  )
+}
+
+///|
 async fn UsageService::handle_metrics(
   self : UsageService,
   w : @httpx.ResponseWriter,
