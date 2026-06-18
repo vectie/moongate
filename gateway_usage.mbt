@@ -454,40 +454,40 @@ async fn UsageService::request_detail_json(
 }
 
 ///|
-async fn Gateway::handle_stats(
-  self : Gateway,
+async fn UsageService::handle_stats(
+  self : UsageService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
-  w.write(self.usage.stats_json().stringify(indent=2))
+  w.write(self.stats_json().stringify(indent=2))
   w.flush()
 }
 
 ///|
-async fn Gateway::handle_metrics(
-  self : Gateway,
+async fn UsageService::handle_metrics(
+  self : UsageService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   w.header().set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
   w.write_header(@status.Ok)
-  w.write(self.usage.metrics_text())
+  w.write(self.metrics_text())
   w.flush()
 }
 
 ///|
-async fn Gateway::handle_usage_logs(
-  self : Gateway,
+async fn UsageService::handle_usage_logs(
+  self : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
+  pricing_overrides : Array[ModelPricing],
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   let body = proxy_json_body(r)
   let filters = usage_request_log_filters_from_request(r.path, body)
-  let pricing_overrides = self.pricing_override_rows()
   w.write(
-    self.usage
+    self
     .usage_logs_json(
       filters,
       usage_int_from_request(r.path, body, ["page"]).unwrap_or(0),
@@ -502,15 +502,15 @@ async fn Gateway::handle_usage_logs(
 }
 
 ///|
-async fn Gateway::handle_usage_summary(
-  self : Gateway,
+async fn UsageService::handle_usage_summary(
+  self : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   write_usage_json(
     w,
-    self.usage.summary_json(
+    self.summary_json(
       start_date=usage_int_from_request(r.path, body, [
         "start_date", "startDate",
       ]),
@@ -521,15 +521,15 @@ async fn Gateway::handle_usage_summary(
 }
 
 ///|
-async fn Gateway::handle_usage_summary_by_app(
-  self : Gateway,
+async fn UsageService::handle_usage_summary_by_app(
+  self : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   write_usage_json(
     w,
-    self.usage.summary_by_app_json(
+    self.summary_by_app_json(
       start_date=usage_int_from_request(r.path, body, [
         "start_date", "startDate",
       ]),
@@ -539,8 +539,8 @@ async fn Gateway::handle_usage_summary_by_app(
 }
 
 ///|
-async fn Gateway::handle_usage_trends(
-  self : Gateway,
+async fn UsageService::handle_usage_trends(
+  self : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -550,7 +550,150 @@ async fn Gateway::handle_usage_trends(
   ])
   let end_ts = usage_int_from_request(r.path, body, ["end_date", "endDate"])
   let app_type = usage_string_from_request(r.path, body, ["app_type", "appType"])
-  write_usage_json(w, self.usage.trends_json(start_ts~, end_ts~, app_type~))
+  write_usage_json(w, self.trends_json(start_ts~, end_ts~, app_type~))
+}
+
+///|
+async fn UsageService::handle_usage_provider_stats(
+  self : UsageService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  write_usage_json(
+    w,
+    self.provider_stats_json(
+      start_date=usage_int_from_request(r.path, body, [
+        "start_date", "startDate",
+      ]),
+      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
+      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
+    ),
+  )
+}
+
+///|
+async fn UsageService::handle_usage_model_stats(
+  self : UsageService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  write_usage_json(
+    w,
+    self.model_stats_json(
+      start_date=usage_int_from_request(r.path, body, [
+        "start_date", "startDate",
+      ]),
+      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
+      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
+    ),
+  )
+}
+
+///|
+async fn UsageService::handle_usage_data_sources(
+  self : UsageService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.data_sources_json())
+}
+
+///|
+async fn UsageService::handle_usage_sync_session(
+  self : UsageService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let claude_projects_dir = usage_query_value_any(
+    r.path,
+    "projects_dir",
+    "projectsDir",
+  ).unwrap_or(default_claude_projects_dir())
+  let codex_dir = usage_query_value_any(r.path, "codex_dir", "codexDir").unwrap_or(
+    default_codex_config_dir(),
+  )
+  let gemini_dir = usage_query_value_any(r.path, "gemini_dir", "geminiDir").unwrap_or(
+    default_gemini_dir(),
+  )
+  let opencode_export_path = usage_query_value_any(
+    r.path,
+    "opencode_export_path",
+    "opencodeExportPath",
+  ).unwrap_or(default_opencode_export_path())
+  let opencode_db_path = usage_query_value_any(
+    r.path,
+    "opencode_db_path",
+    "opencodeDbPath",
+  ).unwrap_or(default_opencode_db_path())
+  let result = self.sync_session_logs(
+    claude_projects_dir, codex_dir, gemini_dir, opencode_db_path, opencode_export_path,
+  )
+  write_usage_json(w, result.to_json())
+}
+
+///|
+async fn UsageService::handle_usage_request_detail(
+  self : UsageService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+  pricing_overrides : Array[ModelPricing],
+) -> Unit {
+  let body = proxy_json_body(r)
+  let request_id = usage_request_detail_id_from_request(r.path, body)
+  write_usage_json(w, self.request_detail_json(request_id, pricing_overrides))
+}
+
+///|
+async fn Gateway::handle_stats(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.usage.handle_stats(w)
+}
+
+///|
+async fn Gateway::handle_metrics(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.usage.handle_metrics(w)
+}
+
+///|
+async fn Gateway::handle_usage_logs(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.usage.handle_usage_logs(r, w, self.pricing_override_rows())
+}
+
+///|
+async fn Gateway::handle_usage_summary(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.usage.handle_usage_summary(r, w)
+}
+
+///|
+async fn Gateway::handle_usage_summary_by_app(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.usage.handle_usage_summary_by_app(r, w)
+}
+
+///|
+async fn Gateway::handle_usage_trends(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.usage.handle_usage_trends(r, w)
 }
 
 ///|
@@ -604,17 +747,7 @@ async fn Gateway::handle_usage_provider_stats(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let body = proxy_json_body(r)
-  write_usage_json(
-    w,
-    self.usage.provider_stats_json(
-      start_date=usage_int_from_request(r.path, body, [
-        "start_date", "startDate",
-      ]),
-      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
-      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
-    ),
-  )
+  self.usage.handle_usage_provider_stats(r, w)
 }
 
 ///|
@@ -623,17 +756,7 @@ async fn Gateway::handle_usage_model_stats(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let body = proxy_json_body(r)
-  write_usage_json(
-    w,
-    self.usage.model_stats_json(
-      start_date=usage_int_from_request(r.path, body, [
-        "start_date", "startDate",
-      ]),
-      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
-      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
-    ),
-  )
+  self.usage.handle_usage_model_stats(r, w)
 }
 
 ///|
@@ -641,7 +764,7 @@ async fn Gateway::handle_usage_data_sources(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.usage.data_sources_json())
+  self.usage.handle_usage_data_sources(w)
 }
 
 ///|
@@ -731,31 +854,7 @@ async fn Gateway::handle_usage_sync_session(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let claude_projects_dir = usage_query_value_any(
-    r.path,
-    "projects_dir",
-    "projectsDir",
-  ).unwrap_or(default_claude_projects_dir())
-  let codex_dir = usage_query_value_any(r.path, "codex_dir", "codexDir").unwrap_or(
-    default_codex_config_dir(),
-  )
-  let gemini_dir = usage_query_value_any(r.path, "gemini_dir", "geminiDir").unwrap_or(
-    default_gemini_dir(),
-  )
-  let opencode_export_path = usage_query_value_any(
-    r.path,
-    "opencode_export_path",
-    "opencodeExportPath",
-  ).unwrap_or(default_opencode_export_path())
-  let opencode_db_path = usage_query_value_any(
-    r.path,
-    "opencode_db_path",
-    "opencodeDbPath",
-  ).unwrap_or(default_opencode_db_path())
-  let result = self.usage.sync_session_logs(
-    claude_projects_dir, codex_dir, gemini_dir, opencode_db_path, opencode_export_path,
-  )
-  write_usage_json(w, result.to_json())
+  self.usage.handle_usage_sync_session(r, w)
 }
 
 ///|
@@ -764,13 +863,7 @@ async fn Gateway::handle_usage_request_detail(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let body = proxy_json_body(r)
-  let request_id = usage_request_detail_id_from_request(r.path, body)
-  let pricing_overrides = self.pricing_override_rows()
-  write_usage_json(
-    w,
-    self.usage.request_detail_json(request_id, pricing_overrides),
-  )
+  self.usage.handle_usage_request_detail(r, w, self.pricing_override_rows())
 }
 
 ///|
