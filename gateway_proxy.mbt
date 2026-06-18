@@ -535,46 +535,8 @@ async fn ProxyService::apply_global_config_request(
 }
 
 ///|
-async fn Gateway::handle_proxy_status(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.proxy.handle_proxy_status(
-    w,
-    self.usage,
-    self.host,
-    self.port,
-    self.uptime_seconds(),
-  )
-}
-
-///|
-async fn Gateway::handle_proxy_start_server(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.proxy.handle_proxy_start_server(w, self.started_at_ms)
-}
-
-///|
-async fn Gateway::handle_proxy_stop_server(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.proxy.handle_proxy_stop_server(w)
-}
-
-///|
 fn moon_stop_proxy_takeover_error() -> String {
   "仍有应用处于代理接管状态，请先在设置中关闭对应应用接管后再停止本地路由。"
-}
-
-///|
-async fn Gateway::handle_proxy_stop_with_restore(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.proxy.handle_proxy_stop_with_restore(w)
 }
 
 ///|
@@ -1364,14 +1326,6 @@ fn ProxyService::clear_enabled_apps_for_manual_stop(
   for app_type in ["claude", "codex", "gemini"] {
     self.proxy_app_enabled.set(app_type, false)
   }
-}
-
-///|
-async fn Gateway::handle_proxy_running(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.proxy.handle_proxy_running(w)
 }
 
 ///|

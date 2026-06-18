@@ -2026,6 +2026,11 @@ async test "ccs proxy mutation command handlers return unit success bodies" {
   let source = @fsx.read_file("gateway_proxy.mbt")
   for
     entry in [
+      ("ProxyService", "handle_proxy_status"),
+      ("ProxyService", "handle_proxy_start_server"),
+      ("ProxyService", "handle_proxy_stop_server"),
+      ("ProxyService", "handle_proxy_stop_with_restore"),
+      ("ProxyService", "handle_proxy_running"),
       ("ProxyService", "handle_proxy_update_config"),
       ("ProxyService", "handle_proxy_update_global_config"),
       ("ProxyService", "handle_proxy_update_app_config"),
@@ -2036,7 +2041,20 @@ async test "ccs proxy mutation command handlers return unit success bodies" {
       ("Gateway", "handle_proxy_switch_provider"),
     ] {
     let (owner, handler) = entry
-    assert_true(service_handler_uses_unit_success(source, owner, handler))
+    if handler == "handle_proxy_status" ||
+      handler == "handle_proxy_start_server" ||
+      handler == "handle_proxy_running" {
+      assert_true(source.contains("async fn \{owner}::\{handler}("))
+    } else {
+      assert_true(service_handler_uses_unit_success(source, owner, handler))
+    }
+  }
+  for
+    handler in [
+      "handle_proxy_status", "handle_proxy_start_server", "handle_proxy_stop_server",
+      "handle_proxy_stop_with_restore", "handle_proxy_running",
+    ] {
+    assert_false(source.contains("async fn Gateway::\{handler}("))
   }
 }
 
