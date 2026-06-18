@@ -49,7 +49,7 @@ async fn test_global_proxy_url(args : Array[String]) -> Unit {
     logger.error("Missing required --url")
     return
   }
-  check_json_endpoint(args, path, "Proxy")
+  check_json_post_endpoint(args, path, "Proxy")
 }
 
 ///|
@@ -1054,12 +1054,12 @@ async fn stream_check_provider(args : Array[String]) -> Unit {
     logger.error("Missing required stream check args: --provider-id --app-type")
     return
   }
-  check_usage_endpoint(args, path)
+  check_json_post_endpoint(args, path, "Stream check")
 }
 
 ///|
 async fn stream_check_all_providers(args : Array[String]) -> Unit {
-  check_usage_endpoint(args, stream_check_all_path(args))
+  check_json_post_endpoint(args, stream_check_all_path(args), "Stream check")
 }
 
 ///|

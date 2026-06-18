@@ -94,7 +94,7 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /proxy/global-config`
 - `GET /proxy/global-url`
 - `POST /proxy/global-url?url=http://127.0.0.1:7890`
-- `GET|POST /proxy/test-url?url=http://127.0.0.1:7890`
+- `POST /proxy/test-url?url=http://127.0.0.1:7890`
 - `GET /proxy/upstream-status`
 - `GET /proxy/local-proxies`
 - `GET /proxy/app-config?appType=claude`
@@ -260,7 +260,7 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /providers/universal?id=custom&name=Custom&apps=claude,codex`
 - `DELETE /providers/universal?id=custom`
 - `POST /providers/universal/sync?id=custom`
-- `GET|POST /providers/test-endpoints?urls=https://api.example.com/v1`
+- `POST /providers/test-endpoints?urls=https://api.example.com/v1`
 - `POST /providers/sort-order?appType=codex&id=custom&sortIndex=0`
 - `GET /providers/endpoints/list?appType=codex&providerId=custom`
 - `POST /providers/endpoints?appType=codex&providerId=custom&url=https://api.backup.example.com/v1`

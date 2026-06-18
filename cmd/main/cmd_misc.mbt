@@ -526,7 +526,7 @@ async fn test_api_endpoints(args : Array[String]) -> Unit {
     logger.error("Missing required --url or --urls")
     return
   }
-  check_json_endpoint(args, path, "Provider")
+  check_json_post_endpoint(args, path, "Provider")
 }
 
 ///|

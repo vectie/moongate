@@ -97,9 +97,6 @@ fn ProxyService::register_management_routes(
   router.add_handler(Post, "/proxy/global-url", (r, w) => {
     self.handle_set_global_proxy_url(r, w)
   })
-  router.add_handler(Get, "/proxy/test-url", (r, w) => {
-    self.handle_test_proxy_url(r, w)
-  })
   router.add_handler(Post, "/proxy/test-url", (r, w) => {
     self.handle_test_proxy_url(r, w)
   })
@@ -181,22 +178,13 @@ fn ProxyService::register_management_routes(
   router.add_handler(Post, "/proxy/stream-check/provider", (r, w) => {
     self.handle_stream_check_provider(stream_check_config, r, w)
   })
-  router.add_handler(Get, "/proxy/stream-check/provider", (r, w) => {
-    self.handle_stream_check_provider(stream_check_config, r, w)
-  })
   router.add_handler(Post, "/proxy/stream-check/all", (r, w) => {
-    self.handle_stream_check_all_providers(stream_check_config, r, w)
-  })
-  router.add_handler(Get, "/proxy/stream-check/all", (r, w) => {
     self.handle_stream_check_all_providers(stream_check_config, r, w)
   })
   router.add_handler(Get, "/providers", (r, w) => {
     self.handle_get_providers(r, w)
   })
   router.add_handler(Get, "/providers/current", (r, w) => {
-    self.handle_get_current_provider(r, w)
-  })
-  router.add_handler(Post, "/providers/current", (r, w) => {
     self.handle_get_current_provider(r, w)
   })
   router.add_handler(Post, "/providers", (r, w) => {
@@ -232,9 +220,6 @@ fn ProxyService::register_management_routes(
   router.add_handler(Get, "/providers/live-settings", (r, w) => {
     self.handle_read_live_provider_settings(r, w)
   })
-  router.add_handler(Post, "/providers/live-settings", (r, w) => {
-    self.handle_read_live_provider_settings(r, w)
-  })
   router.add_handler(Get, "/providers/live-ids", (r, w) => {
     self.handle_get_live_provider_ids(
       w,
@@ -242,13 +227,6 @@ fn ProxyService::register_management_routes(
     )
   })
   router.add_handler(Get, "/providers/live-provider", (r, w) => {
-    self.handle_get_live_provider(
-      r,
-      w,
-      usage_query_value(r.path, "appType").unwrap_or("openclaw"),
-    )
-  })
-  router.add_handler(Post, "/providers/live-provider", (r, w) => {
     self.handle_get_live_provider(
       r,
       w,
@@ -279,9 +257,6 @@ fn ProxyService::register_management_routes(
   router.add_handler(Get, "/providers/presets", (r, w) => {
     self.handle_get_provider_presets(r, w)
   })
-  router.add_handler(Get, "/providers/test-endpoints", (r, w) => {
-    self.handle_test_api_endpoints(r, w)
-  })
   router.add_handler(Post, "/providers/test-endpoints", (r, w) => {
     self.handle_test_api_endpoints(r, w)
   })
@@ -289,9 +264,6 @@ fn ProxyService::register_management_routes(
     self.handle_update_providers_sort_order(r, w)
   })
   router.add_handler(Get, "/providers/endpoints/list", (r, w) => {
-    self.handle_get_custom_endpoints(r, w)
-  })
-  router.add_handler(Post, "/providers/endpoints/list", (r, w) => {
     self.handle_get_custom_endpoints(r, w)
   })
   router.add_handler(Post, "/providers/endpoints", (r, w) => {

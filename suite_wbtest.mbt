@@ -118,9 +118,9 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /usage/coding-plan-quota")))
   assert_true(routes.contains(Json::string("POST /usage/test-script")))
   assert_true(
-    routes.contains(Json::string("GET|POST /proxy/stream-check/provider")),
+    routes.contains(Json::string("POST /proxy/stream-check/provider")),
   )
-  assert_true(routes.contains(Json::string("GET|POST /proxy/stream-check/all")))
+  assert_true(routes.contains(Json::string("POST /proxy/stream-check/all")))
   assert_true(routes.contains(Json::string("GET /proxy/stream-check/config")))
   assert_true(routes.contains(Json::string("POST /proxy/stream-check/config")))
   assert_true(routes.contains(Json::string("GET /providers/presets")))
@@ -197,7 +197,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_false(routes.contains(Json::string("GET /proxy/config")))
   assert_true(routes.contains(Json::string("GET|POST /proxy/global-config")))
   assert_true(routes.contains(Json::string("GET|POST /proxy/global-url")))
-  assert_true(routes.contains(Json::string("GET|POST /proxy/test-url")))
+  assert_true(routes.contains(Json::string("POST /proxy/test-url")))
   assert_true(routes.contains(Json::string("GET /proxy/upstream-status")))
   assert_true(routes.contains(Json::string("GET /proxy/local-proxies")))
   assert_true(routes.contains(Json::string("POST /proxy/switch-provider")))
@@ -208,7 +208,7 @@ test "suite manifest publishes moonstat service contract" {
     routes.contains(Json::string("POST /proxy/import-default-config")),
   )
   assert_true(routes.contains(Json::string("GET /providers")))
-  assert_true(routes.contains(Json::string("GET|POST /providers/current")))
+  assert_true(routes.contains(Json::string("GET /providers/current")))
   assert_true(routes.contains(Json::string("POST /providers")))
   assert_true(routes.contains(Json::string("POST /providers/update")))
   assert_true(routes.contains(Json::string("DELETE /providers")))
@@ -216,14 +216,10 @@ test "suite manifest publishes moonstat service contract" {
   assert_false(routes.contains(Json::string("POST /providers/delete")))
   assert_false(routes.contains(Json::string("POST /providers/live/remove")))
   assert_true(routes.contains(Json::string("POST /providers/switch")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /providers/live-settings")),
-  )
+  assert_true(routes.contains(Json::string("GET /providers/live-settings")))
   assert_true(routes.contains(Json::string("POST /providers/terminal")))
   assert_true(routes.contains(Json::string("GET /providers/live-ids")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /providers/live-provider")),
-  )
+  assert_true(routes.contains(Json::string("GET /providers/live-provider")))
   assert_true(routes.contains(Json::string("POST /providers/import-live")))
   assert_true(routes.contains(Json::string("GET /providers/universal")))
   assert_true(routes.contains(Json::string("GET /providers/universal/item")))
@@ -233,13 +229,9 @@ test "suite manifest publishes moonstat service contract" {
     routes.contains(Json::string("POST /providers/universal/delete")),
   )
   assert_true(routes.contains(Json::string("POST /providers/universal/sync")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /providers/test-endpoints")),
-  )
+  assert_true(routes.contains(Json::string("POST /providers/test-endpoints")))
   assert_true(routes.contains(Json::string("POST /providers/sort-order")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /providers/endpoints/list")),
-  )
+  assert_true(routes.contains(Json::string("GET /providers/endpoints/list")))
   assert_true(routes.contains(Json::string("POST /providers/endpoints")))
   assert_true(routes.contains(Json::string("DELETE /providers/endpoints")))
   assert_false(
@@ -257,16 +249,16 @@ test "suite manifest publishes moonstat service contract" {
     "GET|POST /proxy/pricing-model-source", "GET /proxy/provider-health", "GET|POST /proxy/circuit-breaker-config",
     "GET /proxy/circuit-breaker-stats", "GET|POST|DELETE /proxy/failover-queue",
     "GET|POST /proxy/auto-failover-enabled", "GET|POST /proxy/takeover-status", "GET /proxy/running",
-    "GET|POST /proxy/global-url", "GET|POST /proxy/test-url", "GET /proxy/upstream-status",
+    "GET|POST /proxy/global-url", "POST /proxy/test-url", "GET /proxy/upstream-status",
     "GET /proxy/local-proxies", "POST /proxy/switch-provider", "POST /proxy/sync-current-providers-live",
-    "POST /proxy/import-default-config", "GET /providers", "GET|POST /providers/current",
-    "POST /providers", "POST /providers/update", "POST /providers/switch", "GET|POST /providers/live-settings",
-    "GET /providers/live-ids", "GET|POST /providers/live-provider", "POST /providers/import-live",
+    "POST /proxy/import-default-config", "GET /providers", "GET /providers/current",
+    "POST /providers", "POST /providers/update", "POST /providers/switch", "GET /providers/live-settings",
+    "GET /providers/live-ids", "GET /providers/live-provider", "POST /providers/import-live",
     "POST /proxy/reset-circuit-breaker", "GET /mcp/servers", "POST /mcp/servers",
     "DELETE /mcp/servers", "GET /prompts", "POST /prompts", "DELETE /prompts", "GET /openclaw/config-health",
     "GET /openclaw/default-model", "POST /openclaw/default-model", "GET /hermes/model-config",
     "GET /hermes/memory", "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
-    "POST /providers/universal", "DELETE /providers/universal", "GET|POST /providers/test-endpoints",
+    "POST /providers/universal", "DELETE /providers/universal", "POST /providers/test-endpoints",
     "POST /config/models",
   ]
   for route in control_routes {
