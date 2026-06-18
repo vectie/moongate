@@ -21,7 +21,7 @@ async fn RuntimeService::handle_pick_directory(
   let body = proxy_json_body(r)
   write_usage_json(
     w,
-    match proxy_string_request(r.path, body, ["defaultPath"]) {
+    match proxy_string_request(r.path, body, "defaultPath") {
       Some(path) => Json::string(path)
       None => Json::null()
     },
@@ -35,7 +35,7 @@ async fn ProxyService::handle_open_external(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let raw_url = proxy_string_request(r.path, body, ["url"]).unwrap_or(
+  let raw_url = proxy_string_request(r.path, body, "url").unwrap_or(
     moon_update_url(),
   )
   ignore(self.record_external_open(raw_url))
@@ -60,7 +60,7 @@ async fn RuntimeService::handle_copy_text_to_clipboard(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  ignore(proxy_string_request(r.path, body, ["text"]).unwrap_or(""))
+  ignore(proxy_string_request(r.path, body, "text").unwrap_or(""))
   write_usage_json(w, Json::boolean(true))
 }
 
@@ -99,7 +99,7 @@ async fn RuntimeService::handle_get_tool_versions(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let tools = proxy_string_request(r.path, body, ["tools"])
+  let tools = proxy_string_request(r.path, body, "tools")
   write_usage_json(w, moon_get_tool_versions_json(tools))
 }
 
@@ -113,10 +113,9 @@ async fn RuntimeService::handle_run_tool_lifecycle_action(
   let body = proxy_json_body(r)
   let tools = match body {
     Some(Object(obj)) => moon_requested_tool_names_from_json(obj.get("tools"))
-    _ =>
-      moon_requested_tool_names(proxy_string_request(r.path, body, ["tools"]))
+    _ => moon_requested_tool_names(proxy_string_request(r.path, body, "tools"))
   }
-  guard proxy_string_request(r.path, body, ["action"]) is Some(action) else {
+  guard proxy_string_request(r.path, body, "action") is Some(action) else {
     write_usage_bad_request(w, "missing_action")
     return
   }
@@ -136,8 +135,7 @@ async fn RuntimeService::handle_probe_tool_installations(
   let body = proxy_json_body(r)
   let tools = match body {
     Some(Object(obj)) => moon_requested_tool_names_from_json(obj.get("tools"))
-    _ =>
-      moon_requested_tool_names(proxy_string_request(r.path, body, ["tools"]))
+    _ => moon_requested_tool_names(proxy_string_request(r.path, body, "tools"))
   }
   match moon_probe_tool_installations_json(tools) {
     Ok(result) => write_usage_json(w, result)

@@ -716,7 +716,7 @@ fn moon_preserve_secret_if_empty(
 
 ///|
 fn moon_optional_path_from_request(path : StringView, body : Json?) -> String? {
-  match proxy_string_request(path, body, ["path"]) {
+  match proxy_string_request(path, body, "path") {
     Some(value) if !value.trim().is_empty() => return Some(value)
     Some(_) => return None
     None => ()

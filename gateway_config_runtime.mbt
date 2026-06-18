@@ -5,7 +5,7 @@ async fn ConfigService::handle_set_window_theme(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  self.window_theme = proxy_string_request(r.path, body, ["theme"]).unwrap_or(
+  self.window_theme = proxy_string_request(r.path, body, "theme").unwrap_or(
     "system",
   )
   ignore(self.window_theme)
@@ -195,7 +195,7 @@ async fn ConfigService::handle_set_auto_launch(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
+  guard proxy_bool_request(r.path, body, "enabled") is Some(enabled) else {
     write_usage_bad_request(w, "invalid_auto_launch")
     return
   }

@@ -1,6 +1,6 @@
 ///|
 fn moon_config_app_from_request(path : StringView, body : Json?) -> String? {
-  match proxy_string_request(path, body, ["appType"]) {
+  match proxy_string_request(path, body, "appType") {
     Some(app) => Some(moon_normalize_app_type(app))
     None => None
   }
@@ -158,7 +158,7 @@ fn moon_json_config_from_request(
   path : StringView,
   body : Json?,
   current : Json,
-  setters : Array[(String, Array[String], String)],
+  setters : Array[(String, String, String)],
 ) -> Json {
   let source = proxy_embedded_config(body)
   let base = match current {
@@ -201,11 +201,11 @@ fn moon_rectifier_config_from_request(
   current : Json,
 ) -> Json {
   moon_json_config_from_request(path, body, current, [
-    ("enabled", ["enabled"], "bool"),
-    ("requestThinkingSignature", ["requestThinkingSignature"], "bool"),
-    ("requestThinkingBudget", ["requestThinkingBudget"], "bool"),
-    ("requestMediaFallback", ["requestMediaFallback"], "bool"),
-    ("requestMediaHeuristic", ["requestMediaHeuristic"], "bool"),
+    ("enabled", "enabled", "bool"),
+    ("requestThinkingSignature", "requestThinkingSignature", "bool"),
+    ("requestThinkingBudget", "requestThinkingBudget", "bool"),
+    ("requestMediaFallback", "requestMediaFallback", "bool"),
+    ("requestMediaHeuristic", "requestMediaHeuristic", "bool"),
   ])
 }
 
@@ -216,10 +216,10 @@ fn moon_optimizer_config_from_request(
   current : Json,
 ) -> Json {
   moon_json_config_from_request(path, body, current, [
-    ("enabled", ["enabled"], "bool"),
-    ("thinkingOptimizer", ["thinkingOptimizer"], "bool"),
-    ("cacheInjection", ["cacheInjection"], "bool"),
-    ("cacheTtl", ["cacheTtl"], "string"),
+    ("enabled", "enabled", "bool"),
+    ("thinkingOptimizer", "thinkingOptimizer", "bool"),
+    ("cacheInjection", "cacheInjection", "bool"),
+    ("cacheTtl", "cacheTtl", "string"),
   ])
 }
 
@@ -230,8 +230,8 @@ fn moon_log_config_from_request(
   current : Json,
 ) -> Json {
   moon_json_config_from_request(path, body, current, [
-    ("enabled", ["enabled"], "bool"),
-    ("level", ["level"], "string"),
+    ("enabled", "enabled", "bool"),
+    ("level", "level", "string"),
   ])
 }
 
@@ -746,7 +746,7 @@ async fn ConfigService::handle_export_config_to_file(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filePath"]) is Some(file_path) else {
+  guard proxy_string_request(r.path, body, "filePath") is Some(file_path) else {
     write_usage_bad_request(w, "missing_file_path")
     return
   }
@@ -766,7 +766,7 @@ async fn ConfigService::handle_import_config_from_file(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filePath"]) is Some(file_path) else {
+  guard proxy_string_request(r.path, body, "filePath") is Some(file_path) else {
     write_usage_bad_request(w, "missing_file_path")
     return
   }
@@ -804,7 +804,7 @@ async fn ConfigService::handle_restore_db_backup(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) else {
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) else {
     write_usage_bad_request(w, "missing_filename")
     return
   }
@@ -822,12 +822,11 @@ async fn ConfigService::handle_rename_db_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["oldFilename"])
-    is Some(old_filename) else {
+  guard proxy_string_request(r.path, body, "oldFilename") is Some(old_filename) else {
     write_usage_bad_request(w, "missing_old_filename")
     return
   }
-  guard proxy_string_request(r.path, body, ["newName"]) is Some(new_name) else {
+  guard proxy_string_request(r.path, body, "newName") is Some(new_name) else {
     write_usage_bad_request(w, "missing_new_name")
     return
   }
@@ -845,7 +844,7 @@ async fn ConfigService::handle_delete_db_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) else {
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) else {
     write_usage_bad_request(w, "missing_filename")
     return
   }
@@ -948,7 +947,7 @@ async fn ConfigService::handle_delete_skill_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["backupId"]) is Some(backup_id) else {
+  guard proxy_string_request(r.path, body, "backupId") is Some(backup_id) else {
     write_usage_bad_request(w, "missing_backup_id")
     return
   }
@@ -963,11 +962,11 @@ async fn ConfigService::handle_restore_skill_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["backupId"]) is Some(backup_id) else {
+  guard proxy_string_request(r.path, body, "backupId") is Some(backup_id) else {
     write_usage_bad_request(w, "missing_backup_id")
     return
   }
-  let current_app = proxy_string_request(r.path, body, ["currentApp"]).unwrap_or(
+  let current_app = proxy_string_request(r.path, body, "currentApp").unwrap_or(
     "claude",
   )
   write_usage_json(w, moon_restore_skill_backup_json(backup_id, current_app))
@@ -1127,9 +1126,7 @@ async fn ConfigService::handle_set_common_config_snippet(
   app_type : String,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let snippet = proxy_string_request(r.path, body, [
-    "snippet", "content", "value",
-  ]).unwrap_or("")
+  let snippet = proxy_string_request(r.path, body, "snippet").unwrap_or("")
   match moon_validate_common_config_snippet(app_type, snippet) {
     Some(error) => {
       write_usage_bad_request(w, error)
@@ -1164,7 +1161,7 @@ async fn ConfigService::handle_extract_common_config_snippet(
 ) -> Unit {
   let body = proxy_json_body(r)
   let app_type = moon_config_app_from_request(r.path, body).unwrap_or("claude")
-  match proxy_string_request(r.path, body, ["settingsConfig"]) {
+  match proxy_string_request(r.path, body, "settingsConfig") {
     Some(settings_config) =>
       match
         moon_extract_common_config_snippet_from_settings_config(
@@ -1189,7 +1186,7 @@ async fn ConfigService::handle_restore_env_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let backup_path = proxy_string_request(r.path, body, ["backupPath"])
+  let backup_path = proxy_string_request(r.path, body, "backupPath")
   match moon_restore_env_backup_json(backup_path) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
@@ -1234,7 +1231,7 @@ async fn ConfigService::handle_upsert_mcp_server_in_config(
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
   match moon_mcp_server_from_request(r.path, body, app) {
     Some((id, server)) => {
-      let sync_other = proxy_bool_request(r.path, body, ["syncOtherSide"]).unwrap_or(
+      let sync_other = proxy_bool_request(r.path, body, "syncOtherSide").unwrap_or(
         false,
       )
       let next = if sync_other {
@@ -1299,7 +1296,7 @@ async fn ConfigService::handle_apply_claude_plugin_config(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let official = proxy_bool_request(r.path, body, ["official"]).unwrap_or(false)
+  let official = proxy_bool_request(r.path, body, "official").unwrap_or(false)
   if official {
     self.claude_plugin_applied = false
     self.claude_plugin_config = None
@@ -1476,19 +1473,19 @@ async fn ConfigService::handle_fetch_models_for_config(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["baseUrl"]) is Some(base_url) else {
+  guard proxy_string_request(r.path, body, "baseUrl") is Some(base_url) else {
     write_usage_bad_request(w, "missing_base_url")
     return
   }
-  guard proxy_string_request(r.path, body, ["apiKey"]) is Some(api_key) else {
+  guard proxy_string_request(r.path, body, "apiKey") is Some(api_key) else {
     write_usage_bad_request(w, "missing_api_key")
     return
   }
-  let is_full_url = proxy_bool_request(r.path, body, ["isFullUrl"]).unwrap_or(
+  let is_full_url = proxy_bool_request(r.path, body, "isFullUrl").unwrap_or(
     false,
   )
-  let models_url = proxy_string_request(r.path, body, ["modelsUrl"])
-  let user_agent = proxy_string_request(r.path, body, ["customUserAgent"])
+  let models_url = proxy_string_request(r.path, body, "modelsUrl")
+  let user_agent = proxy_string_request(r.path, body, "customUserAgent")
   match fetch_models(base_url, api_key, is_full_url, models_url, user_agent) {
     Ok(models) => write_usage_json(w, fetched_models_to_json(models))
     Err(error) => write_usage_bad_request(w, error)

@@ -6,7 +6,7 @@ async fn ConfigService::handle_parse_deeplink(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["url"]) is Some(url) else {
+  guard proxy_string_request(r.path, body, "url") is Some(url) else {
     write_usage_bad_request(w, "missing_url")
     return
   }

@@ -182,7 +182,7 @@ fn moon_deeplink_request_payload(path : StringView, body : Json?) -> Json? {
     Some(Object(obj)) => return Some(Json::object(obj))
     _ => ()
   }
-  match proxy_string_request(path, body, ["url"]) {
+  match proxy_string_request(path, body, "url") {
     Some(url) => return moon_parse_deeplink_url_json(url)
     None => ()
   }

@@ -1012,11 +1012,11 @@ async fn ProxyService::handle_open_provider_terminal(
     write_usage_bad_request(w, "missing_app")
     return
   }
-  guard proxy_string_request(r.path, body, ["providerId"]) is Some(provider_id) else {
+  guard proxy_string_request(r.path, body, "providerId") is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  let cwd = proxy_string_request(r.path, body, ["cwd"])
+  let cwd = proxy_string_request(r.path, body, "cwd")
   match
     moon_open_provider_terminal_json(
       self.provider_router,
@@ -1395,9 +1395,9 @@ async fn ProxyService::handle_stream_check_all_providers(
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  let proxy_targets_only = proxy_bool_request(r.path, body, [
-    "proxy_targets_only", "proxyTargetsOnly",
-  ]).unwrap_or(false)
+  let proxy_targets_only = proxy_bool_request(r.path, body, "proxyTargetsOnly").unwrap_or(
+    false,
+  )
   let rows : Array[Json] = []
   for
     provider_id in self.provider_router.stream_check_provider_ids(
@@ -1504,12 +1504,12 @@ fn stream_check_provider_from_request(
 ) -> (String, String)? {
   let app_type = match usage_query_value(path, "appType") {
     Some(value) => Some(value)
-    None => proxy_string_request(path, body, ["appType"])
+    None => proxy_string_request(path, body, "appType")
   }
   guard app_type is Some(app_type) else { return None }
   let provider_id = match usage_query_value(path, "providerId") {
     Some(value) => Some(value)
-    None => proxy_string_request(path, body, ["providerId"])
+    None => proxy_string_request(path, body, "providerId")
   }
   guard provider_id is Some(provider_id) else { return None }
   Some((app_type, provider_id))
@@ -1536,12 +1536,12 @@ fn provider_string_from_request(
   body : Json?,
   keys : Array[String],
 ) -> String? {
-  match proxy_string_request(path, body, keys) {
+  match proxy_string_request_any(path, body, keys) {
     Some(value) => return Some(value)
     None => ()
   }
   match provider_body_payload(body) {
-    Some(payload) => proxy_string_request(path, Some(payload), keys)
+    Some(payload) => proxy_string_request_any(path, Some(payload), keys)
     None => None
   }
 }
@@ -1552,12 +1552,12 @@ fn provider_bool_from_request(
   body : Json?,
   keys : Array[String],
 ) -> Bool? {
-  match proxy_bool_request(path, body, keys) {
+  match proxy_bool_request_any(path, body, keys) {
     Some(value) => return Some(value)
     None => ()
   }
   match provider_body_payload(body) {
-    Some(payload) => proxy_bool_request(path, Some(payload), keys)
+    Some(payload) => proxy_bool_request_any(path, Some(payload), keys)
     None => None
   }
 }
@@ -2054,7 +2054,7 @@ fn provider_sort_updates_from_request(
     None => ()
   }
   guard provider_id_from_request(path, body) is Some(id) else { return updates }
-  let sort_index = proxy_int_request(path, body, ["sortIndex"]).unwrap_or(0)
+  let sort_index = proxy_int_request(path, body, "sortIndex").unwrap_or(0)
   updates.push({ id, sort_index })
   updates
 }

@@ -18,7 +18,7 @@ async fn SkillService::handle_install_skill_unified(
   let skill = match moon_skill_request_payload(body) {
     Some(skill) => Some(skill)
     None =>
-      match proxy_string_request(r.path, body, ["directory"]) {
+      match proxy_string_request(r.path, body, "directory") {
         Some(directory) => {
           let install_name = moon_skill_install_name(directory)
           if install_name.is_empty() {
@@ -28,12 +28,12 @@ async fn SkillService::handle_install_skill_unified(
               {
                 "key": Json::string("local:\{install_name}"),
                 "name": Json::string(
-                  proxy_string_request(r.path, body, ["name"]).unwrap_or(
+                  proxy_string_request(r.path, body, "name").unwrap_or(
                     install_name,
                   ),
                 ),
                 "description": Json::string(
-                  proxy_string_request(r.path, body, ["description"]).unwrap_or(
+                  proxy_string_request(r.path, body, "description").unwrap_or(
                     "",
                   ),
                 ),
@@ -49,7 +49,7 @@ async fn SkillService::handle_install_skill_unified(
     write_usage_bad_request(w, "missing_skill")
     return
   }
-  let current_app = proxy_string_request(r.path, body, ["currentApp"]).unwrap_or(
+  let current_app = proxy_string_request(r.path, body, "currentApp").unwrap_or(
     "claude",
   )
   write_usage_json(w, moon_install_skill_unified_json(skill, current_app))
@@ -63,7 +63,7 @@ async fn SkillService::handle_uninstall_skill_unified(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["id"]) is Some(id) else {
+  guard proxy_string_request(r.path, body, "id") is Some(id) else {
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
@@ -78,15 +78,15 @@ async fn SkillService::handle_toggle_skill_app(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["id"]) is Some(id) else {
+  guard proxy_string_request(r.path, body, "id") is Some(id) else {
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
-  guard proxy_string_request(r.path, body, ["appType"]) is Some(app) else {
+  guard proxy_string_request(r.path, body, "appType") is Some(app) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
-  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
+  guard proxy_bool_request(r.path, body, "enabled") is Some(enabled) else {
     write_usage_bad_request(w, "missing_enabled")
     return
   }
@@ -148,7 +148,7 @@ async fn SkillService::handle_update_skill(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["id"]) is Some(id) else {
+  guard proxy_string_request(r.path, body, "id") is Some(id) else {
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
@@ -163,7 +163,7 @@ async fn SkillService::handle_migrate_skill_storage(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["target"]) is Some(target) else {
+  guard proxy_string_request(r.path, body, "target") is Some(target) else {
     write_usage_bad_request(w, "missing_storage_target")
     return
   }
@@ -178,9 +178,9 @@ async fn SkillService::handle_search_skills_sh(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let query = proxy_string_request(r.path, body, ["query"]).unwrap_or("")
-  let limit = proxy_int_request(r.path, body, ["limit"]).unwrap_or(20)
-  let offset = proxy_int_request(r.path, body, ["offset"]).unwrap_or(0)
+  let query = proxy_string_request(r.path, body, "query").unwrap_or("")
+  let limit = proxy_int_request(r.path, body, "limit").unwrap_or(20)
+  let offset = proxy_int_request(r.path, body, "offset").unwrap_or(0)
   write_usage_json(w, moon_search_skills_sh_json(query, limit, offset))
 }
 
@@ -241,10 +241,10 @@ async fn SkillService::handle_add_skill_repo(
 
 ///|
 fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
-  guard proxy_string_request(path, body, ["owner"]) is Some(owner) else {
+  guard proxy_string_request(path, body, "owner") is Some(owner) else {
     return None
   }
-  guard proxy_string_request(path, body, ["name"]) is Some(name) else {
+  guard proxy_string_request(path, body, "name") is Some(name) else {
     return None
   }
   Some(
@@ -252,10 +252,10 @@ fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
       "owner": Json::string(owner),
       "name": Json::string(name),
       "branch": Json::string(
-        proxy_string_request(path, body, ["branch"]).unwrap_or("main"),
+        proxy_string_request(path, body, "branch").unwrap_or("main"),
       ),
       "enabled": Json::boolean(
-        proxy_bool_request(path, body, ["enabled"]).unwrap_or(true),
+        proxy_bool_request(path, body, "enabled").unwrap_or(true),
       ),
     }.to_json(),
   )
@@ -269,11 +269,11 @@ async fn SkillService::handle_remove_skill_repo(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["owner"]) is Some(owner) else {
+  guard proxy_string_request(r.path, body, "owner") is Some(owner) else {
     write_usage_bad_request(w, "missing_owner")
     return
   }
-  guard proxy_string_request(r.path, body, ["name"]) is Some(name) else {
+  guard proxy_string_request(r.path, body, "name") is Some(name) else {
     write_usage_bad_request(w, "missing_name")
     return
   }
@@ -288,11 +288,11 @@ async fn SkillService::handle_install_skills_from_zip(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filePath"]) is Some(file_path) else {
+  guard proxy_string_request(r.path, body, "filePath") is Some(file_path) else {
     write_usage_bad_request(w, "missing_file_path")
     return
   }
-  let current_app = proxy_string_request(r.path, body, ["currentApp"]).unwrap_or(
+  let current_app = proxy_string_request(r.path, body, "currentApp").unwrap_or(
     "claude",
   )
   write_usage_json(w, moon_install_skills_from_zip_json(file_path, current_app))

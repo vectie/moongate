@@ -159,7 +159,7 @@ async fn OpenClawService::handle_set_hermes_memory(
     write_usage_bad_request(w, "invalid_hermes_memory_kind")
     return
   }
-  let content = proxy_string_request(r.path, body, ["content"]).unwrap_or("")
+  let content = proxy_string_request(r.path, body, "content").unwrap_or("")
   self.hermes_memory[kind] = content
   write_usage_json(w, Json::null())
 }
@@ -183,7 +183,7 @@ async fn OpenClawService::handle_set_hermes_memory_enabled(
     write_usage_bad_request(w, "invalid_hermes_memory_kind")
     return
   }
-  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
+  guard proxy_bool_request(r.path, body, "enabled") is Some(enabled) else {
     write_usage_bad_request(w, "missing_enabled")
     return
   }
@@ -200,7 +200,7 @@ async fn OpenClawService::handle_open_hermes_web_ui(
   ignore(self)
   let body = proxy_json_body(r)
   let port = hermes_web_port_from_request(r.path)
-  let path = proxy_string_request(r.path, body, ["path"]).unwrap_or("/")
+  let path = proxy_string_request(r.path, body, "path").unwrap_or("/")
   if !hermes_web_ui_is_live(port) {
     write_usage_bad_request(w, HERMES_WEB_OFFLINE_ERROR)
     return
@@ -276,7 +276,7 @@ fn openclaw_default_model_from_request(
     Some(model) => return Some(model)
     None => ()
   }
-  guard proxy_string_request(path, body, ["primary"]) is Some(primary) &&
+  guard proxy_string_request(path, body, "primary") is Some(primary) &&
     !primary.trim().is_empty() else {
     return None
   }
@@ -284,7 +284,7 @@ fn openclaw_default_model_from_request(
     {
       "primary": Json::string(primary.trim().to_owned()),
       "fallbacks": split_csv_json(
-        proxy_string_request(path, body, ["fallbacks"]).unwrap_or(""),
+        proxy_string_request(path, body, "fallbacks").unwrap_or(""),
       ),
     }.to_json(),
   )
@@ -296,11 +296,11 @@ fn openclaw_env_from_request(path : StringView, body : Json?) -> Json? {
     Some(env) => return Some(env)
     None => ()
   }
-  guard proxy_string_request(path, body, ["key"]) is Some(key) &&
+  guard proxy_string_request(path, body, "key") is Some(key) &&
     !key.trim().is_empty() else {
     return None
   }
-  let value = proxy_string_request(path, body, ["value"]).unwrap_or("")
+  let value = proxy_string_request(path, body, "value").unwrap_or("")
   let env : Map[String, Json] = {}
   env[key.trim().to_owned()] = Json::string(value)
   Some(Json::object(env))
@@ -314,13 +314,13 @@ fn openclaw_tools_from_request(path : StringView, body : Json?) -> Json? {
   }
   let tools : Map[String, Json] = {
     "allow": split_csv_json(
-      proxy_string_request(path, body, ["allow"]).unwrap_or(""),
+      proxy_string_request(path, body, "allow").unwrap_or(""),
     ),
     "deny": split_csv_json(
-      proxy_string_request(path, body, ["deny"]).unwrap_or(""),
+      proxy_string_request(path, body, "deny").unwrap_or(""),
     ),
   }
-  match proxy_string_request(path, body, ["profile"]) {
+  match proxy_string_request(path, body, "profile") {
     Some(profile) if !profile.trim().is_empty() =>
       tools["profile"] = Json::string(profile.trim().to_owned())
     _ => ()
@@ -330,7 +330,7 @@ fn openclaw_tools_from_request(path : StringView, body : Json?) -> Json? {
 
 ///|
 fn hermes_memory_kind_from_request(path : StringView, body : Json?) -> String? {
-  match proxy_string_request(path, body, ["kind"]) {
+  match proxy_string_request(path, body, "kind") {
     Some(raw) =>
       match raw.trim().to_lower() {
         "memory" => Some("memory")

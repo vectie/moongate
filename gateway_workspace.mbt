@@ -247,7 +247,7 @@ fn moon_prompt_file_path_from_request(
   body : Json?,
   app : String,
 ) -> Result[String, String] {
-  match proxy_string_request(path, body, ["filePath"]) {
+  match proxy_string_request(path, body, "filePath") {
     Some(file_path) => Ok(file_path)
     None => moon_prompt_file_path(app)
   }
@@ -304,7 +304,7 @@ async fn WorkspaceService::handle_save_file_dialog(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  ignore(proxy_string_request(r.path, body, ["defaultName"]))
+  ignore(proxy_string_request(r.path, body, "defaultName"))
   write_usage_json(w, moon_dialog_result_json())
 }
 
@@ -397,7 +397,7 @@ async fn WorkspaceService::handle_read_daily_memory_file(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) &&
     moon_validate_daily_memory_filename(filename) else {
     write_usage_bad_request(w, "invalid_daily_memory_filename")
     return
@@ -424,12 +424,12 @@ async fn WorkspaceService::handle_write_daily_memory_file(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) &&
     moon_validate_daily_memory_filename(filename) else {
     write_usage_bad_request(w, "invalid_daily_memory_filename")
     return
   }
-  let content = proxy_string_request(r.path, body, ["content"]).unwrap_or("")
+  let content = proxy_string_request(r.path, body, "content").unwrap_or("")
   if !moon_ensure_directory(moon_openclaw_memory_dir()) {
     write_usage_bad_request(w, "daily_memory_directory_failed")
     return
@@ -451,7 +451,7 @@ async fn WorkspaceService::handle_search_daily_memory_files(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let query = proxy_string_request(r.path, body, ["query"]).unwrap_or("")
+  let query = proxy_string_request(r.path, body, "query").unwrap_or("")
   write_usage_json(w, moon_search_daily_memory_files_json(query))
 }
 
@@ -463,7 +463,7 @@ async fn WorkspaceService::handle_delete_daily_memory_file(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) &&
     moon_validate_daily_memory_filename(filename) else {
     write_usage_bad_request(w, "invalid_daily_memory_filename")
     return
@@ -488,7 +488,7 @@ async fn WorkspaceService::handle_read_workspace_file(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) &&
     moon_validate_workspace_filename(filename) else {
     write_usage_bad_request(w, "invalid_workspace_filename")
     return
@@ -515,12 +515,12 @@ async fn WorkspaceService::handle_write_workspace_file(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) &&
+  guard proxy_string_request(r.path, body, "filename") is Some(filename) &&
     moon_validate_workspace_filename(filename) else {
     write_usage_bad_request(w, "invalid_workspace_filename")
     return
   }
-  let content = proxy_string_request(r.path, body, ["content"]).unwrap_or("")
+  let content = proxy_string_request(r.path, body, "content").unwrap_or("")
   if !moon_ensure_directory(moon_openclaw_workspace_dir()) {
     write_usage_bad_request(w, "workspace_directory_failed")
     return
@@ -542,7 +542,7 @@ async fn WorkspaceService::handle_open_workspace_directory(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let subdir = proxy_string_request(r.path, body, ["subdir"]).unwrap_or(
+  let subdir = proxy_string_request(r.path, body, "subdir").unwrap_or(
     "workspace",
   )
   let target = if subdir == "memory" {

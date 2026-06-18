@@ -345,7 +345,7 @@ test "usage query helpers parse moonstat auto failover boolean parameters" {
     proxy_bool_request(
       "/proxy/auto-failover-enabled?appType=codex&enabled=true",
       None,
-      ["enabled"],
+      "enabled",
     ),
     Some(true),
   )
@@ -353,14 +353,16 @@ test "usage query helpers parse moonstat auto failover boolean parameters" {
     proxy_bool_request(
       "/proxy/auto-failover-enabled?appType=codex&enabled=0",
       None,
-      ["enabled"],
+      "enabled",
     ),
     Some(false),
   )
   assert_eq(
-    proxy_bool_request("/proxy/auto-failover-enabled?enabled=maybe", None, [
+    proxy_bool_request(
+      "/proxy/auto-failover-enabled?enabled=maybe",
+      None,
       "enabled",
-    ]),
+    ),
     None,
   )
 }
@@ -371,7 +373,7 @@ test "pick directory parser accepts defaultPath payload key" {
     proxy_string_request(
       "/files/directories/pick",
       Some({ "defaultPath": Json::string("/tmp/moonstat") }.to_json()),
-      ["defaultPath"],
+      "defaultPath",
     ),
     Some("/tmp/moonstat"),
   )
@@ -379,7 +381,7 @@ test "pick directory parser accepts defaultPath payload key" {
     proxy_string_request(
       "/files/directories/pick?defaultPath=/tmp/moonstat",
       None,
-      ["defaultPath"],
+      "defaultPath",
     ),
     Some("/tmp/moonstat"),
   )
@@ -387,7 +389,7 @@ test "pick directory parser accepts defaultPath payload key" {
     proxy_string_request(
       "/files/directories/pick?default_path=/tmp/legacy",
       None,
-      ["defaultPath"],
+      "defaultPath",
     ),
     None,
   )
@@ -436,8 +438,8 @@ test "moonstat read command parsers accept canonical json payload keys" {
   assert_eq(
     proxy_string_request(
       "/mcp/validate",
-      Some({ "cmd": Json::string("node") }.to_json()),
-      ["cmd", "command"],
+      Some({ "command": Json::string("node") }.to_json()),
+      "command",
     ),
     Some("node"),
   )
@@ -503,7 +505,7 @@ test "proxy failover command parsers accept canonical json payload keys" {
     is None,
   )
   assert_eq(
-    proxy_bool_request("/proxy/auto-failover-enabled", body, ["enabled"]),
+    proxy_bool_request("/proxy/auto-failover-enabled", body, "enabled"),
     Some(true),
   )
   guard stream_check_provider_from_request("/proxy/stream-check/provider", body)
@@ -521,7 +523,7 @@ test "proxy failover command parsers accept canonical json payload keys" {
           "proxyTargetsOnly": Json::boolean(true),
         }.to_json(),
       ),
-      ["proxy_targets_only", "proxyTargetsOnly"],
+      "proxyTargetsOnly",
     ),
     Some(true),
   )
@@ -1592,12 +1594,9 @@ test "usage request log helpers parse moonstat structured body filters" {
   assert_eq(filters.status_code, Some(200))
   assert_eq(filters.start_date, Some(10))
   assert_eq(filters.end_date, Some(20))
+  assert_eq(usage_int_from_request("/usage/logs", Some(body), "page"), Some(2))
   assert_eq(
-    usage_int_from_request("/usage/logs", Some(body), ["page"]),
-    Some(2),
-  )
-  assert_eq(
-    usage_int_from_request("/usage/logs", Some(body), ["pageSize"]),
+    usage_int_from_request("/usage/logs", Some(body), "pageSize"),
     Some(25),
   )
 }
@@ -1618,8 +1617,8 @@ test "usage request log helpers let query override moonstat body filters" {
   assert_eq(filters.app_type, Some("codex"))
   assert_eq(filters.provider_name, Some("OAuth"))
   assert_eq(filters.status_code, Some(200))
-  assert_eq(usage_int_from_request(path, Some(body), ["page"]), Some(1))
-  assert_eq(usage_int_from_request(path, Some(body), ["pageSize"]), Some(10))
+  assert_eq(usage_int_from_request(path, Some(body), "page"), Some(1))
+  assert_eq(usage_int_from_request(path, Some(body), "pageSize"), Some(10))
 }
 
 ///|
@@ -1633,29 +1632,29 @@ test "usage aggregate helpers parse moonstat structured command args" {
     "monthlyLimitUsd": Json::number(9.5),
   }.to_json()
   let path = "/usage/summary"
-  assert_eq(usage_int_from_request(path, Some(body), ["startDate"]), Some(100))
-  assert_eq(usage_int_from_request(path, Some(body), ["endDate"]), Some(200))
+  assert_eq(usage_int_from_request(path, Some(body), "startDate"), Some(100))
+  assert_eq(usage_int_from_request(path, Some(body), "endDate"), Some(200))
   assert_eq(
-    usage_string_from_request(path, Some(body), ["appType"]),
+    usage_string_from_request(path, Some(body), "appType"),
     Some("codex"),
   )
   assert_eq(
-    usage_string_from_request(path, Some(body), ["providerId"]),
+    usage_string_from_request(path, Some(body), "providerId"),
     Some("codex-oauth"),
   )
   assert_eq(
-    usage_string_from_request(path, Some(body), ["dailyLimitUsd"]),
+    usage_string_from_request(path, Some(body), "dailyLimitUsd"),
     Some("1.25"),
   )
   assert_eq(
-    usage_string_from_request(path, Some(body), ["monthlyLimitUsd"]),
+    usage_string_from_request(path, Some(body), "monthlyLimitUsd"),
     Some("9.5"),
   )
   assert_eq(
     usage_string_from_request(
       path,
       Some({ "provider_id": Json::string("legacy") }.to_json()),
-      ["providerId"],
+      "providerId",
     ),
     None,
   )
@@ -1669,10 +1668,10 @@ test "usage aggregate helpers prefer query params over moonstat body args" {
     "appType": Json::string("claude"),
   }.to_json()
   let path = "/usage/provider-stats?startDate=10&endDate=20&appType=codex"
-  assert_eq(usage_int_from_request(path, Some(body), ["startDate"]), Some(10))
-  assert_eq(usage_int_from_request(path, Some(body), ["endDate"]), Some(20))
+  assert_eq(usage_int_from_request(path, Some(body), "startDate"), Some(10))
+  assert_eq(usage_int_from_request(path, Some(body), "endDate"), Some(20))
   assert_eq(
-    usage_string_from_request(path, Some(body), ["appType"]),
+    usage_string_from_request(path, Some(body), "appType"),
     Some("codex"),
   )
 }
@@ -1897,7 +1896,7 @@ test "suite config helpers mirror moonstat openclaw hermes shapes" {
     proxy_string_request(
       "/hermes/web-ui",
       Some({ "path": Json::string("/config") }.to_json()),
-      ["path"],
+      "path",
     ),
     Some("/config"),
   )
@@ -3142,35 +3141,35 @@ test "proxy config request parsers accept canonical moonstat fields" {
     }.to_json(),
   )
   assert_eq(
-    proxy_bool_request("/proxy/global-config", config, ["proxyEnabled"]),
+    proxy_bool_request("/proxy/global-config", config, "proxyEnabled"),
     Some(false),
   )
   assert_eq(
-    proxy_string_request("/proxy/global-config", config, ["listenAddress"]),
+    proxy_string_request("/proxy/global-config", config, "listenAddress"),
     Some("127.0.0.10"),
   )
   assert_eq(
-    proxy_int_request("/proxy/global-config", config, ["listenPort"]),
+    proxy_int_request("/proxy/global-config", config, "listenPort"),
     Some(17010),
   )
   assert_eq(
-    proxy_bool_request("/proxy/global-config", config, ["enableLogging"]),
+    proxy_bool_request("/proxy/global-config", config, "enableLogging"),
     Some(false),
   )
   assert_eq(
-    proxy_int_request("/proxy/app-config", config, ["maxRetries"]),
+    proxy_int_request("/proxy/app-config", config, "maxRetries"),
     Some(6),
   )
   assert_eq(
-    proxy_double_request("/proxy/app-config", config, ["errorRateThreshold"]),
+    proxy_double_request("/proxy/app-config", config, "errorRateThreshold"),
     Some(0.35),
   )
   assert_eq(
-    proxy_int_request("/proxy/app-config?max_retries=8", None, ["maxRetries"]),
+    proxy_int_request("/proxy/app-config?max_retries=8", None, "maxRetries"),
     None,
   )
   assert_eq(
-    proxy_bool_request("/proxy/takeover-status?enabled=yes", None, ["enabled"]),
+    proxy_bool_request("/proxy/takeover-status?enabled=yes", None, "enabled"),
     Some(true),
   )
   assert_eq(
@@ -3815,14 +3814,14 @@ test "usage request detail id accepts moonstat structured body" {
 test "usage model id helpers accept body and query precedence" {
   let body = { "modelId": Json::string("body-model") }.to_json()
   assert_eq(
-    usage_string_from_request("/usage/model-pricing", Some(body), ["modelId"]),
+    usage_string_from_request("/usage/model-pricing", Some(body), "modelId"),
     Some("body-model"),
   )
   assert_eq(
     usage_string_from_request(
       "/usage/model-pricing?modelId=query-model",
       Some(body),
-      ["modelId"],
+      "modelId",
     ),
     Some("query-model"),
   )
@@ -3830,7 +3829,7 @@ test "usage model id helpers accept body and query precedence" {
     usage_string_from_request(
       "/usage/model-pricing?model_id=legacy-query",
       Some({ "model_id": Json::string("legacy-body") }.to_json()),
-      ["modelId"],
+      "modelId",
     ),
     None,
   )
@@ -9611,14 +9610,16 @@ test "moonstat config request helpers ignore retired snake case aliases" {
     proxy_string_request(
       "/config/env/restore?backup_path=/tmp/legacy.json",
       None,
-      ["backupPath"],
+      "backupPath",
     ),
     None,
   )
   assert_eq(
-    proxy_bool_request("/mcp/config/servers?sync_other_side=true", None, [
+    proxy_bool_request(
+      "/mcp/config/servers?sync_other_side=true",
+      None,
       "syncOtherSide",
-    ]),
+    ),
     None,
   )
 }

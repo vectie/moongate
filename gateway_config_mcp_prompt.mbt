@@ -40,7 +40,7 @@ async fn ConfigService::handle_delete_mcp_server(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  match proxy_string_request(r.path, body, ["id"]) {
+  match proxy_string_request(r.path, body, "id") {
     Some(id) => {
       let existed = self.mcp_servers.get(id) is Some(_)
       self.mcp_servers.remove(id)
@@ -58,7 +58,7 @@ async fn ConfigService::handle_validate_mcp_command(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let command = proxy_string_request(r.path, body, ["command"]).unwrap_or("")
+  let command = proxy_string_request(r.path, body, "command").unwrap_or("")
   write_usage_json(w, Json::boolean(moon_validate_mcp_command_name(command)))
 }
 
@@ -70,8 +70,8 @@ async fn ConfigService::handle_set_mcp_enabled(
 ) -> Unit {
   let body = proxy_json_body(r)
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
-  let enabled = proxy_bool_request(r.path, body, ["enabled"]).unwrap_or(true)
-  match proxy_string_request(r.path, body, ["id"]) {
+  let enabled = proxy_bool_request(r.path, body, "enabled").unwrap_or(true)
+  match proxy_string_request(r.path, body, "id") {
     Some(id) =>
       match self.mcp_servers.get(id) {
         Some(server) => {
@@ -116,8 +116,8 @@ async fn ConfigService::handle_toggle_mcp_app(
 ) -> Unit {
   let body = proxy_json_body(r)
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
-  let enabled = proxy_bool_request(r.path, body, ["enabled"]).unwrap_or(true)
-  match proxy_string_request(r.path, body, ["id"]) {
+  let enabled = proxy_bool_request(r.path, body, "enabled").unwrap_or(true)
+  match proxy_string_request(r.path, body, "id") {
     Some(id) =>
       match self.mcp_servers.get(id) {
         Some(server) => {
@@ -173,7 +173,7 @@ async fn ConfigService::handle_delete_prompt(
 ) -> Unit {
   let body = proxy_json_body(r)
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
-  match proxy_string_request(r.path, body, ["id"]) {
+  match proxy_string_request(r.path, body, "id") {
     Some(id) => self.prompts.remove(moon_prompt_store_key(app, id))
     None => ()
   }
@@ -188,7 +188,7 @@ async fn ConfigService::handle_enable_prompt(
 ) -> Unit {
   let body = proxy_json_body(r)
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
-  match proxy_string_request(r.path, body, ["id"]) {
+  match proxy_string_request(r.path, body, "id") {
     Some(id) =>
       match moon_prompt_file_path_from_request(r.path, body, app) {
         Ok(file_path) =>
@@ -274,9 +274,7 @@ fn moon_mcp_server_from_request(
       }
     _ => ()
   }
-  guard proxy_string_request(path, body, ["id"]) is Some(id) else {
-    return None
-  }
+  guard proxy_string_request(path, body, "id") is Some(id) else { return None }
   let spec = moon_json_request(path, body, ["spec", "server"]).unwrap_or(
     Json::object({}),
   )
@@ -794,13 +792,11 @@ fn moon_prompt_from_request(
       }
     _ => ()
   }
-  guard proxy_string_request(path, body, ["id"]) is Some(id) else {
-    return None
-  }
-  let name = proxy_string_request(path, body, ["name"]).unwrap_or(id)
-  let content = proxy_string_request(path, body, ["content"]).unwrap_or("")
-  let description = proxy_string_request(path, body, ["description"])
-  let enabled = proxy_bool_request(path, body, ["enabled"]).unwrap_or(true)
+  guard proxy_string_request(path, body, "id") is Some(id) else { return None }
+  let name = proxy_string_request(path, body, "name").unwrap_or(id)
+  let content = proxy_string_request(path, body, "content").unwrap_or("")
+  let description = proxy_string_request(path, body, "description")
+  let enabled = proxy_bool_request(path, body, "enabled").unwrap_or(true)
   let now = Json::string(@async.now().to_string())
   let prompt : Map[String, Json] = {
     "id": Json::string(id),

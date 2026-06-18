@@ -343,7 +343,7 @@ async fn ProxyService::handle_set_global_proxy_url(
 ) -> Unit {
   let body = proxy_json_body(r)
   let config = proxy_embedded_config(body)
-  let url = proxy_string_request(r.path, config, ["url"]).unwrap_or("")
+  let url = proxy_string_request(r.path, config, "url").unwrap_or("")
   let trimmed = url.trim().to_owned()
   if trimmed.is_empty() {
     self.upstream_proxy_url = None
@@ -367,7 +367,7 @@ async fn ProxyService::handle_test_proxy_url(
   ignore(self)
   let body = proxy_json_body(r)
   let config = proxy_embedded_config(body)
-  let url = proxy_string_request(r.path, config, ["url"]).unwrap_or("")
+  let url = proxy_string_request(r.path, config, "url").unwrap_or("")
   write_usage_json(w, proxy_test_result_json(url))
 }
 
@@ -395,12 +395,10 @@ async fn ProxyService::apply_global_config_request(
 ) -> Bool {
   let body = proxy_json_body(r)
   let config = proxy_embedded_config(body)
-  let proxy_enabled = proxy_bool_request(r.path, config, [
-    "proxyEnabled", "enabled",
-  ])
-  let listen_address = proxy_string_request(r.path, config, ["listenAddress"])
-  let listen_port = proxy_int_request(r.path, config, ["listenPort"])
-  let enable_logging = proxy_bool_request(r.path, config, ["enableLogging"])
+  let proxy_enabled = proxy_bool_request(r.path, config, "proxyEnabled")
+  let listen_address = proxy_string_request(r.path, config, "listenAddress")
+  let listen_port = proxy_int_request(r.path, config, "listenPort")
+  let enable_logging = proxy_bool_request(r.path, config, "enableLogging")
   if proxy_enabled is Some(enabled) {
     self.proxy_enabled = enabled
   }
@@ -614,7 +612,7 @@ async fn ProxyService::handle_proxy_set_default_cost_multiplier(
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  guard proxy_string_request(r.path, config, ["value"]) is Some(value) else {
+  guard proxy_string_request(r.path, config, "value") is Some(value) else {
     write_usage_bad_request(w, "missing_value")
     return
   }
@@ -653,7 +651,7 @@ async fn ProxyService::handle_proxy_set_pricing_model_source(
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  guard proxy_string_request(r.path, config, ["value"]) is Some(value) else {
+  guard proxy_string_request(r.path, config, "value") is Some(value) else {
     write_usage_bad_request(w, "missing_value")
     return
   }
@@ -708,18 +706,18 @@ async fn ProxyService::apply_app_config_request(
     Some(app_type) if !app_type.trim().is_empty() => app_type.trim().to_owned()
     _ => return None
   }
-  match proxy_bool_request(r.path, config, ["enabled"]) {
+  match proxy_bool_request(r.path, config, "enabled") {
     Some(enabled) => self.proxy_app_enabled.set(app_type, enabled)
     None => ()
   }
-  match proxy_bool_request(r.path, config, ["autoFailoverEnabled"]) {
+  match proxy_bool_request(r.path, config, "autoFailoverEnabled") {
     Some(enabled) =>
       if !self.provider_router.set_auto_failover_moonstat(app_type, enabled) {
         return None
       }
     None => ()
   }
-  match proxy_int_request(r.path, config, ["maxRetries"]) {
+  match proxy_int_request(r.path, config, "maxRetries") {
     Some(max_retries) if max_retries >= 0 =>
       self.provider_router.set_max_retries(app_type, max_retries)
     Some(_) => return None
@@ -747,19 +745,19 @@ fn ProxyService::apply_app_timeout_config(
   path : StringView,
   config : Json?,
 ) -> Bool {
-  match proxy_int_request(path, config, ["streamingFirstByteTimeout"]) {
+  match proxy_int_request(path, config, "streamingFirstByteTimeout") {
     Some(timeout) if timeout > 0 =>
       self.proxy_streaming_first_byte_timeout.set(app_type, timeout)
     Some(_) => return false
     None => ()
   }
-  match proxy_int_request(path, config, ["streamingIdleTimeout"]) {
+  match proxy_int_request(path, config, "streamingIdleTimeout") {
     Some(timeout) if timeout > 0 =>
       self.proxy_streaming_idle_timeout.set(app_type, timeout)
     Some(_) => return false
     None => ()
   }
-  match proxy_int_request(path, config, ["nonStreamingTimeout"]) {
+  match proxy_int_request(path, config, "nonStreamingTimeout") {
     Some(timeout) if timeout > 0 =>
       self.proxy_non_streaming_timeout.set(app_type, timeout)
     Some(_) => return false
@@ -980,7 +978,7 @@ async fn ProxyService::handle_proxy_set_auto_failover_enabled(
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  guard proxy_bool_request(r.path, body, ["enabled"]) is Some(enabled) else {
+  guard proxy_bool_request(r.path, body, "enabled") is Some(enabled) else {
     write_usage_bad_request(w, "missing_enabled")
     return
   }
@@ -1018,7 +1016,7 @@ async fn ProxyService::handle_proxy_set_takeover_for_app(
     write_usage_bad_request(w, "missing_app_type")
     return
   }
-  guard proxy_bool_request(r.path, config, ["enabled"]) is Some(enabled) else {
+  guard proxy_bool_request(r.path, config, "enabled") is Some(enabled) else {
     write_usage_bad_request(w, "missing_enabled")
     return
   }
@@ -1036,8 +1034,7 @@ async fn ProxyService::switch_provider_from_request(
   guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
     return Err("missing_app_type")
   }
-  guard proxy_string_request(r.path, config, ["providerId"])
-    is Some(provider_id) else {
+  guard proxy_string_request(r.path, config, "providerId") is Some(provider_id) else {
     return Err("missing_provider_id")
   }
   guard self.provider_router.provider_by_id(app_type, provider_id)
@@ -1123,7 +1120,7 @@ fn proxy_provider_query_from_request(
   path : StringView,
   body : Json?,
 ) -> ProxyProviderQuery? {
-  guard proxy_string_request(path, body, ["providerId"]) is Some(provider_id) else {
+  guard proxy_string_request(path, body, "providerId") is Some(provider_id) else {
     return None
   }
   guard proxy_app_type_from_request(path, body) is Some(app_type) else {
@@ -1134,7 +1131,7 @@ fn proxy_provider_query_from_request(
 
 ///|
 fn proxy_app_type_from_request(path : StringView, body : Json?) -> String? {
-  match proxy_string_request(path, body, ["appType"]) {
+  match proxy_string_request(path, body, "appType") {
     Some(app_type) if !app_type.trim().is_empty() =>
       Some(app_type.trim().to_owned())
     _ => None
@@ -1143,23 +1140,22 @@ fn proxy_app_type_from_request(path : StringView, body : Json?) -> String? {
 
 ///|
 fn proxy_circuit_config_from_query(path : StringView) -> CircuitBreakerConfig? {
-  guard proxy_int_request(path, None, ["failureThreshold"])
+  guard proxy_int_request(path, None, "failureThreshold")
     is Some(failure_threshold) else {
     return None
   }
-  guard proxy_int_request(path, None, ["successThreshold"])
+  guard proxy_int_request(path, None, "successThreshold")
     is Some(success_threshold) else {
     return None
   }
-  guard proxy_int_request(path, None, ["timeoutSeconds"])
-    is Some(timeout_seconds) else {
+  guard proxy_int_request(path, None, "timeoutSeconds") is Some(timeout_seconds) else {
     return None
   }
-  guard proxy_double_request(path, None, ["errorRateThreshold"])
+  guard proxy_double_request(path, None, "errorRateThreshold")
     is Some(error_rate_threshold) else {
     return None
   }
-  guard proxy_int_request(path, None, ["minRequests"]) is Some(min_requests) else {
+  guard proxy_int_request(path, None, "minRequests") is Some(min_requests) else {
     return None
   }
   let config = {
@@ -1210,30 +1206,32 @@ fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int?) -> Int {
 }
 
 ///|
-fn proxy_bool_request(
+fn proxy_bool_request(path : StringView, config : Json?, key : String) -> Bool? {
+  match usage_query_value(path, key) {
+    Some(value) =>
+      match parse_bool_value(value) {
+        Some(parsed) => return Some(parsed)
+        None => ()
+      }
+    None => ()
+  }
+  match config {
+    Some(Object(obj)) => proxy_json_bool(obj, key)
+    _ => None
+  }
+}
+
+///|
+fn proxy_bool_request_any(
   path : StringView,
   config : Json?,
   keys : Array[String],
 ) -> Bool? {
   for key in keys {
-    match usage_query_value(path, key) {
-      Some(value) =>
-        match parse_bool_value(value) {
-          Some(parsed) => return Some(parsed)
-          None => ()
-        }
+    match proxy_bool_request(path, config, key) {
+      Some(value) => return Some(value)
       None => ()
     }
-  }
-  match config {
-    Some(Object(obj)) =>
-      for key in keys {
-        match proxy_json_bool(obj, key) {
-          Some(parsed) => return Some(parsed)
-          None => ()
-        }
-      }
-    _ => ()
   }
   None
 }
@@ -1242,89 +1240,77 @@ fn proxy_bool_request(
 fn proxy_string_request(
   path : StringView,
   config : Json?,
-  keys : Array[String],
+  key : String,
 ) -> String? {
-  for key in keys {
-    match usage_query_value(path, key) {
-      Some(value) => return Some(value)
-      None => ()
-    }
+  match usage_query_value(path, key) {
+    Some(value) => return Some(value)
+    None => ()
   }
   match config {
     Some(Object(obj)) =>
-      for key in keys {
-        match obj.get(key) {
-          Some(String(value)) => return Some(value)
-          _ => ()
-        }
+      match obj.get(key) {
+        Some(String(value)) => Some(value)
+        _ => None
       }
-    _ => ()
+    _ => None
+  }
+}
+
+///|
+fn proxy_string_request_any(
+  path : StringView,
+  config : Json?,
+  keys : Array[String],
+) -> String? {
+  for key in keys {
+    match proxy_string_request(path, config, key) {
+      Some(value) => return Some(value)
+      None => ()
+    }
   }
   None
 }
 
 ///|
-fn proxy_int_request(
-  path : StringView,
-  config : Json?,
-  keys : Array[String],
-) -> Int? {
-  for key in keys {
-    match usage_query_value(path, key) {
-      Some(value) =>
-        try @string.parse_int(value, base=10) catch {
-          _ => ()
-        } noraise {
-          parsed => return Some(parsed)
-        }
-      None => ()
-    }
+fn proxy_int_request(path : StringView, config : Json?, key : String) -> Int? {
+  match usage_query_value(path, key) {
+    Some(value) =>
+      try @string.parse_int(value, base=10) catch {
+        _ => ()
+      } noraise {
+        parsed => return Some(parsed)
+      }
+    None => ()
   }
   match config {
-    Some(Object(obj)) =>
-      for key in keys {
-        match proxy_json_int(obj, key) {
-          Some(parsed) => return Some(parsed)
-          None => ()
-        }
-      }
-    _ => ()
+    Some(Object(obj)) => proxy_json_int(obj, key)
+    _ => None
   }
-  None
 }
 
 ///|
 fn proxy_double_request(
   path : StringView,
   config : Json?,
-  keys : Array[String],
+  key : String,
 ) -> Double? {
-  for key in keys {
-    match usage_query_value(path, key) {
-      Some(value) =>
-        match parse_non_negative_decimal_to_double(value) {
-          Some(parsed) => return Some(parsed)
-          None => ()
-        }
-      None => ()
-    }
+  match usage_query_value(path, key) {
+    Some(value) =>
+      match parse_non_negative_decimal_to_double(value) {
+        Some(parsed) => return Some(parsed)
+        None => ()
+      }
+    None => ()
   }
   match config {
     Some(Object(obj)) =>
-      for key in keys {
-        match obj.get(key) {
-          Some(Number(value, ..)) => return Some(value)
-          Some(String(value)) =>
-            match parse_non_negative_decimal_to_double(value) {
-              Some(parsed) => return Some(parsed)
-              None => ()
-            }
-          _ => ()
-        }
+      match obj.get(key) {
+        Some(Number(value, ..)) => Some(value)
+        Some(String(value)) => parse_non_negative_decimal_to_double(value)
+        _ => None
       }
-    _ => ()
+    _ => None
   }
-  None
 }
 
 ///|
@@ -1357,13 +1343,13 @@ fn proxy_circuit_config_from_request(
   config : Json?,
   current : CircuitBreakerConfig,
 ) -> CircuitBreakerConfig? {
-  let failure_threshold = proxy_int_request(path, config, ["failureThreshold"])
-  let success_threshold = proxy_int_request(path, config, ["successThreshold"])
-  let timeout_seconds = proxy_int_request(path, config, ["timeoutSeconds"])
-  let error_rate_threshold = proxy_double_request(path, config, [
-    "errorRateThreshold",
-  ])
-  let min_requests = proxy_int_request(path, config, ["minRequests"])
+  let failure_threshold = proxy_int_request(path, config, "failureThreshold")
+  let success_threshold = proxy_int_request(path, config, "successThreshold")
+  let timeout_seconds = proxy_int_request(path, config, "timeoutSeconds")
+  let error_rate_threshold = proxy_double_request(
+    path, config, "errorRateThreshold",
+  )
+  let min_requests = proxy_int_request(path, config, "minRequests")
   if failure_threshold is None &&
     success_threshold is None &&
     timeout_seconds is None &&
@@ -1389,25 +1375,24 @@ fn proxy_circuit_config_from_request(
 
 ///|
 fn usage_pricing_from_request(path : StringView, body : Json?) -> ModelPricing? {
-  guard usage_string_from_request(path, body, ["modelId"]) is Some(model_id) else {
+  guard usage_string_from_request(path, body, "modelId") is Some(model_id) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["displayName"])
+  guard usage_string_from_request(path, body, "displayName")
     is Some(display_name) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["inputCost"]) is Some(input_cost) else {
+  guard usage_string_from_request(path, body, "inputCost") is Some(input_cost) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["outputCost"])
-    is Some(output_cost) else {
+  guard usage_string_from_request(path, body, "outputCost") is Some(output_cost) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["cacheReadCost"])
+  guard usage_string_from_request(path, body, "cacheReadCost")
     is Some(cache_read_cost) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["cacheCreationCost"])
+  guard usage_string_from_request(path, body, "cacheCreationCost")
     is Some(cache_creation_cost) else {
     return None
   }
@@ -1438,13 +1423,13 @@ fn usage_pricing_validation_error_from_request(
   path : StringView,
   body : Json?,
 ) -> String? {
-  guard usage_string_from_request(path, body, ["modelId"]) is Some(model_id) else {
+  guard usage_string_from_request(path, body, "modelId") is Some(model_id) else {
     return Some("Model ID is required")
   }
   if model_id.trim().is_empty() {
     return Some("Model ID is required")
   }
-  guard usage_string_from_request(path, body, ["displayName"])
+  guard usage_string_from_request(path, body, "displayName")
     is Some(display_name) else {
     return Some("Display name is required")
   }
@@ -1452,29 +1437,29 @@ fn usage_pricing_validation_error_from_request(
     return Some("Display name is required")
   }
   match
-    usage_decimal_validation_error_from_request(path, body, "inputCost", [
-      "inputCost",
-    ]) {
+    usage_decimal_validation_error_from_request(
+      path, body, "inputCost", "inputCost",
+    ) {
     Some(error) => return Some(error)
     None => ()
   }
   match
-    usage_decimal_validation_error_from_request(path, body, "outputCost", [
-      "outputCost",
-    ]) {
+    usage_decimal_validation_error_from_request(
+      path, body, "outputCost", "outputCost",
+    ) {
     Some(error) => return Some(error)
     None => ()
   }
   match
-    usage_decimal_validation_error_from_request(path, body, "cacheReadCost", [
-      "cacheReadCost",
-    ]) {
+    usage_decimal_validation_error_from_request(
+      path, body, "cacheReadCost", "cacheReadCost",
+    ) {
     Some(error) => return Some(error)
     None => ()
   }
-  usage_decimal_validation_error_from_request(path, body, "cacheCreationCost", [
-    "cacheCreationCost",
-  ])
+  usage_decimal_validation_error_from_request(
+    path, body, "cacheCreationCost", "cacheCreationCost",
+  )
 }
 
 ///|
