@@ -919,14 +919,14 @@ test "proxy config setter paths encode moonstat command arguments" {
       [
         "moonstat", "provider", "add", "--app-type", "codex", "--id", "custom", "--name",
         "Custom Provider", "--base-url", "https://api.example.com/v1", "--api-key",
-        "sk-test", "--category", "custom", "--enabled", "true", "--add-to-live",
+        "sk-test", "--provider-type", "custom", "--enabled", "true", "--add-to-live",
         "false",
       ],
       "/providers",
       require_original=false,
     ),
     Some(
-      "/providers?appType=codex&id=custom&name=Custom%20Provider&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&category=custom&enabled=true&addToLive=false",
+      "/providers?appType=codex&id=custom&name=Custom%20Provider&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&providerType=custom&enabled=true&addToLive=false",
     ),
   )
   assert_eq(

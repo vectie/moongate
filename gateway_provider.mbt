@@ -1589,12 +1589,7 @@ fn provider_settings_config_from_body(body : Json?) -> Json? {
   match obj.get("settingsConfig") {
     Some(settings) =>
       Some(provider_settings_config_with_inline_metadata(settings, obj))
-    None =>
-      match obj.get("settings_config") {
-        Some(settings) =>
-          Some(provider_settings_config_with_inline_metadata(settings, obj))
-        None => provider_inline_settings_config(obj)
-      }
+    None => provider_inline_settings_config(obj)
   }
 }
 
@@ -1710,7 +1705,7 @@ fn provider_explicit_type_from_request(
   body : Json?,
   settings : Json?,
 ) -> String? {
-  match provider_string_from_request(path, body, ["category", "providerType"]) {
+  match provider_string_from_request(path, body, ["providerType"]) {
     Some(value) if !value.trim().is_empty() => return Some(value)
     _ => ()
   }
@@ -1862,12 +1857,8 @@ fn provider_limit_config_from_settings(
   settings : Json?,
 ) -> ProviderLimitConfig? {
   guard settings is Some(Object(obj)) else { return None }
-  let daily = provider_limit_string_from_settings(obj, [
-    "limitDailyUsd", "limit_daily_usd",
-  ])
-  let monthly = provider_limit_string_from_settings(obj, [
-    "limitMonthlyUsd", "limit_monthly_usd",
-  ])
+  let daily = provider_limit_string_from_settings(obj, ["limitDailyUsd"])
+  let monthly = provider_limit_string_from_settings(obj, ["limitMonthlyUsd"])
   if daily is None && monthly is None {
     None
   } else {
@@ -2082,7 +2073,7 @@ fn provider_target_from_request(
     provider_settings_api_format(settings_config),
   )
   let base_url = provider_prefer_non_empty(
-    provider_string_from_request(path, body, ["baseUrl", "websiteUrl"]),
+    provider_string_from_request(path, body, ["baseUrl"]),
     provider_settings_base_url(app_type, settings_config),
   )
   let api_key = provider_prefer_non_empty(
@@ -2097,9 +2088,9 @@ fn provider_target_from_request(
     false,
   )
   let notes = provider_string_from_request(path, body, ["notes"])
-  let is_full_url = provider_bool_from_request(path, body, [
-    "is_full_url", "isFullUrl", "fullUrl",
-  ]).unwrap_or(false)
+  let is_full_url = provider_bool_from_request(path, body, ["isFullUrl"]).unwrap_or(
+    false,
+  )
   let model_mapping = provider_model_mapping_from_request(path, body)
   let claude_desktop_model_routes = provider_claude_desktop_model_routes_from_body(
     body,
@@ -2130,18 +2121,13 @@ fn provider_target_from_request(
 ///|
 fn provider_claude_desktop_mode_from_body(body : Json?) -> String? {
   guard provider_body_payload(body) is Some(Object(obj)) else { return None }
-  match
-    json_non_empty_string_from_map_any(obj, [
-      "claudeDesktopMode", "claude_desktop_mode",
-    ]) {
+  match json_non_empty_string_from_map_any(obj, ["claudeDesktopMode"]) {
     Some(mode) => normalize_claude_desktop_mode(mode)
     None =>
       match obj.get("meta") {
         Some(Object(meta)) =>
           match
-            json_non_empty_string_from_map_any(meta, [
-              "claudeDesktopMode", "claude_desktop_mode",
-            ]) {
+            json_non_empty_string_from_map_any(meta, ["claudeDesktopMode"]) {
             Some(mode) => normalize_claude_desktop_mode(mode)
             None => None
           }
@@ -2160,12 +2146,7 @@ fn provider_model_mapping_from_request(
       match obj.get("modelMapping") {
         Some(Object(mapping_obj)) =>
           return provider_model_mapping_from_json(mapping_obj)
-        _ =>
-          match obj.get("model_mapping") {
-            Some(Object(mapping_obj)) =>
-              return provider_model_mapping_from_json(mapping_obj)
-            _ => ()
-          }
+        _ => ()
       }
     _ => ()
   }

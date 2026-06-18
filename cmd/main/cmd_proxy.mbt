@@ -864,8 +864,8 @@ fn provider_upsert_path(
     Some(value) => query.push(cli_query_pair("apiKey", value))
     None => ()
   }
-  match parse_string_arg(args, "--category") {
-    Some(value) => query.push(cli_query_pair("category", value))
+  match parse_string_arg(args, "--provider-type") {
+    Some(value) => query.push(cli_query_pair("providerType", value))
     None => ()
   }
   match parse_string_arg(args, "--enabled") {

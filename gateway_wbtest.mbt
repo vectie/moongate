@@ -921,6 +921,40 @@ test "provider target parses moonstat claude desktop route metadata" {
 }
 
 ///|
+test "provider target ignores retired provider request aliases" {
+  guard provider_target_from_request(
+      "/providers?id=legacy&category=official&websiteUrl=https%3A%2F%2Flegacy.example&is_full_url=true&fullUrl=true",
+      Some(
+        {
+          "provider": {
+            "settings_config": {
+              "apiKey": Json::string("sk-legacy"),
+              "baseUrl": Json::string("https://legacy.example/v1"),
+            }.to_json(),
+            "model_mapping": { "sonnetModel": Json::string("legacy-sonnet") }.to_json(),
+            "claude_desktop_mode": Json::string("direct"),
+            "limit_daily_usd": Json::string("1.00"),
+          }.to_json(),
+        }.to_json(),
+      ),
+      "codex",
+    )
+    is Some(provider) else {
+    fail("expected provider target")
+  }
+  assert_eq(provider.provider_id, "legacy")
+  assert_eq(provider.provider_type, None)
+  assert_eq(provider.base_url, None)
+  assert_eq(provider.api_key, None)
+  assert_false(provider.is_full_url)
+  assert_true(provider.model_mapping is None)
+  assert_eq(provider.claude_desktop_mode, None)
+  assert_true(
+    provider_limit_config_from_settings(provider.settings_config) is None,
+  )
+}
+
+///|
 test "provider target preserves provider limit metadata" {
   guard provider_target_from_request(
       "/providers",
@@ -1597,7 +1631,7 @@ test "official provider ignores moonstat custom user agent metadata" {
           "provider": {
             "id": Json::string("official-ua-provider"),
             "name": Json::string("Official UA Provider"),
-            "category": Json::string("official"),
+            "providerType": Json::string("official"),
             "customUserAgent": Json::string("claude-cli/2.1.161"),
             "meta": { "customUserAgent": Json::string("codex_cli_rs/0.99") }.to_json(),
           }.to_json(),

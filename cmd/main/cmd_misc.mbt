@@ -166,7 +166,7 @@ fn print_help() -> Unit {
   println("  --name <name>      Provider display name for provider add/update")
   println("  --base-url <url>   Provider API base URL for provider add/update")
   println("  --api-key <key>    Provider API key for provider add/update")
-  println("  --category <kind>  Provider category for provider add/update")
+  println("  --provider-type <kind>  Provider type for provider add/update")
   println("  --endpoint-url <url> Provider custom endpoint URL")
   println("  --app-type <app>         App id for usage commands")
   println("  --server <json>     MCP server JSON for MCP upsert commands")
