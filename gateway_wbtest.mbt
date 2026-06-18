@@ -1295,7 +1295,7 @@ test "provider target infers moonstat proxy provider type from settings" {
           "provider": {
             "id": Json::string("bearer-native"),
             "settingsConfig": {
-              "auth_mode": Json::string("bearer_only"),
+              "authMode": Json::string("bearer_only"),
               "env": {
                 "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
                 "ANTHROPIC_AUTH_TOKEN": Json::string("bearer-token"),

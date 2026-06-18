@@ -1799,7 +1799,7 @@ fn provider_gemini_key_provider_type(api_key : String?) -> String {
 ///|
 fn provider_settings_bearer_only(settings : Json?) -> Bool {
   guard settings is Some(Object(obj)) else { return false }
-  match json_non_empty_string_from_map_any(obj, ["auth_mode", "authMode"]) {
+  match json_non_empty_string_from_map_any(obj, ["authMode"]) {
     Some(mode) if mode == "bearer_only" => return true
     _ => ()
   }
@@ -2318,9 +2318,7 @@ fn provider_sort_updates_from_array(
   let updates : Array[ProviderSortUpdate] = []
   for item in items {
     guard item is Object(obj) else { continue }
-    guard json_string_from_map_any(obj, ["id", "providerId"]) is Some(id) else {
-      continue
-    }
+    guard json_string_from_map_any(obj, ["id"]) is Some(id) else { continue }
     let sort_index = match obj.get("sortIndex") {
       Some(Number(value, ..)) => value.trunc().to_int()
       Some(String(value)) =>

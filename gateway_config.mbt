@@ -831,15 +831,12 @@ async fn ConfigService::handle_rename_db_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, [
-      "oldFilename", "old_filename", "filename",
-    ])
+  guard proxy_string_request(r.path, body, ["oldFilename"])
     is Some(old_filename) else {
     write_usage_bad_request(w, "missing_old_filename")
     return
   }
-  guard proxy_string_request(r.path, body, ["newName", "name"])
-    is Some(new_name) else {
+  guard proxy_string_request(r.path, body, ["newName"]) is Some(new_name) else {
     write_usage_bad_request(w, "missing_new_name")
     return
   }
