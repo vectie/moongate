@@ -2401,7 +2401,8 @@ async test "provider config endpoints are owned by proxy service" {
       "post_codex_compatible_provider_json", "post_codex_compatible_provider_stream",
       "post_claude_compatible_provider_json", "activate_provider", "activate_first_available_provider",
       "activate_first_available_provider_excluding", "activate_provider_target",
-      "forward_gemini_get", "forward_gemini_post",
+      "activate_next_provider_after_upstream_status", "active_provider_target", "forward_gemini_get",
+      "forward_gemini_post",
     ] {
     assert_true(sources.contains("fn ProxyService::\{helper}("))
     assert_false(sources.contains("async fn Gateway::\{helper}("))
@@ -5125,7 +5126,8 @@ test "gateway retryable upstream status activates next failover provider" {
   assert_true(primary.provider_id == "codex-oauth")
 
   let attempted : Array[String] = []
-  let next = gateway.activate_next_provider_after_upstream_status(
+  let next = gateway.proxy.activate_next_provider_after_upstream_status(
+    gateway.usage,
     "codex",
     selection.providers,
     attempted,
@@ -5211,7 +5213,8 @@ test "gateway retryable upstream status respects ccs max retries cap before perm
   assert_eq(primary.provider_id, "codex-oauth")
 
   let attempted : Array[String] = []
-  let next = gateway.activate_next_provider_after_upstream_status(
+  let next = gateway.proxy.activate_next_provider_after_upstream_status(
+    gateway.usage,
     "codex",
     selection.providers,
     attempted,
@@ -5263,7 +5266,8 @@ test "gateway retryable final provider remains active for final upstream error" 
   assert_true(provider.provider_id == "codex-oauth")
 
   let attempted : Array[String] = []
-  let next = gateway.activate_next_provider_after_upstream_status(
+  let next = gateway.proxy.activate_next_provider_after_upstream_status(
+    gateway.usage,
     "codex",
     selection.providers,
     attempted,
@@ -5336,7 +5340,8 @@ test "gateway nonretryable upstream status does not activate failover provider" 
   assert_true(provider.provider_id == "codex-oauth")
 
   let attempted : Array[String] = []
-  let next = gateway.activate_next_provider_after_upstream_status(
+  let next = gateway.proxy.activate_next_provider_after_upstream_status(
+    gateway.usage,
     "codex",
     selection.providers,
     attempted,
@@ -8423,7 +8428,8 @@ test "gateway detects active direct codex compatible provider" {
       api_key=Some("sk-test"),
     ),
   ]
-  guard gateway.active_provider_target(providers) is Some(active) else {
+  guard gateway.proxy.active_provider_target(gateway.usage, providers)
+    is Some(active) else {
     fail("expected active provider")
   }
   assert_true(active.provider_id == "codex-openai")

@@ -273,7 +273,10 @@ async fn Gateway::forward_non_streaming_chat_completion(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let active_provider = self.active_provider_target(providers)
+    let active_provider = self.proxy.active_provider_target(
+      self.usage,
+      providers,
+    )
     let (response, response_body) = match active_provider {
       Some(provider) if provider.can_use_codex_compatible_upstream() =>
         match
@@ -291,7 +294,8 @@ async fn Gateway::forward_non_streaming_chat_completion(
               "\{error}",
             )
             if !providers.is_empty() {
-              let next = self.activate_next_provider_after_upstream_status(
+              let next = self.proxy.activate_next_provider_after_upstream_status(
+                self.usage,
                 app_type,
                 providers,
                 attempted_provider_ids,
@@ -376,7 +380,8 @@ async fn Gateway::forward_non_streaming_chat_completion(
       return
     }
     if !providers.is_empty() {
-      let next = self.activate_next_provider_after_upstream_status(
+      let next = self.proxy.activate_next_provider_after_upstream_status(
+        self.usage,
         app_type,
         providers,
         attempted_provider_ids,
@@ -426,7 +431,10 @@ async fn Gateway::forward_streaming_chat_completion(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let active_provider = self.active_provider_target(providers)
+    let active_provider = self.proxy.active_provider_target(
+      self.usage,
+      providers,
+    )
     let (client, response, use_chat_bridge) = match active_provider {
       Some(provider) if provider.can_use_codex_compatible_upstream() => {
         let use_chat_bridge = provider.codex_uses_chat_completions()
@@ -457,7 +465,8 @@ async fn Gateway::forward_streaming_chat_completion(
               "\{error}",
             )
             if !providers.is_empty() {
-              let next = self.activate_next_provider_after_upstream_status(
+              let next = self.proxy.activate_next_provider_after_upstream_status(
+                self.usage,
                 app_type,
                 providers,
                 attempted_provider_ids,
@@ -509,7 +518,8 @@ async fn Gateway::forward_streaming_chat_completion(
       let error_body = client.read_all().text()
       client.close()
       if !providers.is_empty() {
-        let next = self.activate_next_provider_after_upstream_status(
+        let next = self.proxy.activate_next_provider_after_upstream_status(
+          self.usage,
           app_type,
           providers,
           attempted_provider_ids,
@@ -540,7 +550,8 @@ async fn Gateway::forward_streaming_chat_completion(
         client.close()
         let error_body = "{\"error\":{\"message\":\"Streaming response ended before first chunk\",\"type\":\"upstream_error\"}}"
         if !providers.is_empty() {
-          let next = self.activate_next_provider_after_upstream_status(
+          let next = self.proxy.activate_next_provider_after_upstream_status(
+            self.usage,
             app_type,
             providers,
             attempted_provider_ids,
@@ -686,7 +697,10 @@ async fn Gateway::forward_non_streaming_codex_response(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let active_provider = self.active_provider_target(providers)
+    let active_provider = self.proxy.active_provider_target(
+      self.usage,
+      providers,
+    )
     let outbound_request = self.codex_provider_outbound_request(
       active_provider, request,
     )
@@ -735,7 +749,8 @@ async fn Gateway::forward_non_streaming_codex_response(
               "\{error}",
             )
             if !providers.is_empty() {
-              let next = self.activate_next_provider_after_upstream_status(
+              let next = self.proxy.activate_next_provider_after_upstream_status(
+                self.usage,
                 "codex",
                 providers,
                 attempted_provider_ids,
@@ -810,7 +825,8 @@ async fn Gateway::forward_non_streaming_codex_response(
       return
     }
     if !providers.is_empty() {
-      let next = self.activate_next_provider_after_upstream_status(
+      let next = self.proxy.activate_next_provider_after_upstream_status(
+        self.usage,
         "codex",
         providers,
         attempted_provider_ids,
@@ -865,7 +881,10 @@ async fn Gateway::forward_streaming_codex_response(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let active_provider = self.active_provider_target(providers)
+    let active_provider = self.proxy.active_provider_target(
+      self.usage,
+      providers,
+    )
     let outbound_request = self.codex_provider_outbound_request(
       active_provider, request,
     )
@@ -899,7 +918,8 @@ async fn Gateway::forward_streaming_codex_response(
               "\{error}",
             )
             if !providers.is_empty() {
-              let next = self.activate_next_provider_after_upstream_status(
+              let next = self.proxy.activate_next_provider_after_upstream_status(
+                self.usage,
                 "codex",
                 providers,
                 attempted_provider_ids,
@@ -951,7 +971,8 @@ async fn Gateway::forward_streaming_codex_response(
       let error_body = client.read_all().text()
       client.close()
       if !providers.is_empty() {
-        let next = self.activate_next_provider_after_upstream_status(
+        let next = self.proxy.activate_next_provider_after_upstream_status(
+          self.usage,
           "codex",
           providers,
           attempted_provider_ids,
@@ -982,7 +1003,8 @@ async fn Gateway::forward_streaming_codex_response(
         client.close()
         let error_body = "{\"error\":{\"message\":\"Streaming response ended before first chunk\",\"type\":\"upstream_error\"}}"
         if !providers.is_empty() {
-          let next = self.activate_next_provider_after_upstream_status(
+          let next = self.proxy.activate_next_provider_after_upstream_status(
+            self.usage,
             "codex",
             providers,
             attempted_provider_ids,
@@ -5314,7 +5336,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     Err(error) => {
       let error_body = "{\"error\":{\"message\":\"Claude upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
       if !providers.is_empty() {
-        let next = self.activate_next_provider_after_upstream_status(
+        let next = self.proxy.activate_next_provider_after_upstream_status(
+          self.usage,
           app_type,
           providers,
           attempted_provider_ids,
@@ -5459,8 +5482,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         w.write(anthropic_response.stringify())
       } else {
         if !providers.is_empty() {
-          let next = self.activate_next_provider_after_upstream_status(
-            app_type, providers, attempted_provider_ids, response_code,
+          let next = self.proxy.activate_next_provider_after_upstream_status(
+            self.usage,
+            app_type,
+            providers,
+            attempted_provider_ids,
+            response_code,
           )
           if next is Some(provider) {
             self.handle_non_streaming_request(
@@ -6690,7 +6717,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         }
         let retry_error_body = retry_client.read_all().text()
         if !providers.is_empty() {
-          let next = self.activate_next_provider_after_upstream_status(
+          let next = self.proxy.activate_next_provider_after_upstream_status(
+            self.usage,
             app_type,
             providers,
             attempted_provider_ids,
@@ -6767,7 +6795,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         }
         let retry_error_body = retry_client.read_all().text()
         if !providers.is_empty() {
-          let next = self.activate_next_provider_after_upstream_status(
+          let next = self.proxy.activate_next_provider_after_upstream_status(
+            self.usage,
             app_type,
             providers,
             attempted_provider_ids,
@@ -6808,7 +6837,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       None => ()
     }
     if !providers.is_empty() {
-      let next = self.activate_next_provider_after_upstream_status(
+      let next = self.proxy.activate_next_provider_after_upstream_status(
+        self.usage,
         app_type,
         providers,
         attempted_provider_ids,

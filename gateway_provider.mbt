@@ -154,40 +154,36 @@ fn ProxyService::activate_provider_target(
 }
 
 ///|
-fn Gateway::activate_next_provider_after_upstream_status(
-  self : Gateway,
+fn ProxyService::activate_next_provider_after_upstream_status(
+  self : ProxyService,
+  usage : UsageService,
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
   status_code : Int,
 ) -> ProviderRouteTarget? {
-  guard self.usage.provider_request_context() is Some(context) else {
-    return None
-  }
+  guard usage.provider_request_context() is Some(context) else { return None }
   if !attempted_provider_ids.contains(context.provider_id) {
     attempted_provider_ids.push(context.provider_id)
   }
   if moon_upstream_status_retryable(status_code) {
-    self.proxy.provider_router.record_result(
+    self.provider_router.record_result(
       context.provider_id,
       app_type,
       context.used_half_open_permit,
       false,
     )
-    self.usage.set_last_error("upstream_error")
-    self.proxy.activate_first_available_provider_excluding(
-      self.usage,
-      app_type,
-      providers,
-      attempted_provider_ids,
+    usage.set_last_error("upstream_error")
+    self.activate_first_available_provider_excluding(
+      usage, app_type, providers, attempted_provider_ids,
     )
   } else {
-    self.proxy.provider_router.release_permit_neutral(
+    self.provider_router.release_permit_neutral(
       context.provider_id,
       app_type,
       context.used_half_open_permit,
     )
-    self.usage.set_last_error("upstream_error")
+    usage.set_last_error("upstream_error")
     None
   }
 }
@@ -252,11 +248,13 @@ fn Gateway::codex_provider_outbound_request(
 }
 
 ///|
-fn Gateway::active_provider_target(
-  self : Gateway,
+fn ProxyService::active_provider_target(
+  self : ProxyService,
+  usage : UsageService,
   providers : Array[ProviderRouteTarget],
 ) -> ProviderRouteTarget? {
-  guard self.usage.current_provider_id() is Some(provider_id) else {
+  let _ = self
+  guard usage.current_provider_id() is Some(provider_id) else {
     match providers.get(0) {
       Some(provider) => return Some(provider)
       None => return None
