@@ -18,7 +18,7 @@ async fn SkillService::handle_install_skill_unified(
   let skill = match moon_skill_request_payload(body) {
     Some(skill) => Some(skill)
     None =>
-      match proxy_string_request(r.path, body, ["directory", "id", "key"]) {
+      match proxy_string_request(r.path, body, ["directory"]) {
         Some(directory) => {
           let install_name = moon_skill_install_name(directory)
           if install_name.is_empty() {
@@ -63,7 +63,7 @@ async fn SkillService::handle_uninstall_skill_unified(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["id", "directory"]) is Some(id) else {
+  guard proxy_string_request(r.path, body, ["id"]) is Some(id) else {
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
@@ -78,11 +78,11 @@ async fn SkillService::handle_toggle_skill_app(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["id", "directory"]) is Some(id) else {
+  guard proxy_string_request(r.path, body, ["id"]) is Some(id) else {
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
-  guard proxy_string_request(r.path, body, ["app", "appType"]) is Some(app) else {
+  guard proxy_string_request(r.path, body, ["app"]) is Some(app) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
@@ -148,7 +148,7 @@ async fn SkillService::handle_update_skill(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["id", "directory"]) is Some(id) else {
+  guard proxy_string_request(r.path, body, ["id"]) is Some(id) else {
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
@@ -178,7 +178,7 @@ async fn SkillService::handle_search_skills_sh(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let query = proxy_string_request(r.path, body, ["query", "q"]).unwrap_or("")
+  let query = proxy_string_request(r.path, body, ["query"]).unwrap_or("")
   let limit = proxy_int_request(r.path, body, ["limit"]).unwrap_or(20)
   let offset = proxy_int_request(r.path, body, ["offset"]).unwrap_or(0)
   write_usage_json(w, moon_search_skills_sh_json(query, limit, offset))
@@ -244,7 +244,7 @@ fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
   guard proxy_string_request(path, body, ["owner"]) is Some(owner) else {
     return None
   }
-  guard proxy_string_request(path, body, ["name", "repo"]) is Some(name) else {
+  guard proxy_string_request(path, body, ["name"]) is Some(name) else {
     return None
   }
   Some(
@@ -273,7 +273,7 @@ async fn SkillService::handle_remove_skill_repo(
     write_usage_bad_request(w, "missing_owner")
     return
   }
-  guard proxy_string_request(r.path, body, ["name", "repo"]) is Some(name) else {
+  guard proxy_string_request(r.path, body, ["name"]) is Some(name) else {
     write_usage_bad_request(w, "missing_name")
     return
   }

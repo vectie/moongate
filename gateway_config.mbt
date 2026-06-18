@@ -752,8 +752,7 @@ async fn ConfigService::handle_export_config_to_file(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filePath", "path"])
-    is Some(file_path) else {
+  guard proxy_string_request(r.path, body, ["filePath"]) is Some(file_path) else {
     write_usage_bad_request(w, "missing_file_path")
     return
   }
@@ -773,8 +772,7 @@ async fn ConfigService::handle_import_config_from_file(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filePath", "path"])
-    is Some(file_path) else {
+  guard proxy_string_request(r.path, body, ["filePath"]) is Some(file_path) else {
     write_usage_bad_request(w, "missing_file_path")
     return
   }
@@ -812,8 +810,7 @@ async fn ConfigService::handle_restore_db_backup(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename", "fileName", "name"])
-    is Some(filename) else {
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) else {
     write_usage_bad_request(w, "missing_filename")
     return
   }
@@ -854,8 +851,7 @@ async fn ConfigService::handle_delete_db_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filename", "fileName", "name"])
-    is Some(filename) else {
+  guard proxy_string_request(r.path, body, ["filename"]) is Some(filename) else {
     write_usage_bad_request(w, "missing_filename")
     return
   }
@@ -958,8 +954,7 @@ async fn ConfigService::handle_delete_skill_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["backupId", "id"])
-    is Some(backup_id) else {
+  guard proxy_string_request(r.path, body, ["backupId"]) is Some(backup_id) else {
     write_usage_bad_request(w, "missing_backup_id")
     return
   }
@@ -974,8 +969,7 @@ async fn ConfigService::handle_restore_skill_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["backupId", "id"])
-    is Some(backup_id) else {
+  guard proxy_string_request(r.path, body, ["backupId"]) is Some(backup_id) else {
     write_usage_bad_request(w, "missing_backup_id")
     return
   }

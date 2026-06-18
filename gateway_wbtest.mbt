@@ -10254,4 +10254,11 @@ test "moonstat skill repo request accepts query and json body shapes" {
   assert_eq(body_repo["name"], Json::string("skills"))
   assert_eq(body_repo["branch"], Json::string("main"))
   assert_eq(body_repo["enabled"], Json::boolean(false))
+  assert_true(
+    moon_skill_repo_request_json(
+      "/skills/repos?owner=vectie&repo=legacy-skills",
+      None,
+    )
+    is None,
+  )
 }
