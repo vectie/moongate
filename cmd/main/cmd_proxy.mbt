@@ -1125,12 +1125,12 @@ fn usage_pricing_update_path(args : Array[String]) -> String? {
     return None
   }
   let query = [
-    cli_query_pair("model_id", model_id),
-    cli_query_pair("display_name", display_name),
-    cli_query_pair("input_cost", input_cost),
-    cli_query_pair("output_cost", output_cost),
-    cli_query_pair("cache_read_cost", cache_read_cost),
-    cli_query_pair("cache_creation_cost", cache_creation_cost),
+    cli_query_pair("modelId", model_id),
+    cli_query_pair("displayName", display_name),
+    cli_query_pair("inputCost", input_cost),
+    cli_query_pair("outputCost", output_cost),
+    cli_query_pair("cacheReadCost", cache_read_cost),
+    cli_query_pair("cacheCreationCost", cache_creation_cost),
   ].join("&")
   Some("/usage/model-pricing?\{query}")
 }
@@ -1140,7 +1140,7 @@ fn usage_pricing_delete_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--model-id") is Some(model_id) else {
     return None
   }
-  Some("/usage/model-pricing?\{cli_query_pair("model_id", model_id)}")
+  Some("/usage/model-pricing?\{cli_query_pair("modelId", model_id)}")
 }
 
 ///|

@@ -92,16 +92,14 @@ fn provider_cost_multiplier_from_default(
   }
   match settings {
     Object(obj) => {
-      match
-        json_string_from_map_any(obj, ["costMultiplier", "cost_multiplier"]) {
+      match json_string_from_map(obj, "costMultiplier") {
         Some(value) if usage_non_negative_decimal(value) =>
           return value.trim().to_owned()
         _ => ()
       }
       match obj.get("meta") {
         Some(Object(meta)) =>
-          match
-            json_string_from_map_any(meta, ["costMultiplier", "cost_multiplier"]) {
+          match json_string_from_map(meta, "costMultiplier") {
             Some(value) if usage_non_negative_decimal(value) =>
               value.trim().to_owned()
             _ => default_multiplier
@@ -1433,31 +1431,25 @@ fn proxy_circuit_config_from_request(
 
 ///|
 fn usage_pricing_from_request(path : StringView, body : Json?) -> ModelPricing? {
-  guard usage_string_from_request(path, body, ["model_id", "modelId"])
-    is Some(model_id) else {
+  guard usage_string_from_request(path, body, ["modelId"]) is Some(model_id) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["display_name", "displayName"])
+  guard usage_string_from_request(path, body, ["displayName"])
     is Some(display_name) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["input_cost", "inputCost"])
-    is Some(input_cost) else {
+  guard usage_string_from_request(path, body, ["inputCost"]) is Some(input_cost) else {
     return None
   }
-  guard usage_string_from_request(path, body, ["output_cost", "outputCost"])
+  guard usage_string_from_request(path, body, ["outputCost"])
     is Some(output_cost) else {
     return None
   }
-  guard usage_string_from_request(path, body, [
-      "cache_read_cost", "cacheReadCost",
-    ])
+  guard usage_string_from_request(path, body, ["cacheReadCost"])
     is Some(cache_read_cost) else {
     return None
   }
-  guard usage_string_from_request(path, body, [
-      "cache_creation_cost", "cacheCreationCost",
-    ])
+  guard usage_string_from_request(path, body, ["cacheCreationCost"])
     is Some(cache_creation_cost) else {
     return None
   }
@@ -1488,14 +1480,13 @@ fn usage_pricing_validation_error_from_request(
   path : StringView,
   body : Json?,
 ) -> String? {
-  guard usage_string_from_request(path, body, ["model_id", "modelId"])
-    is Some(model_id) else {
+  guard usage_string_from_request(path, body, ["modelId"]) is Some(model_id) else {
     return Some("Model ID is required")
   }
   if model_id.trim().is_empty() {
     return Some("Model ID is required")
   }
-  guard usage_string_from_request(path, body, ["display_name", "displayName"])
+  guard usage_string_from_request(path, body, ["displayName"])
     is Some(display_name) else {
     return Some("Display name is required")
   }
@@ -1503,32 +1494,29 @@ fn usage_pricing_validation_error_from_request(
     return Some("Display name is required")
   }
   match
-    usage_decimal_validation_error_from_request(path, body, "input_cost", [
-      "input_cost", "inputCost",
+    usage_decimal_validation_error_from_request(path, body, "inputCost", [
+      "inputCost",
     ]) {
     Some(error) => return Some(error)
     None => ()
   }
   match
-    usage_decimal_validation_error_from_request(path, body, "output_cost", [
-      "output_cost", "outputCost",
+    usage_decimal_validation_error_from_request(path, body, "outputCost", [
+      "outputCost",
     ]) {
     Some(error) => return Some(error)
     None => ()
   }
   match
-    usage_decimal_validation_error_from_request(path, body, "cache_read_cost", [
-      "cache_read_cost", "cacheReadCost",
+    usage_decimal_validation_error_from_request(path, body, "cacheReadCost", [
+      "cacheReadCost",
     ]) {
     Some(error) => return Some(error)
     None => ()
   }
-  usage_decimal_validation_error_from_request(
-    path,
-    body,
-    "cache_creation_cost",
-    ["cache_creation_cost", "cacheCreationCost"],
-  )
+  usage_decimal_validation_error_from_request(path, body, "cacheCreationCost", [
+    "cacheCreationCost",
+  ])
 }
 
 ///|

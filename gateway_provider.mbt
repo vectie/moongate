@@ -1493,7 +1493,7 @@ fn stream_check_effective_config_for_provider(
     return global_config
   }
   let mut config = global_config
-  match json_string_from_map_any(test_config, ["testModel", "test_model"]) {
+  match json_string_from_map(test_config, "testModel") {
     Some(model) =>
       config = {
         ..config,
@@ -1505,31 +1505,18 @@ fn stream_check_effective_config_for_provider(
   }
   match proxy_json_int(test_config, "timeoutSecs") {
     Some(value) if value >= 0 => config = { ..config, timeout_secs: value }
-    _ =>
-      match proxy_json_int(test_config, "timeout_secs") {
-        Some(value) if value >= 0 => config = { ..config, timeout_secs: value }
-        _ => ()
-      }
+    _ => ()
   }
   match proxy_json_int(test_config, "maxRetries") {
     Some(value) if value >= 0 => config = { ..config, max_retries: value }
-    _ =>
-      match proxy_json_int(test_config, "max_retries") {
-        Some(value) if value >= 0 => config = { ..config, max_retries: value }
-        _ => ()
-      }
+    _ => ()
   }
   match proxy_json_int(test_config, "degradedThresholdMs") {
     Some(value) if value >= 0 =>
       config = { ..config, degraded_threshold_ms: value }
-    _ =>
-      match proxy_json_int(test_config, "degraded_threshold_ms") {
-        Some(value) if value >= 0 =>
-          config = { ..config, degraded_threshold_ms: value }
-        _ => ()
-      }
+    _ => ()
   }
-  match json_string_from_map_any(test_config, ["testPrompt", "test_prompt"]) {
+  match json_string_from_map(test_config, "testPrompt") {
     Some(prompt) => config = { ..config, test_prompt: prompt }
     None => ()
   }
@@ -1853,18 +1840,13 @@ fn provider_settings_bearer_only(settings : Json?) -> Bool {
 ///|
 fn provider_settings_prompt_cache_key(settings : Json?) -> String? {
   guard settings is Some(Object(obj)) else { return None }
-  match
-    json_non_empty_string_from_map_any(obj, [
-      "promptCacheKey", "prompt_cache_key",
-    ]) {
+  match json_non_empty_string_from_map_any(obj, ["promptCacheKey"]) {
     Some(value) => return Some(value)
     None => ()
   }
   match obj.get("meta") {
     Some(Object(meta)) =>
-      json_non_empty_string_from_map_any(meta, [
-        "promptCacheKey", "prompt_cache_key",
-      ])
+      json_non_empty_string_from_map_any(meta, ["promptCacheKey"])
     _ => None
   }
 }
@@ -1872,13 +1854,12 @@ fn provider_settings_prompt_cache_key(settings : Json?) -> String? {
 ///|
 fn provider_settings_codex_fast_mode(settings : Json?) -> Bool? {
   guard settings is Some(Object(obj)) else { return None }
-  match json_bool_from_map_any(obj, ["codexFastMode", "codex_fast_mode"]) {
+  match json_bool_from_map(obj, "codexFastMode") {
     Some(value) => return Some(value)
     None => ()
   }
   match obj.get("meta") {
-    Some(Object(meta)) =>
-      json_bool_from_map_any(meta, ["codexFastMode", "codex_fast_mode"])
+    Some(Object(meta)) => json_bool_from_map(meta, "codexFastMode")
     _ => None
   }
 }
@@ -1965,10 +1946,8 @@ fn provider_copy_inline_metadata_fields(
 ) -> Unit {
   for
     key in [
-      "customUserAgent", "custom_user_agent", "userAgent", "user_agent", "apiFormat",
-      "api_format", "promptCacheKey", "prompt_cache_key", "codexFastMode", "codex_fast_mode",
-      "githubAccountId", "github_account_id", "limitDailyUsd", "limit_daily_usd",
-      "limitMonthlyUsd", "limit_monthly_usd",
+      "customUserAgent", "userAgent", "apiFormat", "promptCacheKey", "codexFastMode",
+      "githubAccountId", "limitDailyUsd", "limitMonthlyUsd",
     ] {
     match obj.get(key) {
       Some(value) => settings[key] = value
@@ -2230,12 +2209,10 @@ fn provider_model_mapping_from_request(
 ///|
 fn provider_model_mapping_from_json(obj : Map[String, Json]) -> ModelMapping? {
   let mapping = ModelMapping::new(
-    haiku_model=json_string_from_map_any(obj, ["haikuModel", "haiku_model"]),
-    sonnet_model=json_string_from_map_any(obj, ["sonnetModel", "sonnet_model"]),
-    opus_model=json_string_from_map_any(obj, ["opusModel", "opus_model"]),
-    default_model=json_string_from_map_any(obj, [
-      "defaultModel", "default_model",
-    ]),
+    haiku_model=json_string_from_map(obj, "haikuModel"),
+    sonnet_model=json_string_from_map(obj, "sonnetModel"),
+    opus_model=json_string_from_map(obj, "opusModel"),
+    default_model=json_string_from_map(obj, "defaultModel"),
   )
   if mapping.has_mapping() {
     Some(mapping)
@@ -2264,21 +2241,13 @@ fn provider_claude_desktop_routes_object(
   match obj.get("claudeDesktopModelRoutes") {
     Some(Object(routes)) => Some(routes)
     _ =>
-      match obj.get("claude_desktop_model_routes") {
-        Some(Object(routes)) => Some(routes)
-        _ =>
-          match obj.get("meta") {
-            Some(Object(meta)) =>
-              match meta.get("claudeDesktopModelRoutes") {
-                Some(Object(routes)) => Some(routes)
-                _ =>
-                  match meta.get("claude_desktop_model_routes") {
-                    Some(Object(routes)) => Some(routes)
-                    _ => None
-                  }
-              }
+      match obj.get("meta") {
+        Some(Object(meta)) =>
+          match meta.get("claudeDesktopModelRoutes") {
+            Some(Object(routes)) => Some(routes)
             _ => None
           }
+        _ => None
       }
   }
 }
@@ -2328,10 +2297,8 @@ fn provider_claude_desktop_route_from_json(
       Some(
         ClaudeDesktopModelRoute::new(
           model=trimmed,
-          label_override=json_string_from_map_any(obj, [
-            "labelOverride", "label_override",
-          ]),
-          supports_1m=json_bool_from_map_any(obj, ["supports1m", "supports_1m"]),
+          label_override=json_string_from_map(obj, "labelOverride"),
+          supports_1m=json_bool_from_map(obj, "supports1m"),
         ),
       )
     }
@@ -2350,9 +2317,7 @@ fn provider_sort_updates_from_request(
     None => ()
   }
   guard provider_id_from_request(path, body) is Some(id) else { return updates }
-  let sort_index = proxy_int_request(path, body, ["sortIndex", "sort_index"]).unwrap_or(
-    0,
-  )
+  let sort_index = proxy_int_request(path, body, ["sortIndex"]).unwrap_or(0)
   updates.push({ id, sort_index })
   updates
 }
@@ -2388,17 +2353,7 @@ fn provider_sort_updates_from_array(
         } noraise {
           parsed => parsed
         }
-      _ =>
-        match obj.get("sort_index") {
-          Some(Number(value, ..)) => value.trunc().to_int()
-          Some(String(value)) =>
-            try @string.parse_int(value, base=10) catch {
-              _ => 0
-            } noraise {
-              parsed => parsed
-            }
-          _ => 0
-        }
+      _ => 0
     }
     updates.push({ id, sort_index })
   }

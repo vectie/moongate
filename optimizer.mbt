@@ -100,31 +100,27 @@ fn moon_copilot_optimizer_runtime_config(
     }
   }
   {
-    enabled: json_bool_from_map_any(obj, ["enabled"]).unwrap_or(true),
-    request_classification: json_bool_from_map_any(obj, [
-      "requestClassification", "request_classification",
-    ]).unwrap_or(true),
-    tool_result_merging: json_bool_from_map_any(obj, [
-      "toolResultMerging", "tool_result_merging",
-    ]).unwrap_or(true),
-    compact_detection: json_bool_from_map_any(obj, [
-      "compactDetection", "compact_detection",
-    ]).unwrap_or(true),
-    deterministic_request_id: json_bool_from_map_any(obj, [
-      "deterministicRequestId", "deterministic_request_id",
-    ]).unwrap_or(true),
-    subagent_detection: json_bool_from_map_any(obj, [
-      "subagentDetection", "subagent_detection",
-    ]).unwrap_or(true),
-    warmup_downgrade: json_bool_from_map_any(obj, [
-      "warmupDowngrade", "warmup_downgrade",
-    ]).unwrap_or(true),
-    warmup_model: json_string_from_map_any(obj, ["warmupModel", "warmup_model"]).unwrap_or(
+    enabled: json_bool_from_map(obj, "enabled").unwrap_or(true),
+    request_classification: json_bool_from_map(obj, "requestClassification").unwrap_or(
+      true,
+    ),
+    tool_result_merging: json_bool_from_map(obj, "toolResultMerging").unwrap_or(
+      true,
+    ),
+    compact_detection: json_bool_from_map(obj, "compactDetection").unwrap_or(
+      true,
+    ),
+    deterministic_request_id: json_bool_from_map(obj, "deterministicRequestId").unwrap_or(
+      true,
+    ),
+    subagent_detection: json_bool_from_map(obj, "subagentDetection").unwrap_or(
+      true,
+    ),
+    warmup_downgrade: json_bool_from_map(obj, "warmupDowngrade").unwrap_or(true),
+    warmup_model: json_string_from_map(obj, "warmupModel").unwrap_or(
       "gpt-5-mini",
     ),
-    strip_thinking: json_bool_from_map_any(obj, [
-      "stripThinking", "strip_thinking",
-    ]).unwrap_or(true),
+    strip_thinking: json_bool_from_map(obj, "stripThinking").unwrap_or(true),
   }
 }
 

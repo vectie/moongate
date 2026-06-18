@@ -46,19 +46,3 @@ test "ccs database backup entries sort newest first" {
   assert_eq(rows[1].filename, "mid.db")
   assert_eq(rows[2].filename, "old.db")
 }
-
-///|
-test "ccs import proxy ints accept camel and snake case keys" {
-  guard Json::object({ "listenPort": Json::number(123.0) }) is Object(camel) else {
-    fail("expected object")
-  }
-  guard Json::object({ "listen_port": Json::number(456.0) }) is Object(snake) else {
-    fail("expected object")
-  }
-  assert_eq(moon_json_int_from_map_any(camel, ["listenPort"]), Some(123))
-  assert_eq(
-    moon_json_int_from_map_any(snake, ["listenPort", "listen_port"]),
-    Some(456),
-  )
-  assert_eq(moon_json_int_from_map_any(camel, ["missing"]), None)
-}

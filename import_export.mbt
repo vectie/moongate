@@ -239,21 +239,19 @@ fn ProxyService::moon_apply_import_proxy(
 ) -> Unit {
   match proxy.get("globalConfig") {
     Some(Object(global)) => {
-      match json_bool_from_map_any(global, ["proxyEnabled", "proxy_enabled"]) {
+      match json_bool_from_map(global, "proxyEnabled") {
         Some(enabled) => self.proxy_enabled = enabled
         None => ()
       }
-      match
-        json_string_from_map_any(global, ["listenAddress", "listen_address"]) {
+      match json_string_from_map(global, "listenAddress") {
         Some(address) => self.proxy_listen_address = address
         None => ()
       }
-      match moon_json_int_from_map_any(global, ["listenPort", "listen_port"]) {
+      match proxy_json_int(global, "listenPort") {
         Some(port) => self.proxy_listen_port = port
         None => ()
       }
-      match
-        json_bool_from_map_any(global, ["enableLogging", "enable_logging"]) {
+      match json_bool_from_map(global, "enableLogging") {
         Some(enabled) => self.proxy_enable_logging = enabled
         None => ()
       }
@@ -270,20 +268,6 @@ fn ProxyService::moon_apply_import_proxy(
       }
     _ => ()
   }
-}
-
-///|
-fn moon_json_int_from_map_any(
-  obj : Map[String, Json],
-  keys : Array[String],
-) -> Int? {
-  for key in keys {
-    match proxy_json_int(obj, key) {
-      Some(value) => return Some(value)
-      None => ()
-    }
-  }
-  None
 }
 
 ///|

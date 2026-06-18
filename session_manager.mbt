@@ -249,16 +249,13 @@ fn moon_delete_session_request_from_json(
   value : Json,
 ) -> MoonDeleteSessionRequest? {
   guard value is Object(obj) else { return None }
-  guard json_string_from_map_any(obj, ["providerId", "provider_id"])
-    is Some(provider_id) else {
+  guard json_string_from_map(obj, "providerId") is Some(provider_id) else {
     return None
   }
-  guard json_string_from_map_any(obj, ["sessionId", "session_id"])
-    is Some(session_id) else {
+  guard json_string_from_map(obj, "sessionId") is Some(session_id) else {
     return None
   }
-  guard json_string_from_map_any(obj, ["sourcePath", "source_path"])
-    is Some(source_path) else {
+  guard json_string_from_map(obj, "sourcePath") is Some(source_path) else {
     return None
   }
   Some({ provider_id, session_id, source_path })

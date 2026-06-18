@@ -3752,12 +3752,12 @@ test "usage pricing validation mirrors ccs invalid price messages" {
   let negative = "/usage/model-pricing?modelId=m&displayName=M&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
   assert_eq(
     usage_pricing_validation_error_from_request(negative, None),
-    Some("input_cost price must be non-negative: -1"),
+    Some("inputCost price must be non-negative: -1"),
   )
   let invalid = "/usage/model-pricing?modelId=m&displayName=M&inputCost=abc&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
   assert_eq(
     usage_pricing_validation_error_from_request(invalid, None),
-    Some("input_cost price is invalid: abc"),
+    Some("inputCost price is invalid: abc"),
   )
 }
 
@@ -3804,18 +3804,24 @@ test "usage request detail id accepts moonstat structured body" {
 test "usage model id helpers accept body and query precedence" {
   let body = { "modelId": Json::string("body-model") }.to_json()
   assert_eq(
-    usage_string_from_request("/usage/model-pricing", Some(body), [
-      "model_id", "modelId",
-    ]),
+    usage_string_from_request("/usage/model-pricing", Some(body), ["modelId"]),
     Some("body-model"),
   )
   assert_eq(
     usage_string_from_request(
       "/usage/model-pricing?modelId=query-model",
       Some(body),
-      ["model_id", "modelId"],
+      ["modelId"],
     ),
     Some("query-model"),
+  )
+  assert_eq(
+    usage_string_from_request(
+      "/usage/model-pricing?model_id=legacy-query",
+      Some({ "model_id": Json::string("legacy-body") }.to_json()),
+      ["modelId"],
+    ),
+    None,
   )
 }
 
@@ -9536,7 +9542,7 @@ async test "ccs prompt file helpers import and read prompt files" {
     let prompt_path = @pathx.join(tmpdir, "AGENTS.md")
     let content = "# Codex prompt\n\nUse MoonBit."
     @fsx.write_to_file(prompt_path, content)
-    let body = { "path": Json::string(prompt_path) }.to_json()
+    let body = { "filePath": Json::string(prompt_path) }.to_json()
     guard moon_prompt_file_path_from_request(
         "/prompts/import-file?app=codex",
         Some(body),

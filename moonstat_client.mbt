@@ -290,7 +290,7 @@ pub fn MoonstatClient::usage_delete_model_pricing_url(
   model_id : String,
 ) -> String {
   self.endpoint(
-    "/usage/model-pricing?\{moonstat_client_query_pair("model_id", model_id)}",
+    "/usage/model-pricing?\{moonstat_client_query_pair("modelId", model_id)}",
   )
 }
 
@@ -490,7 +490,7 @@ pub async fn MoonstatClient::usage_delete_model_pricing(
   model_id : String,
 ) -> Result[Json, String] {
   self.delete_json_path(
-    "/usage/model-pricing?\{moonstat_client_query_pair("model_id", model_id)}",
+    "/usage/model-pricing?\{moonstat_client_query_pair("modelId", model_id)}",
   )
 }
 

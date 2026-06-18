@@ -247,7 +247,7 @@ fn moon_prompt_file_path_from_request(
   body : Json?,
   app : String,
 ) -> Result[String, String] {
-  match proxy_string_request(path, body, ["path", "filePath", "file_path"]) {
+  match proxy_string_request(path, body, ["filePath"]) {
     Some(file_path) => Ok(file_path)
     None => moon_prompt_file_path(app)
   }
@@ -304,7 +304,7 @@ async fn WorkspaceService::handle_save_file_dialog(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  ignore(proxy_string_request(r.path, body, ["defaultName", "default_name"]))
+  ignore(proxy_string_request(r.path, body, ["defaultName"]))
   write_usage_json(w, moon_dialog_result_json())
 }
 

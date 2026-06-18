@@ -373,16 +373,12 @@ fn moon_sync_preserve_empty_password_request(
   path : StringView,
   body : Json?,
 ) -> Bool {
-  proxy_bool_request(path, body, [
-    "preserveEmptyPassword", "preserve_empty_password",
-  ]).unwrap_or(true)
+  proxy_bool_request(path, body, ["preserveEmptyPassword"]).unwrap_or(true)
 }
 
 ///|
 fn moon_sync_password_touched_request(path : StringView, body : Json?) -> Bool {
-  proxy_bool_request(path, body, ["passwordTouched", "password_touched"]).unwrap_or(
-    false,
-  )
+  proxy_bool_request(path, body, ["passwordTouched"]).unwrap_or(false)
 }
 
 ///|

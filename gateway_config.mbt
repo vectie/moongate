@@ -982,9 +982,9 @@ async fn ConfigService::handle_restore_skill_backup(
     write_usage_bad_request(w, "missing_backup_id")
     return
   }
-  let current_app = proxy_string_request(r.path, body, [
-    "currentApp", "current_app", "app",
-  ]).unwrap_or("claude")
+  let current_app = proxy_string_request(r.path, body, ["currentApp"]).unwrap_or(
+    "claude",
+  )
   write_usage_json(w, moon_restore_skill_backup_json(backup_id, current_app))
 }
 

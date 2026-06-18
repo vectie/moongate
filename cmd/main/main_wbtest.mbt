@@ -643,7 +643,7 @@ test "usage sync path accepts standalone projects dir override" {
       "/tmp/codex", "--gemini-dir", "/tmp/gemini", "--opencode-export-path", "/tmp/opencode/messages.jsonl",
       "--opencode-db-path", "/tmp/opencode/opencode.db?mode=ro",
     ]),
-    "/usage/sync-session?projects_dir=%2Ftmp%2Fclaude%20projects&codex_dir=%2Ftmp%2Fcodex&gemini_dir=%2Ftmp%2Fgemini&opencode_export_path=%2Ftmp%2Fopencode%2Fmessages.jsonl&opencode_db_path=%2Ftmp%2Fopencode%2Fopencode.db%3Fmode%3Dro",
+    "/usage/sync-session?projectsDir=%2Ftmp%2Fclaude%20projects&codexDir=%2Ftmp%2Fcodex&geminiDir=%2Ftmp%2Fgemini&opencodeExportPath=%2Ftmp%2Fopencode%2Fmessages.jsonl&opencodeDbPath=%2Ftmp%2Fopencode%2Fopencode.db%3Fmode%3Dro",
   )
 }
 
@@ -656,14 +656,14 @@ test "usage pricing paths accept moonstat editable pricing args" {
       "--cache-read-cost", "0.1", "--cache-creation-cost", "0",
     ]),
     Some(
-      "/usage/model-pricing?model_id=anthropic%2Fclaude%26sonnet&display_name=Custom%20Model&input_cost=1&output_cost=2&cache_read_cost=0.1&cache_creation_cost=0",
+      "/usage/model-pricing?modelId=anthropic%2Fclaude%26sonnet&displayName=Custom%20Model&inputCost=1&outputCost=2&cacheReadCost=0.1&cacheCreationCost=0",
     ),
   )
   assert_eq(
     usage_pricing_delete_path([
       "moonstat", "usage", "pricing", "delete", "--model-id", "anthropic/claude&sonnet",
     ]),
-    Some("/usage/model-pricing?model_id=anthropic%2Fclaude%26sonnet"),
+    Some("/usage/model-pricing?modelId=anthropic%2Fclaude%26sonnet"),
   )
   assert_eq(
     usage_pricing_update_path([
@@ -1534,7 +1534,7 @@ test "top level moonstat prompt command names build prompt paths" {
       ],
       "/prompts/import-file",
     ),
-    "/prompts/import-file?app=codex&path=%2Ftmp%2Fprompts.md",
+    "/prompts/import-file?app=codex&filePath=%2Ftmp%2Fprompts.md",
   )
 }
 

@@ -282,8 +282,7 @@ async fn UsageService::handle_usage_delete_model_pricing(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard usage_string_from_request(r.path, body, ["model_id", "modelId"])
-    is Some(model_id) else {
+  guard usage_string_from_request(r.path, body, ["modelId"]) is Some(model_id) else {
     write_usage_bad_request(w, "missing_model_id")
     return
   }

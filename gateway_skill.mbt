@@ -49,9 +49,9 @@ async fn SkillService::handle_install_skill_unified(
     write_usage_bad_request(w, "missing_skill")
     return
   }
-  let current_app = proxy_string_request(r.path, body, [
-    "currentApp", "current_app", "app",
-  ]).unwrap_or("claude")
+  let current_app = proxy_string_request(r.path, body, ["currentApp"]).unwrap_or(
+    "claude",
+  )
   write_usage_json(w, moon_install_skill_unified_json(skill, current_app))
 }
 
@@ -288,13 +288,12 @@ async fn SkillService::handle_install_skills_from_zip(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["filePath", "file_path", "path"])
-    is Some(file_path) else {
+  guard proxy_string_request(r.path, body, ["filePath"]) is Some(file_path) else {
     write_usage_bad_request(w, "missing_file_path")
     return
   }
-  let current_app = proxy_string_request(r.path, body, [
-    "currentApp", "current_app", "app",
-  ]).unwrap_or("claude")
+  let current_app = proxy_string_request(r.path, body, ["currentApp"]).unwrap_or(
+    "claude",
+  )
   write_usage_json(w, moon_install_skills_from_zip_json(file_path, current_app))
 }

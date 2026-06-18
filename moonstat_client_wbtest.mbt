@@ -91,7 +91,7 @@ test "moonstat client builds required endpoint parameters" {
   )
   assert_eq(
     client.usage_delete_model_pricing_url("model/a b"),
-    "http://127.0.0.1:4199/usage/model-pricing?model_id=model%2Fa%20b",
+    "http://127.0.0.1:4199/usage/model-pricing?modelId=model%2Fa%20b",
   )
 }
 

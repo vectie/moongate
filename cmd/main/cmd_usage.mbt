@@ -306,23 +306,23 @@ fn usage_limits_path(args : Array[String]) -> String {
 fn usage_sync_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--projects-dir") {
-    Some(value) => query.push(cli_query_pair("projects_dir", value))
+    Some(value) => query.push(cli_query_pair("projectsDir", value))
     None => ()
   }
   match parse_string_arg(args, "--codex-dir") {
-    Some(value) => query.push(cli_query_pair("codex_dir", value))
+    Some(value) => query.push(cli_query_pair("codexDir", value))
     None => ()
   }
   match parse_string_arg(args, "--gemini-dir") {
-    Some(value) => query.push(cli_query_pair("gemini_dir", value))
+    Some(value) => query.push(cli_query_pair("geminiDir", value))
     None => ()
   }
   match parse_string_arg(args, "--opencode-export-path") {
-    Some(value) => query.push(cli_query_pair("opencode_export_path", value))
+    Some(value) => query.push(cli_query_pair("opencodeExportPath", value))
     None => ()
   }
   match parse_string_arg(args, "--opencode-db-path") {
-    Some(value) => query.push(cli_query_pair("opencode_db_path", value))
+    Some(value) => query.push(cli_query_pair("opencodeDbPath", value))
     None => ()
   }
   if query.is_empty() {
