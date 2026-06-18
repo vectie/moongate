@@ -602,10 +602,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.proxy.handle_proxy_update_global_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_settings", (_, w) => {
-    self.handle_get_settings(w)
+    self.config.handle_get_settings(w)
   })
   router.add_handler(@httpx.Method::Post, "/save_settings", (r, w) => {
-    self.handle_save_settings(r, w)
+    self.config.handle_save_settings(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/restart_app", (_, w) => {
     self.handle_restart_app(w)
@@ -614,10 +614,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_install_update_and_restart(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_app_config_dir_override", (_, w) => {
-    self.handle_get_app_config_dir_override(w)
+    self.config.handle_get_app_config_dir_override(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_app_config_dir_override", (r, w) => {
-    self.handle_set_app_config_dir_override(r, w)
+    self.config.handle_set_app_config_dir_override(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/set_auto_launch", (r, w) => {
     self.handle_set_auto_launch(r, w)
@@ -626,16 +626,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_get_auto_launch_status(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_rectifier_config", (_, w) => {
-    self.handle_get_rectifier_config(w)
+    self.config.handle_get_rectifier_config(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_rectifier_config", (r, w) => {
-    self.handle_set_rectifier_config(r, w)
+    self.config.handle_set_rectifier_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_optimizer_config", (_, w) => {
-    self.handle_get_optimizer_config(w)
+    self.config.handle_get_optimizer_config(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_optimizer_config", (r, w) => {
-    self.handle_set_optimizer_config(r, w)
+    self.config.handle_set_optimizer_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_copilot_optimizer_config", (_, w) => {
     self.handle_get_copilot_optimizer_config(w)
@@ -645,10 +645,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     w,
   ) => self.handle_set_copilot_optimizer_config(r, w))
   router.add_handler(@httpx.Method::Get, "/get_log_config", (_, w) => {
-    self.handle_get_log_config(w)
+    self.config.handle_get_log_config(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_log_config", (r, w) => {
-    self.handle_set_log_config(r, w)
+    self.config.handle_set_log_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_global_proxy_url", (_, w) => {
     self.proxy.handle_get_global_proxy_url(w)

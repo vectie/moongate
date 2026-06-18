@@ -1005,22 +1005,22 @@ async fn ConfigService::handle_open_app_config_folder(
 }
 
 ///|
-async fn Gateway::handle_get_settings(
-  self : Gateway,
+async fn ConfigService::handle_get_settings(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.config.settings_json())
+  write_usage_json(w, self.settings_json())
 }
 
 ///|
-async fn Gateway::handle_save_settings(
-  self : Gateway,
+async fn ConfigService::handle_save_settings(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match proxy_json_body(r) {
     Some(settings) => {
-      self.config.save_settings_json(settings)
+      self.save_settings_json(settings)
       write_usage_json(w, Json::boolean(true))
     }
     None => write_usage_bad_request(w, "invalid_settings")
@@ -1028,59 +1028,59 @@ async fn Gateway::handle_save_settings(
 }
 
 ///|
-async fn Gateway::handle_get_app_config_dir_override(
-  self : Gateway,
+async fn ConfigService::handle_get_app_config_dir_override(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.config.app_config_dir_override_json())
+  write_usage_json(w, self.app_config_dir_override_json())
 }
 
 ///|
-async fn Gateway::handle_set_app_config_dir_override(
-  self : Gateway,
+async fn ConfigService::handle_set_app_config_dir_override(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  self.config.set_app_config_dir_override_from_request(r.path, body)
+  self.set_app_config_dir_override_from_request(r.path, body)
   write_usage_json(w, Json::boolean(true))
 }
 
 ///|
-async fn Gateway::handle_get_rectifier_config(
-  self : Gateway,
+async fn ConfigService::handle_get_rectifier_config(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.config.rectifier_json())
+  write_usage_json(w, self.rectifier_json())
 }
 
 ///|
-async fn Gateway::handle_set_rectifier_config(
-  self : Gateway,
+async fn ConfigService::handle_set_rectifier_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  self.config.set_rectifier_from_request(r.path, body)
+  self.set_rectifier_from_request(r.path, body)
   write_usage_json(w, Json::boolean(true))
 }
 
 ///|
-async fn Gateway::handle_get_optimizer_config(
-  self : Gateway,
+async fn ConfigService::handle_get_optimizer_config(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.config.optimizer_json())
+  write_usage_json(w, self.optimizer_json())
 }
 
 ///|
-async fn Gateway::handle_set_optimizer_config(
-  self : Gateway,
+async fn ConfigService::handle_set_optimizer_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  if !self.config.set_optimizer_from_request(r.path, body) {
+  if !self.set_optimizer_from_request(r.path, body) {
     write_usage_bad_request(w, "invalid_optimizer_cache_ttl")
     return
   }
@@ -1088,21 +1088,21 @@ async fn Gateway::handle_set_optimizer_config(
 }
 
 ///|
-async fn Gateway::handle_get_log_config(
-  self : Gateway,
+async fn ConfigService::handle_get_log_config(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.config.log_json())
+  write_usage_json(w, self.log_json())
 }
 
 ///|
-async fn Gateway::handle_set_log_config(
-  self : Gateway,
+async fn ConfigService::handle_set_log_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  self.config.set_log_from_request(r.path, body)
+  self.set_log_from_request(r.path, body)
   write_usage_json(w, Json::boolean(true))
 }
 
