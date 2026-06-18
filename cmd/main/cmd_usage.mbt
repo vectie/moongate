@@ -37,6 +37,70 @@ async fn check_stats(args : Array[String]) -> Unit {
 }
 
 ///|
+fn cli_usage_command_id(command_id : String) -> Bool {
+  match command_id {
+    "get_usage_summary"
+    | "get_usage_summary_by_app"
+    | "get_usage_trends"
+    | "get_provider_stats"
+    | "get_model_stats"
+    | "get_request_logs"
+    | "get_request_detail"
+    | "get_model_pricing"
+    | "update_model_pricing"
+    | "delete_model_pricing"
+    | "check_provider_limits"
+    | "sync_session_usage"
+    | "get_usage_data_sources"
+    | "query_provider_usage"
+    | "get_balance"
+    | "get_subscription_quota"
+    | "get_codex_oauth_quota"
+    | "get_codex_oauth_models"
+    | "get_coding_plan_quota"
+    | "test_usage_script"
+    | "status"
+    | "health"
+    | "stats" => true
+    _ => false
+  }
+}
+
+///|
+async fn run_usage_cli_command(
+  command_id : String,
+  args : Array[String],
+) -> Unit {
+  match command_id {
+    "get_usage_summary" => check_usage_summary(args)
+    "get_usage_summary_by_app" => check_usage_apps(args)
+    "get_usage_trends" => check_usage_trends(args)
+    "get_provider_stats" => check_usage_providers(args)
+    "get_model_stats" => check_usage_models(args)
+    "get_request_logs" => check_usage_logs(args)
+    "get_request_detail" => check_usage_detail(args)
+    "get_model_pricing" => check_usage_endpoint(args, "/usage/model-pricing")
+    "update_model_pricing" => update_usage_pricing(args)
+    "delete_model_pricing" => delete_usage_pricing(args)
+    "check_provider_limits" => check_usage_limits(args)
+    "sync_session_usage" => sync_session_usage(args)
+    "get_usage_data_sources" =>
+      check_usage_endpoint(args, "/usage/data-sources")
+    "query_provider_usage" => check_usage_provider_script(args)
+    "get_balance" => check_balance(args)
+    "get_subscription_quota" => check_subscription_quota(args)
+    "get_codex_oauth_quota" => check_codex_oauth_quota(args)
+    "get_codex_oauth_models" => check_codex_oauth_models(args)
+    "get_coding_plan_quota" => check_coding_plan_quota(args)
+    "test_usage_script" => test_usage_script(args)
+    "status" => check_status(args)
+    "health" => check_health(args)
+    "stats" => check_stats(args)
+    _ => ()
+  }
+}
+
+///|
 async fn check_usage_logs(args : Array[String]) -> Unit {
   check_usage_endpoint(args, usage_logs_path(args))
 }

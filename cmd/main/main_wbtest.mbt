@@ -464,6 +464,19 @@ test "proxy cli dispatcher owns only proxy command family" {
 }
 
 ///|
+test "usage cli dispatcher owns usage and telemetry commands" {
+  assert_true(cli_usage_command_id("get_usage_summary"))
+  assert_true(cli_usage_command_id("get_request_logs"))
+  assert_true(cli_usage_command_id("query_provider_usage"))
+  assert_true(cli_usage_command_id("status"))
+  assert_true(cli_usage_command_id("health"))
+  assert_true(cli_usage_command_id("stats"))
+  assert_false(cli_usage_command_id("get_providers"))
+  assert_false(cli_usage_command_id("suite_manifest"))
+  assert_false(cli_usage_command_id("auth_get_status"))
+}
+
+///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),

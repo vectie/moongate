@@ -1543,84 +1543,8 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       )
       true
     }
-    Some("get_usage_summary") => {
-      check_usage_summary(args)
-      true
-    }
-    Some("get_usage_summary_by_app") => {
-      check_usage_apps(args)
-      true
-    }
-    Some("get_usage_trends") => {
-      check_usage_trends(args)
-      true
-    }
-    Some("get_provider_stats") => {
-      check_usage_providers(args)
-      true
-    }
-    Some("get_model_stats") => {
-      check_usage_models(args)
-      true
-    }
-    Some("get_request_logs") => {
-      check_usage_logs(args)
-      true
-    }
-    Some("get_request_detail") => {
-      check_usage_detail(args)
-      true
-    }
-    Some("get_model_pricing") => {
-      check_usage_endpoint(args, "/usage/model-pricing")
-      true
-    }
-    Some("update_model_pricing") => {
-      update_usage_pricing(args)
-      true
-    }
-    Some("delete_model_pricing") => {
-      delete_usage_pricing(args)
-      true
-    }
-    Some("check_provider_limits") => {
-      check_usage_limits(args)
-      true
-    }
-    Some("sync_session_usage") => {
-      sync_session_usage(args)
-      true
-    }
-    Some("get_usage_data_sources") => {
-      check_usage_endpoint(args, "/usage/data-sources")
-      true
-    }
-    Some("query_provider_usage") => {
-      check_usage_provider_script(args)
-      true
-    }
-    Some("get_balance") => {
-      check_balance(args)
-      true
-    }
-    Some("get_subscription_quota") => {
-      check_subscription_quota(args)
-      true
-    }
-    Some("get_codex_oauth_quota") => {
-      check_codex_oauth_quota(args)
-      true
-    }
-    Some("get_codex_oauth_models") => {
-      check_codex_oauth_models(args)
-      true
-    }
-    Some("get_coding_plan_quota") => {
-      check_coding_plan_quota(args)
-      true
-    }
-    Some("test_usage_script") => {
-      test_usage_script(args)
+    Some(command_id) if cli_usage_command_id(command_id) => {
+      run_usage_cli_command(command_id, args)
       true
     }
     Some("suite_manifest") => {
@@ -1641,18 +1565,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("suite_write_moonclaw_providers") => {
       write_moonclaw_providers_file(args)
-      true
-    }
-    Some("status") => {
-      check_status(args)
-      true
-    }
-    Some("health") => {
-      check_health(args)
-      true
-    }
-    Some("stats") => {
-      check_stats(args)
       true
     }
     Some("help") => {
