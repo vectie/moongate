@@ -1,39 +1,4 @@
 ///|
-async fn Gateway::record_success_usage(
-  self : Gateway,
-  usage : TokenUsage,
-  response_bytes : Int,
-) -> Unit {
-  self.record_provider_result(true)
-  self.usage.record_success_usage(
-    usage,
-    response_bytes,
-    self.pricing_override_rows(),
-  )
-}
-
-///|
-async fn Gateway::record_success_stream_usage(
-  self : Gateway,
-  usage : TokenUsage?,
-  response_bytes : Int,
-  record_provider? : Bool = true,
-  first_token_ms? : Int? = None,
-  skip_empty_usage? : Bool = false,
-) -> Unit {
-  if record_provider {
-    self.record_provider_result(true)
-  }
-  self.usage.record_success_stream_usage(
-    usage,
-    response_bytes,
-    self.pricing_override_rows(),
-    first_token_ms~,
-    skip_empty_usage~,
-  )
-}
-
-///|
 fn UsageService::stats_json(self : UsageService) -> Json {
   self.stats.to_json()
 }
@@ -357,6 +322,67 @@ fn UsageService::record_stream_mode(self : UsageService, stream : Bool) -> Unit 
 }
 
 ///|
+fn UsageService::record_provider_result(
+  self : UsageService,
+  proxy : ProxyService,
+  success : Bool,
+) -> Unit {
+  guard self.provider_request_context() is Some(context) else { return }
+  proxy.provider_router.record_result(
+    context.provider_id,
+    context.app_type,
+    context.used_half_open_permit,
+    success,
+  )
+}
+
+///|
+fn UsageService::release_provider_permit_neutral(
+  self : UsageService,
+  proxy : ProxyService,
+) -> Unit {
+  guard self.provider_request_context() is Some(context) else { return }
+  proxy.provider_router.release_permit_neutral(
+    context.provider_id,
+    context.app_type,
+    context.used_half_open_permit,
+  )
+}
+
+///|
+async fn UsageService::record_success_usage_with_provider(
+  self : UsageService,
+  proxy : ProxyService,
+  usage : TokenUsage,
+  response_bytes : Int,
+) -> Unit {
+  self.record_provider_result(proxy, true)
+  self.record_success_usage(usage, response_bytes, self.pricing_override_rows())
+}
+
+///|
+async fn UsageService::record_success_stream_usage_with_provider(
+  self : UsageService,
+  proxy : ProxyService,
+  usage : TokenUsage?,
+  response_bytes : Int,
+  record_provider? : Bool = true,
+  first_token_ms? : Int? = None,
+  skip_empty_usage? : Bool = false,
+) -> Unit {
+  if record_provider {
+    self.record_provider_result(proxy, true)
+  }
+  self.record_success_stream_usage(
+    usage,
+    response_bytes,
+    self.pricing_override_rows(),
+    first_token_ms~,
+    skip_empty_usage~,
+  )
+}
+
+///|
 async fn UsageService::record_success_usage(
   self : UsageService,
   usage : TokenUsage,
@@ -408,9 +434,27 @@ async fn UsageService::record_bad_request(self : UsageService) -> Unit {
 }
 
 ///|
+async fn UsageService::record_bad_request_with_provider(
+  self : UsageService,
+  proxy : ProxyService,
+) -> Unit {
+  self.release_provider_permit_neutral(proxy)
+  self.record_bad_request()
+}
+
+///|
 async fn UsageService::record_unauthorized(self : UsageService) -> Unit {
   self.stats.record_unauthorized()
   self.stats.save_persistent_store()
+}
+
+///|
+async fn UsageService::record_unauthorized_with_provider(
+  self : UsageService,
+  proxy : ProxyService,
+) -> Unit {
+  self.release_provider_permit_neutral(proxy)
+  self.record_unauthorized()
 }
 
 ///|
@@ -424,9 +468,33 @@ async fn UsageService::record_upstream_error_status(
 }
 
 ///|
+async fn UsageService::record_upstream_error_status_with_provider(
+  self : UsageService,
+  proxy : ProxyService,
+  response_bytes : Int,
+  status_code : Int,
+) -> Unit {
+  if moon_upstream_status_retryable(status_code) {
+    self.record_provider_result(proxy, false)
+  } else {
+    self.release_provider_permit_neutral(proxy)
+  }
+  self.record_upstream_error_status(response_bytes, status_code)
+}
+
+///|
 async fn UsageService::record_internal_error(self : UsageService) -> Unit {
   self.stats.record_internal_error()
   self.stats.save_persistent_store()
+}
+
+///|
+async fn UsageService::record_internal_error_with_provider(
+  self : UsageService,
+  proxy : ProxyService,
+) -> Unit {
+  self.release_provider_permit_neutral(proxy)
+  self.record_internal_error()
 }
 
 ///|

@@ -2086,6 +2086,32 @@ async test "auth endpoints are owned by auth service" {
 }
 
 ///|
+async test "usage accounting is owned by usage service" {
+  let usage_source = @fsx.read_file("gateway_usage.mbt")
+  let auth_source = @fsx.read_file("gateway_auth.mbt")
+  let misc_source = @fsx.read_file("gateway_misc.mbt")
+  let provider_source = @fsx.read_file("gateway_provider.mbt")
+  let old_gateway_sources = auth_source + misc_source + provider_source
+  for
+    helper in [
+      "record_success_usage_with_provider", "record_success_stream_usage_with_provider",
+      "record_bad_request_with_provider", "record_unauthorized_with_provider", "record_upstream_error_status_with_provider",
+      "record_internal_error_with_provider", "record_provider_result", "release_provider_permit_neutral",
+    ] {
+    assert_true(usage_source.contains("UsageService::\{helper}("))
+    assert_false(old_gateway_sources.contains("Gateway::\{helper}("))
+  }
+  for
+    helper in [
+      "record_success_usage", "record_success_stream_usage", "record_bad_request",
+      "record_unauthorized", "record_upstream_error_status", "record_internal_error",
+      "record_provider_result", "release_provider_permit_neutral",
+    ] {
+    assert_false(old_gateway_sources.contains("Gateway::\{helper}("))
+  }
+}
+
+///|
 async test "copilot optimizer config endpoints are owned by config service" {
   let copilot_source = @fsx.read_file("gateway_copilot.mbt")
   let core_source = @fsx.read_file("gateway_core.mbt")
@@ -4077,7 +4103,7 @@ test "gateway records upstream failures into provider router before finish" {
     "gpt-5",
     provider_type=Some("codex"),
   )
-  gateway.record_provider_result(false)
+  gateway.usage.record_provider_result(gateway.proxy, false)
   gateway.usage.stats.record_upstream_error_status(0, 502)
   assert_eq(gateway.usage.stats.current_request_app_type, None)
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
@@ -4515,7 +4541,8 @@ async test "gateway applies ccs provider cost multiplier to request log" {
     ),
   )
   gateway.usage.stats.record_request_context("claude", "test-model")
-  gateway.record_success_usage(
+  gateway.usage.record_success_usage_with_provider(
+    gateway.proxy,
     TokenUsage::new(
       input_tokens=1000,
       output_tokens=0,
@@ -4567,7 +4594,8 @@ async test "gateway ignores invalid ccs provider cost multiplier" {
     ),
   )
   gateway.usage.stats.record_request_context("claude", "test-model")
-  gateway.record_success_usage(
+  gateway.usage.record_success_usage_with_provider(
+    gateway.proxy,
     TokenUsage::new(
       input_tokens=1000,
       output_tokens=0,
@@ -4623,7 +4651,8 @@ async test "gateway applies ccs request pricing model source" {
     ),
   )
   gateway.usage.stats.record_request_context("claude", "request-model")
-  gateway.record_success_usage(
+  gateway.usage.record_success_usage_with_provider(
+    gateway.proxy,
     TokenUsage::new(
       input_tokens=1000,
       output_tokens=0,
@@ -4650,7 +4679,8 @@ async test "gateway records billable ccs stream usage once" {
     provider_type=Some("codex"),
   )
   gateway.usage.stats.record_stream_mode(true)
-  gateway.record_success_stream_usage(
+  gateway.usage.record_success_stream_usage_with_provider(
+    gateway.proxy,
     Some(
       TokenUsage::new(
         input_tokens=10,
@@ -4689,7 +4719,11 @@ async test "gateway records all zero ccs stream usage request log" {
     provider_type=Some("codex"),
   )
   gateway.usage.stats.record_stream_mode(true)
-  gateway.record_success_stream_usage(Some(TokenUsage::empty()), 42)
+  gateway.usage.record_success_stream_usage_with_provider(
+    gateway.proxy,
+    Some(TokenUsage::empty()),
+    42,
+  )
   assert_eq(gateway.usage.stats.successful_responses, 1)
   assert_eq(gateway.usage.stats.response_bytes, 42)
   assert_eq(gateway.usage.stats.request_logs.length(), 1)
@@ -4713,7 +4747,8 @@ async test "gateway skips all zero ccs transformed stream usage log" {
     provider_type=Some("codex"),
   )
   gateway.usage.stats.record_stream_mode(true)
-  gateway.record_success_stream_usage(
+  gateway.usage.record_success_stream_usage_with_provider(
+    gateway.proxy,
     Some(TokenUsage::empty()),
     42,
     skip_empty_usage=true,
@@ -4735,7 +4770,11 @@ async test "gateway records all zero ccs nonstream usage request log" {
     provider_type=Some("codex"),
   )
   gateway.usage.stats.record_stream_mode(false)
-  gateway.record_success_usage(TokenUsage::empty(), 42)
+  gateway.usage.record_success_usage_with_provider(
+    gateway.proxy,
+    TokenUsage::empty(),
+    42,
+  )
   assert_eq(gateway.usage.stats.successful_responses, 1)
   assert_eq(gateway.usage.stats.response_bytes, 42)
   assert_eq(gateway.usage.stats.request_logs.length(), 1)
@@ -4790,7 +4829,7 @@ async test "gateway nonretryable upstream errors release half open permit" {
     "gpt-5",
     provider_type=Some("codex"),
   )
-  gateway.record_provider_result(false)
+  gateway.usage.record_provider_result(gateway.proxy, false)
   gateway.usage.stats.record_upstream_error_status(0, 502)
 
   gateway.usage.stats.record_inbound(10)
@@ -4801,7 +4840,11 @@ async test "gateway nonretryable upstream errors release half open permit" {
     "gpt-5",
     provider_type=Some("codex"),
   )
-  gateway.record_upstream_error_status(0, 400)
+  gateway.usage.record_upstream_error_status_with_provider(
+    gateway.proxy,
+    0,
+    400,
+  )
 
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
@@ -4840,7 +4883,7 @@ async test "gateway streaming success records provider health before request com
   guard selected is Some(provider) else { fail("expected provider") }
   assert_true(provider.provider_id == "codex-oauth")
 
-  gateway.record_provider_result(true)
+  gateway.usage.record_provider_result(gateway.proxy, true)
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
     )
@@ -4854,7 +4897,8 @@ async test "gateway streaming success records provider health before request com
     fail("request should remain open until stream end")
   }
 
-  gateway.record_success_stream_usage(
+  gateway.usage.record_success_stream_usage_with_provider(
+    gateway.proxy,
     None,
     24,
     record_provider=false,

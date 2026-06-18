@@ -114,7 +114,8 @@ async test "gateway completion records are persisted automatically" {
     session_id=Some("live-session"),
     provider_type=Some("codex"),
   )
-  gateway.record_success_usage(
+  gateway.usage.record_success_usage_with_provider(
+    gateway.proxy,
     TokenUsage::new(
       input_tokens=11,
       output_tokens=7,
@@ -133,7 +134,11 @@ async test "gateway completion records are persisted automatically" {
     "gemini-2.5-pro",
     provider_type=Some("gemini"),
   )
-  gateway.record_upstream_error_status(64, 502)
+  gateway.usage.record_upstream_error_status_with_provider(
+    gateway.proxy,
+    64,
+    502,
+  )
 
   let loaded = TrafficStats::new()
   loaded.load_persistent_store(storage_dir=dir)

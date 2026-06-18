@@ -113,32 +113,6 @@ pub fn Gateway::port(self : Gateway) -> Int {
 }
 
 ///|
-async fn Gateway::record_bad_request(self : Gateway) -> Unit {
-  self.release_provider_permit_neutral()
-  self.usage.record_bad_request()
-}
-
-///|
-async fn Gateway::record_upstream_error_status(
-  self : Gateway,
-  response_bytes : Int,
-  status_code : Int,
-) -> Unit {
-  if moon_upstream_status_retryable(status_code) {
-    self.record_provider_result(false)
-  } else {
-    self.release_provider_permit_neutral()
-  }
-  self.usage.record_upstream_error_status(response_bytes, status_code)
-}
-
-///|
-async fn Gateway::record_internal_error(self : Gateway) -> Unit {
-  self.release_provider_permit_neutral()
-  self.usage.record_internal_error()
-}
-
-///|
 fn moon_first_stream_event_ms(current : Int?, started_at_ms : Int?) -> Int? {
   match current {
     Some(_) => current
@@ -175,7 +149,7 @@ async fn Gateway::handle_codex_responses(
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
-      self.record_bad_request()
+      self.usage.record_bad_request_with_provider(self.proxy)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write(
@@ -235,7 +209,7 @@ async fn Gateway::handle_chat_completions(
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
-      self.record_bad_request()
+      self.usage.record_bad_request_with_provider(self.proxy)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write(
@@ -265,7 +239,7 @@ async fn Gateway::handle_chat_completions(
       )
       let request = openai_chat_to_codex_response_request(json, self.model)
       guard request is Some(codex_request) else {
-        self.record_bad_request()
+        self.usage.record_bad_request_with_provider(self.proxy)
         w.header().set("Content-Type", "application/json")
         w.write_header(@status.BadRequest)
         w.write(
@@ -303,7 +277,7 @@ async fn Gateway::handle_gemini(
   } else {
     @json.parse(body_str) catch {
       _ => {
-        self.record_bad_request()
+        self.usage.record_bad_request_with_provider(self.proxy)
         w.header().set("Content-Type", "application/json")
         w.write_header(@status.BadRequest)
         w.write(
@@ -325,7 +299,7 @@ async fn Gateway::handle_gemini(
   let url = match gemini_proxy_url(endpoint) {
     Some(url) => url
     None => {
-      self.record_unauthorized()
+      self.usage.record_unauthorized_with_provider(self.proxy)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.Unauthorized)
       w.write(
@@ -339,7 +313,7 @@ async fn Gateway::handle_gemini(
     @httpx.Method::Get => self.forward_gemini_get(url, w)
     @httpx.Method::Post => self.forward_gemini_post(url, request_json, w)
     _ => {
-      self.record_bad_request()
+      self.usage.record_bad_request_with_provider(self.proxy)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.MethodNotAllowed)
       w.write(
@@ -359,7 +333,11 @@ async fn Gateway::forward_gemini_get(
   let result = try? @http.get(url)
   match result {
     Err(error) => {
-      self.record_upstream_error_status(0, @status.BadGateway)
+      self.usage.record_upstream_error_status_with_provider(
+        self.proxy,
+        0,
+        @status.BadGateway,
+      )
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(
@@ -369,9 +347,17 @@ async fn Gateway::forward_gemini_get(
     Ok((response, data)) => {
       let response_body = data.text()
       if response.code is (200..=299) {
-        self.record_success_usage(TokenUsage::empty(), response_body.length())
+        self.usage.record_success_usage_with_provider(
+          self.proxy,
+          TokenUsage::empty(),
+          response_body.length(),
+        )
       } else {
-        self.record_upstream_error_status(response_body.length(), response.code)
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
+          response_body.length(),
+          response.code,
+        )
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -393,7 +379,11 @@ async fn Gateway::forward_gemini_post(
   })
   match result {
     Err(error) => {
-      self.record_upstream_error_status(0, @status.BadGateway)
+      self.usage.record_upstream_error_status_with_provider(
+        self.proxy,
+        0,
+        @status.BadGateway,
+      )
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(
@@ -409,9 +399,17 @@ async fn Gateway::forward_gemini_post(
           parsed,
           ["modelVersion"],
         )
-        self.record_success_usage(usage, response_body.length())
+        self.usage.record_success_usage_with_provider(
+          self.proxy,
+          usage,
+          response_body.length(),
+        )
       } else {
-        self.record_upstream_error_status(response_body.length(), response.code)
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
+          response_body.length(),
+          response.code,
+        )
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -470,7 +468,8 @@ async fn Gateway::forward_non_streaming_chat_completion(
                 @status.BadGateway,
               )
             } else {
-              self.record_upstream_error_status(
+              self.usage.record_upstream_error_status_with_provider(
+                self.proxy,
                 error_body.length(),
                 @status.BadGateway,
               )
@@ -484,7 +483,7 @@ async fn Gateway::forward_non_streaming_chat_completion(
         }
       _ => {
         guard self.auth.credentials is Some(creds) else {
-          self.record_unauthorized()
+          self.usage.record_unauthorized_with_provider(self.proxy)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Unauthorized)
           w.write(
@@ -518,13 +517,17 @@ async fn Gateway::forward_non_streaming_chat_completion(
             json, response_model,
           )
           let chat_response_body = chat_response.stringify()
-          self.record_success_usage(usage, chat_response_body.length())
+          self.usage.record_success_usage_with_provider(
+            self.proxy,
+            usage,
+            chat_response_body.length(),
+          )
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Ok)
           w.write(chat_response_body)
         }
         Err(_) => {
-          self.record_internal_error()
+          self.usage.record_internal_error_with_provider(self.proxy)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.InternalServerError)
           w.write(
@@ -550,7 +553,11 @@ async fn Gateway::forward_non_streaming_chat_completion(
         response.code,
       )
     } else {
-      self.record_upstream_error_status(response_body.length(), response.code)
+      self.usage.record_upstream_error_status_with_provider(
+        self.proxy,
+        response_body.length(),
+        response.code,
+      )
     }
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
@@ -622,7 +629,8 @@ async fn Gateway::forward_streaming_chat_completion(
                 @status.BadGateway,
               )
             } else {
-              self.record_upstream_error_status(
+              self.usage.record_upstream_error_status_with_provider(
+                self.proxy,
                 error_body.length(),
                 @status.BadGateway,
               )
@@ -637,7 +645,7 @@ async fn Gateway::forward_streaming_chat_completion(
       }
       _ => {
         guard self.auth.credentials is Some(creds) else {
-          self.record_unauthorized()
+          self.usage.record_unauthorized_with_provider(self.proxy)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Unauthorized)
           w.write(
@@ -673,7 +681,11 @@ async fn Gateway::forward_streaming_chat_completion(
           response.code,
         )
       } else {
-        self.record_upstream_error_status(error_body.length(), response.code)
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
+          error_body.length(),
+          response.code,
+        )
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -700,7 +712,8 @@ async fn Gateway::forward_streaming_chat_completion(
             @status.BadGateway,
           )
         } else {
-          self.record_upstream_error_status(
+          self.usage.record_upstream_error_status_with_provider(
+            self.proxy,
             error_body.length(),
             @status.BadGateway,
           )
@@ -725,7 +738,7 @@ async fn Gateway::forward_streaming_chat_completion(
           )
           w.flush()
         }
-        self.record_provider_result(true)
+        self.usage.record_provider_result(self.proxy, true)
         let mut response_bytes = 0
         let mut first_token_ms : Int? = None
         if first_line is [.. "data: ", .. rest] {
@@ -793,7 +806,8 @@ async fn Gateway::forward_streaming_chat_completion(
         ignore(
           self.session.codex_chat_history.record_stream_events(stream_events),
         )
-        self.record_success_stream_usage(
+        self.usage.record_success_stream_usage_with_provider(
+          self.proxy,
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
           record_provider=false,
@@ -888,7 +902,8 @@ async fn Gateway::forward_non_streaming_codex_response(
                 @status.BadGateway,
               )
             } else {
-              self.record_upstream_error_status(
+              self.usage.record_upstream_error_status_with_provider(
+                self.proxy,
                 error_body.length(),
                 @status.BadGateway,
               )
@@ -903,7 +918,7 @@ async fn Gateway::forward_non_streaming_codex_response(
       }
       _ => {
         guard self.auth.credentials is Some(creds) else {
-          self.record_unauthorized()
+          self.usage.record_unauthorized_with_provider(self.proxy)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Unauthorized)
           w.write(
@@ -936,7 +951,11 @@ async fn Gateway::forward_non_streaming_codex_response(
         }
         Err(_) => TokenUsage::empty()
       }
-      self.record_success_usage(usage, response_body.length())
+      self.usage.record_success_usage_with_provider(
+        self.proxy,
+        usage,
+        response_body.length(),
+      )
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.Ok)
       w.write(response_body)
@@ -958,7 +977,11 @@ async fn Gateway::forward_non_streaming_codex_response(
         response.code,
       )
     } else {
-      self.record_upstream_error_status(response_body.length(), response.code)
+      self.usage.record_upstream_error_status_with_provider(
+        self.proxy,
+        response_body.length(),
+        response.code,
+      )
     }
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
@@ -1038,7 +1061,8 @@ async fn Gateway::forward_streaming_codex_response(
                 @status.BadGateway,
               )
             } else {
-              self.record_upstream_error_status(
+              self.usage.record_upstream_error_status_with_provider(
+                self.proxy,
                 error_body.length(),
                 @status.BadGateway,
               )
@@ -1053,7 +1077,7 @@ async fn Gateway::forward_streaming_codex_response(
       }
       _ => {
         guard self.auth.credentials is Some(creds) else {
-          self.record_unauthorized()
+          self.usage.record_unauthorized_with_provider(self.proxy)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Unauthorized)
           w.write(
@@ -1089,7 +1113,11 @@ async fn Gateway::forward_streaming_codex_response(
           response.code,
         )
       } else {
-        self.record_upstream_error_status(error_body.length(), response.code)
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
+          error_body.length(),
+          response.code,
+        )
       }
       w.header().set("Content-Type", "application/json")
       w.write_header(response.code)
@@ -1116,7 +1144,8 @@ async fn Gateway::forward_streaming_codex_response(
             @status.BadGateway,
           )
         } else {
-          self.record_upstream_error_status(
+          self.usage.record_upstream_error_status_with_provider(
+            self.proxy,
             error_body.length(),
             @status.BadGateway,
           )
@@ -1169,7 +1198,7 @@ async fn Gateway::forward_streaming_codex_response(
           w.write("\n")
           w.flush()
         }
-        self.record_provider_result(true)
+        self.usage.record_provider_result(self.proxy, true)
         while client.read_until("\n") is Some(line) {
           if use_chat_bridge {
             guard line is [.. "data: ", .. rest] else { continue }
@@ -1213,7 +1242,8 @@ async fn Gateway::forward_streaming_codex_response(
         ignore(
           self.session.codex_chat_history.record_stream_events(stream_events),
         )
-        self.record_success_stream_usage(
+        self.usage.record_success_stream_usage_with_provider(
+          self.proxy,
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
           record_provider=false,
@@ -5277,7 +5307,7 @@ async fn Gateway::handle_messages(
   let json_result : Result[Json, Error] = try? @json.parse(body_str)
   match json_result {
     Err(_) => {
-      self.record_bad_request()
+      self.usage.record_bad_request_with_provider(self.proxy)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write("{\"error\":\"Invalid JSON\"}")
@@ -5301,7 +5331,7 @@ async fn Gateway::handle_messages(
       )
       match anthropic_request_result {
         Err(_) => {
-          self.record_bad_request()
+          self.usage.record_bad_request_with_provider(self.proxy)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.BadRequest)
           w.write("{\"error\":\"Invalid Anthropic request\"}")
@@ -5472,7 +5502,11 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           return
         }
       }
-      self.record_upstream_error_status(error_body.length(), @status.BadGateway)
+      self.usage.record_upstream_error_status_with_provider(
+        self.proxy,
+        error_body.length(),
+        @status.BadGateway,
+      )
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadGateway)
       w.write(error_body)
@@ -5550,7 +5584,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           ) {
           Ok(parsed) => parsed
           Err(message) => {
-            self.record_internal_error()
+            self.usage.record_internal_error_with_provider(self.proxy)
             w.header().set("Content-Type", "application/json")
             w.write_header(@status.InternalServerError)
             w.write(
@@ -5568,7 +5602,11 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         if api_format == "openai_responses" {
           ignore(self.session.codex_chat_history.record_response(parsed))
         }
-        self.record_success_usage(usage, final_response_body.length())
+        self.usage.record_success_usage_with_provider(
+          self.proxy,
+          usage,
+          final_response_body.length(),
+        )
         if api_format == "gemini_native" {
           self.gemini_shadow.record_gemini_response(
             provider.provider_id,
@@ -5610,7 +5648,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             return
           }
         }
-        self.record_upstream_error_status(
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
           final_response_body.length(),
           response_code,
         )
@@ -6624,7 +6663,7 @@ async fn Gateway::handle_non_streaming_request(
     _ => ()
   }
   guard self.auth.credentials is Some(creds) else {
-    self.record_unauthorized()
+    self.usage.record_unauthorized_with_provider(self.proxy)
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write("{\"error\":\"Not authenticated. Please login first.\"}")
@@ -6659,7 +6698,11 @@ async fn Gateway::handle_non_streaming_request(
         Err(_) => ()
       }
     }
-    self.record_upstream_error_status(error_body.length(), response.code)
+    self.usage.record_upstream_error_status_with_provider(
+      self.proxy,
+      error_body.length(),
+      response.code,
+    )
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write("{\"error\":\"Codex API error: \{response.code}\"}")
@@ -6678,14 +6721,18 @@ async fn Gateway::handle_non_streaming_request(
         json,
         ["model"],
       )
-      self.record_success_usage(usage, response_body.length())
+      self.usage.record_success_usage_with_provider(
+        self.proxy,
+        usage,
+        response_body.length(),
+      )
       let anthropic_response = convert_codex_to_anthropic(json, request.model)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.Ok)
       w.write(anthropic_response.to_json().stringify())
     }
     Err(_) => {
-      self.record_internal_error()
+      self.usage.record_internal_error_with_provider(self.proxy)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.InternalServerError)
       w.write("{\"error\":\"Failed to parse Codex response\"}")
@@ -6835,7 +6882,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             return
           }
         }
-        self.record_upstream_error_status(
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
           retry_error_body.length(),
           retry_response.code,
         )
@@ -6911,7 +6959,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             return
           }
         }
-        self.record_upstream_error_status(
+        self.usage.record_upstream_error_status_with_provider(
+          self.proxy,
           retry_error_body.length(),
           retry_response.code,
         )
@@ -6947,7 +6996,11 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         return
       }
     }
-    self.record_upstream_error_status(error_body.length(), response.code)
+    self.usage.record_upstream_error_status_with_provider(
+      self.proxy,
+      error_body.length(),
+      response.code,
+    )
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write(error_body)
@@ -6978,13 +7031,14 @@ async fn Gateway::forward_successful_claude_compatible_stream(
   w.header().set("Cache-Control", "no-cache")
   w.header().set("Connection", "keep-alive")
   w.write_header(@status.Ok)
-  self.record_provider_result(true)
+  self.usage.record_provider_result(self.proxy, true)
   let stream_events : Array[Json] = []
   if api_format == "openai_chat" {
     let first_token_ms = self.forward_openai_chat_sse_as_anthropic(
       client, stream_events, w,
     )
-    self.record_success_stream_usage(
+    self.usage.record_success_stream_usage_with_provider(
+      self.proxy,
       token_usage_from_openai_stream_events(stream_events),
       0,
       record_provider=false,
@@ -6995,7 +7049,8 @@ async fn Gateway::forward_successful_claude_compatible_stream(
     let first_token_ms = self.forward_gemini_native_sse_as_anthropic(
       client, stream_events, provider_id, session_id, w,
     )
-    self.record_success_stream_usage(
+    self.usage.record_success_stream_usage_with_provider(
+      self.proxy,
       token_usage_from_gemini_stream_chunks(stream_events),
       0,
       record_provider=false,
@@ -7012,7 +7067,8 @@ async fn Gateway::forward_successful_claude_compatible_stream(
       w.flush()
     }
     ignore(self.session.codex_chat_history.record_stream_events(reader.events))
-    self.record_success_stream_usage(
+    self.usage.record_success_stream_usage_with_provider(
+      self.proxy,
       token_usage_from_codex_stream_events_auto(reader.events),
       0,
       record_provider=false,
@@ -7023,7 +7079,8 @@ async fn Gateway::forward_successful_claude_compatible_stream(
     let first_token_ms = self.forward_anthropic_sse_passthrough(
       client, stream_events, w,
     )
-    self.record_success_stream_usage(
+    self.usage.record_success_stream_usage_with_provider(
+      self.proxy,
       token_usage_from_claude_stream_events(stream_events),
       0,
       record_provider=false,
@@ -8687,7 +8744,7 @@ async fn Gateway::handle_streaming_request(
     _ => ()
   }
   guard self.auth.credentials is Some(creds) else {
-    self.record_unauthorized()
+    self.usage.record_unauthorized_with_provider(self.proxy)
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write("{\"error\":\"Not authenticated. Please login first.\"}")
@@ -8722,7 +8779,11 @@ async fn Gateway::handle_streaming_request(
         Err(_) => ()
       }
     }
-    self.record_upstream_error_status(error_body.length(), response.code)
+    self.usage.record_upstream_error_status_with_provider(
+      self.proxy,
+      error_body.length(),
+      response.code,
+    )
     w.header().set("Content-Type", "application/json")
     w.write_header(response.code)
     w.write("{\"error\":\"Codex API error: \{response.code}\"}")
@@ -8734,7 +8795,7 @@ async fn Gateway::handle_streaming_request(
   w.header().set("Connection", "keep-alive")
   w.write_header(@status.Ok)
   let reader = CodexStreamReader::new(client, request.model)
-  self.record_provider_result(true)
+  self.usage.record_provider_result(self.proxy, true)
   let mut first_token_ms : Int? = None
   while reader.read() is Some(event) {
     first_token_ms = self.usage.first_stream_event_ms(first_token_ms)
@@ -8743,7 +8804,8 @@ async fn Gateway::handle_streaming_request(
     w.flush()
   }
   ignore(self.session.codex_chat_history.record_stream_events(reader.events))
-  self.record_success_stream_usage(
+  self.usage.record_success_stream_usage_with_provider(
+    self.proxy,
     token_usage_from_codex_stream_events_auto(reader.events),
     0,
     record_provider=false,

@@ -152,27 +152,6 @@ fn Gateway::activate_provider_target(
 }
 
 ///|
-fn Gateway::record_provider_result(self : Gateway, success : Bool) -> Unit {
-  guard self.usage.provider_request_context() is Some(context) else { return }
-  self.proxy.provider_router.record_result(
-    context.provider_id,
-    context.app_type,
-    context.used_half_open_permit,
-    success,
-  )
-}
-
-///|
-fn Gateway::release_provider_permit_neutral(self : Gateway) -> Unit {
-  guard self.usage.provider_request_context() is Some(context) else { return }
-  self.proxy.provider_router.release_permit_neutral(
-    context.provider_id,
-    context.app_type,
-    context.used_half_open_permit,
-  )
-}
-
-///|
 fn Gateway::activate_next_provider_after_upstream_status(
   self : Gateway,
   app_type : String,
@@ -263,7 +242,11 @@ async fn Gateway::write_provider_selection_error(
 ) -> Unit {
   let status_code = provider_selection_error_status(error)
   let body = provider_selection_error_json(error, app_type).stringify()
-  self.record_upstream_error_status(body.length(), status_code)
+  self.usage.record_upstream_error_status_with_provider(
+    self.proxy,
+    body.length(),
+    status_code,
+  )
   self.usage.set_last_error(error.to_string())
   w.header().set("Content-Type", "application/json")
   w.write_header(status_code)

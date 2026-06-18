@@ -1,10 +1,4 @@
 ///|
-async fn Gateway::record_unauthorized(self : Gateway) -> Unit {
-  self.release_provider_permit_neutral()
-  self.usage.record_unauthorized()
-}
-
-///|
 fn gemini_cli_bearer_token(api_key : String) -> String {
   let trimmed = api_key.trim()
   if trimmed.has_prefix("{") {
@@ -454,7 +448,7 @@ async fn Gateway::validate_claude_desktop_gateway_auth(
       if claude_desktop_authorization_valid(r.headers, expected) {
         true
       } else {
-        self.record_unauthorized()
+        self.usage.record_unauthorized_with_provider(self.proxy)
         write_auth_error(w, "Claude Desktop gateway token invalid or missing")
         false
       }
