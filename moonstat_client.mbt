@@ -24,6 +24,26 @@ pub fn MoonstatUsageQuery::empty() -> MoonstatUsageQuery {
 }
 
 ///|
+pub struct MoonstatSessionSyncQuery {
+  projects_dir : String?
+  codex_dir : String?
+  gemini_dir : String?
+  opencode_export_path : String?
+  opencode_db_path : String?
+}
+
+///|
+pub fn MoonstatSessionSyncQuery::empty() -> MoonstatSessionSyncQuery {
+  {
+    projects_dir: None,
+    codex_dir: None,
+    gemini_dir: None,
+    opencode_export_path: None,
+    opencode_db_path: None,
+  }
+}
+
+///|
 pub struct MoonstatClient {
   base_url : String
   api_key : String?
@@ -197,6 +217,28 @@ pub fn MoonstatClient::usage_model_pricing_url(self : MoonstatClient) -> String 
 }
 
 ///|
+pub fn MoonstatClient::usage_delete_model_pricing_url(
+  self : MoonstatClient,
+  model_id : String,
+) -> String {
+  self.endpoint(
+    "/delete_model_pricing?\{moonstat_client_query_pair("modelId", model_id)}",
+  )
+}
+
+///|
+pub fn MoonstatClient::usage_sync_session_url(
+  self : MoonstatClient,
+  query? : MoonstatSessionSyncQuery? = None,
+) -> String {
+  moonstat_client_url_with_session_sync_query(
+    self.base_url,
+    "/usage/sync-session",
+    query,
+  )
+}
+
+///|
 pub fn MoonstatClient::usage_request_detail_url(
   self : MoonstatClient,
   request_id : String,
@@ -324,6 +366,36 @@ pub async fn MoonstatClient::usage_model_pricing(
   self : MoonstatClient,
 ) -> Result[Json, String] {
   self.get_json_path("/usage/model-pricing")
+}
+
+///|
+pub async fn MoonstatClient::usage_update_model_pricing(
+  self : MoonstatClient,
+  pricing : ModelPricing,
+) -> Result[Json, String] {
+  self.post_json_path("/usage/model-pricing", pricing.to_json())
+}
+
+///|
+pub async fn MoonstatClient::usage_delete_model_pricing(
+  self : MoonstatClient,
+  model_id : String,
+) -> Result[Json, String] {
+  self.post_json_path(
+    "/delete_model_pricing",
+    { "modelId": Json::string(model_id) }.to_json(),
+  )
+}
+
+///|
+pub async fn MoonstatClient::usage_sync_session(
+  self : MoonstatClient,
+  query? : MoonstatSessionSyncQuery? = None,
+) -> Result[Json, String] {
+  self.post_json_path(
+    moonstat_client_session_sync_path_with_query("/usage/sync-session", query),
+    Json::null(),
+  )
 }
 
 ///|
@@ -480,11 +552,34 @@ fn moonstat_client_url_with_query(
 }
 
 ///|
+fn moonstat_client_url_with_session_sync_query(
+  base_url : String,
+  path : String,
+  query : MoonstatSessionSyncQuery?,
+) -> String {
+  moonstat_client_url(
+    base_url,
+    moonstat_client_session_sync_path_with_query(path, query),
+  )
+}
+
+///|
 fn moonstat_client_path_with_query(
   path : String,
   query : MoonstatUsageQuery?,
 ) -> String {
   match moonstat_usage_query_string(query) {
+    Some(query_string) => "\{path}?\{query_string}"
+    None => path
+  }
+}
+
+///|
+fn moonstat_client_session_sync_path_with_query(
+  path : String,
+  query : MoonstatSessionSyncQuery?,
+) -> String {
+  match moonstat_session_sync_query_string(query) {
     Some(query_string) => "\{path}?\{query_string}"
     None => path
   }
@@ -522,6 +617,44 @@ fn moonstat_usage_query_string(query : MoonstatUsageQuery?) -> String? {
     Some(value) =>
       parts.push(moonstat_client_query_pair("pageSize", "\{value}"))
     None => ()
+  }
+  if parts.is_empty() {
+    None
+  } else {
+    Some(parts.join("&"))
+  }
+}
+
+///|
+fn moonstat_session_sync_query_string(
+  query : MoonstatSessionSyncQuery?,
+) -> String? {
+  guard query is Some(query) else { return None }
+  let parts : Array[String] = []
+  match query.projects_dir {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("projectsDir", value))
+    _ => ()
+  }
+  match query.codex_dir {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("codexDir", value))
+    _ => ()
+  }
+  match query.gemini_dir {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("geminiDir", value))
+    _ => ()
+  }
+  match query.opencode_export_path {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("opencodeExportPath", value))
+    _ => ()
+  }
+  match query.opencode_db_path {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("opencodeDbPath", value))
+    _ => ()
   }
   if parts.is_empty() {
     None

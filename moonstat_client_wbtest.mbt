@@ -71,6 +71,10 @@ test "moonstat client builds required endpoint parameters" {
     client.usage_request_detail_url("req/a b"),
     "http://127.0.0.1:4199/usage/request-detail/req%2Fa%20b",
   )
+  assert_eq(
+    client.usage_delete_model_pricing_url("model/a b"),
+    "http://127.0.0.1:4199/delete_model_pricing?modelId=model%2Fa%20b",
+  )
 }
 
 ///|
@@ -92,6 +96,26 @@ test "moonstat client omits empty usage query values" {
   assert_eq(
     client.usage_logs_url(query=Some(MoonstatUsageQuery::empty())),
     "http://127.0.0.1:15721/usage/logs",
+  )
+}
+
+///|
+test "moonstat client builds session sync URLs" {
+  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
+  let query = {
+    projects_dir: Some("/tmp/Claude Projects"),
+    codex_dir: Some(""),
+    gemini_dir: Some("  "),
+    opencode_export_path: Some("/tmp/open code.jsonl"),
+    opencode_db_path: Some("/tmp/opencode.db"),
+  }
+  assert_eq(
+    client.usage_sync_session_url(query=Some(query)),
+    "http://127.0.0.1:4199/usage/sync-session?projectsDir=%2Ftmp%2FClaude%20Projects&opencodeExportPath=%2Ftmp%2Fopen%20code.jsonl&opencodeDbPath=%2Ftmp%2Fopencode.db",
+  )
+  assert_eq(
+    client.usage_sync_session_url(query=Some(MoonstatSessionSyncQuery::empty())),
+    "http://127.0.0.1:4199/usage/sync-session",
   )
 }
 

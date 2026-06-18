@@ -481,6 +481,8 @@ pub async fn MoonstatClient::status(Self) -> Result[Json, String]
 pub fn MoonstatClient::status_url(Self) -> String
 pub async fn MoonstatClient::usage_data_sources(Self) -> Result[Json, String]
 pub fn MoonstatClient::usage_data_sources_url(Self) -> String
+pub async fn MoonstatClient::usage_delete_model_pricing(Self, String) -> Result[Json, String]
+pub fn MoonstatClient::usage_delete_model_pricing_url(Self, String) -> String
 pub async fn MoonstatClient::usage_logs(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
 pub fn MoonstatClient::usage_logs_url(Self, query? : MoonstatUsageQuery?) -> String
 pub async fn MoonstatClient::usage_model_pricing(Self) -> Result[Json, String]
@@ -497,8 +499,20 @@ pub async fn MoonstatClient::usage_summary(Self, query? : MoonstatUsageQuery?) -
 pub async fn MoonstatClient::usage_summary_by_app(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
 pub fn MoonstatClient::usage_summary_by_app_url(Self, query? : MoonstatUsageQuery?) -> String
 pub fn MoonstatClient::usage_summary_url(Self, query? : MoonstatUsageQuery?) -> String
+pub async fn MoonstatClient::usage_sync_session(Self, query? : MoonstatSessionSyncQuery?) -> Result[Json, String]
+pub fn MoonstatClient::usage_sync_session_url(Self, query? : MoonstatSessionSyncQuery?) -> String
 pub async fn MoonstatClient::usage_trends(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
 pub fn MoonstatClient::usage_trends_url(Self, query? : MoonstatUsageQuery?) -> String
+pub async fn MoonstatClient::usage_update_model_pricing(Self, ModelPricing) -> Result[Json, String]
+
+pub struct MoonstatSessionSyncQuery {
+  projects_dir : String?
+  codex_dir : String?
+  gemini_dir : String?
+  opencode_export_path : String?
+  opencode_db_path : String?
+}
+pub fn MoonstatSessionSyncQuery::empty() -> Self
 
 pub struct MoonstatUsageQuery {
   start_date : String?
