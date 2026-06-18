@@ -3118,42 +3118,42 @@ async fn RuntimeService::handle_probe_tool_installations(
 }
 
 ///|
-async fn Gateway::handle_set_window_theme(
-  self : Gateway,
+async fn ConfigService::handle_set_window_theme(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  self.config.window_theme = proxy_string_request(r.path, body, ["theme"]).unwrap_or(
+  self.window_theme = proxy_string_request(r.path, body, ["theme"]).unwrap_or(
     "system",
   )
   write_usage_json(w, Json::null())
 }
 
 ///|
-async fn Gateway::handle_enter_lightweight_mode(
-  self : Gateway,
+async fn ConfigService::handle_enter_lightweight_mode(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.config.lightweight_mode = true
+  self.lightweight_mode = true
   write_usage_json(w, Json::null())
 }
 
 ///|
-async fn Gateway::handle_exit_lightweight_mode(
-  self : Gateway,
+async fn ConfigService::handle_exit_lightweight_mode(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.config.lightweight_mode = false
+  self.lightweight_mode = false
   write_usage_json(w, Json::null())
 }
 
 ///|
-async fn Gateway::handle_is_lightweight_mode(
-  self : Gateway,
+async fn ConfigService::handle_is_lightweight_mode(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, Json::boolean(self.config.lightweight_mode))
+  write_usage_json(w, Json::boolean(self.lightweight_mode))
 }
 
 ///|
@@ -3707,8 +3707,8 @@ async fn Gateway::handle_install_update_and_restart(
 }
 
 ///|
-async fn Gateway::handle_set_auto_launch(
-  self : Gateway,
+async fn ConfigService::handle_set_auto_launch(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3717,9 +3717,9 @@ async fn Gateway::handle_set_auto_launch(
     write_usage_bad_request(w, "invalid_auto_launch")
     return
   }
-  self.config.auto_launch_enabled = enabled
-  self.config.app_settings = moon_settings_with_bool(
-    self.config.app_settings,
+  self.auto_launch_enabled = enabled
+  self.app_settings = moon_settings_with_bool(
+    self.app_settings,
     "launchOnStartup",
     enabled,
   )
@@ -3727,16 +3727,16 @@ async fn Gateway::handle_set_auto_launch(
 }
 
 ///|
-async fn Gateway::handle_get_auto_launch_status(
-  self : Gateway,
+async fn ConfigService::handle_get_auto_launch_status(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, Json::boolean(self.config.auto_launch_enabled))
+  write_usage_json(w, Json::boolean(self.auto_launch_enabled))
 }
 
 ///|
-async fn Gateway::handle_check_env_conflicts(
-  self : Gateway,
+async fn ConfigService::handle_check_env_conflicts(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3747,8 +3747,8 @@ async fn Gateway::handle_check_env_conflicts(
 }
 
 ///|
-async fn Gateway::handle_delete_env_vars(
-  self : Gateway,
+async fn ConfigService::handle_delete_env_vars(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3761,8 +3761,8 @@ async fn Gateway::handle_delete_env_vars(
 }
 
 ///|
-async fn Gateway::handle_get_claude_mcp_status(
-  self : Gateway,
+async fn ConfigService::handle_get_claude_mcp_status(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(
@@ -3774,23 +3774,21 @@ async fn Gateway::handle_get_claude_mcp_status(
       "userConfigExists": Json::boolean(
         @fsx.exists_as_file(@pathx.join(moon_home_dir(), ".claude.json")),
       ),
-      "serverCount": Json::number(self.config.mcp_servers.length().to_double()),
+      "serverCount": Json::number(self.mcp_servers.length().to_double()),
     }.to_json(),
   )
 }
 
 ///|
-async fn Gateway::handle_upsert_claude_mcp_server(
-  self : Gateway,
+async fn ConfigService::handle_upsert_claude_mcp_server(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   match moon_mcp_server_from_request(r.path, body, "claude") {
     Some((id, server)) => {
-      self.config.mcp_servers[id] = moon_mcp_server_with_app(
-        server, "claude", true,
-      )
+      self.mcp_servers[id] = moon_mcp_server_with_app(server, "claude", true)
       write_usage_json(w, Json::boolean(true))
     }
     None => write_usage_json(w, Json::boolean(false))
@@ -3798,16 +3796,16 @@ async fn Gateway::handle_upsert_claude_mcp_server(
 }
 
 ///|
-async fn Gateway::handle_delete_mcp_server(
-  self : Gateway,
+async fn ConfigService::handle_delete_mcp_server(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   match proxy_string_request(r.path, body, ["id", "serverId", "server_id"]) {
     Some(id) => {
-      let existed = self.config.mcp_servers.get(id) is Some(_)
-      self.config.mcp_servers.remove(id)
+      let existed = self.mcp_servers.get(id) is Some(_)
+      self.mcp_servers.remove(id)
       write_usage_json(w, Json::boolean(existed))
     }
     None => write_usage_json(w, Json::boolean(false))
@@ -3815,8 +3813,8 @@ async fn Gateway::handle_delete_mcp_server(
 }
 
 ///|
-async fn Gateway::handle_validate_mcp_command(
-  self : Gateway,
+async fn ConfigService::handle_validate_mcp_command(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3829,8 +3827,8 @@ async fn Gateway::handle_validate_mcp_command(
 }
 
 ///|
-async fn Gateway::handle_set_mcp_enabled(
-  self : Gateway,
+async fn ConfigService::handle_set_mcp_enabled(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3839,11 +3837,9 @@ async fn Gateway::handle_set_mcp_enabled(
   let enabled = proxy_bool_request(r.path, body, ["enabled"]).unwrap_or(true)
   match proxy_string_request(r.path, body, ["id", "serverId", "server_id"]) {
     Some(id) =>
-      match self.config.mcp_servers.get(id) {
+      match self.mcp_servers.get(id) {
         Some(server) => {
-          self.config.mcp_servers[id] = moon_mcp_server_with_app(
-            server, app, enabled,
-          )
+          self.mcp_servers[id] = moon_mcp_server_with_app(server, app, enabled)
           write_usage_json(w, Json::boolean(true))
         }
         None => write_usage_json(w, Json::boolean(false))
@@ -3853,26 +3849,23 @@ async fn Gateway::handle_set_mcp_enabled(
 }
 
 ///|
-async fn Gateway::handle_get_mcp_servers(
-  self : Gateway,
+async fn ConfigService::handle_get_mcp_servers(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(
-    w,
-    moon_mcp_servers_object_for_app(self.config.mcp_servers, None),
-  )
+  write_usage_json(w, moon_mcp_servers_object_for_app(self.mcp_servers, None))
 }
 
 ///|
-async fn Gateway::handle_upsert_mcp_server(
-  self : Gateway,
+async fn ConfigService::handle_upsert_mcp_server(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   match moon_mcp_server_from_request(r.path, body, "claude") {
     Some((id, server)) => {
-      self.config.mcp_servers[id] = server
+      self.mcp_servers[id] = server
       write_usage_json(w, Json::null())
     }
     None => write_usage_json(w, Json::null())
@@ -3880,8 +3873,8 @@ async fn Gateway::handle_upsert_mcp_server(
 }
 
 ///|
-async fn Gateway::handle_toggle_mcp_app(
-  self : Gateway,
+async fn ConfigService::handle_toggle_mcp_app(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3890,11 +3883,9 @@ async fn Gateway::handle_toggle_mcp_app(
   let enabled = proxy_bool_request(r.path, body, ["enabled"]).unwrap_or(true)
   match proxy_string_request(r.path, body, ["serverId", "server_id", "id"]) {
     Some(id) =>
-      match self.config.mcp_servers.get(id) {
+      match self.mcp_servers.get(id) {
         Some(server) => {
-          self.config.mcp_servers[id] = moon_mcp_server_with_app(
-            server, app, enabled,
-          )
+          self.mcp_servers[id] = moon_mcp_server_with_app(server, app, enabled)
           write_usage_json(w, Json::null())
         }
         None => write_usage_json(w, Json::null())
@@ -3904,58 +3895,58 @@ async fn Gateway::handle_toggle_mcp_app(
 }
 
 ///|
-async fn Gateway::handle_import_mcp_from_apps(
-  self : Gateway,
+async fn ConfigService::handle_import_mcp_from_apps(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let imported = moon_import_mcp_from_apps_count(self.config.mcp_servers)
+  let imported = moon_import_mcp_from_apps_count(self.mcp_servers)
   write_usage_json(w, Json::number(imported.to_double()))
 }
 
 ///|
-async fn Gateway::handle_get_prompts(
-  self : Gateway,
+async fn ConfigService::handle_get_prompts(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
-  write_usage_json(w, moon_prompts_object_for_app(self.config.prompts, app))
+  write_usage_json(w, moon_prompts_object_for_app(self.prompts, app))
 }
 
 ///|
-async fn Gateway::handle_upsert_prompt(
-  self : Gateway,
+async fn ConfigService::handle_upsert_prompt(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   match moon_prompt_from_request(r.path, body) {
     Some((app, id, prompt)) =>
-      self.config.prompts[moon_prompt_store_key(app, id)] = prompt
+      self.prompts[moon_prompt_store_key(app, id)] = prompt
     None => ()
   }
   write_usage_json(w, Json::null())
 }
 
 ///|
-async fn Gateway::handle_delete_prompt(
-  self : Gateway,
+async fn ConfigService::handle_delete_prompt(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
   match proxy_string_request(r.path, body, ["id", "promptId", "prompt_id"]) {
-    Some(id) => self.config.prompts.remove(moon_prompt_store_key(app, id))
+    Some(id) => self.prompts.remove(moon_prompt_store_key(app, id))
     None => ()
   }
   write_usage_json(w, Json::null())
 }
 
 ///|
-async fn Gateway::handle_enable_prompt(
-  self : Gateway,
+async fn ConfigService::handle_enable_prompt(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3965,8 +3956,7 @@ async fn Gateway::handle_enable_prompt(
     Some(id) =>
       match moon_prompt_file_path_from_request(r.path, body, app) {
         Ok(file_path) =>
-          match
-            moon_enable_prompt_json(self.config.prompts, app, id, file_path) {
+          match moon_enable_prompt_json(self.prompts, app, id, file_path) {
             Ok(result) => write_usage_json(w, result)
             Err(error) => write_usage_bad_request(w, error)
           }

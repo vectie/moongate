@@ -193,25 +193,25 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.runtime.handle_probe_tool_installations(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/set_window_theme", (r, w) => {
-    self.handle_set_window_theme(r, w)
+    self.config.handle_set_window_theme(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/set_window_theme", (r, w) => {
-    self.handle_set_window_theme(r, w)
+    self.config.handle_set_window_theme(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/enter_lightweight_mode", (_, w) => {
-    self.handle_enter_lightweight_mode(w)
+    self.config.handle_enter_lightweight_mode(w)
   })
   router.add_handler(@httpx.Method::Get, "/enter_lightweight_mode", (_, w) => {
-    self.handle_enter_lightweight_mode(w)
+    self.config.handle_enter_lightweight_mode(w)
   })
   router.add_handler(@httpx.Method::Post, "/exit_lightweight_mode", (_, w) => {
-    self.handle_exit_lightweight_mode(w)
+    self.config.handle_exit_lightweight_mode(w)
   })
   router.add_handler(@httpx.Method::Get, "/exit_lightweight_mode", (_, w) => {
-    self.handle_exit_lightweight_mode(w)
+    self.config.handle_exit_lightweight_mode(w)
   })
   router.add_handler(@httpx.Method::Get, "/is_lightweight_mode", (_, w) => {
-    self.handle_is_lightweight_mode(w)
+    self.config.handle_is_lightweight_mode(w)
   })
   router.add_handler(@httpx.Method::Post, "/save_file_dialog", (r, w) => {
     self.workspace.handle_save_file_dialog(r, w)
@@ -450,92 +450,92 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     w,
   ) => self.handle_extract_common_config_snippet(r, w))
   router.add_handler(@httpx.Method::Get, "/check_env_conflicts", (r, w) => {
-    self.handle_check_env_conflicts(r, w)
+    self.config.handle_check_env_conflicts(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/check_env_conflicts", (r, w) => {
-    self.handle_check_env_conflicts(r, w)
+    self.config.handle_check_env_conflicts(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_env_vars", (r, w) => {
-    self.handle_delete_env_vars(r, w)
+    self.config.handle_delete_env_vars(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/restore_env_backup", (r, w) => {
-    self.handle_restore_env_backup(r, w)
+    self.config.handle_restore_env_backup(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_mcp_status", (_, w) => {
-    self.handle_get_claude_mcp_status(w)
+    self.config.handle_get_claude_mcp_status(w)
   })
   router.add_handler(@httpx.Method::Get, "/read_claude_mcp_config", (_, w) => {
-    self.handle_read_claude_mcp_config(w)
+    self.config.handle_read_claude_mcp_config(w)
   })
   router.add_handler(@httpx.Method::Post, "/upsert_claude_mcp_server", (r, w) => {
-    self.handle_upsert_claude_mcp_server(r, w)
+    self.config.handle_upsert_claude_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_claude_mcp_server", (r, w) => {
-    self.handle_delete_mcp_server(r, w)
+    self.config.handle_delete_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Delete, "/delete_claude_mcp_server", (r, w) => {
-    self.handle_delete_mcp_server(r, w)
+    self.config.handle_delete_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/validate_mcp_command", (r, w) => {
-    self.handle_validate_mcp_command(r, w)
+    self.config.handle_validate_mcp_command(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/validate_mcp_command", (r, w) => {
-    self.handle_validate_mcp_command(r, w)
+    self.config.handle_validate_mcp_command(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_mcp_config", (r, w) => {
-    self.handle_get_mcp_config(r, w)
+    self.config.handle_get_mcp_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_mcp_config", (r, w) => {
-    self.handle_get_mcp_config(r, w)
+    self.config.handle_get_mcp_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/upsert_mcp_server_in_config", (r, w) => {
-    self.handle_upsert_mcp_server_in_config(r, w)
+    self.config.handle_upsert_mcp_server_in_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_mcp_server_in_config", (r, w) => {
-    self.handle_delete_mcp_server(r, w)
+    self.config.handle_delete_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Delete, "/delete_mcp_server_in_config", (
     r,
     w,
-  ) => self.handle_delete_mcp_server(r, w))
+  ) => self.config.handle_delete_mcp_server(r, w))
   router.add_handler(@httpx.Method::Post, "/set_mcp_enabled", (r, w) => {
-    self.handle_set_mcp_enabled(r, w)
+    self.config.handle_set_mcp_enabled(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_mcp_servers", (_, w) => {
-    self.handle_get_mcp_servers(w)
+    self.config.handle_get_mcp_servers(w)
   })
   router.add_handler(@httpx.Method::Post, "/upsert_mcp_server", (r, w) => {
-    self.handle_upsert_mcp_server(r, w)
+    self.config.handle_upsert_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_mcp_server", (r, w) => {
-    self.handle_delete_mcp_server(r, w)
+    self.config.handle_delete_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Delete, "/delete_mcp_server", (r, w) => {
-    self.handle_delete_mcp_server(r, w)
+    self.config.handle_delete_mcp_server(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/toggle_mcp_app", (r, w) => {
-    self.handle_toggle_mcp_app(r, w)
+    self.config.handle_toggle_mcp_app(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/import_mcp_from_apps", (_, w) => {
-    self.handle_import_mcp_from_apps(w)
+    self.config.handle_import_mcp_from_apps(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_prompts", (r, w) => {
-    self.handle_get_prompts(r, w)
+    self.config.handle_get_prompts(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_prompts", (r, w) => {
-    self.handle_get_prompts(r, w)
+    self.config.handle_get_prompts(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/upsert_prompt", (r, w) => {
-    self.handle_upsert_prompt(r, w)
+    self.config.handle_upsert_prompt(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_prompt", (r, w) => {
-    self.handle_delete_prompt(r, w)
+    self.config.handle_delete_prompt(r, w)
   })
   router.add_handler(@httpx.Method::Delete, "/delete_prompt", (r, w) => {
-    self.handle_delete_prompt(r, w)
+    self.config.handle_delete_prompt(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/enable_prompt", (r, w) => {
-    self.handle_enable_prompt(r, w)
+    self.config.handle_enable_prompt(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/import_prompt_from_file", (r, w) => {
     self.handle_import_prompt_from_file(r, w)
@@ -624,10 +624,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.config.handle_set_app_config_dir_override(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/set_auto_launch", (r, w) => {
-    self.handle_set_auto_launch(r, w)
+    self.config.handle_set_auto_launch(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_auto_launch_status", (_, w) => {
-    self.handle_get_auto_launch_status(w)
+    self.config.handle_get_auto_launch_status(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_rectifier_config", (_, w) => {
     self.config.handle_get_rectifier_config(w)

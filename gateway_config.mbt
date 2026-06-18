@@ -1208,8 +1208,8 @@ async fn Gateway::handle_extract_common_config_snippet(
 }
 
 ///|
-async fn Gateway::handle_restore_env_backup(
-  self : Gateway,
+async fn ConfigService::handle_restore_env_backup(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1225,19 +1225,19 @@ async fn Gateway::handle_restore_env_backup(
 }
 
 ///|
-async fn Gateway::handle_read_claude_mcp_config(
-  self : Gateway,
+async fn ConfigService::handle_read_claude_mcp_config(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  match moon_mcp_config_text(self.config.mcp_servers) {
+  match moon_mcp_config_text(self.mcp_servers) {
     Some(content) => write_usage_json(w, Json::string(content))
     None => write_usage_json(w, Json::null())
   }
 }
 
 ///|
-async fn Gateway::handle_get_mcp_config(
-  self : Gateway,
+async fn ConfigService::handle_get_mcp_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1247,17 +1247,14 @@ async fn Gateway::handle_get_mcp_config(
     w,
     {
       "configPath": Json::string(moon_app_config_path()),
-      "servers": moon_mcp_servers_object_for_app(
-        self.config.mcp_servers,
-        Some(app),
-      ),
+      "servers": moon_mcp_servers_object_for_app(self.mcp_servers, Some(app)),
     }.to_json(),
   )
 }
 
 ///|
-async fn Gateway::handle_upsert_mcp_server_in_config(
-  self : Gateway,
+async fn ConfigService::handle_upsert_mcp_server_in_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1277,7 +1274,7 @@ async fn Gateway::handle_upsert_mcp_server_in_config(
       } else {
         moon_mcp_server_with_app(server, app, true)
       }
-      self.config.mcp_servers[id] = next
+      self.mcp_servers[id] = next
       write_usage_json(w, Json::boolean(true))
     }
     None => write_usage_json(w, Json::boolean(false))
