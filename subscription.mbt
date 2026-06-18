@@ -1,23 +1,23 @@
 ///|
-const CCS_TIER_FIVE_HOUR = "five_hour"
+const MOON_QUOTA_TIER_FIVE_HOUR = "five_hour"
 
 ///|
-const CCS_TIER_SEVEN_DAY = "seven_day"
+const MOON_QUOTA_TIER_SEVEN_DAY = "seven_day"
 
 ///|
-const CCS_TIER_SEVEN_DAY_OPUS = "seven_day_opus"
+const MOON_QUOTA_TIER_SEVEN_DAY_OPUS = "seven_day_opus"
 
 ///|
-const CCS_TIER_SEVEN_DAY_SONNET = "seven_day_sonnet"
+const MOON_QUOTA_TIER_SEVEN_DAY_SONNET = "seven_day_sonnet"
 
 ///|
-const CCS_TIER_GEMINI_PRO = "gemini_pro"
+const MOON_QUOTA_TIER_GEMINI_PRO = "gemini_pro"
 
 ///|
-const CCS_TIER_GEMINI_FLASH = "gemini_flash"
+const MOON_QUOTA_TIER_GEMINI_FLASH = "gemini_flash"
 
 ///|
-const CCS_TIER_GEMINI_FLASH_LITE = "gemini_flash_lite"
+const MOON_QUOTA_TIER_GEMINI_FLASH_LITE = "gemini_flash_lite"
 
 ///|
 const MOONSTAT_CODEX_OAUTH_RELOGIN_MESSAGE = "Codex OAuth access token expired or rejected. Please re-login via moonstat."
@@ -856,10 +856,10 @@ fn moon_parse_claude_quota(body : Json) -> SubscriptionQuota {
   let tiers : Array[Json] = []
   for
     name in [
-      CCS_TIER_FIVE_HOUR,
-      CCS_TIER_SEVEN_DAY,
-      CCS_TIER_SEVEN_DAY_OPUS,
-      CCS_TIER_SEVEN_DAY_SONNET,
+      MOON_QUOTA_TIER_FIVE_HOUR,
+      MOON_QUOTA_TIER_SEVEN_DAY,
+      MOON_QUOTA_TIER_SEVEN_DAY_OPUS,
+      MOON_QUOTA_TIER_SEVEN_DAY_SONNET,
     ] {
     match obj.get(name) {
       Some(Object(window)) =>
@@ -872,10 +872,10 @@ fn moon_parse_claude_quota(body : Json) -> SubscriptionQuota {
   }
   for key, value in obj {
     if key == "extra_usage" ||
-      key == CCS_TIER_FIVE_HOUR ||
-      key == CCS_TIER_SEVEN_DAY ||
-      key == CCS_TIER_SEVEN_DAY_OPUS ||
-      key == CCS_TIER_SEVEN_DAY_SONNET {
+      key == MOON_QUOTA_TIER_FIVE_HOUR ||
+      key == MOON_QUOTA_TIER_SEVEN_DAY ||
+      key == MOON_QUOTA_TIER_SEVEN_DAY_OPUS ||
+      key == MOON_QUOTA_TIER_SEVEN_DAY_SONNET {
       continue
     }
     match value {
@@ -975,9 +975,9 @@ fn moon_parse_gemini_quota(body : Json) -> SubscriptionQuota {
   let tiers : Array[Json] = []
   for
     name in [
-      CCS_TIER_GEMINI_PRO,
-      CCS_TIER_GEMINI_FLASH,
-      CCS_TIER_GEMINI_FLASH_LITE,
+      MOON_QUOTA_TIER_GEMINI_PRO,
+      MOON_QUOTA_TIER_GEMINI_FLASH,
+      MOON_QUOTA_TIER_GEMINI_FLASH_LITE,
     ] {
     match categories.get(name) {
       Some(Object(row)) => tiers.push(moon_gemini_category_tier(name, row))
@@ -985,9 +985,9 @@ fn moon_parse_gemini_quota(body : Json) -> SubscriptionQuota {
     }
   }
   for name, row in categories {
-    if name == CCS_TIER_GEMINI_PRO ||
-      name == CCS_TIER_GEMINI_FLASH ||
-      name == CCS_TIER_GEMINI_FLASH_LITE {
+    if name == MOON_QUOTA_TIER_GEMINI_PRO ||
+      name == MOON_QUOTA_TIER_GEMINI_FLASH ||
+      name == MOON_QUOTA_TIER_GEMINI_FLASH_LITE {
       continue
     }
     match row {
@@ -1073,11 +1073,11 @@ fn moon_gemini_project_id(body : Json) -> String? {
 ///|
 fn moon_classify_gemini_model(model_id : String) -> String {
   if model_id.contains("flash-lite") {
-    CCS_TIER_GEMINI_FLASH_LITE
+    MOON_QUOTA_TIER_GEMINI_FLASH_LITE
   } else if model_id.contains("flash") {
-    CCS_TIER_GEMINI_FLASH
+    MOON_QUOTA_TIER_GEMINI_FLASH
   } else if model_id.contains("pro") {
-    CCS_TIER_GEMINI_PRO
+    MOON_QUOTA_TIER_GEMINI_PRO
   } else {
     model_id
   }

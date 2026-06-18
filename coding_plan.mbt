@@ -123,7 +123,7 @@ fn moon_parse_kimi_coding_plan(body : Json) -> SubscriptionQuota {
         let used = (limit - remaining).max(0.0)
         tiers.push(
           moon_quota_tier_json(
-            CCS_TIER_FIVE_HOUR,
+            MOON_QUOTA_TIER_FIVE_HOUR,
             if limit > 0.0 {
               used / limit * 100.0
             } else {
@@ -273,7 +273,7 @@ fn moon_parse_zhipu_token_tiers(data : Json) -> Array[Json] {
     Some(entry) =>
       tiers.push(
         moon_quota_tier_json(
-          CCS_TIER_FIVE_HOUR,
+          MOON_QUOTA_TIER_FIVE_HOUR,
           entry.percentage,
           resets_at=entry.resets_at,
         ),
@@ -402,7 +402,7 @@ fn moon_parse_minimax_tiers(body : Json) -> Array[Json] {
     Some(remain_pct) =>
       tiers.push(
         moon_quota_tier_json(
-          CCS_TIER_FIVE_HOUR,
+          MOON_QUOTA_TIER_FIVE_HOUR,
           100.0 - remain_pct,
           resets_at=match json_int64_from_map(item, "end_time") {
             Some(ms) => Some(@os.local_rfc3339(ms / 1000L))
@@ -471,7 +471,7 @@ fn moon_parse_zenmux_coding_plan(body : Json) -> SubscriptionQuota {
     Some(Object(row)) =>
       tiers.push(
         moon_quota_tier_json(
-          CCS_TIER_FIVE_HOUR,
+          MOON_QUOTA_TIER_FIVE_HOUR,
           moon_json_double_from_map(row, "usage_percentage").unwrap_or(0.0) *
           100.0,
           resets_at=json_string_from_map(row, "resets_at"),
