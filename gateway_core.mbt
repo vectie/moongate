@@ -545,13 +545,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_proxy_status(w)
   })
   router.add_handler(@httpx.Method::Post, "/start_proxy_server", (_, w) => {
-    self.handle_proxy_start_server(w)
+    self.proxy.handle_proxy_start_server(w, self.started_at_ms)
   })
   router.add_handler(@httpx.Method::Post, "/stop_proxy_server", (_, w) => {
-    self.handle_proxy_stop_server(w)
+    self.proxy.handle_proxy_stop_server(w)
   })
   router.add_handler(@httpx.Method::Post, "/stop_proxy_with_restore", (_, w) => {
-    self.handle_proxy_stop_with_restore(w)
+    self.proxy.handle_proxy_stop_with_restore(w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
     self.proxy.handle_proxy_config(
@@ -1084,10 +1084,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_update_endpoint_last_used(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/running", (_, w) => {
-    self.handle_proxy_running(w)
+    self.proxy.handle_proxy_running(w)
   })
   router.add_handler(@httpx.Method::Get, "/is_proxy_running", (_, w) => {
-    self.handle_proxy_running(w)
+    self.proxy.handle_proxy_running(w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/logs", (r, w) => {
     self.usage.handle_usage_logs(r, w, self.pricing_override_rows())

@@ -266,6 +266,51 @@ fn ProxyService::server_info_json(
 }
 
 ///|
+async fn ProxyService::handle_proxy_start_server(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+  started_at_ms : Int,
+) -> Unit {
+  self.proxy_enabled = true
+  write_usage_json(w, self.server_info_json(started_at_ms))
+}
+
+///|
+async fn ProxyService::handle_proxy_stop_server(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  if self.takeover_active() {
+    write_usage_bad_request(w, moon_stop_proxy_takeover_error())
+    return
+  }
+  self.proxy_enabled = false
+  write_usage_json(w, moon_unit_success_json())
+}
+
+///|
+async fn ProxyService::handle_proxy_stop_with_restore(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.proxy_enabled = false
+  self.clear_takeover()
+  self.clear_enabled_apps_for_manual_stop()
+  write_usage_json(w, moon_unit_success_json())
+}
+
+///|
+async fn ProxyService::handle_proxy_running(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(Json::boolean(self.proxy_enabled).stringify())
+  w.flush()
+}
+
+///|
 fn ProxyService::config_json(
   self : ProxyService,
   live_takeover_active? : Bool = false,
@@ -487,8 +532,7 @@ async fn Gateway::handle_proxy_start_server(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.proxy.proxy_enabled = true
-  write_usage_json(w, self.proxy_server_info_json())
+  self.proxy.handle_proxy_start_server(w, self.started_at_ms)
 }
 
 ///|
@@ -501,12 +545,7 @@ async fn Gateway::handle_proxy_stop_server(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  if self.proxy_takeover_active() {
-    write_usage_bad_request(w, moon_stop_proxy_takeover_error())
-    return
-  }
-  self.proxy.proxy_enabled = false
-  write_usage_json(w, moon_unit_success_json())
+  self.proxy.handle_proxy_stop_server(w)
 }
 
 ///|
@@ -519,10 +558,7 @@ async fn Gateway::handle_proxy_stop_with_restore(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.proxy.proxy_enabled = false
-  self.proxy_clear_takeover()
-  self.proxy_clear_enabled_apps_for_manual_stop()
-  write_usage_json(w, moon_unit_success_json())
+  self.proxy.handle_proxy_stop_with_restore(w)
 }
 
 ///|
@@ -1336,6 +1372,22 @@ fn ProxyService::takeover_active(self : ProxyService) -> Bool {
 }
 
 ///|
+fn ProxyService::clear_takeover(self : ProxyService) -> Unit {
+  for app_type in ["claude", "codex", "gemini", "opencode", "openclaw"] {
+    self.proxy_takeover_enabled.set(app_type, false)
+  }
+}
+
+///|
+fn ProxyService::clear_enabled_apps_for_manual_stop(
+  self : ProxyService,
+) -> Unit {
+  for app_type in ["claude", "codex", "gemini"] {
+    self.proxy_app_enabled.set(app_type, false)
+  }
+}
+
+///|
 fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
   self.proxy.takeover_status_json()
 }
@@ -1352,16 +1404,12 @@ fn Gateway::proxy_takeover_active(self : Gateway) -> Bool {
 
 ///|
 fn Gateway::proxy_clear_takeover(self : Gateway) -> Unit {
-  for app_type in ["claude", "codex", "gemini", "opencode", "openclaw"] {
-    self.proxy.proxy_takeover_enabled.set(app_type, false)
-  }
+  self.proxy.clear_takeover()
 }
 
 ///|
 fn Gateway::proxy_clear_enabled_apps_for_manual_stop(self : Gateway) -> Unit {
-  for app_type in ["claude", "codex", "gemini"] {
-    self.proxy.proxy_app_enabled.set(app_type, false)
-  }
+  self.proxy.clear_enabled_apps_for_manual_stop()
 }
 
 ///|
@@ -1369,10 +1417,7 @@ async fn Gateway::handle_proxy_running(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(Json::boolean(self.proxy.proxy_enabled).stringify())
-  w.flush()
+  self.proxy.handle_proxy_running(w)
 }
 
 ///|
