@@ -1,13 +1,10 @@
-
-
+///|
 async fn main {
   let args = @os.args()
   start(args)
 }
 
-
 ///|
-
 fn print_help() -> Unit {
   println("Moonstat - Anthropic to OpenAI Codex OAuth Gateway")
   println("")
@@ -331,9 +328,7 @@ fn print_help() -> Unit {
   println("  moonstat uninstall             # Remove hosts reroute")
 }
 
-
 ///|
-
 async fn start_gateway(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
@@ -346,9 +341,7 @@ async fn start_gateway(args : Array[String]) -> Unit {
   gateway.start()
 }
 
-
 ///|
-
 async fn import_default_config(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -357,9 +350,7 @@ async fn import_default_config(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn import_default_config_test_hook(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -368,9 +359,7 @@ async fn import_default_config_test_hook(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn save_settings(args : Array[String]) -> Unit {
   guard parse_string_arg_any(args, "--settings", "--config") is Some(settings) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -380,9 +369,7 @@ async fn save_settings(args : Array[String]) -> Unit {
   post_json_body_endpoint(args, "/save_settings", settings, "Settings")
 }
 
-
 ///|
-
 async fn delete_sessions(args : Array[String]) -> Unit {
   guard delete_sessions_body(args) is Some(body) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -392,16 +379,12 @@ async fn delete_sessions(args : Array[String]) -> Unit {
   post_json_body_endpoint(args, "/delete_sessions", body, "Session")
 }
 
-
 ///|
-
 fn delete_sessions_body(args : Array[String]) -> String? {
   parse_string_arg_any(args, "--items", "--body")
 }
 
-
 ///|
-
 async fn import_skills_from_apps(args : Array[String]) -> Unit {
   guard import_skills_from_apps_body(args) is Some(body) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -411,16 +394,12 @@ async fn import_skills_from_apps(args : Array[String]) -> Unit {
   post_json_body_endpoint(args, "/import_skills_from_apps", body, "Skills")
 }
 
-
 ///|
-
 fn import_skills_from_apps_body(args : Array[String]) -> String? {
   parse_string_arg_any(args, "--imports", "--body")
 }
 
-
 ///|
-
 async fn migrate_skill_storage(args : Array[String]) -> Unit {
   guard migrate_skill_storage_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -430,9 +409,7 @@ async fn migrate_skill_storage(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Skills")
 }
 
-
 ///|
-
 fn migrate_skill_storage_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--target") is Some(target) else { return None }
   Some(
@@ -442,9 +419,7 @@ fn migrate_skill_storage_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 async fn delete_env_vars(args : Array[String]) -> Unit {
   guard delete_env_vars_body(args) is Some(body) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -454,16 +429,12 @@ async fn delete_env_vars(args : Array[String]) -> Unit {
   post_json_body_endpoint(args, "/delete_env_vars", body, "Env")
 }
 
-
 ///|
-
 fn delete_env_vars_body(args : Array[String]) -> String? {
   parse_string_arg_any(args, "--conflicts", "--body")
 }
 
-
 ///|
-
 async fn set_moon_json_config(
   args : Array[String],
   base_path : String,
@@ -478,9 +449,7 @@ async fn set_moon_json_config(
   check_json_post_endpoint(args, path, label)
 }
 
-
 ///|
-
 async fn set_app_config_dir_override(args : Array[String]) -> Unit {
   guard app_config_dir_override_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -490,9 +459,7 @@ async fn set_app_config_dir_override(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Settings")
 }
 
-
 ///|
-
 async fn set_auto_launch(args : Array[String]) -> Unit {
   guard set_auto_launch_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -502,9 +469,7 @@ async fn set_auto_launch(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Settings")
 }
 
-
 ///|
-
 async fn apply_claude_plugin_config(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -513,9 +478,7 @@ async fn apply_claude_plugin_config(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn set_config_snippet(
   args : Array[String],
   base_path : String,
@@ -529,9 +492,7 @@ async fn set_config_snippet(
   check_json_post_endpoint(args, path, "Config")
 }
 
-
 ///|
-
 async fn restore_env_backup(args : Array[String]) -> Unit {
   guard restore_env_backup_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -541,9 +502,7 @@ async fn restore_env_backup(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Env")
 }
 
-
 ///|
-
 async fn upsert_mcp_server(args : Array[String], base_path : String) -> Unit {
   guard mcp_upsert_path(args, base_path) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -553,9 +512,7 @@ async fn upsert_mcp_server(args : Array[String], base_path : String) -> Unit {
   check_json_post_endpoint(args, path, "MCP")
 }
 
-
 ///|
-
 async fn delete_mcp_server(args : Array[String], base_path : String) -> Unit {
   guard mcp_id_path(args, base_path) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -565,9 +522,7 @@ async fn delete_mcp_server(args : Array[String], base_path : String) -> Unit {
   check_json_delete_endpoint(args, path, "MCP")
 }
 
-
 ///|
-
 async fn set_mcp_enabled(args : Array[String]) -> Unit {
   guard mcp_enabled_path(args, "/set_mcp_enabled") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -577,9 +532,7 @@ async fn set_mcp_enabled(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "MCP")
 }
 
-
 ///|
-
 async fn toggle_mcp_app(args : Array[String]) -> Unit {
   guard mcp_enabled_path(args, "/toggle_mcp_app") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -589,9 +542,7 @@ async fn toggle_mcp_app(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "MCP")
 }
 
-
 ///|
-
 async fn upsert_prompt(args : Array[String]) -> Unit {
   guard prompt_upsert_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -601,9 +552,7 @@ async fn upsert_prompt(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Prompt")
 }
 
-
 ///|
-
 async fn delete_prompt(args : Array[String]) -> Unit {
   guard prompt_id_path(args, "/delete_prompt") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -613,9 +562,7 @@ async fn delete_prompt(args : Array[String]) -> Unit {
   check_json_delete_endpoint(args, path, "Prompt")
 }
 
-
 ///|
-
 async fn enable_prompt(args : Array[String]) -> Unit {
   guard prompt_id_path(args, "/enable_prompt") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -625,9 +572,7 @@ async fn enable_prompt(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Prompt")
 }
 
-
 ///|
-
 async fn test_api_endpoints(args : Array[String]) -> Unit {
   guard provider_test_endpoints_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -637,25 +582,19 @@ async fn test_api_endpoints(args : Array[String]) -> Unit {
   check_json_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 fn config_app_arg(args : Array[String]) -> String {
   parse_string_arg_any(args, "--app", "--appType").unwrap_or(
     parse_string_arg(args, "--app-type").unwrap_or("claude"),
   )
 }
 
-
 ///|
-
 fn config_app_path(args : Array[String], base_path : String) -> String {
   "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
 }
 
-
 ///|
-
 fn app_config_dir_override_path(args : Array[String]) -> String? {
   match parse_string_arg(args, "--path") {
     Some(path) =>
@@ -673,9 +612,7 @@ fn app_config_dir_override_path(args : Array[String]) -> String? {
   }
 }
 
-
 ///|
-
 fn set_auto_launch_path(args : Array[String]) -> String? {
   match parse_string_arg(args, "--enabled") {
     Some(enabled) =>
@@ -684,9 +621,7 @@ fn set_auto_launch_path(args : Array[String]) -> String? {
   }
 }
 
-
 ///|
-
 fn moon_json_config_path(
   args : Array[String],
   base_path : String,
@@ -711,9 +646,7 @@ fn moon_json_config_path(
   }
 }
 
-
 ///|
-
 fn moon_json_config_flag_names() -> Array[String] {
   [
     "enabled", "requestThinkingSignature", "request_thinking_signature", "requestThinkingBudget",
@@ -727,9 +660,7 @@ fn moon_json_config_flag_names() -> Array[String] {
   ]
 }
 
-
 ///|
-
 fn apply_claude_plugin_config_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--official") {
     Some(official) =>
@@ -738,9 +669,7 @@ fn apply_claude_plugin_config_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn pick_directory_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--default-path", "--defaultPath") {
@@ -750,9 +679,7 @@ fn pick_directory_path(args : Array[String]) -> String {
   cli_path_with_query("/pick_directory", query)
 }
 
-
 ///|
-
 fn open_external_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--url") {
     Some(url) => "/open_external?\{cli_query_pair("url", url)}"
@@ -760,9 +687,7 @@ fn open_external_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn copy_text_to_clipboard_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--text") {
     Some(text) => "/copy_text_to_clipboard?\{cli_query_pair("text", text)}"
@@ -770,9 +695,7 @@ fn copy_text_to_clipboard_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn tool_versions_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--tools") {
     Some(tools) => "/get_tool_versions?\{cli_query_pair("tools", tools)}"
@@ -780,9 +703,7 @@ fn tool_versions_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 async fn run_tool_lifecycle_action(args : Array[String]) -> Unit {
   guard tool_lifecycle_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -792,9 +713,7 @@ async fn run_tool_lifecycle_action(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "App shell")
 }
 
-
 ///|
-
 fn tool_lifecycle_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--action") is Some(action) else { return None }
   let query : Array[String] = [cli_query_pair("action", action)]
@@ -805,9 +724,7 @@ fn tool_lifecycle_path(args : Array[String]) -> String? {
   Some(cli_path_with_query("/run_tool_lifecycle_action", query))
 }
 
-
 ///|
-
 fn tool_installations_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--tools") {
     Some(tools) => "/probe_tool_installations?\{cli_query_pair("tools", tools)}"
@@ -815,9 +732,7 @@ fn tool_installations_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn window_theme_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--theme") {
     Some(theme) => "/set_window_theme?\{cli_query_pair("theme", theme)}"
@@ -825,9 +740,7 @@ fn window_theme_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn db_backup_rename_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--old-filename", "--oldFilename") {
@@ -849,9 +762,7 @@ fn db_backup_rename_path(args : Array[String]) -> String {
   cli_path_with_query("/rename_db_backup", query)
 }
 
-
 ///|
-
 fn deeplink_url_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--url") {
@@ -861,9 +772,7 @@ fn deeplink_url_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, query)
 }
 
-
 ///|
-
 fn deeplink_request_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--request") {
@@ -877,9 +786,7 @@ fn deeplink_request_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, query)
 }
 
-
 ///|
-
 fn sync_settings_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--settings", "--config") {
@@ -900,9 +807,7 @@ fn sync_settings_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, query)
 }
 
-
 ///|
-
 fn session_messages_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--provider-id", "--providerId") {
@@ -916,9 +821,7 @@ fn session_messages_path(args : Array[String]) -> String {
   cli_path_with_query("/get_session_messages", query)
 }
 
-
 ///|
-
 fn launch_session_terminal_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--command") {
@@ -936,9 +839,7 @@ fn launch_session_terminal_path(args : Array[String]) -> String {
   cli_path_with_query("/launch_session_terminal", query)
 }
 
-
 ///|
-
 fn delete_session_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--provider-id", "--providerId") {
@@ -956,16 +857,12 @@ fn delete_session_path(args : Array[String]) -> String {
   cli_path_with_query("/delete_session", query)
 }
 
-
 ///|
-
 fn skill_app_arg(args : Array[String]) -> String {
   config_app_arg(args)
 }
 
-
 ///|
-
 fn skill_id_arg(args : Array[String]) -> String? {
   match parse_string_arg(args, "--id") {
     Some(id) => Some(id)
@@ -977,16 +874,12 @@ fn skill_id_arg(args : Array[String]) -> String? {
   }
 }
 
-
 ///|
-
 fn skill_app_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, [cli_query_pair("app", skill_app_arg(args))])
 }
 
-
 ///|
-
 fn skill_id_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match skill_id_arg(args) {
@@ -1004,9 +897,7 @@ fn skill_id_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, query)
 }
 
-
 ///|
-
 fn skill_backup_id_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--backup-id", "--backupId") {
@@ -1020,9 +911,7 @@ fn skill_backup_id_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, query)
 }
 
-
 ///|
-
 fn skill_restore_backup_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--backup-id", "--backupId") {
@@ -1048,9 +937,7 @@ fn skill_restore_backup_path(args : Array[String]) -> String {
   cli_path_with_query("/restore_skill_backup", query)
 }
 
-
 ///|
-
 fn skill_install_path(args : Array[String], base_path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--directory") {
@@ -1088,9 +975,7 @@ fn skill_install_path(args : Array[String], base_path : String) -> String {
   cli_path_with_query(base_path, query)
 }
 
-
 ///|
-
 fn skill_toggle_app_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match skill_id_arg(args) {
@@ -1105,9 +990,7 @@ fn skill_toggle_app_path(args : Array[String]) -> String {
   cli_path_with_query("/toggle_skill_app", query)
 }
 
-
 ///|
-
 fn skill_search_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--query", "--q") {
@@ -1125,9 +1008,7 @@ fn skill_search_path(args : Array[String]) -> String {
   cli_path_with_query("/search_skills_sh", query)
 }
 
-
 ///|
-
 fn skill_repo_add_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--owner") {
@@ -1153,9 +1034,7 @@ fn skill_repo_add_path(args : Array[String]) -> String {
   cli_path_with_query("/add_skill_repo", query)
 }
 
-
 ///|
-
 fn skill_repo_remove_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--owner") {
@@ -1173,9 +1052,7 @@ fn skill_repo_remove_path(args : Array[String]) -> String {
   cli_path_with_query("/remove_skill_repo", query)
 }
 
-
 ///|
-
 fn skill_zip_install_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--file-path", "--filePath") {
@@ -1201,9 +1078,7 @@ fn skill_zip_install_path(args : Array[String]) -> String {
   cli_path_with_query("/install_skills_from_zip", query)
 }
 
-
 ///|
-
 fn config_snippet_path(
   args : Array[String],
   base_path : String,
@@ -1219,9 +1094,7 @@ fn config_snippet_path(
   Some("\{base_path}?\{query.join("&")}")
 }
 
-
 ///|
-
 fn extract_common_config_snippet_path(args : Array[String]) -> String {
   let query : Array[String] = [cli_query_pair("appType", config_app_arg(args))]
   match parse_string_arg_any(args, "--settings-config", "--settingsConfig") {
@@ -1231,9 +1104,7 @@ fn extract_common_config_snippet_path(args : Array[String]) -> String {
   "/extract_common_config_snippet?\{query.join("&")}"
 }
 
-
 ///|
-
 fn restore_env_backup_path(args : Array[String]) -> String? {
   guard parse_string_arg_any(args, "--backup-path", "--backupPath")
     is Some(path) else {
@@ -1242,16 +1113,12 @@ fn restore_env_backup_path(args : Array[String]) -> String? {
   Some("/restore_env_backup?\{cli_query_pair("backupPath", path)}")
 }
 
-
 ///|
-
 fn mcp_app_path(args : Array[String], base_path : String) -> String {
   "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
 }
 
-
 ///|
-
 fn mcp_server_id_arg(args : Array[String]) -> String? {
   match parse_string_arg(args, "--id") {
     Some(id) => Some(id)
@@ -1259,17 +1126,13 @@ fn mcp_server_id_arg(args : Array[String]) -> String? {
   }
 }
 
-
 ///|
-
 fn mcp_id_path(args : Array[String], base_path : String) -> String? {
   guard mcp_server_id_arg(args) is Some(id) else { return None }
   Some("\{base_path}?\{cli_query_pair("id", id)}")
 }
 
-
 ///|
-
 fn mcp_validate_command_path(args : Array[String]) -> String {
   match parse_string_arg_any(args, "--command", "--cmd") {
     Some(command) =>
@@ -1278,9 +1141,7 @@ fn mcp_validate_command_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn mcp_server_json_from_args(args : Array[String], id : String) -> String {
   let name = parse_string_arg(args, "--name").unwrap_or(id)
   let spec : Map[String, Json] = {}
@@ -1305,9 +1166,7 @@ fn mcp_server_json_from_args(args : Array[String], id : String) -> String {
   .stringify()
 }
 
-
 ///|
-
 fn mcp_upsert_path(args : Array[String], base_path : String) -> String? {
   let query : Array[String] = []
   match parse_string_arg(args, "--server") {
@@ -1329,9 +1188,7 @@ fn mcp_upsert_path(args : Array[String], base_path : String) -> String? {
   Some("\{base_path}?\{query.join("&")}")
 }
 
-
 ///|
-
 fn mcp_enabled_path(args : Array[String], base_path : String) -> String? {
   guard mcp_server_id_arg(args) is Some(id) else { return None }
   guard parse_string_arg(args, "--enabled") is Some(enabled) else {
@@ -1342,16 +1199,12 @@ fn mcp_enabled_path(args : Array[String], base_path : String) -> String? {
   )
 }
 
-
 ///|
-
 fn prompt_app_path(args : Array[String], base_path : String) -> String {
   "\{base_path}?\{cli_query_pair("app", config_app_arg(args))}"
 }
 
-
 ///|
-
 fn prompt_id_path(args : Array[String], base_path : String) -> String? {
   guard parse_string_arg_any(args, "--id", "--promptId") is Some(id) else {
     return None
@@ -1361,9 +1214,7 @@ fn prompt_id_path(args : Array[String], base_path : String) -> String? {
   )
 }
 
-
 ///|
-
 fn prompt_upsert_path(args : Array[String]) -> String? {
   let query : Array[String] = [cli_query_pair("app", config_app_arg(args))]
   match parse_string_arg(args, "--prompt") {
@@ -1395,9 +1246,7 @@ fn prompt_upsert_path(args : Array[String]) -> String? {
   Some("/upsert_prompt?\{query.join("&")}")
 }
 
-
 ///|
-
 fn stream_check_all_path(args : Array[String]) -> String {
   let app_type = match parse_string_arg_any(args, "--app-type", "--appType") {
     Some(value) => value
@@ -1412,9 +1261,7 @@ fn stream_check_all_path(args : Array[String]) -> String {
   "/stream_check_all_providers?\{query.join("&")}"
 }
 
-
 ///|
-
 fn stream_check_config_update_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--timeout-secs", "--timeoutSecs") {
@@ -1455,9 +1302,7 @@ fn stream_check_config_update_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 async fn save_stream_check_config(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
@@ -1479,9 +1324,7 @@ async fn save_stream_check_config(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn check_balance(args : Array[String]) -> Unit {
   guard balance_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1491,9 +1334,7 @@ async fn check_balance(args : Array[String]) -> Unit {
   check_usage_endpoint(args, path)
 }
 
-
 ///|
-
 async fn check_subscription_quota(args : Array[String]) -> Unit {
   guard subscription_quota_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1503,9 +1344,7 @@ async fn check_subscription_quota(args : Array[String]) -> Unit {
   check_usage_endpoint(args, path)
 }
 
-
 ///|
-
 async fn check_coding_plan_quota(args : Array[String]) -> Unit {
   guard coding_plan_quota_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1517,9 +1356,7 @@ async fn check_coding_plan_quota(args : Array[String]) -> Unit {
   check_usage_endpoint(args, path)
 }
 
-
 ///|
-
 fn cli_path_with_query(path : String, query : Array[String]) -> String {
   if query.is_empty() {
     path
@@ -1528,9 +1365,7 @@ fn cli_path_with_query(path : String, query : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn balance_path(args : Array[String]) -> String? {
   guard parse_string_arg_any(args, "--base-url", "--baseUrl") is Some(base_url) else {
     return None
@@ -1543,9 +1378,7 @@ fn balance_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 fn subscription_quota_path(args : Array[String]) -> String? {
   let tool = match parse_string_arg(args, "--tool") {
     Some(value) => Some(value)
@@ -1559,9 +1392,7 @@ fn subscription_quota_path(args : Array[String]) -> String? {
   Some("/get_subscription_quota?\{cli_query_pair("tool", tool)}")
 }
 
-
 ///|
-
 fn coding_plan_quota_path(args : Array[String]) -> String? {
   guard parse_string_arg_any(args, "--base-url", "--baseUrl") is Some(base_url) else {
     return None
@@ -1574,9 +1405,7 @@ fn coding_plan_quota_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 async fn check_json_endpoint(
   args : Array[String],
   path : String,
@@ -1599,9 +1428,7 @@ async fn check_json_endpoint(
   }
 }
 
-
 ///|
-
 async fn check_json_post_endpoint(
   args : Array[String],
   path : String,
@@ -1624,9 +1451,7 @@ async fn check_json_post_endpoint(
   }
 }
 
-
 ///|
-
 async fn post_json_body_endpoint(
   args : Array[String],
   path : String,
@@ -1652,9 +1477,7 @@ async fn post_json_body_endpoint(
   }
 }
 
-
 ///|
-
 async fn check_json_delete_endpoint(
   args : Array[String],
   path : String,
@@ -1678,9 +1501,7 @@ async fn check_json_delete_endpoint(
   }
 }
 
-
 ///|
-
 async fn install_reroute(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let port = parse_int_arg(args, "--port", default=15721)
@@ -1697,9 +1518,7 @@ async fn install_reroute(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn uninstall_reroute() -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
 
@@ -1711,9 +1530,7 @@ async fn uninstall_reroute() -> Unit {
   }
 }
 
-
 ///|
-
 async fn install_claude_desktop(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
@@ -1732,9 +1549,7 @@ async fn install_claude_desktop(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn uninstall_claude_desktop() -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   logger.info("Removing Claude Desktop gateway profile...")
@@ -1745,9 +1560,7 @@ async fn uninstall_claude_desktop() -> Unit {
   }
 }
 
-
 ///|
-
 async fn install_codex(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
@@ -1766,9 +1579,7 @@ async fn install_codex(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn uninstall_codex() -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   logger.info("Removing Codex config.toml Moonstat provider...")
@@ -1779,9 +1590,7 @@ async fn uninstall_codex() -> Unit {
   }
 }
 
-
 ///|
-
 async fn print_model_candidates(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   guard parse_string_arg(args, "--base-url") is Some(base_url) else {
@@ -1803,9 +1612,7 @@ async fn print_model_candidates(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 fn parse_string_arg(args : Array[String], name : String) -> String? {
   let mut i = 0
   while i < args.length() {
@@ -1817,9 +1624,7 @@ fn parse_string_arg(args : Array[String], name : String) -> String? {
   None
 }
 
-
 ///|
-
 fn parse_string_arg_any(
   args : Array[String],
   left_name : String,
@@ -1831,16 +1636,12 @@ fn parse_string_arg_any(
   }
 }
 
-
 ///|
-
 fn cli_query_pair(key : String, value : String) -> String {
   "\{cli_url_encode(key)}=\{cli_url_encode(value)}"
 }
 
-
 ///|
-
 fn cli_url_encode(value : String) -> String {
   let builder = StringBuilder::new()
   for ch in value {
@@ -1861,9 +1662,7 @@ fn cli_url_encode(value : String) -> String {
   builder.to_string()
 }
 
-
 ///|
-
 fn cli_hex_digit(n : Int) -> Char {
   if n < 10 {
     ('0'.to_int() + n).unsafe_to_char()
@@ -1872,9 +1671,7 @@ fn cli_hex_digit(n : Int) -> Char {
   }
 }
 
-
 ///|
-
 fn has_flag(args : Array[String], name : String) -> Bool {
   for arg in args {
     if arg == name {
@@ -1884,9 +1681,7 @@ fn has_flag(args : Array[String], name : String) -> Bool {
   false
 }
 
-
 ///|
-
 fn parse_int_arg(args : Array[String], name : String, default~ : Int) -> Int {
   match parse_string_arg(args, name) {
     Some(s) => {

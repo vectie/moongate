@@ -1,13 +1,11 @@
-
+///|
 async fn Gateway::record_unauthorized(self : Gateway) -> Unit {
   self.release_provider_permit_neutral()
   self.usage.stats.record_unauthorized()
   self.usage.stats.save_persistent_store()
 }
 
-
 ///|
-
 fn gemini_cli_bearer_token(api_key : String) -> String {
   let trimmed = api_key.trim()
   if trimmed.has_prefix("{") {
@@ -23,9 +21,7 @@ fn gemini_cli_bearer_token(api_key : String) -> String {
   trimmed.to_owned()
 }
 
-
 ///|
-
 fn codex_oauth_headers(
   creds : @codex.Credentials,
   accept : String,
@@ -53,9 +49,7 @@ fn codex_oauth_headers(
   headers
 }
 
-
 ///|
-
 fn normalize_codex_oauth_request(json : Json) -> Json {
   guard json is Object(obj) else { return json }
   obj["store"] = Json::boolean(false)
@@ -71,9 +65,7 @@ fn normalize_codex_oauth_request(json : Json) -> Json {
   Json::object(obj)
 }
 
-
 ///|
-
 fn moon_provider_balance_query_credentials(
   provider : ProviderRouteTarget,
 ) -> (String, String)? {
@@ -82,9 +74,7 @@ fn moon_provider_balance_query_credentials(
   Some((base_url, provider.api_key.unwrap_or("")))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_codex_oauth_quota(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -99,9 +89,7 @@ async fn Gateway::handle_get_codex_oauth_quota(
   write_usage_json(w, quota.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_codex_oauth_models(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -118,18 +106,14 @@ async fn Gateway::handle_get_codex_oauth_models(
   }
 }
 
-
 ///|
-
 fn managed_auth_provider_request(path : StringView, body : Json?) -> String {
   proxy_string_request(path, body, ["authProvider", "auth_provider", "provider"]).unwrap_or(
     managed_auth_default_provider(),
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_start_login(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -154,9 +138,7 @@ async fn Gateway::handle_auth_start_login(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_poll_for_account(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -201,9 +183,7 @@ async fn Gateway::handle_auth_poll_for_account(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_list_accounts(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -218,9 +198,7 @@ async fn Gateway::handle_auth_list_accounts(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_get_status(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -235,9 +213,7 @@ async fn Gateway::handle_auth_get_status(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_remove_account(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -259,9 +235,7 @@ async fn Gateway::handle_auth_remove_account(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_set_default_account(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -281,9 +255,7 @@ async fn Gateway::handle_auth_set_default_account(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_auth_logout(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -300,9 +272,7 @@ async fn Gateway::handle_auth_logout(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_start_device_flow(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -316,9 +286,7 @@ async fn Gateway::handle_copilot_start_device_flow(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_poll_for_auth(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -342,9 +310,7 @@ async fn Gateway::handle_copilot_poll_for_auth(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_get_auth_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -353,9 +319,7 @@ async fn Gateway::handle_copilot_get_auth_status(
   write_usage_json(w, copilot_get_auth_status())
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_is_authenticated(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -364,9 +328,7 @@ async fn Gateway::handle_copilot_is_authenticated(
   write_usage_json(w, Json::boolean(copilot_is_authenticated()))
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_logout(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -375,9 +337,7 @@ async fn Gateway::handle_copilot_logout(
   write_usage_json(w, copilot_logout())
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_get_token(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -391,9 +351,7 @@ async fn Gateway::handle_copilot_get_token(
   }
 }
 
-
 ///|
-
 fn moon_token_plan_usage_result_from_quota(
   quota : SubscriptionQuota,
 ) -> UsageResult {
@@ -431,17 +389,13 @@ fn moon_token_plan_usage_result_from_quota(
   UsageResult::new(true, data=if data.is_empty() { None } else { Some(data) })
 }
 
-
 ///|
-
 fn moon_token_plan_tier_has_usd(tier : Json) -> Bool {
   guard tier is Object(obj) else { return false }
   obj.contains("usedValueUsd")
 }
 
-
 ///|
-
 fn moon_token_plan_label(message : String?) -> String? {
   guard message is Some(value) else { return None }
   for part in value.split(" ") {
@@ -453,9 +407,7 @@ fn moon_token_plan_label(message : String?) -> String? {
   None
 }
 
-
 ///|
-
 fn moon_token_plan_usage_extra(
   tier : Map[String, Json],
   has_usd~ : Bool,
@@ -488,9 +440,7 @@ fn moon_token_plan_usage_extra(
   Some(Json::object(extra).stringify())
 }
 
-
 ///|
-
 async fn Gateway::validate_claude_desktop_gateway_auth(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -510,9 +460,7 @@ async fn Gateway::validate_claude_desktop_gateway_auth(
   }
 }
 
-
 ///|
-
 fn claude_desktop_authorization_valid(
   headers : Map[String, String],
   expected : String,
@@ -527,9 +475,7 @@ fn claude_desktop_authorization_valid(
   }
 }
 
-
 ///|
-
 fn bearer_token(value : String) -> String? {
   let trimmed = value.trim()
   if trimmed.has_prefix("Bearer ") {
@@ -541,9 +487,7 @@ fn bearer_token(value : String) -> String? {
   }
 }
 
-
 ///|
-
 async fn write_auth_error(w : @httpx.ResponseWriter, message : String) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Unauthorized)
@@ -553,9 +497,7 @@ async fn write_auth_error(w : @httpx.ResponseWriter, message : String) -> Unit {
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_login(
   self : Gateway,
   _r : @httpx.RequestReader,
@@ -578,9 +520,7 @@ async fn Gateway::handle_login(
   w.flush()
 }
 
-
 ///|
-
 fn token_usage_from_claude_compatible_response(
   body : Json,
   api_format : String,
@@ -592,4 +532,3 @@ fn token_usage_from_claude_compatible_response(
     _ => token_usage_from_claude_response(body)
   }
 }
-

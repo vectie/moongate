@@ -560,7 +560,9 @@ fn Gateway::moon_import_prompt_deeplink(
     None => ()
   }
   let app_type = moon_normalize_app_type(app)
-  self.config.prompts[moon_prompt_store_key(app_type, id)] = Json::object(prompt)
+  self.config.prompts[moon_prompt_store_key(app_type, id)] = Json::object(
+    prompt,
+  )
   Json::object({ "type": Json::string("prompt"), "id": Json::string(id) })
   |> Some
 }

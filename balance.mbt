@@ -146,7 +146,8 @@ fn moon_parse_deepseek_balance(body : Json) -> UsageResult {
 
 ///|
 async fn moon_query_stepfun_balance(api_key : String) -> UsageResult {
-  match moon_balance_fetch_json("https://api.stepfun.com/v1/accounts", api_key) {
+  match
+    moon_balance_fetch_json("https://api.stepfun.com/v1/accounts", api_key) {
     Err(result) => result
     Ok(body) => moon_parse_stepfun_balance(body)
   }

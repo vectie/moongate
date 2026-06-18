@@ -1,4 +1,4 @@
-
+///|
 fn moon_config_app_from_request(path : StringView, body : Json?) -> String? {
   match proxy_string_request(path, body, ["app", "appType", "app_type"]) {
     Some(app) => Some(moon_normalize_app_type(app))
@@ -6,9 +6,7 @@ fn moon_config_app_from_request(path : StringView, body : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn moon_config_dir(app : String) -> String {
   let home = moon_home_dir()
   match moon_normalize_app_type(app) {
@@ -25,9 +23,7 @@ fn moon_config_dir(app : String) -> String {
   }
 }
 
-
 ///|
-
 fn moon_config_file_path(app : String) -> String {
   let dir = moon_config_dir(app)
   match moon_normalize_app_type(app) {
@@ -42,23 +38,17 @@ fn moon_config_file_path(app : String) -> String {
   }
 }
 
-
 ///|
-
 fn moon_app_config_dir() -> String {
   @pathx.join(moon_home_dir(), ".moonsuite")
 }
 
-
 ///|
-
 fn moon_app_config_path() -> String {
   @pathx.join(moon_app_config_dir(), "config.json")
 }
 
-
 ///|
-
 fn moon_default_app_settings_json() -> Json {
   {
     "showInTray": Json::boolean(true),
@@ -76,9 +66,7 @@ fn moon_default_app_settings_json() -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn moon_default_rectifier_config_json() -> Json {
   {
     "enabled": Json::boolean(true),
@@ -89,9 +77,7 @@ fn moon_default_rectifier_config_json() -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn moon_default_optimizer_config_json() -> Json {
   {
     "enabled": Json::boolean(false),
@@ -101,23 +87,17 @@ fn moon_default_optimizer_config_json() -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn moon_default_log_config_json() -> Json {
   { "enabled": Json::boolean(true), "level": Json::string("info") }.to_json()
 }
 
-
 ///|
-
 fn moon_claude_plugin_config_path() -> String {
   @pathx.join(moon_config_dir("claude"), "config.json")
 }
 
-
 ///|
-
 fn moon_search_snippet(content : String, first_pos : Int) -> String {
   let start = if first_pos > 50 { first_pos - 50 } else { 0 }
   let end = if first_pos + 70 < content.length() {
@@ -130,9 +110,7 @@ fn moon_search_snippet(content : String, first_pos : Int) -> String {
   "\{prefix}\{content[start:end]}\{suffix}"
 }
 
-
 ///|
-
 fn moon_merge_settings_for_save(incoming : Json, existing : Json) -> Json {
   guard incoming is Object(incoming_obj) else { return existing }
   guard existing is Object(existing_obj) else { return incoming }
@@ -152,9 +130,7 @@ fn moon_merge_settings_for_save(incoming : Json, existing : Json) -> Json {
   Json::object(next)
 }
 
-
 ///|
-
 fn moon_preserve_missing_settings_object(
   incoming : Map[String, Json],
   existing : Map[String, Json],
@@ -168,9 +144,7 @@ fn moon_preserve_missing_settings_object(
   }
 }
 
-
 ///|
-
 fn moon_settings_with_bool(settings : Json, key : String, value : Bool) -> Json {
   match settings {
     Object(obj) => {
@@ -185,9 +159,7 @@ fn moon_settings_with_bool(settings : Json, key : String, value : Bool) -> Json 
   }
 }
 
-
 ///|
-
 fn moon_json_config_from_request(
   path : StringView,
   body : Json?,
@@ -223,9 +195,7 @@ fn moon_json_config_from_request(
   }
 }
 
-
 ///|
-
 fn moon_rectifier_config_from_request(
   path : StringView,
   body : Json?,
@@ -256,9 +226,7 @@ fn moon_rectifier_config_from_request(
   ])
 }
 
-
 ///|
-
 fn moon_optimizer_config_from_request(
   path : StringView,
   body : Json?,
@@ -272,9 +240,7 @@ fn moon_optimizer_config_from_request(
   ])
 }
 
-
 ///|
-
 fn moon_log_config_from_request(
   path : StringView,
   body : Json?,
@@ -286,9 +252,7 @@ fn moon_log_config_from_request(
   ])
 }
 
-
 ///|
-
 fn moon_optimizer_cache_ttl_valid(config : Json) -> Bool {
   guard config is Object(obj) else { return true }
   match json_string_from_map_any(obj, ["cacheTtl", "cache_ttl"]) {
@@ -297,9 +261,7 @@ fn moon_optimizer_cache_ttl_valid(config : Json) -> Bool {
   }
 }
 
-
 ///|
-
 async fn moon_config_status_json(app : String) -> Json {
   let normalized = moon_normalize_app_type(app)
   let path = match normalized {
@@ -314,9 +276,7 @@ async fn moon_config_status_json(app : String) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn moon_config_exists(app : String) -> Bool {
   let normalized = moon_normalize_app_type(app)
   match normalized {
@@ -333,9 +293,7 @@ async fn moon_config_exists(app : String) -> Bool {
   }
 }
 
-
 ///|
-
 fn moon_env_shell_config_paths() -> Array[String] {
   let home = moon_home_dir()
   [
@@ -349,9 +307,7 @@ fn moon_env_shell_config_paths() -> Array[String] {
   ]
 }
 
-
 ///|
-
 fn moon_env_backup_json(body : Json?) -> Json {
   let conflicts = moon_env_conflicts_from_body(body)
   let timestamp = @async.now().to_int().to_string()
@@ -367,9 +323,7 @@ fn moon_env_backup_json(body : Json?) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn moon_restore_env_backup_json(
   backup_path : String?,
 ) -> Result[Json, String] {
@@ -389,9 +343,7 @@ async fn moon_restore_env_backup_json(
   Ok(Json::null())
 }
 
-
 ///|
-
 fn moon_mcp_config_text(servers : Map[String, Json]) -> String? {
   if servers.is_empty() {
     return None
@@ -411,9 +363,7 @@ fn moon_mcp_config_text(servers : Map[String, Json]) -> String? {
   )
 }
 
-
 ///|
-
 fn moon_validate_common_config_snippet(
   app_type : String,
   snippet : String,
@@ -440,9 +390,7 @@ fn moon_validate_common_config_snippet(
   }
 }
 
-
 ///|
-
 fn moon_validate_codex_toml_snippet(snippet : String) -> Bool {
   for line_view in snippet.split("\n") {
     let line = moon_toml_strip_comment(line_view.to_owned()).trim().to_owned()
@@ -469,9 +417,7 @@ fn moon_validate_codex_toml_snippet(snippet : String) -> Bool {
   true
 }
 
-
 ///|
-
 fn moon_extract_common_config_snippet_from_settings_config(
   app_type : String,
   settings_config : String,
@@ -482,9 +428,7 @@ fn moon_extract_common_config_snippet_from_settings_config(
   Ok(moon_extract_common_config_snippet_json(app_type, parsed))
 }
 
-
 ///|
-
 fn moon_extract_common_config_snippet_json(
   app_type : String,
   settings : Json,
@@ -499,9 +443,7 @@ fn moon_extract_common_config_snippet_json(
   }
 }
 
-
 ///|
-
 fn moon_extract_claude_common_config(settings : Json) -> String {
   guard settings is Object(config) else { return "{}" }
   match config.get("env") {
@@ -533,9 +475,7 @@ fn moon_extract_claude_common_config(settings : Json) -> String {
   }
 }
 
-
 ///|
-
 fn moon_extract_codex_common_config(settings : Json) -> String {
   guard settings is Object(config) else { return "" }
   let toml = json_string_from_map_any(config, ["config"]).unwrap_or("")
@@ -545,9 +485,7 @@ fn moon_extract_codex_common_config(settings : Json) -> String {
   moon_extract_codex_common_config_from_toml(toml)
 }
 
-
 ///|
-
 fn moon_extract_codex_common_config_from_toml(toml : String) -> String {
   let lines : Array[String] = []
   let mut skip_model_providers = false
@@ -582,9 +520,7 @@ fn moon_extract_codex_common_config_from_toml(toml : String) -> String {
   moon_clean_blank_lines(lines).trim().to_owned()
 }
 
-
 ///|
-
 fn moon_extract_gemini_common_config(settings : Json) -> String {
   guard settings is Object(config) else { return "{}" }
   let snippet : Map[String, Json] = {}
@@ -609,9 +545,7 @@ fn moon_extract_gemini_common_config(settings : Json) -> String {
   }
 }
 
-
 ///|
-
 fn moon_extract_opencode_common_config(settings : Json) -> String {
   guard settings is Object(config) else { return "{}" }
   match config.get("options") {
@@ -629,9 +563,7 @@ fn moon_extract_opencode_common_config(settings : Json) -> String {
   }
 }
 
-
 ///|
-
 fn moon_extract_openclaw_common_config(settings : Json) -> String {
   guard settings is Object(config) else { return "{}" }
   config.remove("apiKey")
@@ -643,9 +575,7 @@ fn moon_extract_openclaw_common_config(settings : Json) -> String {
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_config_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -655,9 +585,7 @@ async fn Gateway::handle_get_config_status(
   write_usage_json(w, moon_config_status_json(app))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_config_status_request(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -669,9 +597,7 @@ async fn Gateway::handle_get_config_status_request(
   write_usage_json(w, moon_config_status_json(app))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_claude_code_config_path(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -680,9 +606,7 @@ async fn Gateway::handle_get_claude_code_config_path(
   write_usage_json(w, Json::string(moon_config_file_path("claude")))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_config_dir(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -694,9 +618,7 @@ async fn Gateway::handle_get_config_dir(
   write_usage_json(w, Json::string(moon_config_dir(app)))
 }
 
-
 ///|
-
 async fn Gateway::handle_open_config_folder(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -711,9 +633,7 @@ async fn Gateway::handle_open_config_folder(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_export_config_to_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -728,9 +648,7 @@ async fn Gateway::handle_export_config_to_file(
   write_usage_json(w, self.moon_export_config_to_file_json(file_path))
 }
 
-
 ///|
-
 async fn Gateway::handle_import_config_from_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -745,9 +663,7 @@ async fn Gateway::handle_import_config_from_file(
   write_usage_json(w, self.moon_import_config_from_file_json(file_path))
 }
 
-
 ///|
-
 async fn Gateway::handle_create_db_backup(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -755,9 +671,7 @@ async fn Gateway::handle_create_db_backup(
   write_usage_json(w, self.moon_create_db_backup_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_list_db_backups(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -766,9 +680,7 @@ async fn Gateway::handle_list_db_backups(
   write_usage_json(w, moon_list_db_backups_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_restore_db_backup(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -786,9 +698,7 @@ async fn Gateway::handle_restore_db_backup(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_rename_db_backup(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -814,9 +724,7 @@ async fn Gateway::handle_rename_db_backup(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_db_backup(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -835,9 +743,7 @@ async fn Gateway::handle_delete_db_backup(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_merge_deeplink_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -855,9 +761,7 @@ async fn Gateway::handle_merge_deeplink_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_webdav_sync_save_settings(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -886,9 +790,7 @@ async fn Gateway::handle_webdav_sync_save_settings(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_s3_sync_save_settings(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -917,9 +819,7 @@ async fn Gateway::handle_s3_sync_save_settings(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_skill_backups(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -928,9 +828,7 @@ async fn Gateway::handle_get_skill_backups(
   write_usage_json(w, moon_get_skill_backups_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_skill_backup(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -946,9 +844,7 @@ async fn Gateway::handle_delete_skill_backup(
   write_usage_json(w, moon_delete_skill_backup_json(backup_id))
 }
 
-
 ///|
-
 async fn Gateway::handle_restore_skill_backup(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -967,9 +863,7 @@ async fn Gateway::handle_restore_skill_backup(
   write_usage_json(w, moon_restore_skill_backup_json(backup_id, current_app))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_app_config_path(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -978,9 +872,7 @@ async fn Gateway::handle_get_app_config_path(
   write_usage_json(w, Json::string(moon_app_config_path()))
 }
 
-
 ///|
-
 async fn Gateway::handle_open_app_config_folder(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -992,9 +884,7 @@ async fn Gateway::handle_open_app_config_folder(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_settings(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1002,9 +892,7 @@ async fn Gateway::handle_get_settings(
   write_usage_json(w, self.config.app_settings)
 }
 
-
 ///|
-
 async fn Gateway::handle_save_settings(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1035,9 +923,7 @@ async fn Gateway::handle_save_settings(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_app_config_dir_override(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1048,22 +934,21 @@ async fn Gateway::handle_get_app_config_dir_override(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_set_app_config_dir_override(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  self.config.app_config_dir_override = moon_optional_path_from_request(r.path, body)
+  self.config.app_config_dir_override = moon_optional_path_from_request(
+    r.path,
+    body,
+  )
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_rectifier_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1071,9 +956,7 @@ async fn Gateway::handle_get_rectifier_config(
   write_usage_json(w, self.config.rectifier_config_json)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_rectifier_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1088,9 +971,7 @@ async fn Gateway::handle_set_rectifier_config(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_optimizer_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1098,9 +979,7 @@ async fn Gateway::handle_get_optimizer_config(
   write_usage_json(w, self.config.optimizer_config_json)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_optimizer_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1120,9 +999,7 @@ async fn Gateway::handle_set_optimizer_config(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_log_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1130,9 +1007,7 @@ async fn Gateway::handle_get_log_config(
   write_usage_json(w, self.config.log_config_json)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_log_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1147,9 +1022,7 @@ async fn Gateway::handle_set_log_config(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_common_config_snippet(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1161,9 +1034,7 @@ async fn Gateway::handle_get_common_config_snippet(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_common_config_snippet_request(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1174,9 +1045,7 @@ async fn Gateway::handle_get_common_config_snippet_request(
   self.handle_get_common_config_snippet(w, app_type)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_common_config_snippet(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1202,9 +1071,7 @@ async fn Gateway::handle_set_common_config_snippet(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_set_common_config_snippet_request(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1230,9 +1097,7 @@ async fn Gateway::handle_set_common_config_snippet_request(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_extract_common_config_snippet(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1258,9 +1123,7 @@ async fn Gateway::handle_extract_common_config_snippet(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_restore_env_backup(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1277,9 +1140,7 @@ async fn Gateway::handle_restore_env_backup(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_read_claude_mcp_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1290,9 +1151,7 @@ async fn Gateway::handle_read_claude_mcp_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_mcp_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1304,14 +1163,15 @@ async fn Gateway::handle_get_mcp_config(
     w,
     {
       "configPath": Json::string(moon_app_config_path()),
-      "servers": moon_mcp_servers_object_for_app(self.config.mcp_servers, Some(app)),
+      "servers": moon_mcp_servers_object_for_app(
+        self.config.mcp_servers,
+        Some(app),
+      ),
     }.to_json(),
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_upsert_mcp_server_in_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1340,9 +1200,7 @@ async fn Gateway::handle_upsert_mcp_server_in_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_import_default_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1359,9 +1217,7 @@ async fn Gateway::handle_import_default_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_read_claude_plugin_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1383,9 +1239,7 @@ async fn Gateway::handle_read_claude_plugin_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_apply_claude_plugin_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1398,14 +1252,14 @@ async fn Gateway::handle_apply_claude_plugin_config(
     self.config.claude_plugin_config = None
   } else {
     self.config.claude_plugin_applied = true
-    self.config.claude_plugin_config = Some("{\n  \"primaryApiKey\": \"any\"\n}\n")
+    self.config.claude_plugin_config = Some(
+      "{\n  \"primaryApiKey\": \"any\"\n}\n",
+    )
   }
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_scan_openclaw_config_health(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1413,9 +1267,7 @@ async fn Gateway::handle_scan_openclaw_config_health(
   write_usage_json(w, self.openclaw_config_health_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_hermes_model_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1423,9 +1275,7 @@ async fn Gateway::handle_get_hermes_model_config(
   write_usage_json(w, self.openclaw.hermes_model_config.unwrap_or(Json::null()))
 }
 
-
 ///|
-
 fn stream_check_config_from_request(
   path : StringView,
   body : String,
@@ -1493,9 +1343,7 @@ fn stream_check_config_from_request(
   Some(config)
 }
 
-
 ///|
-
 async fn Gateway::handle_get_stream_check_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1503,9 +1351,7 @@ async fn Gateway::handle_get_stream_check_config(
   write_usage_json(w, self.config.stream_check_config.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_save_stream_check_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1513,7 +1359,11 @@ async fn Gateway::handle_save_stream_check_config(
 ) -> Unit {
   let body = r.body.read_all().text()
   match
-    stream_check_config_from_request(r.path, body, self.config.stream_check_config) {
+    stream_check_config_from_request(
+      r.path,
+      body,
+      self.config.stream_check_config,
+    ) {
     Some(config) => {
       self.config.stream_check_config = config
       write_usage_json(w, Json::null())
@@ -1522,11 +1372,11 @@ async fn Gateway::handle_save_stream_check_config(
   }
 }
 
-
 ///|
-
 fn Gateway::openclaw_config_health_json(self : Gateway) -> Json {
-  let defaults = self.openclaw.openclaw_agents_defaults.unwrap_or(Json::object({}))
+  let defaults = self.openclaw.openclaw_agents_defaults.unwrap_or(
+    Json::object({}),
+  )
   let config = {
     "tools": self.openclaw.openclaw_tools,
     "agents": { "defaults": defaults }.to_json(),
@@ -1535,9 +1385,7 @@ fn Gateway::openclaw_config_health_json(self : Gateway) -> Json {
   openclaw_config_health_from_json(config)
 }
 
-
 ///|
-
 fn openclaw_config_health_from_json(config : Json) -> Json {
   let warnings : Array[Json] = []
   match openclaw_nested_json(config, ["tools", "profile"]) {
@@ -1589,9 +1437,7 @@ fn openclaw_config_health_from_json(config : Json) -> Json {
   Json::array(warnings)
 }
 
-
 ///|
-
 async fn Gateway::handle_fetch_models_for_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1624,9 +1470,7 @@ async fn Gateway::handle_fetch_models_for_config(
   }
 }
 
-
 ///|
-
 fn body_snippet(body : String, max_chars : Int) -> String {
   let mut snippet = ""
   let limit = if body.length() < max_chars { body.length() } else { max_chars }
@@ -1648,13 +1492,10 @@ fn body_snippet(body : String, max_chars : Int) -> String {
   snippet
 }
 
-
 ///|
-
 fn rectifier_media_heuristic_enabled(provider : ProviderRouteTarget?) -> Bool {
   let config = moonstat_rectifier_config_from_env()
   config.enabled &&
   config.request_media_heuristic &&
   provider_media_heuristic_enabled(provider)
 }
-

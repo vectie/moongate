@@ -741,7 +741,9 @@ fn moon_trim_trailing_slash(path : String) -> String {
 }
 
 ///|
-async fn moon_collect_provider_session_files(provider : String) -> Array[String] {
+async fn moon_collect_provider_session_files(
+  provider : String,
+) -> Array[String] {
   let files = []
   for root in moon_session_provider_roots(provider) {
     match provider {
@@ -998,7 +1000,8 @@ async fn moon_collect_gemini_chat_files(
     let chats_dir = @pathx.join(project.path, "chats")
     let chats = @fsx.list_directory(chats_dir) catch { _ => continue }
     for chat in chats {
-      if chat.kind is @fsx.FileKind::Regular && moon_session_file_name(chat.name) {
+      if chat.kind is @fsx.FileKind::Regular &&
+        moon_session_file_name(chat.name) {
         files.push(chat.path)
       }
     }
@@ -1169,7 +1172,8 @@ fn moon_parse_claude_session_lines(
       last_active_at = moon_json_timestamp_ms(moon_json_get(value, "timestamp"))
     }
     if custom_title is None &&
-      json_string_from_json(moon_json_get(value, "type")) == Some("custom-title") {
+      json_string_from_json(moon_json_get(value, "type")) ==
+      Some("custom-title") {
       match json_string_from_json(moon_json_get(value, "customTitle")) {
         Some(value) if !value.trim().is_empty() =>
           custom_title = Some(value.trim().to_owned())
@@ -1448,7 +1452,8 @@ async fn moon_load_opencode_sqlite_messages(
     #|GROUP BY m.id, m.time_created, m.data
     #|ORDER BY m.time_created ASC;
   ).replace_all(old="$SESSION", new=moon_sqlite_quote(source.session_id))
-  let rows = match moon_sqlite_json_rows(source.db_path, query, read_only=true) {
+  let rows = match
+    moon_sqlite_json_rows(source.db_path, query, read_only=true) {
     Ok(rows) => rows
     Err(error) => return Err(error)
   }
@@ -1532,7 +1537,8 @@ async fn moon_load_hermes_sqlite_messages(
     #|WHERE session_id = $SESSION
     #|ORDER BY created_at ASC;
   ).replace_all(old="$SESSION", new=moon_sqlite_quote(source.session_id))
-  let rows = match moon_sqlite_json_rows(source.db_path, query, read_only=true) {
+  let rows = match
+    moon_sqlite_json_rows(source.db_path, query, read_only=true) {
     Ok(rows) => rows
     Err(error) => return Err(error)
   }
@@ -1540,7 +1546,9 @@ async fn moon_load_hermes_sqlite_messages(
   for row in rows {
     guard row is Object(obj) else { continue }
     guard moon_json_string(obj.get("role")) is Some(role) else { continue }
-    guard moon_json_string(obj.get("content")) is Some(content) else { continue }
+    guard moon_json_string(obj.get("content")) is Some(content) else {
+      continue
+    }
     if content.trim().is_empty() {
       continue
     }
@@ -1659,7 +1667,9 @@ async fn moon_delete_hermes_sqlite_session_with_expected(
 }
 
 ///|
-fn moon_parse_opencode_sqlite_source(source : String) -> MoonSqliteSessionSource? {
+fn moon_parse_opencode_sqlite_source(
+  source : String,
+) -> MoonSqliteSessionSource? {
   guard source.has_prefix("sqlite:") else { return None }
   let rest = source["sqlite:".length():].to_owned()
   let sep = moon_last_index_of(rest, ":ses_")
@@ -1901,7 +1911,9 @@ fn moon_load_gemini_messages(content : String) -> Array[MoonSessionMessage] {
 }
 
 ///|
-fn moon_load_generic_json_messages(content : String) -> Array[MoonSessionMessage] {
+fn moon_load_generic_json_messages(
+  content : String,
+) -> Array[MoonSessionMessage] {
   let messages = []
   for line in moon_nonempty_lines_from_content(content) {
     guard moon_parse_json_line(line) is Some(value) else { continue }

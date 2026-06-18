@@ -247,7 +247,9 @@ fn MoonToolInstallation::to_json(self : MoonToolInstallation) -> Json {
 }
 
 ///|
-fn MoonToolInstallationReport::to_json(self : MoonToolInstallationReport) -> Json {
+fn MoonToolInstallationReport::to_json(
+  self : MoonToolInstallationReport,
+) -> Json {
   {
     "tool": Json::string(self.tool),
     "installs": Json::array(self.installs.map(fn(item) { item.to_json() })),
@@ -440,7 +442,10 @@ async fn moon_build_tool_lifecycle_command(
       match action {
         Install => moon_tool_install_command(tool)
         Update =>
-          moon_tool_update_command(tool, moon_enumerate_tool_installations(tool))
+          moon_tool_update_command(
+            tool,
+            moon_enumerate_tool_installations(tool),
+          )
       },
     )
     lines.push("")

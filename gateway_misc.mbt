@@ -1,5 +1,4 @@
-
-
+///|
 pub struct Gateway {
   host : String
   port : Int
@@ -21,9 +20,7 @@ pub struct Gateway {
   openclaw : OpenClawService
 }
 
-
 ///|
-
 pub fn Gateway::new(
   port~ : Int,
   host? : String = "127.0.0.1",
@@ -46,9 +43,7 @@ pub fn Gateway::new(
   }
 }
 
-
 ///|
-
 fn codex_forward_failed_error_message(
   provider_name : String,
   request_model : String,
@@ -61,9 +56,7 @@ fn codex_forward_failed_error_message(
   )
 }
 
-
 ///|
-
 fn codex_forward_failed_error_json(
   provider : ProviderRouteTarget,
   request_model : String,
@@ -90,9 +83,7 @@ fn codex_forward_failed_error_json(
   }.to_json()
 }
 
-
 ///|
-
 fn codex_forward_failed_error_body(
   provider : ProviderRouteTarget,
   request_model : String,
@@ -102,32 +93,24 @@ fn codex_forward_failed_error_body(
   codex_forward_failed_error_json(provider, request_model, endpoint, cause).stringify()
 }
 
-
 ///|
-
 pub fn Gateway::host(self : Gateway) -> String {
   self.host
 }
 
-
 ///|
-
 pub fn Gateway::port(self : Gateway) -> Int {
   self.port
 }
 
-
 ///|
-
 async fn Gateway::record_bad_request(self : Gateway) -> Unit {
   self.release_provider_permit_neutral()
   self.usage.stats.record_bad_request()
   self.usage.stats.save_persistent_store()
 }
 
-
 ///|
-
 async fn Gateway::record_upstream_error_status(
   self : Gateway,
   response_bytes : Int,
@@ -142,18 +125,14 @@ async fn Gateway::record_upstream_error_status(
   self.usage.stats.save_persistent_store()
 }
 
-
 ///|
-
 async fn Gateway::record_internal_error(self : Gateway) -> Unit {
   self.release_provider_permit_neutral()
   self.usage.stats.record_internal_error()
   self.usage.stats.save_persistent_store()
 }
 
-
 ///|
-
 fn moon_first_stream_event_ms(current : Int?, started_at_ms : Int?) -> Int? {
   match current {
     Some(_) => current
@@ -165,9 +144,7 @@ fn moon_first_stream_event_ms(current : Int?, started_at_ms : Int?) -> Int? {
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_register_page(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -177,9 +154,7 @@ async fn Gateway::handle_register_page(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_health(
   self : Gateway,
   _r : @httpx.RequestReader,
@@ -198,9 +173,7 @@ async fn Gateway::handle_health(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_codex_responses(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -260,9 +233,7 @@ async fn Gateway::handle_codex_responses(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_chat_completions(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -328,9 +299,7 @@ async fn Gateway::handle_chat_completions(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_gemini(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -393,9 +362,7 @@ async fn Gateway::handle_gemini(
   }
 }
 
-
 ///|
-
 async fn Gateway::forward_gemini_get(
   self : Gateway,
   url : String,
@@ -426,9 +393,7 @@ async fn Gateway::forward_gemini_get(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::forward_gemini_post(
   self : Gateway,
   url : String,
@@ -468,9 +433,7 @@ async fn Gateway::forward_gemini_post(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::forward_non_streaming_chat_completion(
   self : Gateway,
   request : Json,
@@ -610,9 +573,7 @@ async fn Gateway::forward_non_streaming_chat_completion(
   }
 }
 
-
 ///|
-
 async fn Gateway::forward_streaming_chat_completion(
   self : Gateway,
   request : Json,
@@ -760,7 +721,9 @@ async fn Gateway::forward_streaming_chat_completion(
           }
         }
         client.close()
-        ignore(self.session.codex_chat_history.record_stream_events(stream_events))
+        ignore(
+          self.session.codex_chat_history.record_stream_events(stream_events),
+        )
         self.record_success_stream_usage(
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
@@ -775,9 +738,7 @@ async fn Gateway::forward_streaming_chat_completion(
   }
 }
 
-
 ///|
-
 async fn Gateway::forward_non_streaming_codex_response(
   self : Gateway,
   request : Json,
@@ -938,17 +899,13 @@ async fn Gateway::forward_non_streaming_codex_response(
   }
 }
 
-
 ///|
-
 fn codex_request_model(request : Json, fallback : String) -> String {
   guard request is Object(obj) else { return fallback }
   json_string_from_map(obj, "model").unwrap_or(fallback)
 }
 
-
 ///|
-
 async fn Gateway::forward_streaming_codex_response(
   self : Gateway,
   request : Json,
@@ -1195,7 +1152,9 @@ async fn Gateway::forward_streaming_codex_response(
           response_bytes += bytes
           w.write("data: [DONE]\n\n")
         }
-        ignore(self.session.codex_chat_history.record_stream_events(stream_events))
+        ignore(
+          self.session.codex_chat_history.record_stream_events(stream_events),
+        )
         self.record_success_stream_usage(
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
@@ -1210,9 +1169,7 @@ async fn Gateway::forward_streaming_codex_response(
   }
 }
 
-
 ///|
-
 fn codex_backend_responses_endpoint(
   compact : Bool,
   request_path? : StringView = "",
@@ -1225,9 +1182,7 @@ fn codex_backend_responses_endpoint(
   endpoint_with_request_query(base, request_path)
 }
 
-
 ///|
-
 fn endpoint_with_request_query(
   endpoint : String,
   request_path : StringView,
@@ -1238,9 +1193,7 @@ fn endpoint_with_request_query(
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::can_use_codex_compatible_upstream(
   self : ProviderRouteTarget,
 ) -> Bool {
@@ -1249,9 +1202,7 @@ fn ProviderRouteTarget::can_use_codex_compatible_upstream(
   self.api_key is Some(_)
 }
 
-
 ///|
-
 fn ProviderRouteTarget::codex_uses_chat_completions(
   self : ProviderRouteTarget,
 ) -> Bool {
@@ -1264,9 +1215,7 @@ fn ProviderRouteTarget::codex_uses_chat_completions(
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::can_use_claude_compatible_upstream(
   self : ProviderRouteTarget,
 ) -> Bool {
@@ -1275,9 +1224,7 @@ fn ProviderRouteTarget::can_use_claude_compatible_upstream(
   self.api_key is Some(_)
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_api_format(self : ProviderRouteTarget) -> String {
   if self.provider_type == Some("codex_oauth") {
     return "openai_responses"
@@ -1290,9 +1237,7 @@ fn ProviderRouteTarget::claude_api_format(self : ProviderRouteTarget) -> String 
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_api_format_for_model(
   self : ProviderRouteTarget,
   model : String,
@@ -1306,9 +1251,7 @@ fn ProviderRouteTarget::claude_api_format_for_model(
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::copilot_model_vendor(
   self : ProviderRouteTarget,
   model : String,
@@ -1330,28 +1273,20 @@ fn ProviderRouteTarget::copilot_model_vendor(
   None
 }
 
-
 ///|
-
 fn claude_api_format_needs_transform(api_format : String) -> Bool {
   api_format == "openai_chat" ||
   api_format == "openai_responses" ||
   api_format == "gemini_native"
 }
 
-
 ///|
-
 const CCS_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
 
-
 ///|
-
 const HERMES_WEB_OFFLINE_ERROR = "hermes_web_offline"
 
-
 ///|
-
 fn moon_is_managed_account_upstream_url(url : String) -> Bool {
   let (origin, path) = split_origin_and_path(url)
   let host = extract_host(origin).to_lower()
@@ -1360,9 +1295,7 @@ fn moon_is_managed_account_upstream_url(url : String) -> Bool {
   (host == "chatgpt.com" && path.has_prefix("/backend-api/codex"))
 }
 
-
 ///|
-
 fn parse_custom_user_agent(value : String?) -> String? {
   match value {
     Some(raw) => {
@@ -1377,9 +1310,7 @@ fn parse_custom_user_agent(value : String?) -> String? {
   }
 }
 
-
 ///|
-
 fn custom_user_agent_header_value_valid(value : String) -> Bool {
   for ch in value {
     let code = ch.to_int()
@@ -1393,9 +1324,7 @@ fn custom_user_agent_header_value_valid(value : String) -> Bool {
   true
 }
 
-
 ///|
-
 fn moon_claude_code_beta_header(existing_beta : String?) -> String {
   let claude_code_beta = "claude-code-20250219"
   match existing_beta {
@@ -1405,9 +1334,7 @@ fn moon_claude_code_beta_header(existing_beta : String?) -> String {
   }
 }
 
-
 ///|
-
 fn codex_compatible_responses_endpoint(endpoint : String) -> String {
   let query = match endpoint.find("?") {
     Some(index) => endpoint[index:]
@@ -1416,9 +1343,7 @@ fn codex_compatible_responses_endpoint(endpoint : String) -> String {
   "/responses\{query}"
 }
 
-
 ///|
-
 fn codex_compatible_chat_completions_endpoint(endpoint : String) -> String {
   let query = match endpoint.find("?") {
     Some(index) => endpoint[index:]
@@ -1427,9 +1352,7 @@ fn codex_compatible_chat_completions_endpoint(endpoint : String) -> String {
   "/chat/completions\{query}"
 }
 
-
 ///|
-
 fn claude_transform_endpoint(
   api_format : String,
   is_stream : Bool,
@@ -1462,16 +1385,12 @@ fn claude_transform_endpoint(
   }
 }
 
-
 ///|
-
 fn is_claude_messages_path(path : StringView) -> Bool {
   path == "/v1/messages" || path == "/claude/v1/messages"
 }
 
-
 ///|
-
 fn claude_transform_passthrough_query(
   request_path : StringView,
   api_format : String,
@@ -1492,9 +1411,7 @@ fn claude_transform_passthrough_query(
   }
 }
 
-
 ///|
-
 fn strip_claude_beta_query(query : StringView) -> String? {
   let parts : Array[String] = []
   for pair in query.split("&") {
@@ -1509,9 +1426,7 @@ fn strip_claude_beta_query(query : StringView) -> String? {
   }
 }
 
-
 ///|
-
 fn gemini_stream_query_extra(
   api_format : String,
   is_stream : Bool,
@@ -1536,9 +1451,7 @@ fn gemini_stream_query_extra(
   Some(parts.join("&"))
 }
 
-
 ///|
-
 fn append_query_to_full_url(
   base_url : String,
   endpoint_trimmed : String,
@@ -1558,9 +1471,7 @@ fn append_query_to_full_url(
   }
 }
 
-
 ///|
-
 async fn Gateway::codex_client(
   self : Gateway,
   creds : @codex.Credentials,
@@ -1574,9 +1485,7 @@ async fn Gateway::codex_client(
   )
 }
 
-
 ///|
-
 priv enum MoonClientFormat {
   Claude
   Codex
@@ -1586,9 +1495,7 @@ priv enum MoonClientFormat {
   Unknown
 } derive(Eq)
 
-
 ///|
-
 fn MoonClientFormat::to_string(self : MoonClientFormat) -> String {
   match self {
     Claude => "claude"
@@ -1600,9 +1507,7 @@ fn MoonClientFormat::to_string(self : MoonClientFormat) -> String {
   }
 }
 
-
 ///|
-
 fn moon_client_format_from_path(path : String) -> MoonClientFormat {
   if path.contains("/v1/messages") {
     Claude
@@ -1622,9 +1527,7 @@ fn moon_client_format_from_path(path : String) -> MoonClientFormat {
   }
 }
 
-
 ///|
-
 fn moon_client_format_from_body(body : Json) -> MoonClientFormat {
   guard body is Object(obj) else { return Unknown }
   if obj.get("messages") is Some(_) &&
@@ -1645,9 +1548,7 @@ fn moon_client_format_from_body(body : Json) -> MoonClientFormat {
   Unknown
 }
 
-
 ///|
-
 fn moon_client_format_for_request(
   path : String,
   body : Json?,
@@ -1662,17 +1563,13 @@ fn moon_client_format_for_request(
   }
 }
 
-
 ///|
-
 priv struct MoonClientSession {
   session_id : String
   client_provided : Bool
 }
 
-
 ///|
-
 fn MoonClientSession::upstream_session_id(self : MoonClientSession) -> String? {
   if self.client_provided {
     Some(self.session_id)
@@ -1681,9 +1578,7 @@ fn MoonClientSession::upstream_session_id(self : MoonClientSession) -> String? {
   }
 }
 
-
 ///|
-
 fn json_metadata_string(body : Json, key : String) -> String? {
   guard body is Object(obj) else { return None }
   guard obj.get("metadata") is Some(Object(metadata)) else { return None }
@@ -1693,9 +1588,7 @@ fn json_metadata_string(body : Json, key : String) -> String? {
   }
 }
 
-
 ///|
-
 fn json_bool_field(json : Json, key : String) -> Bool? {
   guard json is Object(obj) else { return None }
   match obj.get(key) {
@@ -1705,9 +1598,7 @@ fn json_bool_field(json : Json, key : String) -> Bool? {
   }
 }
 
-
 ///|
-
 fn json_string_field(json : Json, key : String) -> String? {
   guard json is Object(obj) else { return None }
   match obj.get(key) {
@@ -1716,9 +1607,7 @@ fn json_string_field(json : Json, key : String) -> String? {
   }
 }
 
-
 ///|
-
 fn normalize_gemini_endpoint(path : StringView) -> String {
   let raw = path.to_owned()
   if raw.has_prefix("/gemini/v1beta/") {
@@ -1730,9 +1619,7 @@ fn normalize_gemini_endpoint(path : StringView) -> String {
   }
 }
 
-
 ///|
-
 fn gemini_model_from_endpoint(endpoint : String) -> String {
   match endpoint.find("/models/") {
     Some(index) => {
@@ -1755,9 +1642,7 @@ fn gemini_model_from_endpoint(endpoint : String) -> String {
   }
 }
 
-
 ///|
-
 fn gemini_base_url() -> String {
   match getenv_or_none("GOOGLE_GEMINI_BASE_URL") {
     Some(url) if !url.is_empty() => url
@@ -1769,30 +1654,22 @@ fn gemini_base_url() -> String {
   }
 }
 
-
 ///|
-
 fn gemini_base_is_full_url() -> Bool {
   env_bool("MOONSTAT_GEMINI_FULL_URL") || env_bool("GEMINI_FULL_URL")
 }
 
-
 ///|
-
 fn codex_base_is_full_url() -> Bool {
   env_bool("MOONSTAT_CODEX_FULL_URL") || env_bool("CODEX_FULL_URL")
 }
 
-
 ///|
-
 fn claude_base_is_full_url() -> Bool {
   env_bool("MOONSTAT_CLAUDE_FULL_URL") || env_bool("ANTHROPIC_FULL_URL")
 }
 
-
 ///|
-
 fn moon_model_mapping_from_env() -> ModelMapping? {
   let mapping = ModelMapping::new(
     haiku_model=env_first_non_empty([
@@ -1815,9 +1692,7 @@ fn moon_model_mapping_from_env() -> ModelMapping? {
   }
 }
 
-
 ///|
-
 fn env_first_non_empty(keys : Array[String]) -> String? {
   for key in keys {
     match getenv_or_none(key) {
@@ -1829,9 +1704,7 @@ fn env_first_non_empty(keys : Array[String]) -> String? {
   None
 }
 
-
 ///|
-
 fn env_first_non_negative_decimal(keys : Array[String]) -> String? {
   for key in keys {
     match getenv_or_none(key) {
@@ -1843,16 +1716,12 @@ fn env_first_non_negative_decimal(keys : Array[String]) -> String? {
   None
 }
 
-
 ///|
-
 fn url_contains_query_key(url : String) -> Bool {
   url.contains("?key=") || url.contains("&key=")
 }
 
-
 ///|
-
 fn env_bool(key : String) -> Bool {
   match getenv_or_none(key) {
     Some(value) => {
@@ -1866,9 +1735,7 @@ fn env_bool(key : String) -> Bool {
   }
 }
 
-
 ///|
-
 fn gemini_api_key() -> String? {
   match getenv_or_none("GEMINI_API_KEY") {
     Some(key) if !key.is_empty() => Some(key)
@@ -1880,18 +1747,14 @@ fn gemini_api_key() -> String? {
   }
 }
 
-
 ///|
-
 fn getenv_or_none(key : String) -> String? {
   @os.getenv(key) catch {
     _ => None
   }
 }
 
-
 ///|
-
 fn moon_normalize_app_type(app : String) -> String {
   match app.trim().to_lower() {
     "claude-desktop" | "claude_desktop" => "claude-desktop"
@@ -1906,26 +1769,20 @@ fn moon_normalize_app_type(app : String) -> String {
   }
 }
 
-
 ///|
-
 fn moon_home_dir() -> String {
   @os.home() catch {
     _ => "."
   }
 }
 
-
 ///|
-
 fn moon_ascii_digit_at(value : String, index : Int) -> Bool {
   let ch = value[index]
   ch >= '0' && ch <= '9'
 }
 
-
 ///|
-
 async fn moon_ensure_directory(path : String) -> Bool {
   @fsx.make_directory(path, recursive=true, exists_ok=true) catch {
     _ => return false
@@ -1933,9 +1790,7 @@ async fn moon_ensure_directory(path : String) -> Bool {
   true
 }
 
-
 ///|
-
 async fn moon_open_directory_result_json(path : String) -> Result[Json, String] {
   if !moon_ensure_directory(path) {
     return Err("open_directory_create_failed")
@@ -1943,9 +1798,7 @@ async fn moon_open_directory_result_json(path : String) -> Result[Json, String] 
   Ok(Json::boolean(true))
 }
 
-
 ///|
-
 fn moon_preview(content : String, limit : Int) -> String {
   if content.length() <= limit {
     content
@@ -1954,9 +1807,7 @@ fn moon_preview(content : String, limit : Int) -> String {
   }
 }
 
-
 ///|
-
 fn moon_count_case_insensitive_matches(
   haystack : String,
   needle : String,
@@ -1985,9 +1836,7 @@ fn moon_count_case_insensitive_matches(
   (count, first)
 }
 
-
 ///|
-
 fn moon_preserve_secret_if_empty(
   incoming : Map[String, Json],
   existing : Map[String, Json],
@@ -2008,9 +1857,7 @@ fn moon_preserve_secret_if_empty(
   }
 }
 
-
 ///|
-
 fn moon_optional_path_from_request(path : StringView, body : Json?) -> String? {
   match proxy_string_request(path, body, ["path", "appConfigDir"]) {
     Some(value) if !value.trim().is_empty() => return Some(value)
@@ -2027,9 +1874,7 @@ fn moon_optional_path_from_request(path : StringView, body : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn moon_json_primary_api_key_any(content : String) -> Bool {
   let parsed : Result[Json, Error] = try? @json.parse(content)
   match parsed {
@@ -2042,16 +1887,12 @@ fn moon_json_primary_api_key_any(content : String) -> Bool {
   }
 }
 
-
 ///|
-
 async fn moon_env_conflicts_json(app : String) -> Json {
   moon_env_conflicts_json_with_shell_files(app, moon_env_shell_config_paths())
 }
 
-
 ///|
-
 async fn moon_push_shell_env_conflicts(
   conflicts : Array[Json],
   file_path : String,
@@ -2078,9 +1919,7 @@ async fn moon_push_shell_env_conflicts(
   }
 }
 
-
 ///|
-
 fn moon_env_conflict_keys(app : String) -> Array[String] {
   match app {
     "codex" =>
@@ -2108,9 +1947,7 @@ fn moon_env_conflict_keys(app : String) -> Array[String] {
   }
 }
 
-
 ///|
-
 async fn moon_delete_env_vars_json(body : Json?) -> Result[Json, String] {
   let backup = moon_env_backup_json(body)
   guard backup is Object(obj) else { return Err("invalid_backup") }
@@ -2139,9 +1976,7 @@ async fn moon_delete_env_vars_json(body : Json?) -> Result[Json, String] {
   Ok(backup)
 }
 
-
 ///|
-
 async fn moon_delete_single_env_conflict(
   conflict : Json,
 ) -> Result[Unit, String] {
@@ -2177,9 +2012,7 @@ async fn moon_delete_single_env_conflict(
   }
 }
 
-
 ///|
-
 async fn moon_restore_single_env_conflict(
   conflict : Json,
 ) -> Result[Unit, String] {
@@ -2211,9 +2044,7 @@ async fn moon_restore_single_env_conflict(
   }
 }
 
-
 ///|
-
 fn moon_env_conflicts_from_body(body : Json?) -> Array[Json] {
   match body {
     Some(Array(items)) => items
@@ -2226,9 +2057,7 @@ fn moon_env_conflicts_from_body(body : Json?) -> Array[Json] {
   }
 }
 
-
 ///|
-
 fn moon_env_conflict_string(
   obj : Map[String, Json],
   key : String,
@@ -2244,9 +2073,7 @@ fn moon_env_conflict_string(
   }
 }
 
-
 ///|
-
 fn moon_env_assignment_line(line : String) -> (String, String)? {
   if line.is_empty() || line.has_prefix("#") {
     return None
@@ -2270,9 +2097,7 @@ fn moon_env_assignment_line(line : String) -> (String, String)? {
   }
 }
 
-
 ///|
-
 fn moon_env_name_matches_keywords(
   var_name : String,
   keywords : Array[String],
@@ -2286,9 +2111,7 @@ fn moon_env_name_matches_keywords(
   false
 }
 
-
 ///|
-
 fn moon_trim_env_value_quotes(value : String) -> String {
   let trimmed = value.trim().to_owned()
   if trimmed.length() >= 2 {
@@ -2300,9 +2123,7 @@ fn moon_trim_env_value_quotes(value : String) -> String {
   trimmed
 }
 
-
 ///|
-
 fn moon_json_request(
   path : StringView,
   body : Json?,
@@ -2327,9 +2148,7 @@ fn moon_json_request(
   None
 }
 
-
 ///|
-
 fn moon_json_value_from_string(value : String) -> Json {
   try @json.parse(value) catch {
     _ => Json::string(value)
@@ -2338,9 +2157,7 @@ fn moon_json_value_from_string(value : String) -> Json {
   }
 }
 
-
 ///|
-
 fn moon_mcp_apps_json(app : String, enabled? : Bool = true) -> Json {
   let apps = {
     "claude": Json::boolean(false),
@@ -2355,9 +2172,7 @@ fn moon_mcp_apps_json(app : String, enabled? : Bool = true) -> Json {
   Json::object(apps)
 }
 
-
 ///|
-
 fn moon_mcp_app_enabled(server : Json, app : String) -> Bool {
   guard server is Object(obj) else { return false }
   guard obj.get("apps") is Some(Object(apps)) else { return false }
@@ -2368,10 +2183,12 @@ fn moon_mcp_app_enabled(server : Json, app : String) -> Bool {
   }
 }
 
-
 ///|
-
-fn moon_mcp_server_with_app(server : Json, app : String, enabled : Bool) -> Json {
+fn moon_mcp_server_with_app(
+  server : Json,
+  app : String,
+  enabled : Bool,
+) -> Json {
   let normalized = moon_normalize_app_type(app)
   match server {
     Object(obj) => {
@@ -2392,9 +2209,7 @@ fn moon_mcp_server_with_app(server : Json, app : String, enabled : Bool) -> Json
   }
 }
 
-
 ///|
-
 fn moon_mcp_server_from_request(
   path : StringView,
   body : Json?,
@@ -2424,9 +2239,7 @@ fn moon_mcp_server_from_request(
   Some((id, moon_mcp_server_from_spec(id, spec, default_app)))
 }
 
-
 ///|
-
 fn moon_mcp_server_from_spec(id : String, spec : Json, app : String) -> Json {
   let name = match spec {
     Object(obj) => json_string_from_map_any(obj, ["name"]).unwrap_or(id)
@@ -2444,9 +2257,7 @@ fn moon_mcp_server_from_spec(id : String, spec : Json, app : String) -> Json {
   })
 }
 
-
 ///|
-
 fn moon_mcp_normalize_server(
   id : String,
   server : Json,
@@ -2476,9 +2287,7 @@ fn moon_mcp_normalize_server(
   }
 }
 
-
 ///|
-
 fn moon_mcp_servers_object_for_app(
   servers : Map[String, Json],
   app : String?,
@@ -2497,9 +2306,7 @@ fn moon_mcp_servers_object_for_app(
   Json::object(result)
 }
 
-
 ///|
-
 fn moon_mcp_valid_server_spec(spec : Json) -> Bool {
   guard spec is Object(obj) else { return false }
   let typ = json_string_from_map_any(obj, ["type"]).unwrap_or("stdio")
@@ -2512,9 +2319,7 @@ fn moon_mcp_valid_server_spec(spec : Json) -> Bool {
   }
 }
 
-
 ///|
-
 fn moon_mcp_import_spec_for_app(app : String, spec : Json) -> Json {
   let normalized = moon_normalize_app_type(app)
   if normalized != "gemini" {
@@ -2544,9 +2349,7 @@ fn moon_mcp_import_spec_for_app(app : String, spec : Json) -> Json {
   }
 }
 
-
 ///|
-
 fn moon_import_mcp_servers_map(
   servers : Map[String, Json],
   app : String,
@@ -2574,9 +2377,7 @@ fn moon_import_mcp_servers_map(
   changed
 }
 
-
 ///|
-
 fn moon_import_mcp_from_root_json(
   servers : Map[String, Json],
   app : String,
@@ -2587,9 +2388,7 @@ fn moon_import_mcp_from_root_json(
   moon_import_mcp_servers_map(servers, app, mcp_servers)
 }
 
-
 ///|
-
 fn moon_import_mcp_from_codex_toml_text(
   servers : Map[String, Json],
   content : String,
@@ -2656,9 +2455,7 @@ fn moon_import_mcp_from_codex_toml_text(
   moon_import_mcp_servers_map(servers, "codex", normalized)
 }
 
-
 ///|
-
 fn moon_codex_raw_mcp_spec(
   specs : Map[String, Json],
   id : String,
@@ -2673,9 +2470,7 @@ fn moon_codex_raw_mcp_spec(
   }
 }
 
-
 ///|
-
 fn moon_codex_mcp_section(section : String) -> (String, String)? {
   let rest = if section.has_prefix("mcp_servers.") {
     section["mcp_servers.".length():].to_owned()
@@ -2699,9 +2494,7 @@ fn moon_codex_mcp_section(section : String) -> (String, String)? {
   }
 }
 
-
 ///|
-
 fn moon_codex_mcp_unified_spec(raw_spec : Json) -> Json {
   guard raw_spec is Object(raw) else { return Json::object({}) }
   let typ = json_string_from_map_any(raw, ["type"]).unwrap_or("stdio")
@@ -2752,9 +2545,7 @@ fn moon_codex_mcp_unified_spec(raw_spec : Json) -> Json {
   Json::object(spec)
 }
 
-
 ///|
-
 fn moon_codex_mcp_core_field(typ : String, key : String) -> Bool {
   match typ {
     "stdio" =>
@@ -2769,9 +2560,7 @@ fn moon_codex_mcp_core_field(typ : String, key : String) -> Bool {
   }
 }
 
-
 ///|
-
 fn moon_toml_strip_comment(line : String) -> String {
   let mut in_quote = false
   let mut quote = 0
@@ -2796,9 +2585,7 @@ fn moon_toml_strip_comment(line : String) -> String {
   line
 }
 
-
 ///|
-
 fn moon_toml_assignment(line : String) -> (String, String)? {
   guard line.find("=") is Some(index) else { return None }
   let key = line[:index].trim().to_owned()
@@ -2810,9 +2597,7 @@ fn moon_toml_assignment(line : String) -> (String, String)? {
   }
 }
 
-
 ///|
-
 fn moon_toml_value(raw : String) -> Json? {
   let value = raw.trim().to_owned()
   if value.is_empty() {
@@ -2861,9 +2646,7 @@ fn moon_toml_value(raw : String) -> Json? {
   }
 }
 
-
 ///|
-
 fn moon_toml_split_csv(text : String) -> Array[String] {
   let parts : Array[String] = []
   let mut start = 0
@@ -2898,9 +2681,7 @@ fn moon_toml_split_csv(text : String) -> Array[String] {
   parts
 }
 
-
 ///|
-
 fn moon_clean_blank_lines(lines : Array[String]) -> String {
   let cleaned : Array[String] = []
   let mut blank_run = 0
@@ -2918,9 +2699,7 @@ fn moon_clean_blank_lines(lines : Array[String]) -> String {
   cleaned.join("\n")
 }
 
-
 ///|
-
 async fn moon_import_mcp_from_apps_count(servers : Map[String, Json]) -> Int {
   let mut total = 0
   total += moon_import_mcp_from_file(
@@ -2940,9 +2719,7 @@ async fn moon_import_mcp_from_apps_count(servers : Map[String, Json]) -> Int {
   total
 }
 
-
 ///|
-
 fn moon_validate_mcp_command_name(command : String) -> Bool {
   let trimmed = command.trim()
   !trimmed.is_empty() &&
@@ -2951,16 +2728,12 @@ fn moon_validate_mcp_command_name(command : String) -> Bool {
   !trimmed.contains("\u{0000}")
 }
 
-
 ///|
-
 fn moon_prompt_store_key(app : String, id : String) -> String {
   "\{moon_normalize_app_type(app)}:\{id}"
 }
 
-
 ///|
-
 fn moon_prompt_from_request(
   path : StringView,
   body : Json?,
@@ -2970,7 +2743,9 @@ fn moon_prompt_from_request(
     Some(Object(prompt)) =>
       match json_string_from_map_any(prompt, ["id"]) {
         Some(id) =>
-          return Some((app, id, moon_normalize_prompt(id, Json::object(prompt))))
+          return Some(
+            (app, id, moon_normalize_prompt(id, Json::object(prompt))),
+          )
         None => ()
       }
     _ => ()
@@ -2999,9 +2774,7 @@ fn moon_prompt_from_request(
   Some((app, id, Json::object(prompt)))
 }
 
-
 ///|
-
 async fn moon_enable_prompt_json(
   prompts : Map[String, Json],
   app : String,
@@ -3057,9 +2830,7 @@ async fn moon_enable_prompt_json(
   Ok(Json::null())
 }
 
-
 ///|
-
 fn moon_normalize_prompt(id : String, prompt : Json) -> Json {
   match prompt {
     Object(obj) => {
@@ -3087,9 +2858,7 @@ fn moon_normalize_prompt(id : String, prompt : Json) -> Json {
   }
 }
 
-
 ///|
-
 fn moon_prompts_object_for_app(
   prompts : Map[String, Json],
   app : String,
@@ -3109,16 +2878,12 @@ fn moon_prompts_object_for_app(
   Json::object(result)
 }
 
-
 ///|
-
 fn gemini_request_is_stream(endpoint : String, body : Json) -> Bool {
   moon_streaming_request(endpoint, body, {})
 }
 
-
 ///|
-
 fn moon_streaming_request(
   endpoint : String,
   body : Json,
@@ -3136,9 +2901,7 @@ fn moon_streaming_request(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3158,9 +2921,7 @@ async fn Gateway::handle_status(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_pick_directory(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3177,9 +2938,7 @@ async fn Gateway::handle_pick_directory(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_open_external(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3193,18 +2952,14 @@ async fn Gateway::handle_open_external(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 fn Gateway::record_external_open(self : Gateway, raw_url : String) -> String {
   let normalized = moon_normalize_external_url(raw_url)
   self.proxy.last_external_url = Some(normalized)
   normalized
 }
 
-
 ///|
-
 async fn Gateway::handle_copy_text_to_clipboard(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3216,9 +2971,7 @@ async fn Gateway::handle_copy_text_to_clipboard(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_check_for_updates(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3227,9 +2980,7 @@ async fn Gateway::handle_check_for_updates(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_update_tray_menu(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3238,9 +2989,7 @@ async fn Gateway::handle_update_tray_menu(
   write_usage_json(w, moon_update_tray_menu_result())
 }
 
-
 ///|
-
 async fn Gateway::handle_is_portable_mode(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3249,9 +2998,7 @@ async fn Gateway::handle_is_portable_mode(
   write_usage_json(w, Json::boolean(moon_portable_mode()))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_init_error(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3260,9 +3007,7 @@ async fn Gateway::handle_get_init_error(
   write_usage_json(w, moon_init_error_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_migration_result(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3271,9 +3016,7 @@ async fn Gateway::handle_get_migration_result(
   write_usage_json(w, moon_migration_result_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_skills_migration_result(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3282,9 +3025,7 @@ async fn Gateway::handle_get_skills_migration_result(
   write_usage_json(w, moon_skills_migration_result_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_tool_versions(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3296,9 +3037,7 @@ async fn Gateway::handle_get_tool_versions(
   write_usage_json(w, moon_get_tool_versions_json(tools))
 }
 
-
 ///|
-
 async fn Gateway::handle_run_tool_lifecycle_action(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3308,7 +3047,8 @@ async fn Gateway::handle_run_tool_lifecycle_action(
   let body = proxy_json_body(r)
   let tools = match body {
     Some(Object(obj)) => moon_requested_tool_names_from_json(obj.get("tools"))
-    _ => moon_requested_tool_names(proxy_string_request(r.path, body, ["tools"]))
+    _ =>
+      moon_requested_tool_names(proxy_string_request(r.path, body, ["tools"]))
   }
   guard proxy_string_request(r.path, body, ["action"]) is Some(action) else {
     write_usage_bad_request(w, "missing_action")
@@ -3320,9 +3060,7 @@ async fn Gateway::handle_run_tool_lifecycle_action(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_probe_tool_installations(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3332,7 +3070,8 @@ async fn Gateway::handle_probe_tool_installations(
   let body = proxy_json_body(r)
   let tools = match body {
     Some(Object(obj)) => moon_requested_tool_names_from_json(obj.get("tools"))
-    _ => moon_requested_tool_names(proxy_string_request(r.path, body, ["tools"]))
+    _ =>
+      moon_requested_tool_names(proxy_string_request(r.path, body, ["tools"]))
   }
   match moon_probe_tool_installations_json(tools) {
     Ok(result) => write_usage_json(w, result)
@@ -3340,9 +3079,7 @@ async fn Gateway::handle_probe_tool_installations(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_set_window_theme(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3355,9 +3092,7 @@ async fn Gateway::handle_set_window_theme(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_enter_lightweight_mode(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3366,9 +3101,7 @@ async fn Gateway::handle_enter_lightweight_mode(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_exit_lightweight_mode(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3377,9 +3110,7 @@ async fn Gateway::handle_exit_lightweight_mode(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_is_lightweight_mode(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3387,9 +3118,7 @@ async fn Gateway::handle_is_lightweight_mode(
   write_usage_json(w, Json::boolean(self.config.lightweight_mode))
 }
 
-
 ///|
-
 async fn Gateway::handle_webdav_test_connection(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3415,9 +3144,7 @@ async fn Gateway::handle_webdav_test_connection(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_webdav_sync_operation(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3443,9 +3170,7 @@ async fn Gateway::handle_webdav_sync_operation(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_webdav_sync_fetch_remote_info(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3464,9 +3189,7 @@ async fn Gateway::handle_webdav_sync_fetch_remote_info(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_s3_test_connection(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3492,9 +3215,7 @@ async fn Gateway::handle_s3_test_connection(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_s3_sync_operation(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3520,9 +3241,7 @@ async fn Gateway::handle_s3_sync_operation(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_s3_sync_fetch_remote_info(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3541,9 +3260,7 @@ async fn Gateway::handle_s3_sync_fetch_remote_info(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_disable_current_omo(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3556,9 +3273,7 @@ async fn Gateway::handle_disable_current_omo(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_installed_skills(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3567,9 +3282,7 @@ async fn Gateway::handle_get_installed_skills(
   write_usage_json(w, moon_get_installed_skills_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_install_skill_unified(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3617,9 +3330,7 @@ async fn Gateway::handle_install_skill_unified(
   write_usage_json(w, moon_install_skill_unified_json(skill, current_app))
 }
 
-
 ///|
-
 async fn Gateway::handle_uninstall_skill_unified(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3634,9 +3345,7 @@ async fn Gateway::handle_uninstall_skill_unified(
   write_usage_json(w, moon_uninstall_skill_unified_json(id))
 }
 
-
 ///|
-
 async fn Gateway::handle_toggle_skill_app(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3660,9 +3369,7 @@ async fn Gateway::handle_toggle_skill_app(
   write_usage_json(w, moon_toggle_skill_app_json(id, app, enabled))
 }
 
-
 ///|
-
 async fn Gateway::handle_scan_unmanaged_skills(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3671,9 +3378,7 @@ async fn Gateway::handle_scan_unmanaged_skills(
   write_usage_json(w, moon_scan_unmanaged_skills_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_import_skills_from_apps(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3693,9 +3398,7 @@ async fn Gateway::handle_import_skills_from_apps(
   write_usage_json(w, moon_import_skills_from_apps_json(imports))
 }
 
-
 ///|
-
 async fn Gateway::handle_discover_available_skills(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3704,9 +3407,7 @@ async fn Gateway::handle_discover_available_skills(
   write_usage_json(w, moon_discover_available_skills_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_check_skill_updates(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3715,9 +3416,7 @@ async fn Gateway::handle_check_skill_updates(
   write_usage_json(w, moon_check_skill_updates_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_update_skill(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3732,9 +3431,7 @@ async fn Gateway::handle_update_skill(
   write_usage_json(w, moon_update_skill_json(id))
 }
 
-
 ///|
-
 async fn Gateway::handle_migrate_skill_storage(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3749,9 +3446,7 @@ async fn Gateway::handle_migrate_skill_storage(
   write_usage_json(w, moon_migrate_skill_storage_json(target))
 }
 
-
 ///|
-
 async fn Gateway::handle_search_skills_sh(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3765,9 +3460,7 @@ async fn Gateway::handle_search_skills_sh(
   write_usage_json(w, moon_search_skills_sh_json(query, limit, offset))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_skills(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3776,9 +3469,7 @@ async fn Gateway::handle_get_skills(
   write_usage_json(w, moon_get_skills_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_install_skill_legacy(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3807,9 +3498,7 @@ async fn Gateway::handle_install_skill_legacy(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_install_skill_for_app(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3840,9 +3529,7 @@ async fn Gateway::handle_install_skill_for_app(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_uninstall_skill_legacy(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3857,9 +3544,7 @@ async fn Gateway::handle_uninstall_skill_legacy(
   write_usage_json(w, moon_uninstall_skill_unified_json(id))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_skill_repos(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3868,9 +3553,7 @@ async fn Gateway::handle_get_skill_repos(
   write_usage_json(w, moon_get_skill_repos_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_add_skill_repo(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3907,9 +3590,7 @@ async fn Gateway::handle_add_skill_repo(
   write_usage_json(w, moon_add_skill_repo_json(repo))
 }
 
-
 ///|
-
 fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
   guard proxy_string_request(path, body, ["owner"]) is Some(owner) else {
     return None
@@ -3931,9 +3612,7 @@ fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_remove_skill_repo(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3952,9 +3631,7 @@ async fn Gateway::handle_remove_skill_repo(
   write_usage_json(w, moon_remove_skill_repo_json(owner, name))
 }
 
-
 ///|
-
 async fn Gateway::handle_install_skills_from_zip(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -3973,9 +3650,7 @@ async fn Gateway::handle_install_skills_from_zip(
   write_usage_json(w, moon_install_skills_from_zip_json(file_path, current_app))
 }
 
-
 ///|
-
 async fn Gateway::handle_restart_app(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3984,9 +3659,7 @@ async fn Gateway::handle_restart_app(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_install_update_and_restart(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -3995,9 +3668,7 @@ async fn Gateway::handle_install_update_and_restart(
   write_usage_json(w, Json::boolean(false))
 }
 
-
 ///|
-
 async fn Gateway::handle_set_auto_launch(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4017,9 +3688,7 @@ async fn Gateway::handle_set_auto_launch(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_auto_launch_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4027,9 +3696,7 @@ async fn Gateway::handle_get_auto_launch_status(
   write_usage_json(w, Json::boolean(self.config.auto_launch_enabled))
 }
 
-
 ///|
-
 async fn Gateway::handle_check_env_conflicts(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4041,9 +3708,7 @@ async fn Gateway::handle_check_env_conflicts(
   write_usage_json(w, moon_env_conflicts_json(app))
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_env_vars(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4057,9 +3722,7 @@ async fn Gateway::handle_delete_env_vars(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_claude_mcp_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4078,9 +3741,7 @@ async fn Gateway::handle_get_claude_mcp_status(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_upsert_claude_mcp_server(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4089,16 +3750,16 @@ async fn Gateway::handle_upsert_claude_mcp_server(
   let body = proxy_json_body(r)
   match moon_mcp_server_from_request(r.path, body, "claude") {
     Some((id, server)) => {
-      self.config.mcp_servers[id] = moon_mcp_server_with_app(server, "claude", true)
+      self.config.mcp_servers[id] = moon_mcp_server_with_app(
+        server, "claude", true,
+      )
       write_usage_json(w, Json::boolean(true))
     }
     None => write_usage_json(w, Json::boolean(false))
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_mcp_server(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4115,9 +3776,7 @@ async fn Gateway::handle_delete_mcp_server(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_validate_mcp_command(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4131,9 +3790,7 @@ async fn Gateway::handle_validate_mcp_command(
   write_usage_json(w, Json::boolean(moon_validate_mcp_command_name(command)))
 }
 
-
 ///|
-
 async fn Gateway::handle_set_mcp_enabled(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4146,7 +3803,9 @@ async fn Gateway::handle_set_mcp_enabled(
     Some(id) =>
       match self.config.mcp_servers.get(id) {
         Some(server) => {
-          self.config.mcp_servers[id] = moon_mcp_server_with_app(server, app, enabled)
+          self.config.mcp_servers[id] = moon_mcp_server_with_app(
+            server, app, enabled,
+          )
           write_usage_json(w, Json::boolean(true))
         }
         None => write_usage_json(w, Json::boolean(false))
@@ -4155,19 +3814,18 @@ async fn Gateway::handle_set_mcp_enabled(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_mcp_servers(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, moon_mcp_servers_object_for_app(self.config.mcp_servers, None))
+  write_usage_json(
+    w,
+    moon_mcp_servers_object_for_app(self.config.mcp_servers, None),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_upsert_mcp_server(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4183,9 +3841,7 @@ async fn Gateway::handle_upsert_mcp_server(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_toggle_mcp_app(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4198,7 +3854,9 @@ async fn Gateway::handle_toggle_mcp_app(
     Some(id) =>
       match self.config.mcp_servers.get(id) {
         Some(server) => {
-          self.config.mcp_servers[id] = moon_mcp_server_with_app(server, app, enabled)
+          self.config.mcp_servers[id] = moon_mcp_server_with_app(
+            server, app, enabled,
+          )
           write_usage_json(w, Json::null())
         }
         None => write_usage_json(w, Json::null())
@@ -4207,9 +3865,7 @@ async fn Gateway::handle_toggle_mcp_app(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_import_mcp_from_apps(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4218,9 +3874,7 @@ async fn Gateway::handle_import_mcp_from_apps(
   write_usage_json(w, Json::number(imported.to_double()))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_prompts(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4231,9 +3885,7 @@ async fn Gateway::handle_get_prompts(
   write_usage_json(w, moon_prompts_object_for_app(self.config.prompts, app))
 }
 
-
 ///|
-
 async fn Gateway::handle_upsert_prompt(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4248,9 +3900,7 @@ async fn Gateway::handle_upsert_prompt(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_prompt(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4265,9 +3915,7 @@ async fn Gateway::handle_delete_prompt(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_enable_prompt(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4279,7 +3927,8 @@ async fn Gateway::handle_enable_prompt(
     Some(id) =>
       match moon_prompt_file_path_from_request(r.path, body, app) {
         Ok(file_path) =>
-          match moon_enable_prompt_json(self.config.prompts, app, id, file_path) {
+          match
+            moon_enable_prompt_json(self.config.prompts, app, id, file_path) {
             Ok(result) => write_usage_json(w, result)
             Err(error) => write_usage_bad_request(w, error)
           }
@@ -4289,9 +3938,7 @@ async fn Gateway::handle_enable_prompt(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_scan_local_proxies(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4300,9 +3947,7 @@ async fn Gateway::handle_scan_local_proxies(
   write_usage_json(w, moon_scan_local_proxies_json())
 }
 
-
 ///|
-
 fn moon_scan_local_proxies_json() -> Json {
   let found : Array[Json] = []
   for item in moon_local_proxy_ports() {
@@ -4316,9 +3961,7 @@ fn moon_scan_local_proxies_json() -> Json {
   Json::array(found)
 }
 
-
 ///|
-
 async fn Gateway::handle_get_claude_desktop_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4327,9 +3970,7 @@ async fn Gateway::handle_get_claude_desktop_status(
   write_usage_json(w, self.claude_desktop_status_json(status))
 }
 
-
 ///|
-
 fn Gateway::claude_desktop_status_json(
   self : Gateway,
   status : @claude_desktop.ClaudeDesktopStatus,
@@ -4359,9 +4000,7 @@ fn Gateway::claude_desktop_status_json(
   }.to_json()
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_desktop_mode_for_status(
   self : ProviderRouteTarget,
 ) -> String? {
@@ -4380,9 +4019,7 @@ fn ProviderRouteTarget::claude_desktop_mode_for_status(
   }
 }
 
-
 ///|
-
 fn Gateway::claude_desktop_expected_base_url(
   self : Gateway,
   mode : String?,
@@ -4400,9 +4037,7 @@ fn Gateway::claude_desktop_expected_base_url(
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_desktop_direct_base_url(
   self : ProviderRouteTarget,
 ) -> String? {
@@ -4417,9 +4052,7 @@ fn ProviderRouteTarget::claude_desktop_direct_base_url(
   }
 }
 
-
 ///|
-
 fn claude_desktop_missing_route_mappings(
   mode : String?,
   provider : ProviderRouteTarget?,
@@ -4431,9 +4064,7 @@ fn claude_desktop_missing_route_mappings(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_claude_desktop_default_routes(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4442,9 +4073,7 @@ async fn Gateway::handle_get_claude_desktop_default_routes(
   write_usage_json(w, claude_desktop_default_routes_json())
 }
 
-
 ///|
-
 fn claude_desktop_default_routes_json() -> Json {
   Json::array([
     claude_desktop_default_route_json(
@@ -4459,9 +4088,7 @@ fn claude_desktop_default_routes_json() -> Json {
   ])
 }
 
-
 ///|
-
 fn claude_desktop_default_route_json(
   route_id : String,
   env_key : String,
@@ -4473,9 +4100,7 @@ fn claude_desktop_default_route_json(
   }.to_json()
 }
 
-
 ///|
-
 fn ProviderRouteTarget::is_compatible_claude_desktop_direct_provider(
   self : ProviderRouteTarget,
 ) -> Bool {
@@ -4502,9 +4127,7 @@ fn ProviderRouteTarget::is_compatible_claude_desktop_direct_provider(
   self.claude_desktop_direct_routes_are_identity()
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_desktop_direct_auth_token(
   self : ProviderRouteTarget,
 ) -> String? {
@@ -4519,9 +4142,7 @@ fn ProviderRouteTarget::claude_desktop_direct_auth_token(
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_desktop_direct_routes_are_identity(
   self : ProviderRouteTarget,
 ) -> Bool {
@@ -4546,9 +4167,7 @@ fn ProviderRouteTarget::claude_desktop_direct_routes_are_identity(
   true
 }
 
-
 ///|
-
 fn suggested_claude_desktop_routes(
   provider : ProviderRouteTarget,
 ) -> Map[String, ClaudeDesktopModelRoute]? {
@@ -4580,9 +4199,7 @@ fn suggested_claude_desktop_routes(
   }
 }
 
-
 ///|
-
 fn add_suggested_claude_desktop_route(
   routes : Map[String, ClaudeDesktopModelRoute],
   env : Map[String, Json],
@@ -4646,9 +4263,7 @@ fn add_suggested_claude_desktop_route(
   }
 }
 
-
 ///|
-
 fn strip_claude_desktop_one_m_marker(model : String) -> (String, Bool) {
   let marker = "[1m]"
   if model.to_lower().has_suffix(marker) {
@@ -4658,9 +4273,7 @@ fn strip_claude_desktop_one_m_marker(model : String) -> (String, Bool) {
   }
 }
 
-
 ///|
-
 fn claude_desktop_route_key_for_upstream(
   routes : Map[String, ClaudeDesktopModelRoute],
   model : String,
@@ -4674,9 +4287,7 @@ fn claude_desktop_route_key_for_upstream(
   None
 }
 
-
 ///|
-
 fn merge_suggested_claude_desktop_route(
   existing : ClaudeDesktopModelRoute,
   stripped_model : String,
@@ -4700,9 +4311,7 @@ fn merge_suggested_claude_desktop_route(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_get_claude_plugin_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4719,9 +4328,7 @@ async fn Gateway::handle_get_claude_plugin_status(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_is_claude_plugin_applied(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4747,9 +4354,7 @@ async fn Gateway::handle_is_claude_plugin_applied(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_apply_claude_onboarding_skip(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4763,9 +4368,7 @@ async fn Gateway::handle_apply_claude_onboarding_skip(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_clear_claude_onboarding_skip(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -4779,9 +4382,7 @@ async fn Gateway::handle_clear_claude_onboarding_skip(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_test_api_endpoints(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4799,9 +4400,7 @@ async fn Gateway::handle_test_api_endpoints(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_get_custom_endpoints(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4822,9 +4421,7 @@ async fn Gateway::handle_get_custom_endpoints(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_add_custom_endpoint(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4850,9 +4447,7 @@ async fn Gateway::handle_add_custom_endpoint(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_remove_custom_endpoint(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4875,9 +4470,7 @@ async fn Gateway::handle_remove_custom_endpoint(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_update_endpoint_last_used(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4896,13 +4489,13 @@ async fn Gateway::handle_update_endpoint_last_used(
     write_usage_bad_request(w, "missing_url")
     return
   }
-  self.proxy.provider_router.update_endpoint_last_used(app_type, provider_id, url)
+  self.proxy.provider_router.update_endpoint_last_used(
+    app_type, provider_id, url,
+  )
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_balance(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4923,9 +4516,7 @@ async fn Gateway::handle_get_balance(
   write_usage_json(w, moon_get_balance(base_url, api_key).to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_subscription_quota(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4944,9 +4535,7 @@ async fn Gateway::handle_get_subscription_quota(
   write_usage_json(w, quota.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_coding_plan_quota(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -4968,9 +4557,7 @@ async fn Gateway::handle_get_coding_plan_quota(
   write_usage_json(w, quota.to_json())
 }
 
-
 ///|
-
 struct StreamCheckConfig {
   timeout_secs : Int
   max_retries : Int
@@ -4981,9 +4568,7 @@ struct StreamCheckConfig {
   test_prompt : String
 }
 
-
 ///|
-
 fn StreamCheckConfig::default() -> StreamCheckConfig {
   {
     timeout_secs: 45,
@@ -4996,9 +4581,7 @@ fn StreamCheckConfig::default() -> StreamCheckConfig {
   }
 }
 
-
 ///|
-
 fn StreamCheckConfig::to_json(self : StreamCheckConfig) -> Json {
   {
     "timeoutSecs": Json::number(self.timeout_secs.to_double()),
@@ -5011,9 +4594,7 @@ fn StreamCheckConfig::to_json(self : StreamCheckConfig) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn stream_check_int_request(
   path : StringView,
   obj : Map[String, Json]?,
@@ -5042,9 +4623,7 @@ fn stream_check_int_request(
   usage_query_int_any(path, snake_key, camel_key)
 }
 
-
 ///|
-
 fn stream_check_string_request(
   path : StringView,
   obj : Map[String, Json]?,
@@ -5067,9 +4646,7 @@ fn stream_check_string_request(
   usage_query_value_any(path, snake_key, camel_key)
 }
 
-
 ///|
-
 fn stream_check_model_for_app(
   config : StreamCheckConfig,
   app_type : String,
@@ -5081,9 +4658,7 @@ fn stream_check_model_for_app(
   }
 }
 
-
 ///|
-
 fn stream_check_reported_model_for_app(
   config : StreamCheckConfig,
   app_type : String,
@@ -5096,9 +4671,7 @@ fn stream_check_reported_model_for_app(
   }
 }
 
-
 ///|
-
 fn stream_check_parse_model_with_effort(model : String) -> (String, String?) {
   let split = match model.find("@") {
     Some(index) => Some(index)
@@ -5117,31 +4690,23 @@ fn stream_check_parse_model_with_effort(model : String) -> (String, String?) {
   }
 }
 
-
 ///|
-
 fn moon_unit_success_json() -> Json {
   Json::null()
 }
 
-
 ///|
-
 fn moon_update_tray_menu_result() -> Json {
   Json::boolean(false)
 }
 
-
 ///|
-
 priv struct ProxyProviderQuery {
   provider_id : String
   app_type : String
 }
 
-
 ///|
-
 fn json_non_empty_string_from_map_any(
   obj : Map[String, Json],
   keys : Array[String],
@@ -5155,9 +4720,7 @@ fn json_non_empty_string_from_map_any(
   None
 }
 
-
 ///|
-
 fn codex_toml_string_value(content : String, key : String) -> String? {
   for raw_line in content.split("\n") {
     let line = raw_line.trim()
@@ -5191,17 +4754,13 @@ fn codex_toml_string_value(content : String, key : String) -> String? {
   None
 }
 
-
 ///|
-
 fn suite_write_outcome_json() -> Json {
   let empty : Map[String, Json] = {}
   Json::object(empty)
 }
 
-
 ///|
-
 fn suite_object_payload(body : Json?, key : String) -> Json? {
   match body {
     Some(Object(obj)) =>
@@ -5214,9 +4773,7 @@ fn suite_object_payload(body : Json?, key : String) -> Json? {
   }
 }
 
-
 ///|
-
 fn suite_object_request(path : StringView, body : Json?, key : String) -> Json? {
   match suite_object_payload(body, key) {
     Some(payload) => return Some(payload)
@@ -5234,9 +4791,7 @@ fn suite_object_request(path : StringView, body : Json?, key : String) -> Json? 
   }
 }
 
-
 ///|
-
 fn split_csv_json(value : String) -> Json {
   let items : Array[Json] = []
   for raw in value.split(",") {
@@ -5248,19 +4803,13 @@ fn split_csv_json(value : String) -> Json {
   Json::array(items)
 }
 
-
 ///|
-
 const HERMES_DASHBOARD_COMMAND = "hermes dashboard"
 
-
 ///|
-
 const HERMES_DASHBOARD_LOG_PATH = "/tmp/moonstat_hermes_dashboard.log"
 
-
 ///|
-
 fn normalize_claude_desktop_mode(mode : String) -> String? {
   match mode.trim().to_lower() {
     "direct" => Some("direct")
@@ -5269,9 +4818,7 @@ fn normalize_claude_desktop_mode(mode : String) -> String? {
   }
 }
 
-
 ///|
-
 fn split_endpoint_urls(value : String) -> Array[String] {
   let urls : Array[String] = []
   for raw in value.split(",") {
@@ -5280,24 +4827,16 @@ fn split_endpoint_urls(value : String) -> Array[String] {
   urls
 }
 
-
 ///|
-
 const CCS_ENDPOINT_DEFAULT_TIMEOUT_SECS = 8
 
-
 ///|
-
 const CCS_ENDPOINT_MIN_TIMEOUT_SECS = 2
 
-
 ///|
-
 const CCS_ENDPOINT_MAX_TIMEOUT_SECS = 30
 
-
 ///|
-
 fn moon_endpoint_invalid_url_error(url : String) -> String {
   if url.has_prefix("http://") || url.has_prefix("https://") {
     if moon_endpoint_url_missing_host(url) {
@@ -5310,9 +4849,7 @@ fn moon_endpoint_invalid_url_error(url : String) -> String {
   }
 }
 
-
 ///|
-
 fn moon_endpoint_url_missing_host(url : String) -> Bool {
   match endpoint_url_host_start(url) {
     Some(start) => {
@@ -5326,9 +4863,7 @@ fn moon_endpoint_url_missing_host(url : String) -> Bool {
   }
 }
 
-
 ///|
-
 fn endpoint_url_host_start(url : String) -> Int? {
   if url.has_prefix("http://") {
     Some(7)
@@ -5339,9 +4874,7 @@ fn endpoint_url_host_start(url : String) -> Int? {
   }
 }
 
-
 ///|
-
 fn parse_bool_value(value : String) -> Bool? {
   match value.trim().to_owned().to_lower() {
     "true" | "1" | "yes" | "on" => Some(true)
@@ -5350,9 +4883,7 @@ fn parse_bool_value(value : String) -> Bool? {
   }
 }
 
-
 ///|
-
 fn parse_non_negative_decimal_to_double(value : String) -> Double? {
   let trimmed = value.trim().to_owned()
   if trimmed.is_empty() {
@@ -5380,9 +4911,7 @@ fn parse_non_negative_decimal_to_double(value : String) -> Double? {
   Some(parse_decimal_scaled(trimmed, 1_000_000L).to_double() / 1_000_000.0)
 }
 
-
 ///|
-
 async fn Gateway::handle_models(
   _self : Gateway,
   w : @httpx.ResponseWriter,
@@ -5390,14 +4919,14 @@ async fn Gateway::handle_models(
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(
-    moon_models_endpoint_response_json(@codex_config.active_model_catalog_json()).stringify(),
+    moon_models_endpoint_response_json(
+      @codex_config.active_model_catalog_json(),
+    ).stringify(),
   )
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_claude_desktop_models(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -5411,9 +4940,7 @@ async fn Gateway::handle_claude_desktop_models(
   w.flush()
 }
 
-
 ///|
-
 fn claude_desktop_model_list_json(
   provider? : ProviderRouteTarget? = None,
 ) -> Json {
@@ -5437,9 +4964,7 @@ fn claude_desktop_model_list_json(
   }.to_json()
 }
 
-
 ///|
-
 fn claude_desktop_route_model_list_json(
   routes : Array[(String, String, String?, Bool)],
 ) -> Json {
@@ -5467,9 +4992,7 @@ fn claude_desktop_route_model_list_json(
   }.to_json()
 }
 
-
 ///|
-
 fn claude_desktop_model_json(
   id : String,
   label_override? : String? = None,
@@ -5490,9 +5013,7 @@ fn claude_desktop_model_json(
   Json::object(obj)
 }
 
-
 ///|
-
 fn normalize_claude_desktop_request_model(
   request : AnthropicRequest,
   app_type : String,
@@ -5515,9 +5036,7 @@ fn normalize_claude_desktop_request_model(
   }
 }
 
-
 ///|
-
 fn normalize_claude_desktop_model_id(model : String) -> String {
   let trimmed = model.trim().to_owned()
   let route_id = strip_one_m_suffix_for_route_lookup(trimmed)
@@ -5532,9 +5051,7 @@ fn normalize_claude_desktop_model_id(model : String) -> String {
   }
 }
 
-
 ///|
-
 fn strip_one_m_suffix_for_route_lookup(model : String) -> String {
   let trimmed = model.trim().to_owned()
   let marker = "[1m]"
@@ -5545,9 +5062,7 @@ fn strip_one_m_suffix_for_route_lookup(model : String) -> String {
   }
 }
 
-
 ///|
-
 fn is_claude_safe_model_id(model : String) -> Bool {
   let normalized = model.trim().to_lower()
   if normalized.contains("[1m]") {
@@ -5565,9 +5080,7 @@ fn is_claude_safe_model_id(model : String) -> Bool {
   })
 }
 
-
 ///|
-
 fn claude_role_keyword(model : String) -> String? {
   let normalized = model.to_lower()
   if normalized.contains("opus") {
@@ -5581,9 +5094,7 @@ fn claude_role_keyword(model : String) -> String? {
   }
 }
 
-
 ///|
-
 fn ProviderRouteTarget::resolved_claude_desktop_model_routes(
   self : ProviderRouteTarget,
 ) -> Array[(String, String, String?, Bool)] {
@@ -5654,9 +5165,7 @@ fn ProviderRouteTarget::resolved_claude_desktop_model_routes(
   deduped
 }
 
-
 ///|
-
 fn next_claude_desktop_catalog_safe_route_id(
   existing : Array[(String, String, String?, Bool)],
   reserved : Array[String],
@@ -5683,9 +5192,7 @@ fn next_claude_desktop_catalog_safe_route_id(
   "claude-sonnet-4-6-r10000"
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_desktop_route_upstream_model(
   self : ProviderRouteTarget,
   request_model : String,
@@ -5722,9 +5229,7 @@ fn ProviderRouteTarget::claude_desktop_route_upstream_model(
   None
 }
 
-
 ///|
-
 fn ProviderRouteTarget::claude_desktop_legacy_raw_route_upstream_model(
   self : ProviderRouteTarget,
   requested : String,
@@ -5746,9 +5251,7 @@ fn ProviderRouteTarget::claude_desktop_legacy_raw_route_upstream_model(
   None
 }
 
-
 ///|
-
 fn claude_desktop_opus_route_alias_matches(
   route_id : String,
   requested : String,
@@ -5759,9 +5262,7 @@ fn claude_desktop_opus_route_alias_matches(
   (route == "claude-opus-4-8" && requested == "claude-opus-4-7")
 }
 
-
 ///|
-
 fn Gateway::uptime_seconds(self : Gateway) -> Int {
   let elapsed = @async.now().to_int() - self.started_at_ms
   if elapsed < 0 {
@@ -5771,9 +5272,7 @@ fn Gateway::uptime_seconds(self : Gateway) -> Int {
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_messages(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -5884,9 +5383,7 @@ async fn Gateway::handle_messages(
   }
 }
 
-
 ///|
-
 fn Gateway::upstream_claude_model(
   self : Gateway,
   request_model : String,
@@ -5907,9 +5404,7 @@ fn Gateway::upstream_claude_model(
   }
 }
 
-
 ///|
-
 async fn Gateway::forward_non_streaming_claude_compatible_request(
   self : Gateway,
   request : AnthropicRequest,
@@ -6147,9 +5642,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   }
 }
 
-
 ///|
-
 fn claude_request_json_for_upstream(
   body : Json,
   upstream_model : String,
@@ -6159,9 +5652,7 @@ fn claude_request_json_for_upstream(
   Json::object(obj)
 }
 
-
 ///|
-
 fn ProviderRouteTarget::should_normalize_mimo_anthropic_thinking_history(
   self : ProviderRouteTarget,
   upstream_model : String,
@@ -6170,9 +5661,7 @@ fn ProviderRouteTarget::should_normalize_mimo_anthropic_thinking_history(
   (is_mimo_identifier(upstream_model) || self.has_mimo_endpoint())
 }
 
-
 ///|
-
 fn ProviderRouteTarget::uses_anthropic_messages_format(
   self : ProviderRouteTarget,
 ) -> Bool {
@@ -6187,9 +5676,7 @@ fn ProviderRouteTarget::uses_anthropic_messages_format(
   api_format.is_empty() || api_format == "anthropic"
 }
 
-
 ///|
-
 fn ProviderRouteTarget::has_mimo_endpoint(self : ProviderRouteTarget) -> Bool {
   guard self.settings_config is Some(Object(settings)) else { return false }
   match settings.get("env") {
@@ -6215,17 +5702,13 @@ fn ProviderRouteTarget::has_mimo_endpoint(self : ProviderRouteTarget) -> Bool {
   false
 }
 
-
 ///|
-
 fn is_mimo_identifier(value : String) -> Bool {
   let lower = value.to_lower()
   lower.contains("mimo") || lower.contains("xiaomimimo")
 }
 
-
 ///|
-
 fn normalize_mimo_anthropic_thinking_history(body : Json) -> Json {
   guard body is Object(obj) else { return body }
   guard obj.get("messages") is Some(Array(messages)) else {
@@ -6252,9 +5735,7 @@ fn normalize_mimo_anthropic_thinking_history(body : Json) -> Json {
   Json::object(obj)
 }
 
-
 ///|
-
 fn normalize_mimo_anthropic_content_blocks(
   content : Array[Json],
 ) -> Array[Json] {
@@ -6303,9 +5784,7 @@ fn normalize_mimo_anthropic_content_blocks(
   }
 }
 
-
 ///|
-
 fn claude_compatible_response_to_anthropic(
   body : Json,
   api_format : String,
@@ -6320,9 +5799,7 @@ fn claude_compatible_response_to_anthropic(
   }
 }
 
-
 ///|
-
 fn parse_claude_compatible_non_stream_body_with_diagnostics(
   api_format : String,
   body : String,
@@ -6356,9 +5833,7 @@ fn parse_claude_compatible_non_stream_body_with_diagnostics(
   Ok(parsed)
 }
 
-
 ///|
-
 fn body_looks_like_sse(body : String) -> Bool {
   let trimmed = strip_utf8_bom(body).trim()
   trimmed.has_prefix("data:") ||
@@ -6368,9 +5843,7 @@ fn body_looks_like_sse(body : String) -> Bool {
   trimmed.has_prefix(":")
 }
 
-
 ///|
-
 fn body_diagnostics_suffix(
   headers : Map[String, String],
   body : String,
@@ -6380,9 +5853,7 @@ fn body_diagnostics_suffix(
   "(content-type: \{content_type}; content-encoding: \{content_encoding}; body[..120]: '\{body_snippet(body, 120)}')"
 }
 
-
 ///|
-
 fn moon_hop_by_hop_response_header_names() -> Array[String] {
   [
     "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "proxy-connection",
@@ -6390,9 +5861,7 @@ fn moon_hop_by_hop_response_header_names() -> Array[String] {
   ]
 }
 
-
 ///|
-
 fn moon_connection_listed_response_headers(
   headers : Map[String, String],
 ) -> Array[String] {
@@ -6410,9 +5879,7 @@ fn moon_connection_listed_response_headers(
   result
 }
 
-
 ///|
-
 pub fn moon_strip_hop_by_hop_response_headers(
   headers : Map[String, String],
 ) -> Map[String, String] {
@@ -6429,9 +5896,7 @@ pub fn moon_strip_hop_by_hop_response_headers(
   result
 }
 
-
 ///|
-
 pub fn moon_strip_entity_headers_for_rebuilt_body(
   headers : Map[String, String],
 ) -> Map[String, String] {
@@ -6445,9 +5910,7 @@ pub fn moon_strip_entity_headers_for_rebuilt_body(
   result
 }
 
-
 ///|
-
 fn strip_utf8_bom(body : String) -> String {
   if body.has_prefix("\u{feff}") {
     body["\u{feff}".length():].to_owned()
@@ -6456,9 +5919,7 @@ fn strip_utf8_bom(body : String) -> String {
   }
 }
 
-
 ///|
-
 fn responses_sse_to_response_value(body : String) -> Json? {
   let mut buffer = ""
   let mut completed_response : Json? = None
@@ -6503,9 +5964,7 @@ fn responses_sse_to_response_value(body : String) -> Json? {
   }
 }
 
-
 ///|
-
 fn process_responses_sse_block(
   block : String,
   strict : Bool,
@@ -6562,9 +6021,7 @@ fn process_responses_sse_block(
   (completed_response, output_items)
 }
 
-
 ///|
-
 fn strip_sse_field(line : String, field : String) -> String? {
   let prefix = "\{field}:"
   if !line.has_prefix(prefix) {
@@ -6577,18 +6034,14 @@ fn strip_sse_field(line : String, field : String) -> String? {
   Some(value)
 }
 
-
 ///|
-
 priv struct OpenAIChatSseToolCall {
   mut id : String
   mut name : String
   mut arguments : String
 }
 
-
 ///|
-
 priv struct OpenAIChatSseState {
   mut id : String?
   mut created : Json?
@@ -6602,9 +6055,7 @@ priv struct OpenAIChatSseState {
   tool_calls : Map[Int, OpenAIChatSseToolCall]
 }
 
-
 ///|
-
 fn OpenAIChatSseState::new() -> OpenAIChatSseState {
   {
     id: None,
@@ -6620,9 +6071,7 @@ fn OpenAIChatSseState::new() -> OpenAIChatSseState {
   }
 }
 
-
 ///|
-
 fn chat_sse_to_response_value(body : String) -> Json? {
   let state = OpenAIChatSseState::new()
   let mut buffer = ""
@@ -6649,9 +6098,7 @@ fn chat_sse_to_response_value(body : String) -> Json? {
   Some(state.to_chat_completion_json())
 }
 
-
 ///|
-
 fn process_chat_sse_block(
   block : String,
   strict : Bool,
@@ -6710,9 +6157,7 @@ fn process_chat_sse_block(
   state.push_chat_sse_chunk(obj)
 }
 
-
 ///|
-
 fn OpenAIChatSseState::push_chat_sse_chunk(
   self : OpenAIChatSseState,
   obj : Map[String, Json],
@@ -6751,9 +6196,7 @@ fn OpenAIChatSseState::push_chat_sse_chunk(
   }
 }
 
-
 ///|
-
 fn OpenAIChatSseState::push_chat_sse_message(
   self : OpenAIChatSseState,
   message : Map[String, Json],
@@ -6781,9 +6224,7 @@ fn OpenAIChatSseState::push_chat_sse_message(
   }
 }
 
-
 ///|
-
 fn OpenAIChatSseState::push_chat_sse_delta(
   self : OpenAIChatSseState,
   delta : Map[String, Json],
@@ -6812,9 +6253,7 @@ fn OpenAIChatSseState::push_chat_sse_delta(
   }
 }
 
-
 ///|
-
 fn OpenAIChatSseState::push_chat_sse_tool_call(
   self : OpenAIChatSseState,
   index : Int,
@@ -6851,9 +6290,7 @@ fn OpenAIChatSseState::push_chat_sse_tool_call(
   }
 }
 
-
 ///|
-
 fn OpenAIChatSseState::push_chat_sse_legacy_function_call(
   self : OpenAIChatSseState,
   function_call : Map[String, Json],
@@ -6865,9 +6302,7 @@ fn OpenAIChatSseState::push_chat_sse_legacy_function_call(
   self.push_chat_sse_tool_call(0, call)
 }
 
-
 ///|
-
 fn json_tool_arguments_fragment(value : Json) -> String? {
   match value {
     String(text) => Some(text)
@@ -6876,9 +6311,7 @@ fn json_tool_arguments_fragment(value : Json) -> String? {
   }
 }
 
-
 ///|
-
 fn OpenAIChatSseState::to_chat_completion_json(
   self : OpenAIChatSseState,
 ) -> Json {
@@ -6915,9 +6348,7 @@ fn OpenAIChatSseState::to_chat_completion_json(
   Json::object(response)
 }
 
-
 ///|
-
 fn OpenAIChatSseState::chat_sse_tool_calls_json(
   self : OpenAIChatSseState,
 ) -> Array[Json] {
@@ -6955,9 +6386,7 @@ fn OpenAIChatSseState::chat_sse_tool_calls_json(
   calls
 }
 
-
 ///|
-
 fn gemini_native_response_to_anthropic(
   body : Json,
   model : String,
@@ -7012,17 +6441,13 @@ fn gemini_native_response_to_anthropic(
   }
 }
 
-
 ///|
-
 fn gemini_prompt_block_reason(obj : Map[String, Json]) -> String? {
   guard obj.get("promptFeedback") is Some(Object(feedback)) else { return None }
   json_string_from_map(feedback, "blockReason")
 }
 
-
 ///|
-
 fn append_gemini_parts_as_anthropic(
   parts : Array[Json],
   content : Array[AnthropicResponseBlock],
@@ -7057,9 +6482,7 @@ fn append_gemini_parts_as_anthropic(
   }
 }
 
-
 ///|
-
 fn gemini_finish_reason_to_anthropic(
   finish_reason : String,
   has_tools : Bool,
@@ -7075,9 +6498,7 @@ fn gemini_finish_reason_to_anthropic(
   }
 }
 
-
 ///|
-
 fn openai_chat_completion_to_anthropic(
   body : Json,
   model : String,
@@ -7120,17 +6541,13 @@ fn openai_chat_completion_to_anthropic(
   }
 }
 
-
 ///|
-
 fn openai_chat_completion_id(body : Json) -> String? {
   guard body is Object(obj) else { return None }
   json_string_from_map(obj, "id")
 }
 
-
 ///|
-
 fn append_openai_chat_message_content_as_anthropic(
   message : Map[String, Json],
   content : Array[AnthropicResponseBlock],
@@ -7174,9 +6591,7 @@ fn append_openai_chat_message_content_as_anthropic(
   }
 }
 
-
 ///|
-
 fn append_openai_chat_tool_calls_as_anthropic(
   message : Map[String, Json],
   content : Array[AnthropicResponseBlock],
@@ -7202,9 +6617,7 @@ fn append_openai_chat_tool_calls_as_anthropic(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_non_streaming_request(
   self : Gateway,
   request : AnthropicRequest,
@@ -7300,9 +6713,7 @@ async fn Gateway::handle_non_streaming_request(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::forward_streaming_claude_compatible_request(
   self : Gateway,
   request : AnthropicRequest,
@@ -7572,9 +6983,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   )
 }
 
-
 ///|
-
 async fn Gateway::forward_successful_claude_compatible_stream(
   self : Gateway,
   client : @http.Client,
@@ -7650,9 +7059,7 @@ async fn Gateway::forward_successful_claude_compatible_stream(
   w.flush()
 }
 
-
 ///|
-
 fn claude_stream_request_json_for_upstream(
   body : Json,
   upstream_model : String,
@@ -7663,17 +7070,13 @@ fn claude_stream_request_json_for_upstream(
   Json::object(obj)
 }
 
-
 ///|
-
 priv struct PreparedUpstreamRequest {
   body : Json
   copilot_headers : Map[String, String]
 }
 
-
 ///|
-
 fn prepare_upstream_request_body(
   body : Json,
   provider? : ProviderRouteTarget? = None,
@@ -7690,9 +7093,7 @@ fn prepare_upstream_request_body(
   ).body
 }
 
-
 ///|
-
 fn prepare_upstream_request(
   body : Json,
   provider? : ProviderRouteTarget? = None,
@@ -7724,9 +7125,7 @@ fn prepare_upstream_request(
   }
 }
 
-
 ///|
-
 fn filter_private_params_for_upstream(
   body : Json,
   parent_key : String?,
@@ -7762,22 +7161,16 @@ fn filter_private_params_for_upstream(
   }
 }
 
-
 ///|
-
 const UNSUPPORTED_IMAGE_MARKER = "[Unsupported Image]"
 
-
 ///|
-
 priv struct MediaReplacementResult {
   body : Json
   count : Int
 }
 
-
 ///|
-
 fn replace_images_for_text_only_model(
   body : Json,
   provider? : ProviderRouteTarget? = None,
@@ -7798,9 +7191,7 @@ fn replace_images_for_text_only_model(
   replace_image_blocks_with_marker(Json::object(obj))
 }
 
-
 ///|
-
 fn explicit_model_image_support(
   provider : ProviderRouteTarget?,
   model : String,
@@ -7838,9 +7229,7 @@ fn explicit_model_image_support(
   }
 }
 
-
 ///|
-
 fn explicit_model_image_support_in_value(value : Json, model : String) -> Bool? {
   match value {
     Array(models) => {
@@ -7869,9 +7258,7 @@ fn explicit_model_image_support_in_value(value : Json, model : String) -> Bool? 
   }
 }
 
-
 ///|
-
 fn explicit_image_support(entry : Json) -> Bool? {
   guard entry is Object(obj) else { return None }
   match
@@ -7913,9 +7300,7 @@ fn explicit_image_support(entry : Json) -> Bool? {
   }
 }
 
-
 ///|
-
 fn json_string_from_map_any(
   obj : Map[String, Json],
   keys : Array[String],
@@ -7929,9 +7314,7 @@ fn json_string_from_map_any(
   None
 }
 
-
 ///|
-
 fn input_modalities_support_image(value : Json) -> Bool? {
   guard value is Array(modalities) else { return None }
   Some(
@@ -7944,9 +7327,7 @@ fn input_modalities_support_image(value : Json) -> Bool? {
   )
 }
 
-
 ///|
-
 fn model_entry_matches(entry : Json, key : String?, model : String) -> Bool {
   match key {
     Some(key) if model_ids_match(key, model) => return true
@@ -7961,9 +7342,7 @@ fn model_entry_matches(entry : Json, key : String?, model : String) -> Bool {
   })
 }
 
-
 ///|
-
 fn model_ids_match(candidate : String, model : String) -> Bool {
   let candidate = normalize_media_model_id(candidate)
   let model = normalize_media_model_id(model)
@@ -7980,9 +7359,7 @@ fn model_ids_match(candidate : String, model : String) -> Bool {
   candidate_tail == model
 }
 
-
 ///|
-
 fn normalize_media_model_id(value : String) -> String {
   let lower = value.trim().to_lower()
   let without_model_prefix = if lower.has_prefix("models/") {
@@ -7993,9 +7370,7 @@ fn normalize_media_model_id(value : String) -> String {
   strip_one_m_suffix_for_upstream(without_model_prefix).trim().to_owned()
 }
 
-
 ///|
-
 fn model_id_tail(model : String) -> String {
   let parts = model.split("/").collect()
   match parts.last() {
@@ -8004,9 +7379,7 @@ fn model_id_tail(model : String) -> String {
   }
 }
 
-
 ///|
-
 fn json_bool_from_map_any(
   obj : Map[String, Json],
   keys : Array[String],
@@ -8021,9 +7394,7 @@ fn json_bool_from_map_any(
   None
 }
 
-
 ///|
-
 fn contains_image_blocks(body : Json) -> Bool {
   match body {
     Object(obj) =>
@@ -8033,9 +7404,7 @@ fn contains_image_blocks(body : Json) -> Bool {
   }
 }
 
-
 ///|
-
 fn messages_have_image_blocks(obj : Map[String, Json]) -> Bool {
   guard obj.get("messages") is Some(Array(messages)) else { return false }
   messages.any(message => {
@@ -8050,9 +7419,7 @@ fn messages_have_image_blocks(obj : Map[String, Json]) -> Bool {
   })
 }
 
-
 ///|
-
 fn content_has_image_blocks(content : Json) -> Bool {
   guard content is Array(blocks) else { return false }
   blocks.any(block => {
@@ -8070,9 +7437,7 @@ fn content_has_image_blocks(content : Json) -> Bool {
   })
 }
 
-
 ///|
-
 fn responses_input_has_image_blocks(input : Json?) -> Bool {
   match input {
     Some(Array(items)) =>
@@ -8082,9 +7447,7 @@ fn responses_input_has_image_blocks(input : Json?) -> Bool {
   }
 }
 
-
 ///|
-
 fn responses_input_item_has_image_blocks(item : Json) -> Bool {
   guard item is Object(item_obj) else { return false }
   if json_string_from_map(item_obj, "type") == Some("input_image") {
@@ -8096,9 +7459,7 @@ fn responses_input_item_has_image_blocks(item : Json) -> Bool {
   }
 }
 
-
 ///|
-
 fn is_unsupported_image_error_status(status_code : Int, body : String) -> Bool {
   match status_code {
     400 | 415 | 422 | 501 => ()
@@ -8124,9 +7485,7 @@ fn is_unsupported_image_error_status(status_code : Int, body : String) -> Bool {
   ].any(hint => message.contains(hint))
 }
 
-
 ///|
-
 fn extract_upstream_error_text(body : String) -> String {
   let parsed = @json.parse(body) catch { _ => return body }
   match parsed {
@@ -8154,9 +7513,7 @@ fn extract_upstream_error_text(body : String) -> String {
   }
 }
 
-
 ///|
-
 fn replace_image_blocks_with_marker(body : Json) -> MediaReplacementResult {
   guard body is Object(obj) else { return { body, count: 0 } }
   let mut count = 0
@@ -8193,9 +7550,7 @@ fn replace_image_blocks_with_marker(body : Json) -> MediaReplacementResult {
   { body: Json::object(obj), count }
 }
 
-
 ///|
-
 fn replace_images_in_content(
   content : Json,
   text_type : String,
@@ -8226,9 +7581,7 @@ fn replace_images_in_content(
   { body: Json::array(replaced_blocks), count }
 }
 
-
 ///|
-
 fn replace_images_in_responses_input(input : Json) -> MediaReplacementResult {
   match input {
     Array(items) => {
@@ -8246,9 +7599,7 @@ fn replace_images_in_responses_input(input : Json) -> MediaReplacementResult {
   }
 }
 
-
 ///|
-
 fn replace_images_in_responses_input_item(
   item : Json,
 ) -> MediaReplacementResult {
@@ -8281,9 +7632,7 @@ fn replace_images_in_responses_input_item(
   { body: Json::object(item_obj), count }
 }
 
-
 ///|
-
 fn is_image_block(block : Json) -> Bool {
   guard block is Object(obj) else { return false }
   match json_string_from_map(obj, "type") {
@@ -8292,9 +7641,7 @@ fn is_image_block(block : Json) -> Bool {
   }
 }
 
-
 ///|
-
 fn image_marker_block(block : Json, text_type : String) -> Json {
   let cache_control = match block {
     Object(obj) => obj.get("cache_control")
@@ -8311,9 +7658,7 @@ fn image_marker_block(block : Json, text_type : String) -> Json {
   Json::object(marker)
 }
 
-
 ///|
-
 fn known_text_only_model(model : String) -> Bool {
   let lower = model.trim().to_lower()
   let without_model_prefix = if lower.has_prefix("models/") {
@@ -8338,9 +7683,7 @@ fn known_text_only_model(model : String) -> Bool {
   })
 }
 
-
 ///|
-
 fn matches_schema_name_map(key : String) -> Bool {
   key == "properties" ||
   key == "patternProperties" ||
@@ -8348,9 +7691,7 @@ fn matches_schema_name_map(key : String) -> Bool {
   key == "$defs"
 }
 
-
 ///|
-
 async fn Gateway::forward_openai_chat_sse_as_anthropic(
   self : Gateway,
   reader : &@io.Reader,
@@ -8394,9 +7735,7 @@ async fn Gateway::forward_openai_chat_sse_as_anthropic(
   first_token_ms
 }
 
-
 ///|
-
 async fn Gateway::forward_anthropic_sse_passthrough(
   self : Gateway,
   reader : &@io.Reader,
@@ -8423,9 +7762,7 @@ async fn Gateway::forward_anthropic_sse_passthrough(
   first_token_ms
 }
 
-
 ///|
-
 async fn Gateway::forward_gemini_native_sse_as_anthropic(
   self : Gateway,
   reader : &@io.Reader,
@@ -8476,9 +7813,7 @@ async fn Gateway::forward_gemini_native_sse_as_anthropic(
   first_token_ms
 }
 
-
 ///|
-
 fn gemini_native_stream_chunk_to_anthropic_events(
   chunk : Json,
 ) -> Array[StreamEvent] {
@@ -8486,9 +7821,7 @@ fn gemini_native_stream_chunk_to_anthropic_events(
   state.push_chunk(chunk)
 }
 
-
 ///|
-
 fn openai_chat_stream_chunk_to_anthropic_events(
   chunk : Json,
 ) -> Array[StreamEvent] {
@@ -8496,9 +7829,7 @@ fn openai_chat_stream_chunk_to_anthropic_events(
   state.push_chunk(chunk)
 }
 
-
 ///|
-
 priv struct GeminiNativeAnthropicToolSnapshot {
   mut id : String?
   mut name : String
@@ -8506,9 +7837,7 @@ priv struct GeminiNativeAnthropicToolSnapshot {
   mut thought_signature : String?
 }
 
-
 ///|
-
 priv struct GeminiNativeAnthropicStreamState {
   mut message_id : String?
   mut model : String?
@@ -8525,9 +7854,7 @@ priv struct GeminiNativeAnthropicStreamState {
   mut finished : Bool
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::new() -> GeminiNativeAnthropicStreamState {
   {
     message_id: None,
@@ -8546,9 +7873,7 @@ fn GeminiNativeAnthropicStreamState::new() -> GeminiNativeAnthropicStreamState {
   }
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::push_chunk(
   self : GeminiNativeAnthropicStreamState,
   chunk : Json,
@@ -8606,9 +7931,7 @@ fn GeminiNativeAnthropicStreamState::push_chunk(
   events
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::finish(
   self : GeminiNativeAnthropicStreamState,
 ) -> Array[StreamEvent] {
@@ -8646,9 +7969,7 @@ fn GeminiNativeAnthropicStreamState::finish(
   events
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::message_start_event(
   self : GeminiNativeAnthropicStreamState,
 ) -> StreamEvent {
@@ -8667,9 +7988,7 @@ fn GeminiNativeAnthropicStreamState::message_start_event(
   }
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::ensure_text_block(
   self : GeminiNativeAnthropicStreamState,
   events : Array[StreamEvent],
@@ -8690,9 +8009,7 @@ fn GeminiNativeAnthropicStreamState::ensure_text_block(
   index
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::merge_tool_snapshots_from_parts(
   self : GeminiNativeAnthropicStreamState,
   parts : Array[Json],
@@ -8728,9 +8045,7 @@ fn GeminiNativeAnthropicStreamState::merge_tool_snapshots_from_parts(
   }
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::merge_text_thought_signature_from_parts(
   self : GeminiNativeAnthropicStreamState,
   parts : Array[Json],
@@ -8748,9 +8063,7 @@ fn GeminiNativeAnthropicStreamState::merge_text_thought_signature_from_parts(
   }
 }
 
-
 ///|
-
 fn gemini_part_thought_signature(part_obj : Map[String, Json]) -> String? {
   match json_string_from_map(part_obj, "thoughtSignature") {
     Some(signature) => Some(signature)
@@ -8758,9 +8071,7 @@ fn gemini_part_thought_signature(part_obj : Map[String, Json]) -> String? {
   }
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::tool_snapshot_for_position(
   self : GeminiNativeAnthropicStreamState,
   position : Int,
@@ -8794,9 +8105,7 @@ fn GeminiNativeAnthropicStreamState::tool_snapshot_for_position(
   self.tool_snapshots[position]
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::emit_tool_snapshots(
   self : GeminiNativeAnthropicStreamState,
   events : Array[StreamEvent],
@@ -8825,9 +8134,7 @@ fn GeminiNativeAnthropicStreamState::emit_tool_snapshots(
   }
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::shadow_turn(
   self : GeminiNativeAnthropicStreamState,
 ) -> GeminiAssistantTurn? {
@@ -8888,9 +8195,7 @@ fn GeminiNativeAnthropicStreamState::shadow_turn(
   })
 }
 
-
 ///|
-
 fn GeminiNativeAnthropicStreamState::message_delta_event(
   self : GeminiNativeAnthropicStreamState,
   stop_reason : String,
@@ -8908,9 +8213,7 @@ fn GeminiNativeAnthropicStreamState::message_delta_event(
   }
 }
 
-
 ///|
-
 fn gemini_visible_text_from_parts(parts : Array[Json]) -> String {
   let texts : Array[String] = []
   for part in parts {
@@ -8928,9 +8231,7 @@ fn gemini_visible_text_from_parts(parts : Array[Json]) -> String {
   texts.join("")
 }
 
-
 ///|
-
 fn TokenUsage::as_anthropic_usage_json(self : TokenUsage) -> Json {
   let result : Map[String, Json] = {
     "input_tokens": Json::number(self.anthropic_input_tokens().to_double()),
@@ -8949,9 +8250,7 @@ fn TokenUsage::as_anthropic_usage_json(self : TokenUsage) -> Json {
   Json::object(result)
 }
 
-
 ///|
-
 priv struct OpenAIChatAnthropicToolBlock {
   anthropic_index : Int
   mut id : String
@@ -8960,9 +8259,7 @@ priv struct OpenAIChatAnthropicToolBlock {
   mut pending_args : String
 }
 
-
 ///|
-
 priv struct OpenAIChatAnthropicStreamState {
   mut message_id : String?
   mut model : String?
@@ -8977,9 +8274,7 @@ priv struct OpenAIChatAnthropicStreamState {
   mut pending_usage : Json?
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::new() -> OpenAIChatAnthropicStreamState {
   {
     message_id: None,
@@ -8996,9 +8291,7 @@ fn OpenAIChatAnthropicStreamState::new() -> OpenAIChatAnthropicStreamState {
   }
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::push_chunk(
   self : OpenAIChatAnthropicStreamState,
   chunk : Json,
@@ -9055,9 +8348,7 @@ fn OpenAIChatAnthropicStreamState::push_chunk(
   events
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::finish(
   self : OpenAIChatAnthropicStreamState,
 ) -> Array[StreamEvent] {
@@ -9076,9 +8367,7 @@ fn OpenAIChatAnthropicStreamState::finish(
   events
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::message_start_event(
   self : OpenAIChatAnthropicStreamState,
 ) -> StreamEvent {
@@ -9097,9 +8386,7 @@ fn OpenAIChatAnthropicStreamState::message_start_event(
   }
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::push_non_tool_delta(
   self : OpenAIChatAnthropicStreamState,
   events : Array[StreamEvent],
@@ -9122,9 +8409,7 @@ fn OpenAIChatAnthropicStreamState::push_non_tool_delta(
   }
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::close_current_non_tool_block(
   self : OpenAIChatAnthropicStreamState,
   events : Array[StreamEvent],
@@ -9136,9 +8421,7 @@ fn OpenAIChatAnthropicStreamState::close_current_non_tool_block(
   self.current_non_tool_block_type = None
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::push_tool_call_delta(
   self : OpenAIChatAnthropicStreamState,
   events : Array[StreamEvent],
@@ -9206,9 +8489,7 @@ fn OpenAIChatAnthropicStreamState::push_tool_call_delta(
   }
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::prepare_finish(
   self : OpenAIChatAnthropicStreamState,
   events : Array[StreamEvent],
@@ -9224,9 +8505,7 @@ fn OpenAIChatAnthropicStreamState::prepare_finish(
   self.pending_stop_reason = Some(openai_chat_stop_reason(reason))
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::start_pending_tool_blocks(
   self : OpenAIChatAnthropicStreamState,
   events : Array[StreamEvent],
@@ -9270,9 +8549,7 @@ fn OpenAIChatAnthropicStreamState::start_pending_tool_blocks(
   }
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::close_open_tool_blocks(
   self : OpenAIChatAnthropicStreamState,
   events : Array[StreamEvent],
@@ -9283,9 +8560,7 @@ fn OpenAIChatAnthropicStreamState::close_open_tool_blocks(
   self.open_tool_block_indices.clear()
 }
 
-
 ///|
-
 fn OpenAIChatAnthropicStreamState::message_delta_event(
   self : OpenAIChatAnthropicStreamState,
   stop_reason : String,
@@ -9303,9 +8578,7 @@ fn OpenAIChatAnthropicStreamState::message_delta_event(
   }
 }
 
-
 ///|
-
 fn anthropic_content_block_start_event(
   index : Int,
   block_type : String,
@@ -9328,9 +8601,7 @@ fn anthropic_content_block_start_event(
   }
 }
 
-
 ///|
-
 fn anthropic_content_block_delta_event(
   index : Int,
   delta_type : String,
@@ -9350,9 +8621,7 @@ fn anthropic_content_block_delta_event(
   }
 }
 
-
 ///|
-
 fn anthropic_tool_block_start_event(
   index : Int,
   id : String,
@@ -9372,9 +8641,7 @@ fn anthropic_tool_block_start_event(
   }
 }
 
-
 ///|
-
 fn anthropic_tool_input_delta_event(index : Int, args : String) -> StreamEvent {
   {
     event_type: "content_block_delta",
@@ -9389,9 +8656,7 @@ fn anthropic_tool_input_delta_event(index : Int, args : String) -> StreamEvent {
   }
 }
 
-
 ///|
-
 fn anthropic_content_block_stop_event(index : Int) -> StreamEvent {
   {
     event_type: "content_block_stop",
@@ -9402,9 +8667,7 @@ fn anthropic_content_block_stop_event(index : Int) -> StreamEvent {
   }
 }
 
-
 ///|
-
 fn anthropic_message_stop_stream_event() -> StreamEvent {
   {
     event_type: "message_stop",
@@ -9412,9 +8675,7 @@ fn anthropic_message_stop_stream_event() -> StreamEvent {
   }
 }
 
-
 ///|
-
 fn json_openai_chat_reasoning_text(delta : Map[String, Json]) -> String? {
   match json_string_from_map(delta, "reasoning") {
     Some(text) => Some(text)
@@ -9422,9 +8683,7 @@ fn json_openai_chat_reasoning_text(delta : Map[String, Json]) -> String? {
   }
 }
 
-
 ///|
-
 fn openai_chat_stop_reason(reason : String) -> String {
   match reason {
     "tool_calls" | "function_call" => "tool_use"
@@ -9433,9 +8692,7 @@ fn openai_chat_stop_reason(reason : String) -> String {
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_streaming_request(
   self : Gateway,
   request : AnthropicRequest,
@@ -9530,9 +8787,7 @@ async fn Gateway::handle_streaming_request(
   w.flush()
 }
 
-
 ///|
-
 fn convert_codex_to_anthropic(
   codex_json : Json,
   model : String,
@@ -9638,33 +8893,25 @@ fn convert_codex_to_anthropic(
   }
 }
 
-
 ///|
-
 fn generate_message_id() -> String {
   let gen = @uuid.generator(@random.Rand::new())
   let uuid = gen.v4()
   "msg_\{uuid}"
 }
 
-
 ///|
-
 fn generate_gemini_synth_tool_call_id(position : Int) -> String {
   "gemini_synth_\{position}"
 }
 
-
 ///|
-
 priv struct StreamEvent {
   event_type : String
   data : String
 }
 
-
 ///|
-
 priv struct CodexStreamReader {
   reader : &@io.Reader
   model : String
@@ -9674,9 +8921,7 @@ priv struct CodexStreamReader {
   mut partial_block : String
 }
 
-
 ///|
-
 fn CodexStreamReader::new(
   reader : &@io.Reader,
   model : String,
@@ -9691,9 +8936,7 @@ fn CodexStreamReader::new(
   }
 }
 
-
 ///|
-
 async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
   for ;; {
     if !self.pending_events.is_empty() {
@@ -9729,9 +8972,7 @@ async fn CodexStreamReader::read(self : CodexStreamReader) -> StreamEvent? {
   }
 }
 
-
 ///|
-
 fn codex_stream_event_from_sse_block(
   block : String,
   model : String,
@@ -9769,9 +9010,7 @@ fn codex_stream_event_from_sse_block(
   (false, Some(parsed), convert_stream_event(actual_event_name, obj, model))
 }
 
-
 ///|
-
 fn codex_stream_events_from_sse_block(
   block : String,
   state : ResponsesStreamState,
@@ -9809,9 +9048,7 @@ fn codex_stream_events_from_sse_block(
   (false, Some(parsed), state.push_event(actual_event_name, obj))
 }
 
-
 ///|
-
 fn push_sse_json_event(events : Array[Json], data : String) -> Bool {
   let json_result : Result[Json, Error] = try? @json.parse(data)
   match json_result {
@@ -9823,9 +9060,7 @@ fn push_sse_json_event(events : Array[Json], data : String) -> Bool {
   }
 }
 
-
 ///|
-
 async fn write_codex_response_sse_event(
   w : @httpx.ResponseWriter,
   event : Json,
@@ -9843,9 +9078,7 @@ async fn write_codex_response_sse_event(
   payload.length()
 }
 
-
 ///|
-
 priv struct ResponsesStreamState {
   mut message_id : String?
   mut model : String
@@ -9863,9 +9096,7 @@ priv struct ResponsesStreamState {
   tool_args_by_index : Map[Int, String]
 }
 
-
 ///|
-
 fn ResponsesStreamState::new(model : String) -> ResponsesStreamState {
   {
     message_id: None,
@@ -9885,9 +9116,7 @@ fn ResponsesStreamState::new(model : String) -> ResponsesStreamState {
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::push_event(
   self : ResponsesStreamState,
   event_type : String,
@@ -9970,9 +9199,7 @@ fn ResponsesStreamState::push_event(
   events
 }
 
-
 ///|
-
 fn ResponsesStreamState::ensure_message_start(
   self : ResponsesStreamState,
   events : Array[StreamEvent],
@@ -9996,9 +9223,7 @@ fn ResponsesStreamState::ensure_message_start(
   self.has_sent_message_start = true
 }
 
-
 ///|
-
 fn ResponsesStreamState::push_output_item_added(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10047,9 +9272,7 @@ fn ResponsesStreamState::push_output_item_added(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::push_function_call_arguments_delta(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10070,9 +9293,7 @@ fn ResponsesStreamState::push_function_call_arguments_delta(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::finish_function_call_arguments(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10102,9 +9323,7 @@ fn ResponsesStreamState::finish_function_call_arguments(
   self.tool_args_by_index.remove(index)
 }
 
-
 ///|
-
 fn ResponsesStreamState::tool_index_from_event(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10142,9 +9361,7 @@ fn ResponsesStreamState::tool_index_from_event(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::ensure_tool_block(
   self : ResponsesStreamState,
   index : Int,
@@ -10175,9 +9392,7 @@ fn ResponsesStreamState::ensure_tool_block(
   )
 }
 
-
 ///|
-
 fn ResponsesStreamState::ensure_text_block(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10198,9 +9413,7 @@ fn ResponsesStreamState::ensure_text_block(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::ensure_thinking_block(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10221,9 +9434,7 @@ fn ResponsesStreamState::ensure_thinking_block(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::resolve_content_index(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10252,9 +9463,7 @@ fn ResponsesStreamState::resolve_content_index(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::close_current_text_block(
   self : ResponsesStreamState,
   events : Array[StreamEvent],
@@ -10269,9 +9478,7 @@ fn ResponsesStreamState::close_current_text_block(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::close_text_block_from_event(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10293,9 +9500,7 @@ fn ResponsesStreamState::close_text_block_from_event(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::close_current_thinking_block(
   self : ResponsesStreamState,
   events : Array[StreamEvent],
@@ -10310,9 +9515,7 @@ fn ResponsesStreamState::close_current_thinking_block(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::close_thinking_block_from_event(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10334,9 +9537,7 @@ fn ResponsesStreamState::close_thinking_block_from_event(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::content_index_from_event(
   self : ResponsesStreamState,
   obj : Map[String, Json],
@@ -10351,9 +9552,7 @@ fn ResponsesStreamState::content_index_from_event(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::clear_fallback_if_index(
   self : ResponsesStreamState,
   index : Int,
@@ -10363,9 +9562,7 @@ fn ResponsesStreamState::clear_fallback_if_index(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::close_open_block(
   self : ResponsesStreamState,
   events : Array[StreamEvent],
@@ -10380,9 +9577,7 @@ fn ResponsesStreamState::close_open_block(
   }
 }
 
-
 ///|
-
 fn ResponsesStreamState::close_open_blocks(
   self : ResponsesStreamState,
   events : Array[StreamEvent],
@@ -10394,9 +9589,7 @@ fn ResponsesStreamState::close_open_blocks(
   self.fallback_open_index = None
 }
 
-
 ///|
-
 fn responses_stream_content_part_key(obj : Map[String, Json]) -> String? {
   match (json_string_from_map(obj, "item_id"), json_int(obj, "content_index")) {
     (Some(item_id), Some(content_index)) =>
@@ -10410,9 +9603,7 @@ fn responses_stream_content_part_key(obj : Map[String, Json]) -> String? {
   }
 }
 
-
 ///|
-
 fn responses_stream_item_id(
   obj : Map[String, Json],
   item : Map[String, Json],
@@ -10431,9 +9622,7 @@ fn responses_stream_item_id(
   }
 }
 
-
 ///|
-
 fn sanitize_anthropic_tool_use_input_json(
   name : String,
   raw : String,
@@ -10450,9 +9639,7 @@ fn sanitize_anthropic_tool_use_input_json(
   Json::object(obj).stringify()
 }
 
-
 ///|
-
 fn convert_stream_event(
   event_type : String,
   obj : Map[String, Json],
@@ -10546,9 +9733,7 @@ fn convert_stream_event(
   }
 }
 
-
 ///|
-
 fn responses_stream_completed_event(
   obj : Map[String, Json],
   _model : String,
@@ -10570,9 +9755,7 @@ fn responses_stream_completed_event(
   { event_type: "message_delta", data: event_data.to_json().stringify() }
 }
 
-
 ///|
-
 fn responses_stream_response_object(
   obj : Map[String, Json],
 ) -> Map[String, Json] {
@@ -10582,9 +9765,7 @@ fn responses_stream_response_object(
   }
 }
 
-
 ///|
-
 fn responses_stream_response_has_tool_use(
   response_obj : Map[String, Json],
 ) -> Bool {
@@ -10603,9 +9784,7 @@ fn responses_stream_response_has_tool_use(
   }
 }
 
-
 ///|
-
 fn responses_stream_incomplete_reason(
   response_obj : Map[String, Json],
 ) -> String? {
@@ -10615,9 +9794,7 @@ fn responses_stream_incomplete_reason(
   }
 }
 
-
 ///|
-
 fn responses_stream_stop_reason_json(
   status : String?,
   has_tool_use : Bool,

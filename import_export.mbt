@@ -100,7 +100,9 @@ fn Gateway::moon_export_proxy_json(self : Gateway) -> Json {
     "defaultCostMultipliers": moon_string_map_json(
       self.proxy.proxy_default_cost_multipliers,
     ),
-    "pricingModelSources": moon_string_map_json(self.proxy.proxy_pricing_model_sources),
+    "pricingModelSources": moon_string_map_json(
+      self.proxy.proxy_pricing_model_sources,
+    ),
     "upstreamProxyUrl": match self.proxy.upstream_proxy_url {
       Some(url) => Json::string(url)
       None => Json::null()

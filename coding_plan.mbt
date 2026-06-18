@@ -28,7 +28,9 @@ priv struct MoonZhipuEntry {
 }
 
 ///|
-fn moon_detect_coding_plan_provider(base_url : String) -> MoonCodingPlanProvider? {
+fn moon_detect_coding_plan_provider(
+  base_url : String,
+) -> MoonCodingPlanProvider? {
   let url = base_url.to_lower()
   if url.contains("api.kimi.com/coding") {
     Some(MoonCodingPlanProvider::Kimi)
@@ -93,7 +95,9 @@ async fn moon_query_kimi_coding_plan(api_key : String) -> SubscriptionQuota {
     ) {
     Err(error) =>
       if error.status == CredentialStatus::Expired {
-        moon_coding_plan_auth_error(moon_status_code_from_message(error.message))
+        moon_coding_plan_auth_error(
+          moon_status_code_from_message(error.message),
+        )
       } else {
         moon_coding_plan_error(error.message)
       }
@@ -177,7 +181,9 @@ async fn moon_query_zhipu_coding_plan(
     ) {
     Err(error) =>
       if error.status == CredentialStatus::Expired {
-        moon_coding_plan_auth_error(moon_status_code_from_message(error.message))
+        moon_coding_plan_auth_error(
+          moon_status_code_from_message(error.message),
+        )
       } else {
         moon_coding_plan_error(error.message)
       }
@@ -340,7 +346,9 @@ async fn moon_query_minimax_coding_plan(
     ) {
     Err(error) =>
       if error.status == CredentialStatus::Expired {
-        moon_coding_plan_auth_error(moon_status_code_from_message(error.message))
+        moon_coding_plan_auth_error(
+          moon_status_code_from_message(error.message),
+        )
       } else {
         moon_coding_plan_error(error.message)
       }
@@ -436,7 +444,9 @@ async fn moon_query_zenmux_coding_plan(
     ) {
     Err(error) =>
       if error.status == CredentialStatus::Expired {
-        moon_coding_plan_auth_error(moon_status_code_from_message(error.message))
+        moon_coding_plan_auth_error(
+          moon_status_code_from_message(error.message),
+        )
       } else {
         moon_coding_plan_error(error.message)
       }

@@ -1,4 +1,4 @@
-
+///|
 fn moonstat_default_provider_router() -> ProviderRouter {
   let router = ProviderRouter::new()
   let claude_model_mapping = moon_model_mapping_from_env()
@@ -75,9 +75,7 @@ fn moonstat_default_provider_router() -> ProviderRouter {
   router
 }
 
-
 ///|
-
 fn Gateway::activate_provider(
   self : Gateway,
   app_type : String,
@@ -87,9 +85,7 @@ fn Gateway::activate_provider(
   self.activate_first_available_provider(app_type, selected.providers)
 }
 
-
 ///|
-
 fn Gateway::activate_first_available_provider(
   self : Gateway,
   app_type : String,
@@ -98,9 +94,7 @@ fn Gateway::activate_first_available_provider(
   self.activate_first_available_provider_excluding(app_type, providers, [])
 }
 
-
 ///|
-
 fn Gateway::activate_first_available_provider_excluding(
   self : Gateway,
   app_type : String,
@@ -130,9 +124,7 @@ fn Gateway::activate_first_available_provider_excluding(
   None
 }
 
-
 ///|
-
 fn Gateway::activate_provider_target(
   self : Gateway,
   app_type : String,
@@ -142,7 +134,10 @@ fn Gateway::activate_provider_target(
   let allow = if bypass_circuit_breaker {
     { allowed: true, used_half_open_permit: false }
   } else {
-    self.proxy.provider_router.allow_provider_request(provider.provider_id, app_type)
+    self.proxy.provider_router.allow_provider_request(
+      provider.provider_id,
+      app_type,
+    )
   }
   guard allow.allowed else { return false }
   self.usage.stats.current_request_used_half_open_permit = allow.used_half_open_permit
@@ -156,12 +151,14 @@ fn Gateway::activate_provider_target(
   true
 }
 
-
 ///|
-
 fn Gateway::record_provider_result(self : Gateway, success : Bool) -> Unit {
-  guard self.usage.stats.current_request_app_type is Some(app_type) else { return }
-  guard self.usage.stats.current_provider_id is Some(provider_id) else { return }
+  guard self.usage.stats.current_request_app_type is Some(app_type) else {
+    return
+  }
+  guard self.usage.stats.current_provider_id is Some(provider_id) else {
+    return
+  }
   self.proxy.provider_router.record_result(
     provider_id,
     app_type,
@@ -170,12 +167,14 @@ fn Gateway::record_provider_result(self : Gateway, success : Bool) -> Unit {
   )
 }
 
-
 ///|
-
 fn Gateway::release_provider_permit_neutral(self : Gateway) -> Unit {
-  guard self.usage.stats.current_request_app_type is Some(app_type) else { return }
-  guard self.usage.stats.current_provider_id is Some(provider_id) else { return }
+  guard self.usage.stats.current_request_app_type is Some(app_type) else {
+    return
+  }
+  guard self.usage.stats.current_provider_id is Some(provider_id) else {
+    return
+  }
   self.proxy.provider_router.release_permit_neutral(
     provider_id,
     app_type,
@@ -183,9 +182,7 @@ fn Gateway::release_provider_permit_neutral(self : Gateway) -> Unit {
   )
 }
 
-
 ///|
-
 fn Gateway::activate_next_provider_after_upstream_status(
   self : Gateway,
   app_type : String,
@@ -193,7 +190,9 @@ fn Gateway::activate_next_provider_after_upstream_status(
   attempted_provider_ids : Array[String],
   status_code : Int,
 ) -> ProviderRouteTarget? {
-  guard self.usage.stats.current_provider_id is Some(provider_id) else { return None }
+  guard self.usage.stats.current_provider_id is Some(provider_id) else {
+    return None
+  }
   if !attempted_provider_ids.contains(provider_id) {
     attempted_provider_ids.push(provider_id)
   }
@@ -219,9 +218,7 @@ fn Gateway::activate_next_provider_after_upstream_status(
   }
 }
 
-
 ///|
-
 fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
   match error {
     NoProvidersConfigured | AllProvidersCircuitOpen =>
@@ -229,9 +226,7 @@ fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
   }
 }
 
-
 ///|
-
 fn provider_selection_error_code(error : ProviderSelectionError) -> String {
   match error {
     NoProvidersConfigured => "cc_switch_no_providers_configured"
@@ -239,9 +234,7 @@ fn provider_selection_error_code(error : ProviderSelectionError) -> String {
   }
 }
 
-
 ///|
-
 fn provider_selection_error_message(
   error : ProviderSelectionError,
   app_type : String,
@@ -254,9 +247,7 @@ fn provider_selection_error_message(
   }
 }
 
-
 ///|
-
 fn provider_selection_error_json(
   error : ProviderSelectionError,
   app_type : String,
@@ -273,9 +264,7 @@ fn provider_selection_error_json(
   }.to_json()
 }
 
-
 ///|
-
 async fn Gateway::write_provider_selection_error(
   self : Gateway,
   app_type : String,
@@ -292,9 +281,7 @@ async fn Gateway::write_provider_selection_error(
   w.flush()
 }
 
-
 ///|
-
 fn Gateway::codex_provider_outbound_request(
   self : Gateway,
   provider : ProviderRouteTarget?,
@@ -307,9 +294,7 @@ fn Gateway::codex_provider_outbound_request(
   }
 }
 
-
 ///|
-
 fn Gateway::active_provider_target(
   self : Gateway,
   providers : Array[ProviderRouteTarget],
@@ -331,9 +316,7 @@ fn Gateway::active_provider_target(
   }
 }
 
-
 ///|
-
 async fn Gateway::post_codex_compatible_provider_json(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -359,9 +342,7 @@ async fn Gateway::post_codex_compatible_provider_json(
   Ok((response, data.text()))
 }
 
-
 ///|
-
 async fn Gateway::post_codex_compatible_provider_stream(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -392,9 +373,7 @@ async fn Gateway::post_codex_compatible_provider_stream(
   Ok((client, response))
 }
 
-
 ///|
-
 async fn Gateway::post_claude_compatible_provider_json(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -431,9 +410,7 @@ async fn Gateway::post_claude_compatible_provider_json(
   Ok((response, data.text()))
 }
 
-
 ///|
-
 fn claude_compatible_provider_headers(
   api_key : String,
   api_format : String,
@@ -491,9 +468,7 @@ fn claude_compatible_provider_headers(
   headers
 }
 
-
 ///|
-
 fn codex_compatible_provider_headers(
   api_key : String,
   accept : String,
@@ -511,9 +486,7 @@ fn codex_compatible_provider_headers(
   headers
 }
 
-
 ///|
-
 fn provider_custom_user_agent(provider : ProviderRouteTarget) -> String? {
   if provider.provider_type == Some("official") {
     return None
@@ -539,9 +512,7 @@ fn provider_custom_user_agent(provider : ProviderRouteTarget) -> String? {
   }
 }
 
-
 ///|
-
 fn claude_compatible_provider_url(
   base_url : String,
   endpoint : String,
@@ -555,9 +526,7 @@ fn claude_compatible_provider_url(
   }
 }
 
-
 ///|
-
 fn codex_compatible_provider_url(
   base_url : String,
   endpoint : String,
@@ -580,9 +549,7 @@ fn codex_compatible_provider_url(
   url
 }
 
-
 ///|
-
 fn provider_base_is_full_endpoint(base_url : String) -> Bool {
   let path = match base_url.find("?") {
     Some(index) => base_url[:index]
@@ -593,9 +560,7 @@ fn provider_base_is_full_endpoint(base_url : String) -> Bool {
   path.has_suffix("/messages")
 }
 
-
 ///|
-
 fn codex_provider_from_env() -> ProviderRouteTarget? {
   guard env_first_non_empty([
       "MOONSTAT_CODEX_BASE_URL", "CODEX_BASE_URL", "OPENAI_BASE_URL",
@@ -636,9 +601,7 @@ fn codex_provider_from_env() -> ProviderRouteTarget? {
   )
 }
 
-
 ///|
-
 fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
   guard env_first_non_empty(["MOONSTAT_CLAUDE_BASE_URL", "ANTHROPIC_BASE_URL"])
     is Some(base_url) else {
@@ -690,9 +653,7 @@ fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
   )
 }
 
-
 ///|
-
 fn provider_settings_config_from_env(keys : Array[String]) -> Json? {
   match env_first_non_empty(keys) {
     Some(raw) => Some(@json.parse(raw)) catch { _ => None }
@@ -700,9 +661,7 @@ fn provider_settings_config_from_env(keys : Array[String]) -> Json? {
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_current_omo_provider_id(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -711,9 +670,7 @@ async fn Gateway::handle_get_current_omo_provider_id(
   write_usage_json(w, Json::string(self.current_omo_provider_id(slim)))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_providers(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -727,9 +684,7 @@ async fn Gateway::handle_get_providers(
   write_usage_json(w, self.proxy.provider_router.providers_moon_json(app_type))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_current_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -748,9 +703,7 @@ async fn Gateway::handle_get_current_provider(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_add_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -772,9 +725,7 @@ async fn Gateway::handle_add_provider(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 fn Gateway::add_provider_target_ccs(
   self : Gateway,
   app_type : String,
@@ -792,9 +743,7 @@ fn Gateway::add_provider_target_ccs(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_update_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -818,9 +767,7 @@ async fn Gateway::handle_update_provider(
   }
 }
 
-
 ///|
-
 fn Gateway::update_provider_target_ccs(
   self : Gateway,
   app_type : String,
@@ -841,12 +788,15 @@ fn Gateway::update_provider_target_ccs(
         "Original provider '\{original_provider_id}' does not exist in app '\{app_type}'",
       )
     }
-    if self.proxy.provider_router.provider_by_id(app_type, provider_id) is Some(_) {
+    if self.proxy.provider_router.provider_by_id(app_type, provider_id)
+      is Some(_) {
       return Err(
         "Provider '\{provider_id}' already exists in app '\{app_type}'",
       )
     }
-    ignore(self.proxy.provider_router.delete_provider(app_type, original_provider_id))
+    ignore(
+      self.proxy.provider_router.delete_provider(app_type, original_provider_id),
+    )
   }
   self.sync_provider_limits_from_target(target)
   self.proxy.provider_router.upsert_provider(target)
@@ -856,9 +806,7 @@ fn Gateway::update_provider_target_ccs(
   Ok(())
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -880,9 +828,7 @@ async fn Gateway::handle_delete_provider(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_remove_provider_from_live_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -906,9 +852,7 @@ async fn Gateway::handle_remove_provider_from_live_config(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::handle_switch_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -937,9 +881,7 @@ async fn Gateway::handle_switch_provider(
   write_usage_json(w, { "warnings": Json::array([]) }.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_open_provider_terminal(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -968,9 +910,7 @@ async fn Gateway::handle_open_provider_terminal(
   }
 }
 
-
 ///|
-
 fn Gateway::current_claude_desktop_provider(
   self : Gateway,
 ) -> ProviderRouteTarget? {
@@ -981,9 +921,7 @@ fn Gateway::current_claude_desktop_provider(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_import_claude_desktop_providers_from_claude(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -994,9 +932,7 @@ async fn Gateway::handle_import_claude_desktop_providers_from_claude(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_ensure_claude_desktop_official_provider(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1007,9 +943,7 @@ async fn Gateway::handle_ensure_claude_desktop_official_provider(
   )
 }
 
-
 ///|
-
 fn Gateway::ensure_claude_desktop_official_provider(self : Gateway) -> Bool {
   if self.proxy.provider_router.provider_by_id("claude-desktop", "codex-oauth")
     is Some(_) {
@@ -1025,18 +959,19 @@ fn Gateway::ensure_claude_desktop_official_provider(self : Gateway) -> Bool {
     ),
   )
   if self.proxy.provider_router.current_provider_id("claude-desktop") is None {
-    self.proxy.provider_router.set_current_provider("claude-desktop", "codex-oauth")
+    self.proxy.provider_router.set_current_provider(
+      "claude-desktop", "codex-oauth",
+    )
   }
   true
 }
 
-
 ///|
-
 fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
   ignore(self.ensure_claude_desktop_official_provider())
   let mut imported = 0
-  guard self.proxy.provider_router.providers.get("claude") is Some(claude_providers) else {
+  guard self.proxy.provider_router.providers.get("claude")
+    is Some(claude_providers) else {
     return imported
   }
   for provider in claude_providers.values() {
@@ -1083,7 +1018,9 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
   if self.proxy.provider_router.current_provider_id("claude-desktop") is None {
     match self.proxy.provider_router.current_provider_id("claude") {
       Some(provider_id) =>
-        if self.proxy.provider_router.provider_by_id("claude-desktop", provider_id)
+        if self.proxy.provider_router.provider_by_id(
+            "claude-desktop", provider_id,
+          )
           is Some(_) {
           self.proxy.provider_router.set_current_provider(
             "claude-desktop", provider_id,
@@ -1095,9 +1032,7 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
   imported
 }
 
-
 ///|
-
 fn claude_provider_models_are_claude_safe(
   provider : ProviderRouteTarget,
 ) -> Bool {
@@ -1123,9 +1058,7 @@ fn claude_provider_models_are_claude_safe(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_sync_current_providers_live(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1147,9 +1080,7 @@ async fn Gateway::handle_sync_current_providers_live(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_read_live_provider_settings(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1166,20 +1097,19 @@ async fn Gateway::handle_read_live_provider_settings(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_get_live_provider_ids(
   self : Gateway,
   w : @httpx.ResponseWriter,
   app_type : String,
 ) -> Unit {
-  write_usage_json(w, self.proxy.provider_router.live_provider_ids_json(app_type))
+  write_usage_json(
+    w,
+    self.proxy.provider_router.live_provider_ids_json(app_type),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_get_live_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1197,9 +1127,7 @@ async fn Gateway::handle_get_live_provider(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_import_live_providers(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1213,9 +1141,7 @@ async fn Gateway::handle_import_live_providers(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_get_universal_providers(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1223,9 +1149,7 @@ async fn Gateway::handle_get_universal_providers(
   write_usage_json(w, self.proxy.provider_router.universal_providers_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_universal_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1239,9 +1163,7 @@ async fn Gateway::handle_get_universal_provider(
   write_usage_json(w, self.proxy.provider_router.universal_provider_json(id))
 }
 
-
 ///|
-
 async fn Gateway::handle_upsert_universal_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1254,13 +1176,13 @@ async fn Gateway::handle_upsert_universal_provider(
   }
   write_usage_json(
     w,
-    Json::boolean(self.proxy.provider_router.upsert_universal_provider(provider)),
+    Json::boolean(
+      self.proxy.provider_router.upsert_universal_provider(provider),
+    ),
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_universal_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1277,9 +1199,7 @@ async fn Gateway::handle_delete_universal_provider(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_sync_universal_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1296,9 +1216,7 @@ async fn Gateway::handle_sync_universal_provider(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_get_provider_presets(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1308,9 +1226,7 @@ async fn Gateway::handle_get_provider_presets(
   write_usage_json(w, moon_provider_presets_json(r.path))
 }
 
-
 ///|
-
 async fn Gateway::handle_update_providers_sort_order(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1330,9 +1246,7 @@ async fn Gateway::handle_update_providers_sort_order(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_stream_check_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1352,9 +1266,7 @@ async fn Gateway::handle_stream_check_provider(
   write_usage_json(w, result)
 }
 
-
 ///|
-
 async fn Gateway::handle_stream_check_all_providers(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1382,9 +1294,7 @@ async fn Gateway::handle_stream_check_all_providers(
   write_usage_json(w, Json::array(rows))
 }
 
-
 ///|
-
 fn Gateway::stream_check_provider_result_json(
   self : Gateway,
   app_type : String,
@@ -1421,9 +1331,7 @@ fn Gateway::stream_check_provider_result_json(
   Some(Json::object(obj))
 }
 
-
 ///|
-
 fn stream_check_effective_config_for_provider(
   global_config : StreamCheckConfig,
   provider : ProviderRouteTarget,
@@ -1482,9 +1390,7 @@ fn stream_check_effective_config_for_provider(
   config
 }
 
-
 ///|
-
 fn stream_check_provider_from_request(
   path : StringView,
   body : Json?,
@@ -1511,30 +1417,22 @@ fn stream_check_provider_from_request(
   Some((app_type, provider_id))
 }
 
-
 ///|
-
 fn provider_app_from_request(path : StringView, body : Json?) -> String? {
   provider_string_from_request(path, body, ["app", "app_type", "appType"])
 }
 
-
 ///|
-
 fn provider_id_from_request(path : StringView, body : Json?) -> String? {
   provider_string_from_request(path, body, ["id", "provider_id", "providerId"])
 }
 
-
 ///|
-
 fn provider_url_from_request(path : StringView, body : Json?) -> String? {
   provider_string_from_request(path, body, ["url"])
 }
 
-
 ///|
-
 fn provider_string_from_request(
   path : StringView,
   body : Json?,
@@ -1550,9 +1448,7 @@ fn provider_string_from_request(
   }
 }
 
-
 ///|
-
 fn provider_bool_from_request(
   path : StringView,
   body : Json?,
@@ -1568,9 +1464,7 @@ fn provider_bool_from_request(
   }
 }
 
-
 ///|
-
 fn provider_body_payload(body : Json?) -> Json? {
   match body {
     Some(Object(obj)) =>
@@ -1582,9 +1476,7 @@ fn provider_body_payload(body : Json?) -> Json? {
   }
 }
 
-
 ///|
-
 fn provider_settings_config_from_body(body : Json?) -> Json? {
   guard provider_body_payload(body) is Some(Object(obj)) else { return None }
   match obj.get("settingsConfig") {
@@ -1599,9 +1491,7 @@ fn provider_settings_config_from_body(body : Json?) -> Json? {
   }
 }
 
-
 ///|
-
 fn provider_settings_config_with_inline_metadata(
   settings : Json,
   obj : Map[String, Json],
@@ -1618,9 +1508,7 @@ fn provider_settings_config_with_inline_metadata(
   Json::object(merged)
 }
 
-
 ///|
-
 fn provider_settings_base_url(app_type : String, settings : Json?) -> String? {
   guard settings is Some(Object(obj)) else { return None }
   match app_type {
@@ -1653,9 +1541,7 @@ fn provider_settings_base_url(app_type : String, settings : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_settings_api_key(app_type : String, settings : Json?) -> String? {
   guard settings is Some(Object(obj)) else { return None }
   match app_type {
@@ -1694,9 +1580,7 @@ fn provider_settings_api_key(app_type : String, settings : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_settings_api_format(settings : Json?) -> String? {
   guard settings is Some(Object(obj)) else { return None }
   match obj.get("meta") {
@@ -1719,9 +1603,7 @@ fn provider_settings_api_format(settings : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_settings_openrouter_compat_enabled(obj : Map[String, Json]) -> Bool {
   match obj.get("openrouter_compat_mode") {
     Some(true) => true
@@ -1737,9 +1619,7 @@ fn provider_settings_openrouter_compat_enabled(obj : Map[String, Json]) -> Bool 
   }
 }
 
-
 ///|
-
 fn provider_explicit_type_from_request(
   path : StringView,
   body : Json?,
@@ -1779,16 +1659,12 @@ fn provider_explicit_type_from_request(
   None
 }
 
-
 ///|
-
 fn provider_type_normalize(value : String) -> String {
   value.trim().to_owned().to_lower().replace_all(old="-", new="_")
 }
 
-
 ///|
-
 fn provider_resolved_provider_type(
   app_type : String,
   explicit_type : String?,
@@ -1829,9 +1705,7 @@ fn provider_resolved_provider_type(
   }
 }
 
-
 ///|
-
 fn provider_gemini_key_provider_type(api_key : String?) -> String {
   match api_key {
     Some(key) => {
@@ -1846,9 +1720,7 @@ fn provider_gemini_key_provider_type(api_key : String?) -> String {
   }
 }
 
-
 ///|
-
 fn provider_settings_bearer_only(settings : Json?) -> Bool {
   guard settings is Some(Object(obj)) else { return false }
   match json_non_empty_string_from_map_any(obj, ["auth_mode", "authMode"]) {
@@ -1865,9 +1737,7 @@ fn provider_settings_bearer_only(settings : Json?) -> Bool {
   }
 }
 
-
 ///|
-
 fn provider_settings_prompt_cache_key(settings : Json?) -> String? {
   guard settings is Some(Object(obj)) else { return None }
   match
@@ -1886,9 +1756,7 @@ fn provider_settings_prompt_cache_key(settings : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_settings_codex_fast_mode(settings : Json?) -> Bool? {
   guard settings is Some(Object(obj)) else { return None }
   match json_bool_from_map_any(obj, ["codexFastMode", "codex_fast_mode"]) {
@@ -1902,9 +1770,7 @@ fn provider_settings_codex_fast_mode(settings : Json?) -> Bool? {
   }
 }
 
-
 ///|
-
 fn Gateway::provider_limit_config_for_provider(
   self : Gateway,
   provider_id : String,
@@ -1917,9 +1783,7 @@ fn Gateway::provider_limit_config_for_provider(
   provider_limit_config_from_settings(provider.settings_config)
 }
 
-
 ///|
-
 fn Gateway::sync_provider_limits_from_target(
   self : Gateway,
   target : ProviderRouteTarget,
@@ -1936,9 +1800,7 @@ fn Gateway::sync_provider_limits_from_target(
   )
 }
 
-
 ///|
-
 fn provider_limit_config_from_settings(
   settings : Json?,
 ) -> ProviderLimitConfig? {
@@ -1958,9 +1820,7 @@ fn provider_limit_config_from_settings(
   }
 }
 
-
 ///|
-
 fn provider_limit_string_from_settings(
   obj : Map[String, Json],
   keys : Array[String],
@@ -1975,9 +1835,7 @@ fn provider_limit_string_from_settings(
   }
 }
 
-
 ///|
-
 fn provider_prefer_non_empty(primary : String?, fallback : String?) -> String? {
   match primary {
     Some(value) if !value.trim().is_empty() => Some(value)
@@ -1989,9 +1847,7 @@ fn provider_prefer_non_empty(primary : String?, fallback : String?) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_inline_settings_config(obj : Map[String, Json]) -> Json? {
   let settings : Map[String, Json] = {}
   provider_copy_inline_metadata_fields(settings, obj)
@@ -2002,9 +1858,7 @@ fn provider_inline_settings_config(obj : Map[String, Json]) -> Json? {
   }
 }
 
-
 ///|
-
 fn provider_copy_inline_metadata_fields(
   settings : Map[String, Json],
   obj : Map[String, Json],
@@ -2028,9 +1882,7 @@ fn provider_copy_inline_metadata_fields(
   }
 }
 
-
 ///|
-
 fn provider_merge_inline_meta(existing : Json?, incoming : Json) -> Json {
   match (existing, incoming) {
     (Some(Object(existing_obj)), Object(incoming_obj)) => {
@@ -2053,9 +1905,7 @@ fn provider_merge_inline_meta(existing : Json?, incoming : Json) -> Json {
   }
 }
 
-
 ///|
-
 fn universal_provider_from_request(path : StringView, body : Json?) -> Json? {
   match provider_body_payload(body) {
     Some(Object(obj)) =>
@@ -2092,9 +1942,7 @@ fn universal_provider_from_request(path : StringView, body : Json?) -> Json? {
   Some(Json::object(provider))
 }
 
-
 ///|
-
 fn universal_provider_apps_from_request(
   path : StringView,
   body : Json?,
@@ -2110,9 +1958,7 @@ fn universal_provider_apps_from_request(
   }.to_json()
 }
 
-
 ///|
-
 fn universal_provider_enabled_apps(apps_value : String) -> Array[String] {
   let enabled : Array[String] = []
   for raw in apps_value.split(",") {
@@ -2128,9 +1974,7 @@ fn universal_provider_enabled_apps(apps_value : String) -> Array[String] {
   enabled
 }
 
-
 ///|
-
 fn universal_provider_models_from_request(
   path : StringView,
   body : Json?,
@@ -2165,9 +2009,7 @@ fn universal_provider_models_from_request(
   Json::object(models)
 }
 
-
 ///|
-
 fn provider_target_from_request(
   path : StringView,
   body : Json?,
@@ -2238,9 +2080,7 @@ fn provider_target_from_request(
   )
 }
 
-
 ///|
-
 fn provider_claude_desktop_mode_from_body(body : Json?) -> String? {
   guard provider_body_payload(body) is Some(Object(obj)) else { return None }
   match
@@ -2263,9 +2103,7 @@ fn provider_claude_desktop_mode_from_body(body : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_model_mapping_from_request(
   path : StringView,
   body : Json?,
@@ -2305,9 +2143,7 @@ fn provider_model_mapping_from_request(
   }
 }
 
-
 ///|
-
 fn provider_model_mapping_from_json(obj : Map[String, Json]) -> ModelMapping? {
   let mapping = ModelMapping::new(
     haiku_model=json_string_from_map_any(obj, ["haikuModel", "haiku_model"]),
@@ -2324,9 +2160,7 @@ fn provider_model_mapping_from_json(obj : Map[String, Json]) -> ModelMapping? {
   }
 }
 
-
 ///|
-
 fn provider_claude_desktop_model_routes_from_body(
   body : Json?,
 ) -> Map[String, ClaudeDesktopModelRoute] {
@@ -2339,9 +2173,7 @@ fn provider_claude_desktop_model_routes_from_body(
   routes
 }
 
-
 ///|
-
 fn provider_claude_desktop_routes_object(
   obj : Map[String, Json],
 ) -> Map[String, Json]? {
@@ -2367,9 +2199,7 @@ fn provider_claude_desktop_routes_object(
   }
 }
 
-
 ///|
-
 fn provider_add_claude_desktop_routes(
   routes : Map[String, ClaudeDesktopModelRoute],
   obj : Map[String, Json],
@@ -2390,9 +2220,7 @@ fn provider_add_claude_desktop_routes(
   }
 }
 
-
 ///|
-
 fn provider_claude_desktop_route_from_json(
   json : Json,
 ) -> ClaudeDesktopModelRoute? {
@@ -2427,9 +2255,7 @@ fn provider_claude_desktop_route_from_json(
   }
 }
 
-
 ///|
-
 fn provider_sort_updates_from_request(
   path : StringView,
   body : Json?,
@@ -2447,9 +2273,7 @@ fn provider_sort_updates_from_request(
   updates
 }
 
-
 ///|
-
 fn provider_sort_updates_from_json(body : Json?) -> Array[ProviderSortUpdate]? {
   match body {
     Some(Array(items)) => Some(provider_sort_updates_from_array(items))
@@ -2462,9 +2286,7 @@ fn provider_sort_updates_from_json(body : Json?) -> Array[ProviderSortUpdate]? {
   }
 }
 
-
 ///|
-
 fn provider_sort_updates_from_array(
   items : Array[Json],
 ) -> Array[ProviderSortUpdate] {
@@ -2500,9 +2322,7 @@ fn provider_sort_updates_from_array(
   updates
 }
 
-
 ///|
-
 fn provider_endpoint_urls_from_request(
   path : StringView,
   body : Json?,
@@ -2521,9 +2341,7 @@ fn provider_endpoint_urls_from_request(
   }
 }
 
-
 ///|
-
 fn provider_endpoint_urls_from_json(body : Json?) -> Array[String]? {
   match body {
     Some(Array(items)) => Some(provider_endpoint_urls_from_array(items))
@@ -2541,9 +2359,7 @@ fn provider_endpoint_urls_from_json(body : Json?) -> Array[String]? {
   }
 }
 
-
 ///|
-
 fn provider_endpoint_urls_from_array(items : Array[Json]) -> Array[String] {
   let urls : Array[String] = []
   for item in items {
@@ -2554,9 +2370,7 @@ fn provider_endpoint_urls_from_array(items : Array[Json]) -> Array[String] {
   urls
 }
 
-
 ///|
-
 fn provider_endpoint_latency_results_json(
   urls : Array[String],
   timeout_secs : Int,
@@ -2565,9 +2379,7 @@ fn provider_endpoint_latency_results_json(
   Json::array(urls.map(provider_endpoint_latency_result_json))
 }
 
-
 ///|
-
 fn provider_endpoint_latency_result_json(raw_url : String) -> Json {
   let trimmed = raw_url.trim().to_owned()
   if trimmed.is_empty() {
@@ -2602,9 +2414,7 @@ fn provider_endpoint_latency_result_json(raw_url : String) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn Gateway::selected_provider_chain(
   self : Gateway,
   app_type : String,
@@ -2617,9 +2427,7 @@ fn Gateway::selected_provider_chain(
   }
 }
 
-
 ///|
-
 fn Gateway::claude_provider_outbound_body(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -2645,9 +2453,7 @@ fn Gateway::claude_provider_outbound_body(
   }
 }
 
-
 ///|
-
 fn provider_media_heuristic_enabled(provider : ProviderRouteTarget?) -> Bool {
   guard provider is Some(provider) else { return true }
   guard provider.settings_config is Some(Object(settings)) else { return true }
@@ -2656,9 +2462,7 @@ fn provider_media_heuristic_enabled(provider : ProviderRouteTarget?) -> Bool {
   ]).unwrap_or(true)
 }
 
-
 ///|
-
 async fn write_chat_provider_codex_stream_data(
   w : @httpx.ResponseWriter,
   data : String,
@@ -2675,4 +2479,3 @@ async fn write_chat_provider_codex_stream_data(
   }
   (done, bytes)
 }
-

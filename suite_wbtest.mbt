@@ -20,6 +20,7 @@ test "suite manifest publishes moonstat service contract" {
     obj["usage_logs_url"],
     Json::string("http://127.0.0.1:15721/usage/logs"),
   )
+  assert_eq(obj["metrics_url"], Json::string("http://127.0.0.1:15721/metrics"))
   assert_eq(
     obj["usage_summary_url"],
     Json::string("http://127.0.0.1:15721/usage/summary"),
@@ -95,6 +96,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(capabilities.contains(Json::string("suite-discovery")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /stats")))
+  assert_true(routes.contains(Json::string("GET /metrics")))
   assert_true(routes.contains(Json::string("GET|POST /usage/logs")))
   assert_true(routes.contains(Json::string("GET|POST /usage/summary")))
   assert_true(routes.contains(Json::string("GET|POST /usage/summary/by-app")))

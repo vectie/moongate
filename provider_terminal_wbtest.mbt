@@ -25,7 +25,10 @@ test "ccs provider terminal command quotes cwd and env values" {
     "GOOD_KEY": "value with space",
     "BAD-KEY": "skip",
   }
-  let command = moon_provider_terminal_command(env, Some("/tmp/project O'Brien"))
+  let command = moon_provider_terminal_command(
+    env,
+    Some("/tmp/project O'Brien"),
+  )
   assert_true(command.contains("tell application \"Terminal\""))
   assert_true(command.contains("project O"))
   assert_true(command.contains("Brien"))

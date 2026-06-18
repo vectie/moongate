@@ -874,7 +874,8 @@ fn optimize_moon_thinking(body : Json) -> Json {
       }
       append_moon_anthropic_beta(obj, "interleaved-thinking-2025-05-14")
     }
-    Some(_) => append_moon_anthropic_beta(obj, "interleaved-thinking-2025-05-14")
+    Some(_) =>
+      append_moon_anthropic_beta(obj, "interleaved-thinking-2025-05-14")
   }
   Json::object(obj)
 }

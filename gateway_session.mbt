@@ -1,4 +1,4 @@
-
+///|
 fn extract_client_session_context(
   headers : Map[String, String],
   body : Json,
@@ -10,17 +10,13 @@ fn extract_client_session_context(
   }
 }
 
-
 ///|
-
 fn generate_moon_session_id() -> String {
   let gen = @uuid.generator(@random.Rand::new())
   gen.v4().to_string()
 }
 
-
 ///|
-
 fn extract_client_session_id(
   headers : Map[String, String],
   body : Json,
@@ -41,9 +37,7 @@ fn extract_client_session_id(
   extract_session_from_metadata(body)
 }
 
-
 ///|
-
 fn extract_claude_session_id(
   headers : Map[String, String],
   body : Json,
@@ -57,9 +51,7 @@ fn extract_claude_session_id(
   extract_session_from_metadata(body)
 }
 
-
 ///|
-
 fn extract_codex_session_id(
   headers : Map[String, String],
   body : Json,
@@ -76,9 +68,7 @@ fn extract_codex_session_id(
   }
 }
 
-
 ///|
-
 fn extract_session_from_metadata(body : Json) -> String? {
   match json_metadata_string(body, "user_id") {
     Some(user_id) =>
@@ -94,9 +84,7 @@ fn extract_session_from_metadata(body : Json) -> String? {
   }
 }
 
-
 ///|
-
 fn parse_session_from_user_id(user_id : String) -> String? {
   match user_id.find("_session_") {
     Some(index) => {
@@ -112,9 +100,7 @@ fn parse_session_from_user_id(user_id : String) -> String? {
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_list_sessions(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -123,9 +109,7 @@ async fn Gateway::handle_list_sessions(
   write_usage_json(w, moon_list_sessions_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_session_messages(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -149,9 +133,7 @@ async fn Gateway::handle_get_session_messages(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_launch_session_terminal(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -178,9 +160,7 @@ async fn Gateway::handle_launch_session_terminal(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_session(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -209,9 +189,7 @@ async fn Gateway::handle_delete_session(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_sessions(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -225,4 +203,3 @@ async fn Gateway::handle_delete_sessions(
   }
   write_usage_json(w, moon_delete_sessions_json(items))
 }
-

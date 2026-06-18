@@ -1,39 +1,29 @@
-
+///|
 async fn check_proxy_status(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/status")
 }
 
-
 ///|
-
 async fn start_proxy_server(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, "/start_proxy_server", "Proxy")
 }
 
-
 ///|
-
 async fn stop_proxy_server(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, "/stop_proxy_server", "Proxy")
 }
 
-
 ///|
-
 async fn stop_proxy_with_restore(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, "/stop_proxy_with_restore", "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_config(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/config")
 }
 
-
 ///|
-
 async fn update_proxy_config(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -42,16 +32,12 @@ async fn update_proxy_config(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_proxy_global_config(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/global-config")
 }
 
-
 ///|
-
 async fn update_proxy_global_config(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -60,9 +46,7 @@ async fn update_proxy_global_config(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn set_global_proxy_url(args : Array[String]) -> Unit {
   guard global_proxy_url_path(args, "/set_global_proxy_url") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -72,9 +56,7 @@ async fn set_global_proxy_url(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn test_global_proxy_url(args : Array[String]) -> Unit {
   guard global_proxy_url_path(args, "/test_proxy_url") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -84,30 +66,22 @@ async fn test_global_proxy_url(args : Array[String]) -> Unit {
   check_json_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_app_config(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/app-config")
 }
 
-
 ///|
-
 async fn update_proxy_app_config(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, proxy_app_config_update_path(args), "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/default-cost-multiplier")
 }
 
-
 ///|
-
 async fn set_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
   guard proxy_app_value_update_path(args, "/proxy/default-cost-multiplier")
     is Some(path) else {
@@ -118,18 +92,14 @@ async fn set_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_default_cost_multiplier_test_hook(
   args : Array[String],
 ) -> Unit {
   check_proxy_app_endpoint(args, "/get_default_cost_multiplier_test_hook")
 }
 
-
 ///|
-
 async fn set_proxy_default_cost_multiplier_test_hook(
   args : Array[String],
 ) -> Unit {
@@ -144,16 +114,12 @@ async fn set_proxy_default_cost_multiplier_test_hook(
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_pricing_model_source(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/pricing-model-source")
 }
 
-
 ///|
-
 async fn set_proxy_pricing_model_source(args : Array[String]) -> Unit {
   guard proxy_app_value_update_path(args, "/proxy/pricing-model-source")
     is Some(path) else {
@@ -164,18 +130,14 @@ async fn set_proxy_pricing_model_source(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_pricing_model_source_test_hook(
   args : Array[String],
 ) -> Unit {
   check_proxy_app_endpoint(args, "/get_pricing_model_source_test_hook")
 }
 
-
 ///|
-
 async fn set_proxy_pricing_model_source_test_hook(args : Array[String]) -> Unit {
   guard proxy_app_value_update_path(args, "/set_pricing_model_source_test_hook")
     is Some(path) else {
@@ -186,23 +148,17 @@ async fn set_proxy_pricing_model_source_test_hook(args : Array[String]) -> Unit 
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_provider_health(args : Array[String]) -> Unit {
   check_proxy_provider_endpoint(args, "/proxy/provider-health")
 }
 
-
 ///|
-
 async fn check_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/circuit-breaker-config")
 }
 
-
 ///|
-
 async fn update_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   guard proxy_circuit_config_update_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -214,16 +170,12 @@ async fn update_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_circuit_breaker_stats(args : Array[String]) -> Unit {
   check_proxy_provider_endpoint(args, "/proxy/circuit-breaker-stats")
 }
 
-
 ///|
-
 async fn reset_proxy_circuit_breaker(args : Array[String]) -> Unit {
   guard proxy_provider_endpoint_path(args, "/proxy/reset-circuit-breaker")
     is Some(path) else {
@@ -234,23 +186,17 @@ async fn reset_proxy_circuit_breaker(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_failover_queue(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/failover-queue")
 }
 
-
 ///|
-
 async fn check_proxy_available_failover_providers(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/available-failover-providers")
 }
 
-
 ///|
-
 async fn add_proxy_failover_queue(args : Array[String]) -> Unit {
   guard proxy_provider_endpoint_path(args, "/proxy/failover-queue")
     is Some(path) else {
@@ -261,9 +207,7 @@ async fn add_proxy_failover_queue(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn remove_proxy_failover_queue(args : Array[String]) -> Unit {
   guard proxy_provider_endpoint_path(args, "/proxy/failover-queue")
     is Some(path) else {
@@ -274,16 +218,12 @@ async fn remove_proxy_failover_queue(args : Array[String]) -> Unit {
   check_json_delete_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
   check_proxy_app_endpoint(args, "/proxy/auto-failover-enabled")
 }
 
-
 ///|
-
 async fn set_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
   guard proxy_auto_failover_enabled_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -293,16 +233,12 @@ async fn set_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_takeover_status(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/takeover-status")
 }
 
-
 ///|
-
 async fn set_proxy_takeover_status(args : Array[String]) -> Unit {
   guard proxy_takeover_update_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -312,9 +248,7 @@ async fn set_proxy_takeover_status(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn switch_proxy_provider(args : Array[String]) -> Unit {
   guard proxy_provider_endpoint_path(args, "/switch_proxy_provider")
     is Some(path) else {
@@ -325,16 +259,12 @@ async fn switch_proxy_provider(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_running(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/running")
 }
 
-
 ///|
-
 async fn check_providers(args : Array[String]) -> Unit {
   check_json_endpoint(
     args,
@@ -343,9 +273,7 @@ async fn check_providers(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_current_provider(args : Array[String]) -> Unit {
   check_json_endpoint(
     args,
@@ -354,9 +282,7 @@ async fn check_current_provider(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn add_provider(args : Array[String]) -> Unit {
   guard provider_upsert_path(args, "/add_provider", require_original=false)
     is Some(path) else {
@@ -367,9 +293,7 @@ async fn add_provider(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn update_provider(args : Array[String]) -> Unit {
   guard provider_upsert_path(args, "/update_provider", require_original=false)
     is Some(path) else {
@@ -380,9 +304,7 @@ async fn update_provider(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn delete_provider(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/delete_provider") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -392,9 +314,7 @@ async fn delete_provider(args : Array[String]) -> Unit {
   check_json_delete_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn remove_provider_from_live_config(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/remove_provider_from_live_config")
     is Some(path) else {
@@ -405,9 +325,7 @@ async fn remove_provider_from_live_config(args : Array[String]) -> Unit {
   check_json_delete_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn switch_provider(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/switch_provider") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -417,9 +335,7 @@ async fn switch_provider(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn switch_provider_test_hook(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/switch_provider_test_hook") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -429,16 +345,12 @@ async fn switch_provider_test_hook(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn sync_current_providers_live(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, "/sync_current_providers_live", "Provider")
 }
 
-
 ///|
-
 async fn open_provider_terminal(args : Array[String]) -> Unit {
   guard open_provider_terminal_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -448,9 +360,7 @@ async fn open_provider_terminal(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn check_live_provider_settings(args : Array[String]) -> Unit {
   check_json_endpoint(
     args,
@@ -459,9 +369,7 @@ async fn check_live_provider_settings(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_named_live_provider_ids(
   args : Array[String],
   app_type : String,
@@ -469,9 +377,7 @@ async fn check_named_live_provider_ids(
   check_json_endpoint(args, provider_live_ids_path(app_type), "Provider")
 }
 
-
 ///|
-
 async fn check_named_live_provider(
   args : Array[String],
   app_type : String,
@@ -484,9 +390,7 @@ async fn check_named_live_provider(
   check_json_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn import_named_live_providers(
   args : Array[String],
   app_type : String,
@@ -498,9 +402,7 @@ async fn import_named_live_providers(
   )
 }
 
-
 ///|
-
 async fn check_provider_live_ids(args : Array[String]) -> Unit {
   check_json_endpoint(
     args,
@@ -509,9 +411,7 @@ async fn check_provider_live_ids(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_provider_live_provider(args : Array[String]) -> Unit {
   guard provider_live_provider_path(args, provider_app_arg(args)) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -521,9 +421,7 @@ async fn check_provider_live_provider(args : Array[String]) -> Unit {
   check_json_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn import_provider_live(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -532,16 +430,12 @@ async fn import_provider_live(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_universal_providers(args : Array[String]) -> Unit {
   check_json_endpoint(args, "/get_universal_providers", "Provider")
 }
 
-
 ///|
-
 async fn check_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_id_path(args, "/get_universal_provider")
     is Some(path) else {
@@ -552,9 +446,7 @@ async fn check_universal_provider(args : Array[String]) -> Unit {
   check_json_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn upsert_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_upsert_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -564,9 +456,7 @@ async fn upsert_universal_provider(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn delete_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_id_path(args, "/delete_universal_provider")
     is Some(path) else {
@@ -577,9 +467,7 @@ async fn delete_universal_provider(args : Array[String]) -> Unit {
   check_json_delete_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn sync_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_id_path(args, "/sync_universal_provider")
     is Some(path) else {
@@ -590,16 +478,12 @@ async fn sync_universal_provider(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn check_provider_presets(args : Array[String]) -> Unit {
   check_json_endpoint(args, provider_presets_path(args), "Provider")
 }
 
-
 ///|
-
 async fn update_providers_sort_order(args : Array[String]) -> Unit {
   guard provider_sort_order_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -609,9 +493,7 @@ async fn update_providers_sort_order(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn check_provider_custom_endpoints(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/get_custom_endpoints") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -621,9 +503,7 @@ async fn check_provider_custom_endpoints(args : Array[String]) -> Unit {
   check_json_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn add_provider_custom_endpoint(args : Array[String]) -> Unit {
   guard provider_endpoint_url_path(args, "/add_custom_endpoint") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -633,9 +513,7 @@ async fn add_provider_custom_endpoint(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn remove_provider_custom_endpoint(args : Array[String]) -> Unit {
   guard provider_endpoint_url_path(args, "/remove_custom_endpoint")
     is Some(path) else {
@@ -646,9 +524,7 @@ async fn remove_provider_custom_endpoint(args : Array[String]) -> Unit {
   check_json_delete_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn update_provider_endpoint_last_used(args : Array[String]) -> Unit {
   guard provider_endpoint_url_path(args, "/update_endpoint_last_used")
     is Some(path) else {
@@ -659,24 +535,18 @@ async fn update_provider_endpoint_last_used(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Provider")
 }
 
-
 ///|
-
 async fn check_proxy_endpoint(args : Array[String], path : String) -> Unit {
   check_json_endpoint(args, path, "Proxy")
 }
 
-
 ///|
-
 async fn check_proxy_app_endpoint(args : Array[String], path : String) -> Unit {
   let app_type = proxy_app_arg(args)
   check_proxy_endpoint(args, "\{path}?app_type=\{cli_url_encode(app_type)}")
 }
 
-
 ///|
-
 async fn check_proxy_provider_endpoint(
   args : Array[String],
   path : String,
@@ -689,9 +559,7 @@ async fn check_proxy_provider_endpoint(
   check_proxy_endpoint(args, path)
 }
 
-
 ///|
-
 fn proxy_provider_endpoint_path(args : Array[String], path : String) -> String? {
   guard parse_string_arg_any(args, "--provider-id", "--providerId")
     is Some(provider_id) else {
@@ -703,9 +571,7 @@ fn proxy_provider_endpoint_path(args : Array[String], path : String) -> String? 
   )
 }
 
-
 ///|
-
 fn proxy_app_arg(args : Array[String]) -> String {
   match parse_string_arg_any(args, "--app", "--app-type") {
     Some(value) => value
@@ -713,9 +579,7 @@ fn proxy_app_arg(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn provider_app_arg(args : Array[String]) -> String {
   match parse_string_arg_any(args, "--app", "--app-type") {
     Some(value) => value
@@ -723,9 +587,7 @@ fn provider_app_arg(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn provider_id_arg(args : Array[String]) -> String? {
   match parse_string_arg(args, "--id") {
     Some(id) => Some(id)
@@ -733,16 +595,12 @@ fn provider_id_arg(args : Array[String]) -> String? {
   }
 }
 
-
 ///|
-
 fn provider_app_path(args : Array[String], path : String) -> String {
   "\{path}?app=\{cli_url_encode(provider_app_arg(args))}"
 }
 
-
 ///|
-
 fn provider_id_path(args : Array[String], path : String) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   Some(
@@ -750,9 +608,7 @@ fn provider_id_path(args : Array[String], path : String) -> String? {
   )
 }
 
-
 ///|
-
 fn open_provider_terminal_path(args : Array[String]) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   let query : Array[String] = [
@@ -766,9 +622,7 @@ fn open_provider_terminal_path(args : Array[String]) -> String? {
   Some(cli_path_with_query("/open_provider_terminal", query))
 }
 
-
 ///|
-
 fn provider_live_ids_path(app_type : String) -> String {
   match app_type {
     "opencode" => "/get_opencode_live_provider_ids"
@@ -778,9 +632,7 @@ fn provider_live_ids_path(app_type : String) -> String {
   }
 }
 
-
 ///|
-
 fn provider_live_provider_path(
   args : Array[String],
   app_type : String,
@@ -794,9 +646,7 @@ fn provider_live_provider_path(
   Some("\{path}?providerId=\{cli_url_encode(provider_id)}")
 }
 
-
 ///|
-
 fn provider_import_live_path(app_type : String) -> String {
   match app_type {
     "opencode" => "/import_opencode_providers_from_live"
@@ -806,17 +656,13 @@ fn provider_import_live_path(app_type : String) -> String {
   }
 }
 
-
 ///|
-
 fn universal_provider_id_path(args : Array[String], path : String) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   Some("\{path}?id=\{cli_url_encode(provider_id)}")
 }
 
-
 ///|
-
 fn universal_provider_upsert_path(args : Array[String]) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   let name = parse_string_arg(args, "--name").unwrap_or(provider_id)
@@ -859,9 +705,7 @@ fn universal_provider_upsert_path(args : Array[String]) -> String? {
   Some("/upsert_universal_provider?\{query.join("&")}")
 }
 
-
 ///|
-
 fn provider_presets_path(args : Array[String]) -> String {
   let query : Array[String] = [
     cli_query_pair("appType", provider_app_arg(args)),
@@ -877,9 +721,7 @@ fn provider_presets_path(args : Array[String]) -> String {
   cli_path_with_query("/get_provider_presets", query)
 }
 
-
 ///|
-
 fn provider_endpoint_url_path(args : Array[String], path : String) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   guard parse_string_arg_any(args, "--endpoint-url", "--endpointUrl")
@@ -891,9 +733,7 @@ fn provider_endpoint_url_path(args : Array[String], path : String) -> String? {
   )
 }
 
-
 ///|
-
 fn provider_test_endpoints_path(args : Array[String]) -> String? {
   let urls = match parse_string_arg(args, "--urls") {
     Some(value) => value
@@ -911,9 +751,7 @@ fn provider_test_endpoints_path(args : Array[String]) -> String? {
   Some("/test_api_endpoints?\{query.join("&")}")
 }
 
-
 ///|
-
 fn provider_sort_order_path(args : Array[String]) -> String? {
   guard provider_id_arg(args) is Some(provider_id) else { return None }
   guard parse_string_arg_any(args, "--sort-index", "--sortIndex")
@@ -925,9 +763,7 @@ fn provider_sort_order_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 fn provider_upsert_path(
   args : Array[String],
   path : String,
@@ -971,9 +807,7 @@ fn provider_upsert_path(
   Some("\{path}?\{query.join("&")}")
 }
 
-
 ///|
-
 fn proxy_app_value_update_path(args : Array[String], path : String) -> String? {
   guard parse_string_arg(args, "--value") is Some(value) else { return None }
   let app_type = proxy_app_arg(args)
@@ -982,9 +816,7 @@ fn proxy_app_value_update_path(args : Array[String], path : String) -> String? {
   )
 }
 
-
 ///|
-
 fn proxy_circuit_config_update_path(args : Array[String]) -> String? {
   guard parse_string_arg_any(args, "--failure-threshold", "--failureThreshold")
     is Some(failure_threshold) else {
@@ -1018,9 +850,7 @@ fn proxy_circuit_config_update_path(args : Array[String]) -> String? {
   Some("/proxy/circuit-breaker-config?\{query}")
 }
 
-
 ///|
-
 fn proxy_global_config_update_path(
   args : Array[String],
   path : String,
@@ -1049,17 +879,13 @@ fn proxy_global_config_update_path(
   }
 }
 
-
 ///|
-
 fn global_proxy_url_path(args : Array[String], path : String) -> String? {
   guard parse_string_arg(args, "--url") is Some(url) else { return None }
   Some("\{path}?url=\{cli_url_encode(url)}")
 }
 
-
 ///|
-
 fn proxy_app_config_update_path(args : Array[String]) -> String {
   let app_type = proxy_app_arg(args)
   let query : Array[String] = [cli_query_pair("appType", app_type)]
@@ -1126,9 +952,7 @@ fn proxy_app_config_update_path(args : Array[String]) -> String {
   "/proxy/app-config?\{query.join("&")}"
 }
 
-
 ///|
-
 fn proxy_takeover_update_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--enabled") is Some(enabled) else {
     return None
@@ -1139,9 +963,7 @@ fn proxy_takeover_update_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 fn proxy_auto_failover_enabled_path(args : Array[String]) -> String? {
   guard parse_string_arg(args, "--enabled") is Some(enabled) else {
     return None
@@ -1152,9 +974,7 @@ fn proxy_auto_failover_enabled_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 fn stream_check_provider_path(args : Array[String]) -> String? {
   let app_type = match parse_string_arg_any(args, "--app-type", "--appType") {
     Some(value) => Some(value)
@@ -1172,9 +992,7 @@ fn stream_check_provider_path(args : Array[String]) -> String? {
   )
 }
 
-
 ///|
-
 async fn check_usage_providers(args : Array[String]) -> Unit {
   check_usage_endpoint(
     args,
@@ -1182,9 +1000,7 @@ async fn check_usage_providers(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn stream_check_provider(args : Array[String]) -> Unit {
   guard stream_check_provider_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -1194,16 +1010,12 @@ async fn stream_check_provider(args : Array[String]) -> Unit {
   check_usage_endpoint(args, path)
 }
 
-
 ///|
-
 async fn stream_check_all_providers(args : Array[String]) -> Unit {
   check_usage_endpoint(args, stream_check_all_path(args))
 }
 
-
 ///|
-
 async fn check_usage_provider_script(args : Array[String]) -> Unit {
   guard usage_provider_script_path(args, "/queryProviderUsage", false)
     is Some(path) else {
@@ -1214,9 +1026,7 @@ async fn check_usage_provider_script(args : Array[String]) -> Unit {
   check_usage_endpoint(args, path)
 }
 
-
 ///|
-
 fn usage_provider_script_path(
   args : Array[String],
   path : String,
@@ -1244,9 +1054,7 @@ fn usage_provider_script_path(
   Some("\{path}?\{query.join("&")}")
 }
 
-
 ///|
-
 fn usage_pricing_update_path(args : Array[String]) -> String? {
   guard parse_string_arg_any(args, "--model-id", "--modelId") is Some(model_id) else {
     return None
@@ -1284,9 +1092,7 @@ fn usage_pricing_update_path(args : Array[String]) -> String? {
   Some("/usage/model-pricing?\{query}")
 }
 
-
 ///|
-
 fn usage_pricing_delete_path(args : Array[String]) -> String? {
   guard parse_string_arg_any(args, "--model-id", "--modelId") is Some(model_id) else {
     return None
@@ -1294,9 +1100,7 @@ fn usage_pricing_delete_path(args : Array[String]) -> String? {
   Some("/usage/model-pricing?\{cli_query_pair("model_id", model_id)}")
 }
 
-
 ///|
-
 async fn update_usage_pricing(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   guard usage_pricing_update_path(args) is Some(path) else {
@@ -1321,9 +1125,7 @@ async fn update_usage_pricing(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn delete_usage_pricing(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   guard usage_pricing_delete_path(args) is Some(path) else {
@@ -1348,9 +1150,7 @@ async fn delete_usage_pricing(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn fetch_provider_models(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   guard parse_string_arg(args, "--base-url") is Some(base_url) else {
@@ -1374,16 +1174,12 @@ async fn fetch_provider_models(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 fn provider_models_to_json(models : Array[@moonstat.FetchedModel]) -> Json {
   @moonstat.fetched_models_to_json(models)
 }
 
-
 ///|
-
 fn print_moonclaw_providers_file(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
   let port = parse_int_arg(args, "--port", default=15721)
@@ -1395,9 +1191,7 @@ fn print_moonclaw_providers_file(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn write_moonclaw_providers_file(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
@@ -1414,4 +1208,3 @@ async fn write_moonclaw_providers_file(args : Array[String]) -> Unit {
   )
   logger.info("MoonClaw providers file written: \{written}")
 }
-

@@ -1,4 +1,4 @@
-
+///|
 fn moon_allowed_workspace_files() -> Array[String] {
   [
     "AGENTS.md", "SOUL.md", "USER.md", "IDENTITY.md", "TOOLS.md", "MEMORY.md", "HEARTBEAT.md",
@@ -6,16 +6,12 @@ fn moon_allowed_workspace_files() -> Array[String] {
   ]
 }
 
-
 ///|
-
 fn moon_validate_workspace_filename(filename : String) -> Bool {
   moon_allowed_workspace_files().contains(filename)
 }
 
-
 ///|
-
 fn moon_validate_daily_memory_filename(filename : String) -> Bool {
   filename.length() == 13 &&
   filename.has_suffix(".md") &&
@@ -32,16 +28,12 @@ fn moon_validate_daily_memory_filename(filename : String) -> Bool {
   filename[10] == '.'
 }
 
-
 ///|
-
 fn moon_daily_memory_list_filename(filename : String) -> Bool {
   filename.has_suffix(".md")
 }
 
-
 ///|
-
 fn moon_daily_memory_date(filename : String) -> String {
   if filename.has_suffix(".md") && filename.length() >= 3 {
     filename[:filename.length() - 3].to_owned()
@@ -52,31 +44,23 @@ fn moon_daily_memory_date(filename : String) -> String {
   }
 }
 
-
 ///|
-
 fn moon_workspace_file_path(filename : String) -> String {
   @pathx.join(moon_openclaw_workspace_dir(), filename)
 }
 
-
 ///|
-
 fn moon_daily_memory_file_path(filename : String) -> String {
   @pathx.join(moon_openclaw_memory_dir(), filename)
 }
 
-
 ///|
-
 fn moon_file_mtime(path : String) -> Int64 {
   let stat = @fsx.stat(path) catch { _ => return 0L }
   stat.mtime()
 }
 
-
 ///|
-
 async fn moon_daily_memory_info_json(path : String, filename : String) -> Json {
   let content = @fsx.read_file(path) catch { _ => "" }
   let modified_at = moon_file_mtime(path)
@@ -89,9 +73,7 @@ async fn moon_daily_memory_info_json(path : String, filename : String) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn moon_list_daily_memory_files_json() -> Json {
   let memory_dir = moon_openclaw_memory_dir()
   if !@fsx.exists(memory_dir) {
@@ -126,9 +108,7 @@ async fn moon_list_daily_memory_files_json() -> Json {
   Json::array(rows)
 }
 
-
 ///|
-
 async fn moon_search_daily_memory_files_json(query : String) -> Json {
   let trimmed = query.trim().to_owned()
   let memory_dir = moon_openclaw_memory_dir()
@@ -183,9 +163,7 @@ async fn moon_search_daily_memory_files_json(query : String) -> Json {
   Json::array(rows)
 }
 
-
 ///|
-
 async fn moon_env_conflicts_json_with_shell_files(
   app : String,
   shell_files : Array[String],
@@ -215,9 +193,7 @@ async fn moon_env_conflicts_json_with_shell_files(
   Json::array(conflicts)
 }
 
-
 ///|
-
 fn moon_env_source_file_path(source_path : String) -> String {
   match source_path.find(":") {
     Some(index) => source_path[:index].to_owned()
@@ -225,9 +201,7 @@ fn moon_env_source_file_path(source_path : String) -> String {
   }
 }
 
-
 ///|
-
 async fn moon_import_mcp_from_codex_file(
   servers : Map[String, Json],
   file_path : String,
@@ -239,9 +213,7 @@ async fn moon_import_mcp_from_codex_file(
   moon_import_mcp_from_codex_toml_text(servers, content)
 }
 
-
 ///|
-
 async fn moon_import_mcp_from_file(
   servers : Map[String, Json],
   app : String,
@@ -255,9 +227,7 @@ async fn moon_import_mcp_from_file(
   moon_import_mcp_from_root_json(servers, app, root)
 }
 
-
 ///|
-
 fn moon_prompt_file_path(app : String) -> Result[String, String] {
   let normalized = moon_normalize_app_type(app)
   if normalized == "claude-desktop" {
@@ -273,9 +243,7 @@ fn moon_prompt_file_path(app : String) -> Result[String, String] {
   Ok(@pathx.join(moon_config_dir(normalized), filename))
 }
 
-
 ///|
-
 fn moon_prompt_file_path_from_request(
   path : StringView,
   body : Json?,
@@ -287,9 +255,7 @@ fn moon_prompt_file_path_from_request(
   }
 }
 
-
 ///|
-
 async fn moon_import_prompt_from_file_json(
   prompts : Map[String, Json],
   app : String,
@@ -319,9 +285,7 @@ async fn moon_import_prompt_from_file_json(
   Ok(Json::string(id))
 }
 
-
 ///|
-
 async fn moon_current_prompt_file_content_json(
   file_path : String,
 ) -> Result[Json, String] {
@@ -334,9 +298,7 @@ async fn moon_current_prompt_file_content_json(
   Ok(Json::string(content))
 }
 
-
 ///|
-
 async fn Gateway::handle_save_file_dialog(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -348,9 +310,7 @@ async fn Gateway::handle_save_file_dialog(
   write_usage_json(w, moon_dialog_result_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_read_omo_local_file(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -365,9 +325,7 @@ async fn Gateway::handle_read_omo_local_file(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_open_file_dialog(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -376,9 +334,7 @@ async fn Gateway::handle_open_file_dialog(
   write_usage_json(w, moon_dialog_result_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_open_zip_file_dialog(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -387,9 +343,7 @@ async fn Gateway::handle_open_zip_file_dialog(
   write_usage_json(w, moon_dialog_result_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_import_prompt_from_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -399,7 +353,8 @@ async fn Gateway::handle_import_prompt_from_file(
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
   match moon_prompt_file_path_from_request(r.path, body, app) {
     Ok(file_path) =>
-      match moon_import_prompt_from_file_json(self.config.prompts, app, file_path) {
+      match
+        moon_import_prompt_from_file_json(self.config.prompts, app, file_path) {
         Ok(result) => write_usage_json(w, result)
         Err(error) => write_usage_bad_request(w, error)
       }
@@ -407,9 +362,7 @@ async fn Gateway::handle_import_prompt_from_file(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_current_prompt_file_content(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -428,9 +381,7 @@ async fn Gateway::handle_get_current_prompt_file_content(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_list_daily_memory_files(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -439,9 +390,7 @@ async fn Gateway::handle_list_daily_memory_files(
   write_usage_json(w, moon_list_daily_memory_files_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_read_daily_memory_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -468,9 +417,7 @@ async fn Gateway::handle_read_daily_memory_file(
   write_usage_json(w, Json::string(content))
 }
 
-
 ///|
-
 async fn Gateway::handle_write_daily_memory_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -497,9 +444,7 @@ async fn Gateway::handle_write_daily_memory_file(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_search_daily_memory_files(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -511,9 +456,7 @@ async fn Gateway::handle_search_daily_memory_files(
   write_usage_json(w, moon_search_daily_memory_files_json(query))
 }
 
-
 ///|
-
 async fn Gateway::handle_delete_daily_memory_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -538,9 +481,7 @@ async fn Gateway::handle_delete_daily_memory_file(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_read_workspace_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -567,9 +508,7 @@ async fn Gateway::handle_read_workspace_file(
   write_usage_json(w, Json::string(content))
 }
 
-
 ///|
-
 async fn Gateway::handle_write_workspace_file(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -596,9 +535,7 @@ async fn Gateway::handle_write_workspace_file(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_open_workspace_directory(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -621,9 +558,7 @@ async fn Gateway::handle_open_workspace_directory(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 async fn Gateway::write_static_file(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -646,4 +581,3 @@ async fn Gateway::write_static_file(
   }
   w.flush()
 }
-

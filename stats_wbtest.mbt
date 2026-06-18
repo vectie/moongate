@@ -2220,3 +2220,27 @@ test "traffic stats backfill does not use request model for real unpriced model"
   assert_eq(updated, 0)
   assert_eq(stats.request_logs[0].total_cost_usd, "0")
 }
+
+///|
+test "traffic stats exports prometheus metrics" {
+  let stats = TrafficStats::new()
+  stats.record_inbound(128)
+  stats.record_stream_mode(true)
+  stats.record_success_usage(
+    TokenUsage::new(input_tokens=11, output_tokens=7),
+    256,
+  )
+  let metrics = stats.prometheus_metrics()
+  assert_true(metrics.contains("# TYPE moonstat_requests_total counter\n"))
+  assert_true(metrics.contains("moonstat_requests_total 1"))
+  assert_true(metrics.contains("moonstat_streaming_requests_total 1"))
+  assert_true(metrics.contains("moonstat_successful_responses_total 1"))
+  assert_true(metrics.contains("moonstat_input_tokens_total 11"))
+  assert_true(metrics.contains("moonstat_output_tokens_total 7"))
+  assert_true(metrics.contains("moonstat_request_bytes_total 128"))
+  assert_true(metrics.contains("moonstat_response_bytes_total 256"))
+  assert_true(metrics.contains("# TYPE moonstat_active_connections gauge\n"))
+  assert_true(metrics.contains("moonstat_active_connections 0"))
+  assert_true(metrics.contains("moonstat_recent_avg_latency_ms"))
+  assert_true(metrics.contains("moonstat_success_rate_percent 100"))
+}

@@ -1,4 +1,4 @@
-
+///|
 fn moon_default_copilot_optimizer_config_json() -> Json {
   {
     "enabled": Json::boolean(true),
@@ -13,9 +13,7 @@ fn moon_default_copilot_optimizer_config_json() -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn moon_copilot_optimizer_config_from_request(
   path : StringView,
   body : Json?,
@@ -42,9 +40,7 @@ fn moon_copilot_optimizer_config_from_request(
   ])
 }
 
-
 ///|
-
 async fn Gateway::handle_get_copilot_optimizer_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -52,9 +48,7 @@ async fn Gateway::handle_get_copilot_optimizer_config(
   write_usage_json(w, self.config.copilot_optimizer_config_json)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_copilot_optimizer_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -69,23 +63,17 @@ async fn Gateway::handle_set_copilot_optimizer_config(
   write_usage_json(w, Json::boolean(true))
 }
 
-
 ///|
-
 fn copilot_github_domain_request(path : StringView, body : Json?) -> String? {
   proxy_string_request(path, body, ["githubDomain", "github_domain", "domain"])
 }
 
-
 ///|
-
 fn copilot_account_id_request(path : StringView, body : Json?) -> String? {
   proxy_string_request(path, body, ["accountId", "account_id", "id"])
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_poll_for_account(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -109,9 +97,7 @@ async fn Gateway::handle_copilot_poll_for_account(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_list_accounts(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -120,9 +106,7 @@ async fn Gateway::handle_copilot_list_accounts(
   write_usage_json(w, copilot_list_accounts())
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_remove_account(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -140,9 +124,7 @@ async fn Gateway::handle_copilot_remove_account(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_set_default_account(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -160,9 +142,7 @@ async fn Gateway::handle_copilot_set_default_account(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_get_models(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -176,9 +156,7 @@ async fn Gateway::handle_copilot_get_models(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_copilot_get_usage(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -192,9 +170,7 @@ async fn Gateway::handle_copilot_get_usage(
   }
 }
 
-
 ///|
-
 fn moon_copilot_usage_result_from_json(usage : Json) -> UsageResult {
   guard usage is Object(obj) else {
     return UsageResult::new(
@@ -243,4 +219,3 @@ fn moon_copilot_usage_result_from_json(usage : Json) -> UsageResult {
     ]),
   )
 }
-

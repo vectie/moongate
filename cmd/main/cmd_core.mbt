@@ -1,4 +1,4 @@
-
+///|
 pub async fn start(args : ArrayView[String]) -> Unit {
   let arr = args.to_array()
   match arr[1:] {
@@ -1044,4 +1044,3 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     _ => print_help()
   }
 }
-

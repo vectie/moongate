@@ -1,4 +1,4 @@
-
+///|
 async fn Gateway::handle_parse_deeplink(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -16,9 +16,7 @@ async fn Gateway::handle_parse_deeplink(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_import_from_deeplink(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -49,4 +47,3 @@ async fn Gateway::handle_import_from_deeplink(
     None => write_usage_bad_request(w, "invalid_deeplink_import")
   }
 }
-

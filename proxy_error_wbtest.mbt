@@ -44,7 +44,9 @@ test "ccs proxy error status mapping matches ccs" {
     400,
   )
   assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::InvalidRequest("bad request")),
+    moon_map_proxy_error_to_status(
+      MoonProxyError::InvalidRequest("bad request"),
+    ),
     400,
   )
   assert_eq(
@@ -58,7 +60,10 @@ test "ccs proxy error status mapping matches ccs" {
 ///|
 test "ccs proxy error message matches ccs friendly text" {
   let message = moon_proxy_error_message(
-    MoonProxyError::UpstreamError(status=500, body=Some("Internal Server Error")),
+    MoonProxyError::UpstreamError(
+      status=500,
+      body=Some("Internal Server Error"),
+    ),
   )
   assert_true(message.contains("上游错误"))
   assert_true(message.contains("500"))

@@ -76,7 +76,8 @@ test "ccs s3 sync settings normalize and preserve secret" {
     "endpoint": Json::string(" https://s3.example.com "),
     "remoteRoot": Json::string(""),
   }.to_json()
-  guard moon_s3_sync_settings_json(incoming, Some(existing), true) is Object(obj) else {
+  guard moon_s3_sync_settings_json(incoming, Some(existing), true)
+    is Object(obj) else {
     fail("expected s3 settings object")
   }
   assert_eq(json_string_from_map(obj, "region"), Some("us-east-1"))
@@ -253,7 +254,9 @@ test "ccs sync protocol paths match ccs v2 current and legacy layouts" {
     ["cc-switch-sync", "v2", "db-v6", "default"],
   )
   assert_eq(
-    moon_sync_remote_dir_segments("/cc-switch-sync/", "/team/default/", "legacy"),
+    moon_sync_remote_dir_segments(
+      "/cc-switch-sync/", "/team/default/", "legacy",
+    ),
     ["cc-switch-sync", "v2", "team", "default"],
   )
   assert_eq(
@@ -302,7 +305,11 @@ test "ccs webdav remote manifest url encodes path segments like ccs" {
     false,
   )
   assert_eq(
-    moon_webdav_remote_file_url(settings, "current", moon_sync_remote_manifest()),
+    moon_webdav_remote_file_url(
+      settings,
+      "current",
+      moon_sync_remote_manifest(),
+    ),
     Ok(
       "https://dav.example.com/remote.php/dav/files/demo/cc%20switch-sync/v2/db-v6/default%20profile/manifest.json",
     ),

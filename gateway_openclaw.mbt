@@ -1,4 +1,4 @@
-
+///|
 fn moon_openclaw_workspace_dir() -> String {
   @pathx.join(
     @pathx.join(@pathx.join(moon_home_dir(), ".moonsuite"), "openclaw"),
@@ -6,26 +6,23 @@ fn moon_openclaw_workspace_dir() -> String {
   )
 }
 
-
 ///|
-
 fn moon_openclaw_memory_dir() -> String {
   @pathx.join(moon_openclaw_workspace_dir(), "memory")
 }
 
-
 ///|
-
 async fn Gateway::handle_get_openclaw_default_model(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.openclaw.openclaw_default_model.unwrap_or(Json::null()))
+  write_usage_json(
+    w,
+    self.openclaw.openclaw_default_model.unwrap_or(Json::null()),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_set_openclaw_default_model(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -40,19 +37,18 @@ async fn Gateway::handle_set_openclaw_default_model(
   write_usage_json(w, suite_write_outcome_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_openclaw_model_catalog(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.openclaw.openclaw_model_catalog.unwrap_or(Json::null()))
+  write_usage_json(
+    w,
+    self.openclaw.openclaw_model_catalog.unwrap_or(Json::null()),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_set_openclaw_model_catalog(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -67,19 +63,18 @@ async fn Gateway::handle_set_openclaw_model_catalog(
   write_usage_json(w, suite_write_outcome_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_openclaw_agents_defaults(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.openclaw.openclaw_agents_defaults.unwrap_or(Json::null()))
+  write_usage_json(
+    w,
+    self.openclaw.openclaw_agents_defaults.unwrap_or(Json::null()),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_set_openclaw_agents_defaults(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -102,9 +97,7 @@ async fn Gateway::handle_set_openclaw_agents_defaults(
   write_usage_json(w, suite_write_outcome_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_openclaw_env(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -112,9 +105,7 @@ async fn Gateway::handle_get_openclaw_env(
   write_usage_json(w, self.openclaw.openclaw_env)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_openclaw_env(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -129,9 +120,7 @@ async fn Gateway::handle_set_openclaw_env(
   write_usage_json(w, suite_write_outcome_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_openclaw_tools(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -139,9 +128,7 @@ async fn Gateway::handle_get_openclaw_tools(
   write_usage_json(w, self.openclaw.openclaw_tools)
 }
 
-
 ///|
-
 async fn Gateway::handle_set_openclaw_tools(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -156,9 +143,7 @@ async fn Gateway::handle_set_openclaw_tools(
   write_usage_json(w, suite_write_outcome_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_hermes_memory(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -169,12 +154,13 @@ async fn Gateway::handle_get_hermes_memory(
     write_usage_bad_request(w, "invalid_hermes_memory_kind")
     return
   }
-  write_usage_json(w, Json::string(self.openclaw.hermes_memory.get(kind).unwrap_or("")))
+  write_usage_json(
+    w,
+    Json::string(self.openclaw.hermes_memory.get(kind).unwrap_or("")),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_set_hermes_memory(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -192,19 +178,18 @@ async fn Gateway::handle_set_hermes_memory(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_get_hermes_memory_limits(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, hermes_memory_limits_json(self.openclaw.hermes_memory_enabled))
+  write_usage_json(
+    w,
+    hermes_memory_limits_json(self.openclaw.hermes_memory_enabled),
+  )
 }
 
-
 ///|
-
 async fn Gateway::handle_set_hermes_memory_enabled(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -223,9 +208,7 @@ async fn Gateway::handle_set_hermes_memory_enabled(
   write_usage_json(w, suite_write_outcome_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_open_hermes_web_ui(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -243,9 +226,7 @@ async fn Gateway::handle_open_hermes_web_ui(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_launch_hermes_dashboard(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -257,16 +238,12 @@ async fn Gateway::handle_launch_hermes_dashboard(
   }
 }
 
-
 ///|
-
 fn openclaw_default_tools_json() -> Json {
   { "allow": Json::array([]), "deny": Json::array([]) }.to_json()
 }
 
-
 ///|
-
 fn openclaw_tools_profile_is_supported(profile : String) -> Bool {
   profile == "minimal" ||
   profile == "coding" ||
@@ -274,9 +251,7 @@ fn openclaw_tools_profile_is_supported(profile : String) -> Bool {
   profile == "full"
 }
 
-
 ///|
-
 fn openclaw_health_warning_json(
   code : String,
   message : String,
@@ -293,9 +268,7 @@ fn openclaw_health_warning_json(
   Json::object(warning)
 }
 
-
 ///|
-
 fn openclaw_nested_json(config : Json, keys : Array[String]) -> Json? {
   let mut current = config
   for key in keys {
@@ -311,9 +284,7 @@ fn openclaw_nested_json(config : Json, keys : Array[String]) -> Json? {
   Some(current)
 }
 
-
 ///|
-
 fn openclaw_default_model_from_request(
   path : StringView,
   body : Json?,
@@ -336,9 +307,7 @@ fn openclaw_default_model_from_request(
   )
 }
 
-
 ///|
-
 fn openclaw_env_from_request(path : StringView, body : Json?) -> Json? {
   match suite_object_request(path, body, "env") {
     Some(env) => return Some(env)
@@ -354,9 +323,7 @@ fn openclaw_env_from_request(path : StringView, body : Json?) -> Json? {
   Some(Json::object(env))
 }
 
-
 ///|
-
 fn openclaw_tools_from_request(path : StringView, body : Json?) -> Json? {
   match suite_object_request(path, body, "tools") {
     Some(tools) => return Some(tools)
@@ -378,9 +345,7 @@ fn openclaw_tools_from_request(path : StringView, body : Json?) -> Json? {
   Some(Json::object(tools))
 }
 
-
 ///|
-
 fn hermes_memory_kind_from_request(path : StringView, body : Json?) -> String? {
   match
     proxy_string_request(path, body, ["kind", "memoryKind", "memory_kind"]) {
@@ -394,9 +359,7 @@ fn hermes_memory_kind_from_request(path : StringView, body : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn hermes_memory_limits_json(enabled : Map[String, Bool]) -> Json {
   {
     "memory": Json::number(2200.0),
@@ -406,9 +369,7 @@ fn hermes_memory_limits_json(enabled : Map[String, Bool]) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn hermes_web_port_from_request(path : StringView) -> Int {
   match usage_query_int(path, "port") {
     Some(port) if port > 0 && port <= 65535 => return port
@@ -430,9 +391,7 @@ fn hermes_web_port_from_request(path : StringView) -> Int {
   }
 }
 
-
 ///|
-
 fn hermes_web_ui_path(path : String) -> String {
   if path.is_empty() {
     "/"
@@ -443,30 +402,22 @@ fn hermes_web_ui_path(path : String) -> String {
   }
 }
 
-
 ///|
-
 fn hermes_web_ui_target_url(port : Int, path : String) -> String {
   "http://127.0.0.1:\{port}\{hermes_web_ui_path(path)}"
 }
 
-
 ///|
-
 fn hermes_web_ui_probe_url(port : Int) -> String {
   "http://127.0.0.1:\{port}/api/status"
 }
 
-
 ///|
-
 fn hermes_dashboard_background_shell_command() -> String {
   "nohup \{HERMES_DASHBOARD_COMMAND} >\{HERMES_DASHBOARD_LOG_PATH} 2>&1 &"
 }
 
-
 ///|
-
 async fn launch_hermes_dashboard_standalone() -> Result[Json, String] {
   let result = @spawn.spawn(
     "sh",
@@ -481,9 +432,7 @@ async fn launch_hermes_dashboard_standalone() -> Result[Json, String] {
   Ok(Json::null())
 }
 
-
 ///|
-
 async fn hermes_web_ui_is_live(port : Int) -> Bool {
   if !@net.localhost_port_open(port, timeout_ms=1200) {
     return false
@@ -494,4 +443,3 @@ async fn hermes_web_ui_is_live(port : Int) -> Bool {
     Err(_) => false
   }
 }
-

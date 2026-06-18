@@ -1,4 +1,4 @@
-
+///|
 async fn Gateway::record_success_usage(
   self : Gateway,
   usage : TokenUsage,
@@ -14,9 +14,7 @@ async fn Gateway::record_success_usage(
   self.usage.stats.save_persistent_store()
 }
 
-
 ///|
-
 async fn Gateway::record_success_stream_usage(
   self : Gateway,
   usage : TokenUsage?,
@@ -48,9 +46,7 @@ async fn Gateway::record_success_stream_usage(
   self.usage.stats.save_persistent_store()
 }
 
-
 ///|
-
 async fn Gateway::handle_stats(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -61,9 +57,18 @@ async fn Gateway::handle_stats(
   w.flush()
 }
 
+///|
+async fn Gateway::handle_metrics(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  w.header().set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+  w.write_header(@status.Ok)
+  w.write(self.usage.stats.prometheus_metrics())
+  w.flush()
+}
 
 ///|
-
 async fn Gateway::handle_usage_logs(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -97,9 +102,7 @@ async fn Gateway::handle_usage_logs(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_summary(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -118,9 +121,7 @@ async fn Gateway::handle_usage_summary(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_summary_by_app(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -138,9 +139,7 @@ async fn Gateway::handle_usage_summary_by_app(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_trends(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -158,9 +157,7 @@ async fn Gateway::handle_usage_trends(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_provider_limits(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -205,9 +202,7 @@ async fn Gateway::handle_usage_provider_limits(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_provider_stats(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -226,9 +221,7 @@ async fn Gateway::handle_usage_provider_stats(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_model_stats(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -247,9 +240,7 @@ async fn Gateway::handle_usage_model_stats(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_data_sources(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -257,9 +248,7 @@ async fn Gateway::handle_usage_data_sources(
   write_usage_json(w, self.usage.stats.usage_data_sources_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_query_provider_usage(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -283,9 +272,7 @@ async fn Gateway::handle_query_provider_usage(
   )
 }
 
-
 ///|
-
 async fn Gateway::query_provider_usage_standalone(
   self : Gateway,
   app_type : String,
@@ -306,9 +293,7 @@ async fn Gateway::query_provider_usage_standalone(
   UsageResult::new(false, error=Some("Usage query is disabled"))
 }
 
-
 ///|
-
 async fn Gateway::handle_test_usage_script(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -344,9 +329,7 @@ async fn Gateway::handle_test_usage_script(
   write_usage_json(w, result.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_sync_session(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -384,9 +367,7 @@ async fn Gateway::handle_usage_sync_session(
   write_usage_json(w, result.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_request_detail(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -413,9 +394,7 @@ async fn Gateway::handle_usage_request_detail(
   }
 }
 
-
 ///|
-
 async fn write_usage_json(w : @httpx.ResponseWriter, body : Json) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
@@ -423,9 +402,7 @@ async fn write_usage_json(w : @httpx.ResponseWriter, body : Json) -> Unit {
   w.flush()
 }
 
-
 ///|
-
 async fn write_usage_bad_request(
   w : @httpx.ResponseWriter,
   error : String,
@@ -436,9 +413,7 @@ async fn write_usage_bad_request(
   w.flush()
 }
 
-
 ///|
-
 fn usage_request_detail_id(path : String) -> String {
   match usage_query_value_any(path, "request_id", "requestId") {
     Some(request_id) => return request_id
@@ -457,9 +432,7 @@ fn usage_request_detail_id(path : String) -> String {
   usage_url_decode(without_query[:])
 }
 
-
 ///|
-
 fn usage_request_detail_id_from_request(
   path : StringView,
   body : Json?,
@@ -470,9 +443,7 @@ fn usage_request_detail_id_from_request(
   }
 }
 
-
 ///|
-
 fn usage_limit_override_or_provider_limit(
   explicit_limit : String?,
   provider_limit : String??,
@@ -487,9 +458,7 @@ fn usage_limit_override_or_provider_limit(
   }
 }
 
-
 ///|
-
 fn usage_request_log_filters_from_request(
   path : StringView,
   body : Json?,
@@ -513,9 +482,7 @@ fn usage_request_log_filters_from_request(
   )
 }
 
-
 ///|
-
 fn usage_filter_body(body : Json?) -> Json? {
   match body {
     Some(Object(obj)) =>
@@ -527,9 +494,7 @@ fn usage_filter_body(body : Json?) -> Json? {
   }
 }
 
-
 ///|
-
 fn usage_string_from_request(
   path : StringView,
   body : Json?,
@@ -555,9 +520,7 @@ fn usage_string_from_request(
   None
 }
 
-
 ///|
-
 fn usage_int_from_request(
   path : StringView,
   body : Json?,
@@ -593,9 +556,7 @@ fn usage_int_from_request(
   None
 }
 
-
 ///|
-
 fn usage_query_value_any(
   path : StringView,
   left_key : String,
@@ -607,9 +568,7 @@ fn usage_query_value_any(
   }
 }
 
-
 ///|
-
 fn usage_query_int_any(
   path : StringView,
   left_key : String,
@@ -626,9 +585,7 @@ fn usage_query_int_any(
   }
 }
 
-
 ///|
-
 fn usage_query_double_any(
   path : StringView,
   left_key : String,
@@ -640,9 +597,7 @@ fn usage_query_double_any(
   }
 }
 
-
 ///|
-
 fn usage_query_int(path : StringView, key : String) -> Int? {
   match usage_query_value(path, key) {
     Some(value) =>
@@ -655,9 +610,7 @@ fn usage_query_int(path : StringView, key : String) -> Int? {
   }
 }
 
-
 ///|
-
 fn usage_query_value(path : StringView, key : String) -> String? {
   let text = path.to_owned()
   guard text.find("?") is Some(question_index) else { return None }
@@ -677,9 +630,7 @@ fn usage_query_value(path : StringView, key : String) -> String? {
   None
 }
 
-
 ///|
-
 fn usage_url_decode(value : StringView) -> String {
   let builder = StringBuilder::new()
   let chars = value.to_array()
@@ -706,9 +657,7 @@ fn usage_url_decode(value : StringView) -> String {
   builder.to_string()
 }
 
-
 ///|
-
 fn usage_hex_value(ch : Char) -> Int? {
   match ch {
     '0'..='9' => Some(ch.to_int() - '0'.to_int())
@@ -718,9 +667,7 @@ fn usage_hex_value(ch : Char) -> Int? {
   }
 }
 
-
 ///|
-
 fn usage_decimal_validation_error_from_request(
   path : StringView,
   body : Json?,
@@ -731,9 +678,7 @@ fn usage_decimal_validation_error_from_request(
   usage_decimal_validation_error(label, value)
 }
 
-
 ///|
-
 fn usage_decimal_validation_error(label : String, value : String) -> String? {
   let trimmed = value.trim().to_owned()
   if trimmed.is_empty() {
@@ -748,9 +693,7 @@ fn usage_decimal_validation_error(label : String, value : String) -> String? {
   None
 }
 
-
 ///|
-
 fn usage_result_from_request(path : StringView, body : Json?) -> UsageResult? {
   for key in ["result", "usageResult", "scriptCode", "script_code"] {
     match usage_query_value(path, key) {
@@ -800,9 +743,7 @@ fn usage_result_from_request(path : StringView, body : Json?) -> UsageResult? {
   }
 }
 
-
 ///|
-
 async fn test_usage_script_template_result(
   path : StringView,
   body : Json?,
@@ -853,9 +794,7 @@ async fn test_usage_script_template_result(
   }
 }
 
-
 ///|
-
 fn moon_subscription_usage_result_from_quota(
   quota : SubscriptionQuota,
 ) -> UsageResult {
@@ -887,9 +826,7 @@ fn moon_subscription_usage_result_from_quota(
   UsageResult::new(true, data=if data.is_empty() { None } else { Some(data) })
 }
 
-
 ///|
-
 fn usage_result_from_string(value : String) -> UsageResult? {
   let trimmed = value.trim().to_owned()
   if trimmed.is_empty() {
@@ -899,9 +836,7 @@ fn usage_result_from_string(value : String) -> UsageResult? {
   usage_result_or_script_output_from_json(parsed)
 }
 
-
 ///|
-
 fn usage_non_negative_decimal(value : String) -> Bool {
   let trimmed = value.trim().to_owned()
   if trimmed.is_empty() || trimmed.has_prefix("-") {
@@ -926,9 +861,7 @@ fn usage_non_negative_decimal(value : String) -> Bool {
   seen_digit && (!seen_dot || digit_after_dot)
 }
 
-
 ///|
-
 fn gemini_native_stream_anthropic_usage_json(usage : Json?) -> Json {
   let body = match usage {
     Some(usage) => Json::object({ "usageMetadata": usage })
@@ -939,9 +872,7 @@ fn gemini_native_stream_anthropic_usage_json(usage : Json?) -> Json {
   .as_anthropic_usage_json()
 }
 
-
 ///|
-
 fn openai_chat_zero_usage_json() -> Json {
   Json::object({
     "input_tokens": Json::number(0.0),
@@ -949,9 +880,7 @@ fn openai_chat_zero_usage_json() -> Json {
   })
 }
 
-
 ///|
-
 fn openai_chat_stream_anthropic_usage_json(usage : Map[String, Json]) -> Json {
   let cache_read = match json_int(usage, "cache_read_input_tokens") {
     Some(tokens) => tokens
@@ -981,9 +910,7 @@ fn openai_chat_stream_anthropic_usage_json(usage : Map[String, Json]) -> Json {
   Json::object(result)
 }
 
-
 ///|
-
 fn responses_stream_anthropic_usage_json(
   response_obj : Map[String, Json],
 ) -> Json {
@@ -1020,4 +947,3 @@ fn responses_stream_anthropic_usage_json(
     cache_creation_tokens~,
   ).as_anthropic_usage_json()
 }
-

@@ -1,4 +1,4 @@
-
+///|
 async fn copilot_start_device_flow(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
@@ -7,9 +7,7 @@ async fn copilot_start_device_flow(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn copilot_poll_for_account(args : Array[String]) -> Unit {
   guard copilot_device_path(args, "/copilot_poll_for_account") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -19,9 +17,7 @@ async fn copilot_poll_for_account(args : Array[String]) -> Unit {
   check_json_post_endpoint(args, path, "Copilot")
 }
 
-
 ///|
-
 async fn copilot_account_post(args : Array[String], path : String) -> Unit {
   guard copilot_account_path(args, path) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -31,9 +27,7 @@ async fn copilot_account_post(args : Array[String], path : String) -> Unit {
   check_json_post_endpoint(args, path, "Copilot")
 }
 
-
 ///|
-
 fn copilot_github_domain_path(args : Array[String], path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--github-domain", "--githubDomain") {
@@ -43,9 +37,7 @@ fn copilot_github_domain_path(args : Array[String], path : String) -> String {
   cli_path_with_query(path, query)
 }
 
-
 ///|
-
 fn copilot_device_path(args : Array[String], path : String) -> String? {
   guard parse_string_arg_any(args, "--device-code", "--deviceCode")
     is Some(device_code) else {
@@ -59,9 +51,7 @@ fn copilot_device_path(args : Array[String], path : String) -> String? {
   Some(cli_path_with_query(path, query))
 }
 
-
 ///|
-
 fn copilot_account_path(args : Array[String], path : String) -> String? {
   guard parse_string_arg_any(args, "--account-id", "--accountId")
     is Some(account_id) else {
@@ -71,9 +61,7 @@ fn copilot_account_path(args : Array[String], path : String) -> String? {
   Some(cli_path_with_query(path, query))
 }
 
-
 ///|
-
 fn copilot_account_optional_path(args : Array[String], path : String) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--account-id", "--accountId") {
@@ -82,4 +70,3 @@ fn copilot_account_optional_path(args : Array[String], path : String) -> String 
   }
   cli_path_with_query(path, query)
 }
-

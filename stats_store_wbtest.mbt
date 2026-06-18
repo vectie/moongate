@@ -125,7 +125,9 @@ async test "gateway completion records are persisted automatically" {
   )
 
   gateway.usage.stats.record_inbound(12)
-  gateway.usage.stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
+  gateway.usage.stats.set_active_target(
+    "gemini", "gemini-api-key", "Gemini API Key",
+  )
   gateway.usage.stats.record_request_context(
     "gemini",
     "gemini-2.5-pro",

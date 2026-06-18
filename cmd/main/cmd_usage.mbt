@@ -1,4 +1,4 @@
-
+///|
 async fn check_health(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
@@ -17,9 +17,7 @@ async fn check_health(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn check_stats(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
@@ -38,16 +36,12 @@ async fn check_stats(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn check_usage_logs(args : Array[String]) -> Unit {
   check_usage_endpoint(args, usage_logs_path(args))
 }
 
-
 ///|
-
 async fn check_usage_summary(args : Array[String]) -> Unit {
   check_usage_endpoint(
     args,
@@ -55,9 +49,7 @@ async fn check_usage_summary(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_usage_apps(args : Array[String]) -> Unit {
   check_usage_endpoint(
     args,
@@ -65,23 +57,17 @@ async fn check_usage_apps(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_usage_trends(args : Array[String]) -> Unit {
   check_usage_endpoint(args, usage_trends_path(args))
 }
 
-
 ///|
-
 async fn check_usage_limits(args : Array[String]) -> Unit {
   check_usage_endpoint(args, usage_limits_path(args))
 }
 
-
 ///|
-
 async fn check_usage_models(args : Array[String]) -> Unit {
   check_usage_endpoint(
     args,
@@ -89,9 +75,7 @@ async fn check_usage_models(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn test_usage_script(args : Array[String]) -> Unit {
   guard usage_provider_script_path(args, "/testUsageScript", true) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
@@ -115,9 +99,7 @@ async fn test_usage_script(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn sync_session_usage(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
@@ -137,16 +119,12 @@ async fn sync_session_usage(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 fn usage_trends_path(args : Array[String]) -> String {
   usage_filtered_path(args, "/usage/trends", app_filter=true)
 }
 
-
 ///|
-
 fn usage_logs_path(args : Array[String]) -> String {
   let query = usage_date_app_query(args, app_filter=true)
   match parse_string_arg(args, "--page") {
@@ -172,9 +150,7 @@ fn usage_logs_path(args : Array[String]) -> String {
   cli_path_with_query("/usage/logs", query)
 }
 
-
 ///|
-
 fn usage_filtered_path(
   args : Array[String],
   base_path : String,
@@ -183,9 +159,7 @@ fn usage_filtered_path(
   cli_path_with_query(base_path, usage_date_app_query(args, app_filter~))
 }
 
-
 ///|
-
 fn usage_date_app_query(
   args : Array[String],
   app_filter~ : Bool,
@@ -208,9 +182,7 @@ fn usage_date_app_query(
   query
 }
 
-
 ///|
-
 fn usage_limits_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg_any(args, "--provider-id", "--providerId") {
@@ -236,9 +208,7 @@ fn usage_limits_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 fn usage_sync_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--projects-dir") {
@@ -268,16 +238,12 @@ fn usage_sync_path(args : Array[String]) -> String {
   }
 }
 
-
 ///|
-
 async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
   check_json_endpoint(args, path, "Usage")
 }
 
-
 ///|
-
 async fn check_usage_detail(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   guard parse_string_arg_any(args, "--request-id", "--requestId")
@@ -291,9 +257,7 @@ async fn check_usage_detail(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn check_status(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
@@ -329,9 +293,7 @@ async fn check_status(args : Array[String]) -> Unit {
   }
 }
 
-
 ///|
-
 async fn status_claude_desktop() -> Unit {
   let status = @claude_desktop.status()
   println(
@@ -344,9 +306,7 @@ async fn status_claude_desktop() -> Unit {
   )
 }
 
-
 ///|
-
 async fn status_codex() -> Unit {
   let status = @codex_config.status()
   println(
@@ -365,9 +325,7 @@ async fn status_codex() -> Unit {
   )
 }
 
-
 ///|
-
 fn print_suite_status(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
   let port = parse_int_arg(args, "--port", default=15721)
@@ -379,9 +337,7 @@ fn print_suite_status(args : Array[String]) -> Unit {
   )
 }
 
-
 ///|
-
 async fn write_suite_status(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
@@ -398,4 +354,3 @@ async fn write_suite_status(args : Array[String]) -> Unit {
   )
   logger.info("Moon suite status written: \{written}")
 }
-

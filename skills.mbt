@@ -73,7 +73,9 @@ fn moon_skill_state_default_json() -> Json {
 }
 
 ///|
-async fn moon_skill_state_load(path? : String = moon_skill_state_path()) -> Json {
+async fn moon_skill_state_load(
+  path? : String = moon_skill_state_path(),
+) -> Json {
   let content = @fs.read_file(path).text() catch {
     _ => return moon_skill_state_default_json()
   }
@@ -425,7 +427,10 @@ async fn moon_upsert_installed_skill_json(
 fn moon_merge_installed_skill_apps(old : Json, incoming : Json) -> Json {
   guard old is Object(old_obj) else { return incoming }
   guard incoming is Object(new_obj) else { return old }
-  let apps = moon_merge_skill_apps_json(old_obj.get("apps"), new_obj.get("apps"))
+  let apps = moon_merge_skill_apps_json(
+    old_obj.get("apps"),
+    new_obj.get("apps"),
+  )
   for key, value in new_obj {
     old_obj[key] = value
   }
@@ -836,7 +841,11 @@ fn moon_skill_migration_result_json(
 }
 
 ///|
-fn moon_search_skills_sh_json(query : String, limit : Int, offset : Int) -> Json {
+fn moon_search_skills_sh_json(
+  query : String,
+  limit : Int,
+  offset : Int,
+) -> Json {
   ignore(offset)
   let skills : Array[Json] = []
   if query.trim().length() >= 2 {

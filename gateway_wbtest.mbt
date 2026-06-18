@@ -868,7 +868,8 @@ test "gateway update provider follows ccs rename guards" {
     Err("Original provider 'missing-original' does not exist in app 'opencode'"),
   )
   assert_true(
-    gateway.proxy.provider_router.provider_by_id("opencode", "opencode-next") is None,
+    gateway.proxy.provider_router.provider_by_id("opencode", "opencode-next")
+    is None,
   )
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -898,7 +899,8 @@ test "gateway update provider follows ccs rename guards" {
     Err("Provider 'opencode-b' already exists in app 'opencode'"),
   )
   assert_true(
-    gateway.proxy.provider_router.provider_by_id("opencode", "opencode-a") is Some(_),
+    gateway.proxy.provider_router.provider_by_id("opencode", "opencode-a")
+    is Some(_),
   )
   let non_additive_result = gateway.update_provider_target_ccs(
     "codex",
@@ -914,7 +916,8 @@ test "gateway update provider follows ccs rename guards" {
     Err("Only additive-mode providers support changing provider key"),
   )
   assert_true(
-    gateway.proxy.provider_router.provider_by_id("codex", "codex-renamed") is None,
+    gateway.proxy.provider_router.provider_by_id("codex", "codex-renamed")
+    is None,
   )
   let rename_result = gateway.update_provider_target_ccs(
     "opencode",
@@ -927,7 +930,8 @@ test "gateway update provider follows ccs rename guards" {
   )
   assert_eq(rename_result, Ok(()))
   assert_true(
-    gateway.proxy.provider_router.provider_by_id("opencode", "opencode-a") is None,
+    gateway.proxy.provider_router.provider_by_id("opencode", "opencode-a")
+    is None,
   )
   assert_true(
     gateway.proxy.provider_router.provider_by_id("opencode", "opencode-renamed")
@@ -1953,7 +1957,9 @@ test "proxy lifecycle state matches ccs command aliases" {
   assert_false(gateway.proxy_app_enabled_for_app("claude"))
   assert_false(gateway.proxy_app_enabled_for_app("codex"))
   assert_false(gateway.proxy_app_enabled_for_app("gemini"))
-  assert_true(gateway.proxy.provider_router.auto_failover_enabled_for_app("codex"))
+  assert_true(
+    gateway.proxy.provider_router.auto_failover_enabled_for_app("codex"),
+  )
   json_inspect(gateway.proxy.provider_router.failover_queue_json("codex"), content=[
     {
       "providerId": "codex-oauth",
@@ -2162,7 +2168,10 @@ test "stream check strips ccs codex effort suffix from result model" {
   }
   assert_eq(result["modelUsed"], Json::string("gpt-5.5"))
   assert_eq(
-    stream_check_reported_model_for_app(gateway.config.stream_check_config, "claude"),
+    stream_check_reported_model_for_app(
+      gateway.config.stream_check_config,
+      "claude",
+    ),
     "claude-sonnet-4-5#high",
   )
 }
@@ -2196,7 +2205,9 @@ test "stream check provider test config overrides global config like ccs" {
       ),
     ),
   )
-  guard gateway.proxy.provider_router.provider_by_id("codex", "codex-provider-test")
+  guard gateway.proxy.provider_router.provider_by_id(
+      "codex", "codex-provider-test",
+    )
     is Some(provider) else {
     fail("expected provider")
   }
@@ -2432,7 +2443,9 @@ test "common config snippet validation mirrors ccs formats" {
     moon_validate_common_config_snippet("codex", "# comment only\n"),
     None,
   )
-  assert_true(moon_validate_common_config_snippet("codex", "[broken") is Some(_))
+  assert_true(
+    moon_validate_common_config_snippet("codex", "[broken") is Some(_),
+  )
   assert_true(
     moon_validate_common_config_snippet("claude", "{\"env\":") is Some(_),
   )
@@ -3094,7 +3107,9 @@ test "ccs client format detects proxy path shapes" {
   assert_true(moon_client_format_from_path("/v1/responses") == Codex)
   assert_true(moon_client_format_from_path("/v1/chat/completions") == OpenAI)
   assert_true(
-    moon_client_format_from_path("/v1internal/models/gemini-pro:generateContent") ==
+    moon_client_format_from_path(
+      "/v1internal/models/gemini-pro:generateContent",
+    ) ==
     GeminiCli,
   )
   assert_true(
@@ -3912,7 +3927,9 @@ test "claude desktop status reports ccs profile and proxy route health" {
       claude_desktop_mode=Some("proxy"),
     ),
   )
-  gateway.proxy.provider_router.set_current_provider("claude-desktop", "broken-proxy")
+  gateway.proxy.provider_router.set_current_provider(
+    "claude-desktop", "broken-proxy",
+  )
   let status = @claude_desktop.ClaudeDesktopStatus::new(
     configured=true,
     profile_path="/tmp/profile.json",
@@ -4480,7 +4497,10 @@ test "gateway retryable upstream status activates next failover provider" {
     "codex-oauth", "codex-alt",
   ])
   gateway.proxy.provider_router.set_auto_failover("codex", true)
-  let selection = gateway.proxy.provider_router.select_providers("codex", now_ms=1000)
+  let selection = gateway.proxy.provider_router.select_providers(
+    "codex",
+    now_ms=1000,
+  )
   assert_true(selection.is_ok())
   assert_true(selection.providers.length() == 2)
 
@@ -4562,7 +4582,10 @@ test "gateway retryable upstream status respects ccs max retries cap before perm
     false,
     now_ms=1000,
   )
-  let selection = gateway.proxy.provider_router.select_providers("codex", now_ms=1000)
+  let selection = gateway.proxy.provider_router.select_providers(
+    "codex",
+    now_ms=1000,
+  )
   assert_true(selection.is_ok())
   assert_eq(selection.providers.length(), 2)
 
@@ -4610,7 +4633,10 @@ test "gateway retryable final provider remains active for final upstream error" 
     error_rate_threshold: 0.6,
     min_requests: 10,
   })
-  let selection = gateway.proxy.provider_router.select_providers("codex", now_ms=1000)
+  let selection = gateway.proxy.provider_router.select_providers(
+    "codex",
+    now_ms=1000,
+  )
   assert_true(selection.is_ok())
   assert_true(selection.providers.length() == 1)
 
@@ -4679,7 +4705,10 @@ test "gateway nonretryable upstream status does not activate failover provider" 
     "codex-oauth", "codex-alt",
   ])
   gateway.proxy.provider_router.set_auto_failover("codex", true)
-  let selection = gateway.proxy.provider_router.select_providers("codex", now_ms=1000)
+  let selection = gateway.proxy.provider_router.select_providers(
+    "codex",
+    now_ms=1000,
+  )
   assert_true(selection.is_ok())
   assert_true(selection.providers.length() == 2)
 
@@ -8575,7 +8604,8 @@ async test "ccs prompt file helpers import and read prompt files" {
       fail("expected imported id")
     }
     assert_true(id.has_prefix("imported-"))
-    guard prompts.get(moon_prompt_store_key("codex", id)) is Some(Object(prompt)) else {
+    guard prompts.get(moon_prompt_store_key("codex", id))
+      is Some(Object(prompt)) else {
       fail("expected stored prompt")
     }
     assert_eq(prompt["content"], Json::string(content))
@@ -8655,7 +8685,8 @@ async test "ccs prompt enable writes prompt file and disables app siblings" {
     }
     assert_eq(claude_first["enabled"], Json::boolean(true))
     assert_true(
-      moon_enable_prompt_json(prompts, "codex", "missing", prompt_path) is Err(_),
+      moon_enable_prompt_json(prompts, "codex", "missing", prompt_path)
+      is Err(_),
     )
   })
 }
@@ -8829,7 +8860,9 @@ test "ccs imports missing claude providers into claude desktop namespace" {
     ),
   )
   assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
-  guard gateway.proxy.provider_router.provider_by_id("claude-desktop", "claude-extra")
+  guard gateway.proxy.provider_router.provider_by_id(
+      "claude-desktop", "claude-extra",
+    )
     is Some(imported) else {
     fail("expected imported provider")
   }
@@ -8930,7 +8963,9 @@ test "ccs import derives claude desktop routes from claude provider env" {
     ),
   )
   assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
-  guard gateway.proxy.provider_router.provider_by_id("claude-desktop", "env-routes")
+  guard gateway.proxy.provider_router.provider_by_id(
+      "claude-desktop", "env-routes",
+    )
     is Some(imported) else {
     fail("expected imported provider")
   }

@@ -1,7 +1,8 @@
 ///|
 test "ccs balance provider detection mirrors native command" {
   assert_true(
-    moon_detect_balance_provider("https://api.deepseek.com/v1") is Some(DeepSeek),
+    moon_detect_balance_provider("https://api.deepseek.com/v1")
+    is Some(DeepSeek),
   )
   assert_true(
     moon_detect_balance_provider("https://api.stepfun.ai/v1") is Some(StepFun),

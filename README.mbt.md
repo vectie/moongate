@@ -37,6 +37,7 @@ Status and counters:
 moon run cmd/main -- health
 moon run cmd/main -- status
 moon run cmd/main -- stats
+curl http://127.0.0.1:15721/metrics
 moon run cmd/main -- usage logs
 ```
 
@@ -63,8 +64,9 @@ moon run cmd/main -- suite write-status
 MoonBook, Moontown, Moondesk, or any other local probe. They expose the
 gateway URLs, status file, capabilities, and command map needed by suite
 launchers. `suite write-status` writes the same status contract to
-`~/.moonsuite/suite-status.json` by default. The contract also includes a
-machine-readable `suite_integrations` object:
+`~/.moonsuite/suite-status.json` by default, and `start` refreshes that file
+when the gateway boots. The contract also includes a machine-readable
+`suite_integrations` object:
 
 - MoonClaw gets local OpenAI/Anthropic base URLs, env names, a
   `moonclaw_providers_file_json` provider entry, and the project/home config
@@ -85,6 +87,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /health`
 - `GET /status`
 - `GET /stats`
+- `GET /metrics`
 - `GET /proxy/status`
 - `POST /start_proxy_server`
 - `POST /stop_proxy_server`

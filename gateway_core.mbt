@@ -1,8 +1,18 @@
-
+///|
 pub async fn Gateway::start(self : Gateway) -> Unit {
   self.logger.info(
     "Starting Anthropic -> Codex OAuth Gateway on \{self.host}:\{self.port}",
   )
+  try {
+    let status_path = write_moonstat_suite_status(
+      host=self.host,
+      port=self.port,
+      model=self.model,
+    )
+    self.logger.info("Wrote Moon suite status to \{status_path}")
+  } catch {
+    err => self.logger.warn("Failed to write Moon suite status: \{err}")
+  }
   self.load_model_pricing_store()
   self.usage.stats.load_persistent_store()
   let backfilled = self.usage.stats.backfill_missing_usage_costs(
@@ -91,6 +101,9 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   })
   router.add_handler(@httpx.Method::Get, "/stats", (_, w) => {
     self.handle_stats(w)
+  })
+  router.add_handler(@httpx.Method::Get, "/metrics", (_, w) => {
+    self.handle_metrics(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_config_status", (_, w) => {
     self.handle_get_config_status(w, "claude")
@@ -1415,4 +1428,3 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   self.logger.info("Gateway started on \{self.host}:\{server.port()}")
   server.serve(router.handler())
 }
-

@@ -249,6 +249,12 @@ pub struct AnthropicUsage {
 } derive(Show, @json.FromJson)
 pub impl ToJson for AnthropicUsage
 
+pub struct AuthService {
+  mut credentials : @codex.Credentials?
+  auth_device_user_codes : Map[String, String]
+}
+pub fn AuthService::new() -> Self
+
 pub struct CircuitBreaker {
   mut state : CircuitState
   mut consecutive_failures : Int
@@ -325,6 +331,26 @@ pub struct CodexTool {
 }
 pub impl ToJson for CodexTool
 
+pub struct ConfigService {
+  mut app_settings : Json
+  mut rectifier_config_json : Json
+  mut optimizer_config_json : Json
+  mut copilot_optimizer_config_json : Json
+  mut log_config_json : Json
+  config_snippets : Map[String, String]
+  mcp_servers : Map[String, Json]
+  prompts : Map[String, Json]
+  mut lightweight_mode : Bool
+  mut window_theme : String
+  mut app_config_dir_override : String?
+  mut auto_launch_enabled : Bool
+  mut claude_plugin_config : String?
+  mut claude_plugin_applied : Bool
+  mut claude_onboarding_skipped : Bool
+  mut stream_check_config : StreamCheckConfig
+}
+pub fn ConfigService::new() -> Self
+
 pub struct CostBreakdown {
   input_cost_usd : String
   output_cost_usd : String
@@ -353,54 +379,15 @@ pub struct Gateway {
   host : String
   port : Int
   model : String
-  mut credentials : @codex.Credentials?
-  stats : TrafficStats
-  provider_router : ProviderRouter
-  gemini_shadow : GeminiShadowStore
-  codex_chat_history : CodexChatHistoryStore
-  usage_cache : UsageCache
-  pricing_overrides : Map[String, ModelPricing]
-  pricing_deleted_model_ids : Map[String, Bool]
-  mut proxy_enabled : Bool
-  mut proxy_listen_address : String
-  mut proxy_listen_port : Int
-  mut proxy_enable_logging : Bool
-  proxy_takeover_enabled : Map[String, Bool]
-  proxy_app_enabled : Map[String, Bool]
-  proxy_streaming_first_byte_timeout : Map[String, Int]
-  proxy_streaming_idle_timeout : Map[String, Int]
-  proxy_non_streaming_timeout : Map[String, Int]
-  proxy_default_cost_multipliers : Map[String, String]
-  proxy_pricing_model_sources : Map[String, String]
-  mut upstream_proxy_url : String?
-  mut last_external_url : String?
-  mut openclaw_default_model : Json?
-  mut openclaw_model_catalog : Json?
-  mut openclaw_agents_defaults : Json?
-  mut openclaw_env : Json
-  mut openclaw_tools : Json
-  hermes_model_config : Json?
-  hermes_memory : Map[String, String]
-  hermes_memory_enabled : Map[String, Bool]
-  config_snippets : Map[String, String]
-  mcp_servers : Map[String, Json]
-  prompts : Map[String, Json]
-  auth_device_user_codes : Map[String, String]
-  mut app_settings : Json
-  mut lightweight_mode : Bool
-  mut window_theme : String
-  mut app_config_dir_override : String?
-  mut auto_launch_enabled : Bool
-  mut rectifier_config_json : Json
-  mut optimizer_config_json : Json
-  mut copilot_optimizer_config_json : Json
-  mut log_config_json : Json
-  mut claude_plugin_config : String?
-  mut claude_plugin_applied : Bool
-  mut claude_onboarding_skipped : Bool
-  mut stream_check_config : StreamCheckConfig
   logger : @pino.Logger
   started_at_ms : Int
+  gemini_shadow : GeminiShadowStore
+  auth : AuthService
+  proxy : ProxyService
+  usage : UsageService
+  config : ConfigService
+  session : SessionService
+  openclaw : OpenClawService
 }
 pub fn Gateway::host(Self) -> String
 pub fn Gateway::new(port~ : Int, host? : String, model? : String) -> Self
@@ -466,6 +453,18 @@ pub enum MoonProxyError {
   Unknown(String)
 }
 pub fn MoonProxyError::to_string(Self) -> String
+
+pub struct OpenClawService {
+  mut openclaw_default_model : Json?
+  mut openclaw_model_catalog : Json?
+  mut openclaw_agents_defaults : Json?
+  mut openclaw_env : Json
+  mut openclaw_tools : Json
+  hermes_model_config : Json?
+  hermes_memory : Map[String, String]
+  hermes_memory_enabled : Map[String, Bool]
+}
+pub fn OpenClawService::new() -> Self
 
 pub struct ProviderLimitConfig {
   daily_limit_usd : String?
@@ -537,6 +536,24 @@ pub enum ProviderSelectionError {
 } derive(Eq)
 pub fn ProviderSelectionError::to_string(Self) -> String
 
+pub struct ProxyService {
+  provider_router : ProviderRouter
+  mut proxy_enabled : Bool
+  mut proxy_listen_address : String
+  mut proxy_listen_port : Int
+  mut proxy_enable_logging : Bool
+  proxy_takeover_enabled : Map[String, Bool]
+  proxy_app_enabled : Map[String, Bool]
+  proxy_streaming_first_byte_timeout : Map[String, Int]
+  proxy_streaming_idle_timeout : Map[String, Int]
+  proxy_non_streaming_timeout : Map[String, Int]
+  proxy_default_cost_multipliers : Map[String, String]
+  proxy_pricing_model_sources : Map[String, String]
+  mut upstream_proxy_url : String?
+  mut last_external_url : String?
+}
+pub fn ProxyService::new(String, Int) -> Self
+
 pub struct RequestLog {
   request_id : String
   provider_id : String
@@ -574,6 +591,11 @@ pub struct SessionFileSyncState {
   last_line_offset : Int
 }
 pub fn SessionFileSyncState::new(last_modified~ : Int64, last_line_offset~ : Int) -> Self
+
+pub struct SessionService {
+  codex_chat_history : CodexChatHistoryStore
+}
+pub fn SessionService::new() -> Self
 
 pub struct SessionSyncResult {
   mut imported : Int
@@ -755,6 +777,14 @@ pub struct UsageResult {
 }
 pub fn UsageResult::new(Bool, data? : Array[UsageData]?, error? : String?) -> Self
 pub fn UsageResult::to_json(Self) -> Json
+
+pub struct UsageService {
+  stats : TrafficStats
+  usage_cache : UsageCache
+  pricing_overrides : Map[String, ModelPricing]
+  pricing_deleted_model_ids : Map[String, Bool]
+}
+pub fn UsageService::new() -> Self
 
 // Type aliases
 

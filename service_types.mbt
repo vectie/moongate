@@ -122,9 +122,7 @@ pub struct SessionService {
 
 ///|
 pub fn SessionService::new() -> SessionService {
-  SessionService::{
-    codex_chat_history: CodexChatHistoryStore::new(),
-  }
+  SessionService::{ codex_chat_history: CodexChatHistoryStore::new() }
 }
 
 ///|

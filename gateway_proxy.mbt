@@ -1,4 +1,4 @@
-
+///|
 fn moon_upstream_status_retryable(status_code : Int) -> Bool {
   match status_code {
     400 | 405 | 406 | 413 | 414 | 415 | 422 | 501 => false
@@ -6,18 +6,14 @@ fn moon_upstream_status_retryable(status_code : Int) -> Bool {
   }
 }
 
-
 ///|
-
 fn provider_selection_is_all_circuits_open(
   selection : ProviderSelection,
 ) -> Bool {
   selection.error == Some(AllProvidersCircuitOpen)
 }
 
-
 ///|
-
 fn Gateway::all_provider_circuits_open(
   self : Gateway,
   app_type : String,
@@ -27,9 +23,7 @@ fn Gateway::all_provider_circuits_open(
   )
 }
 
-
 ///|
-
 fn moon_reject_proxy_managed_placeholder_for_upstream(
   url : String,
   headers : Map[String, String],
@@ -43,9 +37,7 @@ fn moon_reject_proxy_managed_placeholder_for_upstream(
   )
 }
 
-
 ///|
-
 fn moon_headers_contain_proxy_managed_placeholder(
   headers : Map[String, String],
 ) -> Bool {
@@ -57,9 +49,7 @@ fn moon_headers_contain_proxy_managed_placeholder(
   false
 }
 
-
 ///|
-
 fn gemini_proxy_url(endpoint : String) -> String? {
   let url = resolve_gemini_native_url(
     gemini_base_url(),
@@ -81,9 +71,7 @@ fn gemini_proxy_url(endpoint : String) -> String? {
   }
 }
 
-
 ///|
-
 fn Gateway::provider_cost_multiplier(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -94,9 +82,7 @@ fn Gateway::provider_cost_multiplier(
   )
 }
 
-
 ///|
-
 fn provider_cost_multiplier_from_default(
   provider : ProviderRouteTarget,
   default_multiplier : String,
@@ -127,9 +113,7 @@ fn provider_cost_multiplier_from_default(
   }
 }
 
-
 ///|
-
 fn default_cost_multiplier_for_app(app_type : String) -> String {
   let global_keys = [
     "MOONSTAT_DEFAULT_COST_MULTIPLIER", "MOONSTAT_COST_MULTIPLIER",
@@ -167,9 +151,7 @@ fn default_cost_multiplier_for_app(app_type : String) -> String {
   }
 }
 
-
 ///|
-
 fn Gateway::provider_pricing_model_source(
   self : Gateway,
   provider : ProviderRouteTarget,
@@ -180,9 +162,7 @@ fn Gateway::provider_pricing_model_source(
   )
 }
 
-
 ///|
-
 fn provider_pricing_model_source_from_default(
   provider : ProviderRouteTarget,
   default_source : String,
@@ -217,9 +197,7 @@ fn provider_pricing_model_source_from_default(
   }
 }
 
-
 ///|
-
 fn default_pricing_model_source_for_app(app_type : String) -> String {
   let global_keys = [
     "MOONSTAT_PRICING_MODEL_SOURCE", "MOONSTAT_DEFAULT_PRICING_MODEL_SOURCE",
@@ -257,9 +235,7 @@ fn default_pricing_model_source_for_app(app_type : String) -> String {
   }
 }
 
-
 ///|
-
 fn env_first_pricing_model_source(keys : Array[String]) -> String? {
   for key in keys {
     match getenv_or_none(key) {
@@ -271,17 +247,13 @@ fn env_first_pricing_model_source(keys : Array[String]) -> String? {
   None
 }
 
-
 ///|
-
 fn pricing_model_source_is_valid(value : String) -> Bool {
   let trimmed = value.trim()
   trimmed == "response" || trimmed == "request"
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -292,9 +264,7 @@ async fn Gateway::handle_proxy_status(
   w.flush()
 }
 
-
 ///|
-
 fn Gateway::proxy_status_json(self : Gateway) -> Json {
   self.usage.stats.status_json(
     self.host,
@@ -304,9 +274,7 @@ fn Gateway::proxy_status_json(self : Gateway) -> Json {
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_start_server(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -315,9 +283,7 @@ async fn Gateway::handle_proxy_start_server(
   write_usage_json(w, self.proxy_server_info_json())
 }
 
-
 ///|
-
 fn Gateway::proxy_server_info_json(self : Gateway) -> Json {
   {
     "address": Json::string(self.proxy.proxy_listen_address),
@@ -326,9 +292,7 @@ fn Gateway::proxy_server_info_json(self : Gateway) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_stop_server(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -341,16 +305,12 @@ async fn Gateway::handle_proxy_stop_server(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 fn moon_stop_proxy_takeover_error() -> String {
   "仍有应用处于代理接管状态，请先在设置中关闭对应应用接管后再停止本地路由。"
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_stop_with_restore(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -361,9 +321,7 @@ async fn Gateway::handle_proxy_stop_with_restore(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -374,9 +332,7 @@ async fn Gateway::handle_proxy_config(
   w.flush()
 }
 
-
 ///|
-
 fn Gateway::proxy_config_json(self : Gateway) -> Json {
   let app_type = "claude"
   let streaming_first_byte_timeout = self.proxy.proxy_streaming_first_byte_timeout
@@ -405,9 +361,7 @@ fn Gateway::proxy_config_json(self : Gateway) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn moon_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int {
   match app_type {
     "claude" => 90
@@ -415,9 +369,7 @@ fn moon_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int {
   }
 }
 
-
 ///|
-
 fn moon_proxy_streaming_idle_timeout_default(app_type : String) -> Int {
   match app_type {
     "claude" => 180
@@ -425,16 +377,12 @@ fn moon_proxy_streaming_idle_timeout_default(app_type : String) -> Int {
   }
 }
 
-
 ///|
-
 fn moon_proxy_non_streaming_timeout_default(_app_type : String) -> Int {
   600
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_update_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -446,9 +394,7 @@ async fn Gateway::handle_proxy_update_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_global_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -456,9 +402,7 @@ async fn Gateway::handle_proxy_global_config(
   write_usage_json(w, self.proxy_global_config_json())
 }
 
-
 ///|
-
 fn Gateway::proxy_global_config_json(self : Gateway) -> Json {
   {
     "proxyEnabled": Json::boolean(self.proxy.proxy_enabled),
@@ -468,9 +412,7 @@ fn Gateway::proxy_global_config_json(self : Gateway) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_update_global_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -482,9 +424,7 @@ async fn Gateway::handle_proxy_update_global_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_get_global_proxy_url(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -495,9 +435,7 @@ async fn Gateway::handle_get_global_proxy_url(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_set_global_proxy_url(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -520,9 +458,7 @@ async fn Gateway::handle_set_global_proxy_url(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_test_proxy_url(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -535,9 +471,7 @@ async fn Gateway::handle_test_proxy_url(
   write_usage_json(w, proxy_test_result_json(url))
 }
 
-
 ///|
-
 async fn Gateway::handle_get_upstream_proxy_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -554,9 +488,7 @@ async fn Gateway::handle_get_upstream_proxy_status(
   )
 }
 
-
 ///|
-
 fn upstream_proxy_url_is_valid(url : String) -> Bool {
   url.has_prefix("http://") ||
   url.has_prefix("https://") ||
@@ -564,9 +496,7 @@ fn upstream_proxy_url_is_valid(url : String) -> Bool {
   url.has_prefix("socks5h://")
 }
 
-
 ///|
-
 fn moon_local_proxy_ports() -> Array[(Int, String, Bool)] {
   [
     (7890, "http", true),
@@ -580,9 +510,7 @@ fn moon_local_proxy_ports() -> Array[(Int, String, Bool)] {
   ]
 }
 
-
 ///|
-
 fn moon_detected_proxy_json(port : Int, proxy_type : String) -> Json {
   {
     "url": Json::string("\{proxy_type}://127.0.0.1:\{port}"),
@@ -591,9 +519,7 @@ fn moon_detected_proxy_json(port : Int, proxy_type : String) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn moon_detected_proxy_entries_json(
   port : Int,
   primary_type : String,
@@ -607,9 +533,7 @@ fn moon_detected_proxy_entries_json(
   entries
 }
 
-
 ///|
-
 fn proxy_test_result_json(url : String) -> Json {
   let trimmed = url.trim().to_owned()
   if trimmed.is_empty() {
@@ -633,9 +557,7 @@ fn proxy_test_result_json(url : String) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_app_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -649,9 +571,7 @@ async fn Gateway::handle_proxy_app_config(
   write_usage_json(w, self.proxy_app_config_json(app_type))
 }
 
-
 ///|
-
 fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
   let circuit = self.proxy.provider_router.circuit_config_for_app(app_type)
   let enabled = self.proxy_app_enabled_for_app(app_type)
@@ -707,9 +627,7 @@ fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_update_app_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -721,9 +639,7 @@ async fn Gateway::handle_proxy_update_app_config(
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_default_cost_multiplier(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -740,9 +656,7 @@ async fn Gateway::handle_proxy_default_cost_multiplier(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_set_default_cost_multiplier(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -767,9 +681,7 @@ async fn Gateway::handle_proxy_set_default_cost_multiplier(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_set_default_cost_multiplier_unit(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -789,13 +701,14 @@ async fn Gateway::handle_proxy_set_default_cost_multiplier_unit(
     write_usage_bad_request(w, "invalid_default_cost_multiplier")
     return
   }
-  self.proxy.proxy_default_cost_multipliers.set(app_type, value.trim().to_owned())
+  self.proxy.proxy_default_cost_multipliers.set(
+    app_type,
+    value.trim().to_owned(),
+  )
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_pricing_model_source(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -812,9 +725,7 @@ async fn Gateway::handle_proxy_pricing_model_source(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_set_pricing_model_source(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -839,9 +750,7 @@ async fn Gateway::handle_proxy_set_pricing_model_source(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_set_pricing_model_source_unit(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -865,9 +774,7 @@ async fn Gateway::handle_proxy_set_pricing_model_source_unit(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 fn Gateway::proxy_default_cost_multiplier_for_app(
   self : Gateway,
   app_type : String,
@@ -878,9 +785,7 @@ fn Gateway::proxy_default_cost_multiplier_for_app(
   .unwrap_or(default_cost_multiplier_for_app(app_type))
 }
 
-
 ///|
-
 fn Gateway::proxy_pricing_model_source_for_app(
   self : Gateway,
   app_type : String,
@@ -891,9 +796,7 @@ fn Gateway::proxy_pricing_model_source_for_app(
   .unwrap_or(default_pricing_model_source_for_app(app_type))
 }
 
-
 ///|
-
 fn proxy_pricing_default_app_type(app_type : String) -> String {
   if app_type == "claude-desktop" {
     "claude"
@@ -902,9 +805,7 @@ fn proxy_pricing_default_app_type(app_type : String) -> String {
   }
 }
 
-
 ///|
-
 async fn Gateway::apply_proxy_global_config_request(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -950,9 +851,7 @@ async fn Gateway::apply_proxy_global_config_request(
   true
 }
 
-
 ///|
-
 async fn Gateway::apply_proxy_app_config_request(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -992,15 +891,14 @@ async fn Gateway::apply_proxy_app_config_request(
       config,
       self.proxy.provider_router.circuit_config_for_app(app_type),
     ) {
-    Some(config) => self.proxy.provider_router.update_app_configs(app_type, config)
+    Some(config) =>
+      self.proxy.provider_router.update_app_configs(app_type, config)
     None => ()
   }
   Some(app_type)
 }
 
-
 ///|
-
 fn Gateway::apply_proxy_app_timeout_config(
   self : Gateway,
   app_type : String,
@@ -1037,9 +935,7 @@ fn Gateway::apply_proxy_app_timeout_config(
   true
 }
 
-
 ///|
-
 fn Gateway::proxy_app_enabled_for_app(
   self : Gateway,
   app_type : String,
@@ -1049,9 +945,7 @@ fn Gateway::proxy_app_enabled_for_app(
   .unwrap_or(self.proxy.provider_router.has_configured_app(app_type))
 }
 
-
 ///|
-
 fn Gateway::can_set_auto_failover_ccs(
   self : Gateway,
   app_type : String,
@@ -1060,9 +954,7 @@ fn Gateway::can_set_auto_failover_ccs(
   !enabled || self.proxy_app_enabled_for_app(app_type)
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_provider_health(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1083,9 +975,7 @@ async fn Gateway::handle_proxy_provider_health(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_circuit_breaker_config(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1093,9 +983,7 @@ async fn Gateway::handle_proxy_circuit_breaker_config(
   write_usage_json(w, self.proxy.provider_router.circuit_config.to_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_update_circuit_breaker_config(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1124,9 +1012,7 @@ async fn Gateway::handle_proxy_update_circuit_breaker_config(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_circuit_breaker_stats(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1148,9 +1034,7 @@ async fn Gateway::handle_proxy_circuit_breaker_stats(
   write_usage_json(w, body)
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_circuit_breaker_stats_moon_alias(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1159,16 +1043,12 @@ async fn Gateway::handle_proxy_circuit_breaker_stats_moon_alias(
   write_usage_json(w, moon_circuit_breaker_stats_command_json())
 }
 
-
 ///|
-
 fn moon_circuit_breaker_stats_command_json() -> Json {
   Json::null()
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_reset_circuit_breaker(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1189,9 +1069,7 @@ async fn Gateway::handle_proxy_reset_circuit_breaker(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_failover_queue(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1205,9 +1083,7 @@ async fn Gateway::handle_proxy_failover_queue(
   write_usage_json(w, self.proxy.provider_router.failover_queue_json(app_type))
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_available_failover_providers(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1224,9 +1100,7 @@ async fn Gateway::handle_proxy_available_failover_providers(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_add_failover_queue(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1237,13 +1111,14 @@ async fn Gateway::handle_proxy_add_failover_queue(
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
-  self.proxy.provider_router.add_to_failover_queue(query.app_type, query.provider_id)
+  self.proxy.provider_router.add_to_failover_queue(
+    query.app_type,
+    query.provider_id,
+  )
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_remove_failover_queue(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1261,9 +1136,7 @@ async fn Gateway::handle_proxy_remove_failover_queue(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_auto_failover_enabled(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1276,13 +1149,13 @@ async fn Gateway::handle_proxy_auto_failover_enabled(
   }
   write_usage_json(
     w,
-    Json::boolean(self.proxy.provider_router.auto_failover_enabled_for_app(app_type)),
+    Json::boolean(
+      self.proxy.provider_router.auto_failover_enabled_for_app(app_type),
+    ),
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_set_auto_failover_enabled(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1301,16 +1174,16 @@ async fn Gateway::handle_proxy_set_auto_failover_enabled(
     write_usage_bad_request(w, "auto_failover_requires_proxy_takeover")
     return
   }
-  if !self.proxy.provider_router.set_auto_failover_command_ccs(app_type, enabled) {
+  if !self.proxy.provider_router.set_auto_failover_command_ccs(
+      app_type, enabled,
+    ) {
     write_usage_bad_request(w, "auto_failover_unavailable")
     return
   }
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_takeover_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1321,9 +1194,7 @@ async fn Gateway::handle_proxy_takeover_status(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_set_takeover_for_app(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1343,9 +1214,7 @@ async fn Gateway::handle_proxy_set_takeover_for_app(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_live_takeover_active(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1353,9 +1222,7 @@ async fn Gateway::handle_proxy_live_takeover_active(
   write_usage_json(w, Json::boolean(self.proxy_takeover_active()))
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_switch_provider(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1390,9 +1257,7 @@ async fn Gateway::handle_proxy_switch_provider(
   write_usage_json(w, moon_unit_success_json())
 }
 
-
 ///|
-
 fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
   {
     "claude": Json::boolean(self.proxy_takeover_for_app("claude")),
@@ -1403,16 +1268,12 @@ fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn Gateway::proxy_takeover_for_app(self : Gateway, app_type : String) -> Bool {
   self.proxy.proxy_takeover_enabled.get(app_type).unwrap_or(false)
 }
 
-
 ///|
-
 fn Gateway::proxy_takeover_active(self : Gateway) -> Bool {
   for app_type in ["claude", "codex", "gemini", "opencode", "openclaw"] {
     if self.proxy_takeover_for_app(app_type) {
@@ -1422,27 +1283,21 @@ fn Gateway::proxy_takeover_active(self : Gateway) -> Bool {
   false
 }
 
-
 ///|
-
 fn Gateway::proxy_clear_takeover(self : Gateway) -> Unit {
   for app_type in ["claude", "codex", "gemini", "opencode", "openclaw"] {
     self.proxy.proxy_takeover_enabled.set(app_type, false)
   }
 }
 
-
 ///|
-
 fn Gateway::proxy_clear_enabled_apps_for_manual_stop(self : Gateway) -> Unit {
   for app_type in ["claude", "codex", "gemini"] {
     self.proxy.proxy_app_enabled.set(app_type, false)
   }
 }
 
-
 ///|
-
 async fn Gateway::handle_proxy_running(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1453,9 +1308,7 @@ async fn Gateway::handle_proxy_running(
   w.flush()
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_model_pricing(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -1469,9 +1322,7 @@ async fn Gateway::handle_usage_model_pricing(
   )
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_update_model_pricing(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1501,9 +1352,7 @@ async fn Gateway::handle_usage_update_model_pricing(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 async fn Gateway::handle_usage_delete_model_pricing(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -1525,9 +1374,7 @@ async fn Gateway::handle_usage_delete_model_pricing(
   write_usage_json(w, Json::null())
 }
 
-
 ///|
-
 fn proxy_provider_query_from_request(
   path : StringView,
   body : Json?,
@@ -1542,9 +1389,7 @@ fn proxy_provider_query_from_request(
   Some({ provider_id, app_type })
 }
 
-
 ///|
-
 fn proxy_app_type_from_request(path : StringView, body : Json?) -> String? {
   match proxy_string_request(path, body, ["app_type", "appType", "app"]) {
     Some(app_type) if !app_type.trim().is_empty() =>
@@ -1553,9 +1398,7 @@ fn proxy_app_type_from_request(path : StringView, body : Json?) -> String? {
   }
 }
 
-
 ///|
-
 fn proxy_circuit_config_from_query(path : StringView) -> CircuitBreakerConfig? {
   guard usage_query_int_any(path, "failure_threshold", "failureThreshold")
     is Some(failure_threshold) else {
@@ -1593,9 +1436,7 @@ fn proxy_circuit_config_from_query(path : StringView) -> CircuitBreakerConfig? {
   }
 }
 
-
 ///|
-
 async fn proxy_json_body(r : @httpx.RequestReader) -> Json? {
   let body = r.body.read_all().text()
   if body.trim().is_empty() {
@@ -1604,9 +1445,7 @@ async fn proxy_json_body(r : @httpx.RequestReader) -> Json? {
   Some(@json.parse(body) catch { _ => return None })
 }
 
-
 ///|
-
 fn proxy_embedded_config(body : Json?) -> Json? {
   match body {
     Some(Object(obj)) =>
@@ -1618,9 +1457,7 @@ fn proxy_embedded_config(body : Json?) -> Json? {
   }
 }
 
-
 ///|
-
 fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int?) -> Int {
   let secs = timeout_secs.unwrap_or(CCS_ENDPOINT_DEFAULT_TIMEOUT_SECS)
   if secs < CCS_ENDPOINT_MIN_TIMEOUT_SECS {
@@ -1632,9 +1469,7 @@ fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int?) -> Int {
   }
 }
 
-
 ///|
-
 fn proxy_bool_request(
   path : StringView,
   config : Json?,
@@ -1663,9 +1498,7 @@ fn proxy_bool_request(
   None
 }
 
-
 ///|
-
 fn proxy_string_request(
   path : StringView,
   config : Json?,
@@ -1690,9 +1523,7 @@ fn proxy_string_request(
   None
 }
 
-
 ///|
-
 fn proxy_int_request(
   path : StringView,
   config : Json?,
@@ -1722,9 +1553,7 @@ fn proxy_int_request(
   None
 }
 
-
 ///|
-
 fn proxy_double_request(
   path : StringView,
   config : Json?,
@@ -1758,9 +1587,7 @@ fn proxy_double_request(
   None
 }
 
-
 ///|
-
 fn proxy_json_bool(obj : Map[String, Json], key : String) -> Bool? {
   match obj.get(key) {
     Some(true) => Some(true)
@@ -1770,9 +1597,7 @@ fn proxy_json_bool(obj : Map[String, Json], key : String) -> Bool? {
   }
 }
 
-
 ///|
-
 fn proxy_json_int(obj : Map[String, Json], key : String) -> Int? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.trunc().to_int())
@@ -1786,9 +1611,7 @@ fn proxy_json_int(obj : Map[String, Json], key : String) -> Int? {
   }
 }
 
-
 ///|
-
 fn proxy_circuit_config_from_request(
   path : StringView,
   config : Json?,
@@ -1832,9 +1655,7 @@ fn proxy_circuit_config_from_request(
   }
 }
 
-
 ///|
-
 fn usage_pricing_from_request(path : StringView, body : Json?) -> ModelPricing? {
   guard usage_string_from_request(path, body, ["model_id", "modelId"])
     is Some(model_id) else {
@@ -1886,9 +1707,7 @@ fn usage_pricing_from_request(path : StringView, body : Json?) -> ModelPricing? 
   )
 }
 
-
 ///|
-
 fn usage_pricing_validation_error_from_request(
   path : StringView,
   body : Json?,
@@ -1936,9 +1755,7 @@ fn usage_pricing_validation_error_from_request(
   )
 }
 
-
 ///|
-
 fn Gateway::pricing_override_rows(self : Gateway) -> Array[ModelPricing] {
   let rows : Array[ModelPricing] = []
   for model_id in self.usage.pricing_overrides.keys() {
@@ -1950,9 +1767,7 @@ fn Gateway::pricing_override_rows(self : Gateway) -> Array[ModelPricing] {
   rows
 }
 
-
 ///|
-
 async fn Gateway::load_model_pricing_store(self : Gateway) -> Unit {
   let path = @pathx.join(
     default_moonstat_stats_dir(),
@@ -1984,9 +1799,7 @@ async fn Gateway::load_model_pricing_store(self : Gateway) -> Unit {
   }
 }
 
-
 ///|
-
 async fn Gateway::save_model_pricing_store(self : Gateway) -> Unit {
   let storage_dir = default_moonstat_stats_dir()
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
@@ -2020,9 +1833,7 @@ async fn Gateway::save_model_pricing_store(self : Gateway) -> Unit {
   }
 }
 
-
 ///|
-
 fn model_pricing_from_store_json(obj : Map[String, Json]) -> ModelPricing? {
   guard store_json_string(obj, "modelId") is Some(model_id) else { return None }
   guard store_json_string(obj, "displayName") is Some(display_name) else {
@@ -2062,9 +1873,7 @@ fn model_pricing_from_store_json(obj : Map[String, Json]) -> ModelPricing? {
   )
 }
 
-
 ///|
-
 fn model_pricing_store_json(pricing : ModelPricing, deleted~ : Bool) -> Json {
   {
     "modelId": Json::string(pricing.model_id),
@@ -2079,16 +1888,12 @@ fn model_pricing_store_json(pricing : ModelPricing, deleted~ : Bool) -> Json {
   }.to_json()
 }
 
-
 ///|
-
 fn claude_desktop_default_proxy_route_ids() -> Array[String] {
   ["claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"]
 }
 
-
 ///|
-
 fn claude_desktop_proxy_request_json_for_upstream(
   body : Json,
   provider : ProviderRouteTarget,
@@ -2104,9 +1909,7 @@ fn claude_desktop_proxy_request_json_for_upstream(
   normalize_mimo_anthropic_thinking_history(body)
 }
 
-
 ///|
-
 fn moon_media_retry_should_trigger(
   status_code : Int,
   response_body : String,
@@ -2120,9 +1923,7 @@ fn moon_media_retry_should_trigger(
   )
 }
 
-
 ///|
-
 fn moon_media_retry_should_trigger_with_config(
   status_code : Int,
   response_body : String,
@@ -2134,4 +1935,3 @@ fn moon_media_retry_should_trigger_with_config(
   contains_image_blocks(request_body) &&
   is_unsupported_image_error_status(status_code, response_body)
 }
-

@@ -111,7 +111,10 @@ priv struct MoonWebDavCurlRequest {
 }
 
 ///|
-fn moon_sync_status_json(incoming : Map[String, Json], existing : Json?) -> Json {
+fn moon_sync_status_json(
+  incoming : Map[String, Json],
+  existing : Json?,
+) -> Json {
   match existing {
     Some(Object(existing_obj)) =>
       match existing_obj.get("status") {
@@ -502,7 +505,9 @@ fn moon_sync_hex_digit(value : Int) -> Char {
 }
 
 ///|
-fn moon_sync_snapshot_id(artifacts : Map[String, MoonSyncArtifactMeta]) -> String {
+fn moon_sync_snapshot_id(
+  artifacts : Map[String, MoonSyncArtifactMeta],
+) -> String {
   let keys = artifacts.keys().collect()
   keys.sort()
   let parts : Array[String] = []
@@ -692,7 +697,10 @@ fn moon_webdav_remote_url(
 }
 
 ///|
-fn moon_webdav_basic_auth_header(username : String, password : String) -> String {
+fn moon_webdav_basic_auth_header(
+  username : String,
+  password : String,
+) -> String {
   let token = @base64.encode(@encoding/utf8.encode("\{username}:\{password}"))
   "Basic \{token}"
 }
@@ -1670,7 +1678,11 @@ async fn moon_webdav_sync_fetch_remote_info_json(
   let username = json_string_from_map(obj, "username").unwrap_or("")
   let password = json_string_from_map(obj, "password").unwrap_or("")
   let current_url = match
-    moon_webdav_remote_file_url(settings, "current", moon_sync_remote_manifest()) {
+    moon_webdav_remote_file_url(
+      settings,
+      "current",
+      moon_sync_remote_manifest(),
+    ) {
     Ok(url) => url
     Err(error) => return Err(error)
   }

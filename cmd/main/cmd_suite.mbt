@@ -1,4 +1,4 @@
-
+///|
 async fn set_suite_json_config(
   args : Array[String],
   base_path : String,
@@ -12,9 +12,7 @@ async fn set_suite_json_config(
   check_json_post_endpoint(args, path, "Suite")
 }
 
-
 ///|
-
 fn suite_json_config_path(
   args : Array[String],
   base_path : String,
@@ -25,9 +23,7 @@ fn suite_json_config_path(
   Some("\{base_path}?\{cli_query_pair(key, raw)}")
 }
 
-
 ///|
-
 fn print_suite_manifest(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or("127.0.0.1")
   let port = parse_int_arg(args, "--port", default=15721)
@@ -38,4 +34,3 @@ fn print_suite_manifest(args : Array[String]) -> Unit {
     ),
   )
 }
-

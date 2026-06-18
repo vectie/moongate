@@ -220,7 +220,8 @@ async fn moon_get_codex_oauth_models(
   account_id : String?,
 ) -> Result[Array[FetchedModel], String] {
   let creds = moon_read_codex_credentials()
-  let id = match moon_resolve_codex_oauth_account(account_id, creds.account_id) {
+  let id = match
+    moon_resolve_codex_oauth_account(account_id, creds.account_id) {
     Some(value) if !value.trim().is_empty() => value
     _ => return Err("No ChatGPT account available")
   }
@@ -621,11 +622,14 @@ fn moon_parse_rfc3339_date_prefix_seconds(value : String) -> Int? {
 
 ///|
 async fn moon_query_claude_quota(token : String) -> SubscriptionQuota {
-  let result = moon_fetch_json_get("https://api.anthropic.com/api/oauth/usage", {
-    "Authorization": "Bearer \{token}",
-    "anthropic-beta": "oauth-2025-04-20",
-    "Accept": "application/json",
-  })
+  let result = moon_fetch_json_get(
+    "https://api.anthropic.com/api/oauth/usage",
+    {
+      "Authorization": "Bearer \{token}",
+      "anthropic-beta": "oauth-2025-04-20",
+      "Accept": "application/json",
+    },
+  )
   match result {
     Err(error) => moon_quota_error("claude", error.status, error.message)
     Ok(body) => moon_parse_claude_quota(body)
@@ -909,7 +913,10 @@ fn moon_parse_claude_quota(body : Json) -> SubscriptionQuota {
 }
 
 ///|
-fn moon_parse_codex_quota(body : Json, tool_label : String) -> SubscriptionQuota {
+fn moon_parse_codex_quota(
+  body : Json,
+  tool_label : String,
+) -> SubscriptionQuota {
   let tiers : Array[Json] = []
   guard body is Object(obj) else {
     return moon_quota_error(
