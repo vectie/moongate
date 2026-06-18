@@ -1,4 +1,30 @@
 ///|
+fn skill_cli_commands() -> Array[CliCommandSpec] {
+  [
+    { id: "get_installed_skills", patterns: ["skills installed"] },
+    { id: "get_skill_backups", patterns: ["skills backups"] },
+    { id: "delete_skill_backup", patterns: ["skills backup delete"] },
+    { id: "restore_skill_backup", patterns: ["skills backup restore"] },
+    { id: "install_skill_unified", patterns: ["skills install-unified"] },
+    { id: "uninstall_skill_unified", patterns: ["skills uninstall-unified"] },
+    { id: "toggle_skill_app", patterns: ["skills toggle-app"] },
+    { id: "scan_unmanaged_skills", patterns: ["skills scan-unmanaged"] },
+    { id: "import_skills_from_apps", patterns: ["skills import-apps"] },
+    { id: "discover_available_skills", patterns: ["skills discover"] },
+    { id: "check_skill_updates", patterns: ["skills check-updates"] },
+    { id: "update_skill", patterns: ["skills update"] },
+    { id: "migrate_skill_storage", patterns: ["skills migrate-storage"] },
+    { id: "search_skills_sh", patterns: ["skills search"] },
+    { id: "get_skills", patterns: ["skills list"] },
+    { id: "get_skills_for_app", patterns: ["skills app"] },
+    { id: "get_skill_repos", patterns: ["skills repos"] },
+    { id: "add_skill_repo", patterns: ["skills repo add"] },
+    { id: "remove_skill_repo", patterns: ["skills repo remove"] },
+    { id: "install_skills_from_zip", patterns: ["skills install-zip"] },
+  ]
+}
+
+///|
 fn cli_skill_command_id(command_id : String) -> Bool {
   match command_id {
     "get_installed_skills"
