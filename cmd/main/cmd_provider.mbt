@@ -1,4 +1,86 @@
 ///|
+fn provider_cli_commands() -> Array[CliCommandSpec] {
+  [
+    { id: "get_providers", patterns: ["provider list"] },
+    { id: "get_current_provider", patterns: ["provider current"] },
+    { id: "add_provider", patterns: ["provider add"] },
+    { id: "update_provider", patterns: ["provider update"] },
+    { id: "delete_provider", patterns: ["provider delete"] },
+    {
+      id: "remove_provider_from_live_config",
+      patterns: ["provider remove-live"],
+    },
+    { id: "switch_provider", patterns: ["provider switch"] },
+    { id: "sync_current_providers_live", patterns: ["provider sync-live"] },
+    { id: "read_live_provider_settings", patterns: ["provider live-settings"] },
+    { id: "open_provider_terminal", patterns: ["provider terminal"] },
+    { id: "import_default_config", patterns: ["proxy import-default-config"] },
+    {
+      id: "get_claude_desktop_status",
+      patterns: ["providers claude-desktop status"],
+    },
+    {
+      id: "get_claude_desktop_default_routes",
+      patterns: ["providers claude-desktop default-routes"],
+    },
+    {
+      id: "import_claude_desktop_providers_from_claude",
+      patterns: ["providers claude-desktop import"],
+    },
+    {
+      id: "ensure_claude_desktop_official_provider",
+      patterns: ["providers claude-desktop official"],
+    },
+    { id: "provider_live_ids", patterns: ["provider live-ids"] },
+    { id: "provider_live_get", patterns: ["provider live-get"] },
+    { id: "provider_import_live", patterns: ["provider import-live"] },
+    {
+      id: "get_opencode_live_provider_ids",
+      patterns: ["provider opencode live-ids"],
+    },
+    {
+      id: "get_openclaw_live_provider_ids",
+      patterns: ["provider openclaw live-ids"],
+    },
+    {
+      id: "get_openclaw_live_provider",
+      patterns: ["provider openclaw live-get"],
+    },
+    {
+      id: "get_hermes_live_provider_ids",
+      patterns: ["provider hermes live-ids"],
+    },
+    { id: "get_hermes_live_provider", patterns: ["provider hermes live-get"] },
+    {
+      id: "import_opencode_providers_from_live",
+      patterns: ["provider opencode import-live"],
+    },
+    {
+      id: "import_openclaw_providers_from_live",
+      patterns: ["provider openclaw import-live"],
+    },
+    {
+      id: "import_hermes_providers_from_live",
+      patterns: ["provider hermes import-live"],
+    },
+    { id: "get_universal_providers", patterns: ["provider universal list"] },
+    { id: "get_universal_provider", patterns: ["provider universal get"] },
+    { id: "upsert_universal_provider", patterns: ["provider universal upsert"] },
+    { id: "delete_universal_provider", patterns: ["provider universal delete"] },
+    { id: "sync_universal_provider", patterns: ["provider universal sync"] },
+    { id: "get_provider_presets", patterns: ["provider presets list"] },
+    { id: "test_api_endpoints", patterns: ["provider test-endpoints"] },
+    { id: "update_providers_sort_order", patterns: ["provider sort-order set"] },
+    { id: "get_custom_endpoints", patterns: ["provider endpoints list"] },
+    { id: "add_custom_endpoint", patterns: ["provider endpoints add"] },
+    { id: "remove_custom_endpoint", patterns: ["provider endpoints remove"] },
+    { id: "update_endpoint_last_used", patterns: ["provider endpoints touch"] },
+    { id: "fetch_models", patterns: ["models fetch"] },
+    { id: "model_candidates", patterns: ["models candidates"] },
+  ]
+}
+
+///|
 fn cli_provider_command_id(command_id : String) -> Bool {
   match command_id {
     "get_providers"
