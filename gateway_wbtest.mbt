@@ -9641,6 +9641,24 @@ async test "moonstat env helpers scan delete and restore file conflicts" {
 }
 
 ///|
+test "moonstat config request helpers ignore retired snake case aliases" {
+  assert_eq(
+    proxy_string_request(
+      "/config/env/restore?backup_path=/tmp/legacy.json",
+      None,
+      ["backupPath"],
+    ),
+    None,
+  )
+  assert_eq(
+    proxy_bool_request("/mcp/config/servers?sync_other_side=true", None, [
+      "syncOtherSide",
+    ]),
+    None,
+  )
+}
+
+///|
 test "moonstat mcp helpers preserve server apps and config shape" {
   let spec = {
     "name": Json::string("Filesystem"),

@@ -1195,9 +1195,7 @@ async fn ConfigService::handle_restore_env_backup(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let backup_path = proxy_string_request(r.path, body, [
-    "backupPath", "backup_path",
-  ])
+  let backup_path = proxy_string_request(r.path, body, ["backupPath"])
   match moon_restore_env_backup_json(backup_path) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
@@ -1242,9 +1240,9 @@ async fn ConfigService::handle_upsert_mcp_server_in_config(
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
   match moon_mcp_server_from_request(r.path, body, app) {
     Some((id, server)) => {
-      let sync_other = proxy_bool_request(r.path, body, [
-        "syncOtherSide", "sync_other_side",
-      ]).unwrap_or(false)
+      let sync_other = proxy_bool_request(r.path, body, ["syncOtherSide"]).unwrap_or(
+        false,
+      )
       let next = if sync_other {
         let synced = moon_mcp_server_with_app(server, "claude", true)
         let synced = moon_mcp_server_with_app(synced, "codex", true)
