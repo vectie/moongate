@@ -465,6 +465,52 @@ test "registered cli commands match suite command aliases and status commands" {
 }
 
 ///|
+test "cli command ownership comes from family specs" {
+  for command in auth_cli_commands() {
+    assert_true(cli_auth_command_id(command.id))
+  }
+  for command in copilot_cli_commands() {
+    assert_true(cli_copilot_command_id(command.id))
+  }
+  for command in skill_cli_commands() {
+    assert_true(cli_skill_command_id(command.id))
+  }
+  for command in proxy_cli_commands() {
+    assert_true(cli_proxy_command_id(command.id))
+  }
+  for command in config_cli_commands() {
+    assert_true(cli_config_command_id(command.id))
+  }
+  for command in usage_cli_commands() {
+    assert_true(cli_usage_command_id(command.id))
+  }
+  for command in suite_cli_commands() {
+    assert_true(cli_suite_command_id(command.id))
+  }
+  for command in install_cli_commands() {
+    assert_true(cli_install_command_id(command.id))
+  }
+  for command in stream_check_cli_commands() {
+    assert_true(cli_stream_check_command_id(command.id))
+  }
+  for command in sync_cli_commands() {
+    assert_true(cli_sync_command_id(command.id))
+  }
+  for command in session_cli_commands() {
+    assert_true(cli_session_command_id(command.id))
+  }
+  for command in runtime_cli_commands() {
+    assert_true(cli_runtime_command_id(command.id))
+  }
+  for command in workspace_cli_commands() {
+    assert_true(cli_workspace_command_id(command.id))
+  }
+  for command in provider_cli_commands() {
+    assert_true(cli_provider_command_id(command.id))
+  }
+}
+
+///|
 test "proxy cli dispatcher owns only proxy command family" {
   assert_false(cli_proxy_command_id("update_proxy_config"))
   assert_true(cli_proxy_command_id("set_proxy_takeover_for_app"))

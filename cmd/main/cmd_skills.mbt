@@ -26,29 +26,7 @@ fn skill_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_skill_command_id(command_id : String) -> Bool {
-  match command_id {
-    "get_installed_skills"
-    | "get_skill_backups"
-    | "delete_skill_backup"
-    | "restore_skill_backup"
-    | "install_skill_unified"
-    | "uninstall_skill_unified"
-    | "toggle_skill_app"
-    | "scan_unmanaged_skills"
-    | "import_skills_from_apps"
-    | "discover_available_skills"
-    | "check_skill_updates"
-    | "update_skill"
-    | "migrate_skill_storage"
-    | "search_skills_sh"
-    | "get_skills"
-    | "get_skills_for_app"
-    | "get_skill_repos"
-    | "add_skill_repo"
-    | "remove_skill_repo"
-    | "install_skills_from_zip" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, skill_cli_commands())
 }
 
 ///|

@@ -82,49 +82,7 @@ fn provider_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_provider_command_id(command_id : String) -> Bool {
-  match command_id {
-    "get_providers"
-    | "get_current_provider"
-    | "add_provider"
-    | "update_provider"
-    | "delete_provider"
-    | "remove_provider_from_live_config"
-    | "switch_provider"
-    | "sync_current_providers_live"
-    | "read_live_provider_settings"
-    | "open_provider_terminal"
-    | "import_default_config"
-    | "get_claude_desktop_status"
-    | "get_claude_desktop_default_routes"
-    | "import_claude_desktop_providers_from_claude"
-    | "ensure_claude_desktop_official_provider"
-    | "provider_live_ids"
-    | "provider_live_get"
-    | "provider_import_live"
-    | "get_opencode_live_provider_ids"
-    | "get_openclaw_live_provider_ids"
-    | "get_openclaw_live_provider"
-    | "get_hermes_live_provider_ids"
-    | "get_hermes_live_provider"
-    | "import_opencode_providers_from_live"
-    | "import_openclaw_providers_from_live"
-    | "import_hermes_providers_from_live"
-    | "get_universal_providers"
-    | "get_universal_provider"
-    | "upsert_universal_provider"
-    | "delete_universal_provider"
-    | "sync_universal_provider"
-    | "get_provider_presets"
-    | "test_api_endpoints"
-    | "update_providers_sort_order"
-    | "get_custom_endpoints"
-    | "add_custom_endpoint"
-    | "remove_custom_endpoint"
-    | "update_endpoint_last_used"
-    | "fetch_models"
-    | "model_candidates" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, provider_cli_commands())
 }
 
 ///|

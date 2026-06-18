@@ -18,21 +18,7 @@ fn copilot_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_copilot_command_id(command_id : String) -> Bool {
-  match command_id {
-    "copilot_start_device_flow"
-    | "copilot_poll_for_account"
-    | "copilot_poll_for_auth"
-    | "copilot_list_accounts"
-    | "copilot_get_auth_status"
-    | "copilot_is_authenticated"
-    | "copilot_logout"
-    | "copilot_remove_account"
-    | "copilot_set_default_account"
-    | "copilot_get_token"
-    | "copilot_get_models"
-    | "copilot_get_usage" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, copilot_cli_commands())
 }
 
 ///|

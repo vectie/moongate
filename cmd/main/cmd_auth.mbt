@@ -29,17 +29,7 @@ fn auth_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_auth_command_id(command_id : String) -> Bool {
-  match command_id {
-    "login"
-    | "auth_start_login"
-    | "auth_poll_for_account"
-    | "auth_list_accounts"
-    | "auth_get_status"
-    | "auth_remove_account"
-    | "auth_set_default_account"
-    | "auth_logout" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, auth_cli_commands())
 }
 
 ///|

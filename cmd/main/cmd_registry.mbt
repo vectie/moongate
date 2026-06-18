@@ -5,6 +5,19 @@ priv struct CliCommandSpec {
 }
 
 ///|
+fn cli_command_id_in_specs(
+  command_id : String,
+  specs : Array[CliCommandSpec],
+) -> Bool {
+  for command in specs {
+    if command.id == command_id {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn registered_cli_commands() -> Array[CliCommandSpec] {
   let commands = [
     { id: "help", patterns: ["help", "--help", "-h"] },

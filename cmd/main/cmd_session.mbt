@@ -20,20 +20,7 @@ fn session_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_session_command_id(command_id : String) -> Bool {
-  match command_id {
-    "list_sessions"
-    | "get_session_messages"
-    | "launch_session_terminal"
-    | "delete_session"
-    | "delete_sessions"
-    | "read_omo_local_file"
-    | "get_current_omo_provider_id"
-    | "disable_current_omo"
-    | "read_omo_slim_local_file"
-    | "get_current_omo_slim_provider_id"
-    | "disable_current_omo_slim" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, session_cli_commands())
 }
 
 ///|

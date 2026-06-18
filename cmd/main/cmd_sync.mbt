@@ -19,19 +19,7 @@ fn sync_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_sync_command_id(command_id : String) -> Bool {
-  match command_id {
-    "webdav_test_connection"
-    | "webdav_sync_upload"
-    | "webdav_sync_download"
-    | "webdav_sync_save_settings"
-    | "webdav_sync_fetch_remote_info"
-    | "s3_test_connection"
-    | "s3_sync_upload"
-    | "s3_sync_download"
-    | "s3_sync_save_settings"
-    | "s3_sync_fetch_remote_info" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, sync_cli_commands())
 }
 
 ///|

@@ -59,50 +59,7 @@ fn workspace_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_workspace_command_id(command_id : String) -> Bool {
-  match command_id {
-    "scan_openclaw_config_health"
-    | "get_openclaw_default_model"
-    | "set_openclaw_default_model"
-    | "get_openclaw_model_catalog"
-    | "set_openclaw_model_catalog"
-    | "get_openclaw_agents_defaults"
-    | "set_openclaw_agents_defaults"
-    | "get_openclaw_env"
-    | "set_openclaw_env"
-    | "get_openclaw_tools"
-    | "set_openclaw_tools"
-    | "get_hermes_model_config"
-    | "get_hermes_memory"
-    | "set_hermes_memory"
-    | "get_hermes_memory_limits"
-    | "set_hermes_memory_enabled"
-    | "open_hermes_web_ui"
-    | "launch_hermes_dashboard"
-    | "save_file_dialog"
-    | "open_file_dialog"
-    | "open_zip_file_dialog"
-    | "export_config_to_file"
-    | "import_config_from_file"
-    | "create_db_backup"
-    | "list_db_backups"
-    | "restore_db_backup"
-    | "rename_db_backup"
-    | "delete_db_backup"
-    | "parse_deeplink"
-    | "merge_deeplink_config"
-    | "import_from_deeplink"
-    | "list_daily_memory_files"
-    | "read_daily_memory_file"
-    | "write_daily_memory_file"
-    | "search_daily_memory_files"
-    | "delete_daily_memory_file"
-    | "read_workspace_file"
-    | "write_workspace_file"
-    | "open_workspace_directory"
-    | "import_prompt_from_file"
-    | "get_current_prompt_file_content" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, workspace_cli_commands())
 }
 
 ///|

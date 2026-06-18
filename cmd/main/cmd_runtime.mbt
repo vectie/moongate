@@ -24,24 +24,7 @@ fn runtime_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_runtime_command_id(command_id : String) -> Bool {
-  match command_id {
-    "pick_directory"
-    | "open_external"
-    | "copy_text_to_clipboard"
-    | "check_for_updates"
-    | "update_tray_menu"
-    | "is_portable_mode"
-    | "get_tool_versions"
-    | "run_tool_lifecycle_action"
-    | "probe_tool_installations"
-    | "set_window_theme"
-    | "enter_lightweight_mode"
-    | "exit_lightweight_mode"
-    | "is_lightweight_mode"
-    | "restart_app"
-    | "install_update_and_restart" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, runtime_cli_commands())
 }
 
 ///|

@@ -15,18 +15,7 @@ fn install_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_install_command_id(command_id : String) -> Bool {
-  match command_id {
-    "start"
-    | "install_reroute"
-    | "uninstall_reroute"
-    | "install_claude_desktop"
-    | "uninstall_claude_desktop"
-    | "status_claude_desktop"
-    | "install_codex"
-    | "uninstall_codex"
-    | "status_codex" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, install_cli_commands())
 }
 
 ///|

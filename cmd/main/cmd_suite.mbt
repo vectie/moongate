@@ -14,14 +14,7 @@ fn suite_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_suite_command_id(command_id : String) -> Bool {
-  match command_id {
-    "suite_manifest"
-    | "suite_status"
-    | "suite_write_status"
-    | "suite_moonclaw_providers"
-    | "suite_write_moonclaw_providers" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, suite_cli_commands())
 }
 
 ///|

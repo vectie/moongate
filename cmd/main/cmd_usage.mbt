@@ -67,32 +67,7 @@ async fn check_stats(args : Array[String]) -> Unit {
 
 ///|
 fn cli_usage_command_id(command_id : String) -> Bool {
-  match command_id {
-    "get_usage_summary"
-    | "get_usage_summary_by_app"
-    | "get_usage_trends"
-    | "get_provider_stats"
-    | "get_model_stats"
-    | "get_request_logs"
-    | "get_request_detail"
-    | "get_model_pricing"
-    | "update_model_pricing"
-    | "delete_model_pricing"
-    | "check_provider_limits"
-    | "sync_session_usage"
-    | "get_usage_data_sources"
-    | "query_provider_usage"
-    | "get_balance"
-    | "get_subscription_quota"
-    | "get_codex_oauth_quota"
-    | "get_codex_oauth_models"
-    | "get_coding_plan_quota"
-    | "test_usage_script"
-    | "status"
-    | "health"
-    | "stats" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, usage_cli_commands())
 }
 
 ///|

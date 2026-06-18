@@ -83,62 +83,7 @@ fn config_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_config_command_id(command_id : String) -> Bool {
-  match command_id {
-    "get_app_config_path"
-    | "open_app_config_folder"
-    | "get_claude_common_config_snippet"
-    | "set_claude_common_config_snippet"
-    | "get_common_config_snippet"
-    | "set_common_config_snippet"
-    | "extract_common_config_snippet"
-    | "check_env_conflicts"
-    | "delete_env_vars"
-    | "restore_env_backup"
-    | "get_claude_config_status"
-    | "get_config_status"
-    | "get_claude_code_config_path"
-    | "get_config_dir"
-    | "open_config_folder"
-    | "get_settings"
-    | "save_settings"
-    | "set_app_config_dir_override"
-    | "get_app_config_dir_override"
-    | "set_auto_launch"
-    | "get_auto_launch_status"
-    | "set_rectifier_config"
-    | "get_rectifier_config"
-    | "set_optimizer_config"
-    | "get_optimizer_config"
-    | "set_copilot_optimizer_config"
-    | "get_copilot_optimizer_config"
-    | "set_log_config"
-    | "get_log_config"
-    | "get_claude_plugin_status"
-    | "read_claude_plugin_config"
-    | "apply_claude_plugin_config"
-    | "is_claude_plugin_applied"
-    | "apply_claude_onboarding_skip"
-    | "clear_claude_onboarding_skip"
-    | "get_claude_mcp_status"
-    | "read_claude_mcp_config"
-    | "upsert_claude_mcp_server"
-    | "delete_claude_mcp_server"
-    | "validate_mcp_command"
-    | "get_mcp_config"
-    | "upsert_mcp_server_in_config"
-    | "delete_mcp_server_in_config"
-    | "set_mcp_enabled"
-    | "get_mcp_servers"
-    | "upsert_mcp_server"
-    | "delete_mcp_server"
-    | "toggle_mcp_app"
-    | "import_mcp_from_apps"
-    | "get_prompts"
-    | "upsert_prompt"
-    | "delete_prompt"
-    | "enable_prompt" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, config_cli_commands())
 }
 
 ///|

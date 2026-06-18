@@ -10,13 +10,7 @@ fn stream_check_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_stream_check_command_id(command_id : String) -> Bool {
-  match command_id {
-    "stream_check_provider"
-    | "stream_check_all_providers"
-    | "get_stream_check_config"
-    | "save_stream_check_config" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, stream_check_cli_commands())
 }
 
 ///|

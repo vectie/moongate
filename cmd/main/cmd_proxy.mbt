@@ -284,42 +284,7 @@ fn proxy_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 fn cli_proxy_command_id(command_id : String) -> Bool {
-  match command_id {
-    "update_global_proxy_config"
-    | "get_global_proxy_config"
-    | "set_global_proxy_url"
-    | "get_global_proxy_url"
-    | "update_proxy_config_for_app"
-    | "get_proxy_config_for_app"
-    | "set_default_cost_multiplier"
-    | "get_default_cost_multiplier"
-    | "set_pricing_model_source"
-    | "get_pricing_model_source"
-    | "update_circuit_breaker_config"
-    | "get_circuit_breaker_config"
-    | "add_to_failover_queue"
-    | "remove_from_failover_queue"
-    | "get_failover_queue"
-    | "set_auto_failover_enabled"
-    | "get_auto_failover_enabled"
-    | "set_proxy_takeover_for_app"
-    | "get_proxy_takeover_status"
-    | "get_proxy_status"
-    | "start_proxy_server"
-    | "stop_proxy_server"
-    | "stop_proxy_with_restore"
-    | "test_proxy_url"
-    | "get_upstream_proxy_status"
-    | "scan_local_proxies"
-    | "get_provider_health"
-    | "get_circuit_breaker_stats"
-    | "reset_circuit_breaker"
-    | "get_available_providers_for_failover"
-    | "is_live_takeover_active"
-    | "switch_proxy_provider"
-    | "get_proxy_running" => true
-    _ => false
-  }
+  cli_command_id_in_specs(command_id, proxy_cli_commands())
 }
 
 ///|
