@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 35)
+  assert_true(registered_cli_commands().length() >= 70)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -62,6 +62,50 @@ test "registered cli commands match suite command aliases and status commands" {
   assert_true(
     registered_cli_command_id(["moonstat", "get-stream-check-config"]) ==
     Some("get_stream_check_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "config", "set"]) ==
+    Some("update_proxy_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "config"]) ==
+    Some("get_proxy_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "global-url", "set"]) ==
+    Some("set_global_proxy_url"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "failover-queue", "add"]) ==
+    Some("add_to_failover_queue"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "failover-queue"]) ==
+    Some("get_failover_queue"),
+  )
+  assert_true(
+    registered_cli_command_id([
+      "moonstat", "proxy", "auto-failover-enabled", "set",
+    ]) ==
+    Some("set_auto_failover_enabled"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "takeover-status", "set"]) ==
+    Some("set_proxy_takeover_for_app"),
+  )
+  assert_true(
+    registered_cli_command_id([
+      "moonstat", "set_default_cost_multiplier_test_hook",
+    ]) ==
+    Some("set_default_cost_multiplier_test_hook"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "proxy", "running"]) ==
+    Some("is_proxy_running"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get_proxy_status"]) ==
+    Some("get_proxy_status"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "usage", "summary"]) == None,

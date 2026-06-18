@@ -18,22 +18,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["models", "candidates", ..] => print_model_candidates(arr)
     ["fetch_models_for_config", ..] | ["fetch-models-for-config", ..] =>
       fetch_provider_models(arr)
-    ["get_proxy_status", ..] | ["get-proxy-status", ..] =>
-      check_proxy_status(arr)
-    ["start_proxy_server", ..] | ["start-proxy-server", ..] =>
-      start_proxy_server(arr)
-    ["stop_proxy_server", ..] | ["stop-proxy-server", ..] =>
-      stop_proxy_server(arr)
-    ["stop_proxy_with_restore", ..] | ["stop-proxy-with-restore", ..] =>
-      stop_proxy_with_restore(arr)
-    ["get_proxy_config", ..] | ["get-proxy-config", ..] =>
-      check_proxy_config(arr)
-    ["update_proxy_config", ..] | ["update-proxy-config", ..] =>
-      update_proxy_config(arr)
-    ["get_global_proxy_config", ..] | ["get-global-proxy-config", ..] =>
-      check_proxy_global_config(arr)
-    ["update_global_proxy_config", ..] | ["update-global-proxy-config", ..] =>
-      update_proxy_global_config(arr)
     ["get_settings", ..] | ["get-settings", ..] =>
       check_usage_endpoint(arr, "/get_settings")
     ["save_settings", ..] | ["save-settings", ..] => save_settings(arr)
@@ -68,74 +52,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_usage_endpoint(arr, "/get_log_config")
     ["set_log_config", ..] | ["set-log-config", ..] =>
       set_moon_json_config(arr, "/set_log_config", "--config", "Settings")
-    ["get_global_proxy_url", ..] | ["get-global-proxy-url", ..] =>
-      check_usage_endpoint(arr, "/get_global_proxy_url")
-    ["set_global_proxy_url", ..] | ["set-global-proxy-url", ..] =>
-      set_global_proxy_url(arr)
-    ["test_proxy_url", ..] | ["test-proxy-url", ..] =>
-      test_global_proxy_url(arr)
-    ["get_upstream_proxy_status", ..] | ["get-upstream-proxy-status", ..] =>
-      check_usage_endpoint(arr, "/get_upstream_proxy_status")
-    ["scan_local_proxies", ..] | ["scan-local-proxies", ..] =>
-      check_usage_endpoint(arr, "/scan_local_proxies")
-    ["get_proxy_config_for_app", ..] | ["get-proxy-config-for-app", ..] =>
-      check_proxy_app_config(arr)
-    ["update_proxy_config_for_app", ..] | ["update-proxy-config-for-app", ..] =>
-      update_proxy_app_config(arr)
-    ["get_default_cost_multiplier", ..] | ["get-default-cost-multiplier", ..] =>
-      check_proxy_default_cost_multiplier(arr)
-    ["set_default_cost_multiplier", ..] | ["set-default-cost-multiplier", ..] =>
-      set_proxy_default_cost_multiplier(arr)
-    ["get_default_cost_multiplier_test_hook", ..]
-    | ["get-default-cost-multiplier-test-hook", ..] =>
-      check_proxy_default_cost_multiplier_test_hook(arr)
-    ["set_default_cost_multiplier_test_hook", ..]
-    | ["set-default-cost-multiplier-test-hook", ..] =>
-      set_proxy_default_cost_multiplier_test_hook(arr)
-    ["get_pricing_model_source", ..] | ["get-pricing-model-source", ..] =>
-      check_proxy_pricing_model_source(arr)
-    ["set_pricing_model_source", ..] | ["set-pricing-model-source", ..] =>
-      set_proxy_pricing_model_source(arr)
-    ["get_pricing_model_source_test_hook", ..]
-    | ["get-pricing-model-source-test-hook", ..] =>
-      check_proxy_pricing_model_source_test_hook(arr)
-    ["set_pricing_model_source_test_hook", ..]
-    | ["set-pricing-model-source-test-hook", ..] =>
-      set_proxy_pricing_model_source_test_hook(arr)
-    ["get_provider_health", ..] | ["get-provider-health", ..] =>
-      check_proxy_provider_health(arr)
-    ["get_circuit_breaker_config", ..] | ["get-circuit-breaker-config", ..] =>
-      check_proxy_circuit_breaker_config(arr)
-    ["update_circuit_breaker_config", ..]
-    | ["update-circuit-breaker-config", ..] =>
-      update_proxy_circuit_breaker_config(arr)
-    ["get_circuit_breaker_stats", ..] | ["get-circuit-breaker-stats", ..] =>
-      check_proxy_circuit_breaker_stats(arr)
-    ["reset_circuit_breaker", ..] | ["reset-circuit-breaker", ..] =>
-      reset_proxy_circuit_breaker(arr)
-    ["get_failover_queue", ..] | ["get-failover-queue", ..] =>
-      check_proxy_failover_queue(arr)
-    ["get_available_providers_for_failover", ..]
-    | ["get-available-providers-for-failover", ..] =>
-      check_proxy_available_failover_providers(arr)
-    ["add_to_failover_queue", ..] | ["add-to-failover-queue", ..] =>
-      add_proxy_failover_queue(arr)
-    ["remove_from_failover_queue", ..] | ["remove-from-failover-queue", ..] =>
-      remove_proxy_failover_queue(arr)
-    ["get_auto_failover_enabled", ..] | ["get-auto-failover-enabled", ..] =>
-      check_proxy_auto_failover_enabled(arr)
-    ["set_auto_failover_enabled", ..] | ["set-auto-failover-enabled", ..] =>
-      set_proxy_auto_failover_enabled(arr)
-    ["get_proxy_takeover_status", ..] | ["get-proxy-takeover-status", ..] =>
-      check_proxy_takeover_status(arr)
-    ["set_proxy_takeover_for_app", ..] | ["set-proxy-takeover-for-app", ..] =>
-      set_proxy_takeover_status(arr)
-    ["is_live_takeover_active", ..] | ["is-live-takeover-active", ..] =>
-      check_proxy_endpoint(arr, "/is_live_takeover_active")
-    ["switch_proxy_provider", ..] | ["switch-proxy-provider", ..] =>
-      switch_proxy_provider(arr)
-    ["is_proxy_running", ..] | ["is-proxy-running", ..] =>
-      check_proxy_running(arr)
     ["get_providers", ..] | ["get-providers", ..] => check_providers(arr)
     ["get_current_provider", ..] | ["get-current-provider", ..] =>
       check_current_provider(arr)
@@ -678,79 +594,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
         arr,
         prompt_file_path(arr, "/get_current_prompt_file_content"),
       )
-    ["proxy", "status", ..] => check_proxy_status(arr)
-    ["proxy", "start-proxy-server", ..] => start_proxy_server(arr)
-    ["proxy", "stop-proxy-server", ..] => stop_proxy_server(arr)
-    ["proxy", "stop-proxy-with-restore", ..] => stop_proxy_with_restore(arr)
-    ["proxy", "config", "set", ..] => update_proxy_config(arr)
-    ["proxy", "update-config", ..] => update_proxy_config(arr)
-    ["proxy", "config", ..] => check_proxy_config(arr)
-    ["proxy", "global-config", "set", ..] => update_proxy_global_config(arr)
-    ["proxy", "update-global-config", ..] => update_proxy_global_config(arr)
-    ["proxy", "global-config", ..] => check_proxy_global_config(arr)
-    ["proxy", "global-url", "set", ..] => set_global_proxy_url(arr)
-    ["proxy", "set-global-url", ..] => set_global_proxy_url(arr)
-    ["proxy", "global-url", ..] =>
-      check_usage_endpoint(arr, "/get_global_proxy_url")
-    ["proxy", "test-url", ..] => test_global_proxy_url(arr)
-    ["proxy", "upstream-status", ..] =>
-      check_usage_endpoint(arr, "/get_upstream_proxy_status")
-    ["proxy", "scan-local", ..] =>
-      check_usage_endpoint(arr, "/scan_local_proxies")
-    ["proxy", "app-config", "set", ..] => update_proxy_app_config(arr)
-    ["proxy", "update-app-config", ..] => update_proxy_app_config(arr)
-    ["proxy", "app-config", ..] => check_proxy_app_config(arr)
-    ["proxy", "default-cost-multiplier", "set", ..] =>
-      set_proxy_default_cost_multiplier(arr)
-    ["proxy", "set-default-cost-multiplier", ..] =>
-      set_proxy_default_cost_multiplier(arr)
-    ["proxy", "default-cost-multiplier", ..] =>
-      check_proxy_default_cost_multiplier(arr)
-    ["proxy", "pricing-model-source", "set", ..] =>
-      set_proxy_pricing_model_source(arr)
-    ["proxy", "set-pricing-model-source", ..] =>
-      set_proxy_pricing_model_source(arr)
-    ["proxy", "pricing-model-source", ..] =>
-      check_proxy_pricing_model_source(arr)
-    ["proxy", "provider-health", ..] => check_proxy_provider_health(arr)
-    ["proxy", "circuit-breaker-config", "set", ..] =>
-      update_proxy_circuit_breaker_config(arr)
-    ["proxy", "circuit-breaker-config", ..] =>
-      check_proxy_circuit_breaker_config(arr)
-    ["proxy", "update-circuit-breaker-config", ..] =>
-      update_proxy_circuit_breaker_config(arr)
-    ["proxy", "circuit-breaker-stats", ..] =>
-      check_proxy_circuit_breaker_stats(arr)
-    ["proxy", "reset-circuit-breaker", ..] => reset_proxy_circuit_breaker(arr)
-    ["proxy", "failover-queue", "add", ..] => add_proxy_failover_queue(arr)
-    ["proxy", "failover-queue", "remove", ..] =>
-      remove_proxy_failover_queue(arr)
-    ["proxy", "failover-queue", ..] => check_proxy_failover_queue(arr)
-    ["proxy", "get-failover-queue", ..] => check_proxy_failover_queue(arr)
-    ["proxy", "available-failover-providers", ..] =>
-      check_proxy_available_failover_providers(arr)
-    ["proxy", "get-available-providers-for-failover", ..] =>
-      check_proxy_available_failover_providers(arr)
-    ["proxy", "add-to-failover-queue", ..] => add_proxy_failover_queue(arr)
-    ["proxy", "remove-from-failover-queue", ..] =>
-      remove_proxy_failover_queue(arr)
-    ["proxy", "auto-failover-enabled", "set", ..] =>
-      set_proxy_auto_failover_enabled(arr)
-    ["proxy", "auto-failover-enabled", ..] =>
-      check_proxy_auto_failover_enabled(arr)
-    ["proxy", "get-auto-failover-enabled", ..] =>
-      check_proxy_auto_failover_enabled(arr)
-    ["proxy", "set-auto-failover-enabled", ..] =>
-      set_proxy_auto_failover_enabled(arr)
-    ["proxy", "takeover-status", "set", ..] => set_proxy_takeover_status(arr)
-    ["proxy", "set-proxy-takeover-for-app", ..] =>
-      set_proxy_takeover_status(arr)
-    ["proxy", "takeover-status", ..] => check_proxy_takeover_status(arr)
-    ["proxy", "is-live-takeover-active", ..] =>
-      check_proxy_endpoint(arr, "/is_live_takeover_active")
-    ["proxy", "switch-proxy-provider", ..] => switch_proxy_provider(arr)
-    ["proxy", "running", ..] => check_proxy_running(arr)
-    ["proxy", "is-proxy-running", ..] => check_proxy_running(arr)
     ["provider", "list", ..] | ["providers", "list", ..] => check_providers(arr)
     ["provider", "current", ..] | ["providers", "current", ..] =>
       check_current_provider(arr)

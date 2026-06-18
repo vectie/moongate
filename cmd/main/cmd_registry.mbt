@@ -155,6 +155,244 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
         "get-stream-check-config",
       ],
     },
+    {
+      id: "update_proxy_config",
+      patterns: [
+        "proxy config set", "proxy update-config", "update_proxy_config", "update-proxy-config",
+      ],
+    },
+    {
+      id: "get_proxy_config",
+      patterns: ["proxy config", "get_proxy_config", "get-proxy-config"],
+    },
+    {
+      id: "update_global_proxy_config",
+      patterns: [
+        "proxy global-config set", "proxy update-global-config", "update_global_proxy_config",
+        "update-global-proxy-config",
+      ],
+    },
+    {
+      id: "get_global_proxy_config",
+      patterns: [
+        "proxy global-config", "get_global_proxy_config", "get-global-proxy-config",
+      ],
+    },
+    {
+      id: "set_global_proxy_url",
+      patterns: [
+        "proxy global-url set", "proxy set-global-url", "set_global_proxy_url", "set-global-proxy-url",
+      ],
+    },
+    {
+      id: "get_global_proxy_url",
+      patterns: [
+        "proxy global-url", "get_global_proxy_url", "get-global-proxy-url",
+      ],
+    },
+    {
+      id: "update_proxy_config_for_app",
+      patterns: [
+        "proxy app-config set", "proxy update-app-config", "update_proxy_config_for_app",
+        "update-proxy-config-for-app",
+      ],
+    },
+    {
+      id: "get_proxy_config_for_app",
+      patterns: [
+        "proxy app-config", "get_proxy_config_for_app", "get-proxy-config-for-app",
+      ],
+    },
+    {
+      id: "set_default_cost_multiplier",
+      patterns: [
+        "proxy default-cost-multiplier set", "proxy set-default-cost-multiplier",
+        "set_default_cost_multiplier", "set-default-cost-multiplier",
+      ],
+    },
+    {
+      id: "get_default_cost_multiplier",
+      patterns: [
+        "proxy default-cost-multiplier", "get_default_cost_multiplier", "get-default-cost-multiplier",
+      ],
+    },
+    {
+      id: "set_pricing_model_source",
+      patterns: [
+        "proxy pricing-model-source set", "proxy set-pricing-model-source", "set_pricing_model_source",
+        "set-pricing-model-source",
+      ],
+    },
+    {
+      id: "get_pricing_model_source",
+      patterns: [
+        "proxy pricing-model-source", "get_pricing_model_source", "get-pricing-model-source",
+      ],
+    },
+    {
+      id: "update_circuit_breaker_config",
+      patterns: [
+        "proxy circuit-breaker-config set", "proxy update-circuit-breaker-config",
+        "update_circuit_breaker_config", "update-circuit-breaker-config",
+      ],
+    },
+    {
+      id: "get_circuit_breaker_config",
+      patterns: [
+        "proxy circuit-breaker-config", "get_circuit_breaker_config", "get-circuit-breaker-config",
+      ],
+    },
+    {
+      id: "add_to_failover_queue",
+      patterns: [
+        "proxy failover-queue add", "proxy add-to-failover-queue", "add_to_failover_queue",
+        "add-to-failover-queue",
+      ],
+    },
+    {
+      id: "remove_from_failover_queue",
+      patterns: [
+        "proxy failover-queue remove", "proxy remove-from-failover-queue", "remove_from_failover_queue",
+        "remove-from-failover-queue",
+      ],
+    },
+    {
+      id: "get_failover_queue",
+      patterns: [
+        "proxy failover-queue", "proxy get-failover-queue", "get_failover_queue",
+        "get-failover-queue",
+      ],
+    },
+    {
+      id: "set_auto_failover_enabled",
+      patterns: [
+        "proxy auto-failover-enabled set", "proxy set-auto-failover-enabled", "set_auto_failover_enabled",
+        "set-auto-failover-enabled",
+      ],
+    },
+    {
+      id: "get_auto_failover_enabled",
+      patterns: [
+        "proxy auto-failover-enabled", "proxy get-auto-failover-enabled", "get_auto_failover_enabled",
+        "get-auto-failover-enabled",
+      ],
+    },
+    {
+      id: "set_proxy_takeover_for_app",
+      patterns: [
+        "proxy takeover-status set", "proxy set-proxy-takeover-for-app", "set_proxy_takeover_for_app",
+        "set-proxy-takeover-for-app",
+      ],
+    },
+    {
+      id: "get_proxy_takeover_status",
+      patterns: [
+        "proxy takeover-status", "get_proxy_takeover_status", "get-proxy-takeover-status",
+      ],
+    },
+    {
+      id: "get_proxy_status",
+      patterns: ["proxy status", "get_proxy_status", "get-proxy-status"],
+    },
+    {
+      id: "start_proxy_server",
+      patterns: [
+        "proxy start-proxy-server", "start_proxy_server", "start-proxy-server",
+      ],
+    },
+    {
+      id: "stop_proxy_server",
+      patterns: [
+        "proxy stop-proxy-server", "stop_proxy_server", "stop-proxy-server",
+      ],
+    },
+    {
+      id: "stop_proxy_with_restore",
+      patterns: [
+        "proxy stop-proxy-with-restore", "stop_proxy_with_restore", "stop-proxy-with-restore",
+      ],
+    },
+    {
+      id: "test_proxy_url",
+      patterns: ["proxy test-url", "test_proxy_url", "test-proxy-url"],
+    },
+    {
+      id: "get_upstream_proxy_status",
+      patterns: [
+        "proxy upstream-status", "get_upstream_proxy_status", "get-upstream-proxy-status",
+      ],
+    },
+    {
+      id: "scan_local_proxies",
+      patterns: ["proxy scan-local", "scan_local_proxies", "scan-local-proxies"],
+    },
+    {
+      id: "get_default_cost_multiplier_test_hook",
+      patterns: [
+        "get_default_cost_multiplier_test_hook", "get-default-cost-multiplier-test-hook",
+      ],
+    },
+    {
+      id: "set_default_cost_multiplier_test_hook",
+      patterns: [
+        "set_default_cost_multiplier_test_hook", "set-default-cost-multiplier-test-hook",
+      ],
+    },
+    {
+      id: "get_pricing_model_source_test_hook",
+      patterns: [
+        "get_pricing_model_source_test_hook", "get-pricing-model-source-test-hook",
+      ],
+    },
+    {
+      id: "set_pricing_model_source_test_hook",
+      patterns: [
+        "set_pricing_model_source_test_hook", "set-pricing-model-source-test-hook",
+      ],
+    },
+    {
+      id: "get_provider_health",
+      patterns: [
+        "proxy provider-health", "get_provider_health", "get-provider-health",
+      ],
+    },
+    {
+      id: "get_circuit_breaker_stats",
+      patterns: [
+        "proxy circuit-breaker-stats", "get_circuit_breaker_stats", "get-circuit-breaker-stats",
+      ],
+    },
+    {
+      id: "reset_circuit_breaker",
+      patterns: [
+        "proxy reset-circuit-breaker", "reset_circuit_breaker", "reset-circuit-breaker",
+      ],
+    },
+    {
+      id: "get_available_providers_for_failover",
+      patterns: [
+        "proxy available-failover-providers", "proxy get-available-providers-for-failover",
+        "get_available_providers_for_failover", "get-available-providers-for-failover",
+      ],
+    },
+    {
+      id: "is_live_takeover_active",
+      patterns: [
+        "proxy is-live-takeover-active", "is_live_takeover_active", "is-live-takeover-active",
+      ],
+    },
+    {
+      id: "switch_proxy_provider",
+      patterns: [
+        "proxy switch-proxy-provider", "switch_proxy_provider", "switch-proxy-provider",
+      ],
+    },
+    {
+      id: "is_proxy_running",
+      patterns: [
+        "proxy running", "proxy is-proxy-running", "is_proxy_running", "is-proxy-running",
+      ],
+    },
     { id: "suite_manifest", patterns: ["suite manifest"] },
     { id: "suite_status", patterns: ["suite status"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
@@ -338,6 +576,162 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("save_stream_check_config") => {
       save_stream_check_config(args)
+      true
+    }
+    Some("update_proxy_config") => {
+      update_proxy_config(args)
+      true
+    }
+    Some("get_proxy_config") => {
+      check_proxy_config(args)
+      true
+    }
+    Some("update_global_proxy_config") => {
+      update_proxy_global_config(args)
+      true
+    }
+    Some("get_global_proxy_config") => {
+      check_proxy_global_config(args)
+      true
+    }
+    Some("set_global_proxy_url") => {
+      set_global_proxy_url(args)
+      true
+    }
+    Some("get_global_proxy_url") => {
+      check_usage_endpoint(args, "/get_global_proxy_url")
+      true
+    }
+    Some("update_proxy_config_for_app") => {
+      update_proxy_app_config(args)
+      true
+    }
+    Some("get_proxy_config_for_app") => {
+      check_proxy_app_config(args)
+      true
+    }
+    Some("set_default_cost_multiplier") => {
+      set_proxy_default_cost_multiplier(args)
+      true
+    }
+    Some("get_default_cost_multiplier") => {
+      check_proxy_default_cost_multiplier(args)
+      true
+    }
+    Some("set_pricing_model_source") => {
+      set_proxy_pricing_model_source(args)
+      true
+    }
+    Some("get_pricing_model_source") => {
+      check_proxy_pricing_model_source(args)
+      true
+    }
+    Some("update_circuit_breaker_config") => {
+      update_proxy_circuit_breaker_config(args)
+      true
+    }
+    Some("get_circuit_breaker_config") => {
+      check_proxy_circuit_breaker_config(args)
+      true
+    }
+    Some("add_to_failover_queue") => {
+      add_proxy_failover_queue(args)
+      true
+    }
+    Some("remove_from_failover_queue") => {
+      remove_proxy_failover_queue(args)
+      true
+    }
+    Some("get_failover_queue") => {
+      check_proxy_failover_queue(args)
+      true
+    }
+    Some("set_auto_failover_enabled") => {
+      set_proxy_auto_failover_enabled(args)
+      true
+    }
+    Some("get_auto_failover_enabled") => {
+      check_proxy_auto_failover_enabled(args)
+      true
+    }
+    Some("set_proxy_takeover_for_app") => {
+      set_proxy_takeover_status(args)
+      true
+    }
+    Some("get_proxy_takeover_status") => {
+      check_proxy_takeover_status(args)
+      true
+    }
+    Some("get_proxy_status") => {
+      check_proxy_status(args)
+      true
+    }
+    Some("start_proxy_server") => {
+      start_proxy_server(args)
+      true
+    }
+    Some("stop_proxy_server") => {
+      stop_proxy_server(args)
+      true
+    }
+    Some("stop_proxy_with_restore") => {
+      stop_proxy_with_restore(args)
+      true
+    }
+    Some("test_proxy_url") => {
+      test_global_proxy_url(args)
+      true
+    }
+    Some("get_upstream_proxy_status") => {
+      check_usage_endpoint(args, "/get_upstream_proxy_status")
+      true
+    }
+    Some("scan_local_proxies") => {
+      check_usage_endpoint(args, "/scan_local_proxies")
+      true
+    }
+    Some("get_default_cost_multiplier_test_hook") => {
+      check_proxy_default_cost_multiplier_test_hook(args)
+      true
+    }
+    Some("set_default_cost_multiplier_test_hook") => {
+      set_proxy_default_cost_multiplier_test_hook(args)
+      true
+    }
+    Some("get_pricing_model_source_test_hook") => {
+      check_proxy_pricing_model_source_test_hook(args)
+      true
+    }
+    Some("set_pricing_model_source_test_hook") => {
+      set_proxy_pricing_model_source_test_hook(args)
+      true
+    }
+    Some("get_provider_health") => {
+      check_proxy_provider_health(args)
+      true
+    }
+    Some("get_circuit_breaker_stats") => {
+      check_proxy_circuit_breaker_stats(args)
+      true
+    }
+    Some("reset_circuit_breaker") => {
+      reset_proxy_circuit_breaker(args)
+      true
+    }
+    Some("get_available_providers_for_failover") => {
+      check_proxy_available_failover_providers(args)
+      true
+    }
+    Some("is_live_takeover_active") => {
+      check_proxy_endpoint(args, "/is_live_takeover_active")
+      true
+    }
+    Some("switch_proxy_provider") => {
+      switch_proxy_provider(args)
+      true
+    }
+    Some("is_proxy_running") => {
+      check_proxy_running(args)
       true
     }
     Some("suite_manifest") => {
