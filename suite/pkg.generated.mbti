@@ -2,6 +2,29 @@
 package "vectie/moonstat/suite"
 
 // Values
+pub fn base_url(String, Int) -> String
+
+pub fn claude_desktop_base_url(String, Int) -> String
+
+pub fn default_host() -> String
+
+pub fn default_model() -> String
+
+pub fn default_port() -> Int
+
+pub fn manifest_contract() -> String
+
+pub fn normalize_host(String) -> String
+
+pub fn openai_base_url(String, Int) -> String
+
+pub fn project_name() -> String
+
+pub fn service_name() -> String
+
+pub fn status_contract() -> String
+
+pub fn version() -> String
 
 // Errors
 

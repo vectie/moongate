@@ -8,12 +8,12 @@ pub fn moonstat_suite_manifest_json(
   model? : String = "gpt-5",
 ) -> Json {
   {
-    "contract": Json::string("moon.suite.service.v1"),
-    "service": Json::string("moonstat"),
-    "project": Json::string("moonstat"),
-    "version": Json::string("0.1.0"),
+    "contract": Json::string(@suite.manifest_contract()),
+    "service": Json::string(@suite.service_name()),
+    "project": Json::string(@suite.project_name()),
+    "version": Json::string(@suite.version()),
     "role": Json::string("network-edge"),
-    "default_host": Json::string(suite_url_host(host)),
+    "default_host": Json::string(@suite.normalize_host(host)),
     "default_port": Json::number(port.to_double()),
     "base_url": Json::string(moonstat_base_url(host, port)),
     "openai_base_url": Json::string(moonstat_openai_base_url(host, port)),
@@ -125,8 +125,8 @@ pub fn moonstat_suite_status_json(
   ready? : Bool = true,
 ) -> Json {
   {
-    "contract": Json::string("moon.suite.status.v1"),
-    "service": Json::string("moonstat"),
+    "contract": Json::string(@suite.status_contract()),
+    "service": Json::string(@suite.service_name()),
     "status": Json::string(status),
     "ready": Json::boolean(ready),
     "manifest": moonstat_suite_manifest_json(host~, port~, model~),
@@ -242,26 +242,17 @@ fn default_moonstat_dir() -> String {
 
 ///|
 fn moonstat_base_url(host : String, port : Int) -> String {
-  "http://\{suite_url_host(host)}:\{port}"
+  @suite.base_url(host, port)
 }
 
 ///|
 fn moonstat_openai_base_url(host : String, port : Int) -> String {
-  "\{moonstat_base_url(host, port)}/v1"
+  @suite.openai_base_url(host, port)
 }
 
 ///|
 fn moonstat_claude_desktop_base_url(host : String, port : Int) -> String {
-  "\{moonstat_base_url(host, port)}/claude-desktop/v1"
-}
-
-///|
-fn suite_url_host(host : String) -> String {
-  if host == "0.0.0.0" || host == "::" {
-    "127.0.0.1"
-  } else {
-    host
-  }
+  @suite.claude_desktop_base_url(host, port)
 }
 
 ///|

@@ -91,7 +91,7 @@ pub fn MoonstatClient::from_host(
   user_agent? : String? = None,
 ) -> MoonstatClient {
   MoonstatClient::new(
-    base_url=moonstat_base_url(host, port),
+    base_url=@suite.base_url(host, port),
     api_key~,
     user_agent~,
   )
