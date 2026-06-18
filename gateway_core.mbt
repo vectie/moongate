@@ -250,10 +250,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.config.handle_delete_db_backup(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/parse_deeplink", (r, w) => {
-    self.handle_parse_deeplink(r, w)
+    self.config.handle_parse_deeplink(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/parse_deeplink", (r, w) => {
-    self.handle_parse_deeplink(r, w)
+    self.config.handle_parse_deeplink(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/merge_deeplink_config", (r, w) => {
     self.config.handle_merge_deeplink_config(r, w)

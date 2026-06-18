@@ -1,6 +1,6 @@
 ///|
-async fn Gateway::handle_parse_deeplink(
-  self : Gateway,
+async fn ConfigService::handle_parse_deeplink(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
