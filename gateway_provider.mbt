@@ -2549,11 +2549,11 @@ fn provider_endpoint_latency_result_json(raw_url : String) -> Json {
 }
 
 ///|
-fn Gateway::selected_provider_chain(
-  self : Gateway,
+fn ProxyService::selected_provider_chain(
+  self : ProxyService,
   app_type : String,
 ) -> Array[ProviderRouteTarget] {
-  let selection = self.proxy.provider_router.select_providers(app_type)
+  let selection = self.provider_router.select_providers(app_type)
   if selection.is_ok() {
     selection.providers
   } else {
@@ -2562,8 +2562,9 @@ fn Gateway::selected_provider_chain(
 }
 
 ///|
-fn Gateway::claude_provider_outbound_body(
-  self : Gateway,
+fn ProxyService::claude_provider_outbound_body(
+  _self : ProxyService,
+  gemini_shadow : GeminiShadowStore,
   provider : ProviderRouteTarget,
   upstream_body : Json,
   api_format : String,
@@ -2577,7 +2578,7 @@ fn Gateway::claude_provider_outbound_body(
       explicit_prompt_cache_key=provider.prompt_cache_key,
       is_codex_oauth=provider.provider_type == Some("codex_oauth"),
       codex_fast_mode=provider.codex_fast_mode,
-      gemini_shadow_turns=self.gemini_shadow.session_turns(
+      gemini_shadow_turns=gemini_shadow.session_turns(
         provider.provider_id,
         session_id,
       ),

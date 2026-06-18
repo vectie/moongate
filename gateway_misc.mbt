@@ -5214,7 +5214,7 @@ async fn Gateway::handle_messages(
               r.path.to_owned(),
               active_provider,
               app_type,
-              self.selected_provider_chain(app_type),
+              self.proxy.selected_provider_chain(app_type),
               [],
               anthropic_beta,
               upstream_session_id,
@@ -5228,7 +5228,7 @@ async fn Gateway::handle_messages(
               r.path.to_owned(),
               active_provider,
               app_type,
-              self.selected_provider_chain(app_type),
+              self.proxy.selected_provider_chain(app_type),
               [],
               anthropic_beta,
               upstream_session_id,
@@ -5311,8 +5311,12 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
       session_id is Some(_),
     ),
   )
-  let outbound = self.claude_provider_outbound_body(
-    provider, upstream_body, api_format, session_id,
+  let outbound = self.proxy.claude_provider_outbound_body(
+    self.gemini_shadow,
+    provider,
+    upstream_body,
+    api_format,
+    session_id,
   )
   match
     self.proxy.post_claude_compatible_provider_json(
@@ -5369,7 +5373,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         ) {
         let retry_body = replace_image_blocks_with_marker(upstream_body)
         if retry_body.count > 0 {
-          let retry_outbound = self.claude_provider_outbound_body(
+          let retry_outbound = self.proxy.claude_provider_outbound_body(
+            self.gemini_shadow,
             provider,
             retry_body.body,
             api_format,
@@ -5399,7 +5404,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             self.logger.info(
               "CCS rectifier retry triggered: \{rectifier_retry.kind} (\{rectifier_retry.summary})",
             )
-            let retry_outbound = self.claude_provider_outbound_body(
+            let retry_outbound = self.proxy.claude_provider_outbound_body(
+              self.gemini_shadow,
               provider,
               rectifier_retry.body,
               api_format,
@@ -6642,8 +6648,12 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       session_id is Some(_),
     ),
   )
-  let outbound = self.claude_provider_outbound_body(
-    provider, upstream_body, api_format, session_id,
+  let outbound = self.proxy.claude_provider_outbound_body(
+    self.gemini_shadow,
+    provider,
+    upstream_body,
+    api_format,
+    session_id,
   )
   let base_url = provider.base_url.unwrap()
   let api_key = provider.api_key.unwrap()
@@ -6674,7 +6684,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     if moon_media_retry_should_trigger(response.code, error_body, upstream_body) {
       let retry_body = replace_image_blocks_with_marker(upstream_body)
       if retry_body.count > 0 {
-        let retry_outbound = self.claude_provider_outbound_body(
+        let retry_outbound = self.proxy.claude_provider_outbound_body(
+          self.gemini_shadow,
           provider,
           retry_body.body,
           api_format,
@@ -6752,7 +6763,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         self.logger.info(
           "CCS rectifier stream retry triggered: \{rectifier_retry.kind} (\{rectifier_retry.summary})",
         )
-        let retry_outbound = self.claude_provider_outbound_body(
+        let retry_outbound = self.proxy.claude_provider_outbound_body(
+          self.gemini_shadow,
           provider,
           rectifier_retry.body,
           api_format,

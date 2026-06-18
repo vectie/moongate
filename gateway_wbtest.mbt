@@ -2411,7 +2411,8 @@ async test "provider config endpoints are owned by proxy service" {
       "post_claude_compatible_provider_json", "activate_provider", "activate_first_available_provider",
       "activate_first_available_provider_excluding", "activate_provider_target",
       "activate_next_provider_after_upstream_status", "active_provider_target", "forward_gemini_get",
-      "forward_gemini_post", "all_provider_circuits_open",
+      "forward_gemini_post", "all_provider_circuits_open", "selected_provider_chain",
+      "claude_provider_outbound_body",
     ] {
     assert_true(sources.contains("fn ProxyService::\{helper}("))
     assert_false(sources.contains("async fn Gateway::\{helper}("))
