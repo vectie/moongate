@@ -696,8 +696,8 @@ fn moon_extract_openclaw_common_config(settings : Json) -> String {
 }
 
 ///|
-async fn Gateway::handle_get_config_status(
-  self : Gateway,
+async fn ConfigService::handle_get_config_status(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
   app : String,
 ) -> Unit {
@@ -706,8 +706,8 @@ async fn Gateway::handle_get_config_status(
 }
 
 ///|
-async fn Gateway::handle_get_config_status_request(
-  self : Gateway,
+async fn ConfigService::handle_get_config_status_request(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -718,8 +718,8 @@ async fn Gateway::handle_get_config_status_request(
 }
 
 ///|
-async fn Gateway::handle_get_claude_code_config_path(
-  self : Gateway,
+async fn ConfigService::handle_get_claude_code_config_path(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -727,8 +727,8 @@ async fn Gateway::handle_get_claude_code_config_path(
 }
 
 ///|
-async fn Gateway::handle_get_config_dir(
-  self : Gateway,
+async fn ConfigService::handle_get_config_dir(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -739,8 +739,8 @@ async fn Gateway::handle_get_config_dir(
 }
 
 ///|
-async fn Gateway::handle_open_config_folder(
-  self : Gateway,
+async fn ConfigService::handle_open_config_folder(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -792,8 +792,8 @@ async fn Gateway::handle_create_db_backup(
 }
 
 ///|
-async fn Gateway::handle_list_db_backups(
-  self : Gateway,
+async fn ConfigService::handle_list_db_backups(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -819,8 +819,8 @@ async fn Gateway::handle_restore_db_backup(
 }
 
 ///|
-async fn Gateway::handle_rename_db_backup(
-  self : Gateway,
+async fn ConfigService::handle_rename_db_backup(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -845,8 +845,8 @@ async fn Gateway::handle_rename_db_backup(
 }
 
 ///|
-async fn Gateway::handle_delete_db_backup(
-  self : Gateway,
+async fn ConfigService::handle_delete_db_backup(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -864,8 +864,8 @@ async fn Gateway::handle_delete_db_backup(
 }
 
 ///|
-async fn Gateway::handle_merge_deeplink_config(
-  self : Gateway,
+async fn ConfigService::handle_merge_deeplink_config(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -940,8 +940,8 @@ async fn Gateway::handle_s3_sync_save_settings(
 }
 
 ///|
-async fn Gateway::handle_get_skill_backups(
-  self : Gateway,
+async fn ConfigService::handle_get_skill_backups(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -949,8 +949,8 @@ async fn Gateway::handle_get_skill_backups(
 }
 
 ///|
-async fn Gateway::handle_delete_skill_backup(
-  self : Gateway,
+async fn ConfigService::handle_delete_skill_backup(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -965,8 +965,8 @@ async fn Gateway::handle_delete_skill_backup(
 }
 
 ///|
-async fn Gateway::handle_restore_skill_backup(
-  self : Gateway,
+async fn ConfigService::handle_restore_skill_backup(
+  self : ConfigService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -984,8 +984,8 @@ async fn Gateway::handle_restore_skill_backup(
 }
 
 ///|
-async fn Gateway::handle_get_app_config_path(
-  self : Gateway,
+async fn ConfigService::handle_get_app_config_path(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -993,8 +993,8 @@ async fn Gateway::handle_get_app_config_path(
 }
 
 ///|
-async fn Gateway::handle_open_app_config_folder(
-  self : Gateway,
+async fn ConfigService::handle_open_app_config_folder(
+  self : ConfigService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -1002,6 +1002,127 @@ async fn Gateway::handle_open_app_config_folder(
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
   }
+}
+
+///|
+async fn Gateway::handle_get_config_status(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+  app : String,
+) -> Unit {
+  self.config.handle_get_config_status(w, app)
+}
+
+///|
+async fn Gateway::handle_get_config_status_request(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_get_config_status_request(r, w)
+}
+
+///|
+async fn Gateway::handle_get_claude_code_config_path(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_get_claude_code_config_path(w)
+}
+
+///|
+async fn Gateway::handle_get_config_dir(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_get_config_dir(r, w)
+}
+
+///|
+async fn Gateway::handle_open_config_folder(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_open_config_folder(r, w)
+}
+
+///|
+async fn Gateway::handle_list_db_backups(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_list_db_backups(w)
+}
+
+///|
+async fn Gateway::handle_rename_db_backup(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_rename_db_backup(r, w)
+}
+
+///|
+async fn Gateway::handle_delete_db_backup(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_delete_db_backup(r, w)
+}
+
+///|
+async fn Gateway::handle_merge_deeplink_config(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_merge_deeplink_config(r, w)
+}
+
+///|
+async fn Gateway::handle_get_skill_backups(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_get_skill_backups(w)
+}
+
+///|
+async fn Gateway::handle_delete_skill_backup(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_delete_skill_backup(r, w)
+}
+
+///|
+async fn Gateway::handle_restore_skill_backup(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_restore_skill_backup(r, w)
+}
+
+///|
+async fn Gateway::handle_get_app_config_path(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_get_app_config_path(w)
+}
+
+///|
+async fn Gateway::handle_open_app_config_folder(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.config.handle_open_app_config_folder(w)
 }
 
 ///|
