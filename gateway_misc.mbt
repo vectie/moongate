@@ -838,9 +838,9 @@ async fn moon_delete_single_env_conflict(
   conflict : Json,
 ) -> Result[Unit, String] {
   guard conflict is Object(obj) else { return Err("invalid_conflict") }
-  let source_type = moon_env_conflict_string(obj, "sourceType", "source_type")
-  let var_name = moon_env_conflict_string(obj, "varName", "var_name")
-  let source_path = moon_env_conflict_string(obj, "sourcePath", "source_path")
+  let source_type = moon_env_conflict_string(obj, "sourceType")
+  let var_name = moon_env_conflict_string(obj, "varName")
+  let source_path = moon_env_conflict_string(obj, "sourcePath")
   match (source_type, var_name, source_path) {
     (Some("file"), Some(var_name), Some(source_path)) => {
       let file_path = moon_env_source_file_path(source_path)
@@ -874,10 +874,10 @@ async fn moon_restore_single_env_conflict(
   conflict : Json,
 ) -> Result[Unit, String] {
   guard conflict is Object(obj) else { return Err("invalid_conflict") }
-  let source_type = moon_env_conflict_string(obj, "sourceType", "source_type")
-  let var_name = moon_env_conflict_string(obj, "varName", "var_name")
-  let var_value = moon_env_conflict_string(obj, "varValue", "var_value")
-  let source_path = moon_env_conflict_string(obj, "sourcePath", "source_path")
+  let source_type = moon_env_conflict_string(obj, "sourceType")
+  let var_name = moon_env_conflict_string(obj, "varName")
+  let var_value = moon_env_conflict_string(obj, "varValue")
+  let source_path = moon_env_conflict_string(obj, "sourcePath")
   match (source_type, var_name, var_value, source_path) {
     (Some("file"), Some(var_name), Some(var_value), Some(source_path)) => {
       let file_path = moon_env_source_file_path(source_path)
@@ -915,18 +915,10 @@ fn moon_env_conflicts_from_body(body : Json?) -> Array[Json] {
 }
 
 ///|
-fn moon_env_conflict_string(
-  obj : Map[String, Json],
-  key : String,
-  alt : String,
-) -> String? {
+fn moon_env_conflict_string(obj : Map[String, Json], key : String) -> String? {
   match obj.get(key) {
     Some(String(value)) => Some(value)
-    _ =>
-      match obj.get(alt) {
-        Some(String(value)) => Some(value)
-        _ => None
-      }
+    _ => None
   }
 }
 

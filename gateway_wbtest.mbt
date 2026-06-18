@@ -9641,6 +9641,18 @@ async test "moonstat env helpers scan delete and restore file conflicts" {
 }
 
 ///|
+async test "moonstat env conflict helpers reject retired snake case keys" {
+  let conflict = {
+    "source_type": Json::string("system"),
+    "var_name": Json::string("OPENAI_API_KEY"),
+    "var_value": Json::string("sk-legacy"),
+    "source_path": Json::string("/tmp/.zshrc:1"),
+  }.to_json()
+  assert_true(moon_delete_single_env_conflict(conflict) is Err(_))
+  assert_true(moon_restore_single_env_conflict(conflict) is Err(_))
+}
+
+///|
 test "moonstat config request helpers ignore retired snake case aliases" {
   assert_eq(
     proxy_string_request(
