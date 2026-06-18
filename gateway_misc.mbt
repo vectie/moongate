@@ -3302,8 +3302,8 @@ async fn Gateway::handle_s3_sync_fetch_remote_info(
 }
 
 ///|
-async fn Gateway::handle_disable_current_omo(
-  self : Gateway,
+async fn ProxyService::handle_disable_current_omo(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
   slim~ : Bool,
 ) -> Unit {

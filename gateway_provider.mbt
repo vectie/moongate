@@ -652,8 +652,8 @@ fn provider_settings_config_from_env(keys : Array[String]) -> Json? {
 }
 
 ///|
-async fn Gateway::handle_get_current_omo_provider_id(
-  self : Gateway,
+async fn ProxyService::handle_get_current_omo_provider_id(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
   slim~ : Bool,
 ) -> Unit {

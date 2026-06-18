@@ -306,13 +306,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.workspace.handle_read_omo_local_file(w, slim=false)
   })
   router.add_handler(@httpx.Method::Get, "/get_current_omo_provider_id", (_, w) => {
-    self.handle_get_current_omo_provider_id(w, slim=false)
+    self.proxy.handle_get_current_omo_provider_id(w, slim=false)
   })
   router.add_handler(@httpx.Method::Post, "/get_current_omo_provider_id", (_, w) => {
-    self.handle_get_current_omo_provider_id(w, slim=false)
+    self.proxy.handle_get_current_omo_provider_id(w, slim=false)
   })
   router.add_handler(@httpx.Method::Post, "/disable_current_omo", (_, w) => {
-    self.handle_disable_current_omo(w, slim=false)
+    self.proxy.handle_disable_current_omo(w, slim=false)
   })
   router.add_handler(@httpx.Method::Get, "/read_omo_slim_local_file", (_, w) => {
     self.workspace.handle_read_omo_local_file(w, slim=true)
@@ -323,13 +323,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/get_current_omo_slim_provider_id", (
     _,
     w,
-  ) => self.handle_get_current_omo_provider_id(w, slim=true))
+  ) => self.proxy.handle_get_current_omo_provider_id(w, slim=true))
   router.add_handler(@httpx.Method::Post, "/get_current_omo_slim_provider_id", (
     _,
     w,
-  ) => self.handle_get_current_omo_provider_id(w, slim=true))
+  ) => self.proxy.handle_get_current_omo_provider_id(w, slim=true))
   router.add_handler(@httpx.Method::Post, "/disable_current_omo_slim", (_, w) => {
-    self.handle_disable_current_omo(w, slim=true)
+    self.proxy.handle_disable_current_omo(w, slim=true)
   })
   router.add_handler(@httpx.Method::Post, "/open_file_dialog", (_, w) => {
     self.workspace.handle_open_file_dialog(w)

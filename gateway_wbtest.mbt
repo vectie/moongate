@@ -2254,7 +2254,8 @@ async test "provider config endpoints are owned by proxy service" {
   let provider_source = @fsx.read_file("gateway_provider.mbt")
   let config_source = @fsx.read_file("gateway_config.mbt")
   let misc_source = @fsx.read_file("gateway_misc.mbt")
-  let sources = provider_source + config_source + misc_source
+  let omo_source = @fsx.read_file("omo.mbt")
+  let sources = provider_source + config_source + misc_source + omo_source
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
@@ -2262,7 +2263,8 @@ async test "provider config endpoints are owned by proxy service" {
       "handle_ensure_claude_desktop_official_provider", "handle_scan_local_proxies",
       "handle_test_api_endpoints", "handle_get_custom_endpoints", "handle_add_custom_endpoint",
       "handle_remove_custom_endpoint", "handle_update_endpoint_last_used", "handle_get_claude_desktop_status",
-      "handle_get_claude_desktop_default_routes",
+      "handle_get_claude_desktop_default_routes", "handle_get_current_omo_provider_id",
+      "handle_disable_current_omo",
     ] {
     assert_true(sources.contains("async fn ProxyService::\{handler}("))
     assert_false(sources.contains("async fn Gateway::\{handler}("))
@@ -2272,9 +2274,15 @@ async test "provider config endpoints are owned by proxy service" {
       "fn ProxyService::current_claude_desktop_provider(",
     ),
   )
+  assert_true(omo_source.contains("fn ProxyService::current_omo_provider_id("))
+  assert_true(
+    omo_source.contains("fn ProxyService::clear_current_omo_provider("),
+  )
   assert_false(
     provider_source.contains("fn Gateway::current_claude_desktop_provider("),
   )
+  assert_false(omo_source.contains("fn Gateway::current_omo_provider_id("))
+  assert_false(omo_source.contains("fn Gateway::clear_current_omo_provider("))
   assert_true(
     core_source.contains("self.proxy.handle_import_default_config(r, w)"),
   )
@@ -2313,6 +2321,22 @@ async test "provider config endpoints are owned by proxy service" {
     core_source.contains(
       "self.proxy.handle_get_claude_desktop_default_routes(w)",
     ),
+  )
+  assert_true(
+    core_source.contains(
+      "self.proxy.handle_get_current_omo_provider_id(w, slim=false)",
+    ),
+  )
+  assert_true(
+    core_source.contains(
+      "self.proxy.handle_get_current_omo_provider_id(w, slim=true)",
+    ),
+  )
+  assert_true(
+    core_source.contains("self.proxy.handle_disable_current_omo(w, slim=false)"),
+  )
+  assert_true(
+    core_source.contains("self.proxy.handle_disable_current_omo(w, slim=true)"),
   )
 }
 

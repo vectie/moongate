@@ -82,12 +82,12 @@ test "ccs omo current provider helpers use opencode category" {
     ),
   )
   gateway.proxy.provider_router.set_current_provider("opencode", "omo-a")
-  assert_eq(gateway.current_omo_provider_id(false), "omo-a")
-  assert_eq(gateway.current_omo_provider_id(true), "")
-  gateway.clear_current_omo_provider(false)
+  assert_eq(gateway.proxy.current_omo_provider_id(false), "omo-a")
+  assert_eq(gateway.proxy.current_omo_provider_id(true), "")
+  gateway.proxy.clear_current_omo_provider(false)
   assert_eq(gateway.proxy.provider_router.current_provider_id("opencode"), None)
   gateway.proxy.provider_router.set_current_provider("opencode", "plain")
-  gateway.clear_current_omo_provider(false)
+  gateway.proxy.clear_current_omo_provider(false)
   assert_eq(
     gateway.proxy.provider_router.current_provider_id("opencode"),
     Some("plain"),
