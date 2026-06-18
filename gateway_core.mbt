@@ -344,7 +344,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.workspace.handle_open_zip_file_dialog(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_installed_skills", (_, w) => {
-    self.handle_get_installed_skills(w)
+    self.skills.handle_get_installed_skills(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_skill_backups", (_, w) => {
     self.config.handle_get_skill_backups(w)
@@ -356,67 +356,67 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.config.handle_restore_skill_backup(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/install_skill_unified", (r, w) => {
-    self.handle_install_skill_unified(r, w)
+    self.skills.handle_install_skill_unified(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/uninstall_skill_unified", (r, w) => {
-    self.handle_uninstall_skill_unified(r, w)
+    self.skills.handle_uninstall_skill_unified(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/toggle_skill_app", (r, w) => {
-    self.handle_toggle_skill_app(r, w)
+    self.skills.handle_toggle_skill_app(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/scan_unmanaged_skills", (_, w) => {
-    self.handle_scan_unmanaged_skills(w)
+    self.skills.handle_scan_unmanaged_skills(w)
   })
   router.add_handler(@httpx.Method::Post, "/import_skills_from_apps", (r, w) => {
-    self.handle_import_skills_from_apps(r, w)
+    self.skills.handle_import_skills_from_apps(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/discover_available_skills", (_, w) => {
-    self.handle_discover_available_skills(w)
+    self.skills.handle_discover_available_skills(w)
   })
   router.add_handler(@httpx.Method::Get, "/check_skill_updates", (_, w) => {
-    self.handle_check_skill_updates(w)
+    self.skills.handle_check_skill_updates(w)
   })
   router.add_handler(@httpx.Method::Post, "/update_skill", (r, w) => {
-    self.handle_update_skill(r, w)
+    self.skills.handle_update_skill(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/migrate_skill_storage", (r, w) => {
-    self.handle_migrate_skill_storage(r, w)
+    self.skills.handle_migrate_skill_storage(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/search_skills_sh", (r, w) => {
-    self.handle_search_skills_sh(r, w)
+    self.skills.handle_search_skills_sh(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/search_skills_sh", (r, w) => {
-    self.handle_search_skills_sh(r, w)
+    self.skills.handle_search_skills_sh(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_skills", (_, w) => {
-    self.handle_get_skills(w)
+    self.skills.handle_get_skills(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_skills_for_app", (_, w) => {
-    self.handle_get_skills(w)
+    self.skills.handle_get_skills(w)
   })
   router.add_handler(@httpx.Method::Post, "/install_skill", (r, w) => {
-    self.handle_install_skill_legacy(r, w, "claude")
+    self.skills.handle_install_skill_legacy(r, w, "claude")
   })
   router.add_handler(@httpx.Method::Post, "/install_skill_for_app", (r, w) => {
-    self.handle_install_skill_for_app(r, w)
+    self.skills.handle_install_skill_for_app(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/uninstall_skill", (r, w) => {
-    self.handle_uninstall_skill_legacy(r, w)
+    self.skills.handle_uninstall_skill_legacy(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/uninstall_skill_for_app", (r, w) => {
-    self.handle_uninstall_skill_legacy(r, w)
+    self.skills.handle_uninstall_skill_legacy(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_skill_repos", (_, w) => {
-    self.handle_get_skill_repos(w)
+    self.skills.handle_get_skill_repos(w)
   })
   router.add_handler(@httpx.Method::Post, "/add_skill_repo", (r, w) => {
-    self.handle_add_skill_repo(r, w)
+    self.skills.handle_add_skill_repo(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/remove_skill_repo", (r, w) => {
-    self.handle_remove_skill_repo(r, w)
+    self.skills.handle_remove_skill_repo(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/install_skills_from_zip", (r, w) => {
-    self.handle_install_skills_from_zip(r, w)
+    self.skills.handle_install_skills_from_zip(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_app_config_path", (_, w) => {
     self.config.handle_get_app_config_path(w)

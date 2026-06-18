@@ -20,6 +20,8 @@ pub struct Gateway {
   workspace : WorkspaceService
   /// App runtime status and local tool lifecycle operations
   runtime : RuntimeService
+  /// Skill discovery, installation, migration, and repository operations
+  skills : SkillService
   /// OpenClaw and Hermes provider config
   openclaw : OpenClawService
 }
@@ -45,6 +47,7 @@ pub fn Gateway::new(
     session: SessionService::new(),
     workspace: WorkspaceService::new(),
     runtime: RuntimeService::new(),
+    skills: SkillService::new(),
     openclaw: OpenClawService::new(),
   }
 }
@@ -3309,8 +3312,8 @@ async fn Gateway::handle_disable_current_omo(
 }
 
 ///|
-async fn Gateway::handle_get_installed_skills(
-  self : Gateway,
+async fn SkillService::handle_get_installed_skills(
+  self : SkillService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -3318,8 +3321,8 @@ async fn Gateway::handle_get_installed_skills(
 }
 
 ///|
-async fn Gateway::handle_install_skill_unified(
-  self : Gateway,
+async fn SkillService::handle_install_skill_unified(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3366,8 +3369,8 @@ async fn Gateway::handle_install_skill_unified(
 }
 
 ///|
-async fn Gateway::handle_uninstall_skill_unified(
-  self : Gateway,
+async fn SkillService::handle_uninstall_skill_unified(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3381,8 +3384,8 @@ async fn Gateway::handle_uninstall_skill_unified(
 }
 
 ///|
-async fn Gateway::handle_toggle_skill_app(
-  self : Gateway,
+async fn SkillService::handle_toggle_skill_app(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3405,8 +3408,8 @@ async fn Gateway::handle_toggle_skill_app(
 }
 
 ///|
-async fn Gateway::handle_scan_unmanaged_skills(
-  self : Gateway,
+async fn SkillService::handle_scan_unmanaged_skills(
+  self : SkillService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -3414,8 +3417,8 @@ async fn Gateway::handle_scan_unmanaged_skills(
 }
 
 ///|
-async fn Gateway::handle_import_skills_from_apps(
-  self : Gateway,
+async fn SkillService::handle_import_skills_from_apps(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3434,8 +3437,8 @@ async fn Gateway::handle_import_skills_from_apps(
 }
 
 ///|
-async fn Gateway::handle_discover_available_skills(
-  self : Gateway,
+async fn SkillService::handle_discover_available_skills(
+  self : SkillService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -3443,8 +3446,8 @@ async fn Gateway::handle_discover_available_skills(
 }
 
 ///|
-async fn Gateway::handle_check_skill_updates(
-  self : Gateway,
+async fn SkillService::handle_check_skill_updates(
+  self : SkillService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -3452,8 +3455,8 @@ async fn Gateway::handle_check_skill_updates(
 }
 
 ///|
-async fn Gateway::handle_update_skill(
-  self : Gateway,
+async fn SkillService::handle_update_skill(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3467,8 +3470,8 @@ async fn Gateway::handle_update_skill(
 }
 
 ///|
-async fn Gateway::handle_migrate_skill_storage(
-  self : Gateway,
+async fn SkillService::handle_migrate_skill_storage(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3482,8 +3485,8 @@ async fn Gateway::handle_migrate_skill_storage(
 }
 
 ///|
-async fn Gateway::handle_search_skills_sh(
-  self : Gateway,
+async fn SkillService::handle_search_skills_sh(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3496,8 +3499,8 @@ async fn Gateway::handle_search_skills_sh(
 }
 
 ///|
-async fn Gateway::handle_get_skills(
-  self : Gateway,
+async fn SkillService::handle_get_skills(
+  self : SkillService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -3505,8 +3508,8 @@ async fn Gateway::handle_get_skills(
 }
 
 ///|
-async fn Gateway::handle_install_skill_legacy(
-  self : Gateway,
+async fn SkillService::handle_install_skill_legacy(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
   app : String,
@@ -3534,8 +3537,8 @@ async fn Gateway::handle_install_skill_legacy(
 }
 
 ///|
-async fn Gateway::handle_install_skill_for_app(
-  self : Gateway,
+async fn SkillService::handle_install_skill_for_app(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3565,8 +3568,8 @@ async fn Gateway::handle_install_skill_for_app(
 }
 
 ///|
-async fn Gateway::handle_uninstall_skill_legacy(
-  self : Gateway,
+async fn SkillService::handle_uninstall_skill_legacy(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3580,8 +3583,8 @@ async fn Gateway::handle_uninstall_skill_legacy(
 }
 
 ///|
-async fn Gateway::handle_get_skill_repos(
-  self : Gateway,
+async fn SkillService::handle_get_skill_repos(
+  self : SkillService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -3589,8 +3592,8 @@ async fn Gateway::handle_get_skill_repos(
 }
 
 ///|
-async fn Gateway::handle_add_skill_repo(
-  self : Gateway,
+async fn SkillService::handle_add_skill_repo(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3648,8 +3651,8 @@ fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
 }
 
 ///|
-async fn Gateway::handle_remove_skill_repo(
-  self : Gateway,
+async fn SkillService::handle_remove_skill_repo(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -3667,8 +3670,8 @@ async fn Gateway::handle_remove_skill_repo(
 }
 
 ///|
-async fn Gateway::handle_install_skills_from_zip(
-  self : Gateway,
+async fn SkillService::handle_install_skills_from_zip(
+  self : SkillService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {

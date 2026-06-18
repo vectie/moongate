@@ -393,6 +393,7 @@ pub struct Gateway {
   session : SessionService
   workspace : WorkspaceService
   runtime : RuntimeService
+  skills : SkillService
   openclaw : OpenClawService
 }
 pub fn Gateway::host(Self) -> String
@@ -712,6 +713,10 @@ pub struct SessionSyncResult {
 }
 pub fn SessionSyncResult::new() -> Self
 pub fn SessionSyncResult::to_json(Self) -> Json
+
+pub struct SkillService {
+}
+pub fn SkillService::new() -> Self
 
 type StreamCheckConfig
 

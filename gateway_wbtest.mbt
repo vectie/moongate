@@ -2158,6 +2158,32 @@ async test "runtime endpoints are owned by runtime service" {
 }
 
 ///|
+async test "skill endpoints are owned by skill service" {
+  let skill_source = @fsx.read_file("gateway_misc.mbt")
+  let core_source = @fsx.read_file("gateway_core.mbt")
+  for
+    handler in [
+      "handle_get_installed_skills", "handle_install_skill_unified", "handle_uninstall_skill_unified",
+      "handle_toggle_skill_app", "handle_scan_unmanaged_skills", "handle_import_skills_from_apps",
+      "handle_discover_available_skills", "handle_check_skill_updates", "handle_update_skill",
+      "handle_migrate_skill_storage", "handle_search_skills_sh", "handle_get_skills",
+      "handle_install_skill_legacy", "handle_install_skill_for_app", "handle_uninstall_skill_legacy",
+      "handle_get_skill_repos", "handle_add_skill_repo", "handle_remove_skill_repo",
+      "handle_install_skills_from_zip",
+    ] {
+    assert_true(skill_source.contains("async fn SkillService::\{handler}("))
+    assert_false(skill_source.contains("async fn Gateway::\{handler}("))
+  }
+  assert_true(
+    core_source.contains("self.skills.handle_get_installed_skills(w)"),
+  )
+  assert_true(
+    core_source.contains("self.skills.handle_install_skill_unified(r, w)"),
+  )
+  assert_true(core_source.contains("self.skills.handle_add_skill_repo(r, w)"))
+}
+
+///|
 test "standalone tray update mirrors ccs no tray result" {
   assert_eq(moon_update_tray_menu_result(), Json::boolean(false))
 }

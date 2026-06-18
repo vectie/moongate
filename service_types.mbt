@@ -149,6 +149,15 @@ pub fn RuntimeService::new() -> RuntimeService {
 }
 
 ///|
+/// SkillService handles skill discovery, install, migration, and repository endpoints.
+pub struct SkillService {}
+
+///|
+pub fn SkillService::new() -> SkillService {
+  SkillService::{  }
+}
+
+///|
 /// OpenClawService handles OpenClaw and Hermes provider configuration.
 pub struct OpenClawService {
   mut openclaw_default_model : Json?
