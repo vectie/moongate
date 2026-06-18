@@ -4626,7 +4626,7 @@ test "claude desktop status reports direct provider base url" {
 ///|
 async test "gateway applies ccs provider cost multiplier to request log" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.pricing_overrides.set("test-model", ModelPricing::{
+  gateway.usage.pricing_overrides.set("test-model", {
     model_id: "test-model",
     display_name: "Test Model",
     input_cost_per_million: "1.0",
@@ -4680,7 +4680,7 @@ async test "gateway applies ccs provider cost multiplier to request log" {
 ///|
 async test "gateway ignores invalid ccs provider cost multiplier" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.pricing_overrides.set("test-model", ModelPricing::{
+  gateway.usage.pricing_overrides.set("test-model", {
     model_id: "test-model",
     display_name: "Test Model",
     input_cost_per_million: "1.0",
@@ -4730,7 +4730,7 @@ async test "gateway ignores invalid ccs provider cost multiplier" {
 ///|
 async test "gateway applies ccs request pricing model source" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.pricing_overrides.set("request-model", ModelPricing::{
+  gateway.usage.pricing_overrides.set("request-model", {
     model_id: "request-model",
     display_name: "Request Model",
     input_cost_per_million: "1.0",
@@ -4738,7 +4738,7 @@ async test "gateway applies ccs request pricing model source" {
     cache_read_cost_per_million: "0",
     cache_creation_cost_per_million: "0",
   })
-  gateway.usage.pricing_overrides.set("response-model", ModelPricing::{
+  gateway.usage.pricing_overrides.set("response-model", {
     model_id: "response-model",
     display_name: "Response Model",
     input_cost_per_million: "9.0",

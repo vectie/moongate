@@ -33,17 +33,17 @@ fn moon_detect_coding_plan_provider(
 ) -> MoonCodingPlanProvider? {
   let url = base_url.to_lower()
   if url.contains("api.kimi.com/coding") {
-    Some(MoonCodingPlanProvider::Kimi)
+    Some(Kimi)
   } else if url.contains("open.bigmodel.cn") || url.contains("bigmodel.cn") {
-    Some(MoonCodingPlanProvider::ZhipuCn)
+    Some(ZhipuCn)
   } else if url.contains("api.z.ai") {
-    Some(MoonCodingPlanProvider::ZhipuEn)
+    Some(ZhipuEn)
   } else if url.contains("api.minimaxi.com") {
-    Some(MoonCodingPlanProvider::MiniMaxCn)
+    Some(MiniMaxCn)
   } else if url.contains("api.minimax.io") {
-    Some(MoonCodingPlanProvider::MiniMaxEn)
+    Some(MiniMaxEn)
   } else if url.contains("zenmux") {
-    Some(MoonCodingPlanProvider::ZenMux)
+    Some(ZenMux)
   } else {
     None
   }
@@ -70,14 +70,14 @@ async fn moon_get_coding_plan_quota(
 
 ///|
 fn moon_coding_plan_error(message : String) -> SubscriptionQuota {
-  moon_quota_error(CCS_CODING_PLAN_TOOL, CredentialStatus::Valid, message)
+  moon_quota_error(CCS_CODING_PLAN_TOOL, Valid, message)
 }
 
 ///|
 fn moon_coding_plan_auth_error(status_code : Int) -> SubscriptionQuota {
   SubscriptionQuota::new(
     CCS_CODING_PLAN_TOOL,
-    credential_status=CredentialStatus::Expired,
+    credential_status=Expired,
     credential_message=Some("Invalid API key"),
     success=false,
     error=Some("Authentication failed (HTTP \{status_code})"),
@@ -94,7 +94,7 @@ async fn moon_query_kimi_coding_plan(api_key : String) -> SubscriptionQuota {
       expired_message="Authentication failed",
     ) {
     Err(error) =>
-      if error.status == CredentialStatus::Expired {
+      if error.status == Expired {
         moon_coding_plan_auth_error(
           moon_status_code_from_message(error.message),
         )
@@ -180,7 +180,7 @@ async fn moon_query_zhipu_coding_plan(
       expired_message="Authentication failed",
     ) {
     Err(error) =>
-      if error.status == CredentialStatus::Expired {
+      if error.status == Expired {
         moon_coding_plan_auth_error(
           moon_status_code_from_message(error.message),
         )
@@ -297,8 +297,8 @@ fn moon_parse_zhipu_token_tiers(data : Json) -> Array[Json] {
 ///|
 fn moon_classify_zhipu_window(item : Map[String, Json]) -> MoonZhipuWindow? {
   match json_int64_from_map(item, "unit") {
-    Some(3L) => Some(MoonZhipuWindow::FiveHour)
-    Some(6L) => Some(MoonZhipuWindow::Weekly)
+    Some(3L) => Some(FiveHour)
+    Some(6L) => Some(Weekly)
     _ => None
   }
 }
@@ -345,7 +345,7 @@ async fn moon_query_minimax_coding_plan(
       expired_message="Authentication failed",
     ) {
     Err(error) =>
-      if error.status == CredentialStatus::Expired {
+      if error.status == Expired {
         moon_coding_plan_auth_error(
           moon_status_code_from_message(error.message),
         )
@@ -443,7 +443,7 @@ async fn moon_query_zenmux_coding_plan(
       expired_message="Authentication failed",
     ) {
     Err(error) =>
-      if error.status == CredentialStatus::Expired {
+      if error.status == Expired {
         moon_coding_plan_auth_error(
           moon_status_code_from_message(error.message),
         )

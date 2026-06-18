@@ -1239,7 +1239,7 @@ async fn delete_usage_pricing(args : Array[String]) -> Unit {
   try {
     let client = @http.Client::new(url, headers={})
     defer client.close()
-    client.request(@http.RequestMethod::Delete, path)
+    client.request(Delete, path)
     let response = client.end_request()
     if response.code == 200 {
       let body = client.read_all().text()

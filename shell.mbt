@@ -266,7 +266,7 @@ async fn moon_tool_installation_report(
 ) -> MoonToolInstallationReport {
   let installs = moon_enumerate_tool_installations(tool)
   let command = moon_tool_update_command(tool, installs)
-  MoonToolInstallationReport::{
+  {
     tool,
     installs,
     is_conflict: moon_tool_installations_conflict(installs),
@@ -285,7 +285,7 @@ async fn moon_enumerate_tool_installations(
   match moon_command_path(tool) {
     Some(path) => {
       let real = @fsx.resolve(path) catch { _ => path }
-      installs.push(MoonToolInstallation::{
+      installs.push({
         path,
         real,
         version: moon_probe_tool_version_at(path),
@@ -304,7 +304,7 @@ async fn moon_enumerate_tool_installations(
     let exists = @fsx.exists_as_file(path) catch { _ => false }
     if exists {
       let real = @fsx.resolve(path) catch { _ => path }
-      installs.push(MoonToolInstallation::{
+      installs.push({
         path,
         real,
         version: moon_probe_tool_version_at(path),

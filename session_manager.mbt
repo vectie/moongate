@@ -93,7 +93,7 @@ async fn moon_delete_sessions_json(
           error: None,
         }
       Ok(false) =>
-        MoonDeleteSessionOutcome::{
+        {
           provider_id: item.provider_id,
           session_id: item.session_id,
           source_path: item.source_path,
@@ -101,7 +101,7 @@ async fn moon_delete_sessions_json(
           error: Some("Session was not deleted"),
         }
       Err(error) =>
-        MoonDeleteSessionOutcome::{
+        {
           provider_id: item.provider_id,
           session_id: item.session_id,
           source_path: item.source_path,
@@ -261,7 +261,7 @@ fn moon_delete_session_request_from_json(
     is Some(source_path) else {
     return None
   }
-  Some(MoonDeleteSessionRequest::{ provider_id, session_id, source_path })
+  Some({ provider_id, session_id, source_path })
 }
 
 ///|
@@ -342,7 +342,7 @@ async fn moon_session_warp_launch(
     error =>
       return Err("Failed to write to temporary script file for Warp: \{error}")
   }
-  Ok(MoonSessionTerminalLaunch::{
+  Ok({
     program: "open",
     args: [
       "-a",
@@ -365,7 +365,7 @@ fn moon_session_terminal_app_launch(
     "    do script \"\{escaped}\"",
     "end tell",
   ].join("\n")
-  MoonSessionTerminalLaunch::{ program: "osascript", args: ["-e", script] }
+  { program: "osascript", args: ["-e", script] }
 }
 
 ///|
@@ -384,7 +384,7 @@ fn moon_session_iterm_launch(
     "    end tell",
     "end tell",
   ].join("\n")
-  MoonSessionTerminalLaunch::{ program: "osascript", args: ["-e", script] }
+  { program: "osascript", args: ["-e", script] }
 }
 
 ///|
@@ -405,7 +405,7 @@ fn moon_session_ghostty_launch(
   args.push("-l")
   args.push("-c")
   args.push(command)
-  MoonSessionTerminalLaunch::{ program: "open", args }
+  { program: "open", args }
 }
 
 ///|
@@ -413,7 +413,7 @@ fn moon_session_kitty_launch(
   command : String,
   cwd : String?,
 ) -> MoonSessionTerminalLaunch {
-  MoonSessionTerminalLaunch::{
+  {
     program: "open",
     args: [
       "-na",
@@ -446,7 +446,7 @@ fn moon_session_wezterm_like_launch(
   args.push(moon_session_shell())
   args.push("-c")
   args.push(moon_session_shell_command(command, None))
-  MoonSessionTerminalLaunch::{ program: "open", args }
+  { program: "open", args }
 }
 
 ///|
@@ -466,7 +466,7 @@ fn moon_session_alacritty_launch(
   args.push(moon_session_shell())
   args.push("-c")
   args.push(moon_session_shell_command(command, None))
-  MoonSessionTerminalLaunch::{ program: "open", args }
+  { program: "open", args }
 }
 
 ///|
@@ -485,7 +485,7 @@ fn moon_session_custom_launch(
   let final_command = template
     .replace_all(old="{command}", new=command)
     .replace_all(old="{cwd}", new=dir)
-  Ok(MoonSessionTerminalLaunch::{ program: "sh", args: ["-c", final_command] })
+  Ok({ program: "sh", args: ["-c", final_command] })
 }
 
 ///|
@@ -965,15 +965,14 @@ async fn moon_collect_session_files_at(
   }
   let entries = @fsx.list_directory(dir) catch { _ => return }
   for entry in entries {
-    if entry.kind is @fsx.FileKind::Directory {
+    if entry.kind is Directory {
       moon_collect_session_files_at(
         entry.path,
         files,
         depth=depth + 1,
         max_depth~,
       )
-    } else if entry.kind is @fsx.FileKind::Regular &&
-      moon_session_file_name(entry.name) {
+    } else if entry.kind is Regular && moon_session_file_name(entry.name) {
       files.push(entry.path)
     }
   }
@@ -994,14 +993,13 @@ async fn moon_collect_gemini_chat_files(
   }
   let projects = @fsx.list_directory(tmp_dir) catch { _ => return }
   for project in projects {
-    if !(project.kind is @fsx.FileKind::Directory) {
+    if !(project.kind is Directory) {
       continue
     }
     let chats_dir = @pathx.join(project.path, "chats")
     let chats = @fsx.list_directory(chats_dir) catch { _ => continue }
     for chat in chats {
-      if chat.kind is @fsx.FileKind::Regular &&
-        moon_session_file_name(chat.name) {
+      if chat.kind is Regular && moon_session_file_name(chat.name) {
         files.push(chat.path)
       }
     }
@@ -1098,7 +1096,7 @@ fn moon_parse_codex_session_lines(
         None => None
       }
   }
-  Some(MoonSessionMeta::{
+  Some({
     provider_id: "codex",
     session_id: id,
     title,
@@ -1210,7 +1208,7 @@ fn moon_parse_claude_session_lines(
           }
       }
   }
-  Some(MoonSessionMeta::{
+  Some({
     provider_id: "claude",
     session_id: id,
     title,
@@ -1296,7 +1294,7 @@ fn moon_parse_gemini_session_lines(
   if session_id.is_empty() {
     return None
   }
-  Some(MoonSessionMeta::{
+  Some({
     provider_id: "gemini",
     session_id,
     title: first_user_message.map(fn(value) {
@@ -1407,7 +1405,7 @@ fn moon_parse_generic_json_session_lines(
   if id.is_empty() {
     return None
   }
-  Some(MoonSessionMeta::{
+  Some({
     provider_id: provider,
     session_id: id,
     title: moon_first_string(
@@ -1679,7 +1677,7 @@ fn moon_parse_opencode_sqlite_source(
   if db_path.is_empty() || session_id.is_empty() {
     None
   } else {
-    Some(MoonSqliteSessionSource::{ db_path, session_id })
+    Some({ db_path, session_id })
   }
 }
 
@@ -1694,7 +1692,7 @@ fn moon_parse_hermes_sqlite_source(source : String) -> MoonSqliteSessionSource? 
   if db_path.is_empty() || session_id.is_empty() {
     None
   } else {
-    Some(MoonSqliteSessionSource::{ db_path, session_id })
+    Some({ db_path, session_id })
   }
 }
 
@@ -1957,7 +1955,7 @@ async fn moon_read_nonempty_lines(path : String) -> Array[String] {
 
 ///|
 async fn moon_read_session_file_text(path : String) -> String {
-  let file = @fs.open(path, mode=@fs.Mode::ReadOnly)
+  let file = @fs.open(path, mode=ReadOnly)
   defer file.close()
   let size = file.size() catch { _ => moon_session_read_cap.to_int64() }
   let limit = if size < moon_session_read_cap.to_int64() {

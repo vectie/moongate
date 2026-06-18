@@ -399,8 +399,8 @@ test "moonstat sync sha256 and snapshot id match sync protocol" {
     "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
   )
   let artifacts : Map[String, MoonSyncArtifactMeta] = {}
-  artifacts["skills.zip"] = MoonSyncArtifactMeta::{ sha256: "def", size: 2 }
-  artifacts["db.sql"] = MoonSyncArtifactMeta::{ sha256: "abc", size: 1 }
+  artifacts["skills.zip"] = { sha256: "def", size: 2 }
+  artifacts["db.sql"] = { sha256: "abc", size: 1 }
   assert_eq(
     moon_sync_snapshot_id(artifacts),
     moon_sync_sha256_hex(@encoding/utf8.encode("db.sql:abc|skills.zip:def")),

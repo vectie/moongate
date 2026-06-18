@@ -81,7 +81,7 @@ async fn moon_get_claude_subscription_quota() -> SubscriptionQuota {
     ParseError =>
       moon_quota_error(
         "claude",
-        CredentialStatus::ParseError,
+        ParseError,
         creds.message.unwrap_or("Failed to parse credentials"),
       )
     Expired => {
@@ -96,7 +96,7 @@ async fn moon_get_claude_subscription_quota() -> SubscriptionQuota {
       }
       moon_quota_error(
         "claude",
-        CredentialStatus::Expired,
+        Expired,
         creds.message.unwrap_or("OAuth token has expired"),
       )
     }
@@ -106,7 +106,7 @@ async fn moon_get_claude_subscription_quota() -> SubscriptionQuota {
         None =>
           moon_quota_error(
             "claude",
-            CredentialStatus::ParseError,
+            ParseError,
             "accessToken is empty or missing",
           )
       }
@@ -121,7 +121,7 @@ async fn moon_get_codex_subscription_quota() -> SubscriptionQuota {
     ParseError =>
       moon_quota_error(
         "codex",
-        CredentialStatus::ParseError,
+        ParseError,
         creds.message.unwrap_or("Failed to parse credentials"),
       )
     Expired => {
@@ -141,7 +141,7 @@ async fn moon_get_codex_subscription_quota() -> SubscriptionQuota {
       }
       moon_quota_error(
         "codex",
-        CredentialStatus::Expired,
+        Expired,
         creds.message.unwrap_or("Codex OAuth token may be stale"),
       )
     }
@@ -157,7 +157,7 @@ async fn moon_get_codex_subscription_quota() -> SubscriptionQuota {
         None =>
           moon_quota_error(
             "codex",
-            CredentialStatus::ParseError,
+            ParseError,
             "access_token is empty or missing",
           )
       }
@@ -172,7 +172,7 @@ async fn moon_get_codex_oauth_quota(account_id : String?) -> SubscriptionQuota {
     ParseError =>
       moon_quota_error(
         "codex_oauth",
-        CredentialStatus::ParseError,
+        ParseError,
         creds.message.unwrap_or("Failed to parse credentials"),
       )
     Expired => {
@@ -192,7 +192,7 @@ async fn moon_get_codex_oauth_quota(account_id : String?) -> SubscriptionQuota {
       }
       moon_quota_error(
         "codex_oauth",
-        CredentialStatus::Expired,
+        Expired,
         creds.message.unwrap_or("Codex OAuth token unavailable"),
       )
     }
@@ -208,7 +208,7 @@ async fn moon_get_codex_oauth_quota(account_id : String?) -> SubscriptionQuota {
         None =>
           moon_quota_error(
             "codex_oauth",
-            CredentialStatus::ParseError,
+            ParseError,
             "access_token is empty or missing",
           )
       }
@@ -264,7 +264,7 @@ async fn moon_get_gemini_subscription_quota() -> SubscriptionQuota {
     ParseError =>
       moon_quota_error(
         "gemini",
-        CredentialStatus::ParseError,
+        ParseError,
         creds.message.unwrap_or("Failed to parse credentials"),
       )
     Expired => {
@@ -287,7 +287,7 @@ async fn moon_get_gemini_subscription_quota() -> SubscriptionQuota {
       }
       moon_quota_error(
         "gemini",
-        CredentialStatus::Expired,
+        Expired,
         creds.message.unwrap_or("Gemini OAuth token has expired"),
       )
     }
@@ -297,7 +297,7 @@ async fn moon_get_gemini_subscription_quota() -> SubscriptionQuota {
         None =>
           moon_quota_error(
             "gemini",
-            CredentialStatus::ParseError,
+            ParseError,
             "access_token is empty or missing",
           )
       }
@@ -337,12 +337,12 @@ async fn moon_read_claude_credentials() -> MoonTokenCredentials {
   }
   let path = @pathx.join(moon_quota_home_dir(), ".claude/.credentials.json")
   if !@fsx.exists_as_file(path) {
-    return moon_token_credentials(status=CredentialStatus::NotFound)
+    return moon_token_credentials(status=NotFound)
   }
   let content = @fsx.read_file(path) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to read credentials file: \{err}"),
       )
   }
@@ -354,13 +354,13 @@ fn moon_parse_claude_credentials_json(content : String) -> MoonTokenCredentials 
   let parsed = @json.parse(content) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to parse credentials JSON: \{err}"),
       )
   }
   guard parsed is Object(root) else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("Failed to parse credentials JSON: expected object"),
     )
   }
@@ -371,7 +371,7 @@ fn moon_parse_claude_credentials_json(content : String) -> MoonTokenCredentials 
         Some(Object(entry)) => entry
         _ =>
           return moon_token_credentials(
-            status=CredentialStatus::ParseError,
+            status=ParseError,
             message=Some("No OAuth entry found in credentials"),
           )
       }
@@ -379,7 +379,7 @@ fn moon_parse_claude_credentials_json(content : String) -> MoonTokenCredentials 
   guard json_string_from_map(entry, "accessToken") is Some(token) &&
     !token.is_empty() else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("accessToken is empty or missing"),
     )
   }
@@ -387,11 +387,10 @@ fn moon_parse_claude_credentials_json(content : String) -> MoonTokenCredentials 
     Some(value) if moon_quota_token_expired(value) =>
       moon_token_credentials(
         token=Some(token),
-        status=CredentialStatus::Expired,
+        status=Expired,
         message=Some("OAuth token has expired"),
       )
-    _ =>
-      moon_token_credentials(token=Some(token), status=CredentialStatus::Valid)
+    _ => moon_token_credentials(token=Some(token), status=Valid)
   }
 }
 
@@ -403,12 +402,12 @@ async fn moon_read_codex_credentials() -> MoonTokenCredentials {
   }
   let path = @pathx.join(moon_quota_home_dir(), ".codex/auth.json")
   if !@fsx.exists_as_file(path) {
-    return moon_token_credentials(status=CredentialStatus::NotFound)
+    return moon_token_credentials(status=NotFound)
   }
   let content = @fsx.read_file(path) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to read Codex auth file: \{err}"),
       )
   }
@@ -420,45 +419,45 @@ fn moon_parse_codex_credentials_json(content : String) -> MoonTokenCredentials {
   let parsed = @json.parse(content) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to parse Codex auth JSON: \{err}"),
       )
   }
   guard parsed is Object(root) else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("Failed to parse Codex auth JSON: expected object"),
     )
   }
   if json_string_from_map(root, "auth_mode") != Some("chatgpt") {
     return moon_token_credentials(
-      status=CredentialStatus::NotFound,
+      status=NotFound,
       message=Some("Codex not using OAuth mode"),
     )
   }
   guard root.get("tokens") is Some(Object(tokens)) else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("No tokens in Codex auth"),
     )
   }
   guard json_string_from_map(tokens, "access_token") is Some(token) &&
     !token.is_empty() else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("access_token is empty or missing"),
     )
   }
   let status = match json_string_from_map(root, "last_refresh") {
     Some(last_refresh) if moon_codex_token_stale(last_refresh) =>
       CredentialStatus::Expired
-    _ => CredentialStatus::Valid
+    _ => Valid
   }
   moon_token_credentials(
     token=Some(token),
     account_id=json_string_from_map(tokens, "account_id"),
     status~,
-    message=if status == CredentialStatus::Expired {
+    message=if status == Expired {
       Some("Codex token may be stale (>8 days since last refresh)")
     } else {
       None
@@ -474,12 +473,12 @@ async fn moon_read_gemini_credentials() -> MoonTokenCredentials {
   }
   let path = @pathx.join(moon_quota_home_dir(), ".gemini/oauth_creds.json")
   if !@fsx.exists_as_file(path) {
-    return moon_token_credentials(status=CredentialStatus::NotFound)
+    return moon_token_credentials(status=NotFound)
   }
   let content = @fsx.read_file(path) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to read Gemini credentials: \{err}"),
       )
   }
@@ -491,13 +490,13 @@ fn moon_parse_gemini_keychain_json(content : String) -> MoonTokenCredentials {
   let parsed = @json.parse(content) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to parse Gemini keychain JSON: \{err}"),
       )
   }
   guard parsed is Object(root) else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("Failed to parse Gemini keychain JSON: expected object"),
     )
   }
@@ -507,7 +506,7 @@ fn moon_parse_gemini_keychain_json(content : String) -> MoonTokenCredentials {
         !access_token.is_empty() else {
         return moon_token_credentials(
           refresh_token=json_string_from_map(token, "refreshToken"),
-          status=CredentialStatus::ParseError,
+          status=ParseError,
           message=Some("accessToken is empty or missing"),
         )
       }
@@ -516,14 +515,14 @@ fn moon_parse_gemini_keychain_json(content : String) -> MoonTokenCredentials {
           moon_token_credentials(
             token=Some(access_token),
             refresh_token=json_string_from_map(token, "refreshToken"),
-            status=CredentialStatus::Expired,
+            status=Expired,
             message=Some("Gemini access token has expired"),
           )
         _ =>
           moon_token_credentials(
             token=Some(access_token),
             refresh_token=json_string_from_map(token, "refreshToken"),
-            status=CredentialStatus::Valid,
+            status=Valid,
           )
       }
     }
@@ -536,13 +535,13 @@ fn moon_parse_gemini_file_json(content : String) -> MoonTokenCredentials {
   let parsed = @json.parse(content) catch {
     err =>
       return moon_token_credentials(
-        status=CredentialStatus::ParseError,
+        status=ParseError,
         message=Some("Failed to parse Gemini credentials: \{err}"),
       )
   }
   guard parsed is Object(root) else {
     return moon_token_credentials(
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("Failed to parse Gemini credentials: expected object"),
     )
   }
@@ -550,7 +549,7 @@ fn moon_parse_gemini_file_json(content : String) -> MoonTokenCredentials {
     !access_token.is_empty() else {
     return moon_token_credentials(
       refresh_token=json_string_from_map(root, "refresh_token"),
-      status=CredentialStatus::ParseError,
+      status=ParseError,
       message=Some("access_token is empty or missing"),
     )
   }
@@ -559,14 +558,14 @@ fn moon_parse_gemini_file_json(content : String) -> MoonTokenCredentials {
       moon_token_credentials(
         token=Some(access_token),
         refresh_token=json_string_from_map(root, "refresh_token"),
-        status=CredentialStatus::Expired,
+        status=Expired,
         message=Some("Gemini access token has expired"),
       )
     _ =>
       moon_token_credentials(
         token=Some(access_token),
         refresh_token=json_string_from_map(root, "refresh_token"),
-        status=CredentialStatus::Valid,
+        status=Valid,
       )
   }
 }
@@ -777,16 +776,12 @@ async fn moon_fetch_json_get(
 ) -> Result[Json, MoonQuotaFetchError] {
   let target = match models_url_target(url) {
     Ok(target) => target
-    Err(err) => return Err({ status: CredentialStatus::Valid, message: err })
+    Err(err) => return Err({ status: Valid, message: err })
   }
   let client = @http.Client::new(target.origin, headers~)
   defer client.close()
   let response = client.get(target.path) catch {
-    err =>
-      return Err({
-        status: CredentialStatus::Valid,
-        message: "Network error: \{err}",
-      })
+    err => return Err({ status: Valid, message: "Network error: \{err}" })
   }
   moon_read_quota_json_response(client, response.code, expired_message)
 }
@@ -801,7 +796,7 @@ async fn moon_fetch_json_post(
 ) -> Result[Json, MoonQuotaFetchError] {
   let target = match models_url_target(url) {
     Ok(target) => target
-    Err(err) => return Err({ status: CredentialStatus::Valid, message: err })
+    Err(err) => return Err({ status: Valid, message: err })
   }
   let client = @http.Client::new(target.origin, headers~)
   defer client.close()
@@ -811,10 +806,7 @@ async fn moon_fetch_json_post(
         Some(label) => "Network error (\{label})"
         None => "Network error"
       }
-      return Err({
-        status: CredentialStatus::Valid,
-        message: "\{prefix}: \{err}",
-      })
+      return Err({ status: Valid, message: "\{prefix}: \{err}" })
     }
   }
   moon_read_quota_json_response(
@@ -834,10 +826,7 @@ async fn moon_read_quota_json_response(
 ) -> Result[Json, MoonQuotaFetchError] {
   let body = client.read_all().text()
   if code == 401 || code == 403 {
-    return Err({
-      status: CredentialStatus::Expired,
-      message: "\{expired_message} (HTTP \{code})",
-    })
+    return Err({ status: Expired, message: "\{expired_message} (HTTP \{code})" })
   }
   if !(code is (200..=299)) {
     let prefix = match network_label {
@@ -845,17 +834,11 @@ async fn moon_read_quota_json_response(
       Some("retrieveUserQuota") => "retrieveUserQuota failed"
       _ => "API error"
     }
-    return Err({
-      status: CredentialStatus::Valid,
-      message: "\{prefix} (HTTP \{code}): \{body}",
-    })
+    return Err({ status: Valid, message: "\{prefix} (HTTP \{code}): \{body}" })
   }
   try @json.parse(body) catch {
     err =>
-      Err({
-        status: CredentialStatus::Valid,
-        message: "Failed to parse API response: \{err}",
-      })
+      Err({ status: Valid, message: "Failed to parse API response: \{err}" })
   } noraise {
     json => Ok(json)
   }
@@ -866,7 +849,7 @@ fn moon_parse_claude_quota(body : Json) -> SubscriptionQuota {
   guard body is Object(obj) else {
     return moon_quota_error(
       "claude",
-      CredentialStatus::Valid,
+      Valid,
       "Failed to parse API response: expected object",
     )
   }
@@ -921,7 +904,7 @@ fn moon_parse_codex_quota(
   guard body is Object(obj) else {
     return moon_quota_error(
       tool_label,
-      CredentialStatus::Valid,
+      Valid,
       "Failed to parse API response: expected object",
     )
   }
@@ -952,7 +935,7 @@ fn moon_parse_gemini_quota(body : Json) -> SubscriptionQuota {
   guard body is Object(obj) else {
     return moon_quota_error(
       "gemini",
-      CredentialStatus::Valid,
+      Valid,
       "Failed to parse quota response: expected object",
     )
   }

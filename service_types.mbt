@@ -7,10 +7,7 @@ pub struct AuthService {
 
 ///|
 pub fn AuthService::new() -> AuthService {
-  AuthService::{
-    credentials: None,
-    auth_device_user_codes: Map([], capacity=8),
-  }
+  { credentials: None, auth_device_user_codes: Map([], capacity=8) }
 }
 
 ///|
@@ -39,7 +36,7 @@ pub struct ProxyService {
 
 ///|
 pub fn ProxyService::new(host : String, port : Int) -> ProxyService {
-  ProxyService::{
+  {
     provider_router: moonstat_default_provider_router(),
     proxy_enabled: true,
     proxy_listen_address: host,
@@ -68,7 +65,7 @@ pub struct UsageService {
 
 ///|
 pub fn UsageService::new() -> UsageService {
-  UsageService::{
+  {
     stats: TrafficStats::new(),
     usage_cache: UsageCache::new(),
     pricing_overrides: Map([], capacity=0),
@@ -99,7 +96,7 @@ pub struct ConfigService {
 
 ///|
 pub fn ConfigService::new() -> ConfigService {
-  ConfigService::{
+  {
     app_settings: moon_default_app_settings_json(),
     rectifier_config_json: moon_default_rectifier_config_json(),
     optimizer_config_json: moon_default_optimizer_config_json(),
@@ -127,7 +124,7 @@ pub struct SessionService {
 
 ///|
 pub fn SessionService::new() -> SessionService {
-  SessionService::{ codex_chat_history: CodexChatHistoryStore::new() }
+  { codex_chat_history: CodexChatHistoryStore::new() }
 }
 
 ///|
@@ -135,6 +132,7 @@ pub fn SessionService::new() -> SessionService {
 pub struct WorkspaceService {}
 
 ///|
+#warnings("-73")
 pub fn WorkspaceService::new() -> WorkspaceService {
   WorkspaceService::{  }
 }
@@ -144,6 +142,7 @@ pub fn WorkspaceService::new() -> WorkspaceService {
 pub struct RuntimeService {}
 
 ///|
+#warnings("-73")
 pub fn RuntimeService::new() -> RuntimeService {
   RuntimeService::{  }
 }
@@ -153,6 +152,7 @@ pub fn RuntimeService::new() -> RuntimeService {
 pub struct SkillService {}
 
 ///|
+#warnings("-73")
 pub fn SkillService::new() -> SkillService {
   SkillService::{  }
 }
@@ -172,7 +172,7 @@ pub struct OpenClawService {
 
 ///|
 pub fn OpenClawService::new() -> OpenClawService {
-  OpenClawService::{
+  {
     openclaw_default_model: None,
     openclaw_model_catalog: None,
     openclaw_agents_defaults: None,

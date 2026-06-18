@@ -8,10 +8,10 @@ pub enum CredentialStatus {
 
 ///|
 pub let credential_statuses : Array[CredentialStatus] = [
-  CredentialStatus::Valid,
-  CredentialStatus::Expired,
-  CredentialStatus::NotFound,
-  CredentialStatus::ParseError,
+  Valid,
+  Expired,
+  NotFound,
+  ParseError,
 ]
 
 ///|
@@ -230,7 +230,7 @@ pub struct SubscriptionQuota {
 ///|
 pub fn SubscriptionQuota::new(
   tool : String,
-  credential_status? : CredentialStatus = CredentialStatus::Valid,
+  credential_status? : CredentialStatus = Valid,
   credential_message? : String? = None,
   success? : Bool = true,
   tiers? : Array[Json] = [],
@@ -252,11 +252,7 @@ pub fn SubscriptionQuota::new(
 
 ///|
 pub fn SubscriptionQuota::not_found(tool : String) -> SubscriptionQuota {
-  SubscriptionQuota::new(
-    tool,
-    credential_status=CredentialStatus::NotFound,
-    success=false,
-  )
+  SubscriptionQuota::new(tool, credential_status=NotFound, success=false)
 }
 
 ///|

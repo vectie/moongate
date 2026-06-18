@@ -1447,7 +1447,7 @@ async fn check_json_delete_endpoint(
   try {
     let client = @http.Client::new(url, headers={})
     defer client.close()
-    client.request(@http.RequestMethod::Delete, path)
+    client.request(Delete, path)
     let response = client.end_request()
     let body = client.read_all().text()
     if response.code == 200 {

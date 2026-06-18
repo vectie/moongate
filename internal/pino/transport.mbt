@@ -59,7 +59,7 @@ pub fn Transport::parse(transport : StringView) -> Transport raise {
       if path != "" {
         raise InvalidTransport(transport)
       }
-      Transport::Console
+      Console
     }
     "file" => Transport::file(path)
     schema => raise InvalidTransport(schema)
@@ -139,7 +139,7 @@ fn Transport::close(self : Transport) -> Unit {
 /// # Returns
 /// A Transport configured for console output
 pub fn Transport::console() -> Transport {
-  Transport::Console
+  Console
 }
 
 ///|
@@ -157,7 +157,7 @@ pub fn Transport::console() -> Transport {
 /// # Returns
 /// A Transport configured for file output
 pub fn Transport::file(path : StringView) -> Transport {
-  Transport::File(path=path.to_owned(), file=None)
+  File(path=path.to_owned(), file=None)
 }
 
 ///|
@@ -169,7 +169,7 @@ pub fn Transport::file(path : StringView) -> Transport {
 /// # Returns
 /// A Transport that silently discards all output
 pub fn Transport::sink() -> Transport {
-  Transport::Sink
+  Sink
 }
 
 ///|
@@ -185,7 +185,7 @@ pub fn Transport::sink() -> Transport {
 /// This method is deprecated; the alias "chan" is provided for backward compatibility
 #alias(chan, deprecated)
 pub fn Transport::channel(queue : @aqueue.Queue[Json]) -> Transport {
-  Transport::Channel(queue)
+  Channel(queue)
 }
 
 ///|
@@ -202,5 +202,5 @@ pub fn Transport::channel(queue : @aqueue.Queue[Json]) -> Transport {
 /// - Integration with external logging systems
 /// - Testing and log capture
 pub fn Transport::callback(callback : (Json) -> Unit) -> Transport {
-  Transport::Callback(callback)
+  Callback(callback)
 }

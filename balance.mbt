@@ -12,17 +12,17 @@ priv enum MoonBalanceProvider {
 fn moon_detect_balance_provider(base_url : String) -> MoonBalanceProvider? {
   let url = base_url.to_lower()
   if url.contains("api.deepseek.com") {
-    Some(MoonBalanceProvider::DeepSeek)
+    Some(DeepSeek)
   } else if url.contains("api.stepfun.ai") || url.contains("api.stepfun.com") {
-    Some(MoonBalanceProvider::StepFun)
+    Some(StepFun)
   } else if url.contains("api.siliconflow.cn") {
-    Some(MoonBalanceProvider::SiliconFlow)
+    Some(SiliconFlow)
   } else if url.contains("api.siliconflow.com") {
-    Some(MoonBalanceProvider::SiliconFlowEn)
+    Some(SiliconFlowEn)
   } else if url.contains("openrouter.ai") {
-    Some(MoonBalanceProvider::OpenRouter)
+    Some(OpenRouter)
   } else if url.contains("api.novita.ai") {
-    Some(MoonBalanceProvider::NovitaAI)
+    Some(NovitaAI)
   } else {
     None
   }

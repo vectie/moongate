@@ -794,19 +794,19 @@ async fn moon_copy_skill_directory(
   try {
     let kind = @fs.kind(source_path, follow_symlink=false)
     match kind {
-      @fs.FileKind::Directory => {
+      Directory => {
         moon_skill_make_directory(dest_path)
         let entries = @fsx.list_directory(source_path)
         for entry in entries {
           let child_source = entry.path
           let child_dest = @pathx.join(dest_path, entry.name)
           match entry.kind {
-            @fsx.FileKind::Directory =>
+            Directory =>
               match moon_copy_skill_directory(child_source, child_dest) {
                 Ok(_) => ()
                 Err(message) => return Err(message)
               }
-            @fsx.FileKind::Regular | @fsx.FileKind::SymLink => {
+            Regular | SymLink => {
               let bytes = @fs.read_file(child_source)
               @fs.write_file(child_dest, bytes, create=0o644, truncate=true)
             }
@@ -814,7 +814,7 @@ async fn moon_copy_skill_directory(
           }
         }
       }
-      @fs.FileKind::Regular | @fs.FileKind::SymLink => {
+      Regular | SymLink => {
         moon_skill_make_directory(@pathx.dirname(dest_path).to_owned())
         let bytes = @fs.read_file(source_path)
         @fs.write_file(dest_path, bytes, create=0o644, truncate=true)
@@ -1178,7 +1178,7 @@ async fn moon_scan_skill_dirs_recursive(
     if entry.name.has_prefix(".") {
       continue
     }
-    if entry.kind is @fsx.FileKind::Directory {
+    if entry.kind is Directory {
       moon_scan_skill_dirs_recursive(entry.path, result, depth=depth + 1)
     }
   }
@@ -1287,15 +1287,14 @@ async fn moon_collect_skill_hash_files(
       continue
     }
     match entry.kind {
-      @fsx.FileKind::Directory =>
+      Directory =>
         moon_collect_skill_hash_files(
           base_dir,
           entry.path,
           files,
           depth=depth + 1,
         )
-      @fsx.FileKind::Regular | @fsx.FileKind::SymLink =>
-        files.push(moon_relative_path(base_dir, entry.path))
+      Regular | SymLink => files.push(moon_relative_path(base_dir, entry.path))
       _ => ()
     }
   }
@@ -1334,7 +1333,7 @@ fn moon_skill_hex_digit(n : Int) -> Char {
 
 ///|
 async fn moon_path_is_directory(path : String) -> Bool {
-  (@fs.kind(path, follow_symlink=false) is @fs.FileKind::Directory) catch {
+  (@fs.kind(path, follow_symlink=false) is Directory) catch {
     _ => false
   }
 }

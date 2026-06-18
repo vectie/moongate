@@ -86,8 +86,7 @@ async fn moon_list_daily_memory_files_json() -> Json {
     _ => return Json::array([])
   }
   for entry in entries {
-    if entry.kind is @fsx.FileKind::Regular &&
-      moon_daily_memory_list_filename(entry.name) {
+    if entry.kind is Regular && moon_daily_memory_list_filename(entry.name) {
       filenames.push(entry.name)
       rows_by_filename[entry.name] = moon_daily_memory_info_json(
         entry.path,
@@ -122,8 +121,7 @@ async fn moon_search_daily_memory_files_json(query : String) -> Json {
     _ => return Json::array([])
   }
   for entry in entries {
-    if !(entry.kind is @fsx.FileKind::Regular) ||
-      !moon_daily_memory_list_filename(entry.name) {
+    if !(entry.kind is Regular) || !moon_daily_memory_list_filename(entry.name) {
       continue
     }
     let content = @fsx.read_file(entry.path) catch { _ => "" }

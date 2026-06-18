@@ -535,10 +535,7 @@ fn moon_sync_device_name() -> String {
 
 ///|
 fn moon_sync_artifact_meta(bytes : Bytes) -> MoonSyncArtifactMeta {
-  MoonSyncArtifactMeta::{
-    sha256: moon_sync_sha256_hex(bytes),
-    size: bytes.length(),
-  }
+  { sha256: moon_sync_sha256_hex(bytes), size: bytes.length() }
 }
 
 ///|
@@ -853,7 +850,7 @@ fn moon_s3_curl_head_request(
     args.push(path)
   }
   args.push(url)
-  Ok(MoonWebDavCurlRequest::{ program: "curl", args })
+  Ok({ program: "curl", args })
 }
 
 ///|
@@ -879,7 +876,7 @@ fn moon_s3_curl_put_request(
   args.push("-w")
   args.push("%{http_code}")
   args.push(url)
-  Ok(MoonWebDavCurlRequest::{ program: "curl", args })
+  Ok({ program: "curl", args })
 }
 
 ///|
@@ -903,7 +900,7 @@ fn moon_s3_curl_get_request(
     args.push(path)
   }
   args.push(url)
-  Ok(MoonWebDavCurlRequest::{ program: "curl", args })
+  Ok({ program: "curl", args })
 }
 
 ///|
@@ -921,10 +918,7 @@ async fn moon_webdav_get_text(
   let response = client.get(if path.is_empty() { "/" } else { path }) catch {
     err => return Err("WebDAV GET failed: \{err}")
   }
-  Ok(MoonWebDavTextResponse::{
-    code: response.code,
-    body: client.read_all().text(),
-  })
+  Ok({ code: response.code, body: client.read_all().text() })
 }
 
 ///|
@@ -953,7 +947,7 @@ fn moon_webdav_curl_status_request(
     )
   }
   args.push(url)
-  Ok(MoonWebDavCurlRequest::{ program: "curl", args })
+  Ok({ program: "curl", args })
 }
 
 ///|
@@ -990,7 +984,7 @@ fn moon_webdav_curl_put_request(
     )
   }
   args.push(url)
-  Ok(MoonWebDavCurlRequest::{ program: "curl", args })
+  Ok({ program: "curl", args })
 }
 
 ///|
@@ -1020,7 +1014,7 @@ fn moon_webdav_curl_get_request(
     )
   }
   args.push(url)
-  Ok(MoonWebDavCurlRequest::{ program: "curl", args })
+  Ok({ program: "curl", args })
 }
 
 ///|
@@ -1238,7 +1232,7 @@ async fn ConfigService::moon_sync_build_local_snapshot(
   let manifest_bytes = @encoding/utf8.encode(
     moon_sync_manifest_json(artifacts, snapshot_id).stringify(indent=2) + "\n",
   )
-  MoonLocalSyncSnapshot::{
+  {
     db_sql,
     skills_zip,
     manifest_bytes,
@@ -1854,7 +1848,7 @@ async fn moon_webdav_fetch_manifest_snapshot(
     Err(error) => return Some(Err(error))
   }
   Some(
-    Ok(MoonWebDavRemoteSnapshot::{
+    Ok({
       layout,
       manifest,
       manifest_bytes: @encoding/utf8.encode(response.body),
@@ -2194,9 +2188,9 @@ fn moon_sync_manifest_info_from_json(
     guard proxy_json_int(meta_obj, "size") is Some(size) else {
       return Err("Remote manifest artifact \{name} is missing size.")
     }
-    artifact_meta[name] = MoonSyncArtifactMeta::{ sha256, size }
+    artifact_meta[name] = { sha256, size }
   }
-  Ok(MoonSyncManifestInfo::{
+  Ok({
     format,
     version,
     db_compat_version: proxy_json_int(obj, "dbCompatVersion"),

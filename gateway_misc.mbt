@@ -33,7 +33,7 @@ pub fn Gateway::new(
   model? : String = "gpt-4o",
 ) -> Gateway {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  Gateway::{
+  {
     host,
     port,
     model,
@@ -8870,7 +8870,7 @@ fn CodexStreamReader::new(
   reader : &@io.Reader,
   model : String,
 ) -> CodexStreamReader {
-  CodexStreamReader::{
+  {
     reader,
     events: [],
     pending_events: [],

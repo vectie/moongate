@@ -2,74 +2,36 @@
 test "moonstat proxy error status mapping is stable" {
   assert_eq(
     moon_map_proxy_error_to_status(
-      MoonProxyError::UpstreamError(status=401, body=Some("Unauthorized")),
+      UpstreamError(status=401, body=Some("Unauthorized")),
     ),
     401,
   )
-  assert_eq(moon_map_proxy_error_to_status(MoonProxyError::Timeout("x")), 504)
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::StreamIdleTimeout(30)),
-    504,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::ForwardFailed("x")),
-    502,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::NoAvailableProvider),
-    503,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::AllProvidersCircuitOpenError),
-    503,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::NoProvidersConfiguredError),
-    503,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::MaxRetriesExceeded),
-    503,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::ProviderUnhealthy("bad")),
-    503,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::AuthError("bad token")),
-    401,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::ConfigError("bad config")),
-    400,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(
-      MoonProxyError::InvalidRequest("bad request"),
-    ),
-    400,
-  )
-  assert_eq(
-    moon_map_proxy_error_to_status(MoonProxyError::TransformError("bad")),
-    422,
-  )
-  assert_eq(moon_map_proxy_error_to_status(MoonProxyError::AlreadyRunning), 409)
-  assert_eq(moon_map_proxy_error_to_status(MoonProxyError::NotRunning), 503)
+  assert_eq(moon_map_proxy_error_to_status(Timeout("x")), 504)
+  assert_eq(moon_map_proxy_error_to_status(StreamIdleTimeout(30)), 504)
+  assert_eq(moon_map_proxy_error_to_status(ForwardFailed("x")), 502)
+  assert_eq(moon_map_proxy_error_to_status(NoAvailableProvider), 503)
+  assert_eq(moon_map_proxy_error_to_status(AllProvidersCircuitOpenError), 503)
+  assert_eq(moon_map_proxy_error_to_status(NoProvidersConfiguredError), 503)
+  assert_eq(moon_map_proxy_error_to_status(MaxRetriesExceeded), 503)
+  assert_eq(moon_map_proxy_error_to_status(ProviderUnhealthy("bad")), 503)
+  assert_eq(moon_map_proxy_error_to_status(AuthError("bad token")), 401)
+  assert_eq(moon_map_proxy_error_to_status(ConfigError("bad config")), 400)
+  assert_eq(moon_map_proxy_error_to_status(InvalidRequest("bad request")), 400)
+  assert_eq(moon_map_proxy_error_to_status(TransformError("bad")), 422)
+  assert_eq(moon_map_proxy_error_to_status(AlreadyRunning), 409)
+  assert_eq(moon_map_proxy_error_to_status(NotRunning), 503)
 }
 
 ///|
 test "moonstat proxy error message is user friendly" {
   let message = moon_proxy_error_message(
-    MoonProxyError::UpstreamError(
-      status=500,
-      body=Some("Internal Server Error"),
-    ),
+    UpstreamError(status=500, body=Some("Internal Server Error")),
   )
   assert_true(message.contains("上游错误"))
   assert_true(message.contains("500"))
   assert_true(message.contains("Internal Server Error"))
   assert_eq(
-    moon_proxy_error_message(MoonProxyError::NoProvidersConfiguredError),
+    moon_proxy_error_message(NoProvidersConfiguredError),
     "未配置供应商",
   )
 }
@@ -80,7 +42,7 @@ test "moonstat single provider retryable log uses single provider code" {
     "PackyCode-response",
     1,
     1,
-    MoonProxyError::UpstreamError(
+    UpstreamError(
       status=429,
       body=Some("{\"error\":{\"message\":\"rate limit exceeded\"}}"),
     ),
@@ -98,7 +60,7 @@ test "moonstat multi provider retryable log keeps failover wording" {
     "primary",
     1,
     3,
-    MoonProxyError::Timeout("upstream timed out after 30s"),
+    Timeout("upstream timed out after 30s"),
   )
   assert_eq(code, moon_fwd_provider_failed_retry)
   assert_true(message.contains("继续尝试下一个 (1/3)"))
@@ -115,7 +77,7 @@ test "moonstat multi provider terminal log contains last error summary" {
   guard moon_build_terminal_failure_log(
       2,
       2,
-      Some(MoonProxyError::ForwardFailed("connection reset by peer")),
+      Some(ForwardFailed("connection reset by peer")),
     )
     is Some((code, message)) else {
     fail("expected terminal log")

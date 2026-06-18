@@ -38,8 +38,8 @@ test "ccs database backup rename normalizes new name like desktop" {
 test "ccs database backup entries sort newest first" {
   let rows = [
     MoonDbBackupEntry::{ filename: "old.db", size_bytes: 1, created_at: 1L },
-    MoonDbBackupEntry::{ filename: "new.db", size_bytes: 2, created_at: 3L },
-    MoonDbBackupEntry::{ filename: "mid.db", size_bytes: 3, created_at: 2L },
+    { filename: "new.db", size_bytes: 2, created_at: 3L },
+    { filename: "mid.db", size_bytes: 3, created_at: 2L },
   ]
   moon_sort_db_backup_entries(rows)
   assert_eq(rows[0].filename, "new.db")

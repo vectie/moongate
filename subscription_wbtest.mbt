@@ -126,17 +126,17 @@ test "ccs subscription gemini parser groups buckets by model family" {
 ///|
 test "ccs subscription credential parsers report deterministic status" {
   let missing_claude = moon_parse_claude_credentials_json("{}")
-  assert_true(missing_claude.status == CredentialStatus::ParseError)
+  assert_true(missing_claude.status == ParseError)
   assert_eq(missing_claude.message, Some("No OAuth entry found in credentials"))
   let codex_api_key_json =
     #|{"auth_mode":"apikey","tokens":{"access_token":"sk"}}
   let codex_api_key = moon_parse_codex_credentials_json(codex_api_key_json)
-  assert_true(codex_api_key.status == CredentialStatus::NotFound)
+  assert_true(codex_api_key.status == NotFound)
   assert_eq(codex_api_key.message, Some("Codex not using OAuth mode"))
   let gemini_json =
     #|{"access_token":"gem-token","refresh_token":"rt","expiry_date":9999999999999}
   let gemini = moon_parse_gemini_file_json(gemini_json)
-  assert_true(gemini.status == CredentialStatus::Valid)
+  assert_true(gemini.status == Valid)
   assert_eq(gemini.token, Some("gem-token"))
   assert_eq(gemini.refresh_token, Some("rt"))
 }

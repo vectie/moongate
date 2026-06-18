@@ -20,26 +20,19 @@ impl @json.FromJson for TokenResponse with fn from_json(
   path : @json.JsonPath,
 ) -> TokenResponse raise @json.JsonDecodeError {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "TokenResponse: expected object"))
+    raise JsonDecodeError((path, "TokenResponse: expected object"))
   }
   let id_token : String = match obj.get("id_token") {
     Some(String(s)) => s
-    _ =>
-      raise @json.JsonDecodeError((path, "TokenResponse: missing 'id_token'"))
+    _ => raise JsonDecodeError((path, "TokenResponse: missing 'id_token'"))
   }
   let access_token : String = match obj.get("access_token") {
     Some(String(s)) => s
-    _ =>
-      raise @json.JsonDecodeError(
-        (path, "TokenResponse: missing 'access_token'"),
-      )
+    _ => raise JsonDecodeError((path, "TokenResponse: missing 'access_token'"))
   }
   let refresh_token : String = match obj.get("refresh_token") {
     Some(String(s)) => s
-    _ =>
-      raise @json.JsonDecodeError(
-        (path, "TokenResponse: missing 'refresh_token'"),
-      )
+    _ => raise JsonDecodeError((path, "TokenResponse: missing 'refresh_token'"))
   }
   { id_token, access_token, refresh_token }
 }
@@ -77,7 +70,7 @@ fn parse_device_flow_response(json : Json) -> DeviceCodeFlow raise Error {
   guard json_string_field(obj, "user_code") is Some(user_code) else {
     raise OAuthError("Device Code response missing user_code")
   }
-  DeviceCodeFlow::{
+  {
     device_code,
     user_code,
     verification_uri: "\{OAUTH_ISSUER}/codex/device",
@@ -361,7 +354,7 @@ pub async fn start_oauth_flow() -> Credentials raise Error {
     _ => ()
   }
   let router = @httpx.Router::new()
-  router.add_handler(@httpx.Method::Get, "/auth/callback", (r, w) => {
+  router.add_handler(Get, "/auth/callback", (r, w) => {
     let path = r.path
     let parts = path.split("?").to_array()
     let query_string : StringView = if parts.length() > 1 {

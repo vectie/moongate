@@ -2,6 +2,7 @@
 struct Epoch {}
 
 ///|
+#warnings("-73")
 pub let epoch : Epoch = Epoch::{  }
 
 ///|

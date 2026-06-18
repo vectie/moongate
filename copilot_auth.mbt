@@ -321,7 +321,7 @@ fn parse_copilot_device_code_response(
   guard copilot_json_string(obj, "verification_uri") is Some(verification_uri) else {
     raise CopilotAuthError("Device Code response missing verification_uri")
   }
-  CopilotDeviceCodeResponse::{
+  {
     device_code,
     user_code,
     verification_uri,

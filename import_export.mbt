@@ -316,12 +316,12 @@ async fn moon_list_db_backups_json() -> Json {
   }
   let rows : Array[MoonDbBackupEntry] = []
   for entry in entries {
-    if !(entry.kind is @fsx.FileKind::Regular) || !entry.name.has_suffix(".db") {
+    if !(entry.kind is Regular) || !entry.name.has_suffix(".db") {
       continue
     }
     let content = @fsx.read_file(entry.path) catch { _ => "" }
     let modified_at = moon_file_mtime(entry.path)
-    rows.push(MoonDbBackupEntry::{
+    rows.push({
       filename: entry.name,
       size_bytes: content.length(),
       created_at: modified_at,

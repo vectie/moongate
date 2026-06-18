@@ -349,8 +349,8 @@ async fn ProxyService::handle_gemini(
     }
   }
   match r.method_ {
-    @httpx.Method::Get => self.forward_gemini_get(usage, url, w)
-    @httpx.Method::Post => self.forward_gemini_post(usage, url, request_json, w)
+    Get => self.forward_gemini_get(usage, url, w)
+    Post => self.forward_gemini_post(usage, url, request_json, w)
     _ => {
       usage.record_bad_request_with_provider(self)
       w.header().set("Content-Type", "application/json")

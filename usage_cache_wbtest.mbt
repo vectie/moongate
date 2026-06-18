@@ -163,11 +163,7 @@ test "usage cache result json matches ccs usage result shape" {
   assert_eq(plan["unit"], Json::string("usd"))
   assert_true(result.get("error") is None)
 
-  guard SubscriptionQuota::error(
-      "codex",
-      CredentialStatus::Expired,
-      "refresh required",
-    ).to_json()
+  guard SubscriptionQuota::error("codex", Expired, "refresh required").to_json()
     is Object(quota) else {
     fail("expected quota object")
   }

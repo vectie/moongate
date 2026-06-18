@@ -26,7 +26,7 @@ pub fn Router::middleware(self : Router) -> Middleware {
 
 ///|
 fn Route::new(handle : Handler) -> Route {
-  Route::{ handle, names: [] }
+  { handle, names: [] }
 }
 
 ///|
@@ -39,7 +39,7 @@ priv struct Layer {
 
 ///|
 fn Layer::new() -> Layer {
-  Layer::{
+  {
     routes: MethodMap::new(),
     matches: {},
     catch_all_routes: MethodMap::new(),
@@ -196,7 +196,7 @@ pub fn Router::new() -> Router {
       }
     }
   }
-  Router::{ layer, allow, handler: middleware(not_found), middleware }
+  { layer, allow, handler: middleware(not_found), middleware }
 }
 
 ///|

@@ -34,7 +34,7 @@ pub(all) enum Type {
 ///|
 pub fn open_router_model(
   api_key~ : String,
-  name? : CommonModels = CommonModels::Qwen3CoderPlus,
+  name? : CommonModels = Qwen3CoderPlus,
 ) -> Model {
   let model_name = match name {
     Qwen3CoderPlus => "qwen/qwen3-coder-plus"

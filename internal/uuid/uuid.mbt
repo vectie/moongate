@@ -27,11 +27,10 @@ pub impl ToJson for Uuid with fn to_json(self : Uuid) -> Json {
 ///|
 pub impl @json.FromJson for Uuid with fn from_json(json, json_path) -> Uuid raise {
   guard json is String(string) else {
-    raise @json.JsonDecodeError((json_path, "Uuid::from_json: expected string"))
+    raise JsonDecodeError((json_path, "Uuid::from_json: expected string"))
   }
   parse(string) catch {
-    error =>
-      raise @json.JsonDecodeError((json_path, "Uuid::from_json: \{error}"))
+    error => raise JsonDecodeError((json_path, "Uuid::from_json: \{error}"))
   }
 }
 

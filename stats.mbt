@@ -324,11 +324,7 @@ pub fn TrafficStats::set_active_target(
   self.current_provider_id = Some(provider_id)
   self.current_request_cost_multiplier = cost_multiplier
   self.current_request_pricing_model_source = pricing_model_source
-  self.active_targets.set(app_type, ActiveTarget::{
-    app_type,
-    provider_id,
-    provider_name,
-  })
+  self.active_targets.set(app_type, { app_type, provider_id, provider_name })
 }
 
 ///|

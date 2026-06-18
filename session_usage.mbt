@@ -641,7 +641,7 @@ async fn collect_claude_jsonl_files(projects_dir : String) -> Array[String] {
   let files : Array[String] = []
   let entries = @fsx.list_directory(projects_dir) catch { _ => return files }
   for entry in entries {
-    if !(entry.kind is @fsx.FileKind::Directory) {
+    if !(entry.kind is Directory) {
       continue
     }
     let project_entries = @fsx.list_directory(entry.path) catch {
@@ -650,7 +650,7 @@ async fn collect_claude_jsonl_files(projects_dir : String) -> Array[String] {
     for project_entry in project_entries {
       if session_path_is_jsonl(project_entry.path) {
         files.push(project_entry.path)
-      } else if project_entry.kind is @fsx.FileKind::Directory {
+      } else if project_entry.kind is Directory {
         let subagents_dir = @pathx.join(project_entry.path, "subagents")
         push_jsonl_children(subagents_dir, files)
         let workflows_dir = @pathx.join(subagents_dir, "workflows")
@@ -658,7 +658,7 @@ async fn collect_claude_jsonl_files(projects_dir : String) -> Array[String] {
           _ => []
         }
         for workflow_entry in workflow_entries {
-          if workflow_entry.kind is @fsx.FileKind::Directory {
+          if workflow_entry.kind is Directory {
             push_jsonl_children(workflow_entry.path, files)
           }
         }
@@ -933,7 +933,7 @@ async fn collect_jsonl_recursive_limited(
 ) -> Unit {
   let entries = @fsx.list_directory(dir) catch { _ => return }
   for entry in entries {
-    if entry.kind is @fsx.FileKind::Directory && depth < max_depth {
+    if entry.kind is Directory && depth < max_depth {
       collect_jsonl_recursive_limited(
         entry.path,
         files,
@@ -952,7 +952,7 @@ async fn collect_gemini_session_files(gemini_dir : String) -> Array[String] {
   let tmp_dir = @pathx.join(gemini_dir, "tmp")
   let project_dirs = @fsx.list_directory(tmp_dir) catch { _ => return files }
   for project_dir in project_dirs {
-    if !(project_dir.kind is @fsx.FileKind::Directory) {
+    if !(project_dir.kind is Directory) {
       continue
     }
     let chats_dir = @pathx.join(project_dir.path, "chats")
@@ -1045,13 +1045,13 @@ fn parse_codex_token_count_delta(
     state.prev_total = Some(current)
     computed
   } else {
-    DeltaSessionTokens::{
+    {
       input: current.input,
       cached_input: current.cached_input,
       output: current.output,
     }
   }
-  Some(DeltaSessionTokens::{
+  Some({
     input: delta.input,
     cached_input: session_min_int(delta.cached_input, delta.input),
     output: delta.output,
@@ -1062,7 +1062,7 @@ fn parse_codex_token_count_delta(
 fn parse_cumulative_session_tokens(
   obj : Map[String, Json],
 ) -> CumulativeSessionTokens? {
-  Some(CumulativeSessionTokens::{
+  Some({
     input: json_int_or_zero(obj, "input_tokens"),
     cached_input: match obj.get("cached_input_tokens") {
       Some(_) => json_int_or_zero(obj, "cached_input_tokens")
@@ -1079,13 +1079,13 @@ fn compute_delta_session_tokens(
 ) -> DeltaSessionTokens {
   match prev {
     None =>
-      DeltaSessionTokens::{
+      {
         input: current.input,
         cached_input: current.cached_input,
         output: current.output,
       }
     Some(old) =>
-      DeltaSessionTokens::{
+      {
         input: max_int(current.input - old.input, 0),
         cached_input: max_int(current.cached_input - old.cached_input, 0),
         output: max_int(current.output - old.output, 0),
@@ -1141,7 +1141,7 @@ fn session_payload_id(payload : Map[String, Json]) -> String? {
 fn parse_gemini_session_tokens(
   tokens : Map[String, Json],
 ) -> GeminiSessionTokens {
-  GeminiSessionTokens::{
+  {
     input: json_int_or_zero(tokens, "input"),
     output: json_int_or_zero(tokens, "output"),
     cached: json_int_or_zero(tokens, "cached"),
@@ -1194,7 +1194,7 @@ fn parse_opencode_message_data(
       }
     _ => 0L
   }
-  Some(OpenCodeMessageData::{
+  Some({
     input_tokens,
     output_tokens,
     reasoning_tokens,

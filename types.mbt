@@ -33,12 +33,11 @@ pub impl FromJson for AnthropicRequest with fn from_json(
   path : @json.JsonPath,
 ) -> AnthropicRequest raise @json.JsonDecodeError {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "AnthropicRequest: expected object"))
+    raise JsonDecodeError((path, "AnthropicRequest: expected object"))
   }
   let model : String = match obj.get("model") {
     Some(String(s)) => s
-    _ =>
-      raise @json.JsonDecodeError((path, "AnthropicRequest: missing 'model'"))
+    _ => raise JsonDecodeError((path, "AnthropicRequest: missing 'model'"))
   }
   let max_tokens : Int = match obj.get("max_tokens") {
     Some(Number(n, ..)) => n.trunc().to_int()
@@ -52,10 +51,7 @@ pub impl FromJson for AnthropicRequest with fn from_json(
       }
       result
     }
-    _ =>
-      raise @json.JsonDecodeError(
-        (path, "AnthropicRequest: missing 'messages'"),
-      )
+    _ => raise JsonDecodeError((path, "AnthropicRequest: missing 'messages'"))
   }
   let system : String? = match obj.get("system") {
     Some(String(s)) => Some(s)
@@ -101,11 +97,11 @@ pub impl FromJson for AnthropicMessage with fn from_json(
   path : @json.JsonPath,
 ) -> AnthropicMessage raise @json.JsonDecodeError {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "AnthropicMessage: expected object"))
+    raise JsonDecodeError((path, "AnthropicMessage: expected object"))
   }
   let role : String = match obj.get("role") {
     Some(String(s)) => s
-    _ => raise @json.JsonDecodeError((path, "AnthropicMessage: missing 'role'"))
+    _ => raise JsonDecodeError((path, "AnthropicMessage: missing 'role'"))
   }
   let content : AnthropicContent = match obj.get("content") {
     Some(String(s)) => Text(s)
@@ -116,8 +112,7 @@ pub impl FromJson for AnthropicMessage with fn from_json(
       }
       Blocks(result)
     }
-    _ =>
-      raise @json.JsonDecodeError((path, "AnthropicMessage: missing 'content'"))
+    _ => raise JsonDecodeError((path, "AnthropicMessage: missing 'content'"))
   }
   { role, content }
 }
@@ -157,11 +152,11 @@ pub impl FromJson for AnthropicBlock with fn from_json(
   path : @json.JsonPath,
 ) -> AnthropicBlock raise @json.JsonDecodeError {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "AnthropicBlock: expected object"))
+    raise JsonDecodeError((path, "AnthropicBlock: expected object"))
   }
   let type_ : String = match obj.get("type") {
     Some(String(s)) => s
-    _ => raise @json.JsonDecodeError((path, "AnthropicBlock: missing 'type'"))
+    _ => raise JsonDecodeError((path, "AnthropicBlock: missing 'type'"))
   }
   let text : String? = match obj.get("text") {
     Some(String(s)) => Some(s)
@@ -203,11 +198,11 @@ pub impl FromJson for AnthropicTool with fn from_json(
   path : @json.JsonPath,
 ) -> AnthropicTool raise @json.JsonDecodeError {
   guard json is Object(obj) else {
-    raise @json.JsonDecodeError((path, "AnthropicTool: expected object"))
+    raise JsonDecodeError((path, "AnthropicTool: expected object"))
   }
   let name : String = match obj.get("name") {
     Some(String(s)) => s
-    _ => raise @json.JsonDecodeError((path, "AnthropicTool: missing 'name'"))
+    _ => raise JsonDecodeError((path, "AnthropicTool: missing 'name'"))
   }
   let description : String? = match obj.get("description") {
     Some(String(s)) => Some(s)
@@ -215,10 +210,7 @@ pub impl FromJson for AnthropicTool with fn from_json(
   }
   let input_schema : Json = match obj.get("input_schema") {
     Some(schema) => schema
-    _ =>
-      raise @json.JsonDecodeError(
-        (path, "AnthropicTool: missing 'input_schema'"),
-      )
+    _ => raise JsonDecodeError((path, "AnthropicTool: missing 'input_schema'"))
   }
   { name, description, input_schema }
 }
