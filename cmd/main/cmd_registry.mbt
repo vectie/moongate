@@ -804,76 +804,8 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       print_model_candidates(args)
       true
     }
-    Some("scan_openclaw_config_health") => {
-      check_usage_endpoint(args, "/openclaw/config-health")
-      true
-    }
-    Some("get_openclaw_default_model") => {
-      check_usage_endpoint(args, "/openclaw/default-model")
-      true
-    }
-    Some("set_openclaw_default_model") => {
-      set_openclaw_default_model(args)
-      true
-    }
-    Some("get_openclaw_model_catalog") => {
-      check_usage_endpoint(args, "/openclaw/model-catalog")
-      true
-    }
-    Some("set_openclaw_model_catalog") => {
-      set_suite_json_config(args, "/openclaw/model-catalog", "--catalog")
-      true
-    }
-    Some("get_openclaw_agents_defaults") => {
-      check_usage_endpoint(args, "/openclaw/agents-defaults")
-      true
-    }
-    Some("set_openclaw_agents_defaults") => {
-      set_openclaw_agents_defaults(args)
-      true
-    }
-    Some("get_openclaw_env") => {
-      check_usage_endpoint(args, "/openclaw/env")
-      true
-    }
-    Some("set_openclaw_env") => {
-      set_openclaw_env(args)
-      true
-    }
-    Some("get_openclaw_tools") => {
-      check_usage_endpoint(args, "/openclaw/tools")
-      true
-    }
-    Some("set_openclaw_tools") => {
-      set_openclaw_tools(args)
-      true
-    }
-    Some("get_hermes_model_config") => {
-      check_usage_endpoint(args, "/hermes/model-config")
-      true
-    }
-    Some("get_hermes_memory") => {
-      check_hermes_memory(args)
-      true
-    }
-    Some("set_hermes_memory") => {
-      set_hermes_memory(args)
-      true
-    }
-    Some("get_hermes_memory_limits") => {
-      check_usage_endpoint(args, "/hermes/memory-limits")
-      true
-    }
-    Some("set_hermes_memory_enabled") => {
-      set_hermes_memory_enabled(args)
-      true
-    }
-    Some("open_hermes_web_ui") => {
-      check_usage_endpoint(args, hermes_web_ui_path(args))
-      true
-    }
-    Some("launch_hermes_dashboard") => {
-      check_json_post_endpoint(args, "/hermes/dashboard", "Hermes")
+    Some(command_id) if cli_workspace_command_id(command_id) => {
+      run_workspace_cli_command(command_id, args)
       true
     }
     Some("get_claude_config_status") => {
@@ -962,10 +894,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("is_lightweight_mode") => {
       check_usage_endpoint(args, "/runtime/lightweight-mode")
-      true
-    }
-    Some("save_file_dialog") => {
-      check_usage_endpoint(args, save_file_dialog_path(args))
       true
     }
     Some("webdav_test_connection") => {
@@ -1072,82 +1000,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       check_json_post_endpoint(args, "/providers/omo-slim/disable", "OMO")
       true
     }
-    Some("open_file_dialog") => {
-      check_usage_endpoint(args, "/files/dialogs/open")
-      true
-    }
-    Some("open_zip_file_dialog") => {
-      check_usage_endpoint(args, "/files/dialogs/open-zip")
-      true
-    }
-    Some("export_config_to_file") => {
-      check_json_post_endpoint(
-        args,
-        config_file_path(args, "/config/files/export"),
-        "Import/export",
-      )
-      true
-    }
-    Some("import_config_from_file") => {
-      check_json_post_endpoint(
-        args,
-        config_file_path(args, "/config/files/import"),
-        "Import/export",
-      )
-      true
-    }
-    Some("create_db_backup") => {
-      check_json_post_endpoint(args, "/backups/db", "Import/export")
-      true
-    }
-    Some("list_db_backups") => {
-      check_usage_endpoint(args, "/backups/db")
-      true
-    }
-    Some("restore_db_backup") => {
-      check_json_post_endpoint(
-        args,
-        db_backup_filename_path(args, "/backups/db/restore"),
-        "Import/export",
-      )
-      true
-    }
-    Some("rename_db_backup") => {
-      check_json_post_endpoint(
-        args,
-        db_backup_rename_path(args),
-        "Import/export",
-      )
-      true
-    }
-    Some("delete_db_backup") => {
-      check_json_post_endpoint(
-        args,
-        db_backup_filename_path(args, "/backups/db/delete"),
-        "Import/export",
-      )
-      true
-    }
-    Some("parse_deeplink") => {
-      check_usage_endpoint(args, deeplink_url_path(args, "/deeplinks/parse"))
-      true
-    }
-    Some("merge_deeplink_config") => {
-      check_json_post_endpoint(
-        args,
-        deeplink_request_path(args, "/deeplinks/merge"),
-        "Deeplink",
-      )
-      true
-    }
-    Some("import_from_deeplink") => {
-      check_json_post_endpoint(
-        args,
-        deeplink_request_path(args, "/deeplinks/import"),
-        "Deeplink",
-      )
-      true
-    }
     Some("get_settings") => {
       check_usage_endpoint(args, "/settings")
       true
@@ -1242,51 +1094,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       )
       true
     }
-    Some("list_daily_memory_files") => {
-      check_usage_endpoint(args, "/workspace/memory")
-      true
-    }
-    Some("read_daily_memory_file") => {
-      check_usage_endpoint(
-        args,
-        workspace_filename_path(args, "/workspace/memory/file"),
-      )
-      true
-    }
-    Some("write_daily_memory_file") => {
-      write_workspace_content(args, "/workspace/memory/write", "Workspace")
-      true
-    }
-    Some("search_daily_memory_files") => {
-      check_usage_endpoint(
-        args,
-        workspace_query_path(args, "/workspace/memory/search"),
-      )
-      true
-    }
-    Some("delete_daily_memory_file") => {
-      delete_workspace_resource(args, "/workspace/memory/delete", "Workspace")
-      true
-    }
-    Some("read_workspace_file") => {
-      check_usage_endpoint(
-        args,
-        workspace_filename_path(args, "/workspace/files"),
-      )
-      true
-    }
-    Some("write_workspace_file") => {
-      write_workspace_content(args, "/workspace/files", "Workspace")
-      true
-    }
-    Some("open_workspace_directory") => {
-      check_json_post_endpoint(
-        args,
-        workspace_subdir_path(args, "/workspace/open"),
-        "Workspace",
-      )
-      true
-    }
     Some("get_claude_mcp_status") => {
       check_usage_endpoint(args, "/mcp/claude/status")
       true
@@ -1359,39 +1166,12 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       enable_prompt(args)
       true
     }
-    Some("import_prompt_from_file") => {
-      import_prompt_from_file(args)
-      true
-    }
-    Some("get_current_prompt_file_content") => {
-      check_usage_endpoint(
-        args,
-        prompt_file_path(args, "/prompts/current-file"),
-      )
-      true
-    }
     Some(command_id) if cli_usage_command_id(command_id) => {
       run_usage_cli_command(command_id, args)
       true
     }
-    Some("suite_manifest") => {
-      print_suite_manifest(args)
-      true
-    }
-    Some("suite_status") => {
-      print_suite_status(args)
-      true
-    }
-    Some("suite_write_status") => {
-      write_suite_status(args)
-      true
-    }
-    Some("suite_moonclaw_providers") => {
-      print_moonclaw_providers_file(args)
-      true
-    }
-    Some("suite_write_moonclaw_providers") => {
-      write_moonclaw_providers_file(args)
+    Some(command_id) if cli_suite_command_id(command_id) => {
+      run_suite_cli_command(command_id, args)
       true
     }
     Some("help") => {

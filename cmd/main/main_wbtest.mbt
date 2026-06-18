@@ -512,6 +512,30 @@ test "skill cli dispatcher owns skills commands" {
 }
 
 ///|
+test "workspace cli dispatcher owns suite workspace commands" {
+  assert_true(cli_workspace_command_id("scan_openclaw_config_health"))
+  assert_true(cli_workspace_command_id("set_openclaw_model_catalog"))
+  assert_true(cli_workspace_command_id("set_hermes_memory"))
+  assert_true(cli_workspace_command_id("save_file_dialog"))
+  assert_true(cli_workspace_command_id("read_workspace_file"))
+  assert_true(cli_workspace_command_id("import_prompt_from_file"))
+  assert_false(cli_workspace_command_id("auth_get_status"))
+  assert_false(cli_workspace_command_id("get_usage_summary"))
+  assert_false(cli_workspace_command_id("suite_manifest"))
+}
+
+///|
+test "suite cli dispatcher owns suite discovery commands" {
+  assert_true(cli_suite_command_id("suite_manifest"))
+  assert_true(cli_suite_command_id("suite_status"))
+  assert_true(cli_suite_command_id("suite_write_status"))
+  assert_true(cli_suite_command_id("suite_moonclaw_providers"))
+  assert_false(cli_suite_command_id("auth_get_status"))
+  assert_false(cli_suite_command_id("get_usage_summary"))
+  assert_false(cli_suite_command_id("read_workspace_file"))
+}
+
+///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),

@@ -1,4 +1,174 @@
 ///|
+fn cli_workspace_command_id(command_id : String) -> Bool {
+  match command_id {
+    "scan_openclaw_config_health"
+    | "get_openclaw_default_model"
+    | "set_openclaw_default_model"
+    | "get_openclaw_model_catalog"
+    | "set_openclaw_model_catalog"
+    | "get_openclaw_agents_defaults"
+    | "set_openclaw_agents_defaults"
+    | "get_openclaw_env"
+    | "set_openclaw_env"
+    | "get_openclaw_tools"
+    | "set_openclaw_tools"
+    | "get_hermes_model_config"
+    | "get_hermes_memory"
+    | "set_hermes_memory"
+    | "get_hermes_memory_limits"
+    | "set_hermes_memory_enabled"
+    | "open_hermes_web_ui"
+    | "launch_hermes_dashboard"
+    | "save_file_dialog"
+    | "open_file_dialog"
+    | "open_zip_file_dialog"
+    | "export_config_to_file"
+    | "import_config_from_file"
+    | "create_db_backup"
+    | "list_db_backups"
+    | "restore_db_backup"
+    | "rename_db_backup"
+    | "delete_db_backup"
+    | "parse_deeplink"
+    | "merge_deeplink_config"
+    | "import_from_deeplink"
+    | "list_daily_memory_files"
+    | "read_daily_memory_file"
+    | "write_daily_memory_file"
+    | "search_daily_memory_files"
+    | "delete_daily_memory_file"
+    | "read_workspace_file"
+    | "write_workspace_file"
+    | "open_workspace_directory"
+    | "import_prompt_from_file"
+    | "get_current_prompt_file_content" => true
+    _ => false
+  }
+}
+
+///|
+async fn run_workspace_cli_command(
+  command_id : String,
+  args : Array[String],
+) -> Unit {
+  match command_id {
+    "scan_openclaw_config_health" =>
+      check_usage_endpoint(args, "/openclaw/config-health")
+    "get_openclaw_default_model" =>
+      check_usage_endpoint(args, "/openclaw/default-model")
+    "set_openclaw_default_model" => set_openclaw_default_model(args)
+    "get_openclaw_model_catalog" =>
+      check_usage_endpoint(args, "/openclaw/model-catalog")
+    "set_openclaw_model_catalog" =>
+      set_suite_json_config(args, "/openclaw/model-catalog", "--catalog")
+    "get_openclaw_agents_defaults" =>
+      check_usage_endpoint(args, "/openclaw/agents-defaults")
+    "set_openclaw_agents_defaults" => set_openclaw_agents_defaults(args)
+    "get_openclaw_env" => check_usage_endpoint(args, "/openclaw/env")
+    "set_openclaw_env" => set_openclaw_env(args)
+    "get_openclaw_tools" => check_usage_endpoint(args, "/openclaw/tools")
+    "set_openclaw_tools" => set_openclaw_tools(args)
+    "get_hermes_model_config" =>
+      check_usage_endpoint(args, "/hermes/model-config")
+    "get_hermes_memory" => check_hermes_memory(args)
+    "set_hermes_memory" => set_hermes_memory(args)
+    "get_hermes_memory_limits" =>
+      check_usage_endpoint(args, "/hermes/memory-limits")
+    "set_hermes_memory_enabled" => set_hermes_memory_enabled(args)
+    "open_hermes_web_ui" => check_usage_endpoint(args, hermes_web_ui_path(args))
+    "launch_hermes_dashboard" =>
+      check_json_post_endpoint(args, "/hermes/dashboard", "Hermes")
+    "save_file_dialog" =>
+      check_usage_endpoint(args, save_file_dialog_path(args))
+    "open_file_dialog" => check_usage_endpoint(args, "/files/dialogs/open")
+    "open_zip_file_dialog" =>
+      check_usage_endpoint(args, "/files/dialogs/open-zip")
+    "export_config_to_file" =>
+      check_json_post_endpoint(
+        args,
+        config_file_path(args, "/config/files/export"),
+        "Import/export",
+      )
+    "import_config_from_file" =>
+      check_json_post_endpoint(
+        args,
+        config_file_path(args, "/config/files/import"),
+        "Import/export",
+      )
+    "create_db_backup" =>
+      check_json_post_endpoint(args, "/backups/db", "Import/export")
+    "list_db_backups" => check_usage_endpoint(args, "/backups/db")
+    "restore_db_backup" =>
+      check_json_post_endpoint(
+        args,
+        db_backup_filename_path(args, "/backups/db/restore"),
+        "Import/export",
+      )
+    "rename_db_backup" =>
+      check_json_post_endpoint(
+        args,
+        db_backup_rename_path(args),
+        "Import/export",
+      )
+    "delete_db_backup" =>
+      check_json_post_endpoint(
+        args,
+        db_backup_filename_path(args, "/backups/db/delete"),
+        "Import/export",
+      )
+    "parse_deeplink" =>
+      check_usage_endpoint(args, deeplink_url_path(args, "/deeplinks/parse"))
+    "merge_deeplink_config" =>
+      check_json_post_endpoint(
+        args,
+        deeplink_request_path(args, "/deeplinks/merge"),
+        "Deeplink",
+      )
+    "import_from_deeplink" =>
+      check_json_post_endpoint(
+        args,
+        deeplink_request_path(args, "/deeplinks/import"),
+        "Deeplink",
+      )
+    "list_daily_memory_files" => check_usage_endpoint(args, "/workspace/memory")
+    "read_daily_memory_file" =>
+      check_usage_endpoint(
+        args,
+        workspace_filename_path(args, "/workspace/memory/file"),
+      )
+    "write_daily_memory_file" =>
+      write_workspace_content(args, "/workspace/memory/write", "Workspace")
+    "search_daily_memory_files" =>
+      check_usage_endpoint(
+        args,
+        workspace_query_path(args, "/workspace/memory/search"),
+      )
+    "delete_daily_memory_file" =>
+      delete_workspace_resource(args, "/workspace/memory/delete", "Workspace")
+    "read_workspace_file" =>
+      check_usage_endpoint(
+        args,
+        workspace_filename_path(args, "/workspace/files"),
+      )
+    "write_workspace_file" =>
+      write_workspace_content(args, "/workspace/files", "Workspace")
+    "open_workspace_directory" =>
+      check_json_post_endpoint(
+        args,
+        workspace_subdir_path(args, "/workspace/open"),
+        "Workspace",
+      )
+    "import_prompt_from_file" => import_prompt_from_file(args)
+    "get_current_prompt_file_content" =>
+      check_usage_endpoint(
+        args,
+        prompt_file_path(args, "/prompts/current-file"),
+      )
+    _ => ()
+  }
+}
+
+///|
 async fn set_openclaw_default_model(args : Array[String]) -> Unit {
   guard openclaw_default_model_path(args) is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())

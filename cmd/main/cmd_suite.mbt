@@ -1,4 +1,31 @@
 ///|
+fn cli_suite_command_id(command_id : String) -> Bool {
+  match command_id {
+    "suite_manifest"
+    | "suite_status"
+    | "suite_write_status"
+    | "suite_moonclaw_providers"
+    | "suite_write_moonclaw_providers" => true
+    _ => false
+  }
+}
+
+///|
+async fn run_suite_cli_command(
+  command_id : String,
+  args : Array[String],
+) -> Unit {
+  match command_id {
+    "suite_manifest" => print_suite_manifest(args)
+    "suite_status" => print_suite_status(args)
+    "suite_write_status" => write_suite_status(args)
+    "suite_moonclaw_providers" => print_moonclaw_providers_file(args)
+    "suite_write_moonclaw_providers" => write_moonclaw_providers_file(args)
+    _ => ()
+  }
+}
+
+///|
 async fn set_suite_json_config(
   args : Array[String],
   base_path : String,
