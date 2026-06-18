@@ -345,67 +345,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Get, "/files/dialogs/open-zip", (_, w) => {
     self.workspace.handle_open_zip_file_dialog(w)
   })
-  router.add_handler(Get, "/skills/installed", (_, w) => {
-    self.skills.handle_get_installed_skills(w)
-  })
-  router.add_handler(Get, "/skills/backups", (_, w) => {
-    self.config.handle_get_skill_backups(w)
-  })
-  router.add_handler(Post, "/skills/backups/delete", (r, w) => {
-    self.config.handle_delete_skill_backup(r, w)
-  })
-  router.add_handler(Post, "/skills/backups/restore", (r, w) => {
-    self.config.handle_restore_skill_backup(r, w)
-  })
-  router.add_handler(Post, "/skills/install-unified", (r, w) => {
-    self.skills.handle_install_skill_unified(r, w)
-  })
-  router.add_handler(Post, "/skills/uninstall-unified", (r, w) => {
-    self.skills.handle_uninstall_skill_unified(r, w)
-  })
-  router.add_handler(Post, "/skills/toggle-app", (r, w) => {
-    self.skills.handle_toggle_skill_app(r, w)
-  })
-  router.add_handler(Get, "/skills/unmanaged", (_, w) => {
-    self.skills.handle_scan_unmanaged_skills(w)
-  })
-  router.add_handler(Post, "/skills/import-apps", (r, w) => {
-    self.skills.handle_import_skills_from_apps(r, w)
-  })
-  router.add_handler(Get, "/skills/discover", (_, w) => {
-    self.skills.handle_discover_available_skills(w)
-  })
-  router.add_handler(Get, "/skills/updates", (_, w) => {
-    self.skills.handle_check_skill_updates(w)
-  })
-  router.add_handler(Post, "/skills/update", (r, w) => {
-    self.skills.handle_update_skill(r, w)
-  })
-  router.add_handler(Post, "/skills/migrate-storage", (r, w) => {
-    self.skills.handle_migrate_skill_storage(r, w)
-  })
-  router.add_handler(Get, "/skills/search", (r, w) => {
-    self.skills.handle_search_skills_sh(r, w)
-  })
-  router.add_handler(Post, "/skills/search", (r, w) => {
-    self.skills.handle_search_skills_sh(r, w)
-  })
-  router.add_handler(Get, "/skills", (_, w) => self.skills.handle_get_skills(w))
-  router.add_handler(Get, "/skills/app", (_, w) => {
-    self.skills.handle_get_skills(w)
-  })
-  router.add_handler(Get, "/skills/repos", (_, w) => {
-    self.skills.handle_get_skill_repos(w)
-  })
-  router.add_handler(Post, "/skills/repos", (r, w) => {
-    self.skills.handle_add_skill_repo(r, w)
-  })
-  router.add_handler(Post, "/skills/repos/remove", (r, w) => {
-    self.skills.handle_remove_skill_repo(r, w)
-  })
-  router.add_handler(Post, "/skills/install-zip", (r, w) => {
-    self.skills.handle_install_skills_from_zip(r, w)
-  })
+  self.skills.register_routes(router, self.config)
   router.add_handler(Get, "/config/app-path", (_, w) => {
     self.config.handle_get_app_config_path(w)
   })
@@ -680,31 +620,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.openclaw.handle_launch_hermes_dashboard(w)
   })
   self.usage.register_routes(router, self.auth, self.proxy.provider_router)
-  router.add_handler(Get, "/sessions", (_, w) => {
-    self.session.handle_list_sessions(w)
-  })
-  router.add_handler(Post, "/sessions", (_, w) => {
-    self.session.handle_list_sessions(w)
-  })
-  router.add_handler(Get, "/sessions/messages", (r, w) => {
-    self.session.handle_get_session_messages(r, w)
-  })
-  router.add_handler(Post, "/sessions/messages", (r, w) => {
-    self.session.handle_get_session_messages(r, w)
-  })
-  router.add_handler(Post, "/sessions/terminal", (r, w) => {
-    self.session.handle_launch_session_terminal(
-      r,
-      w,
-      moon_session_terminal_from_settings(self.config.app_settings),
-    )
-  })
-  router.add_handler(Post, "/sessions/delete", (r, w) => {
-    self.session.handle_delete_session(r, w)
-  })
-  router.add_handler(Post, "/sessions/delete-many", (r, w) => {
-    self.session.handle_delete_sessions(r, w)
-  })
+  self.session.register_routes(
+    router,
+    moon_session_terminal_from_settings(self.config.app_settings),
+  )
   router.add_handler(Get, "/proxy/stream-check/config", (_, w) => {
     self.config.handle_get_stream_check_config(w)
   })

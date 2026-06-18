@@ -2551,6 +2551,7 @@ async test "provider config endpoints are owned by proxy service" {
 ///|
 async test "skill endpoints are owned by skill service" {
   let skill_source = @fsx.read_file("gateway_misc.mbt")
+  let route_source = @fsx.read_file("gateway_skill_routes.mbt")
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
@@ -2565,12 +2566,31 @@ async test "skill endpoints are owned by skill service" {
     assert_false(skill_source.contains("async fn Gateway::\{handler}("))
   }
   assert_true(
-    core_source.contains("self.skills.handle_get_installed_skills(w)"),
+    core_source.contains("self.skills.register_routes(router, self.config)"),
   )
-  assert_true(
-    core_source.contains("self.skills.handle_install_skill_unified(r, w)"),
-  )
-  assert_true(core_source.contains("self.skills.handle_add_skill_repo(r, w)"))
+  for
+    handler in [
+      "handle_get_installed_skills", "handle_install_skill_unified", "handle_add_skill_repo",
+    ] {
+    assert_true(route_source.contains("self.\{handler}("))
+  }
+}
+
+///|
+async test "session endpoints are owned by session service" {
+  let session_source = @fsx.read_file("gateway_session.mbt")
+  let route_source = @fsx.read_file("gateway_session_routes.mbt")
+  let core_source = @fsx.read_file("gateway_core.mbt")
+  for
+    handler in [
+      "handle_list_sessions", "handle_get_session_messages", "handle_launch_session_terminal",
+      "handle_delete_session", "handle_delete_sessions",
+    ] {
+    assert_true(session_source.contains("async fn SessionService::\{handler}("))
+    assert_false(session_source.contains("async fn Gateway::\{handler}("))
+    assert_true(route_source.contains("self.\{handler}("))
+  }
+  assert_true(core_source.contains("self.session.register_routes("))
 }
 
 ///|
