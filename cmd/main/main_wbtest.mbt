@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 185)
+  assert_true(registered_cli_commands().length() >= 215)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -186,6 +186,62 @@ test "registered cli commands match suite command aliases and status commands" {
   assert_true(
     registered_cli_command_id(["moonstat", "launch_hermes_dashboard"]) ==
     Some("launch_hermes_dashboard"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get_config_status"]) ==
+    Some("get_config_status"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get-claude-code-config-path"]) ==
+    Some("get_claude_code_config_path"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "open_config_folder"]) ==
+    Some("open_config_folder"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "pick-directory"]) ==
+    Some("pick_directory"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "copy_text_to_clipboard"]) ==
+    Some("copy_text_to_clipboard"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "check-for-updates"]) ==
+    Some("check_for_updates"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get_tool_versions"]) ==
+    Some("get_tool_versions"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "run-tool-lifecycle-action"]) ==
+    Some("run_tool_lifecycle_action"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "enter_lightweight_mode"]) ==
+    Some("enter_lightweight_mode"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "save-file-dialog"]) ==
+    Some("save_file_dialog"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "export_config_to_file"]) ==
+    Some("export_config_to_file"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "rename-db-backup"]) ==
+    Some("rename_db_backup"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "parse_deeplink"]) ==
+    Some("parse_deeplink"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "import-from-deeplink-unified"]) ==
+    Some("import_from_deeplink_unified"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "settings", "get"]) ==

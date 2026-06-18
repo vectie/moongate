@@ -708,6 +708,120 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
       patterns: ["launch_hermes_dashboard", "launch-hermes-dashboard"],
     },
     {
+      id: "get_claude_config_status",
+      patterns: ["get_claude_config_status", "get-claude-config-status"],
+    },
+    {
+      id: "get_config_status",
+      patterns: ["get_config_status", "get-config-status"],
+    },
+    {
+      id: "get_claude_code_config_path",
+      patterns: ["get_claude_code_config_path", "get-claude-code-config-path"],
+    },
+    { id: "get_config_dir", patterns: ["get_config_dir", "get-config-dir"] },
+    {
+      id: "open_config_folder",
+      patterns: ["open_config_folder", "open-config-folder"],
+    },
+    { id: "pick_directory", patterns: ["pick_directory", "pick-directory"] },
+    { id: "open_external", patterns: ["open_external", "open-external"] },
+    {
+      id: "copy_text_to_clipboard",
+      patterns: ["copy_text_to_clipboard", "copy-text-to-clipboard"],
+    },
+    {
+      id: "check_for_updates",
+      patterns: ["check_for_updates", "check-for-updates"],
+    },
+    {
+      id: "update_tray_menu",
+      patterns: ["update_tray_menu", "update-tray-menu"],
+    },
+    {
+      id: "is_portable_mode",
+      patterns: ["is_portable_mode", "is-portable-mode"],
+    },
+    { id: "get_init_error", patterns: ["get_init_error", "get-init-error"] },
+    {
+      id: "get_migration_result",
+      patterns: ["get_migration_result", "get-migration-result"],
+    },
+    {
+      id: "get_skills_migration_result",
+      patterns: ["get_skills_migration_result", "get-skills-migration-result"],
+    },
+    {
+      id: "get_tool_versions",
+      patterns: ["get_tool_versions", "get-tool-versions"],
+    },
+    {
+      id: "run_tool_lifecycle_action",
+      patterns: ["run_tool_lifecycle_action", "run-tool-lifecycle-action"],
+    },
+    {
+      id: "probe_tool_installations",
+      patterns: ["probe_tool_installations", "probe-tool-installations"],
+    },
+    {
+      id: "set_window_theme",
+      patterns: ["set_window_theme", "set-window-theme"],
+    },
+    {
+      id: "enter_lightweight_mode",
+      patterns: ["enter_lightweight_mode", "enter-lightweight-mode"],
+    },
+    {
+      id: "exit_lightweight_mode",
+      patterns: ["exit_lightweight_mode", "exit-lightweight-mode"],
+    },
+    {
+      id: "is_lightweight_mode",
+      patterns: ["is_lightweight_mode", "is-lightweight-mode"],
+    },
+    {
+      id: "save_file_dialog",
+      patterns: ["save_file_dialog", "save-file-dialog"],
+    },
+    {
+      id: "export_config_to_file",
+      patterns: ["export_config_to_file", "export-config-to-file"],
+    },
+    {
+      id: "import_config_from_file",
+      patterns: ["import_config_from_file", "import-config-from-file"],
+    },
+    {
+      id: "create_db_backup",
+      patterns: ["create_db_backup", "create-db-backup"],
+    },
+    { id: "list_db_backups", patterns: ["list_db_backups", "list-db-backups"] },
+    {
+      id: "restore_db_backup",
+      patterns: ["restore_db_backup", "restore-db-backup"],
+    },
+    {
+      id: "rename_db_backup",
+      patterns: ["rename_db_backup", "rename-db-backup"],
+    },
+    {
+      id: "delete_db_backup",
+      patterns: ["delete_db_backup", "delete-db-backup"],
+    },
+    { id: "parse_deeplink", patterns: ["parse_deeplink", "parse-deeplink"] },
+    {
+      id: "merge_deeplink_config",
+      patterns: ["merge_deeplink_config", "merge-deeplink-config"],
+    },
+    {
+      id: "import_from_deeplink",
+      patterns: ["import_from_deeplink", "import-from-deeplink"],
+    },
+    {
+      id: "import_from_deeplink_unified",
+      patterns: ["import_from_deeplink_unified", "import-from-deeplink-unified"],
+    },
+    {
       id: "get_settings",
       patterns: ["settings get", "get_settings", "get-settings"],
     },
@@ -1676,6 +1790,170 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("launch_hermes_dashboard") => {
       check_json_post_endpoint(args, "/launch_hermes_dashboard", "Hermes")
+      true
+    }
+    Some("get_claude_config_status") => {
+      check_usage_endpoint(args, "/get_claude_config_status")
+      true
+    }
+    Some("get_config_status") => {
+      check_usage_endpoint(args, config_app_path(args, "/get_config_status"))
+      true
+    }
+    Some("get_claude_code_config_path") => {
+      check_usage_endpoint(args, "/get_claude_code_config_path")
+      true
+    }
+    Some("get_config_dir") => {
+      check_usage_endpoint(args, config_app_path(args, "/get_config_dir"))
+      true
+    }
+    Some("open_config_folder") => {
+      check_usage_endpoint(args, config_app_path(args, "/open_config_folder"))
+      true
+    }
+    Some("pick_directory") => {
+      check_usage_endpoint(args, pick_directory_path(args))
+      true
+    }
+    Some("open_external") => {
+      check_usage_endpoint(args, open_external_path(args))
+      true
+    }
+    Some("copy_text_to_clipboard") => {
+      check_usage_endpoint(args, copy_text_to_clipboard_path(args))
+      true
+    }
+    Some("check_for_updates") => {
+      check_json_post_endpoint(args, "/check_for_updates", "App shell")
+      true
+    }
+    Some("update_tray_menu") => {
+      check_json_post_endpoint(args, "/update_tray_menu", "App shell")
+      true
+    }
+    Some("is_portable_mode") => {
+      check_usage_endpoint(args, "/is_portable_mode")
+      true
+    }
+    Some("get_init_error") => {
+      check_usage_endpoint(args, "/get_init_error")
+      true
+    }
+    Some("get_migration_result") => {
+      check_usage_endpoint(args, "/get_migration_result")
+      true
+    }
+    Some("get_skills_migration_result") => {
+      check_usage_endpoint(args, "/get_skills_migration_result")
+      true
+    }
+    Some("get_tool_versions") => {
+      check_usage_endpoint(args, tool_versions_path(args))
+      true
+    }
+    Some("run_tool_lifecycle_action") => {
+      run_tool_lifecycle_action(args)
+      true
+    }
+    Some("probe_tool_installations") => {
+      check_usage_endpoint(args, tool_installations_path(args))
+      true
+    }
+    Some("set_window_theme") => {
+      check_usage_endpoint(args, window_theme_path(args))
+      true
+    }
+    Some("enter_lightweight_mode") => {
+      check_json_post_endpoint(args, "/enter_lightweight_mode", "App shell")
+      true
+    }
+    Some("exit_lightweight_mode") => {
+      check_json_post_endpoint(args, "/exit_lightweight_mode", "App shell")
+      true
+    }
+    Some("is_lightweight_mode") => {
+      check_usage_endpoint(args, "/is_lightweight_mode")
+      true
+    }
+    Some("save_file_dialog") => {
+      check_usage_endpoint(args, save_file_dialog_path(args))
+      true
+    }
+    Some("export_config_to_file") => {
+      check_json_post_endpoint(
+        args,
+        config_file_path(args, "/export_config_to_file"),
+        "Import/export",
+      )
+      true
+    }
+    Some("import_config_from_file") => {
+      check_json_post_endpoint(
+        args,
+        config_file_path(args, "/import_config_from_file"),
+        "Import/export",
+      )
+      true
+    }
+    Some("create_db_backup") => {
+      check_json_post_endpoint(args, "/create_db_backup", "Import/export")
+      true
+    }
+    Some("list_db_backups") => {
+      check_usage_endpoint(args, "/list_db_backups")
+      true
+    }
+    Some("restore_db_backup") => {
+      check_json_post_endpoint(
+        args,
+        db_backup_filename_path(args, "/restore_db_backup"),
+        "Import/export",
+      )
+      true
+    }
+    Some("rename_db_backup") => {
+      check_json_post_endpoint(
+        args,
+        db_backup_rename_path(args),
+        "Import/export",
+      )
+      true
+    }
+    Some("delete_db_backup") => {
+      check_json_post_endpoint(
+        args,
+        db_backup_filename_path(args, "/delete_db_backup"),
+        "Import/export",
+      )
+      true
+    }
+    Some("parse_deeplink") => {
+      check_usage_endpoint(args, deeplink_url_path(args, "/parse_deeplink"))
+      true
+    }
+    Some("merge_deeplink_config") => {
+      check_json_post_endpoint(
+        args,
+        deeplink_request_path(args, "/merge_deeplink_config"),
+        "Deeplink",
+      )
+      true
+    }
+    Some("import_from_deeplink") => {
+      check_json_post_endpoint(
+        args,
+        deeplink_request_path(args, "/import_from_deeplink"),
+        "Deeplink",
+      )
+      true
+    }
+    Some("import_from_deeplink_unified") => {
+      check_json_post_endpoint(
+        args,
+        deeplink_request_path(args, "/import_from_deeplink_unified"),
+        "Deeplink",
+      )
       true
     }
     Some("get_settings") => {
