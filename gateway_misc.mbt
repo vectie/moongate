@@ -125,23 +125,27 @@ fn moon_first_stream_event_ms(current : Int?, started_at_ms : Int?) -> Int? {
 }
 
 ///|
-async fn Gateway::handle_codex_responses(
-  self : Gateway,
+async fn ProxyService::handle_codex_responses(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  session_store : SessionService,
+  model : String,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
   compact? : Bool = false,
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  self.usage.record_inbound(body_str.length())
-  let _ = self.proxy.activate_provider(self.usage, "codex")
-  self.usage.record_request_context("codex", self.model)
+  usage.record_inbound(body_str.length())
+  let _ = self.activate_provider(usage, "codex")
+  usage.record_request_context("codex", model)
   let json_result : Result[Json, Error] = moon_result(() => {
     @json.parse(body_str)
   })
   match json_result {
     Err(_) => {
-      self.usage.record_bad_request_with_provider(self.proxy)
+      usage.record_bad_request_with_provider(self)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write(
@@ -152,7 +156,7 @@ async fn Gateway::handle_codex_responses(
     }
     Ok(json) => {
       let stream = json_bool_field(json, "stream").unwrap_or(false)
-      self.usage.record_stream_mode(stream)
+      usage.record_stream_mode(stream)
       let request = normalize_codex_oauth_request(json)
       let client_format = moon_client_format_for_request(
         r.path.to_owned(),
@@ -164,9 +168,9 @@ async fn Gateway::handle_codex_responses(
         client_format,
       )
       let upstream_session_id = session.upstream_session_id()
-      self.usage.record_request_context(
+      usage.record_request_context(
         "codex",
-        json_string_field(json, "model").unwrap_or(self.model),
+        json_string_field(json, "model").unwrap_or(model),
         session_id=Some(session.session_id),
       )
       let endpoint = codex_backend_responses_endpoint(
@@ -175,11 +179,13 @@ async fn Gateway::handle_codex_responses(
       )
       if stream {
         self.forward_streaming_codex_response(
-          request, endpoint, upstream_session_id, w,
+          auth, usage, session_store, model, request, endpoint, upstream_session_id,
+          w,
         )
       } else {
         self.forward_non_streaming_codex_response(
-          request, endpoint, upstream_session_id, w,
+          auth, usage, session_store, model, request, endpoint, upstream_session_id,
+          w,
         )
       }
     }
@@ -681,17 +687,21 @@ async fn ProxyService::forward_streaming_chat_completion(
 }
 
 ///|
-async fn Gateway::forward_non_streaming_codex_response(
-  self : Gateway,
+async fn ProxyService::forward_non_streaming_codex_response(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  session_store : SessionService,
+  model : String,
   request : Json,
   endpoint : String,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let selection = self.proxy.provider_router.select_providers("codex")
+  let selection = self.provider_router.select_providers("codex")
   if provider_selection_is_all_circuits_open(selection) {
-    self.usage.write_provider_selection_error(
-      self.proxy,
+    usage.write_provider_selection_error(
+      self,
       "codex",
       AllProvidersCircuitOpen,
       w,
@@ -701,11 +711,8 @@ async fn Gateway::forward_non_streaming_codex_response(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let active_provider = self.proxy.active_provider_target(
-      self.usage,
-      providers,
-    )
-    let outbound_request = self.session.codex_provider_outbound_request(
+    let active_provider = self.active_provider_target(usage, providers)
+    let outbound_request = session_store.codex_provider_outbound_request(
       active_provider, request,
     )
     let (response, response_body) = match active_provider {
@@ -719,13 +726,13 @@ async fn Gateway::forward_non_streaming_codex_response(
         let provider_request = if use_chat_bridge {
           codex_responses_request_to_openai_chat_completion(
             outbound_request,
-            codex_request_model(request, self.model),
+            codex_request_model(request, model),
           ).unwrap_or(outbound_request)
         } else {
           outbound_request
         }
         match
-          self.proxy.post_codex_compatible_provider_json(
+          self.post_codex_compatible_provider_json(
             provider, provider_endpoint, provider_request,
           ) {
           Ok((response, body)) =>
@@ -736,7 +743,7 @@ async fn Gateway::forward_non_streaming_codex_response(
                 chat_response =>
                   openai_chat_completion_to_codex_response_with_request(
                     chat_response,
-                    codex_request_model(request, self.model),
+                    codex_request_model(request, model),
                     outbound_request,
                   ).stringify()
               }
@@ -745,7 +752,7 @@ async fn Gateway::forward_non_streaming_codex_response(
               (response, body)
             }
           Err(error) => {
-            let request_model = codex_request_model(request, self.model)
+            let request_model = codex_request_model(request, model)
             let error_body = codex_forward_failed_error_body(
               provider,
               request_model,
@@ -753,8 +760,8 @@ async fn Gateway::forward_non_streaming_codex_response(
               "\{error}",
             )
             if !providers.is_empty() {
-              let next = self.proxy.activate_next_provider_after_upstream_status(
-                self.usage,
+              let next = self.activate_next_provider_after_upstream_status(
+                usage,
                 "codex",
                 providers,
                 attempted_provider_ids,
@@ -763,13 +770,13 @@ async fn Gateway::forward_non_streaming_codex_response(
               if next is Some(_) {
                 continue
               }
-              self.usage.record_upstream_error_status(
+              usage.record_upstream_error_status(
                 error_body.length(),
                 @status.BadGateway,
               )
             } else {
-              self.usage.record_upstream_error_status_with_provider(
-                self.proxy,
+              usage.record_upstream_error_status_with_provider(
+                self,
                 error_body.length(),
                 @status.BadGateway,
               )
@@ -783,8 +790,8 @@ async fn Gateway::forward_non_streaming_codex_response(
         }
       }
       _ => {
-        guard self.auth.credentials is Some(creds) else {
-          self.usage.record_unauthorized_with_provider(self.proxy)
+        guard auth.credentials is Some(creds) else {
+          usage.record_unauthorized_with_provider(self)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Unauthorized)
           w.write(
@@ -793,7 +800,7 @@ async fn Gateway::forward_non_streaming_codex_response(
           w.flush()
           return
         }
-        let client = self.auth.codex_client(
+        let client = auth.codex_client(
           creds,
           accept="application/json",
           session_id~,
@@ -808,9 +815,9 @@ async fn Gateway::forward_non_streaming_codex_response(
       let parsed : Result[Json, Error] = moon_result(() => {
         @json.parse(response_body)
       })
-      let usage = match parsed {
+      let token_usage = match parsed {
         Ok(json) => {
-          ignore(self.session.codex_chat_history.record_response(json))
+          ignore(session_store.codex_chat_history.record_response(json))
           token_usage_or_response_model(
             token_usage_from_codex_response_auto(json),
             json,
@@ -819,9 +826,9 @@ async fn Gateway::forward_non_streaming_codex_response(
         }
         Err(_) => TokenUsage::empty()
       }
-      self.usage.record_success_usage_with_provider(
-        self.proxy,
-        usage,
+      usage.record_success_usage_with_provider(
+        self,
+        token_usage,
         response_body.length(),
       )
       w.header().set("Content-Type", "application/json")
@@ -831,8 +838,8 @@ async fn Gateway::forward_non_streaming_codex_response(
       return
     }
     if !providers.is_empty() {
-      let next = self.proxy.activate_next_provider_after_upstream_status(
-        self.usage,
+      let next = self.activate_next_provider_after_upstream_status(
+        usage,
         "codex",
         providers,
         attempted_provider_ids,
@@ -841,13 +848,10 @@ async fn Gateway::forward_non_streaming_codex_response(
       if next is Some(_) {
         continue
       }
-      self.usage.record_upstream_error_status(
-        response_body.length(),
-        response.code,
-      )
+      usage.record_upstream_error_status(response_body.length(), response.code)
     } else {
-      self.usage.record_upstream_error_status_with_provider(
-        self.proxy,
+      usage.record_upstream_error_status_with_provider(
+        self,
         response_body.length(),
         response.code,
       )
@@ -867,17 +871,21 @@ fn codex_request_model(request : Json, fallback : String) -> String {
 }
 
 ///|
-async fn Gateway::forward_streaming_codex_response(
-  self : Gateway,
+async fn ProxyService::forward_streaming_codex_response(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  session_store : SessionService,
+  model : String,
   request : Json,
   endpoint : String,
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let selection = self.proxy.provider_router.select_providers("codex")
+  let selection = self.provider_router.select_providers("codex")
   if provider_selection_is_all_circuits_open(selection) {
-    self.usage.write_provider_selection_error(
-      self.proxy,
+    usage.write_provider_selection_error(
+      self,
       "codex",
       AllProvidersCircuitOpen,
       w,
@@ -887,11 +895,8 @@ async fn Gateway::forward_streaming_codex_response(
   let providers = if selection.is_ok() { selection.providers } else { [] }
   let attempted_provider_ids : Array[String] = []
   for ;; {
-    let active_provider = self.proxy.active_provider_target(
-      self.usage,
-      providers,
-    )
-    let outbound_request = self.session.codex_provider_outbound_request(
+    let active_provider = self.active_provider_target(usage, providers)
+    let outbound_request = session_store.codex_provider_outbound_request(
       active_provider, request,
     )
     let (client, response, use_chat_bridge) = match active_provider {
@@ -905,18 +910,18 @@ async fn Gateway::forward_streaming_codex_response(
         let provider_request = if use_chat_bridge {
           codex_responses_request_to_openai_chat_completion(
             outbound_request,
-            codex_request_model(request, self.model),
+            codex_request_model(request, model),
           ).unwrap_or(outbound_request)
         } else {
           outbound_request
         }
         match
-          self.proxy.post_codex_compatible_provider_stream(
+          self.post_codex_compatible_provider_stream(
             provider, provider_endpoint, provider_request,
           ) {
           Ok((client, response)) => (client, response, use_chat_bridge)
           Err(error) => {
-            let request_model = codex_request_model(request, self.model)
+            let request_model = codex_request_model(request, model)
             let error_body = codex_forward_failed_error_body(
               provider,
               request_model,
@@ -924,8 +929,8 @@ async fn Gateway::forward_streaming_codex_response(
               "\{error}",
             )
             if !providers.is_empty() {
-              let next = self.proxy.activate_next_provider_after_upstream_status(
-                self.usage,
+              let next = self.activate_next_provider_after_upstream_status(
+                usage,
                 "codex",
                 providers,
                 attempted_provider_ids,
@@ -934,13 +939,13 @@ async fn Gateway::forward_streaming_codex_response(
               if next is Some(_) {
                 continue
               }
-              self.usage.record_upstream_error_status(
+              usage.record_upstream_error_status(
                 error_body.length(),
                 @status.BadGateway,
               )
             } else {
-              self.usage.record_upstream_error_status_with_provider(
-                self.proxy,
+              usage.record_upstream_error_status_with_provider(
+                self,
                 error_body.length(),
                 @status.BadGateway,
               )
@@ -954,8 +959,8 @@ async fn Gateway::forward_streaming_codex_response(
         }
       }
       _ => {
-        guard self.auth.credentials is Some(creds) else {
-          self.usage.record_unauthorized_with_provider(self.proxy)
+        guard auth.credentials is Some(creds) else {
+          usage.record_unauthorized_with_provider(self)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.Unauthorized)
           w.write(
@@ -964,7 +969,7 @@ async fn Gateway::forward_streaming_codex_response(
           w.flush()
           return
         }
-        let client = self.auth.codex_client(
+        let client = auth.codex_client(
           creds,
           accept="text/event-stream",
           session_id~,
@@ -977,8 +982,8 @@ async fn Gateway::forward_streaming_codex_response(
       let error_body = client.read_all().text()
       client.close()
       if !providers.is_empty() {
-        let next = self.proxy.activate_next_provider_after_upstream_status(
-          self.usage,
+        let next = self.activate_next_provider_after_upstream_status(
+          usage,
           "codex",
           providers,
           attempted_provider_ids,
@@ -987,13 +992,10 @@ async fn Gateway::forward_streaming_codex_response(
         if next is Some(_) {
           continue
         }
-        self.usage.record_upstream_error_status(
-          error_body.length(),
-          response.code,
-        )
+        usage.record_upstream_error_status(error_body.length(), response.code)
       } else {
-        self.usage.record_upstream_error_status_with_provider(
-          self.proxy,
+        usage.record_upstream_error_status_with_provider(
+          self,
           error_body.length(),
           response.code,
         )
@@ -1009,8 +1011,8 @@ async fn Gateway::forward_streaming_codex_response(
         client.close()
         let error_body = "{\"error\":{\"message\":\"Streaming response ended before first chunk\",\"type\":\"upstream_error\"}}"
         if !providers.is_empty() {
-          let next = self.proxy.activate_next_provider_after_upstream_status(
-            self.usage,
+          let next = self.activate_next_provider_after_upstream_status(
+            usage,
             "codex",
             providers,
             attempted_provider_ids,
@@ -1019,13 +1021,13 @@ async fn Gateway::forward_streaming_codex_response(
           if next is Some(_) {
             continue
           }
-          self.usage.record_upstream_error_status(
+          usage.record_upstream_error_status(
             error_body.length(),
             @status.BadGateway,
           )
         } else {
-          self.usage.record_upstream_error_status_with_provider(
-            self.proxy,
+          usage.record_upstream_error_status_with_provider(
+            self,
             error_body.length(),
             @status.BadGateway,
           )
@@ -1045,7 +1047,7 @@ async fn Gateway::forward_streaming_codex_response(
         let stream_events : Array[Json] = []
         let mut first_token_ms : Int? = None
         let chat_state = ChatToCodexResponsesStreamState::new_with_context(
-          codex_request_model(request, self.model),
+          codex_request_model(request, model),
           codex_chat_tool_context_from_responses_request(outbound_request),
         )
         if first_line is [.. "data: ", .. rest] {
@@ -1057,14 +1059,12 @@ async fn Gateway::forward_streaming_codex_response(
             )
             response_bytes += bytes
             if stream_events.length() > before {
-              first_token_ms = self.usage.first_stream_event_ms(first_token_ms)
+              first_token_ms = usage.first_stream_event_ms(first_token_ms)
             }
           } else {
             if data != "[DONE]" {
               if push_sse_json_event(stream_events, data) {
-                first_token_ms = self.usage.first_stream_event_ms(
-                  first_token_ms,
-                )
+                first_token_ms = usage.first_stream_event_ms(first_token_ms)
               }
             }
             response_bytes += first_line.length() + 1
@@ -1078,7 +1078,7 @@ async fn Gateway::forward_streaming_codex_response(
           w.write("\n")
           w.flush()
         }
-        self.usage.record_provider_result(self.proxy, true)
+        usage.record_provider_result(self, true)
         while client.read_until("\n") is Some(line) {
           if use_chat_bridge {
             guard line is [.. "data: ", .. rest] else { continue }
@@ -1089,7 +1089,7 @@ async fn Gateway::forward_streaming_codex_response(
             )
             response_bytes += bytes
             if stream_events.length() > before {
-              first_token_ms = self.usage.first_stream_event_ms(first_token_ms)
+              first_token_ms = usage.first_stream_event_ms(first_token_ms)
             }
             if done {
               break
@@ -1100,9 +1100,7 @@ async fn Gateway::forward_streaming_codex_response(
               let data = rest.trim().to_owned()
               if data != "[DONE]" {
                 if push_sse_json_event(stream_events, data) {
-                  first_token_ms = self.usage.first_stream_event_ms(
-                    first_token_ms,
-                  )
+                  first_token_ms = usage.first_stream_event_ms(first_token_ms)
                 }
               }
             }
@@ -1120,10 +1118,10 @@ async fn Gateway::forward_streaming_codex_response(
           w.write("data: [DONE]\n\n")
         }
         ignore(
-          self.session.codex_chat_history.record_stream_events(stream_events),
+          session_store.codex_chat_history.record_stream_events(stream_events),
         )
-        self.usage.record_success_stream_usage_with_provider(
-          self.proxy,
+        usage.record_success_stream_usage_with_provider(
+          self,
           token_usage_from_codex_stream_events_auto(stream_events),
           response_bytes,
           record_provider=false,

@@ -104,28 +104,88 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     )
   })
   router.add_handler(Post, "/responses", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/v1/responses", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/v1/v1/responses", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/codex/v1/responses", (r, w) => {
-    self.handle_codex_responses(r, w)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w, compact=true)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+      compact=true,
+    )
   })
   router.add_handler(Post, "/v1/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w, compact=true)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+      compact=true,
+    )
   })
   router.add_handler(Post, "/v1/v1/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w, compact=true)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+      compact=true,
+    )
   })
   router.add_handler(Post, "/codex/v1/responses/compact", (r, w) => {
-    self.handle_codex_responses(r, w, compact=true)
+    self.proxy.handle_codex_responses(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+      compact=true,
+    )
   })
   router.add_handler(Get, "/participant/register", (_, w) => {
     self.workspace.handle_register_page(self.logger, w)

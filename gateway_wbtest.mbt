@@ -2403,6 +2403,7 @@ async test "provider config endpoints are owned by proxy service" {
       "handle_disable_current_omo", "handle_stream_check_provider", "handle_stream_check_all_providers",
       "handle_models", "handle_claude_desktop_models", "handle_gemini", "handle_chat_completions",
       "forward_non_streaming_chat_completion", "forward_streaming_chat_completion",
+      "handle_codex_responses", "forward_non_streaming_codex_response", "forward_streaming_codex_response",
       "forward_openai_chat_sse_as_anthropic", "forward_anthropic_sse_passthrough",
       "forward_gemini_native_sse_as_anthropic",
     ] {
@@ -2442,6 +2443,7 @@ async test "provider config endpoints are owned by proxy service" {
     core_source.contains("self.proxy.handle_gemini(self.usage, r, w)"),
   )
   assert_true(core_source.contains("self.proxy.handle_chat_completions("))
+  assert_true(core_source.contains("self.proxy.handle_codex_responses("))
   assert_true(
     core_source.contains(
       "self.proxy.handle_claude_desktop_models(self.auth, self.usage, r, w)",
