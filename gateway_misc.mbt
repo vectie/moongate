@@ -5,7 +5,6 @@ pub struct Gateway {
   model : String
   logger : @pino.Logger
   started_at_ms : Int
-  gemini_shadow : GeminiShadowStore
   /// Auth
   auth : AuthService
   /// Proxy routing and circuit breakers
@@ -39,7 +38,6 @@ pub fn Gateway::new(
     model,
     logger,
     started_at_ms: @async.now().to_int(),
-    gemini_shadow: GeminiShadowStore::new(),
     auth: AuthService::new(),
     proxy: ProxyService::new(host, port),
     usage: UsageService::new(),
@@ -5048,18 +5046,19 @@ fn claude_desktop_opus_route_alias_matches(
 }
 
 ///|
-async fn Gateway::handle_messages(
-  self : Gateway,
+async fn ProxyService::handle_messages(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  config : ConfigService,
+  session_store : SessionService,
+  default_model : String,
+  logger : @pino.Logger,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let app_type = if r.path.has_prefix("/claude-desktop") {
-    guard self.auth.validate_claude_desktop_gateway_auth(
-      self.proxy,
-      self.usage,
-      r,
-      w,
-    ) else {
+    guard auth.validate_claude_desktop_gateway_auth(self, usage, r, w) else {
       return
     }
     "claude-desktop"
@@ -5068,12 +5067,12 @@ async fn Gateway::handle_messages(
   }
   let body = r.body.read_all()
   let body_str = body.text()
-  self.usage.record_inbound(body_str.length())
-  let active_provider = self.proxy.activate_provider(self.usage, app_type)
-  self.usage.record_request_context(app_type, self.model)
-  if active_provider is None && self.proxy.all_provider_circuits_open(app_type) {
-    self.usage.write_provider_selection_error(
-      self.proxy,
+  usage.record_inbound(body_str.length())
+  let active_provider = self.activate_provider(usage, app_type)
+  usage.record_request_context(app_type, default_model)
+  if active_provider is None && self.all_provider_circuits_open(app_type) {
+    usage.write_provider_selection_error(
+      self,
       app_type,
       AllProvidersCircuitOpen,
       w,
@@ -5085,7 +5084,7 @@ async fn Gateway::handle_messages(
   })
   match json_result {
     Err(_) => {
-      self.usage.record_bad_request_with_provider(self.proxy)
+      usage.record_bad_request_with_provider(self)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.BadRequest)
       w.write("{\"error\":\"Invalid JSON\"}")
@@ -5110,7 +5109,7 @@ async fn Gateway::handle_messages(
       )
       match anthropic_request_result {
         Err(_) => {
-          self.usage.record_bad_request_with_provider(self.proxy)
+          usage.record_bad_request_with_provider(self)
           w.header().set("Content-Type", "application/json")
           w.write_header(@status.BadRequest)
           w.write("{\"error\":\"Invalid Anthropic request\"}")
@@ -5121,19 +5120,19 @@ async fn Gateway::handle_messages(
           let anthropic_request = normalize_claude_desktop_request_model(
             anthropic_request, app_type,
           )
-          self.logger.info(
+          logger.info(
             "Received Anthropic request for model: \{anthropic_request.model}",
           )
-          let model = self.proxy.upstream_claude_model(
+          let model = self.upstream_claude_model(
             anthropic_request.model,
             active_provider,
-            default_model=self.model,
+            default_model~,
             app_type~,
           )
-          self.logger.debug("Using Codex model: \{model}")
+          logger.debug("Using Codex model: \{model}")
           let stream = anthropic_request.stream.unwrap_or(false)
-          self.usage.record_stream_mode(stream)
-          self.usage.record_request_context(
+          usage.record_stream_mode(stream)
+          usage.record_request_context(
             app_type,
             anthropic_request.model,
             outbound_model=Some(model),
@@ -5141,13 +5140,19 @@ async fn Gateway::handle_messages(
           )
           if stream {
             self.handle_streaming_request(
+              auth,
+              usage,
+              config,
+              session_store,
+              default_model,
+              logger,
               anthropic_request,
               json,
               model,
               r.path.to_owned(),
               active_provider,
               app_type,
-              self.proxy.selected_provider_chain(app_type),
+              self.selected_provider_chain(app_type),
               [],
               anthropic_beta,
               upstream_session_id,
@@ -5155,13 +5160,19 @@ async fn Gateway::handle_messages(
             )
           } else {
             self.handle_non_streaming_request(
+              auth,
+              usage,
+              config,
+              session_store,
+              default_model,
+              logger,
               anthropic_request,
               json,
               model,
               r.path.to_owned(),
               active_provider,
               app_type,
-              self.proxy.selected_provider_chain(app_type),
+              self.selected_provider_chain(app_type),
               [],
               anthropic_beta,
               upstream_session_id,
@@ -5197,8 +5208,14 @@ fn ProxyService::upstream_claude_model(
 }
 
 ///|
-async fn Gateway::forward_non_streaming_claude_compatible_request(
-  self : Gateway,
+async fn ProxyService::forward_non_streaming_claude_compatible_request(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  config : ConfigService,
+  session_store : SessionService,
+  default_model : String,
+  logger : @pino.Logger,
   request : AnthropicRequest,
   request_json : Json,
   upstream_model : String,
@@ -5211,7 +5228,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.usage.record_request_context(
+  usage.record_request_context(
     app_type,
     request.model,
     outbound_model=Some(upstream_model),
@@ -5224,7 +5241,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
   let prepared_upstream = prepare_upstream_request(
     claude_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
-    copilot_config_json=Some(self.config.copilot_optimizer_config_json),
+    copilot_config_json=Some(config.copilot_optimizer_config_json),
     anthropic_beta~,
     session_id~,
   )
@@ -5235,7 +5252,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     false,
     request_path=request_path[:],
   ).replace_all(old="__MODEL__", new=normalize_gemini_model_id(upstream_model))
-  self.logger.debug(
+  logger.debug(
     prompt_cache_trace_message(
       app_type,
       provider.provider_id,
@@ -5245,7 +5262,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
       session_id is Some(_),
     ),
   )
-  let outbound = self.proxy.claude_provider_outbound_body(
+  let outbound = self.claude_provider_outbound_body(
     self.gemini_shadow,
     provider,
     upstream_body,
@@ -5253,7 +5270,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     session_id,
   )
   match
-    self.proxy.post_claude_compatible_provider_json(
+    self.post_claude_compatible_provider_json(
       provider,
       endpoint,
       outbound,
@@ -5264,8 +5281,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     Err(error) => {
       let error_body = "{\"error\":{\"message\":\"Claude upstream request failed: \{error}\",\"type\":\"upstream_error\"}}"
       if !providers.is_empty() {
-        let next = self.proxy.activate_next_provider_after_upstream_status(
-          self.usage,
+        let next = self.activate_next_provider_after_upstream_status(
+          usage,
           app_type,
           providers,
           attempted_provider_ids,
@@ -5273,12 +5290,18 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         )
         if next is Some(provider) {
           self.handle_non_streaming_request(
+            auth,
+            usage,
+            config,
+            session_store,
+            default_model,
+            logger,
             request,
             request_json,
-            self.proxy.upstream_claude_model(
+            self.upstream_claude_model(
               request.model,
               Some(provider),
-              default_model=self.model,
+              default_model~,
               app_type~,
             ),
             request_path,
@@ -5293,8 +5316,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           return
         }
       }
-      self.usage.record_upstream_error_status_with_provider(
-        self.proxy,
+      usage.record_upstream_error_status_with_provider(
+        self,
         error_body.length(),
         @status.BadGateway,
       )
@@ -5312,7 +5335,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         ) {
         let retry_body = replace_image_blocks_with_marker(upstream_body)
         if retry_body.count > 0 {
-          let retry_outbound = self.proxy.claude_provider_outbound_body(
+          let retry_outbound = self.claude_provider_outbound_body(
             self.gemini_shadow,
             provider,
             retry_body.body,
@@ -5320,7 +5343,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             session_id,
           )
           match
-            self.proxy.post_claude_compatible_provider_json(
+            self.post_claude_compatible_provider_json(
               provider,
               endpoint,
               retry_outbound,
@@ -5340,10 +5363,10 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
       if !(response_code is (200..=299)) {
         match moon_rectifier_retry_body(final_response_body, upstream_body) {
           Some(rectifier_retry) => {
-            self.logger.info(
+            logger.info(
               "CCS rectifier retry triggered: \{rectifier_retry.kind} (\{rectifier_retry.summary})",
             )
-            let retry_outbound = self.proxy.claude_provider_outbound_body(
+            let retry_outbound = self.claude_provider_outbound_body(
               self.gemini_shadow,
               provider,
               rectifier_retry.body,
@@ -5351,7 +5374,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
               session_id,
             )
             match
-              self.proxy.post_claude_compatible_provider_json(
+              self.post_claude_compatible_provider_json(
                 provider,
                 endpoint,
                 retry_outbound,
@@ -5377,7 +5400,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
           ) {
           Ok(parsed) => parsed
           Err(message) => {
-            self.usage.record_internal_error_with_provider(self.proxy)
+            usage.record_internal_error_with_provider(self)
             w.header().set("Content-Type", "application/json")
             w.write_header(@status.InternalServerError)
             w.write(
@@ -5387,17 +5410,17 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             return
           }
         }
-        let usage = token_usage_or_response_model(
+        let token_usage = token_usage_or_response_model(
           token_usage_from_claude_compatible_response(parsed, api_format),
           parsed,
           ["model", "modelVersion"],
         )
         if api_format == "openai_responses" {
-          ignore(self.session.codex_chat_history.record_response(parsed))
+          ignore(session_store.codex_chat_history.record_response(parsed))
         }
-        self.usage.record_success_usage_with_provider(
-          self.proxy,
-          usage,
+        usage.record_success_usage_with_provider(
+          self,
+          token_usage,
           final_response_body.length(),
         )
         if api_format == "gemini_native" {
@@ -5417,21 +5440,23 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
         w.write(anthropic_response.stringify())
       } else {
         if !providers.is_empty() {
-          let next = self.proxy.activate_next_provider_after_upstream_status(
-            self.usage,
-            app_type,
-            providers,
-            attempted_provider_ids,
-            response_code,
+          let next = self.activate_next_provider_after_upstream_status(
+            usage, app_type, providers, attempted_provider_ids, response_code,
           )
           if next is Some(provider) {
             self.handle_non_streaming_request(
+              auth,
+              usage,
+              config,
+              session_store,
+              default_model,
+              logger,
               request,
               request_json,
-              self.proxy.upstream_claude_model(
+              self.upstream_claude_model(
                 request.model,
                 Some(provider),
-                default_model=self.model,
+                default_model~,
                 app_type~,
               ),
               request_path,
@@ -5446,8 +5471,8 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             return
           }
         }
-        self.usage.record_upstream_error_status_with_provider(
-          self.proxy,
+        usage.record_upstream_error_status_with_provider(
+          self,
           final_response_body.length(),
           response_code,
         )
@@ -6436,8 +6461,14 @@ fn append_openai_chat_tool_calls_as_anthropic(
 }
 
 ///|
-async fn Gateway::handle_non_streaming_request(
-  self : Gateway,
+async fn ProxyService::handle_non_streaming_request(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  config : ConfigService,
+  session_store : SessionService,
+  default_model : String,
+  logger : @pino.Logger,
   request : AnthropicRequest,
   request_json : Json,
   model : String,
@@ -6453,15 +6484,16 @@ async fn Gateway::handle_non_streaming_request(
   match active_provider {
     Some(provider) if provider.can_use_claude_compatible_upstream() => {
       self.forward_non_streaming_claude_compatible_request(
-        request, request_json, model, request_path, provider, app_type, providers,
-        attempted_provider_ids, anthropic_beta, session_id, w,
+        auth, usage, config, session_store, default_model, logger, request, request_json,
+        model, request_path, provider, app_type, providers, attempted_provider_ids,
+        anthropic_beta, session_id, w,
       )
       return
     }
     _ => ()
   }
-  guard self.auth.credentials is Some(creds) else {
-    self.usage.record_unauthorized_with_provider(self.proxy)
+  guard auth.credentials is Some(creds) else {
+    usage.record_unauthorized_with_provider(self)
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write("{\"error\":\"Not authenticated. Please login first.\"}")
@@ -6470,7 +6502,7 @@ async fn Gateway::handle_non_streaming_request(
   }
   let codex_input = convert_anthropic_to_codex(request, model)
   let codex_request = build_codex_request(codex_input, model, false)
-  self.logger.debug("Sending request to Codex API")
+  logger.debug("Sending request to Codex API")
   let client = @http.Client::new(
     "https://chatgpt.com",
     headers=codex_oauth_headers(creds, "application/json", session_id),
@@ -6479,28 +6511,29 @@ async fn Gateway::handle_non_streaming_request(
   let response = client.post("/backend-api/codex/responses", codex_request)
   if response.code != 200 {
     let error_body = client.read_all().text()
-    self.logger.error("Codex API error: \{response.code} - \{error_body}")
+    logger.error("Codex API error: \{response.code} - \{error_body}")
     if response.code == 401 {
-      self.logger.info("Attempting to refresh credentials")
+      logger.info("Attempting to refresh credentials")
       let refresh_result : Result[@codex.Credentials, Error] = moon_async_result(() => {
           @codex.refresh_and_save_credentials()
         },
       )
       match refresh_result {
         Ok(new_creds) => {
-          self.auth.credentials = Some(new_creds)
-          self.logger.info("Credentials refreshed, retrying request")
+          auth.credentials = Some(new_creds)
+          logger.info("Credentials refreshed, retrying request")
           self.handle_non_streaming_request(
-            request, request_json, model, request_path, active_provider, app_type,
-            providers, attempted_provider_ids, anthropic_beta, session_id, w,
+            auth, usage, config, session_store, default_model, logger, request, request_json,
+            model, request_path, active_provider, app_type, providers, attempted_provider_ids,
+            anthropic_beta, session_id, w,
           )
           return
         }
         Err(_) => ()
       }
     }
-    self.usage.record_upstream_error_status_with_provider(
-      self.proxy,
+    usage.record_upstream_error_status_with_provider(
+      self,
       error_body.length(),
       response.code,
     )
@@ -6516,15 +6549,15 @@ async fn Gateway::handle_non_streaming_request(
   })
   match response_json_result {
     Ok(json) => {
-      ignore(self.session.codex_chat_history.record_response(json))
-      let usage = token_usage_or_response_model(
+      ignore(session_store.codex_chat_history.record_response(json))
+      let token_usage = token_usage_or_response_model(
         token_usage_from_codex_response_auto(json),
         json,
         ["model"],
       )
-      self.usage.record_success_usage_with_provider(
-        self.proxy,
-        usage,
+      usage.record_success_usage_with_provider(
+        self,
+        token_usage,
         response_body.length(),
       )
       let anthropic_response = convert_codex_to_anthropic(json, request.model)
@@ -6533,7 +6566,7 @@ async fn Gateway::handle_non_streaming_request(
       w.write(anthropic_response.to_json().stringify())
     }
     Err(_) => {
-      self.usage.record_internal_error_with_provider(self.proxy)
+      usage.record_internal_error_with_provider(self)
       w.header().set("Content-Type", "application/json")
       w.write_header(@status.InternalServerError)
       w.write("{\"error\":\"Failed to parse Codex response\"}")
@@ -6543,8 +6576,14 @@ async fn Gateway::handle_non_streaming_request(
 }
 
 ///|
-async fn Gateway::forward_streaming_claude_compatible_request(
-  self : Gateway,
+async fn ProxyService::forward_streaming_claude_compatible_request(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  config : ConfigService,
+  session_store : SessionService,
+  default_model : String,
+  logger : @pino.Logger,
   request : AnthropicRequest,
   request_json : Json,
   upstream_model : String,
@@ -6557,7 +6596,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  self.usage.record_request_context(
+  usage.record_request_context(
     app_type,
     request.model,
     outbound_model=Some(upstream_model),
@@ -6570,7 +6609,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
   let prepared_upstream = prepare_upstream_request(
     claude_stream_request_json_for_upstream(request_json, upstream_model),
     provider=Some(provider),
-    copilot_config_json=Some(self.config.copilot_optimizer_config_json),
+    copilot_config_json=Some(config.copilot_optimizer_config_json),
     anthropic_beta~,
     session_id~,
   )
@@ -6581,7 +6620,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     true,
     request_path=request_path[:],
   ).replace_all(old="__MODEL__", new=normalize_gemini_model_id(upstream_model))
-  self.logger.debug(
+  logger.debug(
     prompt_cache_trace_message(
       app_type,
       provider.provider_id,
@@ -6591,7 +6630,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       session_id is Some(_),
     ),
   )
-  let outbound = self.proxy.claude_provider_outbound_body(
+  let outbound = self.claude_provider_outbound_body(
     self.gemini_shadow,
     provider,
     upstream_body,
@@ -6627,7 +6666,7 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     if moon_media_retry_should_trigger(response.code, error_body, upstream_body) {
       let retry_body = replace_image_blocks_with_marker(upstream_body)
       if retry_body.count > 0 {
-        let retry_outbound = self.proxy.claude_provider_outbound_body(
+        let retry_outbound = self.claude_provider_outbound_body(
           self.gemini_shadow,
           provider,
           retry_body.body,
@@ -6650,6 +6689,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         let retry_response = retry_client.post(path, retry_outbound)
         if retry_response.code == 200 {
           self.forward_successful_claude_compatible_stream(
+            usage,
+            session_store,
             retry_client,
             request.model,
             api_format,
@@ -6661,8 +6702,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         }
         let retry_error_body = retry_client.read_all().text()
         if !providers.is_empty() {
-          let next = self.proxy.activate_next_provider_after_upstream_status(
-            self.usage,
+          let next = self.activate_next_provider_after_upstream_status(
+            usage,
             app_type,
             providers,
             attempted_provider_ids,
@@ -6670,12 +6711,18 @@ async fn Gateway::forward_streaming_claude_compatible_request(
           )
           if next is Some(provider) {
             self.handle_streaming_request(
+              auth,
+              usage,
+              config,
+              session_store,
+              default_model,
+              logger,
               request,
               request_json,
-              self.proxy.upstream_claude_model(
+              self.upstream_claude_model(
                 request.model,
                 Some(provider),
-                default_model=self.model,
+                default_model~,
                 app_type~,
               ),
               request_path,
@@ -6690,8 +6737,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             return
           }
         }
-        self.usage.record_upstream_error_status_with_provider(
-          self.proxy,
+        usage.record_upstream_error_status_with_provider(
+          self,
           retry_error_body.length(),
           retry_response.code,
         )
@@ -6704,10 +6751,10 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     }
     match moon_rectifier_retry_body(error_body, upstream_body) {
       Some(rectifier_retry) => {
-        self.logger.info(
+        logger.info(
           "CCS rectifier stream retry triggered: \{rectifier_retry.kind} (\{rectifier_retry.summary})",
         )
-        let retry_outbound = self.proxy.claude_provider_outbound_body(
+        let retry_outbound = self.claude_provider_outbound_body(
           self.gemini_shadow,
           provider,
           rectifier_retry.body,
@@ -6730,6 +6777,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         let retry_response = retry_client.post(path, retry_outbound)
         if retry_response.code == 200 {
           self.forward_successful_claude_compatible_stream(
+            usage,
+            session_store,
             retry_client,
             request.model,
             api_format,
@@ -6741,8 +6790,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         }
         let retry_error_body = retry_client.read_all().text()
         if !providers.is_empty() {
-          let next = self.proxy.activate_next_provider_after_upstream_status(
-            self.usage,
+          let next = self.activate_next_provider_after_upstream_status(
+            usage,
             app_type,
             providers,
             attempted_provider_ids,
@@ -6750,12 +6799,18 @@ async fn Gateway::forward_streaming_claude_compatible_request(
           )
           if next is Some(provider) {
             self.handle_streaming_request(
+              auth,
+              usage,
+              config,
+              session_store,
+              default_model,
+              logger,
               request,
               request_json,
-              self.proxy.upstream_claude_model(
+              self.upstream_claude_model(
                 request.model,
                 Some(provider),
-                default_model=self.model,
+                default_model~,
                 app_type~,
               ),
               request_path,
@@ -6770,8 +6825,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
             return
           }
         }
-        self.usage.record_upstream_error_status_with_provider(
-          self.proxy,
+        usage.record_upstream_error_status_with_provider(
+          self,
           retry_error_body.length(),
           retry_response.code,
         )
@@ -6784,8 +6839,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       None => ()
     }
     if !providers.is_empty() {
-      let next = self.proxy.activate_next_provider_after_upstream_status(
-        self.usage,
+      let next = self.activate_next_provider_after_upstream_status(
+        usage,
         app_type,
         providers,
         attempted_provider_ids,
@@ -6793,12 +6848,18 @@ async fn Gateway::forward_streaming_claude_compatible_request(
       )
       if next is Some(provider) {
         self.handle_streaming_request(
+          auth,
+          usage,
+          config,
+          session_store,
+          default_model,
+          logger,
           request,
           request_json,
-          self.proxy.upstream_claude_model(
+          self.upstream_claude_model(
             request.model,
             Some(provider),
-            default_model=self.model,
+            default_model~,
             app_type~,
           ),
           request_path,
@@ -6813,8 +6874,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
         return
       }
     }
-    self.usage.record_upstream_error_status_with_provider(
-      self.proxy,
+    usage.record_upstream_error_status_with_provider(
+      self,
       error_body.length(),
       response.code,
     )
@@ -6825,6 +6886,8 @@ async fn Gateway::forward_streaming_claude_compatible_request(
     return
   }
   self.forward_successful_claude_compatible_stream(
+    usage,
+    session_store,
     client,
     request.model,
     api_format,
@@ -6835,8 +6898,10 @@ async fn Gateway::forward_streaming_claude_compatible_request(
 }
 
 ///|
-async fn Gateway::forward_successful_claude_compatible_stream(
-  self : Gateway,
+async fn ProxyService::forward_successful_claude_compatible_stream(
+  self : ProxyService,
+  usage : UsageService,
+  session_store : SessionService,
   client : @http.Client,
   request_model : String,
   api_format : String,
@@ -6848,17 +6913,14 @@ async fn Gateway::forward_successful_claude_compatible_stream(
   w.header().set("Cache-Control", "no-cache")
   w.header().set("Connection", "keep-alive")
   w.write_header(@status.Ok)
-  self.usage.record_provider_result(self.proxy, true)
+  usage.record_provider_result(self, true)
   let stream_events : Array[Json] = []
   if api_format == "openai_chat" {
-    let first_token_ms = self.proxy.forward_openai_chat_sse_as_anthropic(
-      self.usage,
-      client,
-      stream_events,
-      w,
+    let first_token_ms = self.forward_openai_chat_sse_as_anthropic(
+      usage, client, stream_events, w,
     )
-    self.usage.record_success_stream_usage_with_provider(
-      self.proxy,
+    usage.record_success_stream_usage_with_provider(
+      self,
       token_usage_from_openai_stream_events(stream_events),
       0,
       record_provider=false,
@@ -6866,8 +6928,8 @@ async fn Gateway::forward_successful_claude_compatible_stream(
       skip_empty_usage=true,
     )
   } else if api_format == "gemini_native" {
-    let first_token_ms = self.proxy.forward_gemini_native_sse_as_anthropic(
-      self.usage,
+    let first_token_ms = self.forward_gemini_native_sse_as_anthropic(
+      usage,
       self.gemini_shadow,
       client,
       stream_events,
@@ -6875,8 +6937,8 @@ async fn Gateway::forward_successful_claude_compatible_stream(
       session_id,
       w,
     )
-    self.usage.record_success_stream_usage_with_provider(
-      self.proxy,
+    usage.record_success_stream_usage_with_provider(
+      self,
       token_usage_from_gemini_stream_chunks(stream_events),
       0,
       record_provider=false,
@@ -6887,14 +6949,14 @@ async fn Gateway::forward_successful_claude_compatible_stream(
     let reader = CodexStreamReader::new(client, request_model)
     let mut first_token_ms : Int? = None
     while reader.read() is Some(event) {
-      first_token_ms = self.usage.first_stream_event_ms(first_token_ms)
+      first_token_ms = usage.first_stream_event_ms(first_token_ms)
       w.write("event: \{event.event_type}\n")
       w.write("data: \{event.data}\n\n")
       w.flush()
     }
-    ignore(self.session.codex_chat_history.record_stream_events(reader.events))
-    self.usage.record_success_stream_usage_with_provider(
-      self.proxy,
+    ignore(session_store.codex_chat_history.record_stream_events(reader.events))
+    usage.record_success_stream_usage_with_provider(
+      self,
       token_usage_from_codex_stream_events_auto(reader.events),
       0,
       record_provider=false,
@@ -6902,14 +6964,11 @@ async fn Gateway::forward_successful_claude_compatible_stream(
       skip_empty_usage=true,
     )
   } else {
-    let first_token_ms = self.proxy.forward_anthropic_sse_passthrough(
-      self.usage,
-      client,
-      stream_events,
-      w,
+    let first_token_ms = self.forward_anthropic_sse_passthrough(
+      usage, client, stream_events, w,
     )
-    self.usage.record_success_stream_usage_with_provider(
-      self.proxy,
+    usage.record_success_stream_usage_with_provider(
+      self,
       token_usage_from_claude_stream_events(stream_events),
       0,
       record_provider=false,
@@ -8552,8 +8611,14 @@ fn openai_chat_stop_reason(reason : String) -> String {
 }
 
 ///|
-async fn Gateway::handle_streaming_request(
-  self : Gateway,
+async fn ProxyService::handle_streaming_request(
+  self : ProxyService,
+  auth : AuthService,
+  usage : UsageService,
+  config : ConfigService,
+  session_store : SessionService,
+  default_model : String,
+  logger : @pino.Logger,
   request : AnthropicRequest,
   request_json : Json,
   model : String,
@@ -8569,15 +8634,16 @@ async fn Gateway::handle_streaming_request(
   match active_provider {
     Some(provider) if provider.can_use_claude_compatible_upstream() => {
       self.forward_streaming_claude_compatible_request(
-        request, request_json, model, request_path, provider, app_type, providers,
-        attempted_provider_ids, anthropic_beta, session_id, w,
+        auth, usage, config, session_store, default_model, logger, request, request_json,
+        model, request_path, provider, app_type, providers, attempted_provider_ids,
+        anthropic_beta, session_id, w,
       )
       return
     }
     _ => ()
   }
-  guard self.auth.credentials is Some(creds) else {
-    self.usage.record_unauthorized_with_provider(self.proxy)
+  guard auth.credentials is Some(creds) else {
+    usage.record_unauthorized_with_provider(self)
     w.header().set("Content-Type", "application/json")
     w.write_header(@status.Unauthorized)
     w.write("{\"error\":\"Not authenticated. Please login first.\"}")
@@ -8586,7 +8652,7 @@ async fn Gateway::handle_streaming_request(
   }
   let codex_input = convert_anthropic_to_codex(request, model)
   let codex_request = build_codex_request(codex_input, model, true)
-  self.logger.debug("Sending streaming request to Codex API")
+  logger.debug("Sending streaming request to Codex API")
   let client = @http.Client::new(
     "https://chatgpt.com",
     headers=codex_oauth_headers(creds, "text/event-stream", session_id),
@@ -8595,28 +8661,29 @@ async fn Gateway::handle_streaming_request(
   let response = client.post("/backend-api/codex/responses", codex_request)
   if response.code != 200 {
     let error_body = client.read_all().text()
-    self.logger.error("Codex API error: \{response.code} - \{error_body}")
+    logger.error("Codex API error: \{response.code} - \{error_body}")
     if response.code == 401 {
-      self.logger.info("Attempting to refresh credentials")
+      logger.info("Attempting to refresh credentials")
       let refresh_result : Result[@codex.Credentials, Error] = moon_async_result(() => {
           @codex.refresh_and_save_credentials()
         },
       )
       match refresh_result {
         Ok(new_creds) => {
-          self.auth.credentials = Some(new_creds)
-          self.logger.info("Credentials refreshed, retrying request")
+          auth.credentials = Some(new_creds)
+          logger.info("Credentials refreshed, retrying request")
           self.handle_streaming_request(
-            request, request_json, model, request_path, active_provider, app_type,
-            providers, attempted_provider_ids, anthropic_beta, session_id, w,
+            auth, usage, config, session_store, default_model, logger, request, request_json,
+            model, request_path, active_provider, app_type, providers, attempted_provider_ids,
+            anthropic_beta, session_id, w,
           )
           return
         }
         Err(_) => ()
       }
     }
-    self.usage.record_upstream_error_status_with_provider(
-      self.proxy,
+    usage.record_upstream_error_status_with_provider(
+      self,
       error_body.length(),
       response.code,
     )
@@ -8631,17 +8698,17 @@ async fn Gateway::handle_streaming_request(
   w.header().set("Connection", "keep-alive")
   w.write_header(@status.Ok)
   let reader = CodexStreamReader::new(client, request.model)
-  self.usage.record_provider_result(self.proxy, true)
+  usage.record_provider_result(self, true)
   let mut first_token_ms : Int? = None
   while reader.read() is Some(event) {
-    first_token_ms = self.usage.first_stream_event_ms(first_token_ms)
+    first_token_ms = usage.first_stream_event_ms(first_token_ms)
     w.write("event: \{event.event_type}\n")
     w.write("data: \{event.data}\n\n")
     w.flush()
   }
-  ignore(self.session.codex_chat_history.record_stream_events(reader.events))
-  self.usage.record_success_stream_usage_with_provider(
-    self.proxy,
+  ignore(session_store.codex_chat_history.record_stream_events(reader.events))
+  usage.record_success_stream_usage_with_provider(
+    self,
     token_usage_from_codex_stream_events_auto(reader.events),
     0,
     record_provider=false,

@@ -19,6 +19,7 @@ fn AuthService::credentials_loaded(self : AuthService) -> Bool {
 /// ProxyService handles provider routing, circuit breakers, failover, and proxy config.
 pub struct ProxyService {
   provider_router : ProviderRouter
+  gemini_shadow : GeminiShadowStore
   mut proxy_enabled : Bool
   mut proxy_listen_address : String
   mut proxy_listen_port : Int
@@ -38,6 +39,7 @@ pub struct ProxyService {
 pub fn ProxyService::new(host : String, port : Int) -> ProxyService {
   {
     provider_router: moonstat_default_provider_router(),
+    gemini_shadow: GeminiShadowStore::new(),
     proxy_enabled: true,
     proxy_listen_address: host,
     proxy_listen_port: port,

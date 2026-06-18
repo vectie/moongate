@@ -2093,10 +2093,10 @@ async test "auth endpoints are owned by auth service" {
   assert_true(core_source.contains("self.auth.handle_copilot_get_usage(r, w)"))
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   assert_true(
-    misc_source.contains("self.auth.validate_claude_desktop_gateway_auth("),
+    misc_source.contains(
+      "auth.validate_claude_desktop_gateway_auth(self, usage, r, w)",
+    ),
   )
-  assert_true(misc_source.contains("self.proxy,"))
-  assert_true(misc_source.contains("self.usage,"))
 }
 
 ///|
@@ -2399,7 +2399,9 @@ async test "provider config endpoints are owned by proxy service" {
       "handle_models", "handle_claude_desktop_models", "handle_gemini", "handle_chat_completions",
       "forward_non_streaming_chat_completion", "forward_streaming_chat_completion",
       "handle_codex_responses", "forward_non_streaming_codex_response", "forward_streaming_codex_response",
-      "forward_openai_chat_sse_as_anthropic", "forward_anthropic_sse_passthrough",
+      "handle_messages", "forward_non_streaming_claude_compatible_request", "handle_non_streaming_request",
+      "forward_streaming_claude_compatible_request", "forward_successful_claude_compatible_stream",
+      "handle_streaming_request", "forward_openai_chat_sse_as_anthropic", "forward_anthropic_sse_passthrough",
       "forward_gemini_native_sse_as_anthropic",
     ] {
     assert_true(sources.contains("async fn ProxyService::\{handler}("))
@@ -2437,6 +2439,7 @@ async test "provider config endpoints are owned by proxy service" {
   assert_true(
     core_source.contains("self.proxy.handle_gemini(self.usage, r, w)"),
   )
+  assert_true(core_source.contains("self.proxy.handle_messages("))
   assert_true(core_source.contains("self.proxy.handle_chat_completions("))
   assert_true(core_source.contains("self.proxy.handle_codex_responses("))
   assert_true(

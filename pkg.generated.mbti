@@ -386,7 +386,6 @@ pub struct Gateway {
   model : String
   logger : @pino.Logger
   started_at_ms : Int
-  gemini_shadow : GeminiShadowStore
   auth : AuthService
   proxy : ProxyService
   usage : UsageService
@@ -645,6 +644,7 @@ pub fn ProviderSelectionError::to_string(Self) -> String
 
 pub struct ProxyService {
   provider_router : ProviderRouter
+  gemini_shadow : GeminiShadowStore
   mut proxy_enabled : Bool
   mut proxy_listen_address : String
   mut proxy_listen_port : Int

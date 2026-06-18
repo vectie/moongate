@@ -34,9 +34,29 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   }
   let router = @httpx.Router::new()
   let file_server = @httpx.FileServer::new("public")
-  router.add_handler(Post, "/v1/messages", (r, w) => self.handle_messages(r, w))
+  router.add_handler(Post, "/v1/messages", (r, w) => {
+    self.proxy.handle_messages(
+      self.auth,
+      self.usage,
+      self.config,
+      self.session,
+      self.model,
+      self.logger,
+      r,
+      w,
+    )
+  })
   router.add_handler(Post, "/claude-desktop/v1/messages", (r, w) => {
-    self.handle_messages(r, w)
+    self.proxy.handle_messages(
+      self.auth,
+      self.usage,
+      self.config,
+      self.session,
+      self.model,
+      self.logger,
+      r,
+      w,
+    )
   })
   for method_ in @httpx.methods {
     router.add_handler(method_, "/v1beta/*path", (r, w) => {
