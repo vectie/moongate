@@ -5,15 +5,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     return
   }
   match arr[1:] {
-    ["start", ..] => start_gateway(arr)
-    ["install", ..] => install_reroute(arr)
-    ["uninstall"] | ["remove"] => uninstall_reroute()
-    ["claude-desktop", "install", ..] => install_claude_desktop(arr)
-    ["claude-desktop", "uninstall" | "remove", ..] => uninstall_claude_desktop()
-    ["claude-desktop", "status", ..] => status_claude_desktop()
-    ["codex", "install", ..] => install_codex(arr)
-    ["codex", "uninstall" | "remove", ..] => uninstall_codex()
-    ["codex", "status", ..] => status_codex()
     ["webdav_test_connection", ..] | ["webdav-test-connection", ..] =>
       check_json_post_endpoint(
         arr,
@@ -190,8 +181,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["delete_env_vars", ..] | ["delete-env-vars", ..] => delete_env_vars(arr)
     ["restore_env_backup", ..] | ["restore-env-backup", ..] =>
       restore_env_backup(arr)
-    ["help"] | ["--help"] | ["-h"] => print_help()
-    ["version"] | ["--version"] | ["-v"] => println("moonstat v0.1.0")
     _ => print_help()
   }
 }

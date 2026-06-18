@@ -8,6 +8,23 @@ test "has flag matches exact CLI option" {
 ///|
 test "registered cli commands match suite command aliases and status commands" {
   assert_true(registered_cli_commands().length() >= 215)
+  assert_true(registered_cli_command_id(["moonstat", "start"]) == Some("start"))
+  assert_true(
+    registered_cli_command_id(["moonstat", "install", "--port", "15721"]) ==
+    Some("install_reroute"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "claude-desktop", "status"]) ==
+    Some("status_claude_desktop"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "codex", "remove"]) ==
+    Some("uninstall_codex"),
+  )
+  assert_true(registered_cli_command_id(["moonstat", "--help"]) == Some("help"))
+  assert_true(
+    registered_cli_command_id(["moonstat", "--version"]) == Some("version"),
+  )
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],

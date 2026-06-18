@@ -7,6 +7,18 @@ priv struct CliCommandSpec {
 ///|
 fn registered_cli_commands() -> Array[CliCommandSpec] {
   [
+    { id: "start", patterns: ["start"] },
+    { id: "install_reroute", patterns: ["install"] },
+    { id: "uninstall_reroute", patterns: ["uninstall", "remove"] },
+    { id: "install_claude_desktop", patterns: ["claude-desktop install"] },
+    {
+      id: "uninstall_claude_desktop",
+      patterns: ["claude-desktop uninstall", "claude-desktop remove"],
+    },
+    { id: "status_claude_desktop", patterns: ["claude-desktop status"] },
+    { id: "install_codex", patterns: ["codex install"] },
+    { id: "uninstall_codex", patterns: ["codex uninstall", "codex remove"] },
+    { id: "status_codex", patterns: ["codex status"] },
     { id: "login", patterns: ["login"] },
     {
       id: "auth_start_login",
@@ -1223,6 +1235,8 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "status", patterns: ["status"] },
     { id: "health", patterns: ["health"] },
     { id: "stats", patterns: ["stats"] },
+    { id: "help", patterns: ["help", "--help", "-h"] },
+    { id: "version", patterns: ["version", "--version", "-v"] },
   ]
 }
 
@@ -1266,6 +1280,42 @@ fn registered_cli_command_id(args : Array[String]) -> String? {
 ///|
 async fn run_registered_cli_command(args : Array[String]) -> Bool {
   match registered_cli_command_id(args) {
+    Some("start") => {
+      start_gateway(args)
+      true
+    }
+    Some("install_reroute") => {
+      install_reroute(args)
+      true
+    }
+    Some("uninstall_reroute") => {
+      uninstall_reroute()
+      true
+    }
+    Some("install_claude_desktop") => {
+      install_claude_desktop(args)
+      true
+    }
+    Some("uninstall_claude_desktop") => {
+      uninstall_claude_desktop()
+      true
+    }
+    Some("status_claude_desktop") => {
+      status_claude_desktop()
+      true
+    }
+    Some("install_codex") => {
+      install_codex(args)
+      true
+    }
+    Some("uninstall_codex") => {
+      uninstall_codex()
+      true
+    }
+    Some("status_codex") => {
+      status_codex()
+      true
+    }
     Some("login") => {
       do_login(args)
       true
@@ -2136,6 +2186,14 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("stats") => {
       check_stats(args)
+      true
+    }
+    Some("help") => {
+      print_help()
+      true
+    }
+    Some("version") => {
+      println("moonstat v0.1.0")
       true
     }
     _ => false
