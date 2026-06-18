@@ -220,25 +220,54 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.workspace.handle_save_file_dialog(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/export_config_to_file", (r, w) => {
-    self.handle_export_config_to_file(r, w)
+    self.config.handle_export_config_to_file(
+      self.proxy,
+      host=self.host,
+      port=self.port,
+      r,
+      w,
+    )
   })
   router.add_handler(@httpx.Method::Get, "/export_config_to_file", (r, w) => {
-    self.handle_export_config_to_file(r, w)
+    self.config.handle_export_config_to_file(
+      self.proxy,
+      host=self.host,
+      port=self.port,
+      r,
+      w,
+    )
   })
   router.add_handler(@httpx.Method::Post, "/import_config_from_file", (r, w) => {
-    self.handle_import_config_from_file(r, w)
+    self.config.handle_import_config_from_file(
+      self.proxy,
+      host=self.host,
+      port=self.port,
+      r,
+      w,
+    )
   })
   router.add_handler(@httpx.Method::Get, "/import_config_from_file", (r, w) => {
-    self.handle_import_config_from_file(r, w)
+    self.config.handle_import_config_from_file(
+      self.proxy,
+      host=self.host,
+      port=self.port,
+      r,
+      w,
+    )
   })
   router.add_handler(@httpx.Method::Post, "/create_db_backup", (_, w) => {
-    self.handle_create_db_backup(w)
+    self.config.handle_create_db_backup(
+      self.proxy,
+      host=self.host,
+      port=self.port,
+      w,
+    )
   })
   router.add_handler(@httpx.Method::Get, "/list_db_backups", (_, w) => {
     self.config.handle_list_db_backups(w)
   })
   router.add_handler(@httpx.Method::Post, "/restore_db_backup", (r, w) => {
-    self.handle_restore_db_backup(r, w)
+    self.config.handle_restore_db_backup(self.proxy, r, w)
   })
   router.add_handler(@httpx.Method::Post, "/rename_db_backup", (r, w) => {
     self.config.handle_rename_db_backup(r, w)

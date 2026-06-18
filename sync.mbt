@@ -1222,7 +1222,10 @@ async fn Gateway::moon_sync_build_local_snapshot(
   self : Gateway,
 ) -> MoonLocalSyncSnapshot {
   let db_sql = @encoding/utf8.encode(
-    self.moon_export_snapshot_json().stringify(indent=2) + "\n",
+    self.config
+    .moon_export_snapshot_json(self.proxy, host=self.host, port=self.port)
+    .stringify(indent=2) +
+    "\n",
   )
   let skills_zip = @encoding/utf8.encode(
     moon_skill_state_load().stringify(indent=2) + "\n",
@@ -1963,7 +1966,7 @@ async fn Gateway::moon_apply_webdav_snapshot(
       return Err("Downloaded skills.zip is not valid Moonstat JSON: \{error}")
   }
   ignore(moon_skill_state_save(skills))
-  self.moon_apply_import_snapshot(snapshot)
+  self.config.moon_apply_import_snapshot(self.proxy, snapshot)
   Ok(())
 }
 

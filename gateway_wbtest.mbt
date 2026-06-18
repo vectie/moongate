@@ -2111,7 +2111,11 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   let config_source = @fsx.read_file("gateway_config.mbt")
   let deeplink_source = @fsx.read_file("gateway_deeplink.mbt")
-  let config_sources = misc_source + config_source + deeplink_source
+  let import_export_source = @fsx.read_file("import_export.mbt")
+  let config_sources = misc_source +
+    config_source +
+    deeplink_source +
+    import_export_source
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
@@ -2129,10 +2133,27 @@ async test "settings mcp and prompt endpoints are owned by config service" {
       "handle_s3_sync_save_settings", "handle_get_stream_check_config", "handle_save_stream_check_config",
       "handle_get_claude_plugin_status", "handle_read_claude_plugin_config", "handle_apply_claude_plugin_config",
       "handle_is_claude_plugin_applied", "handle_apply_claude_onboarding_skip", "handle_clear_claude_onboarding_skip",
-      "handle_fetch_models_for_config",
+      "handle_fetch_models_for_config", "handle_export_config_to_file", "handle_import_config_from_file",
+      "handle_create_db_backup", "handle_restore_db_backup",
     ] {
     assert_true(config_sources.contains("async fn ConfigService::\{handler}("))
     assert_false(config_sources.contains("async fn Gateway::\{handler}("))
+  }
+  for
+    helper in [
+      "moon_export_snapshot_json", "moon_export_config_to_file_json", "moon_import_config_from_file_json",
+      "moon_apply_import_snapshot", "moon_create_db_backup_json", "moon_restore_db_backup_json",
+    ] {
+    assert_true(config_sources.contains("ConfigService::\{helper}("))
+    assert_false(config_sources.contains("Gateway::\{helper}("))
+  }
+  for
+    helper in [
+      "moon_export_proxy_json", "moon_export_proxy_app_configs_json", "moon_export_providers_json",
+      "moon_apply_import_proxy",
+    ] {
+    assert_true(import_export_source.contains("ProxyService::\{helper}("))
+    assert_false(import_export_source.contains("Gateway::\{helper}("))
   }
   assert_true(core_source.contains("self.config.handle_set_window_theme(r, w)"))
   assert_true(
@@ -2178,6 +2199,16 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   )
   assert_true(
     core_source.contains("self.config.handle_get_auto_launch_status(w)"),
+  )
+  assert_true(core_source.contains("self.config.handle_export_config_to_file("))
+  assert_true(
+    core_source.contains("self.config.handle_import_config_from_file("),
+  )
+  assert_true(core_source.contains("self.config.handle_create_db_backup("))
+  assert_true(
+    core_source.contains(
+      "self.config.handle_restore_db_backup(self.proxy, r, w)",
+    ),
   )
 }
 

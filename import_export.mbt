@@ -79,31 +79,36 @@ async fn moon_ensure_db_backup_dir() -> Unit {
 }
 
 ///|
-async fn Gateway::moon_export_snapshot_json(self : Gateway) -> Json {
+async fn ConfigService::moon_export_snapshot_json(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
+) -> Json {
   {
     "format": Json::string("moonstat.config.v1"),
     "exportedAt": Json::number(@os.unix_seconds().to_double()),
-    "settings": self.config.app_settings,
+    "settings": self.app_settings,
     "skills": moon_skill_state_load(),
-    "proxy": self.moon_export_proxy_json(),
-    "providers": self.moon_export_providers_json(),
-    "suite": moonstat_suite_manifest_json(host=self.host, port=self.port),
+    "proxy": proxy.moon_export_proxy_json(),
+    "providers": proxy.moon_export_providers_json(),
+    "suite": moonstat_suite_manifest_json(host~, port~),
   }.to_json()
 }
 
 ///|
-fn Gateway::moon_export_proxy_json(self : Gateway) -> Json {
+fn ProxyService::moon_export_proxy_json(self : ProxyService) -> Json {
   {
-    "globalConfig": self.proxy.global_config_json(),
-    "takeoverStatus": self.proxy.takeover_status_json(),
+    "globalConfig": self.global_config_json(),
+    "takeoverStatus": self.takeover_status_json(),
     "appConfigs": self.moon_export_proxy_app_configs_json(),
     "defaultCostMultipliers": moon_string_map_json(
-      self.proxy.proxy_default_cost_multipliers,
+      self.proxy_default_cost_multipliers,
     ),
     "pricingModelSources": moon_string_map_json(
-      self.proxy.proxy_pricing_model_sources,
+      self.proxy_pricing_model_sources,
     ),
-    "upstreamProxyUrl": match self.proxy.upstream_proxy_url {
+    "upstreamProxyUrl": match self.upstream_proxy_url {
       Some(url) => Json::string(url)
       None => Json::null()
     },
@@ -111,23 +116,25 @@ fn Gateway::moon_export_proxy_json(self : Gateway) -> Json {
 }
 
 ///|
-fn Gateway::moon_export_proxy_app_configs_json(self : Gateway) -> Json {
+fn ProxyService::moon_export_proxy_app_configs_json(
+  self : ProxyService,
+) -> Json {
   let obj : Map[String, Json] = Map([], capacity=0)
   for app in moon_suite_app_types() {
-    obj[app] = self.proxy.app_config_json(app)
+    obj[app] = self.app_config_json(app)
   }
   Json::object(obj)
 }
 
 ///|
-fn Gateway::moon_export_providers_json(self : Gateway) -> Json {
+fn ProxyService::moon_export_providers_json(self : ProxyService) -> Json {
   let obj : Map[String, Json] = Map([], capacity=0)
   for app in moon_suite_app_types() {
-    obj[app] = self.proxy.provider_router.providers_moon_json(app)
+    obj[app] = self.provider_router.providers_moon_json(app)
   }
-  obj["universalProviders"] = self.proxy.provider_router.universal_providers_json()
-  obj["routeStats"] = self.proxy.provider_router.route_stats_json()
-  obj["circuitBreakerConfig"] = self.proxy.provider_router.circuit_config.to_json()
+  obj["universalProviders"] = self.provider_router.universal_providers_json()
+  obj["routeStats"] = self.provider_router.route_stats_json()
+  obj["circuitBreakerConfig"] = self.provider_router.circuit_config.to_json()
   Json::object(obj)
 }
 
@@ -142,11 +149,14 @@ fn moon_string_map_json(map : Map[String, String]) -> Json {
 }
 
 ///|
-async fn Gateway::moon_export_config_to_file_json(
-  self : Gateway,
+async fn ConfigService::moon_export_config_to_file_json(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
   file_path : String,
 ) -> Json {
-  let snapshot = self.moon_export_snapshot_json()
+  let snapshot = self.moon_export_snapshot_json(proxy, host~, port~)
   @fsx.write_to_file(file_path, snapshot.stringify(indent=2) + "\n") catch {
     error =>
       return {
@@ -163,8 +173,11 @@ async fn Gateway::moon_export_config_to_file_json(
 }
 
 ///|
-async fn Gateway::moon_import_config_from_file_json(
-  self : Gateway,
+async fn ConfigService::moon_import_config_from_file_json(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
   file_path : String,
 ) -> Json {
   let content = @fsx.read_file(file_path) catch {
@@ -183,8 +196,8 @@ async fn Gateway::moon_import_config_from_file_json(
         "filePath": Json::string(file_path),
       }.to_json()
   }
-  let backup_id = self.moon_create_db_backup_json()
-  self.moon_apply_import_snapshot(parsed)
+  let backup_id = self.moon_create_db_backup_json(proxy, host~, port~)
+  self.moon_apply_import_snapshot(proxy, parsed)
   {
     "success": Json::boolean(true),
     "message": Json::string("SQL imported successfully"),
@@ -195,16 +208,17 @@ async fn Gateway::moon_import_config_from_file_json(
 }
 
 ///|
-async fn Gateway::moon_apply_import_snapshot(
-  self : Gateway,
+async fn ConfigService::moon_apply_import_snapshot(
+  self : ConfigService,
+  proxy : ProxyService,
   snapshot : Json,
 ) -> Unit {
   guard snapshot is Object(obj) else { return }
   match obj.get("settings") {
     Some(settings) =>
-      self.config.app_settings = moon_merge_settings_for_save(
+      self.app_settings = moon_merge_settings_for_save(
         settings,
-        self.config.app_settings,
+        self.app_settings,
       )
     None => ()
   }
@@ -213,34 +227,34 @@ async fn Gateway::moon_apply_import_snapshot(
     None => ()
   }
   match obj.get("proxy") {
-    Some(Object(proxy)) => self.moon_apply_import_proxy(proxy)
+    Some(Object(proxy_json)) => proxy.moon_apply_import_proxy(proxy_json)
     _ => ()
   }
 }
 
 ///|
-fn Gateway::moon_apply_import_proxy(
-  self : Gateway,
+fn ProxyService::moon_apply_import_proxy(
+  self : ProxyService,
   proxy : Map[String, Json],
 ) -> Unit {
   match proxy.get("globalConfig") {
     Some(Object(global)) => {
       match json_bool_from_map_any(global, ["proxyEnabled", "proxy_enabled"]) {
-        Some(enabled) => self.proxy.proxy_enabled = enabled
+        Some(enabled) => self.proxy_enabled = enabled
         None => ()
       }
       match
         json_string_from_map_any(global, ["listenAddress", "listen_address"]) {
-        Some(address) => self.proxy.proxy_listen_address = address
+        Some(address) => self.proxy_listen_address = address
         None => ()
       }
       match moon_json_int_from_map_any(global, ["listenPort", "listen_port"]) {
-        Some(port) => self.proxy.proxy_listen_port = port
+        Some(port) => self.proxy_listen_port = port
         None => ()
       }
       match
         json_bool_from_map_any(global, ["enableLogging", "enable_logging"]) {
-        Some(enabled) => self.proxy.proxy_enable_logging = enabled
+        Some(enabled) => self.proxy_enable_logging = enabled
         None => ()
       }
     }
@@ -250,7 +264,7 @@ fn Gateway::moon_apply_import_proxy(
     Some(Object(takeover)) =>
       for app in moon_suite_app_types() {
         match json_bool_from_map_any(takeover, [app]) {
-          Some(enabled) => self.proxy.proxy_takeover_enabled.set(app, enabled)
+          Some(enabled) => self.proxy_takeover_enabled.set(app, enabled)
           None => ()
         }
       }
@@ -273,11 +287,16 @@ fn moon_json_int_from_map_any(
 }
 
 ///|
-async fn Gateway::moon_create_db_backup_json(self : Gateway) -> Json {
+async fn ConfigService::moon_create_db_backup_json(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
+) -> Json {
   moon_ensure_db_backup_dir()
   let filename = moon_new_backup_filename()
   let path = moon_db_backup_path(filename)
-  let snapshot = self.moon_export_snapshot_json()
+  let snapshot = self.moon_export_snapshot_json(proxy, host~, port~)
   @fsx.write_to_file(path, snapshot.stringify(indent=2) + "\n") catch {
     _ => return Json::string("")
   }
@@ -313,8 +332,9 @@ async fn moon_list_db_backups_json() -> Json {
 }
 
 ///|
-async fn Gateway::moon_restore_db_backup_json(
-  self : Gateway,
+async fn ConfigService::moon_restore_db_backup_json(
+  self : ConfigService,
+  proxy : ProxyService,
   filename : String,
 ) -> Result[Json, String] {
   match moon_db_backup_filename_error(filename) {
@@ -327,7 +347,7 @@ async fn Gateway::moon_restore_db_backup_json(
   }
   let content = @fsx.read_file(path) catch { error => return Err("\{error}") }
   let parsed = @json.parse(content) catch { error => return Err("\{error}") }
-  self.moon_apply_import_snapshot(parsed)
+  self.moon_apply_import_snapshot(proxy, parsed)
   Ok(Json::string(filename))
 }
 

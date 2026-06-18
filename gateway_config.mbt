@@ -754,8 +754,11 @@ async fn ConfigService::handle_open_config_folder(
 }
 
 ///|
-async fn Gateway::handle_export_config_to_file(
-  self : Gateway,
+async fn ConfigService::handle_export_config_to_file(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -765,12 +768,18 @@ async fn Gateway::handle_export_config_to_file(
     write_usage_bad_request(w, "missing_file_path")
     return
   }
-  write_usage_json(w, self.moon_export_config_to_file_json(file_path))
+  write_usage_json(
+    w,
+    self.moon_export_config_to_file_json(proxy, host~, port~, file_path),
+  )
 }
 
 ///|
-async fn Gateway::handle_import_config_from_file(
-  self : Gateway,
+async fn ConfigService::handle_import_config_from_file(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -780,15 +789,21 @@ async fn Gateway::handle_import_config_from_file(
     write_usage_bad_request(w, "missing_file_path")
     return
   }
-  write_usage_json(w, self.moon_import_config_from_file_json(file_path))
+  write_usage_json(
+    w,
+    self.moon_import_config_from_file_json(proxy, host~, port~, file_path),
+  )
 }
 
 ///|
-async fn Gateway::handle_create_db_backup(
-  self : Gateway,
+async fn ConfigService::handle_create_db_backup(
+  self : ConfigService,
+  proxy : ProxyService,
+  host~ : String,
+  port~ : Int,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(w, self.moon_create_db_backup_json())
+  write_usage_json(w, self.moon_create_db_backup_json(proxy, host~, port~))
 }
 
 ///|
@@ -801,8 +816,9 @@ async fn ConfigService::handle_list_db_backups(
 }
 
 ///|
-async fn Gateway::handle_restore_db_backup(
-  self : Gateway,
+async fn ConfigService::handle_restore_db_backup(
+  self : ConfigService,
+  proxy : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -812,7 +828,7 @@ async fn Gateway::handle_restore_db_backup(
     write_usage_bad_request(w, "missing_filename")
     return
   }
-  match self.moon_restore_db_backup_json(filename) {
+  match self.moon_restore_db_backup_json(proxy, filename) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
   }
