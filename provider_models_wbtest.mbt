@@ -105,103 +105,83 @@ test "model url candidates override empty falls through" {
 }
 
 ///|
-test "model url candidates deepseek strip anthropic" {
+test "model url candidates keep anthropic path" {
   assert_model_url_candidates(
     build_models_url_candidates(
       "https://api.deepseek.com/anthropic",
       false,
       None,
     ),
-    [
-      "https://api.deepseek.com/anthropic/v1/models", "https://api.deepseek.com/v1/models",
-      "https://api.deepseek.com/models",
-    ],
+    ["https://api.deepseek.com/anthropic/v1/models"],
   )
 }
 
 ///|
-test "model url candidates zhipu strip api anthropic" {
+test "model url candidates keep api anthropic path" {
   assert_model_url_candidates(
     build_models_url_candidates(
       "https://open.bigmodel.cn/api/anthropic",
       false,
       None,
     ),
-    [
-      "https://open.bigmodel.cn/api/anthropic/v1/models", "https://open.bigmodel.cn/v1/models",
-      "https://open.bigmodel.cn/models",
-    ],
+    ["https://open.bigmodel.cn/api/anthropic/v1/models"],
   )
 }
 
 ///|
-test "model url candidates bailian strip apps anthropic" {
+test "model url candidates keep apps anthropic path" {
   assert_model_url_candidates(
     build_models_url_candidates(
       "https://dashscope.aliyuncs.com/apps/anthropic",
       false,
       None,
     ),
-    [
-      "https://dashscope.aliyuncs.com/apps/anthropic/v1/models", "https://dashscope.aliyuncs.com/v1/models",
-      "https://dashscope.aliyuncs.com/models",
-    ],
+    ["https://dashscope.aliyuncs.com/apps/anthropic/v1/models"],
   )
 }
 
 ///|
-test "model url candidates stepfun strip step plan" {
+test "model url candidates keep step plan path" {
   assert_model_url_candidates(
     build_models_url_candidates(
       "https://api.stepfun.com/step_plan",
       false,
       None,
     ),
-    [
-      "https://api.stepfun.com/step_plan/v1/models", "https://api.stepfun.com/v1/models",
-      "https://api.stepfun.com/models",
-    ],
+    ["https://api.stepfun.com/step_plan/v1/models"],
   )
 }
 
 ///|
-test "model url candidates doubao strip api coding" {
+test "model url candidates keep api coding path" {
   assert_model_url_candidates(
     build_models_url_candidates(
       "https://ark.cn-beijing.volces.com/api/coding",
       false,
       None,
     ),
-    [
-      "https://ark.cn-beijing.volces.com/api/coding/v1/models", "https://ark.cn-beijing.volces.com/v1/models",
-      "https://ark.cn-beijing.volces.com/models",
-    ],
+    ["https://ark.cn-beijing.volces.com/api/coding/v1/models"],
   )
 }
 
 ///|
-test "model url candidates rightcode strip claude" {
+test "model url candidates keep claude path" {
   assert_model_url_candidates(
     build_models_url_candidates("https://www.right.codes/claude", false, None),
-    [
-      "https://www.right.codes/claude/v1/models", "https://www.right.codes/v1/models",
-      "https://www.right.codes/models",
-    ],
+    ["https://www.right.codes/claude/v1/models"],
   )
 }
 
 ///|
-test "model url candidates longer suffix wins" {
+test "model url candidates keep api anthropic suffix path" {
   assert_model_url_candidates(
     build_models_url_candidates("https://api.z.ai/api/anthropic", false, None),
-    [
-      "https://api.z.ai/api/anthropic/v1/models", "https://api.z.ai/v1/models", "https://api.z.ai/models",
-    ],
+    ["https://api.z.ai/api/anthropic/v1/models"],
   )
 }
 
 ///|
-test "model url candidates no suffix no strip" {
+test "model url candidates nested api path" {
   assert_model_url_candidates(
     build_models_url_candidates("https://openrouter.ai/api", false, None),
     ["https://openrouter.ai/api/v1/models"],

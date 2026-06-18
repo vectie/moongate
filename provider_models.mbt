@@ -179,17 +179,6 @@ pub fn build_models_url_candidates(
     candidates.push("\{trimmed}/v1/models")
   }
 
-  match strip_compat_suffix(trimmed) {
-    Some(stripped) => {
-      let root = trim_end_slashes(stripped)
-      if !root.is_empty() && root.contains("://") {
-        candidates.push("\{root}/v1/models")
-        candidates.push("\{root}/models")
-      }
-    }
-    None => ()
-  }
-
   Ok(unique_strings(candidates))
 }
 
@@ -388,20 +377,6 @@ fn dedupe_fetched_models_by_id(
     }
   }
   unique
-}
-
-///|
-fn strip_compat_suffix(base_url : String) -> String? {
-  for
-    suffix in [
-      "/api/claudecode", "/api/anthropic", "/apps/anthropic", "/api/coding", "/claudecode",
-      "/anthropic", "/step_plan", "/coding", "/claude",
-    ] {
-    if base_url.has_suffix(suffix) {
-      return Some(base_url[:base_url.length() - suffix.length()].to_owned())
-    }
-  }
-  None
 }
 
 ///|
