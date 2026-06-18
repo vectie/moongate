@@ -2371,6 +2371,7 @@ async test "provider config endpoints are owned by proxy service" {
   let provider_source = @fsx.read_file("gateway_provider.mbt")
   let claude_desktop_source = @fsx.read_file("gateway_claude_desktop.mbt")
   let endpoint_source = @fsx.read_file("gateway_provider_endpoints.mbt")
+  let stream_check_source = @fsx.read_file("gateway_stream_check.mbt")
   let proxy_source = @fsx.read_file("gateway_proxy.mbt")
   let config_source = @fsx.read_file("gateway_config.mbt")
   let misc_source = @fsx.read_file("gateway_misc.mbt")
@@ -2381,6 +2382,7 @@ async test "provider config endpoints are owned by proxy service" {
   let sources = provider_source +
     claude_desktop_source +
     endpoint_source +
+    stream_check_source +
     proxy_source +
     config_source +
     misc_source +
@@ -2413,6 +2415,15 @@ async test "provider config endpoints are owned by proxy service" {
     ] {
     assert_true(endpoint_source.contains("async fn ProxyService::\{handler}("))
     assert_false(misc_source.contains("async fn ProxyService::\{handler}("))
+  }
+  for
+    helper in [
+      "struct StreamCheckConfig", "fn StreamCheckConfig::default(", "fn StreamCheckConfig::to_json(",
+      "fn stream_check_int_request(", "fn stream_check_string_request(", "fn stream_check_model_for_app(",
+      "fn stream_check_reported_model_for_app(", "fn stream_check_parse_model_with_effort(",
+    ] {
+    assert_true(stream_check_source.contains(helper))
+    assert_false(misc_source.contains(helper))
   }
   for
     helper in [
