@@ -2067,6 +2067,7 @@ async test "ccs proxy mutation command handlers return unit success bodies" {
 async test "auth endpoints are owned by auth service" {
   let auth_source = @fsx.read_file("gateway_auth.mbt")
   let copilot_source = @fsx.read_file("gateway_copilot.mbt")
+  let route_source = @fsx.read_file("gateway_auth_routes.mbt")
   let auth_sources = auth_source + copilot_source
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
@@ -2080,15 +2081,17 @@ async test "auth endpoints are owned by auth service" {
     assert_true(auth_sources.contains("async fn AuthService::\{handler}("))
     assert_false(auth_sources.contains("async fn Gateway::\{handler}("))
   }
-  assert_true(core_source.contains("self.auth.handle_auth_start_login(r, w)"))
-  assert_true(core_source.contains("self.auth.handle_auth_get_status(r, w)"))
-  assert_true(core_source.contains("self.auth.handle_copilot_get_token(r, w)"))
   assert_true(
-    core_source.contains("self.auth.handle_copilot_poll_for_account(r, w)"),
+    core_source.contains("self.auth.register_routes(router, self.logger)"),
   )
-  assert_true(core_source.contains("self.auth.handle_copilot_list_accounts(w)"))
-  assert_true(core_source.contains("self.auth.handle_copilot_get_models(r, w)"))
-  assert_true(core_source.contains("self.auth.handle_copilot_get_usage(r, w)"))
+  for
+    handler in [
+      "handle_auth_start_login", "handle_auth_get_status", "handle_copilot_get_token",
+      "handle_copilot_poll_for_account", "handle_copilot_list_accounts", "handle_copilot_get_models",
+      "handle_copilot_get_usage",
+    ] {
+    assert_true(route_source.contains("self.\{handler}("))
+  }
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   assert_true(
     misc_source.contains(
