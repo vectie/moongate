@@ -17,7 +17,4 @@ const REFRESH_TOKEN_URL = "https://auth.openai.com/oauth/token"
 const CREDENTIALS_FILE = ".moonsuite/codex-credentials.json"
 
 ///|
-const LEGACY_CREDENTIALS_FILE = ".moonclaw/codex-credentials.json"
-
-///|
 const CODEX_AUTH_FILE = ".codex/auth.json"
