@@ -554,28 +554,34 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_proxy_stop_with_restore(w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
-    self.handle_proxy_config(w)
+    self.proxy.handle_proxy_config(
+      w,
+      live_takeover_active=self.proxy_takeover_active(),
+    )
   })
   router.add_handler(@httpx.Method::Get, "/get_proxy_config", (_, w) => {
-    self.handle_proxy_config(w)
+    self.proxy.handle_proxy_config(
+      w,
+      live_takeover_active=self.proxy_takeover_active(),
+    )
   })
   router.add_handler(@httpx.Method::Post, "/proxy/config", (r, w) => {
-    self.handle_proxy_update_config(r, w)
+    self.proxy.handle_proxy_update_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/update_proxy_config", (r, w) => {
-    self.handle_proxy_update_config(r, w)
+    self.proxy.handle_proxy_update_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/proxy/global-config", (_, w) => {
-    self.handle_proxy_global_config(w)
+    self.proxy.handle_proxy_global_config(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_global_proxy_config", (_, w) => {
-    self.handle_proxy_global_config(w)
+    self.proxy.handle_proxy_global_config(w)
   })
   router.add_handler(@httpx.Method::Post, "/proxy/global-config", (r, w) => {
-    self.handle_proxy_update_global_config(r, w)
+    self.proxy.handle_proxy_update_global_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/update_global_proxy_config", (r, w) => {
-    self.handle_proxy_update_global_config(r, w)
+    self.proxy.handle_proxy_update_global_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_settings", (_, w) => {
     self.handle_get_settings(w)
@@ -627,19 +633,19 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_set_log_config(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_global_proxy_url", (_, w) => {
-    self.handle_get_global_proxy_url(w)
+    self.proxy.handle_get_global_proxy_url(w)
   })
   router.add_handler(@httpx.Method::Post, "/set_global_proxy_url", (r, w) => {
-    self.handle_set_global_proxy_url(r, w)
+    self.proxy.handle_set_global_proxy_url(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/test_proxy_url", (r, w) => {
-    self.handle_test_proxy_url(r, w)
+    self.proxy.handle_test_proxy_url(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/test_proxy_url", (r, w) => {
-    self.handle_test_proxy_url(r, w)
+    self.proxy.handle_test_proxy_url(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_upstream_proxy_status", (_, w) => {
-    self.handle_get_upstream_proxy_status(w)
+    self.proxy.handle_get_upstream_proxy_status(w)
   })
   router.add_handler(@httpx.Method::Get, "/scan_local_proxies", (_, w) => {
     self.handle_scan_local_proxies(w)

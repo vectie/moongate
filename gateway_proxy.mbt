@@ -254,6 +254,214 @@ fn pricing_model_source_is_valid(value : String) -> Bool {
 }
 
 ///|
+fn ProxyService::server_info_json(
+  self : ProxyService,
+  started_at_ms : Int,
+) -> Json {
+  {
+    "address": Json::string(self.proxy_listen_address),
+    "port": Json::number(self.proxy_listen_port.to_double()),
+    "started_at": Json::string(started_at_ms.to_string()),
+  }.to_json()
+}
+
+///|
+fn ProxyService::config_json(
+  self : ProxyService,
+  live_takeover_active? : Bool = false,
+) -> Json {
+  let app_type = "claude"
+  let streaming_first_byte_timeout = self.proxy_streaming_first_byte_timeout
+    .get(app_type)
+    .unwrap_or(moon_proxy_streaming_first_byte_timeout_default(app_type))
+  let streaming_idle_timeout = self.proxy_streaming_idle_timeout
+    .get(app_type)
+    .unwrap_or(moon_proxy_streaming_idle_timeout_default(app_type))
+  let non_streaming_timeout = self.proxy_non_streaming_timeout
+    .get(app_type)
+    .unwrap_or(moon_proxy_non_streaming_timeout_default(app_type))
+  {
+    "listen_address": Json::string(self.proxy_listen_address),
+    "listen_port": Json::number(self.proxy_listen_port.to_double()),
+    "max_retries": Json::number(
+      self.provider_router.max_retries_for_app(app_type).to_double(),
+    ),
+    "request_timeout": Json::number(600.0),
+    "enable_logging": Json::boolean(self.proxy_enable_logging),
+    "live_takeover_active": Json::boolean(live_takeover_active),
+    "streaming_first_byte_timeout": Json::number(
+      streaming_first_byte_timeout.to_double(),
+    ),
+    "streaming_idle_timeout": Json::number(streaming_idle_timeout.to_double()),
+    "non_streaming_timeout": Json::number(non_streaming_timeout.to_double()),
+  }.to_json()
+}
+
+///|
+fn ProxyService::global_config_json(self : ProxyService) -> Json {
+  {
+    "proxyEnabled": Json::boolean(self.proxy_enabled),
+    "listenAddress": Json::string(self.proxy_listen_address),
+    "listenPort": Json::number(self.proxy_listen_port.to_double()),
+    "enableLogging": Json::boolean(self.proxy_enable_logging),
+  }.to_json()
+}
+
+///|
+async fn ProxyService::handle_proxy_config(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+  live_takeover_active? : Bool = false,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(self.config_json(live_takeover_active~).stringify(indent=2))
+  w.flush()
+}
+
+///|
+async fn ProxyService::handle_proxy_update_config(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.apply_global_config_request(r, legacy=true) {
+    true => write_usage_json(w, moon_unit_success_json())
+    false => write_usage_bad_request(w, "invalid_proxy_config")
+  }
+}
+
+///|
+async fn ProxyService::handle_proxy_global_config(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(w, self.global_config_json())
+}
+
+///|
+async fn ProxyService::handle_proxy_update_global_config(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.apply_global_config_request(r) {
+    true => write_usage_json(w, moon_unit_success_json())
+    false => write_usage_bad_request(w, "invalid_global_proxy_config")
+  }
+}
+
+///|
+async fn ProxyService::handle_get_global_proxy_url(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  match self.upstream_proxy_url {
+    Some(url) => write_usage_json(w, Json::string(url))
+    None => write_usage_json(w, Json::null())
+  }
+}
+
+///|
+async fn ProxyService::handle_set_global_proxy_url(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  let url = proxy_string_request(r.path, config, ["url"]).unwrap_or("")
+  let trimmed = url.trim().to_owned()
+  if trimmed.is_empty() {
+    self.upstream_proxy_url = None
+    write_usage_json(w, Json::null())
+    return
+  }
+  if !upstream_proxy_url_is_valid(trimmed) {
+    write_usage_bad_request(w, "invalid_proxy_url")
+    return
+  }
+  self.upstream_proxy_url = Some(trimmed)
+  write_usage_json(w, Json::null())
+}
+
+///|
+async fn ProxyService::handle_test_proxy_url(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  ignore(self)
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  let url = proxy_string_request(r.path, config, ["url"]).unwrap_or("")
+  write_usage_json(w, proxy_test_result_json(url))
+}
+
+///|
+async fn ProxyService::handle_get_upstream_proxy_status(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  write_usage_json(
+    w,
+    {
+      "enabled": Json::boolean(self.upstream_proxy_url is Some(_)),
+      "proxyUrl": match self.upstream_proxy_url {
+        Some(url) => Json::string(url)
+        None => Json::null()
+      },
+    }.to_json(),
+  )
+}
+
+///|
+async fn ProxyService::apply_global_config_request(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+  legacy? : Bool = false,
+) -> Bool {
+  let body = proxy_json_body(r)
+  let config = proxy_embedded_config(body)
+  let proxy_enabled = proxy_bool_request(r.path, config, [
+    "proxy_enabled", "proxyEnabled", "enabled",
+  ])
+  let listen_address = proxy_string_request(r.path, config, [
+    "listen_address", "listenAddress",
+  ])
+  let listen_port = proxy_int_request(r.path, config, [
+    "listen_port", "listenPort",
+  ])
+  let enable_logging = proxy_bool_request(r.path, config, [
+    "enable_logging", "enableLogging",
+  ])
+  if proxy_enabled is Some(enabled) {
+    self.proxy_enabled = enabled
+  } else if legacy {
+    match proxy_bool_request(r.path, config, ["proxyEnabled"]) {
+      Some(enabled) => self.proxy_enabled = enabled
+      None => ()
+    }
+  }
+  if listen_address is Some(address) {
+    if address.trim().is_empty() {
+      return false
+    }
+    self.proxy_listen_address = address.trim().to_owned()
+  }
+  if listen_port is Some(port) {
+    if port <= 0 || port > 65535 {
+      return false
+    }
+    self.proxy_listen_port = port
+  }
+  if enable_logging is Some(enabled) {
+    self.proxy_enable_logging = enabled
+  }
+  true
+}
+
+///|
 async fn Gateway::handle_proxy_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
@@ -285,11 +493,7 @@ async fn Gateway::handle_proxy_start_server(
 
 ///|
 fn Gateway::proxy_server_info_json(self : Gateway) -> Json {
-  {
-    "address": Json::string(self.proxy.proxy_listen_address),
-    "port": Json::number(self.proxy.proxy_listen_port.to_double()),
-    "started_at": Json::string(self.started_at_ms.to_string()),
-  }.to_json()
+  self.proxy.server_info_json(self.started_at_ms)
 }
 
 ///|
@@ -322,43 +526,8 @@ async fn Gateway::handle_proxy_stop_with_restore(
 }
 
 ///|
-async fn Gateway::handle_proxy_config(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(self.proxy_config_json().stringify(indent=2))
-  w.flush()
-}
-
-///|
 fn Gateway::proxy_config_json(self : Gateway) -> Json {
-  let app_type = "claude"
-  let streaming_first_byte_timeout = self.proxy.proxy_streaming_first_byte_timeout
-    .get(app_type)
-    .unwrap_or(moon_proxy_streaming_first_byte_timeout_default(app_type))
-  let streaming_idle_timeout = self.proxy.proxy_streaming_idle_timeout
-    .get(app_type)
-    .unwrap_or(moon_proxy_streaming_idle_timeout_default(app_type))
-  let non_streaming_timeout = self.proxy.proxy_non_streaming_timeout
-    .get(app_type)
-    .unwrap_or(moon_proxy_non_streaming_timeout_default(app_type))
-  {
-    "listen_address": Json::string(self.proxy.proxy_listen_address),
-    "listen_port": Json::number(self.proxy.proxy_listen_port.to_double()),
-    "max_retries": Json::number(
-      self.proxy.provider_router.max_retries_for_app(app_type).to_double(),
-    ),
-    "request_timeout": Json::number(600.0),
-    "enable_logging": Json::boolean(self.proxy.proxy_enable_logging),
-    "live_takeover_active": Json::boolean(self.proxy_takeover_active()),
-    "streaming_first_byte_timeout": Json::number(
-      streaming_first_byte_timeout.to_double(),
-    ),
-    "streaming_idle_timeout": Json::number(streaming_idle_timeout.to_double()),
-    "non_streaming_timeout": Json::number(non_streaming_timeout.to_double()),
-  }.to_json()
+  self.proxy.config_json(live_takeover_active=self.proxy_takeover_active())
 }
 
 ///|
@@ -383,109 +552,8 @@ fn moon_proxy_non_streaming_timeout_default(_app_type : String) -> Int {
 }
 
 ///|
-async fn Gateway::handle_proxy_update_config(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  match self.apply_proxy_global_config_request(r, legacy=true) {
-    true => write_usage_json(w, moon_unit_success_json())
-    false => write_usage_bad_request(w, "invalid_proxy_config")
-  }
-}
-
-///|
-async fn Gateway::handle_proxy_global_config(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  write_usage_json(w, self.proxy_global_config_json())
-}
-
-///|
 fn Gateway::proxy_global_config_json(self : Gateway) -> Json {
-  {
-    "proxyEnabled": Json::boolean(self.proxy.proxy_enabled),
-    "listenAddress": Json::string(self.proxy.proxy_listen_address),
-    "listenPort": Json::number(self.proxy.proxy_listen_port.to_double()),
-    "enableLogging": Json::boolean(self.proxy.proxy_enable_logging),
-  }.to_json()
-}
-
-///|
-async fn Gateway::handle_proxy_update_global_config(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  match self.apply_proxy_global_config_request(r) {
-    true => write_usage_json(w, moon_unit_success_json())
-    false => write_usage_bad_request(w, "invalid_global_proxy_config")
-  }
-}
-
-///|
-async fn Gateway::handle_get_global_proxy_url(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  match self.proxy.upstream_proxy_url {
-    Some(url) => write_usage_json(w, Json::string(url))
-    None => write_usage_json(w, Json::null())
-  }
-}
-
-///|
-async fn Gateway::handle_set_global_proxy_url(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
-  let url = proxy_string_request(r.path, config, ["url"]).unwrap_or("")
-  let trimmed = url.trim().to_owned()
-  if trimmed.is_empty() {
-    self.proxy.upstream_proxy_url = None
-    write_usage_json(w, Json::null())
-    return
-  }
-  if !upstream_proxy_url_is_valid(trimmed) {
-    write_usage_bad_request(w, "invalid_proxy_url")
-    return
-  }
-  self.proxy.upstream_proxy_url = Some(trimmed)
-  write_usage_json(w, Json::null())
-}
-
-///|
-async fn Gateway::handle_test_proxy_url(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  ignore(self)
-  let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
-  let url = proxy_string_request(r.path, config, ["url"]).unwrap_or("")
-  write_usage_json(w, proxy_test_result_json(url))
-}
-
-///|
-async fn Gateway::handle_get_upstream_proxy_status(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  write_usage_json(
-    w,
-    {
-      "enabled": Json::boolean(self.proxy.upstream_proxy_url is Some(_)),
-      "proxyUrl": match self.proxy.upstream_proxy_url {
-        Some(url) => Json::string(url)
-        None => Json::null()
-      },
-    }.to_json(),
-  )
+  self.proxy.global_config_json()
 }
 
 ///|
@@ -803,52 +871,6 @@ fn proxy_pricing_default_app_type(app_type : String) -> String {
   } else {
     app_type
   }
-}
-
-///|
-async fn Gateway::apply_proxy_global_config_request(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  legacy? : Bool = false,
-) -> Bool {
-  let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
-  let proxy_enabled = proxy_bool_request(r.path, config, [
-    "proxy_enabled", "proxyEnabled", "enabled",
-  ])
-  let listen_address = proxy_string_request(r.path, config, [
-    "listen_address", "listenAddress",
-  ])
-  let listen_port = proxy_int_request(r.path, config, [
-    "listen_port", "listenPort",
-  ])
-  let enable_logging = proxy_bool_request(r.path, config, [
-    "enable_logging", "enableLogging",
-  ])
-  if proxy_enabled is Some(enabled) {
-    self.proxy.proxy_enabled = enabled
-  } else if legacy {
-    match proxy_bool_request(r.path, config, ["proxyEnabled"]) {
-      Some(enabled) => self.proxy.proxy_enabled = enabled
-      None => ()
-    }
-  }
-  if listen_address is Some(address) {
-    if address.trim().is_empty() {
-      return false
-    }
-    self.proxy.proxy_listen_address = address.trim().to_owned()
-  }
-  if listen_port is Some(port) {
-    if port <= 0 || port > 65535 {
-      return false
-    }
-    self.proxy.proxy_listen_port = port
-  }
-  if enable_logging is Some(enabled) {
-    self.proxy.proxy_enable_logging = enabled
-  }
-  true
 }
 
 ///|

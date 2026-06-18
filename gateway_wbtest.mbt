@@ -1987,8 +1987,12 @@ test "ccs unit commands return null success body" {
 }
 
 ///|
-fn gateway_handler_uses_unit_success(source : String, handler : String) -> Bool {
-  let marker = "async fn Gateway::\{handler}("
+fn service_handler_uses_unit_success(
+  source : String,
+  owner : String,
+  handler : String,
+) -> Bool {
+  let marker = "async fn \{owner}::\{handler}("
   let mut seen_marker = false
   for segment in source.split(marker) {
     if seen_marker {
@@ -2005,13 +2009,18 @@ fn gateway_handler_uses_unit_success(source : String, handler : String) -> Bool 
 async test "ccs proxy mutation command handlers return unit success bodies" {
   let source = @fsx.read_file("gateway_proxy.mbt")
   for
-    handler in [
-      "handle_proxy_update_config", "handle_proxy_update_global_config", "handle_proxy_update_app_config",
-      "handle_proxy_set_default_cost_multiplier", "handle_proxy_set_pricing_model_source",
-      "handle_proxy_update_circuit_breaker_config", "handle_proxy_set_takeover_for_app",
-      "handle_proxy_switch_provider",
+    entry in [
+      ("ProxyService", "handle_proxy_update_config"),
+      ("ProxyService", "handle_proxy_update_global_config"),
+      ("Gateway", "handle_proxy_update_app_config"),
+      ("Gateway", "handle_proxy_set_default_cost_multiplier"),
+      ("Gateway", "handle_proxy_set_pricing_model_source"),
+      ("Gateway", "handle_proxy_update_circuit_breaker_config"),
+      ("Gateway", "handle_proxy_set_takeover_for_app"),
+      ("Gateway", "handle_proxy_switch_provider"),
     ] {
-    assert_true(gateway_handler_uses_unit_success(source, handler))
+    let (owner, handler) = entry
+    assert_true(service_handler_uses_unit_success(source, owner, handler))
   }
 }
 
