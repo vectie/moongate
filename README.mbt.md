@@ -152,7 +152,7 @@ Moonstat currently exposes the standalone local routes below:
 - `GET /config/status?appType=codex`
 - `GET /config/claude-code/path`
 - `GET /config/dir?appType=codex`
-- `GET /config/folder/open?appType=codex`
+- `POST /config/folder/open?appType=codex`
 - `POST /files/directories/pick?defaultPath=/tmp`
 - `POST /runtime/open-external?url=https://github.com/vectie/moonstat`
 - `POST /runtime/clipboard/text?text=hello`
@@ -213,7 +213,7 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /config/snippets/claude?snippet={}`
 - `GET /config/snippets?appType=codex`
 - `POST /config/snippets?appType=codex&snippet=model=gpt-5`
-- `GET|POST /config/snippets/extract?appType=claude&settingsConfig={}`
+- `POST /config/snippets/extract?appType=claude&settingsConfig={}`
 - `GET /config/env/conflicts?appType=claude`
 - `POST /config/env/delete`
 - `POST /config/env/restore?backupPath=...`
@@ -315,7 +315,7 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /proxy/stream-check/config?codexModel=gpt-5.5@low&timeoutSecs=45`
 - `GET /models`
 - `GET /v1/models`
-- `GET|POST /config/models?baseUrl=https://api.example.com&apiKey=sk-...`
+- `POST /config/models?baseUrl=https://api.example.com&apiKey=sk-...`
 - `GET /claude-desktop/v1/models`
 - `POST /v1/messages`
 - `POST /claude-desktop/v1/messages`

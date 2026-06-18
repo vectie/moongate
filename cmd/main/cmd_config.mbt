@@ -159,7 +159,11 @@ async fn run_config_cli_command(
     "set_common_config_snippet" =>
       set_config_snippet(args, "/config/snippets", app_required=true)
     "extract_common_config_snippet" =>
-      check_usage_endpoint(args, extract_common_config_snippet_path(args))
+      check_json_post_endpoint(
+        args,
+        extract_common_config_snippet_path(args),
+        "Config",
+      )
     "check_env_conflicts" =>
       check_usage_endpoint(args, config_app_path(args, "/config/env/conflicts"))
     "delete_env_vars" => delete_env_vars(args)
@@ -173,7 +177,11 @@ async fn run_config_cli_command(
     "get_config_dir" =>
       check_usage_endpoint(args, config_app_path(args, "/config/dir"))
     "open_config_folder" =>
-      check_usage_endpoint(args, config_app_path(args, "/config/folder/open"))
+      check_json_post_endpoint(
+        args,
+        config_app_path(args, "/config/folder/open"),
+        "Config",
+      )
     "get_settings" => check_usage_endpoint(args, "/settings")
     "save_settings" => save_settings(args)
     "set_app_config_dir_override" => set_app_config_dir_override(args)

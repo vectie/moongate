@@ -151,16 +151,16 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("POST /runtime/tray-menu/update")))
   assert_true(routes.contains(Json::string("POST /runtime/open-external")))
   assert_true(routes.contains(Json::string("GET /runtime/lightweight-mode")))
-  assert_true(routes.contains(Json::string("GET|POST /config/files/export")))
-  assert_true(routes.contains(Json::string("GET|POST /config/files/import")))
+  assert_true(routes.contains(Json::string("POST /config/files/export")))
+  assert_true(routes.contains(Json::string("POST /config/files/import")))
   assert_true(routes.contains(Json::string("POST /backups/db")))
   assert_true(routes.contains(Json::string("GET /backups/db")))
   assert_true(routes.contains(Json::string("POST /backups/db/restore")))
   assert_true(routes.contains(Json::string("POST /backups/db/rename")))
   assert_true(routes.contains(Json::string("DELETE /backups/db/delete")))
   assert_false(routes.contains(Json::string("DELETE|POST /backups/db/delete")))
-  assert_true(routes.contains(Json::string("GET|POST /deeplinks/parse")))
-  assert_true(routes.contains(Json::string("GET|POST /deeplinks/merge")))
+  assert_true(routes.contains(Json::string("GET /deeplinks/parse")))
+  assert_true(routes.contains(Json::string("POST /deeplinks/merge")))
   assert_true(routes.contains(Json::string("POST /deeplinks/import")))
   assert_true(routes.contains(Json::string("POST /sync/webdav/test")))
   assert_true(routes.contains(Json::string("POST /sync/webdav/upload")))
@@ -247,7 +247,7 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_true(routes.contains(Json::string("POST /providers/endpoints/touch")))
   assert_true(routes.contains(Json::string("GET /config/claude/status")))
-  assert_true(routes.contains(Json::string("GET|POST /config/status")))
+  assert_true(routes.contains(Json::string("GET /config/status")))
   assert_true(
     routes.contains(Json::string("GET /providers/claude-desktop/status")),
   )
@@ -267,7 +267,7 @@ test "suite manifest publishes moonstat service contract" {
     "GET /openclaw/default-model", "POST /openclaw/default-model", "GET /hermes/model-config",
     "GET /hermes/memory", "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
     "POST /providers/universal", "DELETE /providers/universal", "GET|POST /providers/test-endpoints",
-    "GET|POST /config/models",
+    "POST /config/models",
   ]
   for route in control_routes {
     assert_true(routes.contains(Json::string(route)))

@@ -12,20 +12,11 @@ fn ConfigService::register_routes(
   router.add_handler(Get, "/config/status", (r, w) => {
     self.handle_get_config_status_request(r, w)
   })
-  router.add_handler(Post, "/config/status", (r, w) => {
-    self.handle_get_config_status_request(r, w)
-  })
   router.add_handler(Get, "/config/claude-code/path", (_, w) => {
     self.handle_get_claude_code_config_path(w)
   })
   router.add_handler(Get, "/config/dir", (r, w) => {
     self.handle_get_config_dir(r, w)
-  })
-  router.add_handler(Post, "/config/dir", (r, w) => {
-    self.handle_get_config_dir(r, w)
-  })
-  router.add_handler(Get, "/config/folder/open", (r, w) => {
-    self.handle_open_config_folder(r, w)
   })
   router.add_handler(Post, "/config/folder/open", (r, w) => {
     self.handle_open_config_folder(r, w)
@@ -45,13 +36,7 @@ fn ConfigService::register_routes(
   router.add_handler(Post, "/config/files/export", (r, w) => {
     self.handle_export_config_to_file(proxy, host~, port~, r, w)
   })
-  router.add_handler(Get, "/config/files/export", (r, w) => {
-    self.handle_export_config_to_file(proxy, host~, port~, r, w)
-  })
   router.add_handler(Post, "/config/files/import", (r, w) => {
-    self.handle_import_config_from_file(proxy, host~, port~, r, w)
-  })
-  router.add_handler(Get, "/config/files/import", (r, w) => {
     self.handle_import_config_from_file(proxy, host~, port~, r, w)
   })
   router.add_handler(Post, "/backups/db", (_, w) => {
@@ -69,16 +54,10 @@ fn ConfigService::register_routes(
   router.add_handler(Delete, "/backups/db/delete", (r, w) => {
     self.handle_delete_db_backup(r, w)
   })
-  router.add_handler(Post, "/deeplinks/parse", (r, w) => {
-    self.handle_parse_deeplink(r, w)
-  })
   router.add_handler(Get, "/deeplinks/parse", (r, w) => {
     self.handle_parse_deeplink(r, w)
   })
   router.add_handler(Post, "/deeplinks/merge", (r, w) => {
-    self.handle_merge_deeplink_config(r, w)
-  })
-  router.add_handler(Get, "/deeplinks/merge", (r, w) => {
     self.handle_merge_deeplink_config(r, w)
   })
   router.add_handler(Post, "/deeplinks/import", (r, w) => {
@@ -132,16 +111,10 @@ fn ConfigService::register_routes(
   router.add_handler(Post, "/config/snippets", (r, w) => {
     self.handle_set_common_config_snippet_request(r, w)
   })
-  router.add_handler(Get, "/config/snippets/extract", (r, w) => {
-    self.handle_extract_common_config_snippet(r, w)
-  })
   router.add_handler(Post, "/config/snippets/extract", (r, w) => {
     self.handle_extract_common_config_snippet(r, w)
   })
   router.add_handler(Get, "/config/env/conflicts", (r, w) => {
-    self.handle_check_env_conflicts(r, w)
-  })
-  router.add_handler(Post, "/config/env/conflicts", (r, w) => {
     self.handle_check_env_conflicts(r, w)
   })
   router.add_handler(Post, "/config/env/delete", (r, w) => {
@@ -165,13 +138,7 @@ fn ConfigService::register_routes(
   router.add_handler(Get, "/mcp/validate", (r, w) => {
     self.handle_validate_mcp_command(r, w)
   })
-  router.add_handler(Post, "/mcp/validate", (r, w) => {
-    self.handle_validate_mcp_command(r, w)
-  })
   router.add_handler(Get, "/mcp/config", (r, w) => {
-    self.handle_get_mcp_config(r, w)
-  })
-  router.add_handler(Post, "/mcp/config", (r, w) => {
     self.handle_get_mcp_config(r, w)
   })
   router.add_handler(Post, "/mcp/config/servers", (r, w) => {
@@ -269,9 +236,6 @@ fn ConfigService::register_routes(
   })
   router.add_handler(Post, "/proxy/stream-check/config", (r, w) => {
     self.handle_save_stream_check_config(r, w)
-  })
-  router.add_handler(Get, "/config/models", (r, w) => {
-    self.handle_fetch_models_for_config(r, w)
   })
   router.add_handler(Post, "/config/models", (r, w) => {
     self.handle_fetch_models_for_config(r, w)
