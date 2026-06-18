@@ -1,4 +1,22 @@
 ///|
+fn install_cli_commands() -> Array[CliCommandSpec] {
+  [
+    { id: "start", patterns: ["start"] },
+    { id: "install_reroute", patterns: ["install"] },
+    { id: "uninstall_reroute", patterns: ["uninstall", "remove"] },
+    { id: "install_claude_desktop", patterns: ["claude-desktop install"] },
+    {
+      id: "uninstall_claude_desktop",
+      patterns: ["claude-desktop uninstall", "claude-desktop remove"],
+    },
+    { id: "status_claude_desktop", patterns: ["claude-desktop status"] },
+    { id: "install_codex", patterns: ["codex install"] },
+    { id: "uninstall_codex", patterns: ["codex uninstall", "codex remove"] },
+    { id: "status_codex", patterns: ["codex status"] },
+  ]
+}
+
+///|
 fn cli_install_command_id(command_id : String) -> Bool {
   match command_id {
     "start"

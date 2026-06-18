@@ -7,18 +7,6 @@ priv struct CliCommandSpec {
 ///|
 fn registered_cli_commands() -> Array[CliCommandSpec] {
   let commands = [
-    { id: "start", patterns: ["start"] },
-    { id: "install_reroute", patterns: ["install"] },
-    { id: "uninstall_reroute", patterns: ["uninstall", "remove"] },
-    { id: "install_claude_desktop", patterns: ["claude-desktop install"] },
-    {
-      id: "uninstall_claude_desktop",
-      patterns: ["claude-desktop uninstall", "claude-desktop remove"],
-    },
-    { id: "status_claude_desktop", patterns: ["claude-desktop status"] },
-    { id: "install_codex", patterns: ["codex install"] },
-    { id: "uninstall_codex", patterns: ["codex uninstall", "codex remove"] },
-    { id: "status_codex", patterns: ["codex status"] },
     { id: "stream_check_provider", patterns: ["stream-check provider"] },
     { id: "stream_check_all_providers", patterns: ["stream-check all"] },
     { id: "save_stream_check_config", patterns: ["stream-check config set"] },
@@ -158,6 +146,9 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     commands.push(command)
   }
   for command in suite_cli_commands() {
+    commands.push(command)
+  }
+  for command in install_cli_commands() {
     commands.push(command)
   }
   commands
