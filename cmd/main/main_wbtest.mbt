@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 100)
+  assert_true(registered_cli_commands().length() >= 115)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -146,6 +146,46 @@ test "registered cli commands match suite command aliases and status commands" {
       "moonstat", "ensure_claude_desktop_official_provider",
     ]) ==
     Some("ensure_claude_desktop_official_provider"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "get"]) ==
+    Some("get_settings"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "save_settings"]) ==
+    Some("save_settings"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "app-config-dir", "set"]) ==
+    Some("set_app_config_dir_override"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "app-config-dir"]) ==
+    Some("get_app_config_dir_override"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "auto-launch", "set"]) ==
+    Some("set_auto_launch"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "auto-launch"]) ==
+    Some("get_auto_launch_status"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "rectifier", "set"]) ==
+    Some("set_rectifier_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "settings", "rectifier"]) ==
+    Some("get_rectifier_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "set_copilot_optimizer_config"]) ==
+    Some("set_copilot_optimizer_config"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "restart_app"]) ==
+    Some("restart_app"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "usage", "summary"]) == None,

@@ -628,6 +628,87 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
         "update-endpoint-last-used",
       ],
     },
+    {
+      id: "get_settings",
+      patterns: ["settings get", "get_settings", "get-settings"],
+    },
+    {
+      id: "save_settings",
+      patterns: ["settings save", "save_settings", "save-settings"],
+    },
+    { id: "restart_app", patterns: ["restart_app", "restart-app"] },
+    {
+      id: "install_update_and_restart",
+      patterns: ["install_update_and_restart", "install-update-and-restart"],
+    },
+    {
+      id: "set_app_config_dir_override",
+      patterns: [
+        "settings app-config-dir set", "set_app_config_dir_override", "set-app-config-dir-override",
+      ],
+    },
+    {
+      id: "get_app_config_dir_override",
+      patterns: [
+        "settings app-config-dir", "get_app_config_dir_override", "get-app-config-dir-override",
+      ],
+    },
+    {
+      id: "set_auto_launch",
+      patterns: [
+        "settings auto-launch set", "set_auto_launch", "set-auto-launch",
+      ],
+    },
+    {
+      id: "get_auto_launch_status",
+      patterns: [
+        "settings auto-launch", "get_auto_launch_status", "get-auto-launch-status",
+      ],
+    },
+    {
+      id: "set_rectifier_config",
+      patterns: [
+        "settings rectifier set", "set_rectifier_config", "set-rectifier-config",
+      ],
+    },
+    {
+      id: "get_rectifier_config",
+      patterns: [
+        "settings rectifier", "get_rectifier_config", "get-rectifier-config",
+      ],
+    },
+    {
+      id: "set_optimizer_config",
+      patterns: [
+        "settings optimizer set", "set_optimizer_config", "set-optimizer-config",
+      ],
+    },
+    {
+      id: "get_optimizer_config",
+      patterns: [
+        "settings optimizer", "get_optimizer_config", "get-optimizer-config",
+      ],
+    },
+    {
+      id: "set_copilot_optimizer_config",
+      patterns: [
+        "settings copilot-optimizer set", "set_copilot_optimizer_config", "set-copilot-optimizer-config",
+      ],
+    },
+    {
+      id: "get_copilot_optimizer_config",
+      patterns: [
+        "settings copilot-optimizer", "get_copilot_optimizer_config", "get-copilot-optimizer-config",
+      ],
+    },
+    {
+      id: "set_log_config",
+      patterns: ["settings log set", "set_log_config", "set-log-config"],
+    },
+    {
+      id: "get_log_config",
+      patterns: ["settings log", "get_log_config", "get-log-config"],
+    },
     { id: "suite_manifest", patterns: ["suite manifest"] },
     { id: "suite_status", patterns: ["suite status"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
@@ -1131,6 +1212,76 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("update_endpoint_last_used") => {
       update_provider_endpoint_last_used(args)
+      true
+    }
+    Some("get_settings") => {
+      check_usage_endpoint(args, "/get_settings")
+      true
+    }
+    Some("save_settings") => {
+      save_settings(args)
+      true
+    }
+    Some("restart_app") => {
+      check_json_post_endpoint(args, "/restart_app", "Settings")
+      true
+    }
+    Some("install_update_and_restart") => {
+      check_json_post_endpoint(args, "/install_update_and_restart", "Settings")
+      true
+    }
+    Some("set_app_config_dir_override") => {
+      set_app_config_dir_override(args)
+      true
+    }
+    Some("get_app_config_dir_override") => {
+      check_usage_endpoint(args, "/get_app_config_dir_override")
+      true
+    }
+    Some("set_auto_launch") => {
+      set_auto_launch(args)
+      true
+    }
+    Some("get_auto_launch_status") => {
+      check_usage_endpoint(args, "/get_auto_launch_status")
+      true
+    }
+    Some("set_rectifier_config") => {
+      set_moon_json_config(
+        args, "/set_rectifier_config", "--config", "Settings",
+      )
+      true
+    }
+    Some("get_rectifier_config") => {
+      check_usage_endpoint(args, "/get_rectifier_config")
+      true
+    }
+    Some("set_optimizer_config") => {
+      set_moon_json_config(
+        args, "/set_optimizer_config", "--config", "Settings",
+      )
+      true
+    }
+    Some("get_optimizer_config") => {
+      check_usage_endpoint(args, "/get_optimizer_config")
+      true
+    }
+    Some("set_copilot_optimizer_config") => {
+      set_moon_json_config(
+        args, "/set_copilot_optimizer_config", "--config", "Settings",
+      )
+      true
+    }
+    Some("get_copilot_optimizer_config") => {
+      check_usage_endpoint(args, "/get_copilot_optimizer_config")
+      true
+    }
+    Some("set_log_config") => {
+      set_moon_json_config(args, "/set_log_config", "--config", "Settings")
+      true
+    }
+    Some("get_log_config") => {
+      check_usage_endpoint(args, "/get_log_config")
       true
     }
     Some("suite_manifest") => {

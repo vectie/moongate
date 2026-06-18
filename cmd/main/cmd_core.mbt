@@ -18,40 +18,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["models", "candidates", ..] => print_model_candidates(arr)
     ["fetch_models_for_config", ..] | ["fetch-models-for-config", ..] =>
       fetch_provider_models(arr)
-    ["get_settings", ..] | ["get-settings", ..] =>
-      check_usage_endpoint(arr, "/get_settings")
-    ["save_settings", ..] | ["save-settings", ..] => save_settings(arr)
-    ["restart_app", ..] | ["restart-app", ..] =>
-      check_json_post_endpoint(arr, "/restart_app", "Settings")
-    ["install_update_and_restart", ..] | ["install-update-and-restart", ..] =>
-      check_json_post_endpoint(arr, "/install_update_and_restart", "Settings")
-    ["get_app_config_dir_override", ..] | ["get-app-config-dir-override", ..] =>
-      check_usage_endpoint(arr, "/get_app_config_dir_override")
-    ["set_app_config_dir_override", ..] | ["set-app-config-dir-override", ..] =>
-      set_app_config_dir_override(arr)
-    ["set_auto_launch", ..] | ["set-auto-launch", ..] => set_auto_launch(arr)
-    ["get_auto_launch_status", ..] | ["get-auto-launch-status", ..] =>
-      check_usage_endpoint(arr, "/get_auto_launch_status")
-    ["get_rectifier_config", ..] | ["get-rectifier-config", ..] =>
-      check_usage_endpoint(arr, "/get_rectifier_config")
-    ["set_rectifier_config", ..] | ["set-rectifier-config", ..] =>
-      set_moon_json_config(arr, "/set_rectifier_config", "--config", "Settings")
-    ["get_optimizer_config", ..] | ["get-optimizer-config", ..] =>
-      check_usage_endpoint(arr, "/get_optimizer_config")
-    ["set_optimizer_config", ..] | ["set-optimizer-config", ..] =>
-      set_moon_json_config(arr, "/set_optimizer_config", "--config", "Settings")
-    ["get_copilot_optimizer_config", ..]
-    | ["get-copilot-optimizer-config", ..] =>
-      check_usage_endpoint(arr, "/get_copilot_optimizer_config")
-    ["set_copilot_optimizer_config", ..]
-    | ["set-copilot-optimizer-config", ..] =>
-      set_moon_json_config(
-        arr, "/set_copilot_optimizer_config", "--config", "Settings",
-      )
-    ["get_log_config", ..] | ["get-log-config", ..] =>
-      check_usage_endpoint(arr, "/get_log_config")
-    ["set_log_config", ..] | ["set-log-config", ..] =>
-      set_moon_json_config(arr, "/set_log_config", "--config", "Settings")
     ["get_claude_plugin_status", ..] | ["get-claude-plugin-status", ..] =>
       check_usage_endpoint(arr, "/get_claude_plugin_status")
     ["read_claude_plugin_config", ..] | ["read-claude-plugin-config", ..] =>
@@ -510,32 +476,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
         arr,
         prompt_file_path(arr, "/get_current_prompt_file_content"),
       )
-    ["settings", "get", ..] => check_usage_endpoint(arr, "/get_settings")
-    ["settings", "save", ..] => save_settings(arr)
-    ["settings", "app-config-dir", "set", ..] =>
-      set_app_config_dir_override(arr)
-    ["settings", "app-config-dir", ..] =>
-      check_usage_endpoint(arr, "/get_app_config_dir_override")
-    ["settings", "auto-launch", "set", ..] => set_auto_launch(arr)
-    ["settings", "auto-launch", ..] =>
-      check_usage_endpoint(arr, "/get_auto_launch_status")
-    ["settings", "rectifier", "set", ..] =>
-      set_moon_json_config(arr, "/set_rectifier_config", "--config", "Settings")
-    ["settings", "rectifier", ..] =>
-      check_usage_endpoint(arr, "/get_rectifier_config")
-    ["settings", "optimizer", "set", ..] =>
-      set_moon_json_config(arr, "/set_optimizer_config", "--config", "Settings")
-    ["settings", "optimizer", ..] =>
-      check_usage_endpoint(arr, "/get_optimizer_config")
-    ["settings", "copilot-optimizer", "set", ..] =>
-      set_moon_json_config(
-        arr, "/set_copilot_optimizer_config", "--config", "Settings",
-      )
-    ["settings", "copilot-optimizer", ..] =>
-      check_usage_endpoint(arr, "/get_copilot_optimizer_config")
-    ["settings", "log", "set", ..] =>
-      set_moon_json_config(arr, "/set_log_config", "--config", "Settings")
-    ["settings", "log", ..] => check_usage_endpoint(arr, "/get_log_config")
     ["plugin", "claude", "status", ..] =>
       check_usage_endpoint(arr, "/get_claude_plugin_status")
     ["plugin", "claude", "config", ..] =>
