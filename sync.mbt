@@ -163,14 +163,12 @@ fn moon_webdav_sync_settings_json(
   guard settings is Object(obj) else {
     return moon_webdav_sync_empty_settings_json()
   }
-  let remote_root = moon_sync_json_string(obj, ["remoteRoot", "remote_root"])
+  let remote_root = moon_sync_json_string(obj, ["remoteRoot"])
   let profile = moon_sync_json_string(obj, ["profile"])
   {
     "enabled": Json::boolean(moon_sync_json_bool(obj, ["enabled"])),
-    "autoSync": Json::boolean(
-      moon_sync_json_bool(obj, ["autoSync", "auto_sync"]),
-    ),
-    "baseUrl": Json::string(moon_sync_json_string(obj, ["baseUrl", "base_url"])),
+    "autoSync": Json::boolean(moon_sync_json_bool(obj, ["autoSync"])),
+    "baseUrl": Json::string(moon_sync_json_string(obj, ["baseUrl"])),
     "username": Json::string(moon_sync_json_string(obj, ["username"])),
     "password": Json::string(
       moon_sync_secret_or_existing(
@@ -215,7 +213,7 @@ fn moon_webdav_sync_empty_settings_json() -> Json {
 ///|
 fn moon_webdav_sync_settings_empty(settings : Json) -> Bool {
   guard settings is Object(obj) else { return true }
-  moon_sync_json_string(obj, ["baseUrl", "base_url"]).is_empty() &&
+  moon_sync_json_string(obj, ["baseUrl"]).is_empty() &&
   moon_sync_json_string(obj, ["username"]).is_empty() &&
   moon_sync_json_string(obj, ["password"]).is_empty()
 }
@@ -223,7 +221,7 @@ fn moon_webdav_sync_settings_empty(settings : Json) -> Bool {
 ///|
 fn moon_validate_webdav_sync_settings(settings : Json) -> String? {
   guard settings is Object(obj) else { return Some("WebDAV URL is required.") }
-  if moon_sync_json_string(obj, ["baseUrl", "base_url"]).is_empty() {
+  if moon_sync_json_string(obj, ["baseUrl"]).is_empty() {
     return Some("WebDAV URL is required.")
   }
   if moon_sync_json_string(obj, ["username"]).is_empty() {
@@ -241,22 +239,18 @@ fn moon_s3_sync_settings_json(
   guard settings is Object(obj) else {
     return moon_s3_sync_empty_settings_json()
   }
-  let remote_root = moon_sync_json_string(obj, ["remoteRoot", "remote_root"])
+  let remote_root = moon_sync_json_string(obj, ["remoteRoot"])
   let profile = moon_sync_json_string(obj, ["profile"])
   {
     "enabled": Json::boolean(moon_sync_json_bool(obj, ["enabled"])),
-    "autoSync": Json::boolean(
-      moon_sync_json_bool(obj, ["autoSync", "auto_sync"]),
-    ),
+    "autoSync": Json::boolean(moon_sync_json_bool(obj, ["autoSync"])),
     "region": Json::string(moon_sync_json_string(obj, ["region"])),
     "bucket": Json::string(moon_sync_json_string(obj, ["bucket"])),
-    "accessKeyId": Json::string(
-      moon_sync_json_string(obj, ["accessKeyId", "access_key_id"]),
-    ),
+    "accessKeyId": Json::string(moon_sync_json_string(obj, ["accessKeyId"])),
     "secretAccessKey": Json::string(
       moon_sync_secret_or_existing(
         obj,
-        ["secretAccessKey", "secret_access_key"],
+        ["secretAccessKey"],
         existing,
         preserve_empty_secret,
       ),
@@ -301,8 +295,8 @@ fn moon_s3_sync_settings_empty(settings : Json) -> Bool {
   guard settings is Object(obj) else { return true }
   moon_sync_json_string(obj, ["bucket"]).is_empty() &&
   moon_sync_json_string(obj, ["region"]).is_empty() &&
-  moon_sync_json_string(obj, ["accessKeyId", "access_key_id"]).is_empty() &&
-  moon_sync_json_string(obj, ["secretAccessKey", "secret_access_key"]).is_empty()
+  moon_sync_json_string(obj, ["accessKeyId"]).is_empty() &&
+  moon_sync_json_string(obj, ["secretAccessKey"]).is_empty()
 }
 
 ///|
@@ -314,10 +308,10 @@ fn moon_validate_s3_sync_settings(settings : Json) -> String? {
   if moon_sync_json_string(obj, ["region"]).is_empty() {
     return Some("S3 region is required.")
   }
-  if moon_sync_json_string(obj, ["accessKeyId", "access_key_id"]).is_empty() {
+  if moon_sync_json_string(obj, ["accessKeyId"]).is_empty() {
     return Some("S3 Access Key ID is required.")
   }
-  if moon_sync_json_string(obj, ["secretAccessKey", "secret_access_key"]).is_empty() {
+  if moon_sync_json_string(obj, ["secretAccessKey"]).is_empty() {
     return Some("S3 Secret Access Key is required.")
   }
   None
@@ -2071,16 +2065,13 @@ fn moon_sync_manifest_info_from_json(
   guard proxy_json_int(obj, "version") is Some(version) else {
     return Err("Remote manifest is missing protocol version.")
   }
-  guard json_string_from_map_any(obj, ["deviceName", "device_name"])
-    is Some(device_name) else {
+  guard json_string_from_map(obj, "deviceName") is Some(device_name) else {
     return Err("Remote manifest is missing device name.")
   }
-  guard json_string_from_map_any(obj, ["createdAt", "created_at"])
-    is Some(created_at) else {
+  guard json_string_from_map(obj, "createdAt") is Some(created_at) else {
     return Err("Remote manifest is missing creation time.")
   }
-  guard json_string_from_map_any(obj, ["snapshotId", "snapshot_id"])
-    is Some(snapshot_id) else {
+  guard json_string_from_map(obj, "snapshotId") is Some(snapshot_id) else {
     return Err("Remote manifest is missing snapshot id.")
   }
   guard obj.get("artifacts") is Some(Object(artifact_map)) else {

@@ -9,11 +9,11 @@ test "moonstat webdav sync settings normalize and preserve password" {
   }.to_json()
   let incoming = {
     "enabled": Json::boolean(true),
-    "auto_sync": Json::boolean(true),
-    "base_url": Json::string(" https://dav.example.com/root "),
+    "autoSync": Json::boolean(true),
+    "baseUrl": Json::string(" https://dav.example.com/root "),
     "username": Json::string(" alice "),
     "password": Json::string(""),
-    "remote_root": Json::string(""),
+    "remoteRoot": Json::string(""),
     "profile": Json::string(""),
   }.to_json()
   guard moon_webdav_sync_settings_json(incoming, Some(existing), true)
@@ -33,6 +33,27 @@ test "moonstat webdav sync settings normalize and preserve password" {
   }
   assert_eq(json_string_from_map(status, "lastError"), Some("previous"))
   assert_eq(moon_validate_webdav_sync_settings(Json::object(obj)), None)
+}
+
+///|
+test "moonstat webdav sync settings ignore snake case compatibility keys" {
+  let incoming = {
+    "enabled": Json::boolean(true),
+    "auto_sync": Json::boolean(true),
+    "base_url": Json::string("https://legacy.example/root"),
+    "username": Json::string("alice"),
+    "password": Json::string("secret"),
+    "remote_root": Json::string("legacy-root"),
+  }.to_json()
+  guard moon_webdav_sync_settings_json(incoming, None, false) is Object(obj) else {
+    fail("expected webdav settings object")
+  }
+  assert_eq(json_string_from_map(obj, "baseUrl"), Some(""))
+  assert_eq(json_string_from_map(obj, "remoteRoot"), Some("moonstat-sync"))
+  assert_eq(
+    moon_validate_webdav_sync_settings(Json::object(obj)),
+    Some("WebDAV URL is required."),
+  )
 }
 
 ///|
@@ -71,8 +92,8 @@ test "moonstat s3 sync settings normalize and preserve secret" {
     "autoSync": Json::boolean(true),
     "region": Json::string(" us-east-1 "),
     "bucket": Json::string(" moonstat "),
-    "access_key_id": Json::string(" AKID "),
-    "secret_access_key": Json::string(""),
+    "accessKeyId": Json::string(" AKID "),
+    "secretAccessKey": Json::string(""),
     "endpoint": Json::string(" https://s3.example.com "),
     "remoteRoot": Json::string(""),
   }.to_json()
@@ -94,6 +115,29 @@ test "moonstat s3 sync settings normalize and preserve secret" {
   }
   assert_eq(json_string_from_map(status, "lastRemoteEtag"), Some("etag-1"))
   assert_eq(moon_validate_s3_sync_settings(Json::object(obj)), None)
+}
+
+///|
+test "moonstat s3 sync settings ignore snake case compatibility keys" {
+  let incoming = {
+    "enabled": Json::boolean(true),
+    "auto_sync": Json::boolean(true),
+    "region": Json::string("us-east-1"),
+    "bucket": Json::string("moonstat"),
+    "access_key_id": Json::string("AKID"),
+    "secret_access_key": Json::string("SECRET"),
+    "remote_root": Json::string("legacy-root"),
+  }.to_json()
+  guard moon_s3_sync_settings_json(incoming, None, false) is Object(obj) else {
+    fail("expected s3 settings object")
+  }
+  assert_eq(json_string_from_map(obj, "accessKeyId"), Some(""))
+  assert_eq(json_string_from_map(obj, "secretAccessKey"), Some(""))
+  assert_eq(json_string_from_map(obj, "remoteRoot"), Some("moonstat-sync"))
+  assert_eq(
+    moon_validate_s3_sync_settings(Json::object(obj)),
+    Some("S3 Access Key ID is required."),
+  )
 }
 
 ///|
@@ -410,6 +454,24 @@ test "moonstat sync manifest compatibility requires current db version" {
   let manifest = moon_sync_manifest_info_from_json(manifest_json).unwrap()
   assert_eq(manifest.artifacts, ["db.sql", "skills.zip"])
   assert_true(moon_sync_validate_manifest_compat(manifest) is Ok(_))
+  assert_true(
+    moon_sync_manifest_info_from_json(
+      {
+        "format": Json::string(moon_sync_protocol_format()),
+        "version": Json::number(moon_sync_protocol_version().to_double()),
+        "dbCompatVersion": Json::number(
+          moon_sync_db_compat_version().to_double(),
+        ),
+        "device_name": Json::string("Legacy Mac"),
+        "created_at": Json::string("2026-02-12T00:00:00Z"),
+        "snapshot_id": Json::string("snap-legacy"),
+        "artifacts": {
+          "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
+        }.to_json(),
+      }.to_json(),
+    )
+    is Err(_),
+  )
   let missing_db_manifest = moon_sync_manifest_info_from_json(
     {
       "format": Json::string(moon_sync_protocol_format()),
