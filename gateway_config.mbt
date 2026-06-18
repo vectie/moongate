@@ -1,6 +1,6 @@
 ///|
 fn moon_config_app_from_request(path : StringView, body : Json?) -> String? {
-  match proxy_string_request(path, body, ["app", "appType", "app_type"]) {
+  match proxy_string_request(path, body, ["app", "appType"]) {
     Some(app) => Some(moon_normalize_app_type(app))
     None => None
   }
@@ -1508,24 +1508,20 @@ async fn ConfigService::handle_fetch_models_for_config(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["baseUrl", "base_url"])
-    is Some(base_url) else {
+  guard proxy_string_request(r.path, body, ["baseUrl"]) is Some(base_url) else {
     write_usage_bad_request(w, "missing_base_url")
     return
   }
-  guard proxy_string_request(r.path, body, ["apiKey", "api_key"])
-    is Some(api_key) else {
+  guard proxy_string_request(r.path, body, ["apiKey"]) is Some(api_key) else {
     write_usage_bad_request(w, "missing_api_key")
     return
   }
-  let is_full_url = proxy_bool_request(r.path, body, [
-    "isFullUrl", "is_full_url", "fullUrl", "full_url",
-  ]).unwrap_or(false)
-  let models_url = proxy_string_request(r.path, body, [
-    "modelsUrl", "models_url",
-  ])
+  let is_full_url = proxy_bool_request(r.path, body, ["isFullUrl", "fullUrl"]).unwrap_or(
+    false,
+  )
+  let models_url = proxy_string_request(r.path, body, ["modelsUrl"])
   let user_agent = proxy_string_request(r.path, body, [
-    "customUserAgent", "custom_user_agent", "userAgent", "user_agent",
+    "customUserAgent", "userAgent",
   ])
   match fetch_models(base_url, api_key, is_full_url, models_url, user_agent) {
     Ok(models) => write_usage_json(w, fetched_models_to_json(models))

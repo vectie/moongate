@@ -260,16 +260,16 @@ fn usage_date_app_query(
 ) -> Array[String] {
   let query : Array[String] = []
   match parse_string_arg(args, "--start-date") {
-    Some(value) => query.push(cli_query_pair("start_date", value))
+    Some(value) => query.push(cli_query_pair("startDate", value))
     None => ()
   }
   match parse_string_arg(args, "--end-date") {
-    Some(value) => query.push(cli_query_pair("end_date", value))
+    Some(value) => query.push(cli_query_pair("endDate", value))
     None => ()
   }
   if app_filter {
     match parse_string_arg(args, "--app-type") {
-      Some(value) => query.push(cli_query_pair("app_type", value))
+      Some(value) => query.push(cli_query_pair("appType", value))
       None => ()
     }
   }
@@ -280,19 +280,19 @@ fn usage_date_app_query(
 fn usage_limits_path(args : Array[String]) -> String {
   let query : Array[String] = []
   match parse_string_arg(args, "--provider-id") {
-    Some(value) => query.push(cli_query_pair("provider_id", value))
+    Some(value) => query.push(cli_query_pair("providerId", value))
     None => ()
   }
   match parse_string_arg(args, "--app-type") {
-    Some(value) => query.push(cli_query_pair("app_type", value))
+    Some(value) => query.push(cli_query_pair("appType", value))
     None => ()
   }
   match parse_string_arg(args, "--daily-limit-usd") {
-    Some(value) => query.push(cli_query_pair("daily_limit_usd", value))
+    Some(value) => query.push(cli_query_pair("dailyLimitUsd", value))
     None => ()
   }
   match parse_string_arg(args, "--monthly-limit-usd") {
-    Some(value) => query.push(cli_query_pair("monthly_limit_usd", value))
+    Some(value) => query.push(cli_query_pair("monthlyLimitUsd", value))
     None => ()
   }
   if query.is_empty() {

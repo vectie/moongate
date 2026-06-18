@@ -680,14 +680,14 @@ test "usage filter paths encode moonstat query values" {
       "moonstat", "usage", "trends", "--start-date", "10", "--end-date", "20", "--app-type",
       "claude desktop",
     ]),
-    "/usage/trends?start_date=10&end_date=20&app_type=claude%20desktop",
+    "/usage/trends?startDate=10&endDate=20&appType=claude%20desktop",
   )
   assert_eq(
     usage_limits_path([
       "moonstat", "usage", "limits", "--provider-id", "Codex OAuth", "--app-type",
       "codex", "--daily-limit-usd", "1.5", "--monthly-limit-usd", "30",
     ]),
-    "/usage/provider-limits?provider_id=Codex%20OAuth&app_type=codex&daily_limit_usd=1.5&monthly_limit_usd=30",
+    "/usage/provider-limits?providerId=Codex%20OAuth&appType=codex&dailyLimitUsd=1.5&monthlyLimitUsd=30",
   )
 }
 
@@ -763,19 +763,19 @@ test "usage aggregate paths accept moonstat date and app filters" {
   ]
   assert_eq(
     usage_filtered_path(args, "/usage/summary", app_filter=true),
-    "/usage/summary?start_date=10&end_date=20&app_type=claude%20desktop",
+    "/usage/summary?startDate=10&endDate=20&appType=claude%20desktop",
   )
   assert_eq(
     usage_filtered_path(args, "/usage/summary/by-app", app_filter=false),
-    "/usage/summary/by-app?start_date=10&end_date=20",
+    "/usage/summary/by-app?startDate=10&endDate=20",
   )
   assert_eq(
     usage_filtered_path(args, "/usage/provider-stats", app_filter=true),
-    "/usage/provider-stats?start_date=10&end_date=20&app_type=claude%20desktop",
+    "/usage/provider-stats?startDate=10&endDate=20&appType=claude%20desktop",
   )
   assert_eq(
     usage_filtered_path(args, "/usage/model-stats", app_filter=true),
-    "/usage/model-stats?start_date=10&end_date=20&app_type=claude%20desktop",
+    "/usage/model-stats?startDate=10&endDate=20&appType=claude%20desktop",
   )
 }
 
@@ -787,7 +787,7 @@ test "usage logs path accepts moonstat filters and pagination" {
       "codex", "--provider-name", "Codex OAuth", "--model", "anthropic/claude-sonnet",
       "--status-code", "200", "--start-date", "10", "--end-date", "20",
     ]),
-    "/usage/logs?start_date=10&end_date=20&app_type=codex&page=2&pageSize=25&providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200",
+    "/usage/logs?startDate=10&endDate=20&appType=codex&page=2&pageSize=25&providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200",
   )
 }
 
@@ -807,20 +807,20 @@ test "usage kebab-case flags build canonical paths" {
   ]
   assert_eq(
     usage_filtered_path(args, "/usage/summary", app_filter=true),
-    "/usage/summary?start_date=10&end_date=20&app_type=codex",
+    "/usage/summary?startDate=10&endDate=20&appType=codex",
   )
   assert_eq(
     usage_logs_path([
       "moonstat", "usage", "logs", "--page", "1", "--page-size", "50", "--app-type",
       "claude",
     ]),
-    "/usage/logs?app_type=claude&page=1&pageSize=50",
+    "/usage/logs?appType=claude&page=1&pageSize=50",
   )
   assert_eq(
     usage_limits_path([
       "moonstat", "usage", "limits", "--provider-id", "p1", "--app-type", "codex",
     ]),
-    "/usage/provider-limits?provider_id=p1&app_type=codex",
+    "/usage/provider-limits?providerId=p1&appType=codex",
   )
   assert_eq(
     usage_provider_script_path(

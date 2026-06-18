@@ -1,10 +1,8 @@
 ///|
 fn moon_provider_presets_json(path : StringView) -> Json {
-  let app_type = usage_query_value_any(path, "app_type", "appType")
+  let app_type = usage_query_value(path, "appType")
   let query = usage_query_value(path, "query").unwrap_or("")
-  let sort_mode = usage_query_value_any(path, "sort_mode", "sortMode").unwrap_or(
-    "original",
-  )
+  let sort_mode = usage_query_value(path, "sortMode").unwrap_or("original")
   let presets = moon_visible_provider_presets(app_type, query, sort_mode)
   Json::array(presets)
 }

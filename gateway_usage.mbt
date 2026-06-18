@@ -745,9 +745,7 @@ async fn UsageService::handle_usage_logs(
     .usage_logs_json(
       filters,
       usage_int_from_request(r.path, body, ["page"]).unwrap_or(0),
-      usage_int_from_request(r.path, body, ["page_size", "pageSize"]).unwrap_or(
-        20,
-      ),
+      usage_int_from_request(r.path, body, ["pageSize"]).unwrap_or(20),
       pricing_overrides,
     )
     .stringify(indent=2),
@@ -765,11 +763,9 @@ async fn UsageService::handle_usage_summary(
   write_usage_json(
     w,
     self.summary_json(
-      start_date=usage_int_from_request(r.path, body, [
-        "start_date", "startDate",
-      ]),
-      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
-      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
+      start_date=usage_int_from_request(r.path, body, ["startDate"]),
+      end_date=usage_int_from_request(r.path, body, ["endDate"]),
+      app_type=usage_string_from_request(r.path, body, ["appType"]),
     ),
   )
 }
@@ -784,10 +780,8 @@ async fn UsageService::handle_usage_summary_by_app(
   write_usage_json(
     w,
     self.summary_by_app_json(
-      start_date=usage_int_from_request(r.path, body, [
-        "start_date", "startDate",
-      ]),
-      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
+      start_date=usage_int_from_request(r.path, body, ["startDate"]),
+      end_date=usage_int_from_request(r.path, body, ["endDate"]),
     ),
   )
 }
@@ -799,11 +793,9 @@ async fn UsageService::handle_usage_trends(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let start_ts = usage_int_from_request(r.path, body, [
-    "start_date", "startDate",
-  ])
-  let end_ts = usage_int_from_request(r.path, body, ["end_date", "endDate"])
-  let app_type = usage_string_from_request(r.path, body, ["app_type", "appType"])
+  let start_ts = usage_int_from_request(r.path, body, ["startDate"])
+  let end_ts = usage_int_from_request(r.path, body, ["endDate"])
+  let app_type = usage_string_from_request(r.path, body, ["appType"])
   write_usage_json(w, self.trends_json(start_ts~, end_ts~, app_type~))
 }
 
@@ -817,11 +809,9 @@ async fn UsageService::handle_usage_provider_stats(
   write_usage_json(
     w,
     self.provider_stats_json(
-      start_date=usage_int_from_request(r.path, body, [
-        "start_date", "startDate",
-      ]),
-      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
-      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
+      start_date=usage_int_from_request(r.path, body, ["startDate"]),
+      end_date=usage_int_from_request(r.path, body, ["endDate"]),
+      app_type=usage_string_from_request(r.path, body, ["appType"]),
     ),
   )
 }
@@ -836,11 +826,9 @@ async fn UsageService::handle_usage_model_stats(
   write_usage_json(
     w,
     self.model_stats_json(
-      start_date=usage_int_from_request(r.path, body, [
-        "start_date", "startDate",
-      ]),
-      end_date=usage_int_from_request(r.path, body, ["end_date", "endDate"]),
-      app_type=usage_string_from_request(r.path, body, ["app_type", "appType"]),
+      start_date=usage_int_from_request(r.path, body, ["startDate"]),
+      end_date=usage_int_from_request(r.path, body, ["endDate"]),
+      app_type=usage_string_from_request(r.path, body, ["appType"]),
     ),
   )
 }
@@ -859,27 +847,21 @@ async fn UsageService::handle_usage_sync_session(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let claude_projects_dir = usage_query_value_any(
-    r.path,
-    "projects_dir",
-    "projectsDir",
-  ).unwrap_or(default_claude_projects_dir())
-  let codex_dir = usage_query_value_any(r.path, "codex_dir", "codexDir").unwrap_or(
+  let claude_projects_dir = usage_query_value(r.path, "projectsDir").unwrap_or(
+    default_claude_projects_dir(),
+  )
+  let codex_dir = usage_query_value(r.path, "codexDir").unwrap_or(
     default_codex_config_dir(),
   )
-  let gemini_dir = usage_query_value_any(r.path, "gemini_dir", "geminiDir").unwrap_or(
+  let gemini_dir = usage_query_value(r.path, "geminiDir").unwrap_or(
     default_gemini_dir(),
   )
-  let opencode_export_path = usage_query_value_any(
-    r.path,
-    "opencode_export_path",
-    "opencodeExportPath",
-  ).unwrap_or(default_opencode_export_path())
-  let opencode_db_path = usage_query_value_any(
-    r.path,
-    "opencode_db_path",
-    "opencodeDbPath",
-  ).unwrap_or(default_opencode_db_path())
+  let opencode_export_path = usage_query_value(r.path, "opencodeExportPath").unwrap_or(
+    default_opencode_export_path(),
+  )
+  let opencode_db_path = usage_query_value(r.path, "opencodeDbPath").unwrap_or(
+    default_opencode_db_path(),
+  )
   let result = self.sync_session_logs(
     claude_projects_dir, codex_dir, gemini_dir, opencode_db_path, opencode_export_path,
   )
@@ -906,21 +888,20 @@ async fn UsageService::handle_usage_provider_limits(
   provider_router : ProviderRouter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard usage_string_from_request(r.path, body, ["provider_id", "providerId"])
+  guard usage_string_from_request(r.path, body, ["providerId"])
     is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  guard usage_string_from_request(r.path, body, ["app_type", "appType"])
-    is Some(app_type) else {
+  guard usage_string_from_request(r.path, body, ["appType"]) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
   }
   let daily_limit_usd = usage_string_from_request(r.path, body, [
-    "daily_limit_usd", "dailyLimitUsd",
+    "dailyLimitUsd",
   ])
   let monthly_limit_usd = usage_string_from_request(r.path, body, [
-    "monthly_limit_usd", "monthlyLimitUsd",
+    "monthlyLimitUsd",
   ])
   let provider_limits = usage_provider_limit_config_for_provider(
     provider_router, provider_id, app_type,
@@ -965,12 +946,12 @@ async fn UsageService::handle_query_provider_usage(
 ) -> Unit {
   let body = proxy_json_body(r)
   let config = proxy_embedded_config(body)
-  guard proxy_string_request(r.path, config, ["provider_id", "providerId"])
+  guard proxy_string_request(r.path, config, ["providerId"])
     is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  guard proxy_string_request(r.path, config, ["app", "app_type", "appType"])
+  guard proxy_string_request(r.path, config, ["app", "appType"])
     is Some(app_type) else {
     write_usage_bad_request(w, "missing_app")
     return
@@ -1013,13 +994,11 @@ async fn UsageService::handle_get_balance(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["baseUrl", "base_url"])
-    is Some(base_url) else {
+  guard proxy_string_request(r.path, body, ["baseUrl"]) is Some(base_url) else {
     write_usage_bad_request(w, "missing_base_url")
     return
   }
-  guard proxy_string_request(r.path, body, ["apiKey", "api_key"])
-    is Some(api_key) else {
+  guard proxy_string_request(r.path, body, ["apiKey"]) is Some(api_key) else {
     write_usage_bad_request(w, "missing_api_key")
     return
   }
@@ -1033,9 +1012,7 @@ async fn UsageService::handle_get_subscription_quota(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, [
-      "tool", "app", "appType", "app_type",
-    ])
+  guard proxy_string_request(r.path, body, ["tool", "app", "appType"])
     is Some(tool) else {
     write_usage_bad_request(w, "missing_tool")
     return
@@ -1052,13 +1029,11 @@ async fn UsageService::handle_get_coding_plan_quota(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["baseUrl", "base_url"])
-    is Some(base_url) else {
+  guard proxy_string_request(r.path, body, ["baseUrl"]) is Some(base_url) else {
     write_usage_bad_request(w, "missing_base_url")
     return
   }
-  guard proxy_string_request(r.path, body, ["apiKey", "api_key"])
-    is Some(api_key) else {
+  guard proxy_string_request(r.path, body, ["apiKey"]) is Some(api_key) else {
     write_usage_bad_request(w, "missing_api_key")
     return
   }
@@ -1075,12 +1050,12 @@ async fn UsageService::handle_test_usage_script(
 ) -> Unit {
   let body = proxy_json_body(r)
   let config = proxy_embedded_config(body)
-  guard proxy_string_request(r.path, config, ["provider_id", "providerId"])
+  guard proxy_string_request(r.path, config, ["providerId"])
     is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  guard proxy_string_request(r.path, config, ["app", "app_type", "appType"])
+  guard proxy_string_request(r.path, config, ["app", "appType"])
     is Some(app_type) else {
     write_usage_bad_request(w, "missing_app")
     return
@@ -1124,7 +1099,7 @@ async fn write_usage_bad_request(
 
 ///|
 fn usage_request_detail_id(path : String) -> String {
-  match usage_query_value_any(path, "request_id", "requestId") {
+  match usage_query_value(path, "requestId") {
     Some(request_id) => return request_id
     None => ()
   }
@@ -1146,7 +1121,7 @@ fn usage_request_detail_id_from_request(
   path : StringView,
   body : Json?,
 ) -> String {
-  match usage_string_from_request(path, body, ["request_id", "requestId"]) {
+  match usage_string_from_request(path, body, ["requestId"]) {
     Some(request_id) => request_id
     None => usage_request_detail_id(path.to_owned())
   }
@@ -1174,20 +1149,12 @@ fn usage_request_log_filters_from_request(
 ) -> RequestLogFilters {
   let filter_body = usage_filter_body(body)
   RequestLogFilters::new(
-    app_type=usage_string_from_request(path, filter_body, [
-      "app_type", "appType",
-    ]),
-    provider_name=usage_string_from_request(path, filter_body, [
-      "provider_name", "providerName",
-    ]),
+    app_type=usage_string_from_request(path, filter_body, ["appType"]),
+    provider_name=usage_string_from_request(path, filter_body, ["providerName"]),
     model=usage_string_from_request(path, filter_body, ["model"]),
-    status_code=usage_int_from_request(path, filter_body, [
-      "status_code", "statusCode",
-    ]),
-    start_date=usage_int_from_request(path, filter_body, [
-      "start_date", "startDate",
-    ]),
-    end_date=usage_int_from_request(path, filter_body, ["end_date", "endDate"]),
+    status_code=usage_int_from_request(path, filter_body, ["statusCode"]),
+    start_date=usage_int_from_request(path, filter_body, ["startDate"]),
+    end_date=usage_int_from_request(path, filter_body, ["endDate"]),
   )
 }
 
@@ -1263,35 +1230,6 @@ fn usage_int_from_request(
     _ => ()
   }
   None
-}
-
-///|
-fn usage_query_value_any(
-  path : StringView,
-  left_key : String,
-  right_key : String,
-) -> String? {
-  match usage_query_value(path, left_key) {
-    Some(value) => Some(value)
-    None => usage_query_value(path, right_key)
-  }
-}
-
-///|
-fn usage_query_int_any(
-  path : StringView,
-  left_key : String,
-  right_key : String,
-) -> Int? {
-  match usage_query_value_any(path, left_key, right_key) {
-    Some(value) =>
-      try @string.parse_int(value, base=10) catch {
-        _ => None
-      } noraise {
-        parsed => Some(parsed)
-      }
-    None => None
-  }
 }
 
 ///|
@@ -1445,9 +1383,9 @@ async fn test_usage_script_template_result(
   path : StringView,
   body : Json?,
 ) -> UsageResult? {
-  let template_type = proxy_string_request(path, body, [
-    "templateType", "template_type",
-  ]).unwrap_or("")
+  let template_type = proxy_string_request(path, body, ["templateType"]).unwrap_or(
+    "",
+  )
   match template_type {
     "github_copilot" =>
       match copilot_get_usage(copilot_account_id_request(path, body)) {
@@ -1455,22 +1393,15 @@ async fn test_usage_script_template_result(
         Err(error) => Some(UsageResult::new(false, error=Some(error)))
       }
     "balance" => {
-      guard proxy_string_request(path, body, ["baseUrl", "base_url"])
-        is Some(base_url) else {
+      guard proxy_string_request(path, body, ["baseUrl"]) is Some(base_url) else {
         return Some(moon_balance_error("Base URL is empty"))
       }
-      let api_key = proxy_string_request(path, body, ["apiKey", "api_key"]).unwrap_or(
-        "",
-      )
+      let api_key = proxy_string_request(path, body, ["apiKey"]).unwrap_or("")
       Some(moon_get_balance(base_url, api_key))
     }
     "token_plan" => {
-      let base_url = proxy_string_request(path, body, ["baseUrl", "base_url"]).unwrap_or(
-        "",
-      )
-      let api_key = proxy_string_request(path, body, ["apiKey", "api_key"]).unwrap_or(
-        "",
-      )
+      let base_url = proxy_string_request(path, body, ["baseUrl"]).unwrap_or("")
+      let api_key = proxy_string_request(path, body, ["apiKey"]).unwrap_or("")
       Some(
         moon_token_plan_usage_result_from_quota(
           moon_get_coding_plan_quota(base_url, api_key),
@@ -1478,9 +1409,9 @@ async fn test_usage_script_template_result(
       )
     }
     "official_subscription" => {
-      let app_type = proxy_string_request(path, body, [
-        "app", "appType", "app_type", "tool",
-      ]).unwrap_or("")
+      let app_type = proxy_string_request(path, body, ["app", "appType", "tool"]).unwrap_or(
+        "",
+      )
       Some(
         moon_subscription_usage_result_from_quota(
           moon_get_subscription_quota(app_type),

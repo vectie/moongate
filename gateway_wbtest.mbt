@@ -104,35 +104,27 @@ test "usage request detail route extracts ccs request id" {
 }
 
 ///|
-test "usage query helpers parse ccs trend parameters" {
-  let path = "/usage/trends?start_date=10&endDate=20&app_type=codex"
-  assert_eq(usage_query_int_any(path, "start_date", "startDate"), Some(10))
-  assert_eq(usage_query_int_any(path, "end_date", "endDate"), Some(20))
-  assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
+test "usage query helpers parse moonstat trend parameters" {
+  let path = "/usage/trends?startDate=10&endDate=20&appType=codex"
+  assert_eq(usage_query_int(path, "startDate"), Some(10))
+  assert_eq(usage_query_int(path, "endDate"), Some(20))
+  assert_eq(usage_query_value(path, "appType"), Some("codex"))
   assert_eq(usage_query_value(path, "missing"), None)
-  assert_eq(
-    usage_query_int_any(
-      "/usage/trends?start_date=bad", "start_date", "startDate",
-    ),
-    None,
-  )
+  assert_eq(usage_query_int("/usage/trends?startDate=bad", "startDate"), None)
+  assert_eq(usage_query_int("/usage/trends?start_date=10", "startDate"), None)
+  assert_eq(usage_query_value("/usage/trends?app_type=codex", "appType"), None)
 }
 
 ///|
-test "usage query helpers parse ccs provider limit parameters" {
-  let path = "/usage/provider-limits?providerId=codex-oauth&appType=codex&dailyLimitUsd=0.10&monthly_limit_usd=1.25"
+test "usage query helpers parse moonstat provider limit parameters" {
+  let path = "/usage/provider-limits?providerId=codex-oauth&appType=codex&dailyLimitUsd=0.10&monthlyLimitUsd=1.25"
+  assert_eq(usage_query_value(path, "providerId"), Some("codex-oauth"))
+  assert_eq(usage_query_value(path, "appType"), Some("codex"))
+  assert_eq(usage_query_value(path, "dailyLimitUsd"), Some("0.10"))
+  assert_eq(usage_query_value(path, "monthlyLimitUsd"), Some("1.25"))
   assert_eq(
-    usage_query_value_any(path, "provider_id", "providerId"),
-    Some("codex-oauth"),
-  )
-  assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
-  assert_eq(
-    usage_query_value_any(path, "daily_limit_usd", "dailyLimitUsd"),
-    Some("0.10"),
-  )
-  assert_eq(
-    usage_query_value_any(path, "monthly_limit_usd", "monthlyLimitUsd"),
-    Some("1.25"),
+    usage_query_value("/usage/provider-limits?provider_id=p1", "providerId"),
+    None,
   )
 }
 
@@ -1463,26 +1455,24 @@ test "codex compatible provider headers honor custom user agent" {
 }
 
 ///|
-test "usage query helpers parse ccs request log parameters" {
-  let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&end_date=20"
+test "usage query helpers parse moonstat request log parameters" {
+  let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&endDate=20"
   assert_eq(usage_query_int(path, "page"), Some(2))
-  assert_eq(usage_query_int_any(path, "page_size", "pageSize"), Some(25))
-  assert_eq(usage_query_value_any(path, "app_type", "appType"), Some("codex"))
-  assert_eq(
-    usage_query_value_any(path, "provider_name", "providerName"),
-    Some("Codex OAuth"),
-  )
+  assert_eq(usage_query_int(path, "pageSize"), Some(25))
+  assert_eq(usage_query_value(path, "appType"), Some("codex"))
+  assert_eq(usage_query_value(path, "providerName"), Some("Codex OAuth"))
   assert_eq(
     usage_query_value(path, "model"),
     Some("anthropic/claude-sonnet-4.5"),
   )
-  assert_eq(usage_query_int_any(path, "status_code", "statusCode"), Some(200))
-  assert_eq(usage_query_int_any(path, "start_date", "startDate"), Some(10))
-  assert_eq(usage_query_int_any(path, "end_date", "endDate"), Some(20))
+  assert_eq(usage_query_int(path, "statusCode"), Some(200))
+  assert_eq(usage_query_int(path, "startDate"), Some(10))
+  assert_eq(usage_query_int(path, "endDate"), Some(20))
+  assert_eq(usage_query_int("/usage/logs?page_size=25", "pageSize"), None)
 }
 
 ///|
-test "usage request log helpers parse ccs structured body filters" {
+test "usage request log helpers parse moonstat structured body filters" {
   let body = {
     "filters": {
       "appType": Json::string("codex"),
@@ -1510,13 +1500,13 @@ test "usage request log helpers parse ccs structured body filters" {
     Some(2),
   )
   assert_eq(
-    usage_int_from_request("/usage/logs", Some(body), ["page_size", "pageSize"]),
+    usage_int_from_request("/usage/logs", Some(body), ["pageSize"]),
     Some(25),
   )
 }
 
 ///|
-test "usage request log helpers let query override ccs body filters" {
+test "usage request log helpers let query override moonstat body filters" {
   let body = {
     "filters": {
       "appType": Json::string("claude"),
@@ -1532,14 +1522,11 @@ test "usage request log helpers let query override ccs body filters" {
   assert_eq(filters.provider_name, Some("OAuth"))
   assert_eq(filters.status_code, Some(200))
   assert_eq(usage_int_from_request(path, Some(body), ["page"]), Some(1))
-  assert_eq(
-    usage_int_from_request(path, Some(body), ["page_size", "pageSize"]),
-    Some(10),
-  )
+  assert_eq(usage_int_from_request(path, Some(body), ["pageSize"]), Some(10))
 }
 
 ///|
-test "usage aggregate helpers parse ccs structured command args" {
+test "usage aggregate helpers parse moonstat structured command args" {
   let body = {
     "startDate": Json::number(100.0),
     "endDate": Json::number(200.0),
@@ -1549,54 +1536,46 @@ test "usage aggregate helpers parse ccs structured command args" {
     "monthlyLimitUsd": Json::number(9.5),
   }.to_json()
   let path = "/usage/summary"
+  assert_eq(usage_int_from_request(path, Some(body), ["startDate"]), Some(100))
+  assert_eq(usage_int_from_request(path, Some(body), ["endDate"]), Some(200))
   assert_eq(
-    usage_int_from_request(path, Some(body), ["start_date", "startDate"]),
-    Some(100),
-  )
-  assert_eq(
-    usage_int_from_request(path, Some(body), ["end_date", "endDate"]),
-    Some(200),
-  )
-  assert_eq(
-    usage_string_from_request(path, Some(body), ["app_type", "appType"]),
+    usage_string_from_request(path, Some(body), ["appType"]),
     Some("codex"),
   )
   assert_eq(
-    usage_string_from_request(path, Some(body), ["provider_id", "providerId"]),
+    usage_string_from_request(path, Some(body), ["providerId"]),
     Some("codex-oauth"),
   )
   assert_eq(
-    usage_string_from_request(path, Some(body), [
-      "daily_limit_usd", "dailyLimitUsd",
-    ]),
+    usage_string_from_request(path, Some(body), ["dailyLimitUsd"]),
     Some("1.25"),
   )
   assert_eq(
-    usage_string_from_request(path, Some(body), [
-      "monthly_limit_usd", "monthlyLimitUsd",
-    ]),
+    usage_string_from_request(path, Some(body), ["monthlyLimitUsd"]),
     Some("9.5"),
+  )
+  assert_eq(
+    usage_string_from_request(
+      path,
+      Some({ "provider_id": Json::string("legacy") }.to_json()),
+      ["providerId"],
+    ),
+    None,
   )
 }
 
 ///|
-test "usage aggregate helpers prefer query params over ccs body args" {
+test "usage aggregate helpers prefer query params over moonstat body args" {
   let body = {
     "startDate": Json::number(100.0),
     "endDate": Json::number(200.0),
     "appType": Json::string("claude"),
   }.to_json()
   let path = "/usage/provider-stats?startDate=10&endDate=20&appType=codex"
+  assert_eq(usage_int_from_request(path, Some(body), ["startDate"]), Some(10))
+  assert_eq(usage_int_from_request(path, Some(body), ["endDate"]), Some(20))
   assert_eq(
-    usage_int_from_request(path, Some(body), ["start_date", "startDate"]),
-    Some(10),
-  )
-  assert_eq(
-    usage_int_from_request(path, Some(body), ["end_date", "endDate"]),
-    Some(20),
-  )
-  assert_eq(
-    usage_string_from_request(path, Some(body), ["app_type", "appType"]),
+    usage_string_from_request(path, Some(body), ["appType"]),
     Some("codex"),
   )
 }
@@ -3671,31 +3650,30 @@ test "usage decimal validation mirrors ccs frontend regex" {
 }
 
 ///|
-test "usage request detail id accepts ccs get_request_detail query" {
+test "usage request detail id accepts moonstat request detail query" {
   assert_eq(
     usage_request_detail_id("/usage/request-detail?requestId=session%3Amsg%2F1"),
     "session:msg/1",
   )
-  assert_eq(
-    usage_request_detail_id("/usage/request-detail?request_id=req_123"),
+  assert_true(
+    usage_request_detail_id("/usage/request-detail?request_id=req_123") !=
     "req_123",
   )
 }
 
 ///|
-test "usage request detail id accepts ccs structured body" {
+test "usage request detail id accepts moonstat structured body" {
   let body = { "requestId": Json::string("session:body/1") }.to_json()
   assert_eq(
     usage_request_detail_id_from_request("/usage/request-detail", Some(body)),
     "session:body/1",
   )
-  let snake_body = { "request_id": Json::string("req_body_2") }.to_json()
   assert_eq(
     usage_request_detail_id_from_request(
       "/usage/request-detail",
-      Some(snake_body),
+      Some({ "request_id": Json::string("req_body_2") }.to_json()),
     ),
-    "req_body_2",
+    "/usage/request-detail",
   )
 }
 

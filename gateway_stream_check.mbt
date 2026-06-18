@@ -39,15 +39,12 @@ fn StreamCheckConfig::to_json(self : StreamCheckConfig) -> Json {
 fn stream_check_int_request(
   path : StringView,
   obj : Map[String, Json]?,
-  snake_key : String,
+  _snake_key : String,
   camel_key : String,
 ) -> Int? {
   match obj {
     Some(obj) => {
-      let field = match obj.get(camel_key) {
-        Some(value) => Some(value)
-        None => obj.get(snake_key)
-      }
+      let field = obj.get(camel_key)
       match field {
         Some(Number(n, ..)) => return Some(n.trunc().to_int())
         Some(String(value)) =>
@@ -61,22 +58,19 @@ fn stream_check_int_request(
     }
     None => ()
   }
-  usage_query_int_any(path, snake_key, camel_key)
+  usage_query_int(path, camel_key)
 }
 
 ///|
 fn stream_check_string_request(
   path : StringView,
   obj : Map[String, Json]?,
-  snake_key : String,
+  _snake_key : String,
   camel_key : String,
 ) -> String? {
   match obj {
     Some(obj) => {
-      let field = match obj.get(camel_key) {
-        Some(value) => Some(value)
-        None => obj.get(snake_key)
-      }
+      let field = obj.get(camel_key)
       match field {
         Some(String(value)) => return Some(value)
         _ => ()
@@ -84,7 +78,7 @@ fn stream_check_string_request(
     }
     None => ()
   }
-  usage_query_value_any(path, snake_key, camel_key)
+  usage_query_value(path, camel_key)
 }
 
 ///|

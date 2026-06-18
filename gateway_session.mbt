@@ -117,13 +117,11 @@ async fn SessionService::handle_get_session_messages(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["providerId", "provider_id"])
-    is Some(provider_id) else {
+  guard proxy_string_request(r.path, body, ["providerId"]) is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  guard proxy_string_request(r.path, body, ["sourcePath", "source_path"])
-    is Some(source_path) else {
+  guard proxy_string_request(r.path, body, ["sourcePath"]) is Some(source_path) else {
     write_usage_bad_request(w, "missing_source_path")
     return
   }
@@ -147,9 +145,7 @@ async fn SessionService::handle_launch_session_terminal(
     return
   }
   let cwd = proxy_string_request(r.path, body, ["cwd"])
-  let custom_config = proxy_string_request(r.path, body, [
-    "customConfig", "custom_config",
-  ])
+  let custom_config = proxy_string_request(r.path, body, ["customConfig"])
   match
     moon_launch_session_terminal_json(
       command, cwd, custom_config, preferred_terminal,
@@ -167,18 +163,15 @@ async fn SessionService::handle_delete_session(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["providerId", "provider_id"])
-    is Some(provider_id) else {
+  guard proxy_string_request(r.path, body, ["providerId"]) is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  guard proxy_string_request(r.path, body, ["sessionId", "session_id"])
-    is Some(session_id) else {
+  guard proxy_string_request(r.path, body, ["sessionId"]) is Some(session_id) else {
     write_usage_bad_request(w, "missing_session_id")
     return
   }
-  guard proxy_string_request(r.path, body, ["sourcePath", "source_path"])
-    is Some(source_path) else {
+  guard proxy_string_request(r.path, body, ["sourcePath"]) is Some(source_path) else {
     write_usage_bad_request(w, "missing_source_path")
     return
   }

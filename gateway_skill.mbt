@@ -82,8 +82,7 @@ async fn SkillService::handle_toggle_skill_app(
     write_usage_bad_request(w, "missing_skill_id")
     return
   }
-  guard proxy_string_request(r.path, body, ["app", "appType", "app_type"])
-    is Some(app) else {
+  guard proxy_string_request(r.path, body, ["app", "appType"]) is Some(app) else {
     write_usage_bad_request(w, "missing_app")
     return
   }
