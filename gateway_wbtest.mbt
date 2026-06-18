@@ -2361,6 +2361,14 @@ async test "provider config endpoints are owned by proxy service" {
     assert_true(sources.contains("async fn ProxyService::\{handler}("))
     assert_false(sources.contains("async fn Gateway::\{handler}("))
   }
+  for
+    helper in [
+      "post_codex_compatible_provider_json", "post_codex_compatible_provider_stream",
+      "post_claude_compatible_provider_json",
+    ] {
+    assert_true(provider_source.contains("async fn ProxyService::\{helper}("))
+    assert_false(provider_source.contains("async fn Gateway::\{helper}("))
+  }
   assert_true(
     provider_source.contains(
       "fn ProxyService::stream_check_provider_result_json(",

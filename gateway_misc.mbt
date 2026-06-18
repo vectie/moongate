@@ -440,7 +440,7 @@ async fn Gateway::forward_non_streaming_chat_completion(
     let (response, response_body) = match active_provider {
       Some(provider) if provider.can_use_codex_compatible_upstream() =>
         match
-          self.post_codex_compatible_provider_json(
+          self.proxy.post_codex_compatible_provider_json(
             provider,
             codex_compatible_responses_endpoint("/backend-api/codex/responses"),
             request,
@@ -603,7 +603,7 @@ async fn Gateway::forward_streaming_chat_completion(
           request
         }
         match
-          self.post_codex_compatible_provider_stream(
+          self.proxy.post_codex_compatible_provider_stream(
             provider, endpoint, provider_request,
           ) {
           Ok((client, response)) => (client, response, use_chat_bridge)
@@ -860,7 +860,7 @@ async fn Gateway::forward_non_streaming_codex_response(
           outbound_request
         }
         match
-          self.post_codex_compatible_provider_json(
+          self.proxy.post_codex_compatible_provider_json(
             provider, provider_endpoint, provider_request,
           ) {
           Ok((response, body)) =>
@@ -1034,7 +1034,7 @@ async fn Gateway::forward_streaming_codex_response(
           outbound_request
         }
         match
-          self.post_codex_compatible_provider_stream(
+          self.proxy.post_codex_compatible_provider_stream(
             provider, provider_endpoint, provider_request,
           ) {
           Ok((client, response)) => (client, response, use_chat_bridge)
@@ -5468,7 +5468,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
     provider, upstream_body, api_format, session_id,
   )
   match
-    self.post_claude_compatible_provider_json(
+    self.proxy.post_claude_compatible_provider_json(
       provider,
       endpoint,
       outbound,
@@ -5528,7 +5528,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
             session_id,
           )
           match
-            self.post_claude_compatible_provider_json(
+            self.proxy.post_claude_compatible_provider_json(
               provider,
               endpoint,
               retry_outbound,
@@ -5558,7 +5558,7 @@ async fn Gateway::forward_non_streaming_claude_compatible_request(
               session_id,
             )
             match
-              self.post_claude_compatible_provider_json(
+              self.proxy.post_claude_compatible_provider_json(
                 provider,
                 endpoint,
                 retry_outbound,

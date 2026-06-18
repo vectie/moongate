@@ -290,8 +290,8 @@ fn Gateway::active_provider_target(
 }
 
 ///|
-async fn Gateway::post_codex_compatible_provider_json(
-  self : Gateway,
+async fn ProxyService::post_codex_compatible_provider_json(
+  self : ProxyService,
   provider : ProviderRouteTarget,
   endpoint : String,
   request : Json,
@@ -316,8 +316,8 @@ async fn Gateway::post_codex_compatible_provider_json(
 }
 
 ///|
-async fn Gateway::post_codex_compatible_provider_stream(
-  self : Gateway,
+async fn ProxyService::post_codex_compatible_provider_stream(
+  self : ProxyService,
   provider : ProviderRouteTarget,
   endpoint : String,
   request : Json,
@@ -347,8 +347,8 @@ async fn Gateway::post_codex_compatible_provider_stream(
 }
 
 ///|
-async fn Gateway::post_claude_compatible_provider_json(
-  self : Gateway,
+async fn ProxyService::post_claude_compatible_provider_json(
+  self : ProxyService,
   provider : ProviderRouteTarget,
   endpoint : String,
   request : Json,
