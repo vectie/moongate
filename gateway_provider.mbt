@@ -1761,19 +1761,6 @@ fn provider_settings_codex_fast_mode(settings : Json?) -> Bool? {
 }
 
 ///|
-fn Gateway::provider_limit_config_for_provider(
-  self : Gateway,
-  provider_id : String,
-  app_type : String,
-) -> ProviderLimitConfig? {
-  guard self.proxy.provider_router.provider_by_id(app_type, provider_id)
-    is Some(provider) else {
-    return None
-  }
-  provider_limit_config_from_settings(provider.settings_config)
-}
-
-///|
 fn Gateway::sync_provider_limits_from_target(
   self : Gateway,
   target : ProviderRouteTarget,

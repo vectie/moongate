@@ -764,10 +764,11 @@ async fn UsageService::handle_usage_request_detail(
 }
 
 ///|
-async fn Gateway::handle_usage_provider_limits(
-  self : Gateway,
+async fn UsageService::handle_usage_provider_limits(
+  self : UsageService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
+  provider_router : ProviderRouter,
 ) -> Unit {
   let body = proxy_json_body(r)
   guard usage_string_from_request(r.path, body, ["provider_id", "providerId"])
@@ -786,8 +787,8 @@ async fn Gateway::handle_usage_provider_limits(
   let monthly_limit_usd = usage_string_from_request(r.path, body, [
     "monthly_limit_usd", "monthlyLimitUsd",
   ])
-  let provider_limits = self.provider_limit_config_for_provider(
-    provider_id, app_type,
+  let provider_limits = usage_provider_limit_config_for_provider(
+    provider_router, provider_id, app_type,
   )
   let daily_limit_usd = usage_limit_override_or_provider_limit(
     daily_limit_usd,
@@ -799,13 +800,25 @@ async fn Gateway::handle_usage_provider_limits(
   )
   write_usage_json(
     w,
-    self.usage.provider_limit_status_json(
+    self.provider_limit_status_json(
       provider_id,
       app_type,
       daily_limit_usd~,
       monthly_limit_usd~,
     ),
   )
+}
+
+///|
+fn usage_provider_limit_config_for_provider(
+  provider_router : ProviderRouter,
+  provider_id : String,
+  app_type : String,
+) -> ProviderLimitConfig? {
+  guard provider_router.provider_by_id(app_type, provider_id) is Some(provider) else {
+    return None
+  }
+  provider_limit_config_from_settings(provider.settings_config)
 }
 
 ///|

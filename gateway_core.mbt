@@ -1150,16 +1150,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.usage.handle_usage_trends(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/provider-limits", (r, w) => {
-    self.handle_usage_provider_limits(r, w)
+    self.usage.handle_usage_provider_limits(r, w, self.proxy.provider_router)
   })
   router.add_handler(@httpx.Method::Post, "/usage/provider-limits", (r, w) => {
-    self.handle_usage_provider_limits(r, w)
+    self.usage.handle_usage_provider_limits(r, w, self.proxy.provider_router)
   })
   router.add_handler(@httpx.Method::Get, "/check_provider_limits", (r, w) => {
-    self.handle_usage_provider_limits(r, w)
+    self.usage.handle_usage_provider_limits(r, w, self.proxy.provider_router)
   })
   router.add_handler(@httpx.Method::Post, "/check_provider_limits", (r, w) => {
-    self.handle_usage_provider_limits(r, w)
+    self.usage.handle_usage_provider_limits(r, w, self.proxy.provider_router)
   })
   router.add_handler(@httpx.Method::Get, "/usage/provider-stats", (r, w) => {
     self.usage.handle_usage_provider_stats(r, w)
