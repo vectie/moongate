@@ -1,4 +1,60 @@
 ///|
+fn cli_copilot_command_id(command_id : String) -> Bool {
+  match command_id {
+    "copilot_start_device_flow"
+    | "copilot_poll_for_account"
+    | "copilot_poll_for_auth"
+    | "copilot_list_accounts"
+    | "copilot_get_auth_status"
+    | "copilot_is_authenticated"
+    | "copilot_logout"
+    | "copilot_remove_account"
+    | "copilot_set_default_account"
+    | "copilot_get_token"
+    | "copilot_get_models"
+    | "copilot_get_usage" => true
+    _ => false
+  }
+}
+
+///|
+async fn run_copilot_cli_command(
+  command_id : String,
+  args : Array[String],
+) -> Unit {
+  match command_id {
+    "copilot_start_device_flow" => copilot_start_device_flow(args)
+    "copilot_poll_for_account" => copilot_poll_for_account(args)
+    "copilot_poll_for_auth" => copilot_poll_for_auth(args)
+    "copilot_list_accounts" => check_usage_endpoint(args, "/copilot/accounts")
+    "copilot_get_auth_status" => check_usage_endpoint(args, "/copilot/status")
+    "copilot_is_authenticated" =>
+      check_usage_endpoint(args, "/copilot/authenticated")
+    "copilot_logout" =>
+      check_json_post_endpoint(args, "/copilot/logout", "Copilot")
+    "copilot_remove_account" => copilot_account_post(args, "/copilot/account")
+    "copilot_set_default_account" =>
+      copilot_account_post(args, "/copilot/default-account")
+    "copilot_get_token" =>
+      check_usage_endpoint(
+        args,
+        copilot_account_optional_path(args, "/copilot/token"),
+      )
+    "copilot_get_models" =>
+      check_usage_endpoint(
+        args,
+        copilot_account_optional_path(args, "/copilot/models"),
+      )
+    "copilot_get_usage" =>
+      check_usage_endpoint(
+        args,
+        copilot_account_optional_path(args, "/copilot/usage"),
+      )
+    _ => ()
+  }
+}
+
+///|
 async fn copilot_start_device_flow(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,

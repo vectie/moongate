@@ -14,6 +14,39 @@ async fn do_login(_args : Array[String]) -> Unit {
 }
 
 ///|
+fn cli_auth_command_id(command_id : String) -> Bool {
+  match command_id {
+    "login"
+    | "auth_start_login"
+    | "auth_poll_for_account"
+    | "auth_list_accounts"
+    | "auth_get_status"
+    | "auth_remove_account"
+    | "auth_set_default_account"
+    | "auth_logout" => true
+    _ => false
+  }
+}
+
+///|
+async fn run_auth_cli_command(
+  command_id : String,
+  args : Array[String],
+) -> Unit {
+  match command_id {
+    "login" => do_login(args)
+    "auth_start_login" => auth_start_login(args)
+    "auth_poll_for_account" => auth_poll_for_account(args)
+    "auth_list_accounts" => auth_list_accounts(args)
+    "auth_get_status" => auth_get_status(args)
+    "auth_remove_account" => auth_remove_account(args)
+    "auth_set_default_account" => auth_set_default_account(args)
+    "auth_logout" => auth_logout(args)
+    _ => ()
+  }
+}
+
+///|
 async fn auth_start_login(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,

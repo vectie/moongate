@@ -568,93 +568,12 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       status_codex()
       true
     }
-    Some("login") => {
-      do_login(args)
+    Some(command_id) if cli_auth_command_id(command_id) => {
+      run_auth_cli_command(command_id, args)
       true
     }
-    Some("auth_start_login") => {
-      auth_start_login(args)
-      true
-    }
-    Some("auth_poll_for_account") => {
-      auth_poll_for_account(args)
-      true
-    }
-    Some("auth_list_accounts") => {
-      auth_list_accounts(args)
-      true
-    }
-    Some("auth_get_status") => {
-      auth_get_status(args)
-      true
-    }
-    Some("auth_remove_account") => {
-      auth_remove_account(args)
-      true
-    }
-    Some("auth_set_default_account") => {
-      auth_set_default_account(args)
-      true
-    }
-    Some("auth_logout") => {
-      auth_logout(args)
-      true
-    }
-    Some("copilot_start_device_flow") => {
-      copilot_start_device_flow(args)
-      true
-    }
-    Some("copilot_poll_for_account") => {
-      copilot_poll_for_account(args)
-      true
-    }
-    Some("copilot_poll_for_auth") => {
-      copilot_poll_for_auth(args)
-      true
-    }
-    Some("copilot_list_accounts") => {
-      check_usage_endpoint(args, "/copilot/accounts")
-      true
-    }
-    Some("copilot_get_auth_status") => {
-      check_usage_endpoint(args, "/copilot/status")
-      true
-    }
-    Some("copilot_is_authenticated") => {
-      check_usage_endpoint(args, "/copilot/authenticated")
-      true
-    }
-    Some("copilot_logout") => {
-      check_json_post_endpoint(args, "/copilot/logout", "Copilot")
-      true
-    }
-    Some("copilot_remove_account") => {
-      copilot_account_post(args, "/copilot/account")
-      true
-    }
-    Some("copilot_set_default_account") => {
-      copilot_account_post(args, "/copilot/default-account")
-      true
-    }
-    Some("copilot_get_token") => {
-      check_usage_endpoint(
-        args,
-        copilot_account_optional_path(args, "/copilot/token"),
-      )
-      true
-    }
-    Some("copilot_get_models") => {
-      check_usage_endpoint(
-        args,
-        copilot_account_optional_path(args, "/copilot/models"),
-      )
-      true
-    }
-    Some("copilot_get_usage") => {
-      check_usage_endpoint(
-        args,
-        copilot_account_optional_path(args, "/copilot/usage"),
-      )
+    Some(command_id) if cli_copilot_command_id(command_id) => {
+      run_copilot_cli_command(command_id, args)
       true
     }
     Some("get_installed_skills") => {

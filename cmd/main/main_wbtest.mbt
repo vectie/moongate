@@ -477,6 +477,29 @@ test "usage cli dispatcher owns usage and telemetry commands" {
 }
 
 ///|
+test "auth cli dispatcher owns managed auth commands" {
+  assert_true(cli_auth_command_id("login"))
+  assert_true(cli_auth_command_id("auth_start_login"))
+  assert_true(cli_auth_command_id("auth_poll_for_account"))
+  assert_true(cli_auth_command_id("auth_get_status"))
+  assert_true(cli_auth_command_id("auth_logout"))
+  assert_false(cli_auth_command_id("copilot_get_models"))
+  assert_false(cli_auth_command_id("get_usage_summary"))
+  assert_false(cli_auth_command_id("get_providers"))
+}
+
+///|
+test "copilot cli dispatcher owns Copilot auth commands" {
+  assert_true(cli_copilot_command_id("copilot_start_device_flow"))
+  assert_true(cli_copilot_command_id("copilot_poll_for_account"))
+  assert_true(cli_copilot_command_id("copilot_get_token"))
+  assert_true(cli_copilot_command_id("copilot_get_usage"))
+  assert_false(cli_copilot_command_id("auth_get_status"))
+  assert_false(cli_copilot_command_id("get_usage_summary"))
+  assert_false(cli_copilot_command_id("get_providers"))
+}
+
+///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),
