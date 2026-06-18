@@ -7,7 +7,7 @@ test "has flag matches exact CLI option" {
 
 ///|
 test "registered cli commands match suite command aliases and status commands" {
-  assert_true(registered_cli_commands().length() >= 70)
+  assert_true(registered_cli_commands().length() >= 100)
   assert_true(
     cli_args_match_pattern(
       ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
@@ -106,6 +106,46 @@ test "registered cli commands match suite command aliases and status commands" {
   assert_true(
     registered_cli_command_id(["moonstat", "get_proxy_status"]) ==
     Some("get_proxy_status"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "provider", "list"]) ==
+    Some("get_providers"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "providers", "universal", "upsert"]) ==
+    Some("upsert_universal_provider"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "provider", "endpoints", "add"]) ==
+    Some("add_custom_endpoint"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "provider", "sort-order", "set"]) ==
+    Some("update_providers_sort_order"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "provider", "live-ids"]) ==
+    Some("provider_live_ids"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "get_openclaw_live_provider"]) ==
+    Some("get_openclaw_live_provider"),
+  )
+  assert_true(
+    registered_cli_command_id([
+      "moonstat", "import_openclaw_providers_from_live",
+    ]) ==
+    Some("import_openclaw_providers_from_live"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "switch_provider_test_hook"]) ==
+    Some("switch_provider_test_hook"),
+  )
+  assert_true(
+    registered_cli_command_id([
+      "moonstat", "ensure_claude_desktop_official_provider",
+    ]) ==
+    Some("ensure_claude_desktop_official_provider"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "usage", "summary"]) == None,

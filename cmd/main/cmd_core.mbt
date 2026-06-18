@@ -52,44 +52,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_usage_endpoint(arr, "/get_log_config")
     ["set_log_config", ..] | ["set-log-config", ..] =>
       set_moon_json_config(arr, "/set_log_config", "--config", "Settings")
-    ["get_providers", ..] | ["get-providers", ..] => check_providers(arr)
-    ["get_current_provider", ..] | ["get-current-provider", ..] =>
-      check_current_provider(arr)
-    ["add_provider", ..] | ["add-provider", ..] => add_provider(arr)
-    ["update_provider", ..] | ["update-provider", ..] => update_provider(arr)
-    ["delete_provider", ..] | ["delete-provider", ..] => delete_provider(arr)
-    ["remove_provider_from_live_config", ..]
-    | ["remove-provider-from-live-config", ..] =>
-      remove_provider_from_live_config(arr)
-    ["switch_provider", ..] | ["switch-provider", ..] => switch_provider(arr)
-    ["switch_provider_test_hook", ..] | ["switch-provider-test-hook", ..] =>
-      switch_provider_test_hook(arr)
-    ["sync_current_providers_live", ..] | ["sync-current-providers-live", ..] =>
-      sync_current_providers_live(arr)
-    ["import_default_config", ..] | ["import-default-config", ..] =>
-      import_default_config(arr)
-    ["import_default_config_test_hook", ..]
-    | ["import-default-config-test-hook", ..] =>
-      import_default_config_test_hook(arr)
-    ["open_provider_terminal", ..] | ["open-provider-terminal", ..] =>
-      open_provider_terminal(arr)
-    ["get_claude_desktop_status", ..] | ["get-claude-desktop-status", ..] =>
-      check_usage_endpoint(arr, "/get_claude_desktop_status")
-    ["get_claude_desktop_default_routes", ..]
-    | ["get-claude-desktop-default-routes", ..] =>
-      check_usage_endpoint(arr, "/get_claude_desktop_default_routes")
-    ["import_claude_desktop_providers_from_claude", ..]
-    | ["import-claude-desktop-providers-from-claude", ..] =>
-      check_json_post_endpoint(
-        arr, "/import_claude_desktop_providers_from_claude", "Provider",
-      )
-    ["ensure_claude_desktop_official_provider", ..]
-    | ["ensure-claude-desktop-official-provider", ..] =>
-      check_json_post_endpoint(
-        arr, "/ensure_claude_desktop_official_provider", "Provider",
-      )
-    ["read_live_provider_settings", ..] | ["read-live-provider-settings", ..] =>
-      check_live_provider_settings(arr)
     ["get_claude_plugin_status", ..] | ["get-claude-plugin-status", ..] =>
       check_usage_endpoint(arr, "/get_claude_plugin_status")
     ["read_claude_plugin_config", ..] | ["read-claude-plugin-config", ..] =>
@@ -133,14 +95,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
         workspace_subdir_path(arr, "/open_workspace_directory"),
         "Workspace",
       )
-    ["get_opencode_live_provider_ids", ..]
-    | ["get-opencode-live-provider-ids", ..] =>
-      check_named_live_provider_ids(arr, "opencode")
-    ["get_openclaw_live_provider_ids", ..]
-    | ["get-openclaw-live-provider-ids", ..] =>
-      check_named_live_provider_ids(arr, "openclaw")
-    ["get_openclaw_live_provider", ..] | ["get-openclaw-live-provider", ..] =>
-      check_named_live_provider(arr, "openclaw")
     ["scan_openclaw_config_health", ..] | ["scan-openclaw-config-health", ..] =>
       check_usage_endpoint(arr, "/scan_openclaw_config_health")
     ["get_openclaw_default_model", ..] | ["get-openclaw-default-model", ..] =>
@@ -163,11 +117,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
       check_usage_endpoint(arr, "/get_openclaw_tools")
     ["set_openclaw_tools", ..] | ["set-openclaw-tools", ..] =>
       set_openclaw_tools(arr)
-    ["get_hermes_live_provider_ids", ..]
-    | ["get-hermes-live-provider-ids", ..] =>
-      check_named_live_provider_ids(arr, "hermes")
-    ["get_hermes_live_provider", ..] | ["get-hermes-live-provider", ..] =>
-      check_named_live_provider(arr, "hermes")
     ["get_hermes_model_config", ..] | ["get-hermes-model-config", ..] =>
       check_usage_endpoint(arr, "/get_hermes_model_config")
     ["get_hermes_memory", ..] | ["get-hermes-memory", ..] =>
@@ -492,39 +441,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
         arr,
         prompt_file_path(arr, "/get_current_prompt_file_content"),
       )
-    ["import_opencode_providers_from_live", ..]
-    | ["import-opencode-providers-from-live", ..] =>
-      import_named_live_providers(arr, "opencode")
-    ["import_openclaw_providers_from_live", ..]
-    | ["import-openclaw-providers-from-live", ..] =>
-      import_named_live_providers(arr, "openclaw")
-    ["import_hermes_providers_from_live", ..]
-    | ["import-hermes-providers-from-live", ..] =>
-      import_named_live_providers(arr, "hermes")
-    ["get_universal_providers", ..] | ["get-universal-providers", ..] =>
-      check_universal_providers(arr)
-    ["get_universal_provider", ..] | ["get-universal-provider", ..] =>
-      check_universal_provider(arr)
-    ["upsert_universal_provider", ..] | ["upsert-universal-provider", ..] =>
-      upsert_universal_provider(arr)
-    ["delete_universal_provider", ..] | ["delete-universal-provider", ..] =>
-      delete_universal_provider(arr)
-    ["sync_universal_provider", ..] | ["sync-universal-provider", ..] =>
-      sync_universal_provider(arr)
-    ["get_provider_presets", ..] | ["get-provider-presets", ..] =>
-      check_provider_presets(arr)
-    ["test_api_endpoints", ..] | ["test-api-endpoints", ..] =>
-      test_api_endpoints(arr)
-    ["update_providers_sort_order", ..] | ["update-providers-sort-order", ..] =>
-      update_providers_sort_order(arr)
-    ["get_custom_endpoints", ..] | ["get-custom-endpoints", ..] =>
-      check_provider_custom_endpoints(arr)
-    ["add_custom_endpoint", ..] | ["add-custom-endpoint", ..] =>
-      add_provider_custom_endpoint(arr)
-    ["remove_custom_endpoint", ..] | ["remove-custom-endpoint", ..] =>
-      remove_provider_custom_endpoint(arr)
-    ["update_endpoint_last_used", ..] | ["update-endpoint-last-used", ..] =>
-      update_provider_endpoint_last_used(arr)
     ["get_usage_summary", ..] | ["get-usage-summary", ..] =>
       check_usage_summary(arr)
     ["get_usage_summary_by_app", ..] | ["get-usage-summary-by-app", ..] =>
@@ -594,22 +510,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
         arr,
         prompt_file_path(arr, "/get_current_prompt_file_content"),
       )
-    ["provider", "list", ..] | ["providers", "list", ..] => check_providers(arr)
-    ["provider", "current", ..] | ["providers", "current", ..] =>
-      check_current_provider(arr)
-    ["provider", "add", ..] | ["providers", "add", ..] => add_provider(arr)
-    ["provider", "update", ..] | ["providers", "update", ..] =>
-      update_provider(arr)
-    ["provider", "delete", ..] | ["providers", "delete", ..] =>
-      delete_provider(arr)
-    ["provider", "remove-live", ..] | ["providers", "remove-live", ..] =>
-      remove_provider_from_live_config(arr)
-    ["provider", "switch", ..] | ["providers", "switch", ..] =>
-      switch_provider(arr)
-    ["provider", "sync-live", ..] | ["providers", "sync-live", ..] =>
-      sync_current_providers_live(arr)
-    ["provider", "live-settings", ..] | ["providers", "live-settings", ..] =>
-      check_live_provider_settings(arr)
     ["settings", "get", ..] => check_usage_endpoint(arr, "/get_settings")
     ["settings", "save", ..] => save_settings(arr)
     ["settings", "app-config-dir", "set", ..] =>
@@ -676,39 +576,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
         workspace_subdir_path(arr, "/open_workspace_directory"),
         "Workspace",
       )
-    ["provider", "live-ids", ..] | ["providers", "live-ids", ..] =>
-      check_provider_live_ids(arr)
-    ["provider", "live-get", ..] | ["providers", "live-get", ..] =>
-      check_provider_live_provider(arr)
-    ["provider", "import-live", ..] | ["providers", "import-live", ..] =>
-      import_provider_live(arr)
-    ["provider", "universal", "list", ..]
-    | ["providers", "universal", "list", ..] => check_universal_providers(arr)
-    ["provider", "universal", "get", ..]
-    | ["providers", "universal", "get", ..] => check_universal_provider(arr)
-    ["provider", "universal", "upsert", ..]
-    | ["providers", "universal", "upsert", ..] => upsert_universal_provider(arr)
-    ["provider", "universal", "delete", ..]
-    | ["providers", "universal", "delete", ..] => delete_universal_provider(arr)
-    ["provider", "universal", "sync", ..]
-    | ["providers", "universal", "sync", ..] => sync_universal_provider(arr)
-    ["provider", "presets", "list", ..]
-    | ["providers", "presets", "list", ..] => check_provider_presets(arr)
-    ["provider", "test-endpoints", ..] | ["providers", "test-endpoints", ..] =>
-      test_api_endpoints(arr)
-    ["provider", "sort-order", "set", ..]
-    | ["providers", "sort-order", "set", ..] => update_providers_sort_order(arr)
-    ["provider", "endpoints", "list", ..]
-    | ["providers", "endpoints", "list", ..] =>
-      check_provider_custom_endpoints(arr)
-    ["provider", "endpoints", "add", ..]
-    | ["providers", "endpoints", "add", ..] => add_provider_custom_endpoint(arr)
-    ["provider", "endpoints", "remove", ..]
-    | ["providers", "endpoints", "remove", ..] =>
-      remove_provider_custom_endpoint(arr)
-    ["provider", "endpoints", "touch", ..]
-    | ["providers", "endpoints", "touch", ..] =>
-      update_provider_endpoint_last_used(arr)
     ["usage", "logs", ..] => check_usage_logs(arr)
     ["usage", "get-request-logs", ..] => check_usage_logs(arr)
     ["usage", "summary", ..] => check_usage_summary(arr)
