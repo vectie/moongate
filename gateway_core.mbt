@@ -53,19 +53,55 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     })
   }
   router.add_handler(Post, "/chat/completions", (r, w) => {
-    self.handle_chat_completions(r, w)
+    self.proxy.handle_chat_completions(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/v1/chat/completions", (r, w) => {
-    self.handle_chat_completions(r, w)
+    self.proxy.handle_chat_completions(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/v1/v1/chat/completions", (r, w) => {
-    self.handle_chat_completions(r, w)
+    self.proxy.handle_chat_completions(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/codex/v1/chat/completions", (r, w) => {
-    self.handle_chat_completions(r, w)
+    self.proxy.handle_chat_completions(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+    )
   })
   router.add_handler(Post, "/openclaw/v1/chat/completions", (r, w) => {
-    self.handle_chat_completions(r, w, app_type="openclaw")
+    self.proxy.handle_chat_completions(
+      self.auth,
+      self.usage,
+      self.session,
+      self.model,
+      r,
+      w,
+      app_type="openclaw",
+    )
   })
   router.add_handler(Post, "/responses", (r, w) => {
     self.handle_codex_responses(r, w)

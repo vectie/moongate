@@ -2401,8 +2401,10 @@ async test "provider config endpoints are owned by proxy service" {
       "handle_remove_custom_endpoint", "handle_update_endpoint_last_used", "handle_get_claude_desktop_status",
       "handle_get_claude_desktop_default_routes", "handle_get_current_omo_provider_id",
       "handle_disable_current_omo", "handle_stream_check_provider", "handle_stream_check_all_providers",
-      "handle_models", "handle_claude_desktop_models", "handle_gemini", "forward_openai_chat_sse_as_anthropic",
-      "forward_anthropic_sse_passthrough", "forward_gemini_native_sse_as_anthropic",
+      "handle_models", "handle_claude_desktop_models", "handle_gemini", "handle_chat_completions",
+      "forward_non_streaming_chat_completion", "forward_streaming_chat_completion",
+      "forward_openai_chat_sse_as_anthropic", "forward_anthropic_sse_passthrough",
+      "forward_gemini_native_sse_as_anthropic",
     ] {
     assert_true(sources.contains("async fn ProxyService::\{handler}("))
     assert_false(sources.contains("async fn Gateway::\{handler}("))
@@ -2439,6 +2441,7 @@ async test "provider config endpoints are owned by proxy service" {
   assert_true(
     core_source.contains("self.proxy.handle_gemini(self.usage, r, w)"),
   )
+  assert_true(core_source.contains("self.proxy.handle_chat_completions("))
   assert_true(
     core_source.contains(
       "self.proxy.handle_claude_desktop_models(self.auth, self.usage, r, w)",
