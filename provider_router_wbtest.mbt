@@ -598,7 +598,7 @@ test "provider router moonstat auto failover enable seeds empty queue" {
     ),
   )
   router.set_current_provider("codex", "current")
-  assert_true(router.set_auto_failover_moonstat("codex", true))
+  assert_true(router.set_auto_failover_checked("codex", true))
   assert_true(router.auto_failover_enabled_for_app("codex"))
   json_inspect(router.failover_queue_json("codex"), content=[
     {
@@ -607,9 +607,9 @@ test "provider router moonstat auto failover enable seeds empty queue" {
       "sortIndex": null,
     },
   ])
-  assert_true(router.set_auto_failover_moonstat("codex", false))
+  assert_true(router.set_auto_failover_checked("codex", false))
   assert_false(router.auto_failover_enabled_for_app("codex"))
-  assert_false(router.set_auto_failover_moonstat("unknown", true))
+  assert_false(router.set_auto_failover_checked("unknown", true))
 }
 
 ///|
@@ -637,7 +637,7 @@ test "provider router moonstat auto failover command switches to p1" {
     ]),
   )
   router.set_failover_queue("codex", ["current", "p1"])
-  assert_true(router.set_auto_failover_command_moonstat("codex", true))
+  assert_true(router.set_auto_failover_from_command("codex", true))
   assert_true(router.auto_failover_enabled_for_app("codex"))
   assert_eq(router.current_provider_id("codex"), Some("p1"))
 }
@@ -654,7 +654,7 @@ test "provider router moonstat auto failover command rolls back auto added offic
     ),
   )
   router.set_current_provider("codex", "official")
-  assert_false(router.set_auto_failover_command_moonstat("codex", true))
+  assert_false(router.set_auto_failover_from_command("codex", true))
   assert_false(router.auto_failover_enabled_for_app("codex"))
   assert_eq(router.current_provider_id("codex"), Some("official"))
   json_inspect(router.failover_queue_json("codex"), content=[])
@@ -682,7 +682,7 @@ test "provider router moonstat reset switches back to recovered higher priority 
   router.set_auto_failover("claude", true)
   router.record_result("p1", "claude", false, false, now_ms=1000)
   assert_true(
-    router.reset_provider_breaker_moonstat(
+    router.reset_provider_breaker_and_restore(
       "p1",
       "claude",
       app_enabled=true,
@@ -716,7 +716,7 @@ test "provider router moonstat reset does not switch without takeover auto failo
   router.set_failover_queue("codex", ["p1", "p2"])
   router.set_current_provider("codex", "p2")
   assert_false(
-    router.reset_provider_breaker_moonstat(
+    router.reset_provider_breaker_and_restore(
       "p1",
       "codex",
       app_enabled=true,
@@ -727,7 +727,7 @@ test "provider router moonstat reset does not switch without takeover auto failo
 
   router.set_auto_failover("codex", true)
   assert_false(
-    router.reset_provider_breaker_moonstat(
+    router.reset_provider_breaker_and_restore(
       "p1",
       "codex",
       app_enabled=false,
@@ -737,7 +737,7 @@ test "provider router moonstat reset does not switch without takeover auto failo
   assert_eq(router.current_provider_id("codex"), Some("p2"))
 
   assert_false(
-    router.reset_provider_breaker_moonstat(
+    router.reset_provider_breaker_and_restore(
       "p1",
       "codex",
       app_enabled=true,
@@ -747,7 +747,7 @@ test "provider router moonstat reset does not switch without takeover auto failo
   assert_eq(router.current_provider_id("codex"), Some("p2"))
 
   assert_false(
-    router.reset_provider_breaker_moonstat(
+    router.reset_provider_breaker_and_restore(
       "p2",
       "codex",
       app_enabled=true,

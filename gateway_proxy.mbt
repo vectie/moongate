@@ -712,7 +712,7 @@ async fn ProxyService::apply_app_config_request(
   }
   match proxy_bool_request(r.path, config, "autoFailoverEnabled") {
     Some(enabled) =>
-      if !self.provider_router.set_auto_failover_moonstat(app_type, enabled) {
+      if !self.provider_router.set_auto_failover_checked(app_type, enabled) {
         return None
       }
     None => ()
@@ -777,7 +777,7 @@ fn ProxyService::app_enabled_for_app(
 }
 
 ///|
-fn ProxyService::can_set_auto_failover_moonstat(
+fn ProxyService::can_set_auto_failover(
   self : ProxyService,
   app_type : String,
   enabled : Bool,
@@ -877,7 +877,7 @@ async fn ProxyService::handle_proxy_reset_circuit_breaker(
     return
   }
   let app_enabled = self.app_enabled_for_app(query.app_type)
-  let _switched = self.provider_router.reset_provider_breaker_moonstat(
+  let _switched = self.provider_router.reset_provider_breaker_and_restore(
     query.provider_id,
     query.app_type,
     app_enabled~,
@@ -982,11 +982,11 @@ async fn ProxyService::handle_proxy_set_auto_failover_enabled(
     write_usage_bad_request(w, "missing_enabled")
     return
   }
-  if !self.can_set_auto_failover_moonstat(app_type, enabled) {
+  if !self.can_set_auto_failover(app_type, enabled) {
     write_usage_bad_request(w, "auto_failover_requires_proxy_takeover")
     return
   }
-  if !self.provider_router.set_auto_failover_command_moonstat(app_type, enabled) {
+  if !self.provider_router.set_auto_failover_from_command(app_type, enabled) {
     write_usage_bad_request(w, "auto_failover_unavailable")
     return
   }

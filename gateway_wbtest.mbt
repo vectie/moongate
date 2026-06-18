@@ -2110,13 +2110,13 @@ test "proxy lifecycle state matches moonstat command aliases" {
 ///|
 test "moonstat auto failover enable requires proxy takeover" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
-  assert_true(gateway.proxy.can_set_auto_failover_moonstat("codex", true))
-  assert_true(gateway.proxy.can_set_auto_failover_moonstat("codex", false))
+  assert_true(gateway.proxy.can_set_auto_failover("codex", true))
+  assert_true(gateway.proxy.can_set_auto_failover("codex", false))
   gateway.proxy.proxy_app_enabled.set("codex", false)
-  assert_false(gateway.proxy.can_set_auto_failover_moonstat("codex", true))
-  assert_true(gateway.proxy.can_set_auto_failover_moonstat("codex", false))
+  assert_false(gateway.proxy.can_set_auto_failover("codex", true))
+  assert_true(gateway.proxy.can_set_auto_failover("codex", false))
   gateway.proxy.proxy_app_enabled.set("codex", true)
-  assert_true(gateway.proxy.can_set_auto_failover_moonstat("codex", true))
+  assert_true(gateway.proxy.can_set_auto_failover("codex", true))
 }
 
 ///|
