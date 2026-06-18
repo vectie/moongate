@@ -692,101 +692,31 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
         "workspace open", "open_workspace_directory", "open-workspace-directory",
       ],
     },
-    {
-      id: "get_claude_mcp_status",
-      patterns: ["mcp status", "get_claude_mcp_status", "get-claude-mcp-status"],
-    },
-    {
-      id: "read_claude_mcp_config",
-      patterns: [
-        "mcp read-config", "read_claude_mcp_config", "read-claude-mcp-config",
-      ],
-    },
-    {
-      id: "upsert_claude_mcp_server",
-      patterns: ["upsert_claude_mcp_server", "upsert-claude-mcp-server"],
-    },
-    {
-      id: "delete_claude_mcp_server",
-      patterns: ["delete_claude_mcp_server", "delete-claude-mcp-server"],
-    },
-    {
-      id: "validate_mcp_command",
-      patterns: ["mcp validate", "validate_mcp_command", "validate-mcp-command"],
-    },
-    {
-      id: "get_mcp_config",
-      patterns: ["mcp config", "get_mcp_config", "get-mcp-config"],
-    },
-    {
-      id: "upsert_mcp_server_in_config",
-      patterns: [
-        "mcp upsert-config", "upsert_mcp_server_in_config", "upsert-mcp-server-in-config",
-      ],
-    },
-    {
-      id: "delete_mcp_server_in_config",
-      patterns: [
-        "mcp delete-config", "delete_mcp_server_in_config", "delete-mcp-server-in-config",
-      ],
-    },
-    {
-      id: "set_mcp_enabled",
-      patterns: ["mcp set-enabled", "set_mcp_enabled", "set-mcp-enabled"],
-    },
-    {
-      id: "get_mcp_servers",
-      patterns: ["mcp list", "get_mcp_servers", "get-mcp-servers"],
-    },
-    {
-      id: "upsert_mcp_server",
-      patterns: ["mcp upsert", "upsert_mcp_server", "upsert-mcp-server"],
-    },
-    {
-      id: "delete_mcp_server",
-      patterns: ["mcp delete", "delete_mcp_server", "delete-mcp-server"],
-    },
-    {
-      id: "toggle_mcp_app",
-      patterns: ["mcp toggle", "toggle_mcp_app", "toggle-mcp-app"],
-    },
-    {
-      id: "import_mcp_from_apps",
-      patterns: ["mcp import", "import_mcp_from_apps", "import-mcp-from-apps"],
-    },
-    {
-      id: "get_prompts",
-      patterns: ["prompt list", "prompts list", "get_prompts", "get-prompts"],
-    },
-    {
-      id: "upsert_prompt",
-      patterns: [
-        "prompt upsert", "prompts upsert", "upsert_prompt", "upsert-prompt",
-      ],
-    },
-    {
-      id: "delete_prompt",
-      patterns: [
-        "prompt delete", "prompts delete", "delete_prompt", "delete-prompt",
-      ],
-    },
-    {
-      id: "enable_prompt",
-      patterns: [
-        "prompt enable", "prompts enable", "enable_prompt", "enable-prompt",
-      ],
-    },
+    { id: "get_claude_mcp_status", patterns: ["mcp status"] },
+    { id: "read_claude_mcp_config", patterns: ["mcp read-config"] },
+    { id: "upsert_claude_mcp_server", patterns: ["mcp claude upsert"] },
+    { id: "delete_claude_mcp_server", patterns: ["mcp claude delete"] },
+    { id: "validate_mcp_command", patterns: ["mcp validate"] },
+    { id: "get_mcp_config", patterns: ["mcp config"] },
+    { id: "upsert_mcp_server_in_config", patterns: ["mcp upsert-config"] },
+    { id: "delete_mcp_server_in_config", patterns: ["mcp delete-config"] },
+    { id: "set_mcp_enabled", patterns: ["mcp set-enabled"] },
+    { id: "get_mcp_servers", patterns: ["mcp list"] },
+    { id: "upsert_mcp_server", patterns: ["mcp upsert"] },
+    { id: "delete_mcp_server", patterns: ["mcp delete"] },
+    { id: "toggle_mcp_app", patterns: ["mcp toggle"] },
+    { id: "import_mcp_from_apps", patterns: ["mcp import"] },
+    { id: "get_prompts", patterns: ["prompt list", "prompts list"] },
+    { id: "upsert_prompt", patterns: ["prompt upsert", "prompts upsert"] },
+    { id: "delete_prompt", patterns: ["prompt delete", "prompts delete"] },
+    { id: "enable_prompt", patterns: ["prompt enable", "prompts enable"] },
     {
       id: "import_prompt_from_file",
-      patterns: [
-        "prompt import", "prompts import", "import_prompt_from_file", "import-prompt-from-file",
-      ],
+      patterns: ["prompt import", "prompts import"],
     },
     {
       id: "get_current_prompt_file_content",
-      patterns: [
-        "prompt current", "prompts current", "get_current_prompt_file_content", "get-current-prompt-file-content",
-      ],
+      patterns: ["prompt current", "prompts current"],
     },
     { id: "get_usage_summary", patterns: ["usage summary"] },
     { id: "get_usage_summary_by_app", patterns: ["usage apps"] },
@@ -1845,19 +1775,19 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_claude_mcp_status") => {
-      check_usage_endpoint(args, "/get_claude_mcp_status")
+      check_usage_endpoint(args, "/mcp/claude/status")
       true
     }
     Some("read_claude_mcp_config") => {
-      check_usage_endpoint(args, "/read_claude_mcp_config")
+      check_usage_endpoint(args, "/mcp/claude/config")
       true
     }
     Some("upsert_claude_mcp_server") => {
-      upsert_mcp_server(args, "/upsert_claude_mcp_server")
+      upsert_mcp_server(args, "/mcp/claude/servers")
       true
     }
     Some("delete_claude_mcp_server") => {
-      delete_mcp_server(args, "/delete_claude_mcp_server")
+      delete_mcp_server(args, "/mcp/claude/servers")
       true
     }
     Some("validate_mcp_command") => {
@@ -1865,15 +1795,15 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_mcp_config") => {
-      check_usage_endpoint(args, mcp_app_path(args, "/get_mcp_config"))
+      check_usage_endpoint(args, mcp_app_path(args, "/mcp/config"))
       true
     }
     Some("upsert_mcp_server_in_config") => {
-      upsert_mcp_server(args, "/upsert_mcp_server_in_config")
+      upsert_mcp_server(args, "/mcp/config/servers")
       true
     }
     Some("delete_mcp_server_in_config") => {
-      delete_mcp_server(args, "/delete_mcp_server_in_config")
+      delete_mcp_server(args, "/mcp/config/servers")
       true
     }
     Some("set_mcp_enabled") => {
@@ -1881,15 +1811,15 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_mcp_servers") => {
-      check_usage_endpoint(args, "/get_mcp_servers")
+      check_usage_endpoint(args, "/mcp/servers")
       true
     }
     Some("upsert_mcp_server") => {
-      upsert_mcp_server(args, "/upsert_mcp_server")
+      upsert_mcp_server(args, "/mcp/servers")
       true
     }
     Some("delete_mcp_server") => {
-      delete_mcp_server(args, "/delete_mcp_server")
+      delete_mcp_server(args, "/mcp/servers")
       true
     }
     Some("toggle_mcp_app") => {
@@ -1897,11 +1827,11 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("import_mcp_from_apps") => {
-      check_json_post_endpoint(args, "/import_mcp_from_apps", "MCP")
+      check_json_post_endpoint(args, "/mcp/import-apps", "MCP")
       true
     }
     Some("get_prompts") => {
-      check_usage_endpoint(args, prompt_app_path(args, "/get_prompts"))
+      check_usage_endpoint(args, prompt_app_path(args, "/prompts"))
       true
     }
     Some("upsert_prompt") => {
@@ -1923,7 +1853,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("get_current_prompt_file_content") => {
       check_usage_endpoint(
         args,
-        prompt_file_path(args, "/get_current_prompt_file_content"),
+        prompt_file_path(args, "/prompts/current-file"),
       )
       true
     }

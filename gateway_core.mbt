@@ -508,88 +508,70 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/restore_env_backup", (r, w) => {
     self.config.handle_restore_env_backup(r, w)
   })
-  router.add_handler(Get, "/get_claude_mcp_status", (_, w) => {
+  router.add_handler(Get, "/mcp/claude/status", (_, w) => {
     self.config.handle_get_claude_mcp_status(w)
   })
-  router.add_handler(Get, "/read_claude_mcp_config", (_, w) => {
+  router.add_handler(Get, "/mcp/claude/config", (_, w) => {
     self.config.handle_read_claude_mcp_config(w)
   })
-  router.add_handler(Post, "/upsert_claude_mcp_server", (r, w) => {
+  router.add_handler(Post, "/mcp/claude/servers", (r, w) => {
     self.config.handle_upsert_claude_mcp_server(r, w)
   })
-  router.add_handler(Post, "/delete_claude_mcp_server", (r, w) => {
+  router.add_handler(Delete, "/mcp/claude/servers", (r, w) => {
     self.config.handle_delete_mcp_server(r, w)
   })
-  router.add_handler(Delete, "/delete_claude_mcp_server", (r, w) => {
-    self.config.handle_delete_mcp_server(r, w)
-  })
-  router.add_handler(Get, "/validate_mcp_command", (r, w) => {
+  router.add_handler(Get, "/mcp/validate", (r, w) => {
     self.config.handle_validate_mcp_command(r, w)
   })
-  router.add_handler(Post, "/validate_mcp_command", (r, w) => {
+  router.add_handler(Post, "/mcp/validate", (r, w) => {
     self.config.handle_validate_mcp_command(r, w)
   })
-  router.add_handler(Get, "/get_mcp_config", (r, w) => {
+  router.add_handler(Get, "/mcp/config", (r, w) => {
     self.config.handle_get_mcp_config(r, w)
   })
-  router.add_handler(Post, "/get_mcp_config", (r, w) => {
+  router.add_handler(Post, "/mcp/config", (r, w) => {
     self.config.handle_get_mcp_config(r, w)
   })
-  router.add_handler(Post, "/upsert_mcp_server_in_config", (r, w) => {
+  router.add_handler(Post, "/mcp/config/servers", (r, w) => {
     self.config.handle_upsert_mcp_server_in_config(r, w)
   })
-  router.add_handler(Post, "/delete_mcp_server_in_config", (r, w) => {
+  router.add_handler(Delete, "/mcp/config/servers", (r, w) => {
     self.config.handle_delete_mcp_server(r, w)
   })
-  router.add_handler(Delete, "/delete_mcp_server_in_config", (r, w) => {
-    self.config.handle_delete_mcp_server(r, w)
-  })
-  router.add_handler(Post, "/set_mcp_enabled", (r, w) => {
+  router.add_handler(Post, "/mcp/enabled", (r, w) => {
     self.config.handle_set_mcp_enabled(r, w)
   })
-  router.add_handler(Get, "/get_mcp_servers", (_, w) => {
+  router.add_handler(Get, "/mcp/servers", (_, w) => {
     self.config.handle_get_mcp_servers(w)
   })
-  router.add_handler(Post, "/upsert_mcp_server", (r, w) => {
+  router.add_handler(Post, "/mcp/servers", (r, w) => {
     self.config.handle_upsert_mcp_server(r, w)
   })
-  router.add_handler(Post, "/delete_mcp_server", (r, w) => {
+  router.add_handler(Delete, "/mcp/servers", (r, w) => {
     self.config.handle_delete_mcp_server(r, w)
   })
-  router.add_handler(Delete, "/delete_mcp_server", (r, w) => {
-    self.config.handle_delete_mcp_server(r, w)
-  })
-  router.add_handler(Post, "/toggle_mcp_app", (r, w) => {
+  router.add_handler(Post, "/mcp/apps/toggle", (r, w) => {
     self.config.handle_toggle_mcp_app(r, w)
   })
-  router.add_handler(Post, "/import_mcp_from_apps", (_, w) => {
+  router.add_handler(Post, "/mcp/import-apps", (_, w) => {
     self.config.handle_import_mcp_from_apps(w)
   })
-  router.add_handler(Get, "/get_prompts", (r, w) => {
+  router.add_handler(Get, "/prompts", (r, w) => {
     self.config.handle_get_prompts(r, w)
   })
-  router.add_handler(Post, "/get_prompts", (r, w) => {
-    self.config.handle_get_prompts(r, w)
-  })
-  router.add_handler(Post, "/upsert_prompt", (r, w) => {
+  router.add_handler(Post, "/prompts", (r, w) => {
     self.config.handle_upsert_prompt(r, w)
   })
-  router.add_handler(Post, "/delete_prompt", (r, w) => {
+  router.add_handler(Delete, "/prompts", (r, w) => {
     self.config.handle_delete_prompt(r, w)
   })
-  router.add_handler(Delete, "/delete_prompt", (r, w) => {
-    self.config.handle_delete_prompt(r, w)
-  })
-  router.add_handler(Post, "/enable_prompt", (r, w) => {
+  router.add_handler(Post, "/prompts/enable", (r, w) => {
     self.config.handle_enable_prompt(r, w)
   })
-  router.add_handler(Post, "/import_prompt_from_file", (r, w) => {
+  router.add_handler(Post, "/prompts/import-file", (r, w) => {
     self.workspace.handle_import_prompt_from_file(self.config, r, w)
   })
-  router.add_handler(Get, "/get_current_prompt_file_content", (r, w) => {
-    self.workspace.handle_get_current_prompt_file_content(r, w)
-  })
-  router.add_handler(Post, "/get_current_prompt_file_content", (r, w) => {
+  router.add_handler(Get, "/prompts/current-file", (r, w) => {
     self.workspace.handle_get_current_prompt_file_content(r, w)
   })
   router.add_handler(Get, "/proxy/status", (_, w) => {

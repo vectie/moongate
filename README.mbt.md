@@ -228,20 +228,20 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /check_env_conflicts?app=claude`
 - `POST /delete_env_vars`
 - `POST /restore_env_backup?backupPath=...`
-- `GET /get_claude_mcp_status`
-- `GET /read_claude_mcp_config`
-- `POST /upsert_claude_mcp_server?server={"id":"filesystem"}`
-- `DELETE|POST /delete_claude_mcp_server?id=filesystem`
-- `GET /validate_mcp_command?command=npx`
-- `GET /get_mcp_config?app=codex`
-- `POST /upsert_mcp_server_in_config?app=codex&server={"id":"filesystem"}`
-- `DELETE|POST /delete_mcp_server_in_config?id=filesystem`
-- `POST /set_mcp_enabled?app=codex&id=filesystem&enabled=true`
-- `GET /get_mcp_servers`
-- `POST /upsert_mcp_server?server={"id":"filesystem"}`
-- `DELETE|POST /delete_mcp_server?id=filesystem`
-- `POST /toggle_mcp_app?app=codex&id=filesystem&enabled=true`
-- `POST /import_mcp_from_apps`
+- `GET /mcp/claude/status`
+- `GET /mcp/claude/config`
+- `POST /mcp/claude/servers?server={"id":"filesystem"}`
+- `DELETE /mcp/claude/servers?id=filesystem`
+- `GET /mcp/validate?command=npx`
+- `GET /mcp/config?app=codex`
+- `POST /mcp/config/servers?app=codex&server={"id":"filesystem"}`
+- `DELETE /mcp/config/servers?id=filesystem`
+- `POST /mcp/enabled?app=codex&id=filesystem&enabled=true`
+- `GET /mcp/servers`
+- `POST /mcp/servers?server={"id":"filesystem"}`
+- `DELETE /mcp/servers?id=filesystem`
+- `POST /mcp/apps/toggle?app=codex&id=filesystem&enabled=true`
+- `POST /mcp/import-apps`
 - `GET /get_claude_plugin_status`
 - `GET /read_claude_plugin_config`
 - `POST /apply_claude_plugin_config?official=false`
@@ -256,12 +256,12 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET /read_workspace_file?filename=AGENTS.md`
 - `POST /write_workspace_file?filename=AGENTS.md&content=...`
 - `GET|POST /open_workspace_directory?subdir=memory`
-- `GET /get_prompts?app=codex`
-- `POST /upsert_prompt?app=codex&id=review&content=Check`
-- `DELETE|POST /delete_prompt?app=codex&id=review`
-- `POST /enable_prompt?app=codex&id=review`
-- `POST /import_prompt_from_file?app=codex&path=/tmp/prompts.md`
-- `GET /get_current_prompt_file_content?app=codex&path=/tmp/prompts.md`
+- `GET /prompts?app=codex`
+- `POST /prompts?app=codex&id=review&content=Check`
+- `DELETE /prompts?app=codex&id=review`
+- `POST /prompts/enable?app=codex&id=review`
+- `POST /prompts/import-file?app=codex&path=/tmp/prompts.md`
+- `GET /prompts/current-file?app=codex&path=/tmp/prompts.md`
 - `POST /providers/import-live?app=opencode`
 - `POST /providers/import-live?app=openclaw`
 - `POST /providers/import-live?app=hermes`
@@ -415,10 +415,8 @@ workspace files and `memory/YYYY-MM-DD.md` daily memory files under
 `~/.moonsuite/openclaw/workspace`, returns CCS camelCase metadata, and keeps
 directory opening non-destructive while still ensuring the target directory
 exists.
-CCS MCP and prompt commands are mirrored by `/get_mcp_config`,
-`/upsert_mcp_server_in_config`, `/set_mcp_enabled`, `/get_mcp_servers`,
-`/toggle_mcp_app`, `/get_prompts`, `/upsert_prompt`, and related Claude-specific
-aliases. Standalone mode stores MCP servers and prompts in gateway memory,
+MCP and prompt commands are exposed through `/mcp/...` and `/prompts...`
+routes. Standalone mode stores MCP servers and prompts in gateway memory,
 exports the Claude `mcpServers` JSON text shape, validates command names, and
 imports Claude/Gemini JSON MCP server maps plus Codex `config.toml`
 `mcp_servers` entries. It also imports, reads, and enables CCS prompt files

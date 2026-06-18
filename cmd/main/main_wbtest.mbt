@@ -379,7 +379,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("upsert_mcp_server_in_config"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "validate_mcp_command"]) ==
+    registered_cli_command_id(["moonstat", "mcp", "validate"]) ==
     Some("validate_mcp_command"),
   )
   assert_true(
@@ -395,7 +395,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("upsert_prompt"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "get_current_prompt_file_content"]) ==
+    registered_cli_command_id(["moonstat", "prompt", "current"]) ==
     Some("get_current_prompt_file_content"),
   )
   assert_true(
@@ -1279,35 +1279,35 @@ test "top level moonstat workspace command names build workspace paths" {
 test "top level moonstat mcp command names build mcp paths" {
   assert_eq(
     mcp_app_path(
-      ["moonstat", "get_mcp_config", "--appType", "codex"],
-      "/get_mcp_config",
+      ["moonstat", "mcp", "config", "--appType", "codex"],
+      "/mcp/config",
     ),
-    "/get_mcp_config?app=codex",
+    "/mcp/config?app=codex",
   )
   assert_eq(
     mcp_validate_command_path([
-      "moonstat", "validate_mcp_command", "--command", "npx",
+      "moonstat", "mcp", "validate", "--command", "npx",
     ]),
-    "/validate_mcp_command?command=npx",
+    "/mcp/validate?command=npx",
   )
   assert_eq(
     mcp_id_path(
-      ["moonstat", "delete_mcp_server", "--serverId", "filesystem server"],
-      "/delete_mcp_server",
+      ["moonstat", "mcp", "delete", "--serverId", "filesystem server"],
+      "/mcp/servers",
     ),
-    Some("/delete_mcp_server?id=filesystem%20server"),
+    Some("/mcp/servers?id=filesystem%20server"),
   )
   guard mcp_upsert_path(
       [
-        "moonstat", "upsert_mcp_server_in_config", "--app", "codex", "--id", "filesystem",
+        "moonstat", "mcp", "upsert-config", "--app", "codex", "--id", "filesystem",
         "--name", "Filesystem", "--command", "npx", "--syncOtherSide", "true",
       ],
-      "/upsert_mcp_server_in_config",
+      "/mcp/config/servers",
     )
     is Some(upsert_path) else {
     fail("expected upsert path")
   }
-  assert_true(upsert_path.has_prefix("/upsert_mcp_server_in_config?server="))
+  assert_true(upsert_path.has_prefix("/mcp/config/servers?server="))
   assert_true(upsert_path.contains("&app=codex"))
   assert_true(upsert_path.contains("&syncOtherSide=true"))
   assert_true(upsert_path.contains("Filesystem"))
@@ -1315,12 +1315,12 @@ test "top level moonstat mcp command names build mcp paths" {
   assert_eq(
     mcp_enabled_path(
       [
-        "moonstat", "toggle_mcp_app", "--id", "filesystem", "--app", "codex", "--enabled",
+        "moonstat", "mcp", "toggle", "--id", "filesystem", "--app", "codex", "--enabled",
         "false",
       ],
-      "/toggle_mcp_app",
+      "/mcp/apps/toggle",
     ),
-    Some("/toggle_mcp_app?id=filesystem&app=codex&enabled=false"),
+    Some("/mcp/apps/toggle?id=filesystem&app=codex&enabled=false"),
   )
 }
 
@@ -1328,36 +1328,36 @@ test "top level moonstat mcp command names build mcp paths" {
 test "top level moonstat prompt command names build prompt paths" {
   assert_eq(
     prompt_app_path(
-      ["moonstat", "get_prompts", "--appType", "codex"],
-      "/get_prompts",
+      ["moonstat", "prompt", "list", "--appType", "codex"],
+      "/prompts",
     ),
-    "/get_prompts?app=codex",
+    "/prompts?app=codex",
   )
   assert_eq(
     prompt_upsert_path([
-      "moonstat", "upsert_prompt", "--app", "codex", "--id", "review", "--name",
+      "moonstat", "prompt", "upsert", "--app", "codex", "--id", "review", "--name",
       "Review", "--content", "Check this", "--description", "Code review", "--enabled",
       "true",
     ]),
     Some(
-      "/upsert_prompt?app=codex&id=review&name=Review&content=Check%20this&description=Code%20review&enabled=true",
+      "/prompts?app=codex&id=review&name=Review&content=Check%20this&description=Code%20review&enabled=true",
     ),
   )
   assert_eq(
     prompt_id_path(
-      ["moonstat", "delete_prompt", "--app", "codex", "--promptId", "review"],
-      "/delete_prompt",
+      ["moonstat", "prompt", "delete", "--app", "codex", "--promptId", "review"],
+      "/prompts",
     ),
-    Some("/delete_prompt?app=codex&id=review"),
+    Some("/prompts?app=codex&id=review"),
   )
   assert_eq(
     prompt_file_path(
       [
-        "moonstat", "import_prompt_from_file", "--app", "codex", "--path", "/tmp/prompts.md",
+        "moonstat", "prompt", "import", "--app", "codex", "--path", "/tmp/prompts.md",
       ],
-      "/import_prompt_from_file",
+      "/prompts/import-file",
     ),
-    "/import_prompt_from_file?app=codex&path=%2Ftmp%2Fprompts.md",
+    "/prompts/import-file?app=codex&path=%2Ftmp%2Fprompts.md",
   )
 }
 

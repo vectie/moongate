@@ -381,7 +381,7 @@ test "ccs read command parsers accept json payload keys" {
   )
   assert_eq(
     proxy_string_request(
-      "/validate_mcp_command",
+      "/mcp/validate",
       Some({ "cmd": Json::string("node") }.to_json()),
       ["cmd", "command"],
     ),
@@ -9073,7 +9073,7 @@ test "ccs mcp request parser accepts encoded server JSON" {
     }.to_json(),
   }.to_json()
   guard moon_mcp_server_from_request(
-      "/upsert_mcp_server?app=codex",
+      "/mcp/servers?app=codex",
       Some(body),
       "codex",
     )
@@ -9200,7 +9200,7 @@ test "ccs mcp import parses codex legacy toml servers" {
 ///|
 test "ccs prompt helpers keep app-scoped prompt records" {
   guard moon_prompt_from_request(
-      "/upsert_prompt?app=codex&id=review&name=Review&content=Check%20this&description=Code%20review",
+      "/prompts?app=codex&id=review&name=Review&content=Check%20this&description=Code%20review",
       None,
     )
     is Some((app, id, prompt)) else {
@@ -9245,7 +9245,7 @@ async test "ccs prompt file helpers import and read prompt files" {
     @fsx.write_to_file(prompt_path, content)
     let body = { "path": Json::string(prompt_path) }.to_json()
     guard moon_prompt_file_path_from_request(
-        "/import_prompt_from_file?app=codex",
+        "/prompts/import-file?app=codex",
         Some(body),
         "codex",
       )

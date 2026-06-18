@@ -108,7 +108,7 @@ async fn set_hermes_memory_enabled(args : Array[String]) -> Unit {
 async fn import_prompt_from_file(args : Array[String]) -> Unit {
   check_json_post_endpoint(
     args,
-    prompt_file_path(args, "/import_prompt_from_file"),
+    prompt_file_path(args, "/prompts/import-file"),
     "Prompt",
   )
 }

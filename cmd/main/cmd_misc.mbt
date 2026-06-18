@@ -474,7 +474,7 @@ async fn delete_mcp_server(args : Array[String], base_path : String) -> Unit {
 
 ///|
 async fn set_mcp_enabled(args : Array[String]) -> Unit {
-  guard mcp_enabled_path(args, "/set_mcp_enabled") is Some(path) else {
+  guard mcp_enabled_path(args, "/mcp/enabled") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required MCP args: --id --enabled")
     return
@@ -484,7 +484,7 @@ async fn set_mcp_enabled(args : Array[String]) -> Unit {
 
 ///|
 async fn toggle_mcp_app(args : Array[String]) -> Unit {
-  guard mcp_enabled_path(args, "/toggle_mcp_app") is Some(path) else {
+  guard mcp_enabled_path(args, "/mcp/apps/toggle") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required MCP args: --id --enabled")
     return
@@ -504,7 +504,7 @@ async fn upsert_prompt(args : Array[String]) -> Unit {
 
 ///|
 async fn delete_prompt(args : Array[String]) -> Unit {
-  guard prompt_id_path(args, "/delete_prompt") is Some(path) else {
+  guard prompt_id_path(args, "/prompts") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required --id")
     return
@@ -514,7 +514,7 @@ async fn delete_prompt(args : Array[String]) -> Unit {
 
 ///|
 async fn enable_prompt(args : Array[String]) -> Unit {
-  guard prompt_id_path(args, "/enable_prompt") is Some(path) else {
+  guard prompt_id_path(args, "/prompts/enable") is Some(path) else {
     let logger = @pino.logger("moonstat", @pino.Transport::console())
     logger.error("Missing required --id")
     return
@@ -1085,9 +1085,8 @@ fn mcp_id_path(args : Array[String], base_path : String) -> String? {
 ///|
 fn mcp_validate_command_path(args : Array[String]) -> String {
   match parse_string_arg_any(args, "--command", "--cmd") {
-    Some(command) =>
-      "/validate_mcp_command?\{cli_query_pair("command", command)}"
-    None => "/validate_mcp_command"
+    Some(command) => "/mcp/validate?\{cli_query_pair("command", command)}"
+    None => "/mcp/validate"
   }
 }
 
@@ -1193,7 +1192,7 @@ fn prompt_upsert_path(args : Array[String]) -> String? {
       }
     }
   }
-  Some("/upsert_prompt?\{query.join("&")}")
+  Some("/prompts?\{query.join("&")}")
 }
 
 ///|
