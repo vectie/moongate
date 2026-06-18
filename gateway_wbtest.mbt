@@ -1947,6 +1947,17 @@ test "suite config helpers mirror moonstat openclaw hermes shapes" {
     hermes_memory_kind_from_request("/hermes/memory?kind=bad", None),
     None,
   )
+  assert_eq(
+    hermes_memory_kind_from_request("/hermes/memory?memoryKind=user", None),
+    None,
+  )
+  assert_true(
+    openclaw_env_from_request(
+      "/openclaw/env?name=OPENAI_API_KEY&value=sk-old",
+      None,
+    )
+    is None,
+  )
   assert_eq(hermes_web_port_from_request("/hermes/web-ui?port=9120"), 9120)
   assert_eq(
     proxy_string_request(

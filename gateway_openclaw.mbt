@@ -159,9 +159,7 @@ async fn OpenClawService::handle_set_hermes_memory(
     write_usage_bad_request(w, "invalid_hermes_memory_kind")
     return
   }
-  let content = proxy_string_request(r.path, body, ["content", "value", "text"]).unwrap_or(
-    "",
-  )
+  let content = proxy_string_request(r.path, body, ["content"]).unwrap_or("")
   self.hermes_memory[kind] = content
   write_usage_json(w, Json::null())
 }
@@ -298,7 +296,7 @@ fn openclaw_env_from_request(path : StringView, body : Json?) -> Json? {
     Some(env) => return Some(env)
     None => ()
   }
-  guard proxy_string_request(path, body, ["key", "name"]) is Some(key) &&
+  guard proxy_string_request(path, body, ["key"]) is Some(key) &&
     !key.trim().is_empty() else {
     return None
   }
@@ -332,7 +330,7 @@ fn openclaw_tools_from_request(path : StringView, body : Json?) -> Json? {
 
 ///|
 fn hermes_memory_kind_from_request(path : StringView, body : Json?) -> String? {
-  match proxy_string_request(path, body, ["kind", "memoryKind"]) {
+  match proxy_string_request(path, body, ["kind"]) {
     Some(raw) =>
       match raw.trim().to_lower() {
         "memory" => Some("memory")
