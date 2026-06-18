@@ -2149,7 +2149,7 @@ async test "usage accounting is owned by usage service" {
 ///|
 async test "copilot optimizer config endpoints are owned by config service" {
   let copilot_source = @fsx.read_file("gateway_copilot.mbt")
-  let core_source = @fsx.read_file("gateway_core.mbt")
+  let route_source = @fsx.read_file("gateway_config_routes.mbt")
   for
     handler in [
       "handle_get_copilot_optimizer_config", "handle_set_copilot_optimizer_config",
@@ -2158,12 +2158,10 @@ async test "copilot optimizer config endpoints are owned by config service" {
     assert_false(copilot_source.contains("async fn Gateway::\{handler}("))
   }
   assert_true(
-    core_source.contains("self.config.handle_get_copilot_optimizer_config(w)"),
+    route_source.contains("self.handle_get_copilot_optimizer_config(w)"),
   )
   assert_true(
-    core_source.contains(
-      "self.config.handle_set_copilot_optimizer_config(r, w)",
-    ),
+    route_source.contains("self.handle_set_copilot_optimizer_config(r, w)"),
   )
 }
 
@@ -2175,6 +2173,7 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   let deeplink_helpers_source = @fsx.read_file("deeplink.mbt")
   let import_export_source = @fsx.read_file("import_export.mbt")
   let sync_source = @fsx.read_file("sync.mbt")
+  let route_source = @fsx.read_file("gateway_config_routes.mbt")
   let config_sources = misc_source +
     config_source +
     deeplink_source +
@@ -2227,79 +2226,60 @@ async test "settings mcp and prompt endpoints are owned by config service" {
     assert_true(import_export_source.contains("ProxyService::\{helper}("))
     assert_false(import_export_source.contains("Gateway::\{helper}("))
   }
-  assert_true(core_source.contains("self.config.handle_set_window_theme(r, w)"))
   assert_true(
     core_source.contains(
-      "self.config.handle_get_common_config_snippet(w, \"claude\")",
+      "self.config.register_routes(router, self.proxy, self.host, self.port)",
     ),
   )
-  assert_true(core_source.contains("self.config.handle_get_mcp_config(r, w)"))
-  assert_true(core_source.contains("self.config.handle_upsert_prompt(r, w)"))
-  assert_true(core_source.contains("self.config.handle_parse_deeplink(r, w)"))
+  assert_true(route_source.contains("self.handle_set_window_theme(r, w)"))
   assert_true(
-    core_source.contains(
-      "self.config.handle_import_from_deeplink(self.proxy, r, w)",
+    route_source.contains(
+      "self.handle_get_common_config_snippet(w, \"claude\")",
     ),
   )
+  assert_true(route_source.contains("self.handle_get_mcp_config(r, w)"))
+  assert_true(route_source.contains("self.handle_upsert_prompt(r, w)"))
+  assert_true(route_source.contains("self.handle_parse_deeplink(r, w)"))
   assert_true(
-    core_source.contains("self.config.handle_webdav_sync_save_settings(r, w)"),
+    route_source.contains("self.handle_import_from_deeplink(proxy, r, w)"),
   )
   assert_true(
-    core_source.contains("self.config.handle_webdav_test_connection(r, w)"),
+    route_source.contains("self.handle_webdav_sync_save_settings(r, w)"),
   )
-  assert_true(core_source.contains("self.config.handle_webdav_sync_operation("))
+  assert_true(route_source.contains("self.handle_webdav_test_connection(r, w)"))
+  assert_true(route_source.contains("self.handle_webdav_sync_operation("))
   assert_true(
-    core_source.contains("self.config.handle_webdav_sync_fetch_remote_info(w)"),
+    route_source.contains("self.handle_webdav_sync_fetch_remote_info(w)"),
   )
+  assert_true(route_source.contains("self.handle_s3_sync_save_settings(r, w)"))
+  assert_true(route_source.contains("self.handle_s3_test_connection(r, w)"))
+  assert_true(route_source.contains("self.handle_s3_sync_operation("))
+  assert_true(route_source.contains("self.handle_s3_sync_fetch_remote_info(w)"))
+  assert_true(route_source.contains("self.handle_get_stream_check_config(w)"))
   assert_true(
-    core_source.contains("self.config.handle_s3_sync_save_settings(r, w)"),
+    route_source.contains("self.handle_save_stream_check_config(r, w)"),
   )
+  assert_true(route_source.contains("self.handle_get_claude_plugin_status(w)"))
+  assert_true(route_source.contains("self.handle_read_claude_plugin_config(w)"))
   assert_true(
-    core_source.contains("self.config.handle_s3_test_connection(r, w)"),
+    route_source.contains("self.handle_apply_claude_plugin_config(r, w)"),
   )
-  assert_true(core_source.contains("self.config.handle_s3_sync_operation("))
+  assert_true(route_source.contains("self.handle_is_claude_plugin_applied(w)"))
   assert_true(
-    core_source.contains("self.config.handle_s3_sync_fetch_remote_info(w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_get_stream_check_config(w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_save_stream_check_config(r, w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_get_claude_plugin_status(w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_read_claude_plugin_config(w)"),
+    route_source.contains("self.handle_apply_claude_onboarding_skip(w)"),
   )
   assert_true(
-    core_source.contains("self.config.handle_apply_claude_plugin_config(r, w)"),
+    route_source.contains("self.handle_clear_claude_onboarding_skip(w)"),
   )
   assert_true(
-    core_source.contains("self.config.handle_is_claude_plugin_applied(w)"),
+    route_source.contains("self.handle_fetch_models_for_config(r, w)"),
   )
+  assert_true(route_source.contains("self.handle_get_auto_launch_status(w)"))
+  assert_true(route_source.contains("self.handle_export_config_to_file("))
+  assert_true(route_source.contains("self.handle_import_config_from_file("))
+  assert_true(route_source.contains("self.handle_create_db_backup("))
   assert_true(
-    core_source.contains("self.config.handle_apply_claude_onboarding_skip(w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_clear_claude_onboarding_skip(w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_fetch_models_for_config(r, w)"),
-  )
-  assert_true(
-    core_source.contains("self.config.handle_get_auto_launch_status(w)"),
-  )
-  assert_true(core_source.contains("self.config.handle_export_config_to_file("))
-  assert_true(
-    core_source.contains("self.config.handle_import_config_from_file("),
-  )
-  assert_true(core_source.contains("self.config.handle_create_db_backup("))
-  assert_true(
-    core_source.contains(
-      "self.config.handle_restore_db_backup(self.proxy, r, w)",
-    ),
+    route_source.contains("self.handle_restore_db_backup(proxy, r, w)"),
   )
 }
 
