@@ -1475,17 +1475,6 @@ fn openclaw_config_health_from_json(config : Json) -> Json {
       }
     _ => ()
   }
-  match openclaw_nested_json(config, ["agents", "defaults", "timeout"]) {
-    Some(_) =>
-      warnings.push(
-        openclaw_health_warning_json(
-          "legacy_agents_timeout",
-          "agents.defaults.timeout is deprecated; use agents.defaults.timeoutSeconds.",
-          Some("agents.defaults.timeout"),
-        ),
-      )
-    None => ()
-  }
   match openclaw_nested_json(config, ["env", "vars"]) {
     Some(Object(_)) | None => ()
     Some(_) =>

@@ -1826,7 +1826,7 @@ test "suite config helpers mirror ccs openclaw hermes shapes" {
 }
 
 ///|
-test "openclaw health scanner mirrors ccs warning rules" {
+test "openclaw health scanner reports current moonstat warning rules" {
   let config = {
     "tools": { "profile": Json::string("dangerous") }.to_json(),
     "agents": {
@@ -1845,11 +1845,6 @@ test "openclaw health scanner mirrors ccs warning rules" {
       "code": "invalid_tools_profile",
       "message": "tools.profile uses unsupported value 'dangerous'.",
       "path": "tools.profile",
-    },
-    {
-      "code": "legacy_agents_timeout",
-      "message": "agents.defaults.timeout is deprecated; use agents.defaults.timeoutSeconds.",
-      "path": "agents.defaults.timeout",
     },
     {
       "code": "stringified_env_vars",
