@@ -339,19 +339,21 @@ test "usage query helpers parse ccs auto failover boolean parameters" {
 }
 
 ///|
-test "pick directory parser accepts ccs defaultPath payload key" {
+test "pick directory parser accepts defaultPath payload key" {
   assert_eq(
     proxy_string_request(
-      "/pick_directory",
+      "/files/directories/pick",
       Some({ "defaultPath": Json::string("/tmp/ccs") }.to_json()),
       ["default_path", "defaultPath"],
     ),
     Some("/tmp/ccs"),
   )
   assert_eq(
-    proxy_string_request("/pick_directory?default_path=/tmp/moonstat", None, [
-      "default_path", "defaultPath",
-    ]),
+    proxy_string_request(
+      "/files/directories/pick?default_path=/tmp/moonstat",
+      None,
+      ["default_path", "defaultPath"],
+    ),
     Some("/tmp/moonstat"),
   )
 }
@@ -364,7 +366,7 @@ test "ccs read command parsers accept json payload keys" {
     { "app": Json::string("codex"), "providerId": Json::string("codex-oauth") }.to_json(),
   )
   assert_eq(
-    moon_config_app_from_request("/get_config_dir", app_body),
+    moon_config_app_from_request("/config/dir", app_body),
     Some("codex"),
   )
   assert_eq(

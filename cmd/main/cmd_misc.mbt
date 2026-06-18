@@ -326,7 +326,7 @@ async fn delete_sessions(args : Array[String]) -> Unit {
     logger.error("Missing required --items JSON")
     return
   }
-  post_json_body_endpoint(args, "/delete_sessions", body, "Session")
+  post_json_body_endpoint(args, "/sessions/delete-many", body, "Session")
 }
 
 ///|
@@ -614,8 +614,8 @@ fn moon_json_config_flag_names() -> Array[String] {
 fn apply_claude_plugin_config_path(args : Array[String]) -> String {
   match parse_string_arg(args, "--official") {
     Some(official) =>
-      "/apply_claude_plugin_config?\{cli_query_pair("official", official)}"
-    None => "/apply_claude_plugin_config"
+      "/plugin/claude/config?\{cli_query_pair("official", official)}"
+    None => "/plugin/claude/config"
   }
 }
 
@@ -626,7 +626,7 @@ fn pick_directory_path(args : Array[String]) -> String {
     Some(path) => query.push(cli_query_pair("defaultPath", path))
     None => ()
   }
-  cli_path_with_query("/pick_directory", query)
+  cli_path_with_query("/files/directories/pick", query)
 }
 
 ///|
@@ -709,7 +709,7 @@ fn db_backup_rename_path(args : Array[String]) -> String {
         None => ()
       }
   }
-  cli_path_with_query("/rename_db_backup", query)
+  cli_path_with_query("/backups/db/rename", query)
 }
 
 ///|
@@ -768,7 +768,7 @@ fn session_messages_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("sourcePath", value))
     None => ()
   }
-  cli_path_with_query("/get_session_messages", query)
+  cli_path_with_query("/sessions/messages", query)
 }
 
 ///|
@@ -786,7 +786,7 @@ fn launch_session_terminal_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("customConfig", value))
     None => ()
   }
-  cli_path_with_query("/launch_session_terminal", query)
+  cli_path_with_query("/sessions/terminal", query)
 }
 
 ///|
@@ -804,7 +804,7 @@ fn delete_session_path(args : Array[String]) -> String {
     Some(value) => query.push(cli_query_pair("sourcePath", value))
     None => ()
   }
-  cli_path_with_query("/delete_session", query)
+  cli_path_with_query("/sessions/delete", query)
 }
 
 ///|

@@ -26,27 +26,27 @@ test "registered cli commands match suite command aliases and status commands" {
     registered_cli_command_id(["moonstat", "--version"]) == Some("version"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "webdav-sync-upload"]) ==
+    registered_cli_command_id(["moonstat", "sync", "webdav", "upload"]) ==
     Some("webdav_sync_upload"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "s3_test_connection"]) ==
+    registered_cli_command_id(["moonstat", "sync", "s3", "test"]) ==
     Some("s3_test_connection"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "list-sessions"]) ==
+    registered_cli_command_id(["moonstat", "sessions", "list"]) ==
     Some("list_sessions"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "launch_session_terminal"]) ==
+    registered_cli_command_id(["moonstat", "sessions", "terminal"]) ==
     Some("launch_session_terminal"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "read-omo-slim-local-file"]) ==
+    registered_cli_command_id(["moonstat", "providers", "omo-slim", "file"]) ==
     Some("read_omo_slim_local_file"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "open-zip-file-dialog"]) ==
+    registered_cli_command_id(["moonstat", "files", "open-zip-dialog"]) ==
     Some("open_zip_file_dialog"),
   )
   assert_true(
@@ -200,7 +200,7 @@ test "registered cli commands match suite command aliases and status commands" {
   )
   assert_true(
     registered_cli_command_id([
-      "moonstat", "ensure_claude_desktop_official_provider",
+      "moonstat", "providers", "claude-desktop", "official",
     ]) ==
     Some("ensure_claude_desktop_official_provider"),
   )
@@ -209,8 +209,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("fetch_models"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "fetch_models_for_config"]) ==
-    Some("fetch_models"),
+    registered_cli_command_id(["moonstat", "fetch_models_for_config"]) is None,
   )
   assert_true(
     registered_cli_command_id(["moonstat", "models", "candidates"]) ==
@@ -245,19 +244,19 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("launch_hermes_dashboard"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "get_config_status"]) ==
+    registered_cli_command_id(["moonstat", "config", "status"]) ==
     Some("get_config_status"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "get-claude-code-config-path"]) ==
+    registered_cli_command_id(["moonstat", "config", "claude-code", "path"]) ==
     Some("get_claude_code_config_path"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "open_config_folder"]) ==
+    registered_cli_command_id(["moonstat", "config", "folder", "open"]) ==
     Some("open_config_folder"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "pick-directory"]) ==
+    registered_cli_command_id(["moonstat", "files", "directory", "pick"]) ==
     Some("pick_directory"),
   )
   assert_true(
@@ -281,23 +280,23 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("enter_lightweight_mode"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "save-file-dialog"]) ==
+    registered_cli_command_id(["moonstat", "files", "save-dialog"]) ==
     Some("save_file_dialog"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "export_config_to_file"]) ==
+    registered_cli_command_id(["moonstat", "config", "file", "export"]) ==
     Some("export_config_to_file"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "rename-db-backup"]) ==
+    registered_cli_command_id(["moonstat", "backups", "db", "rename"]) ==
     Some("rename_db_backup"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "parse_deeplink"]) ==
+    registered_cli_command_id(["moonstat", "deeplink", "parse"]) ==
     Some("parse_deeplink"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "import-from-deeplink-unified"]) ==
+    registered_cli_command_id(["moonstat", "deeplink", "import-unified"]) ==
     Some("import_from_deeplink_unified"),
   )
   assert_true(
@@ -347,7 +346,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("get_claude_plugin_status"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "apply_claude_plugin_config"]) ==
+    registered_cli_command_id(["moonstat", "plugin", "claude", "apply"]) ==
     Some("apply_claude_plugin_config"),
   )
   assert_true(
@@ -365,7 +364,7 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("search_daily_memory_files"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "read_workspace_file"]) ==
+    registered_cli_command_id(["moonstat", "workspace", "read"]) ==
     Some("read_workspace_file"),
   )
   assert_true(
@@ -1043,23 +1042,23 @@ test "provider grouped commands build canonical paths" {
 test "top level moonstat config command names build config paths" {
   assert_eq(
     config_app_path(
-      ["moonstat", "get_config_status", "--appType", "codex"],
-      "/get_config_status",
+      ["moonstat", "config", "status", "--appType", "codex"],
+      "/config/status",
     ),
-    "/get_config_status?app=codex",
+    "/config/status?app=codex",
   )
   assert_eq(
     config_app_path(
-      ["moonstat", "get_config_dir", "--app-type", "openclaw"],
-      "/get_config_dir",
+      ["moonstat", "config", "dir", "--app-type", "openclaw"],
+      "/config/dir",
     ),
-    "/get_config_dir?app=openclaw",
+    "/config/dir?app=openclaw",
   )
   assert_eq(
     pick_directory_path([
-      "moonstat", "pick_directory", "--defaultPath", "/tmp/claude projects",
+      "moonstat", "files", "directory", "pick", "--defaultPath", "/tmp/claude projects",
     ]),
-    "/pick_directory?defaultPath=%2Ftmp%2Fclaude%20projects",
+    "/files/directories/pick?defaultPath=%2Ftmp%2Fclaude%20projects",
   )
   assert_eq(
     config_snippet_path(
@@ -1095,85 +1094,87 @@ test "top level moonstat config command names build config paths" {
   )
   assert_eq(
     config_file_path(
-      ["moonstat", "export_config_to_file", "--filePath", "/tmp/moon stat.json"],
-      "/export_config_to_file",
+      [
+        "moonstat", "config", "file", "export", "--filePath", "/tmp/moon stat.json",
+      ],
+      "/config/files/export",
     ),
-    "/export_config_to_file?filePath=%2Ftmp%2Fmoon%20stat.json",
+    "/config/files/export?filePath=%2Ftmp%2Fmoon%20stat.json",
   )
   assert_eq(
     config_file_path(
-      ["moonstat", "import_config_from_file", "--path", "/tmp/in.json"],
-      "/import_config_from_file",
+      ["moonstat", "config", "file", "import", "--path", "/tmp/in.json"],
+      "/config/files/import",
     ),
-    "/import_config_from_file?filePath=%2Ftmp%2Fin.json",
+    "/config/files/import?filePath=%2Ftmp%2Fin.json",
   )
   assert_eq(
     db_backup_filename_path(
-      ["moonstat", "restore_db_backup", "--filename", "moonstat-1.db"],
-      "/restore_db_backup",
+      ["moonstat", "backups", "db", "restore", "--filename", "moonstat-1.db"],
+      "/backups/db/restore",
     ),
-    "/restore_db_backup?filename=moonstat-1.db",
+    "/backups/db/restore?filename=moonstat-1.db",
   )
   assert_eq(
     db_backup_rename_path([
-      "moonstat", "rename_db_backup", "--oldFilename", "moonstat-1.db", "--newName",
+      "moonstat", "backups", "db", "rename", "--oldFilename", "moonstat-1.db", "--newName",
       "renamed",
     ]),
-    "/rename_db_backup?oldFilename=moonstat-1.db&newName=renamed",
+    "/backups/db/rename?oldFilename=moonstat-1.db&newName=renamed",
   )
   assert_eq(
     db_backup_filename_path(
-      ["moonstat", "delete_db_backup", "--name", "renamed.db"],
-      "/delete_db_backup",
+      ["moonstat", "backups", "db", "delete", "--name", "renamed.db"],
+      "/backups/db/delete",
     ),
-    "/delete_db_backup?filename=renamed.db",
+    "/backups/db/delete?filename=renamed.db",
   )
   assert_eq(
     deeplink_url_path(
       [
-        "moonstat", "parse_deeplink", "--url", "moonstat://v1/import?resource=skill&repo=vectie/skills",
+        "moonstat", "deeplink", "parse", "--url", "moonstat://v1/import?resource=skill&repo=vectie/skills",
       ],
-      "/parse_deeplink",
+      "/deeplinks/parse",
     ),
-    "/parse_deeplink?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dskill%26repo%3Dvectie%2Fskills",
+    "/deeplinks/parse?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dskill%26repo%3Dvectie%2Fskills",
   )
   assert_eq(
     deeplink_request_path(
       [
-        "moonstat", "merge_deeplink_config", "--request", "{\"resource\":\"provider\"}",
+        "moonstat", "deeplink", "merge", "--request", "{\"resource\":\"provider\"}",
       ],
-      "/merge_deeplink_config",
+      "/deeplinks/merge",
     ),
-    "/merge_deeplink_config?request=%7B%22resource%22%3A%22provider%22%7D",
+    "/deeplinks/merge?request=%7B%22resource%22%3A%22provider%22%7D",
   )
   assert_eq(
     deeplink_request_path(
       [
-        "moonstat", "import_from_deeplink_unified", "--url", "moonstat://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8",
+        "moonstat", "deeplink", "import-unified", "--url", "moonstat://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8",
       ],
-      "/import_from_deeplink_unified",
+      "/deeplinks/import-unified",
     ),
-    "/import_from_deeplink_unified?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dprompt%26app%3Dcodex%26name%3DDaily%26content%3DSGVsbG8",
+    "/deeplinks/import-unified?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dprompt%26app%3Dcodex%26name%3DDaily%26content%3DSGVsbG8",
   )
   assert_eq(
     sync_settings_path(
       [
-        "moonstat", "webdav_sync_save_settings", "--settings", "{\"baseUrl\":\"https://dav.example.com\"}",
+        "moonstat", "sync", "webdav", "settings", "--settings", "{\"baseUrl\":\"https://dav.example.com\"}",
         "--passwordTouched", "false",
       ],
-      "/webdav_sync_save_settings",
+      "/sync/webdav/settings",
     ),
-    "/webdav_sync_save_settings?settings=%7B%22baseUrl%22%3A%22https%3A%2F%2Fdav.example.com%22%7D&passwordTouched=false",
+    "/sync/webdav/settings?settings=%7B%22baseUrl%22%3A%22https%3A%2F%2Fdav.example.com%22%7D&passwordTouched=false",
   )
   assert_eq(
     sync_settings_path(
       [
-        "moonstat", "s3_test_connection", "--config", "{\"bucket\":\"moonstat\"}",
+        "moonstat", "sync", "s3", "test", "--config", "{\"bucket\":\"moonstat\"}",
         "--preserve-empty-password", "true",
       ],
-      "/s3_test_connection",
+      "/sync/s3/test",
     ),
-    "/s3_test_connection?settings=%7B%22bucket%22%3A%22moonstat%22%7D&preserveEmptyPassword=true",
+    "/sync/s3/test?settings=%7B%22bucket%22%3A%22moonstat%22%7D&preserveEmptyPassword=true",
   )
 }
 
@@ -1237,13 +1238,13 @@ test "top level moonstat settings command names build settings paths" {
 test "top level moonstat plugin command names build plugin paths" {
   assert_eq(
     apply_claude_plugin_config_path([
-      "moonstat", "apply_claude_plugin_config", "--official", "true",
+      "moonstat", "plugin", "claude", "apply", "--official", "true",
     ]),
-    "/apply_claude_plugin_config?official=true",
+    "/plugin/claude/config?official=true",
   )
   assert_eq(
-    apply_claude_plugin_config_path(["moonstat", "apply_claude_plugin_config"]),
-    "/apply_claude_plugin_config",
+    apply_claude_plugin_config_path(["moonstat", "plugin", "claude", "apply"]),
+    "/plugin/claude/config",
   )
 }
 
@@ -1251,34 +1252,34 @@ test "top level moonstat plugin command names build plugin paths" {
 test "top level moonstat workspace command names build workspace paths" {
   assert_eq(
     workspace_filename_path(
-      ["moonstat", "read_workspace_file", "--filename", "AGENTS.md"],
-      "/read_workspace_file",
+      ["moonstat", "workspace", "read", "--filename", "AGENTS.md"],
+      "/workspace/files",
     ),
-    "/read_workspace_file?filename=AGENTS.md",
+    "/workspace/files?filename=AGENTS.md",
   )
   assert_eq(
     workspace_content_path(
       [
-        "moonstat", "write_workspace_file", "--filename", "AGENTS.md", "--content",
+        "moonstat", "workspace", "write", "--filename", "AGENTS.md", "--content",
         "hello moon",
       ],
-      "/write_workspace_file",
+      "/workspace/files",
     ),
-    Some("/write_workspace_file?filename=AGENTS.md&content=hello%20moon"),
+    Some("/workspace/files?filename=AGENTS.md&content=hello%20moon"),
   )
   assert_eq(
     workspace_query_path(
-      ["moonstat", "search_daily_memory_files", "--query", "daily plan"],
-      "/search_daily_memory_files",
+      ["moonstat", "workspace", "memory", "search", "--query", "daily plan"],
+      "/workspace/memory/search",
     ),
-    "/search_daily_memory_files?query=daily%20plan",
+    "/workspace/memory/search?query=daily%20plan",
   )
   assert_eq(
     workspace_subdir_path(
-      ["moonstat", "open_workspace_directory", "--subdir", "memory"],
-      "/open_workspace_directory",
+      ["moonstat", "workspace", "open", "--subdir", "memory"],
+      "/workspace/open",
     ),
-    "/open_workspace_directory?subdir=memory",
+    "/workspace/open?subdir=memory",
   )
 }
 
@@ -1504,9 +1505,9 @@ test "top level moonstat app shell commands build paths" {
   )
   assert_eq(
     save_file_dialog_path([
-      "moonstat", "save_file_dialog", "--default-name", "config.json",
+      "moonstat", "files", "save-dialog", "--default-name", "config.json",
     ]),
-    "/save_file_dialog?defaultName=config.json",
+    "/files/dialogs/save?defaultName=config.json",
   )
 }
 

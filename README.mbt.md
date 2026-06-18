@@ -47,7 +47,6 @@ logic and returns the same frontend wire shape, `[{ "id": "...", "ownedBy":
 
 ```sh
 moon run cmd/main -- models fetch --base-url https://api.example.com --api-key sk-...
-moon run cmd/main -- fetch_models_for_config --base-url https://api.example.com --api-key sk-...
 moon run cmd/main -- usage codex-oauth-models --account-id acct_...
 moon run cmd/main -- models candidates --base-url https://api.deepseek.com/anthropic
 ```
@@ -152,12 +151,12 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /hermes/memory-enabled?kind=user&enabled=false`
 - `GET /hermes/web-ui?path=/`
 - `POST /hermes/dashboard`
-- `GET /get_claude_config_status`
-- `GET /get_config_status?app=codex`
-- `GET /get_claude_code_config_path`
-- `GET /get_config_dir?app=codex`
-- `GET /open_config_folder?app=codex`
-- `GET /pick_directory?defaultPath=/tmp`
+- `GET /config/claude/status`
+- `GET /config/status?app=codex`
+- `GET /config/claude-code/path`
+- `GET /config/dir?app=codex`
+- `GET /config/folder/open?app=codex`
+- `GET /files/directories/pick?defaultPath=/tmp`
 - `GET|POST /runtime/open-external?url=https://github.com/vectie/moonstat`
 - `GET|POST /runtime/clipboard/text?text=hello`
 - `GET|POST /runtime/updates/check`
@@ -171,9 +170,9 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `GET|POST /runtime/lightweight-mode/enter`
 - `GET|POST /runtime/lightweight-mode/exit`
 - `GET /runtime/lightweight-mode`
-- `GET|POST /save_file_dialog?defaultName=config.json`
-- `GET|POST /open_file_dialog`
-- `GET|POST /open_zip_file_dialog`
+- `GET|POST /files/dialogs/save?defaultName=config.json`
+- `GET|POST /files/dialogs/open`
+- `GET|POST /files/dialogs/open-zip`
 - `GET /skills/installed`
 - `GET /skills/backups`
 - `POST /skills/backups/delete?backupId=traffic-stats-1`
@@ -242,20 +241,21 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `DELETE /mcp/servers?id=filesystem`
 - `POST /mcp/apps/toggle?app=codex&id=filesystem&enabled=true`
 - `POST /mcp/import-apps`
-- `GET /get_claude_plugin_status`
-- `GET /read_claude_plugin_config`
-- `POST /apply_claude_plugin_config?official=false`
-- `GET /is_claude_plugin_applied`
-- `POST /apply_claude_onboarding_skip`
-- `POST /clear_claude_onboarding_skip`
-- `GET /list_daily_memory_files`
-- `GET /read_daily_memory_file?filename=2026-06-14.md`
-- `POST /write_daily_memory_file?filename=2026-06-14.md&content=...`
-- `GET|POST /search_daily_memory_files?query=plan`
-- `DELETE|POST /delete_daily_memory_file?filename=2026-06-14.md`
-- `GET /read_workspace_file?filename=AGENTS.md`
-- `POST /write_workspace_file?filename=AGENTS.md&content=...`
-- `GET|POST /open_workspace_directory?subdir=memory`
+- `GET /plugin/claude/status`
+- `GET /plugin/claude/config`
+- `POST /plugin/claude/config?official=false`
+- `GET /plugin/claude/applied`
+- `POST /plugin/claude/onboarding-skip`
+- `POST /plugin/claude/onboarding-skip/clear`
+- `GET /workspace/memory`
+- `GET /workspace/memory/file?filename=2026-06-14.md`
+- `POST /workspace/memory/write?filename=2026-06-14.md&content=...`
+- `GET|POST /workspace/memory/search?query=plan`
+- `DELETE /workspace/memory/file?filename=2026-06-14.md`
+- `POST /workspace/memory/delete?filename=2026-06-14.md`
+- `GET /workspace/files?filename=AGENTS.md`
+- `POST /workspace/files?filename=AGENTS.md&content=...`
+- `GET|POST /workspace/open?subdir=memory`
 - `GET /prompts?app=codex`
 - `POST /prompts?app=codex&id=review&content=Check`
 - `DELETE /prompts?app=codex&id=review`
@@ -326,7 +326,7 @@ Moonstat currently exposes the ccs-compatible local routes below:
 - `POST /proxy/stream-check/config?codexModel=gpt-5.5@low&timeoutSecs=45`
 - `GET /models`
 - `GET /v1/models`
-- `GET|POST /fetch_models_for_config?baseUrl=https://api.example.com&apiKey=sk-...`
+- `GET|POST /config/models?baseUrl=https://api.example.com&apiKey=sk-...`
 - `GET /claude-desktop/v1/models`
 - `POST /v1/messages`
 - `POST /claude/v1/messages`
@@ -387,27 +387,23 @@ standalone provider router state. The standalone OpenClaw health scan returns an
 empty warning list because Moonstat does not own OpenClaw's live config file.
 The OpenClaw default-model/catalog/agents/env/tools routes and Hermes
 model/memory/dashboard routes keep their JSON state in Moonstat, returning
-`null` or defaults before a standalone caller sets them. CCS config-folder,
-common-snippet, and environment
-conflict commands are mirrored by `/get_config_status`, `/get_config_dir`,
+`null` or defaults before a standalone caller sets them. Config-folder,
+common-snippet, and environment routes use `/config/status`, `/config/dir`,
 `/config/snippets`, `/config/snippets/extract`, `/config/env/conflicts`,
-`/config/env/delete`, and `/config/env/restore`; standalone folder open/pick
-and env delete/restore
-routes keep CCS-compatible shapes. File-sourced env conflicts are backed up under
+`/config/env/delete`, and `/config/env/restore`; folder open and directory pick
+use `/config/folder/open` and `/files/directories/pick`. File-sourced env
+conflicts are backed up under
 `.moonsuite/backups`, removed from shell config files, and restored from that
 backup JSON; process environment conflicts remain non-destructive like CCS Unix
 system entries. Snippets are kept in gateway memory.
 Settings and Claude plugin commands use `/settings...` routes plus the Claude
 plugin/onboarding routes.
 Moonstat keeps these settings in standalone gateway state, preserves hidden
-WebDAV/S3 secrets during `save_settings` like CCS, validates optimizer
+WebDAV/S3 secrets during `save_settings`, validates optimizer
 `cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
 as deterministic local state changes instead of mutating the desktop OS.
-CCS OpenClaw workspace commands are mirrored by `list_daily_memory_files`,
-`read_daily_memory_file`, `write_daily_memory_file`,
-`search_daily_memory_files`, `delete_daily_memory_file`,
-`read_workspace_file`, `write_workspace_file`, and
-`open_workspace_directory`. Standalone mode stores the same whitelisted
+OpenClaw workspace commands are exposed as `/workspace/memory...` and
+`/workspace/files...` routes. Standalone mode stores the same whitelisted
 workspace files and `memory/YYYY-MM-DD.md` daily memory files under
 `~/.moonsuite/openclaw/workspace`, returns CCS camelCase metadata, and keeps
 directory opening non-destructive while still ensuring the target directory

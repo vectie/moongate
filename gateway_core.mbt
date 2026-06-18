@@ -115,34 +115,34 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       ),
     )
   })
-  router.add_handler(Get, "/get_claude_config_status", (_, w) => {
+  router.add_handler(Get, "/config/claude/status", (_, w) => {
     self.config.handle_get_config_status(w, "claude")
   })
-  router.add_handler(Get, "/get_config_status", (r, w) => {
+  router.add_handler(Get, "/config/status", (r, w) => {
     self.config.handle_get_config_status_request(r, w)
   })
-  router.add_handler(Post, "/get_config_status", (r, w) => {
+  router.add_handler(Post, "/config/status", (r, w) => {
     self.config.handle_get_config_status_request(r, w)
   })
-  router.add_handler(Get, "/get_claude_code_config_path", (_, w) => {
+  router.add_handler(Get, "/config/claude-code/path", (_, w) => {
     self.config.handle_get_claude_code_config_path(w)
   })
-  router.add_handler(Get, "/get_config_dir", (r, w) => {
+  router.add_handler(Get, "/config/dir", (r, w) => {
     self.config.handle_get_config_dir(r, w)
   })
-  router.add_handler(Post, "/get_config_dir", (r, w) => {
+  router.add_handler(Post, "/config/dir", (r, w) => {
     self.config.handle_get_config_dir(r, w)
   })
-  router.add_handler(Get, "/open_config_folder", (r, w) => {
+  router.add_handler(Get, "/config/folder/open", (r, w) => {
     self.config.handle_open_config_folder(r, w)
   })
-  router.add_handler(Post, "/open_config_folder", (r, w) => {
+  router.add_handler(Post, "/config/folder/open", (r, w) => {
     self.config.handle_open_config_folder(r, w)
   })
-  router.add_handler(Get, "/pick_directory", (r, w) => {
+  router.add_handler(Get, "/files/directories/pick", (r, w) => {
     self.runtime.handle_pick_directory(r, w)
   })
-  router.add_handler(Post, "/pick_directory", (r, w) => {
+  router.add_handler(Post, "/files/directories/pick", (r, w) => {
     self.runtime.handle_pick_directory(r, w)
   })
   router.add_handler(Get, "/runtime/open-external", (r, w) => {
@@ -217,13 +217,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Get, "/runtime/lightweight-mode", (_, w) => {
     self.config.handle_is_lightweight_mode(w)
   })
-  router.add_handler(Post, "/save_file_dialog", (r, w) => {
+  router.add_handler(Post, "/files/dialogs/save", (r, w) => {
     self.workspace.handle_save_file_dialog(r, w)
   })
-  router.add_handler(Get, "/save_file_dialog", (r, w) => {
+  router.add_handler(Get, "/files/dialogs/save", (r, w) => {
     self.workspace.handle_save_file_dialog(r, w)
   })
-  router.add_handler(Post, "/export_config_to_file", (r, w) => {
+  router.add_handler(Post, "/config/files/export", (r, w) => {
     self.config.handle_export_config_to_file(
       self.proxy,
       host=self.host,
@@ -232,7 +232,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       w,
     )
   })
-  router.add_handler(Get, "/export_config_to_file", (r, w) => {
+  router.add_handler(Get, "/config/files/export", (r, w) => {
     self.config.handle_export_config_to_file(
       self.proxy,
       host=self.host,
@@ -241,7 +241,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       w,
     )
   })
-  router.add_handler(Post, "/import_config_from_file", (r, w) => {
+  router.add_handler(Post, "/config/files/import", (r, w) => {
     self.config.handle_import_config_from_file(
       self.proxy,
       host=self.host,
@@ -250,7 +250,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       w,
     )
   })
-  router.add_handler(Get, "/import_config_from_file", (r, w) => {
+  router.add_handler(Get, "/config/files/import", (r, w) => {
     self.config.handle_import_config_from_file(
       self.proxy,
       host=self.host,
@@ -259,7 +259,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       w,
     )
   })
-  router.add_handler(Post, "/create_db_backup", (_, w) => {
+  router.add_handler(Post, "/backups/db", (_, w) => {
     self.config.handle_create_db_backup(
       self.proxy,
       host=self.host,
@@ -267,43 +267,43 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       w,
     )
   })
-  router.add_handler(Get, "/list_db_backups", (_, w) => {
+  router.add_handler(Get, "/backups/db", (_, w) => {
     self.config.handle_list_db_backups(w)
   })
-  router.add_handler(Post, "/restore_db_backup", (r, w) => {
+  router.add_handler(Post, "/backups/db/restore", (r, w) => {
     self.config.handle_restore_db_backup(self.proxy, r, w)
   })
-  router.add_handler(Post, "/rename_db_backup", (r, w) => {
+  router.add_handler(Post, "/backups/db/rename", (r, w) => {
     self.config.handle_rename_db_backup(r, w)
   })
-  router.add_handler(Delete, "/delete_db_backup", (r, w) => {
+  router.add_handler(Delete, "/backups/db/delete", (r, w) => {
     self.config.handle_delete_db_backup(r, w)
   })
-  router.add_handler(Post, "/delete_db_backup", (r, w) => {
+  router.add_handler(Post, "/backups/db/delete", (r, w) => {
     self.config.handle_delete_db_backup(r, w)
   })
-  router.add_handler(Post, "/parse_deeplink", (r, w) => {
+  router.add_handler(Post, "/deeplinks/parse", (r, w) => {
     self.config.handle_parse_deeplink(r, w)
   })
-  router.add_handler(Get, "/parse_deeplink", (r, w) => {
+  router.add_handler(Get, "/deeplinks/parse", (r, w) => {
     self.config.handle_parse_deeplink(r, w)
   })
-  router.add_handler(Post, "/merge_deeplink_config", (r, w) => {
+  router.add_handler(Post, "/deeplinks/merge", (r, w) => {
     self.config.handle_merge_deeplink_config(r, w)
   })
-  router.add_handler(Get, "/merge_deeplink_config", (r, w) => {
+  router.add_handler(Get, "/deeplinks/merge", (r, w) => {
     self.config.handle_merge_deeplink_config(r, w)
   })
-  router.add_handler(Post, "/import_from_deeplink", (r, w) => {
+  router.add_handler(Post, "/deeplinks/import", (r, w) => {
     self.config.handle_import_from_deeplink(self.proxy, r, w, legacy=true)
   })
-  router.add_handler(Post, "/import_from_deeplink_unified", (r, w) => {
+  router.add_handler(Post, "/deeplinks/import-unified", (r, w) => {
     self.config.handle_import_from_deeplink(self.proxy, r, w, legacy=false)
   })
-  router.add_handler(Post, "/webdav_test_connection", (r, w) => {
+  router.add_handler(Post, "/sync/webdav/test", (r, w) => {
     self.config.handle_webdav_test_connection(r, w)
   })
-  router.add_handler(Post, "/webdav_sync_upload", (_, w) => {
+  router.add_handler(Post, "/sync/webdav/upload", (_, w) => {
     self.config.handle_webdav_sync_operation(
       self.proxy,
       host=self.host,
@@ -312,7 +312,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       "upload",
     )
   })
-  router.add_handler(Post, "/webdav_sync_download", (_, w) => {
+  router.add_handler(Post, "/sync/webdav/download", (_, w) => {
     self.config.handle_webdav_sync_operation(
       self.proxy,
       host=self.host,
@@ -321,16 +321,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       "download",
     )
   })
-  router.add_handler(Post, "/webdav_sync_save_settings", (r, w) => {
+  router.add_handler(Post, "/sync/webdav/settings", (r, w) => {
     self.config.handle_webdav_sync_save_settings(r, w)
   })
-  router.add_handler(Get, "/webdav_sync_fetch_remote_info", (_, w) => {
+  router.add_handler(Get, "/sync/webdav/remote-info", (_, w) => {
     self.config.handle_webdav_sync_fetch_remote_info(w)
   })
-  router.add_handler(Post, "/s3_test_connection", (r, w) => {
+  router.add_handler(Post, "/sync/s3/test", (r, w) => {
     self.config.handle_s3_test_connection(r, w)
   })
-  router.add_handler(Post, "/s3_sync_upload", (_, w) => {
+  router.add_handler(Post, "/sync/s3/upload", (_, w) => {
     self.config.handle_s3_sync_operation(
       self.proxy,
       host=self.host,
@@ -339,7 +339,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       "upload",
     )
   })
-  router.add_handler(Post, "/s3_sync_download", (_, w) => {
+  router.add_handler(Post, "/sync/s3/download", (_, w) => {
     self.config.handle_s3_sync_operation(
       self.proxy,
       host=self.host,
@@ -348,52 +348,52 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       "download",
     )
   })
-  router.add_handler(Post, "/s3_sync_save_settings", (r, w) => {
+  router.add_handler(Post, "/sync/s3/settings", (r, w) => {
     self.config.handle_s3_sync_save_settings(r, w)
   })
-  router.add_handler(Get, "/s3_sync_fetch_remote_info", (_, w) => {
+  router.add_handler(Get, "/sync/s3/remote-info", (_, w) => {
     self.config.handle_s3_sync_fetch_remote_info(w)
   })
-  router.add_handler(Get, "/read_omo_local_file", (_, w) => {
+  router.add_handler(Get, "/providers/omo/file", (_, w) => {
     self.workspace.handle_read_omo_local_file(w, slim=false)
   })
-  router.add_handler(Post, "/read_omo_local_file", (_, w) => {
+  router.add_handler(Post, "/providers/omo/file", (_, w) => {
     self.workspace.handle_read_omo_local_file(w, slim=false)
   })
-  router.add_handler(Get, "/get_current_omo_provider_id", (_, w) => {
+  router.add_handler(Get, "/providers/omo/current", (_, w) => {
     self.proxy.handle_get_current_omo_provider_id(w, slim=false)
   })
-  router.add_handler(Post, "/get_current_omo_provider_id", (_, w) => {
+  router.add_handler(Post, "/providers/omo/current", (_, w) => {
     self.proxy.handle_get_current_omo_provider_id(w, slim=false)
   })
-  router.add_handler(Post, "/disable_current_omo", (_, w) => {
+  router.add_handler(Post, "/providers/omo/disable", (_, w) => {
     self.proxy.handle_disable_current_omo(w, slim=false)
   })
-  router.add_handler(Get, "/read_omo_slim_local_file", (_, w) => {
+  router.add_handler(Get, "/providers/omo-slim/file", (_, w) => {
     self.workspace.handle_read_omo_local_file(w, slim=true)
   })
-  router.add_handler(Post, "/read_omo_slim_local_file", (_, w) => {
+  router.add_handler(Post, "/providers/omo-slim/file", (_, w) => {
     self.workspace.handle_read_omo_local_file(w, slim=true)
   })
-  router.add_handler(Get, "/get_current_omo_slim_provider_id", (_, w) => {
+  router.add_handler(Get, "/providers/omo-slim/current", (_, w) => {
     self.proxy.handle_get_current_omo_provider_id(w, slim=true)
   })
-  router.add_handler(Post, "/get_current_omo_slim_provider_id", (_, w) => {
+  router.add_handler(Post, "/providers/omo-slim/current", (_, w) => {
     self.proxy.handle_get_current_omo_provider_id(w, slim=true)
   })
-  router.add_handler(Post, "/disable_current_omo_slim", (_, w) => {
+  router.add_handler(Post, "/providers/omo-slim/disable", (_, w) => {
     self.proxy.handle_disable_current_omo(w, slim=true)
   })
-  router.add_handler(Post, "/open_file_dialog", (_, w) => {
+  router.add_handler(Post, "/files/dialogs/open", (_, w) => {
     self.workspace.handle_open_file_dialog(w)
   })
-  router.add_handler(Get, "/open_file_dialog", (_, w) => {
+  router.add_handler(Get, "/files/dialogs/open", (_, w) => {
     self.workspace.handle_open_file_dialog(w)
   })
-  router.add_handler(Post, "/open_zip_file_dialog", (_, w) => {
+  router.add_handler(Post, "/files/dialogs/open-zip", (_, w) => {
     self.workspace.handle_open_zip_file_dialog(w)
   })
-  router.add_handler(Get, "/open_zip_file_dialog", (_, w) => {
+  router.add_handler(Get, "/files/dialogs/open-zip", (_, w) => {
     self.workspace.handle_open_zip_file_dialog(w)
   })
   router.add_handler(Get, "/skills/installed", (_, w) => {
@@ -769,17 +769,16 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/providers/terminal", (r, w) => {
     self.proxy.handle_open_provider_terminal(r, w)
   })
-  router.add_handler(Get, "/get_claude_desktop_status", (_, w) => {
+  router.add_handler(Get, "/providers/claude-desktop/status", (_, w) => {
     self.proxy.handle_get_claude_desktop_status(self.host, self.port, w)
   })
-  router.add_handler(Get, "/get_claude_desktop_default_routes", (_, w) => {
+  router.add_handler(Get, "/providers/claude-desktop/default-routes", (_, w) => {
     self.proxy.handle_get_claude_desktop_default_routes(w)
   })
-  router.add_handler(Post, "/import_claude_desktop_providers_from_claude", (
-    _,
-    w,
-  ) => self.proxy.handle_import_claude_desktop_providers_from_claude(w))
-  router.add_handler(Post, "/ensure_claude_desktop_official_provider", (_, w) => {
+  router.add_handler(Post, "/providers/claude-desktop/import", (_, w) => {
+    self.proxy.handle_import_claude_desktop_providers_from_claude(w)
+  })
+  router.add_handler(Post, "/providers/claude-desktop/official", (_, w) => {
     self.proxy.handle_ensure_claude_desktop_official_provider(w)
   })
   router.add_handler(Get, "/providers/live-settings", (r, w) => {
@@ -788,61 +787,61 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/providers/live-settings", (r, w) => {
     self.proxy.handle_read_live_provider_settings(r, w)
   })
-  router.add_handler(Get, "/get_claude_plugin_status", (_, w) => {
+  router.add_handler(Get, "/plugin/claude/status", (_, w) => {
     self.config.handle_get_claude_plugin_status(w)
   })
-  router.add_handler(Get, "/read_claude_plugin_config", (_, w) => {
+  router.add_handler(Get, "/plugin/claude/config", (_, w) => {
     self.config.handle_read_claude_plugin_config(w)
   })
-  router.add_handler(Post, "/apply_claude_plugin_config", (r, w) => {
+  router.add_handler(Post, "/plugin/claude/config", (r, w) => {
     self.config.handle_apply_claude_plugin_config(r, w)
   })
-  router.add_handler(Get, "/is_claude_plugin_applied", (_, w) => {
+  router.add_handler(Get, "/plugin/claude/applied", (_, w) => {
     self.config.handle_is_claude_plugin_applied(w)
   })
-  router.add_handler(Post, "/apply_claude_onboarding_skip", (_, w) => {
+  router.add_handler(Post, "/plugin/claude/onboarding-skip", (_, w) => {
     self.config.handle_apply_claude_onboarding_skip(w)
   })
-  router.add_handler(Post, "/clear_claude_onboarding_skip", (_, w) => {
+  router.add_handler(Post, "/plugin/claude/onboarding-skip/clear", (_, w) => {
     self.config.handle_clear_claude_onboarding_skip(w)
   })
-  router.add_handler(Get, "/list_daily_memory_files", (_, w) => {
+  router.add_handler(Get, "/workspace/memory", (_, w) => {
     self.workspace.handle_list_daily_memory_files(w)
   })
-  router.add_handler(Get, "/read_daily_memory_file", (r, w) => {
+  router.add_handler(Get, "/workspace/memory/file", (r, w) => {
     self.workspace.handle_read_daily_memory_file(r, w)
   })
-  router.add_handler(Post, "/read_daily_memory_file", (r, w) => {
+  router.add_handler(Post, "/workspace/memory/file", (r, w) => {
     self.workspace.handle_read_daily_memory_file(r, w)
   })
-  router.add_handler(Post, "/write_daily_memory_file", (r, w) => {
+  router.add_handler(Post, "/workspace/memory/write", (r, w) => {
     self.workspace.handle_write_daily_memory_file(r, w)
   })
-  router.add_handler(Get, "/search_daily_memory_files", (r, w) => {
+  router.add_handler(Get, "/workspace/memory/search", (r, w) => {
     self.workspace.handle_search_daily_memory_files(r, w)
   })
-  router.add_handler(Post, "/search_daily_memory_files", (r, w) => {
+  router.add_handler(Post, "/workspace/memory/search", (r, w) => {
     self.workspace.handle_search_daily_memory_files(r, w)
   })
-  router.add_handler(Delete, "/delete_daily_memory_file", (r, w) => {
+  router.add_handler(Delete, "/workspace/memory/file", (r, w) => {
     self.workspace.handle_delete_daily_memory_file(r, w)
   })
-  router.add_handler(Post, "/delete_daily_memory_file", (r, w) => {
+  router.add_handler(Post, "/workspace/memory/delete", (r, w) => {
     self.workspace.handle_delete_daily_memory_file(r, w)
   })
-  router.add_handler(Get, "/read_workspace_file", (r, w) => {
+  router.add_handler(Get, "/workspace/files", (r, w) => {
     self.workspace.handle_read_workspace_file(r, w)
   })
-  router.add_handler(Post, "/read_workspace_file", (r, w) => {
+  router.add_handler(Post, "/workspace/files/read", (r, w) => {
     self.workspace.handle_read_workspace_file(r, w)
   })
-  router.add_handler(Post, "/write_workspace_file", (r, w) => {
+  router.add_handler(Post, "/workspace/files", (r, w) => {
     self.workspace.handle_write_workspace_file(r, w)
   })
-  router.add_handler(Get, "/open_workspace_directory", (r, w) => {
+  router.add_handler(Get, "/workspace/open", (r, w) => {
     self.workspace.handle_open_workspace_directory(r, w)
   })
-  router.add_handler(Post, "/open_workspace_directory", (r, w) => {
+  router.add_handler(Post, "/workspace/open", (r, w) => {
     self.workspace.handle_open_workspace_directory(r, w)
   })
   router.add_handler(Get, "/providers/live-ids", (r, w) => {
@@ -1069,29 +1068,29 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/usage/sync-session", (r, w) => {
     self.usage.handle_usage_sync_session(r, w)
   })
-  router.add_handler(Get, "/list_sessions", (_, w) => {
+  router.add_handler(Get, "/sessions", (_, w) => {
     self.session.handle_list_sessions(w)
   })
-  router.add_handler(Post, "/list_sessions", (_, w) => {
+  router.add_handler(Post, "/sessions", (_, w) => {
     self.session.handle_list_sessions(w)
   })
-  router.add_handler(Get, "/get_session_messages", (r, w) => {
+  router.add_handler(Get, "/sessions/messages", (r, w) => {
     self.session.handle_get_session_messages(r, w)
   })
-  router.add_handler(Post, "/get_session_messages", (r, w) => {
+  router.add_handler(Post, "/sessions/messages", (r, w) => {
     self.session.handle_get_session_messages(r, w)
   })
-  router.add_handler(Post, "/launch_session_terminal", (r, w) => {
+  router.add_handler(Post, "/sessions/terminal", (r, w) => {
     self.session.handle_launch_session_terminal(
       r,
       w,
       moon_session_terminal_from_settings(self.config.app_settings),
     )
   })
-  router.add_handler(Post, "/delete_session", (r, w) => {
+  router.add_handler(Post, "/sessions/delete", (r, w) => {
     self.session.handle_delete_session(r, w)
   })
-  router.add_handler(Post, "/delete_sessions", (r, w) => {
+  router.add_handler(Post, "/sessions/delete-many", (r, w) => {
     self.session.handle_delete_sessions(r, w)
   })
   router.add_handler(Get, "/usage/model-pricing", (_, w) => {
@@ -1144,10 +1143,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Post, "/proxy/stream-check/config", (r, w) => {
     self.config.handle_save_stream_check_config(r, w)
   })
-  router.add_handler(Get, "/fetch_models_for_config", (r, w) => {
+  router.add_handler(Get, "/config/models", (r, w) => {
     self.config.handle_fetch_models_for_config(r, w)
   })
-  router.add_handler(Post, "/fetch_models_for_config", (r, w) => {
+  router.add_handler(Post, "/config/models", (r, w) => {
     self.config.handle_fetch_models_for_config(r, w)
   })
   router.add_handler(Get, "/auth/login", (r, w) => {

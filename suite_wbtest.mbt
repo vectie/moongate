@@ -55,7 +55,7 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_eq(
     obj["config_status_url"],
-    Json::string("http://127.0.0.1:15721/get_config_status"),
+    Json::string("http://127.0.0.1:15721/config/status"),
   )
   assert_eq(obj["usage_store_dir"], Json::string(default_moonstat_stats_dir()))
   assert_eq(
@@ -161,50 +161,42 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_true(routes.contains(Json::string("GET|POST /runtime/open-external")))
   assert_true(routes.contains(Json::string("GET /runtime/lightweight-mode")))
-  assert_true(routes.contains(Json::string("GET|POST /export_config_to_file")))
+  assert_true(routes.contains(Json::string("GET|POST /config/files/export")))
+  assert_true(routes.contains(Json::string("GET|POST /config/files/import")))
+  assert_true(routes.contains(Json::string("POST /backups/db")))
+  assert_true(routes.contains(Json::string("GET /backups/db")))
+  assert_true(routes.contains(Json::string("POST /backups/db/restore")))
+  assert_true(routes.contains(Json::string("POST /backups/db/rename")))
+  assert_true(routes.contains(Json::string("DELETE|POST /backups/db/delete")))
+  assert_true(routes.contains(Json::string("GET|POST /deeplinks/parse")))
+  assert_true(routes.contains(Json::string("GET|POST /deeplinks/merge")))
+  assert_true(routes.contains(Json::string("POST /deeplinks/import")))
+  assert_true(routes.contains(Json::string("POST /deeplinks/import-unified")))
+  assert_true(routes.contains(Json::string("POST /sync/webdav/test")))
+  assert_true(routes.contains(Json::string("POST /sync/webdav/upload")))
+  assert_true(routes.contains(Json::string("POST /sync/webdav/download")))
+  assert_true(routes.contains(Json::string("POST /sync/webdav/settings")))
+  assert_true(routes.contains(Json::string("GET /sync/webdav/remote-info")))
+  assert_true(routes.contains(Json::string("POST /sync/s3/test")))
+  assert_true(routes.contains(Json::string("POST /sync/s3/upload")))
+  assert_true(routes.contains(Json::string("POST /sync/s3/download")))
+  assert_true(routes.contains(Json::string("POST /sync/s3/settings")))
+  assert_true(routes.contains(Json::string("GET /sync/s3/remote-info")))
+  assert_true(routes.contains(Json::string("GET|POST /sessions")))
+  assert_true(routes.contains(Json::string("GET|POST /sessions/messages")))
+  assert_true(routes.contains(Json::string("POST /sessions/terminal")))
+  assert_true(routes.contains(Json::string("POST /sessions/delete")))
+  assert_true(routes.contains(Json::string("POST /sessions/delete-many")))
+  assert_true(routes.contains(Json::string("GET|POST /providers/omo/file")))
+  assert_true(routes.contains(Json::string("GET|POST /providers/omo/current")))
+  assert_true(routes.contains(Json::string("POST /providers/omo/disable")))
   assert_true(
-    routes.contains(Json::string("GET|POST /import_config_from_file")),
-  )
-  assert_true(routes.contains(Json::string("POST /create_db_backup")))
-  assert_true(routes.contains(Json::string("GET /list_db_backups")))
-  assert_true(routes.contains(Json::string("POST /restore_db_backup")))
-  assert_true(routes.contains(Json::string("POST /rename_db_backup")))
-  assert_true(routes.contains(Json::string("DELETE|POST /delete_db_backup")))
-  assert_true(routes.contains(Json::string("GET|POST /parse_deeplink")))
-  assert_true(routes.contains(Json::string("GET|POST /merge_deeplink_config")))
-  assert_true(routes.contains(Json::string("POST /import_from_deeplink")))
-  assert_true(
-    routes.contains(Json::string("POST /import_from_deeplink_unified")),
-  )
-  assert_true(routes.contains(Json::string("POST /webdav_test_connection")))
-  assert_true(routes.contains(Json::string("POST /webdav_sync_upload")))
-  assert_true(routes.contains(Json::string("POST /webdav_sync_download")))
-  assert_true(routes.contains(Json::string("POST /webdav_sync_save_settings")))
-  assert_true(
-    routes.contains(Json::string("GET /webdav_sync_fetch_remote_info")),
-  )
-  assert_true(routes.contains(Json::string("POST /s3_test_connection")))
-  assert_true(routes.contains(Json::string("POST /s3_sync_upload")))
-  assert_true(routes.contains(Json::string("POST /s3_sync_download")))
-  assert_true(routes.contains(Json::string("POST /s3_sync_save_settings")))
-  assert_true(routes.contains(Json::string("GET /s3_sync_fetch_remote_info")))
-  assert_true(routes.contains(Json::string("GET|POST /list_sessions")))
-  assert_true(routes.contains(Json::string("GET|POST /get_session_messages")))
-  assert_true(routes.contains(Json::string("POST /launch_session_terminal")))
-  assert_true(routes.contains(Json::string("POST /delete_session")))
-  assert_true(routes.contains(Json::string("POST /delete_sessions")))
-  assert_true(routes.contains(Json::string("GET|POST /read_omo_local_file")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /get_current_omo_provider_id")),
-  )
-  assert_true(routes.contains(Json::string("POST /disable_current_omo")))
-  assert_true(
-    routes.contains(Json::string("GET|POST /read_omo_slim_local_file")),
+    routes.contains(Json::string("GET|POST /providers/omo-slim/file")),
   )
   assert_true(
-    routes.contains(Json::string("GET|POST /get_current_omo_slim_provider_id")),
+    routes.contains(Json::string("GET|POST /providers/omo-slim/current")),
   )
-  assert_true(routes.contains(Json::string("POST /disable_current_omo_slim")))
+  assert_true(routes.contains(Json::string("POST /providers/omo-slim/disable")))
   assert_true(routes.contains(Json::string("GET /skills/installed")))
   assert_true(routes.contains(Json::string("GET /skills/backups")))
   assert_true(routes.contains(Json::string("POST /skills/install-unified")))
@@ -264,9 +256,11 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("DELETE /providers/endpoints")))
   assert_true(routes.contains(Json::string("POST /providers/endpoints/remove")))
   assert_true(routes.contains(Json::string("POST /providers/endpoints/touch")))
-  assert_true(routes.contains(Json::string("GET /get_claude_config_status")))
-  assert_true(routes.contains(Json::string("GET|POST /get_config_status")))
-  assert_true(routes.contains(Json::string("GET /get_claude_desktop_status")))
+  assert_true(routes.contains(Json::string("GET /config/claude/status")))
+  assert_true(routes.contains(Json::string("GET|POST /config/status")))
+  assert_true(
+    routes.contains(Json::string("GET /providers/claude-desktop/status")),
+  )
   let control_routes = [
     "GET /proxy/status", "POST /proxy/start", "POST /proxy/stop", "POST /proxy/stop-with-restore",
     "GET|POST /proxy/config", "GET|POST /proxy/global-config", "GET|POST /proxy/app-config",
@@ -284,7 +278,7 @@ test "suite manifest publishes moonstat service contract" {
     "POST /openclaw/default-model", "GET /hermes/model-config", "GET /hermes/memory",
     "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
     "POST /providers/universal", "DELETE /providers/universal", "GET|POST /providers/test-endpoints",
-    "GET|POST /fetch_models_for_config",
+    "GET|POST /config/models",
   ]
   for route in control_routes {
     assert_true(routes.contains(Json::string(route)))
@@ -496,7 +490,7 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_eq(
     moondesk["config_status_url"],
-    Json::string("http://127.0.0.1:15721/get_config_status"),
+    Json::string("http://127.0.0.1:15721/config/status"),
   )
   guard moondesk["adapter_packages"] is Array(moondesk_adapters) else {
     fail("expected moondesk adapters")
@@ -618,7 +612,7 @@ fn moon_tauri_command_surface() -> Array[String] {
 }
 
 ///|
-test "suite manifest covers current Moonstat command surface" {
+test "suite manifest omits legacy Moonstat command route surface" {
   let manifest = moonstat_suite_manifest_json(
     host="127.0.0.1",
     port=15721,
@@ -629,7 +623,7 @@ test "suite manifest covers current Moonstat command surface" {
   let moon_commands = moon_tauri_command_surface()
   assert_eq(moon_commands.length(), 60)
   for command in moon_commands {
-    assert_true(suite_routes_include_path(routes, "/\{command}"))
+    assert_false(suite_routes_include_path(routes, "/\{command}"))
   }
 }
 
@@ -645,12 +639,12 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 }
 
 ///|
-async test "gateway registers current Moonstat command handlers" {
+async test "gateway omits legacy Moonstat command route handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let moon_commands = moon_tauri_command_surface()
   assert_eq(moon_commands.length(), 60)
   for command in moon_commands {
-    assert_true(gateway_source_registers_path(source, "/\{command}"))
+    assert_false(gateway_source_registers_path(source, "/\{command}"))
   }
 }
 
@@ -697,7 +691,7 @@ async test "suite status writes discovery file" {
     )
     assert_eq(
       obj["config_status_url"],
-      Json::string("http://127.0.0.1:17000/get_config_status"),
+      Json::string("http://127.0.0.1:17000/config/status"),
     )
     assert_eq(
       obj["usage_request_logs_file"],

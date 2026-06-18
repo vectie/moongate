@@ -260,8 +260,8 @@ fn workspace_subdir_path(args : Array[String], base_path : String) -> String {
 ///|
 fn save_file_dialog_path(args : Array[String]) -> String {
   match parse_string_arg_any(args, "--default-name", "--defaultName") {
-    Some(name) => "/save_file_dialog?\{cli_query_pair("defaultName", name)}"
-    None => "/save_file_dialog"
+    Some(name) => "/files/dialogs/save?\{cli_query_pair("defaultName", name)}"
+    None => "/files/dialogs/save"
   }
 }
 

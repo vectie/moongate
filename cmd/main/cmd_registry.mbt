@@ -182,25 +182,19 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "import_default_config", patterns: ["proxy import-default-config"] },
     {
       id: "get_claude_desktop_status",
-      patterns: ["get_claude_desktop_status", "get-claude-desktop-status"],
+      patterns: ["providers claude-desktop status"],
     },
     {
       id: "get_claude_desktop_default_routes",
-      patterns: [
-        "get_claude_desktop_default_routes", "get-claude-desktop-default-routes",
-      ],
+      patterns: ["providers claude-desktop default-routes"],
     },
     {
       id: "import_claude_desktop_providers_from_claude",
-      patterns: [
-        "import_claude_desktop_providers_from_claude", "import-claude-desktop-providers-from-claude",
-      ],
+      patterns: ["providers claude-desktop import"],
     },
     {
       id: "ensure_claude_desktop_official_provider",
-      patterns: [
-        "ensure_claude_desktop_official_provider", "ensure-claude-desktop-official-provider",
-      ],
+      patterns: ["providers claude-desktop official"],
     },
     {
       id: "provider_live_ids",
@@ -291,12 +285,7 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
       id: "update_endpoint_last_used",
       patterns: ["provider endpoints touch", "providers endpoints touch"],
     },
-    {
-      id: "fetch_models",
-      patterns: [
-        "models fetch", "fetch_models_for_config", "fetch-models-for-config",
-      ],
-    },
+    { id: "fetch_models", patterns: ["models fetch"] },
     { id: "model_candidates", patterns: ["models candidates"] },
     { id: "scan_openclaw_config_health", patterns: ["openclaw config-health"] },
     {
@@ -328,24 +317,12 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "set_hermes_memory_enabled", patterns: ["hermes memory-enabled set"] },
     { id: "open_hermes_web_ui", patterns: ["hermes web-ui"] },
     { id: "launch_hermes_dashboard", patterns: ["hermes dashboard"] },
-    {
-      id: "get_claude_config_status",
-      patterns: ["get_claude_config_status", "get-claude-config-status"],
-    },
-    {
-      id: "get_config_status",
-      patterns: ["get_config_status", "get-config-status"],
-    },
-    {
-      id: "get_claude_code_config_path",
-      patterns: ["get_claude_code_config_path", "get-claude-code-config-path"],
-    },
-    { id: "get_config_dir", patterns: ["get_config_dir", "get-config-dir"] },
-    {
-      id: "open_config_folder",
-      patterns: ["open_config_folder", "open-config-folder"],
-    },
-    { id: "pick_directory", patterns: ["pick_directory", "pick-directory"] },
+    { id: "get_claude_config_status", patterns: ["config claude status"] },
+    { id: "get_config_status", patterns: ["config status"] },
+    { id: "get_claude_code_config_path", patterns: ["config claude-code path"] },
+    { id: "get_config_dir", patterns: ["config dir"] },
+    { id: "open_config_folder", patterns: ["config folder open"] },
+    { id: "pick_directory", patterns: ["files directory pick"] },
     { id: "open_external", patterns: ["runtime open-external"] },
     { id: "copy_text_to_clipboard", patterns: ["runtime copy-text"] },
     { id: "check_for_updates", patterns: ["runtime updates check"] },
@@ -364,131 +341,49 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "enter_lightweight_mode", patterns: ["runtime lightweight enter"] },
     { id: "exit_lightweight_mode", patterns: ["runtime lightweight exit"] },
     { id: "is_lightweight_mode", patterns: ["runtime lightweight status"] },
-    {
-      id: "save_file_dialog",
-      patterns: ["save_file_dialog", "save-file-dialog"],
-    },
-    {
-      id: "webdav_test_connection",
-      patterns: ["webdav_test_connection", "webdav-test-connection"],
-    },
-    {
-      id: "webdav_sync_upload",
-      patterns: ["webdav_sync_upload", "webdav-sync-upload"],
-    },
-    {
-      id: "webdav_sync_download",
-      patterns: ["webdav_sync_download", "webdav-sync-download"],
-    },
-    {
-      id: "webdav_sync_save_settings",
-      patterns: ["webdav_sync_save_settings", "webdav-sync-save-settings"],
-    },
+    { id: "save_file_dialog", patterns: ["files save-dialog"] },
+    { id: "webdav_test_connection", patterns: ["sync webdav test"] },
+    { id: "webdav_sync_upload", patterns: ["sync webdav upload"] },
+    { id: "webdav_sync_download", patterns: ["sync webdav download"] },
+    { id: "webdav_sync_save_settings", patterns: ["sync webdav settings"] },
     {
       id: "webdav_sync_fetch_remote_info",
-      patterns: [
-        "webdav_sync_fetch_remote_info", "webdav-sync-fetch-remote-info",
-      ],
+      patterns: ["sync webdav remote-info"],
     },
-    {
-      id: "s3_test_connection",
-      patterns: ["s3_test_connection", "s3-test-connection"],
-    },
-    { id: "s3_sync_upload", patterns: ["s3_sync_upload", "s3-sync-upload"] },
-    {
-      id: "s3_sync_download",
-      patterns: ["s3_sync_download", "s3-sync-download"],
-    },
-    {
-      id: "s3_sync_save_settings",
-      patterns: ["s3_sync_save_settings", "s3-sync-save-settings"],
-    },
-    {
-      id: "s3_sync_fetch_remote_info",
-      patterns: ["s3_sync_fetch_remote_info", "s3-sync-fetch-remote-info"],
-    },
-    { id: "list_sessions", patterns: ["list_sessions", "list-sessions"] },
-    {
-      id: "get_session_messages",
-      patterns: ["get_session_messages", "get-session-messages"],
-    },
-    {
-      id: "launch_session_terminal",
-      patterns: ["launch_session_terminal", "launch-session-terminal"],
-    },
-    { id: "delete_session", patterns: ["delete_session", "delete-session"] },
-    { id: "delete_sessions", patterns: ["delete_sessions", "delete-sessions"] },
-    {
-      id: "read_omo_local_file",
-      patterns: ["read_omo_local_file", "read-omo-local-file"],
-    },
-    {
-      id: "get_current_omo_provider_id",
-      patterns: ["get_current_omo_provider_id", "get-current-omo-provider-id"],
-    },
-    {
-      id: "disable_current_omo",
-      patterns: ["disable_current_omo", "disable-current-omo"],
-    },
-    {
-      id: "read_omo_slim_local_file",
-      patterns: ["read_omo_slim_local_file", "read-omo-slim-local-file"],
-    },
+    { id: "s3_test_connection", patterns: ["sync s3 test"] },
+    { id: "s3_sync_upload", patterns: ["sync s3 upload"] },
+    { id: "s3_sync_download", patterns: ["sync s3 download"] },
+    { id: "s3_sync_save_settings", patterns: ["sync s3 settings"] },
+    { id: "s3_sync_fetch_remote_info", patterns: ["sync s3 remote-info"] },
+    { id: "list_sessions", patterns: ["sessions list"] },
+    { id: "get_session_messages", patterns: ["sessions messages"] },
+    { id: "launch_session_terminal", patterns: ["sessions terminal"] },
+    { id: "delete_session", patterns: ["sessions delete"] },
+    { id: "delete_sessions", patterns: ["sessions delete-many"] },
+    { id: "read_omo_local_file", patterns: ["providers omo file"] },
+    { id: "get_current_omo_provider_id", patterns: ["providers omo current"] },
+    { id: "disable_current_omo", patterns: ["providers omo disable"] },
+    { id: "read_omo_slim_local_file", patterns: ["providers omo-slim file"] },
     {
       id: "get_current_omo_slim_provider_id",
-      patterns: [
-        "get_current_omo_slim_provider_id", "get-current-omo-slim-provider-id",
-      ],
+      patterns: ["providers omo-slim current"],
     },
-    {
-      id: "disable_current_omo_slim",
-      patterns: ["disable_current_omo_slim", "disable-current-omo-slim"],
-    },
-    {
-      id: "open_file_dialog",
-      patterns: ["open_file_dialog", "open-file-dialog"],
-    },
-    {
-      id: "open_zip_file_dialog",
-      patterns: ["open_zip_file_dialog", "open-zip-file-dialog"],
-    },
-    {
-      id: "export_config_to_file",
-      patterns: ["export_config_to_file", "export-config-to-file"],
-    },
-    {
-      id: "import_config_from_file",
-      patterns: ["import_config_from_file", "import-config-from-file"],
-    },
-    {
-      id: "create_db_backup",
-      patterns: ["create_db_backup", "create-db-backup"],
-    },
-    { id: "list_db_backups", patterns: ["list_db_backups", "list-db-backups"] },
-    {
-      id: "restore_db_backup",
-      patterns: ["restore_db_backup", "restore-db-backup"],
-    },
-    {
-      id: "rename_db_backup",
-      patterns: ["rename_db_backup", "rename-db-backup"],
-    },
-    {
-      id: "delete_db_backup",
-      patterns: ["delete_db_backup", "delete-db-backup"],
-    },
-    { id: "parse_deeplink", patterns: ["parse_deeplink", "parse-deeplink"] },
-    {
-      id: "merge_deeplink_config",
-      patterns: ["merge_deeplink_config", "merge-deeplink-config"],
-    },
-    {
-      id: "import_from_deeplink",
-      patterns: ["import_from_deeplink", "import-from-deeplink"],
-    },
+    { id: "disable_current_omo_slim", patterns: ["providers omo-slim disable"] },
+    { id: "open_file_dialog", patterns: ["files open-dialog"] },
+    { id: "open_zip_file_dialog", patterns: ["files open-zip-dialog"] },
+    { id: "export_config_to_file", patterns: ["config file export"] },
+    { id: "import_config_from_file", patterns: ["config file import"] },
+    { id: "create_db_backup", patterns: ["backups db create"] },
+    { id: "list_db_backups", patterns: ["backups db list"] },
+    { id: "restore_db_backup", patterns: ["backups db restore"] },
+    { id: "rename_db_backup", patterns: ["backups db rename"] },
+    { id: "delete_db_backup", patterns: ["backups db delete"] },
+    { id: "parse_deeplink", patterns: ["deeplink parse"] },
+    { id: "merge_deeplink_config", patterns: ["deeplink merge"] },
+    { id: "import_from_deeplink", patterns: ["deeplink import"] },
     {
       id: "import_from_deeplink_unified",
-      patterns: ["import_from_deeplink_unified", "import-from-deeplink-unified"],
+      patterns: ["deeplink import-unified"],
     },
     { id: "get_settings", patterns: ["settings get"] },
     { id: "save_settings", patterns: ["settings save"] },
@@ -518,88 +413,26 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     },
     { id: "set_log_config", patterns: ["settings log set"] },
     { id: "get_log_config", patterns: ["settings log"] },
-    {
-      id: "get_claude_plugin_status",
-      patterns: [
-        "plugin claude status", "get_claude_plugin_status", "get-claude-plugin-status",
-      ],
-    },
-    {
-      id: "read_claude_plugin_config",
-      patterns: [
-        "plugin claude config", "read_claude_plugin_config", "read-claude-plugin-config",
-      ],
-    },
-    {
-      id: "apply_claude_plugin_config",
-      patterns: [
-        "plugin claude apply", "apply_claude_plugin_config", "apply-claude-plugin-config",
-      ],
-    },
-    {
-      id: "is_claude_plugin_applied",
-      patterns: [
-        "plugin claude applied", "is_claude_plugin_applied", "is-claude-plugin-applied",
-      ],
-    },
+    { id: "get_claude_plugin_status", patterns: ["plugin claude status"] },
+    { id: "read_claude_plugin_config", patterns: ["plugin claude config"] },
+    { id: "apply_claude_plugin_config", patterns: ["plugin claude apply"] },
+    { id: "is_claude_plugin_applied", patterns: ["plugin claude applied"] },
     {
       id: "apply_claude_onboarding_skip",
-      patterns: [
-        "plugin claude onboarding-skip", "apply_claude_onboarding_skip", "apply-claude-onboarding-skip",
-      ],
+      patterns: ["plugin claude onboarding-skip"],
     },
     {
       id: "clear_claude_onboarding_skip",
-      patterns: [
-        "plugin claude onboarding-clear", "clear_claude_onboarding_skip", "clear-claude-onboarding-skip",
-      ],
+      patterns: ["plugin claude onboarding-clear"],
     },
-    {
-      id: "list_daily_memory_files",
-      patterns: [
-        "workspace memory list", "list_daily_memory_files", "list-daily-memory-files",
-      ],
-    },
-    {
-      id: "read_daily_memory_file",
-      patterns: [
-        "workspace memory read", "read_daily_memory_file", "read-daily-memory-file",
-      ],
-    },
-    {
-      id: "write_daily_memory_file",
-      patterns: [
-        "workspace memory write", "write_daily_memory_file", "write-daily-memory-file",
-      ],
-    },
-    {
-      id: "search_daily_memory_files",
-      patterns: [
-        "workspace memory search", "search_daily_memory_files", "search-daily-memory-files",
-      ],
-    },
-    {
-      id: "delete_daily_memory_file",
-      patterns: [
-        "workspace memory delete", "delete_daily_memory_file", "delete-daily-memory-file",
-      ],
-    },
-    {
-      id: "read_workspace_file",
-      patterns: ["workspace read", "read_workspace_file", "read-workspace-file"],
-    },
-    {
-      id: "write_workspace_file",
-      patterns: [
-        "workspace write", "write_workspace_file", "write-workspace-file",
-      ],
-    },
-    {
-      id: "open_workspace_directory",
-      patterns: [
-        "workspace open", "open_workspace_directory", "open-workspace-directory",
-      ],
-    },
+    { id: "list_daily_memory_files", patterns: ["workspace memory list"] },
+    { id: "read_daily_memory_file", patterns: ["workspace memory read"] },
+    { id: "write_daily_memory_file", patterns: ["workspace memory write"] },
+    { id: "search_daily_memory_files", patterns: ["workspace memory search"] },
+    { id: "delete_daily_memory_file", patterns: ["workspace memory delete"] },
+    { id: "read_workspace_file", patterns: ["workspace read"] },
+    { id: "write_workspace_file", patterns: ["workspace write"] },
+    { id: "open_workspace_directory", patterns: ["workspace open"] },
     { id: "get_claude_mcp_status", patterns: ["mcp status"] },
     { id: "read_claude_mcp_config", patterns: ["mcp read-config"] },
     { id: "upsert_claude_mcp_server", patterns: ["mcp claude upsert"] },
@@ -1065,22 +898,22 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_claude_desktop_status") => {
-      check_usage_endpoint(args, "/get_claude_desktop_status")
+      check_usage_endpoint(args, "/providers/claude-desktop/status")
       true
     }
     Some("get_claude_desktop_default_routes") => {
-      check_usage_endpoint(args, "/get_claude_desktop_default_routes")
+      check_usage_endpoint(args, "/providers/claude-desktop/default-routes")
       true
     }
     Some("import_claude_desktop_providers_from_claude") => {
       check_json_post_endpoint(
-        args, "/import_claude_desktop_providers_from_claude", "Provider",
+        args, "/providers/claude-desktop/import", "Provider",
       )
       true
     }
     Some("ensure_claude_desktop_official_provider") => {
       check_json_post_endpoint(
-        args, "/ensure_claude_desktop_official_provider", "Provider",
+        args, "/providers/claude-desktop/official", "Provider",
       )
       true
     }
@@ -1257,23 +1090,23 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_claude_config_status") => {
-      check_usage_endpoint(args, "/get_claude_config_status")
+      check_usage_endpoint(args, "/config/claude/status")
       true
     }
     Some("get_config_status") => {
-      check_usage_endpoint(args, config_app_path(args, "/get_config_status"))
+      check_usage_endpoint(args, config_app_path(args, "/config/status"))
       true
     }
     Some("get_claude_code_config_path") => {
-      check_usage_endpoint(args, "/get_claude_code_config_path")
+      check_usage_endpoint(args, "/config/claude-code/path")
       true
     }
     Some("get_config_dir") => {
-      check_usage_endpoint(args, config_app_path(args, "/get_config_dir"))
+      check_usage_endpoint(args, config_app_path(args, "/config/dir"))
       true
     }
     Some("open_config_folder") => {
-      check_usage_endpoint(args, config_app_path(args, "/open_config_folder"))
+      check_usage_endpoint(args, config_app_path(args, "/config/folder/open"))
       true
     }
     Some("pick_directory") => {
@@ -1351,61 +1184,61 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("webdav_test_connection") => {
       check_json_post_endpoint(
         args,
-        sync_settings_path(args, "/webdav_test_connection"),
+        sync_settings_path(args, "/sync/webdav/test"),
         "Sync",
       )
       true
     }
     Some("webdav_sync_upload") => {
-      check_json_post_endpoint(args, "/webdav_sync_upload", "Sync")
+      check_json_post_endpoint(args, "/sync/webdav/upload", "Sync")
       true
     }
     Some("webdav_sync_download") => {
-      check_json_post_endpoint(args, "/webdav_sync_download", "Sync")
+      check_json_post_endpoint(args, "/sync/webdav/download", "Sync")
       true
     }
     Some("webdav_sync_save_settings") => {
       check_json_post_endpoint(
         args,
-        sync_settings_path(args, "/webdav_sync_save_settings"),
+        sync_settings_path(args, "/sync/webdav/settings"),
         "Sync",
       )
       true
     }
     Some("webdav_sync_fetch_remote_info") => {
-      check_usage_endpoint(args, "/webdav_sync_fetch_remote_info")
+      check_usage_endpoint(args, "/sync/webdav/remote-info")
       true
     }
     Some("s3_test_connection") => {
       check_json_post_endpoint(
         args,
-        sync_settings_path(args, "/s3_test_connection"),
+        sync_settings_path(args, "/sync/s3/test"),
         "Sync",
       )
       true
     }
     Some("s3_sync_upload") => {
-      check_json_post_endpoint(args, "/s3_sync_upload", "Sync")
+      check_json_post_endpoint(args, "/sync/s3/upload", "Sync")
       true
     }
     Some("s3_sync_download") => {
-      check_json_post_endpoint(args, "/s3_sync_download", "Sync")
+      check_json_post_endpoint(args, "/sync/s3/download", "Sync")
       true
     }
     Some("s3_sync_save_settings") => {
       check_json_post_endpoint(
         args,
-        sync_settings_path(args, "/s3_sync_save_settings"),
+        sync_settings_path(args, "/sync/s3/settings"),
         "Sync",
       )
       true
     }
     Some("s3_sync_fetch_remote_info") => {
-      check_usage_endpoint(args, "/s3_sync_fetch_remote_info")
+      check_usage_endpoint(args, "/sync/s3/remote-info")
       true
     }
     Some("list_sessions") => {
-      check_usage_endpoint(args, "/list_sessions")
+      check_usage_endpoint(args, "/sessions")
       true
     }
     Some("get_session_messages") => {
@@ -1429,41 +1262,41 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("read_omo_local_file") => {
-      check_usage_endpoint(args, "/read_omo_local_file")
+      check_usage_endpoint(args, "/providers/omo/file")
       true
     }
     Some("get_current_omo_provider_id") => {
-      check_usage_endpoint(args, "/get_current_omo_provider_id")
+      check_usage_endpoint(args, "/providers/omo/current")
       true
     }
     Some("disable_current_omo") => {
-      check_json_post_endpoint(args, "/disable_current_omo", "OMO")
+      check_json_post_endpoint(args, "/providers/omo/disable", "OMO")
       true
     }
     Some("read_omo_slim_local_file") => {
-      check_usage_endpoint(args, "/read_omo_slim_local_file")
+      check_usage_endpoint(args, "/providers/omo-slim/file")
       true
     }
     Some("get_current_omo_slim_provider_id") => {
-      check_usage_endpoint(args, "/get_current_omo_slim_provider_id")
+      check_usage_endpoint(args, "/providers/omo-slim/current")
       true
     }
     Some("disable_current_omo_slim") => {
-      check_json_post_endpoint(args, "/disable_current_omo_slim", "OMO")
+      check_json_post_endpoint(args, "/providers/omo-slim/disable", "OMO")
       true
     }
     Some("open_file_dialog") => {
-      check_usage_endpoint(args, "/open_file_dialog")
+      check_usage_endpoint(args, "/files/dialogs/open")
       true
     }
     Some("open_zip_file_dialog") => {
-      check_usage_endpoint(args, "/open_zip_file_dialog")
+      check_usage_endpoint(args, "/files/dialogs/open-zip")
       true
     }
     Some("export_config_to_file") => {
       check_json_post_endpoint(
         args,
-        config_file_path(args, "/export_config_to_file"),
+        config_file_path(args, "/config/files/export"),
         "Import/export",
       )
       true
@@ -1471,23 +1304,23 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("import_config_from_file") => {
       check_json_post_endpoint(
         args,
-        config_file_path(args, "/import_config_from_file"),
+        config_file_path(args, "/config/files/import"),
         "Import/export",
       )
       true
     }
     Some("create_db_backup") => {
-      check_json_post_endpoint(args, "/create_db_backup", "Import/export")
+      check_json_post_endpoint(args, "/backups/db", "Import/export")
       true
     }
     Some("list_db_backups") => {
-      check_usage_endpoint(args, "/list_db_backups")
+      check_usage_endpoint(args, "/backups/db")
       true
     }
     Some("restore_db_backup") => {
       check_json_post_endpoint(
         args,
-        db_backup_filename_path(args, "/restore_db_backup"),
+        db_backup_filename_path(args, "/backups/db/restore"),
         "Import/export",
       )
       true
@@ -1503,19 +1336,19 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("delete_db_backup") => {
       check_json_post_endpoint(
         args,
-        db_backup_filename_path(args, "/delete_db_backup"),
+        db_backup_filename_path(args, "/backups/db/delete"),
         "Import/export",
       )
       true
     }
     Some("parse_deeplink") => {
-      check_usage_endpoint(args, deeplink_url_path(args, "/parse_deeplink"))
+      check_usage_endpoint(args, deeplink_url_path(args, "/deeplinks/parse"))
       true
     }
     Some("merge_deeplink_config") => {
       check_json_post_endpoint(
         args,
-        deeplink_request_path(args, "/merge_deeplink_config"),
+        deeplink_request_path(args, "/deeplinks/merge"),
         "Deeplink",
       )
       true
@@ -1523,7 +1356,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("import_from_deeplink") => {
       check_json_post_endpoint(
         args,
-        deeplink_request_path(args, "/import_from_deeplink"),
+        deeplink_request_path(args, "/deeplinks/import"),
         "Deeplink",
       )
       true
@@ -1531,7 +1364,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     Some("import_from_deeplink_unified") => {
       check_json_post_endpoint(
         args,
-        deeplink_request_path(args, "/import_from_deeplink_unified"),
+        deeplink_request_path(args, "/deeplinks/import-unified"),
         "Deeplink",
       )
       true
@@ -1605,11 +1438,11 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("get_claude_plugin_status") => {
-      check_usage_endpoint(args, "/get_claude_plugin_status")
+      check_usage_endpoint(args, "/plugin/claude/status")
       true
     }
     Some("read_claude_plugin_config") => {
-      check_usage_endpoint(args, "/read_claude_plugin_config")
+      check_usage_endpoint(args, "/plugin/claude/config")
       true
     }
     Some("apply_claude_plugin_config") => {
@@ -1617,58 +1450,60 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some("is_claude_plugin_applied") => {
-      check_usage_endpoint(args, "/is_claude_plugin_applied")
+      check_usage_endpoint(args, "/plugin/claude/applied")
       true
     }
     Some("apply_claude_onboarding_skip") => {
-      check_json_post_endpoint(args, "/apply_claude_onboarding_skip", "Plugin")
+      check_json_post_endpoint(args, "/plugin/claude/onboarding-skip", "Plugin")
       true
     }
     Some("clear_claude_onboarding_skip") => {
-      check_json_post_endpoint(args, "/clear_claude_onboarding_skip", "Plugin")
+      check_json_post_endpoint(
+        args, "/plugin/claude/onboarding-skip/clear", "Plugin",
+      )
       true
     }
     Some("list_daily_memory_files") => {
-      check_usage_endpoint(args, "/list_daily_memory_files")
+      check_usage_endpoint(args, "/workspace/memory")
       true
     }
     Some("read_daily_memory_file") => {
       check_usage_endpoint(
         args,
-        workspace_filename_path(args, "/read_daily_memory_file"),
+        workspace_filename_path(args, "/workspace/memory/file"),
       )
       true
     }
     Some("write_daily_memory_file") => {
-      write_workspace_content(args, "/write_daily_memory_file", "Workspace")
+      write_workspace_content(args, "/workspace/memory/write", "Workspace")
       true
     }
     Some("search_daily_memory_files") => {
       check_usage_endpoint(
         args,
-        workspace_query_path(args, "/search_daily_memory_files"),
+        workspace_query_path(args, "/workspace/memory/search"),
       )
       true
     }
     Some("delete_daily_memory_file") => {
-      delete_workspace_resource(args, "/delete_daily_memory_file", "Workspace")
+      delete_workspace_resource(args, "/workspace/memory/delete", "Workspace")
       true
     }
     Some("read_workspace_file") => {
       check_usage_endpoint(
         args,
-        workspace_filename_path(args, "/read_workspace_file"),
+        workspace_filename_path(args, "/workspace/files"),
       )
       true
     }
     Some("write_workspace_file") => {
-      write_workspace_content(args, "/write_workspace_file", "Workspace")
+      write_workspace_content(args, "/workspace/files", "Workspace")
       true
     }
     Some("open_workspace_directory") => {
       check_json_post_endpoint(
         args,
-        workspace_subdir_path(args, "/open_workspace_directory"),
+        workspace_subdir_path(args, "/workspace/open"),
         "Workspace",
       )
       true
