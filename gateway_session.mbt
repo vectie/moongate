@@ -101,8 +101,8 @@ fn parse_session_from_user_id(user_id : String) -> String? {
 }
 
 ///|
-async fn Gateway::handle_list_sessions(
-  self : Gateway,
+async fn SessionService::handle_list_sessions(
+  self : SessionService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
@@ -110,8 +110,8 @@ async fn Gateway::handle_list_sessions(
 }
 
 ///|
-async fn Gateway::handle_get_session_messages(
-  self : Gateway,
+async fn SessionService::handle_get_session_messages(
+  self : SessionService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -134,11 +134,13 @@ async fn Gateway::handle_get_session_messages(
 }
 
 ///|
-async fn Gateway::handle_launch_session_terminal(
-  self : Gateway,
+async fn SessionService::handle_launch_session_terminal(
+  self : SessionService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
+  preferred_terminal : String?,
 ) -> Unit {
+  ignore(self)
   let body = proxy_json_body(r)
   guard proxy_string_request(r.path, body, ["command"]) is Some(command) else {
     write_usage_bad_request(w, "missing_command")
@@ -150,10 +152,7 @@ async fn Gateway::handle_launch_session_terminal(
   ])
   match
     moon_launch_session_terminal_json(
-      command,
-      cwd,
-      custom_config,
-      moon_session_terminal_from_settings(self.config.app_settings),
+      command, cwd, custom_config, preferred_terminal,
     ) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
@@ -161,8 +160,8 @@ async fn Gateway::handle_launch_session_terminal(
 }
 
 ///|
-async fn Gateway::handle_delete_session(
-  self : Gateway,
+async fn SessionService::handle_delete_session(
+  self : SessionService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -190,8 +189,8 @@ async fn Gateway::handle_delete_session(
 }
 
 ///|
-async fn Gateway::handle_delete_sessions(
-  self : Gateway,
+async fn SessionService::handle_delete_sessions(
+  self : SessionService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -202,4 +201,52 @@ async fn Gateway::handle_delete_sessions(
     return
   }
   write_usage_json(w, moon_delete_sessions_json(items))
+}
+
+///|
+async fn Gateway::handle_list_sessions(
+  self : Gateway,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.session.handle_list_sessions(w)
+}
+
+///|
+async fn Gateway::handle_get_session_messages(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.session.handle_get_session_messages(r, w)
+}
+
+///|
+async fn Gateway::handle_launch_session_terminal(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.session.handle_launch_session_terminal(
+    r,
+    w,
+    moon_session_terminal_from_settings(self.config.app_settings),
+  )
+}
+
+///|
+async fn Gateway::handle_delete_session(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.session.handle_delete_session(r, w)
+}
+
+///|
+async fn Gateway::handle_delete_sessions(
+  self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  self.session.handle_delete_sessions(r, w)
 }
