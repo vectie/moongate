@@ -866,12 +866,12 @@ async fn ProxyService::handle_add_provider(
   let add_to_live = provider_bool_from_request(r.path, body, [
     "addToLive", "add_to_live",
   ]).unwrap_or(true)
-  self.add_provider_target_ccs(usage, app_type, target, add_to_live)
+  self.add_provider_target(usage, app_type, target, add_to_live)
   write_usage_json(w, Json::boolean(true))
 }
 
 ///|
-fn ProxyService::add_provider_target_ccs(
+fn ProxyService::add_provider_target(
   self : ProxyService,
   usage : UsageService,
   app_type : String,
@@ -908,14 +908,14 @@ async fn ProxyService::handle_update_provider(
   let original_id = provider_string_from_request(r.path, body, [
     "originalId", "original_id",
   ])
-  match self.update_provider_target_ccs(usage, app_type, target, original_id) {
+  match self.update_provider_target(usage, app_type, target, original_id) {
     Ok(_) => write_usage_json(w, Json::boolean(true))
     Err(error) => write_usage_bad_request(w, error)
   }
 }
 
 ///|
-fn ProxyService::update_provider_target_ccs(
+fn ProxyService::update_provider_target(
   self : ProxyService,
   usage : UsageService,
   app_type : String,
