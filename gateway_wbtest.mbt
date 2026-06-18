@@ -2302,8 +2302,8 @@ async test "workspace endpoints are owned by workspace service" {
 
 ///|
 async test "runtime endpoints are owned by runtime service" {
-  let runtime_source = @fsx.read_file("gateway_misc.mbt")
-  let runtime_helper_source = @fsx.read_file("gateway_runtime.mbt")
+  let runtime_source = @fsx.read_file("gateway_runtime.mbt")
+  let misc_source = @fsx.read_file("gateway_misc.mbt")
   let route_source = @fsx.read_file("gateway_runtime_routes.mbt")
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
@@ -2315,6 +2315,7 @@ async test "runtime endpoints are owned by runtime service" {
     ] {
     assert_true(runtime_source.contains("async fn RuntimeService::\{handler}("))
     assert_false(runtime_source.contains("async fn Gateway::\{handler}("))
+    assert_false(misc_source.contains("async fn RuntimeService::\{handler}("))
   }
   assert_true(
     core_source.contains("self.runtime.register_routes(router, self.proxy)"),
@@ -2326,11 +2327,9 @@ async test "runtime endpoints are owned by runtime service" {
     ] {
     assert_true(route_source.contains("self.\{handler}("))
   }
-  assert_true(
-    runtime_helper_source.contains("fn RuntimeService::uptime_seconds("),
-  )
-  assert_false(runtime_helper_source.contains("fn Gateway::uptime_seconds("))
+  assert_true(runtime_source.contains("fn RuntimeService::uptime_seconds("))
   assert_false(runtime_source.contains("fn Gateway::uptime_seconds("))
+  assert_false(misc_source.contains("fn Gateway::uptime_seconds("))
   assert_true(
     core_source.contains("self.runtime.uptime_seconds(self.started_at_ms)"),
   )
@@ -2338,14 +2337,17 @@ async test "runtime endpoints are owned by runtime service" {
 
 ///|
 async test "external utility endpoints are owned by proxy service" {
-  let source = @fsx.read_file("gateway_misc.mbt")
+  let source = @fsx.read_file("gateway_runtime.mbt")
+  let misc_source = @fsx.read_file("gateway_misc.mbt")
   let route_source = @fsx.read_file("gateway_runtime_routes.mbt")
   for handler in ["handle_open_external", "handle_check_for_updates"] {
     assert_true(source.contains("async fn ProxyService::\{handler}("))
     assert_false(source.contains("async fn Gateway::\{handler}("))
+    assert_false(misc_source.contains("async fn ProxyService::\{handler}("))
   }
   assert_true(source.contains("fn ProxyService::record_external_open("))
   assert_false(source.contains("fn Gateway::record_external_open("))
+  assert_false(misc_source.contains("fn ProxyService::record_external_open("))
   assert_true(route_source.contains("proxy.handle_open_external(r, w)"))
   assert_true(route_source.contains("proxy.handle_check_for_updates(w)"))
 }
