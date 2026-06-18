@@ -1656,27 +1656,7 @@ test "provider selection errors use moonstat proxy error codes" {
 }
 
 ///|
-test "proxy config alias matches ccs default shape" {
-  let gateway = Gateway::new(port=17001, host="127.0.0.2", model="gpt-5")
-  guard gateway.proxy.config_json(
-      live_takeover_active=gateway.proxy.takeover_active(),
-    )
-    is Object(config) else {
-    fail("expected proxy config object")
-  }
-  assert_eq(config["listen_address"], Json::string("127.0.0.2"))
-  assert_eq(config["listen_port"], Json::number(17001.0))
-  assert_eq(config["max_retries"], Json::number(6.0))
-  assert_eq(config["request_timeout"], Json::number(600.0))
-  assert_eq(config["enable_logging"], Json::boolean(true))
-  assert_eq(config["live_takeover_active"], Json::boolean(false))
-  assert_eq(config["streaming_first_byte_timeout"], Json::number(90.0))
-  assert_eq(config["streaming_idle_timeout"], Json::number(180.0))
-  assert_eq(config["non_streaming_timeout"], Json::number(600.0))
-}
-
-///|
-test "proxy global config alias matches ccs v3 shape" {
+test "proxy global config exposes standalone moonstat shape" {
   let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
   guard gateway.proxy.global_config_json() is Object(config) else {
     fail("expected proxy global config object")
@@ -1685,6 +1665,9 @@ test "proxy global config alias matches ccs v3 shape" {
   assert_eq(config["listenAddress"], Json::string("127.0.0.5"))
   assert_eq(config["listenPort"], Json::number(17004.0))
   assert_eq(config["enableLogging"], Json::boolean(true))
+  assert_true(config.get("listen_address") is None)
+  assert_true(config.get("listen_port") is None)
+  assert_true(config.get("enable_logging") is None)
 }
 
 ///|
@@ -1850,34 +1833,34 @@ test "openclaw health scanner accepts supported profiles and object env" {
 }
 
 ///|
-test "proxy app config alias matches ccs app config shape" {
+test "proxy app config exposes standalone moonstat shape" {
   let gateway = Gateway::new(port=17005, host="127.0.0.6", model="gpt-5")
   guard gateway.proxy.app_config_json("claude") is Object(config) else {
     fail("expected proxy app config object")
   }
   assert_eq(config["appType"], Json::string("claude"))
-  assert_eq(config["app_type"], Json::string("claude"))
   assert_eq(config["enabled"], Json::boolean(true))
   assert_eq(config["autoFailoverEnabled"], Json::boolean(false))
-  assert_eq(config["auto_failover_enabled"], Json::boolean(false))
   assert_eq(config["maxRetries"], Json::number(6.0))
-  assert_eq(config["max_retries"], Json::number(6.0))
   assert_eq(config["streamingFirstByteTimeout"], Json::number(90.0))
-  assert_eq(config["streaming_first_byte_timeout"], Json::number(90.0))
   assert_eq(config["streamingIdleTimeout"], Json::number(180.0))
-  assert_eq(config["streaming_idle_timeout"], Json::number(180.0))
   assert_eq(config["nonStreamingTimeout"], Json::number(600.0))
-  assert_eq(config["non_streaming_timeout"], Json::number(600.0))
   assert_eq(config["circuitFailureThreshold"], Json::number(8.0))
-  assert_eq(config["circuit_failure_threshold"], Json::number(8.0))
   assert_eq(config["circuitSuccessThreshold"], Json::number(3.0))
-  assert_eq(config["circuit_success_threshold"], Json::number(3.0))
   assert_eq(config["circuitTimeoutSeconds"], Json::number(90.0))
-  assert_eq(config["circuit_timeout_seconds"], Json::number(90.0))
   assert_eq(config["circuitErrorRateThreshold"], Json::number(0.7))
-  assert_eq(config["circuit_error_rate_threshold"], Json::number(0.7))
   assert_eq(config["circuitMinRequests"], Json::number(15.0))
-  assert_eq(config["circuit_min_requests"], Json::number(15.0))
+  assert_true(config.get("app_type") is None)
+  assert_true(config.get("auto_failover_enabled") is None)
+  assert_true(config.get("max_retries") is None)
+  assert_true(config.get("streaming_first_byte_timeout") is None)
+  assert_true(config.get("streaming_idle_timeout") is None)
+  assert_true(config.get("non_streaming_timeout") is None)
+  assert_true(config.get("circuit_failure_threshold") is None)
+  assert_true(config.get("circuit_success_threshold") is None)
+  assert_true(config.get("circuit_timeout_seconds") is None)
+  assert_true(config.get("circuit_error_rate_threshold") is None)
+  assert_true(config.get("circuit_min_requests") is None)
   guard gateway.proxy.app_config_json("gemini") is Object(gemini) else {
     fail("expected gemini proxy app config object")
   }
@@ -1891,7 +1874,7 @@ test "proxy app config alias matches ccs app config shape" {
 }
 
 ///|
-test "proxy global config state updates ccs config shapes" {
+test "proxy global config state updates standalone config shape" {
   let gateway = Gateway::new(port=17006, host="127.0.0.7", model="gpt-5")
   gateway.proxy.proxy_enabled = false
   gateway.proxy.proxy_listen_address = "127.0.0.8"
@@ -1905,16 +1888,6 @@ test "proxy global config state updates ccs config shapes" {
   assert_eq(global_config["listenAddress"], Json::string("127.0.0.8"))
   assert_eq(global_config["listenPort"], Json::number(17007.0))
   assert_eq(global_config["enableLogging"], Json::boolean(false))
-  guard gateway.proxy.config_json(
-      live_takeover_active=gateway.proxy.takeover_active(),
-    )
-    is Object(legacy_config) else {
-    fail("expected legacy config object")
-  }
-  assert_eq(legacy_config["listen_address"], Json::string("127.0.0.8"))
-  assert_eq(legacy_config["listen_port"], Json::number(17007.0))
-  assert_eq(legacy_config["enable_logging"], Json::boolean(false))
-  assert_eq(legacy_config["live_takeover_active"], Json::boolean(true))
   guard gateway.proxy.takeover_status_json() is Object(takeover) else {
     fail("expected takeover object")
   }
@@ -2963,7 +2936,7 @@ test "stream check all provider ids follow ccs proxy target filter" {
 }
 
 ///|
-test "proxy config request parsers accept ccs camelCase and query aliases" {
+test "proxy config request parsers accept moonstat camelCase fields" {
   let config = Some(
     {
       "proxyEnabled": Json::boolean(false),
@@ -2997,6 +2970,10 @@ test "proxy config request parsers accept ccs camelCase and query aliases" {
   assert_eq(
     proxy_double_request("/proxy/app-config", config, ["errorRateThreshold"]),
     Some(0.35),
+  )
+  assert_eq(
+    proxy_int_request("/proxy/app-config?max_retries=8", None, ["maxRetries"]),
+    None,
   )
   assert_eq(
     proxy_bool_request("/proxy/takeover-status?enabled=yes", None, ["enabled"]),
@@ -3051,6 +3028,14 @@ test "proxy circuit config request parser merges partial app config" {
   assert_eq(next.failure_threshold, 9)
   assert_eq(next.success_threshold, current.success_threshold)
   assert_eq(next.error_rate_threshold, 0.25)
+  assert_true(
+    proxy_circuit_config_from_request(
+      "/proxy/app-config?failure_threshold=9&error_rate_threshold=0.25",
+      None,
+      current,
+    )
+    is None,
+  )
 }
 
 ///|
@@ -3204,7 +3189,7 @@ test "codex common config extraction removes provider toml tables" {
 }
 
 ///|
-test "proxy circuit breaker config alias matches ccs shape" {
+test "proxy circuit breaker config exposes moonstat shape" {
   let gateway = Gateway::new(port=17006, host="127.0.0.7", model="gpt-5")
   guard gateway.proxy.provider_router.circuit_config.to_json() is Object(config) else {
     fail("expected circuit config object")
@@ -3217,7 +3202,7 @@ test "proxy circuit breaker config alias matches ccs shape" {
 }
 
 ///|
-test "proxy circuit breaker config update accepts ccs body and query shapes" {
+test "proxy circuit breaker config update accepts moonstat body and query shapes" {
   let direct = @json.parse(
     "{\"failureThreshold\":5,\"successThreshold\":3,\"timeoutSeconds\":30,\"errorRateThreshold\":0.4,\"minRequests\":12}",
   )
@@ -3249,6 +3234,12 @@ test "proxy circuit breaker config update accepts ccs body and query shapes" {
   assert_eq(query_config.timeout_seconds, 45)
   assert_eq(query_config.error_rate_threshold, 0.25)
   assert_eq(query_config.min_requests, 15)
+  assert_true(
+    proxy_circuit_config_from_query(
+      "/proxy/circuit-breaker-config?failure_threshold=7&success_threshold=4&timeout_seconds=45&error_rate_threshold=0.25&min_requests=15",
+    )
+    is None,
+  )
 
   assert_true(
     circuit_breaker_config_from_json(

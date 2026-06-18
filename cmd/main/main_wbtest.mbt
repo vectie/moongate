@@ -150,8 +150,7 @@ test "registered cli commands match suite command aliases and status commands" {
     None,
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "proxy", "config"]) ==
-    Some("get_proxy_config"),
+    registered_cli_command_id(["moonstat", "proxy", "config"]) == None,
   )
   assert_true(
     registered_cli_command_id(["moonstat", "proxy", "global-url", "set"]) ==

@@ -208,7 +208,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("POST /proxy/start")))
   assert_true(routes.contains(Json::string("POST /proxy/stop")))
   assert_true(routes.contains(Json::string("POST /proxy/stop-with-restore")))
-  assert_true(routes.contains(Json::string("GET /proxy/config")))
+  assert_false(routes.contains(Json::string("GET /proxy/config")))
   assert_true(routes.contains(Json::string("GET|POST /proxy/global-config")))
   assert_true(routes.contains(Json::string("GET|POST /proxy/global-url")))
   assert_true(routes.contains(Json::string("GET|POST /proxy/test-url")))
@@ -267,20 +267,19 @@ test "suite manifest publishes moonstat service contract" {
   )
   let control_routes = [
     "GET /proxy/status", "POST /proxy/start", "POST /proxy/stop", "POST /proxy/stop-with-restore",
-    "GET /proxy/config", "GET|POST /proxy/global-config", "GET|POST /proxy/app-config",
-    "GET|POST /proxy/default-cost-multiplier", "GET|POST /proxy/pricing-model-source",
-    "GET /proxy/provider-health", "GET|POST /proxy/circuit-breaker-config", "GET /proxy/circuit-breaker-stats",
-    "GET|POST|DELETE /proxy/failover-queue", "GET|POST /proxy/auto-failover-enabled",
-    "GET|POST /proxy/takeover-status", "GET /proxy/running", "GET|POST /proxy/global-url",
-    "GET|POST /proxy/test-url", "GET /proxy/upstream-status", "GET /proxy/local-proxies",
-    "POST /proxy/switch-provider", "POST /proxy/sync-current-providers-live", "POST /proxy/import-default-config",
-    "GET /providers", "GET|POST /providers/current", "POST /providers", "POST /providers/update",
-    "POST /providers/switch", "GET|POST /providers/live-settings", "GET /providers/live-ids",
-    "GET|POST /providers/live-provider", "POST /providers/import-live", "POST /proxy/reset-circuit-breaker",
-    "GET /mcp/servers", "POST /mcp/servers", "DELETE /mcp/servers", "GET /prompts",
-    "POST /prompts", "DELETE /prompts", "GET /openclaw/config-health", "GET /openclaw/default-model",
-    "POST /openclaw/default-model", "GET /hermes/model-config", "GET /hermes/memory",
-    "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
+    "GET|POST /proxy/global-config", "GET|POST /proxy/app-config", "GET|POST /proxy/default-cost-multiplier",
+    "GET|POST /proxy/pricing-model-source", "GET /proxy/provider-health", "GET|POST /proxy/circuit-breaker-config",
+    "GET /proxy/circuit-breaker-stats", "GET|POST|DELETE /proxy/failover-queue",
+    "GET|POST /proxy/auto-failover-enabled", "GET|POST /proxy/takeover-status", "GET /proxy/running",
+    "GET|POST /proxy/global-url", "GET|POST /proxy/test-url", "GET /proxy/upstream-status",
+    "GET /proxy/local-proxies", "POST /proxy/switch-provider", "POST /proxy/sync-current-providers-live",
+    "POST /proxy/import-default-config", "GET /providers", "GET|POST /providers/current",
+    "POST /providers", "POST /providers/update", "POST /providers/switch", "GET|POST /providers/live-settings",
+    "GET /providers/live-ids", "GET|POST /providers/live-provider", "POST /providers/import-live",
+    "POST /proxy/reset-circuit-breaker", "GET /mcp/servers", "POST /mcp/servers",
+    "DELETE /mcp/servers", "GET /prompts", "POST /prompts", "DELETE /prompts", "GET /openclaw/config-health",
+    "GET /openclaw/default-model", "POST /openclaw/default-model", "GET /hermes/model-config",
+    "GET /hermes/memory", "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
     "POST /providers/universal", "DELETE /providers/universal", "GET|POST /providers/test-endpoints",
     "GET|POST /config/models",
   ]

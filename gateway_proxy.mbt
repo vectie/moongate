@@ -339,38 +339,6 @@ async fn ProxyService::handle_proxy_running(
 }
 
 ///|
-fn ProxyService::config_json(
-  self : ProxyService,
-  live_takeover_active? : Bool = false,
-) -> Json {
-  let app_type = "claude"
-  let streaming_first_byte_timeout = self.proxy_streaming_first_byte_timeout
-    .get(app_type)
-    .unwrap_or(moon_proxy_streaming_first_byte_timeout_default(app_type))
-  let streaming_idle_timeout = self.proxy_streaming_idle_timeout
-    .get(app_type)
-    .unwrap_or(moon_proxy_streaming_idle_timeout_default(app_type))
-  let non_streaming_timeout = self.proxy_non_streaming_timeout
-    .get(app_type)
-    .unwrap_or(moon_proxy_non_streaming_timeout_default(app_type))
-  {
-    "listen_address": Json::string(self.proxy_listen_address),
-    "listen_port": Json::number(self.proxy_listen_port.to_double()),
-    "max_retries": Json::number(
-      self.provider_router.max_retries_for_app(app_type).to_double(),
-    ),
-    "request_timeout": Json::number(600.0),
-    "enable_logging": Json::boolean(self.proxy_enable_logging),
-    "live_takeover_active": Json::boolean(live_takeover_active),
-    "streaming_first_byte_timeout": Json::number(
-      streaming_first_byte_timeout.to_double(),
-    ),
-    "streaming_idle_timeout": Json::number(streaming_idle_timeout.to_double()),
-    "non_streaming_timeout": Json::number(non_streaming_timeout.to_double()),
-  }.to_json()
-}
-
-///|
 fn ProxyService::global_config_json(self : ProxyService) -> Json {
   {
     "proxyEnabled": Json::boolean(self.proxy_enabled),
@@ -378,18 +346,6 @@ fn ProxyService::global_config_json(self : ProxyService) -> Json {
     "listenPort": Json::number(self.proxy_listen_port.to_double()),
     "enableLogging": Json::boolean(self.proxy_enable_logging),
   }.to_json()
-}
-
-///|
-async fn ProxyService::handle_proxy_config(
-  self : ProxyService,
-  w : @httpx.ResponseWriter,
-  live_takeover_active? : Bool = false,
-) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(self.config_json(live_takeover_active~).stringify(indent=2))
-  w.flush()
 }
 
 ///|
@@ -484,17 +440,11 @@ async fn ProxyService::apply_global_config_request(
   let body = proxy_json_body(r)
   let config = proxy_embedded_config(body)
   let proxy_enabled = proxy_bool_request(r.path, config, [
-    "proxy_enabled", "proxyEnabled", "enabled",
+    "proxyEnabled", "enabled",
   ])
-  let listen_address = proxy_string_request(r.path, config, [
-    "listen_address", "listenAddress",
-  ])
-  let listen_port = proxy_int_request(r.path, config, [
-    "listen_port", "listenPort",
-  ])
-  let enable_logging = proxy_bool_request(r.path, config, [
-    "enable_logging", "enableLogging",
-  ])
+  let listen_address = proxy_string_request(r.path, config, ["listenAddress"])
+  let listen_port = proxy_int_request(r.path, config, ["listenPort"])
+  let enable_logging = proxy_bool_request(r.path, config, ["enableLogging"])
   if proxy_enabled is Some(enabled) {
     self.proxy_enabled = enabled
   }
@@ -647,40 +597,23 @@ fn ProxyService::app_config_json(
     .unwrap_or(moon_proxy_non_streaming_timeout_default(app_type))
   {
     "appType": Json::string(app_type),
-    "app_type": Json::string(app_type),
     "enabled": Json::boolean(enabled),
     "autoFailoverEnabled": Json::boolean(auto_failover_enabled),
-    "auto_failover_enabled": Json::boolean(auto_failover_enabled),
     "maxRetries": Json::number(max_retries.to_double()),
-    "max_retries": Json::number(max_retries.to_double()),
     "streamingFirstByteTimeout": Json::number(
       streaming_first_byte_timeout.to_double(),
     ),
-    "streaming_first_byte_timeout": Json::number(
-      streaming_first_byte_timeout.to_double(),
-    ),
     "streamingIdleTimeout": Json::number(streaming_idle_timeout.to_double()),
-    "streaming_idle_timeout": Json::number(streaming_idle_timeout.to_double()),
     "nonStreamingTimeout": Json::number(non_streaming_timeout.to_double()),
-    "non_streaming_timeout": Json::number(non_streaming_timeout.to_double()),
     "circuitFailureThreshold": Json::number(
-      circuit.failure_threshold.to_double(),
-    ),
-    "circuit_failure_threshold": Json::number(
       circuit.failure_threshold.to_double(),
     ),
     "circuitSuccessThreshold": Json::number(
       circuit.success_threshold.to_double(),
     ),
-    "circuit_success_threshold": Json::number(
-      circuit.success_threshold.to_double(),
-    ),
     "circuitTimeoutSeconds": Json::number(circuit.timeout_seconds.to_double()),
-    "circuit_timeout_seconds": Json::number(circuit.timeout_seconds.to_double()),
     "circuitErrorRateThreshold": Json::number(circuit.error_rate_threshold),
-    "circuit_error_rate_threshold": Json::number(circuit.error_rate_threshold),
     "circuitMinRequests": Json::number(circuit.min_requests.to_double()),
-    "circuit_min_requests": Json::number(circuit.min_requests.to_double()),
   }.to_json()
 }
 
@@ -823,17 +756,14 @@ async fn ProxyService::apply_app_config_request(
     Some(enabled) => self.proxy_app_enabled.set(app_type, enabled)
     None => ()
   }
-  match
-    proxy_bool_request(r.path, config, [
-      "auto_failover_enabled", "autoFailoverEnabled",
-    ]) {
+  match proxy_bool_request(r.path, config, ["autoFailoverEnabled"]) {
     Some(enabled) =>
       if !self.provider_router.set_auto_failover_moonstat(app_type, enabled) {
         return None
       }
     None => ()
   }
-  match proxy_int_request(r.path, config, ["max_retries", "maxRetries"]) {
+  match proxy_int_request(r.path, config, ["maxRetries"]) {
     Some(max_retries) if max_retries >= 0 =>
       self.provider_router.set_max_retries(app_type, max_retries)
     Some(_) => return None
@@ -861,28 +791,19 @@ fn ProxyService::apply_app_timeout_config(
   path : StringView,
   config : Json?,
 ) -> Bool {
-  match
-    proxy_int_request(path, config, [
-      "streaming_first_byte_timeout", "streamingFirstByteTimeout",
-    ]) {
+  match proxy_int_request(path, config, ["streamingFirstByteTimeout"]) {
     Some(timeout) if timeout > 0 =>
       self.proxy_streaming_first_byte_timeout.set(app_type, timeout)
     Some(_) => return false
     None => ()
   }
-  match
-    proxy_int_request(path, config, [
-      "streaming_idle_timeout", "streamingIdleTimeout",
-    ]) {
+  match proxy_int_request(path, config, ["streamingIdleTimeout"]) {
     Some(timeout) if timeout > 0 =>
       self.proxy_streaming_idle_timeout.set(app_type, timeout)
     Some(_) => return false
     None => ()
   }
-  match
-    proxy_int_request(path, config, [
-      "non_streaming_timeout", "nonStreamingTimeout",
-    ]) {
+  match proxy_int_request(path, config, ["nonStreamingTimeout"]) {
     Some(timeout) if timeout > 0 =>
       self.proxy_non_streaming_timeout.set(app_type, timeout)
     Some(_) => return false
@@ -1267,26 +1188,23 @@ fn proxy_app_type_from_request(path : StringView, body : Json?) -> String? {
 
 ///|
 fn proxy_circuit_config_from_query(path : StringView) -> CircuitBreakerConfig? {
-  guard usage_query_int_any(path, "failure_threshold", "failureThreshold")
+  guard proxy_int_request(path, None, ["failureThreshold"])
     is Some(failure_threshold) else {
     return None
   }
-  guard usage_query_int_any(path, "success_threshold", "successThreshold")
+  guard proxy_int_request(path, None, ["successThreshold"])
     is Some(success_threshold) else {
     return None
   }
-  guard usage_query_int_any(path, "timeout_seconds", "timeoutSeconds")
+  guard proxy_int_request(path, None, ["timeoutSeconds"])
     is Some(timeout_seconds) else {
     return None
   }
-  guard usage_query_double_any(
-      path, "error_rate_threshold", "errorRateThreshold",
-    )
+  guard proxy_double_request(path, None, ["errorRateThreshold"])
     is Some(error_rate_threshold) else {
     return None
   }
-  guard usage_query_int_any(path, "min_requests", "minRequests")
-    is Some(min_requests) else {
+  guard proxy_int_request(path, None, ["minRequests"]) is Some(min_requests) else {
     return None
   }
   let config = {
@@ -1484,21 +1402,13 @@ fn proxy_circuit_config_from_request(
   config : Json?,
   current : CircuitBreakerConfig,
 ) -> CircuitBreakerConfig? {
-  let failure_threshold = proxy_int_request(path, config, [
-    "failure_threshold", "failureThreshold",
-  ])
-  let success_threshold = proxy_int_request(path, config, [
-    "success_threshold", "successThreshold",
-  ])
-  let timeout_seconds = proxy_int_request(path, config, [
-    "timeout_seconds", "timeoutSeconds",
-  ])
+  let failure_threshold = proxy_int_request(path, config, ["failureThreshold"])
+  let success_threshold = proxy_int_request(path, config, ["successThreshold"])
+  let timeout_seconds = proxy_int_request(path, config, ["timeoutSeconds"])
   let error_rate_threshold = proxy_double_request(path, config, [
-    "error_rate_threshold", "errorRateThreshold",
+    "errorRateThreshold",
   ])
-  let min_requests = proxy_int_request(path, config, [
-    "min_requests", "minRequests",
-  ])
+  let min_requests = proxy_int_request(path, config, ["minRequests"])
   if failure_threshold is None &&
     success_threshold is None &&
     timeout_seconds is None &&

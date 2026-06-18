@@ -90,8 +90,6 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /proxy/start`
 - `POST /proxy/stop`
 - `POST /proxy/stop-with-restore`
-- `GET /proxy/config`
-- `POST /proxy/config`
 - `GET /proxy/global-config`
 - `POST /proxy/global-config`
 - `GET /proxy/global-url`
@@ -99,8 +97,8 @@ Moonstat currently exposes the standalone local routes below:
 - `GET|POST /proxy/test-url?url=http://127.0.0.1:7890`
 - `GET /proxy/upstream-status`
 - `GET /proxy/local-proxies`
-- `GET /proxy/app-config?app_type=claude`
-- `POST /proxy/app-config?app_type=claude&enabled=true`
+- `GET /proxy/app-config?appType=claude`
+- `POST /proxy/app-config?appType=claude&enabled=true`
 - `GET /proxy/default-cost-multiplier?app_type=claude`
 - `POST /proxy/default-cost-multiplier?app_type=claude&value=1.25`
 - `GET /proxy/pricing-model-source?app_type=claude`
@@ -339,10 +337,9 @@ Moonstat currently exposes the standalone local routes below:
 `/status`, `/proxy/status`, and `/stats` include Moonstat request counts,
 success/failure counts, active connections, token totals, cache token totals,
 last request time, last error, current provider metadata, and success rate.
-`/proxy/config`, `/proxy/takeover-status`, and `/proxy/running` expose
-standalone HTTP endpoints for proxy control. Their POST endpoints
-accept either camelCase JSON bodies or query parameters for standalone
-scripts. `/proxy/global-config`, `/proxy/app-config`,
+`/proxy/takeover-status` and `/proxy/running` expose standalone HTTP endpoints
+for proxy control. Their POST endpoints accept camelCase JSON bodies or query
+parameters for standalone scripts. `/proxy/global-config`, `/proxy/app-config`,
 `/proxy/default-cost-multiplier`, and `/proxy/pricing-model-source` expose the
 Moonstat global/app config and pricing defaults using the same env-backed
 settings that request accounting uses. Global/app config and takeover setters

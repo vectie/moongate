@@ -19,11 +19,6 @@ async fn stop_proxy_with_restore(args : Array[String]) -> Unit {
 }
 
 ///|
-async fn check_proxy_config(args : Array[String]) -> Unit {
-  check_proxy_endpoint(args, "/proxy/config")
-}
-
-///|
 async fn check_proxy_global_config(args : Array[String]) -> Unit {
   check_proxy_endpoint(args, "/proxy/global-config")
 }
@@ -218,7 +213,6 @@ async fn check_proxy_running(args : Array[String]) -> Unit {
 ///|
 fn proxy_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "get_proxy_config", patterns: ["proxy config"] },
     { id: "update_global_proxy_config", patterns: ["proxy global-config set"] },
     { id: "get_global_proxy_config", patterns: ["proxy global-config"] },
     { id: "set_global_proxy_url", patterns: ["proxy global-url set"] },
@@ -291,8 +285,7 @@ fn proxy_cli_commands() -> Array[CliCommandSpec] {
 ///|
 fn cli_proxy_command_id(command_id : String) -> Bool {
   match command_id {
-    "get_proxy_config"
-    | "update_global_proxy_config"
+    "update_global_proxy_config"
     | "get_global_proxy_config"
     | "set_global_proxy_url"
     | "get_global_proxy_url"
@@ -335,7 +328,6 @@ async fn run_proxy_cli_command(
   args : Array[String],
 ) -> Unit {
   match command_id {
-    "get_proxy_config" => check_proxy_config(args)
     "update_global_proxy_config" => update_proxy_global_config(args)
     "get_global_proxy_config" => check_proxy_global_config(args)
     "set_global_proxy_url" => set_global_proxy_url(args)

@@ -1295,18 +1295,6 @@ fn usage_query_int_any(
 }
 
 ///|
-fn usage_query_double_any(
-  path : StringView,
-  left_key : String,
-  right_key : String,
-) -> Double? {
-  match usage_query_value_any(path, left_key, right_key) {
-    Some(value) => parse_non_negative_decimal_to_double(value)
-    None => None
-  }
-}
-
-///|
 fn usage_query_int(path : StringView, key : String) -> Int? {
   match usage_query_value(path, key) {
     Some(value) =>
