@@ -266,6 +266,34 @@ fn ProxyService::server_info_json(
 }
 
 ///|
+fn ProxyService::status_json(
+  self : ProxyService,
+  usage : UsageService,
+  host : String,
+  port : Int,
+  uptime_seconds : Int,
+) -> Json {
+  usage.status_json(host, port, uptime_seconds, running=self.proxy_enabled)
+}
+
+///|
+async fn ProxyService::handle_proxy_status(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+  usage : UsageService,
+  host : String,
+  port : Int,
+  uptime_seconds : Int,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(
+    self.status_json(usage, host, port, uptime_seconds).stringify(indent=2),
+  )
+  w.flush()
+}
+
+///|
 async fn ProxyService::handle_proxy_start_server(
   self : ProxyService,
   w : @httpx.ResponseWriter,
@@ -511,19 +539,22 @@ async fn Gateway::handle_proxy_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Ok)
-  w.write(self.proxy_status_json().stringify(indent=2))
-  w.flush()
+  self.proxy.handle_proxy_status(
+    w,
+    self.usage,
+    self.host,
+    self.port,
+    self.uptime_seconds(),
+  )
 }
 
 ///|
 fn Gateway::proxy_status_json(self : Gateway) -> Json {
-  self.usage.status_json(
+  self.proxy.status_json(
+    self.usage,
     self.host,
     self.port,
     self.uptime_seconds(),
-    running=self.proxy.proxy_enabled,
   )
 }
 

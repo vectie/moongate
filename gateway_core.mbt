@@ -539,10 +539,22 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     w,
   ) => self.handle_get_current_prompt_file_content(r, w))
   router.add_handler(@httpx.Method::Get, "/proxy/status", (_, w) => {
-    self.handle_proxy_status(w)
+    self.proxy.handle_proxy_status(
+      w,
+      self.usage,
+      self.host,
+      self.port,
+      self.uptime_seconds(),
+    )
   })
   router.add_handler(@httpx.Method::Get, "/get_proxy_status", (_, w) => {
-    self.handle_proxy_status(w)
+    self.proxy.handle_proxy_status(
+      w,
+      self.usage,
+      self.host,
+      self.port,
+      self.uptime_seconds(),
+    )
   })
   router.add_handler(@httpx.Method::Post, "/start_proxy_server", (_, w) => {
     self.proxy.handle_proxy_start_server(w, self.started_at_ms)
