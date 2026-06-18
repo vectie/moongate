@@ -2253,6 +2253,10 @@ async test "auth endpoints are owned by auth service" {
     ] {
     assert_true(route_source.contains("self.\{handler}("))
   }
+  assert_true(route_source.contains("Delete, \"/auth/account\""))
+  assert_false(route_source.contains("Post, \"/auth/account\""))
+  assert_true(route_source.contains("Delete, \"/copilot/account\""))
+  assert_false(route_source.contains("Post, \"/copilot/account\""))
   let claude_anthropic_source = @fsx.read_file("gateway_claude_anthropic.mbt")
   assert_true(
     claude_anthropic_source.contains(

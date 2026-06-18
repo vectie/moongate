@@ -96,7 +96,7 @@ async fn auth_remove_account(args : Array[String]) -> Unit {
     logger.error("Missing required auth account arg: --account-id")
     return
   }
-  check_json_post_endpoint(args, path, "Auth")
+  check_json_delete_endpoint(args, path, "Auth")
 }
 
 ///|

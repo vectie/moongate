@@ -291,7 +291,7 @@ Moonstat currently exposes the standalone local routes below:
 - `GET|POST /auth/accounts?authProvider=codex_oauth`
 - `GET|POST /auth/login?authProvider=codex_oauth`
 - `GET|POST /auth/poll?authProvider=codex_oauth&deviceCode=...`
-- `DELETE|POST /auth/account?authProvider=codex_oauth&accountId=...`
+- `DELETE /auth/account?authProvider=codex_oauth&accountId=...`
 - `GET|POST /auth/default-account?authProvider=codex_oauth&accountId=...`
 - `GET|POST /auth/logout?authProvider=codex_oauth`
 - `GET|POST /auth/status?authProvider=github_copilot`
@@ -303,7 +303,7 @@ Moonstat currently exposes the standalone local routes below:
 - `GET|POST /copilot/device-flow?githubDomain=github.com`
 - `GET|POST /copilot/poll-auth?deviceCode=...`
 - `GET|POST /copilot/poll-account?deviceCode=...`
-- `DELETE|POST /copilot/account?accountId=...`
+- `DELETE /copilot/account?accountId=...`
 - `GET|POST /copilot/default-account?accountId=...`
 - `GET|POST /copilot/logout`
 - `GET /copilot/token?accountId=...`

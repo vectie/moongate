@@ -136,7 +136,8 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET|POST /auth/accounts")))
   assert_true(routes.contains(Json::string("GET|POST /auth/login")))
   assert_true(routes.contains(Json::string("GET|POST /auth/poll")))
-  assert_true(routes.contains(Json::string("DELETE|POST /auth/account")))
+  assert_true(routes.contains(Json::string("DELETE /auth/account")))
+  assert_false(routes.contains(Json::string("DELETE|POST /auth/account")))
   assert_true(routes.contains(Json::string("GET|POST /auth/default-account")))
   assert_true(routes.contains(Json::string("GET|POST /auth/logout")))
   assert_true(routes.contains(Json::string("GET /copilot/status")))
@@ -146,7 +147,8 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET|POST /copilot/poll-auth")))
   assert_true(routes.contains(Json::string("GET|POST /copilot/poll-account")))
   assert_true(routes.contains(Json::string("GET|POST /copilot/logout")))
-  assert_true(routes.contains(Json::string("DELETE|POST /copilot/account")))
+  assert_true(routes.contains(Json::string("DELETE /copilot/account")))
+  assert_false(routes.contains(Json::string("DELETE|POST /copilot/account")))
   assert_true(
     routes.contains(Json::string("GET|POST /copilot/default-account")),
   )

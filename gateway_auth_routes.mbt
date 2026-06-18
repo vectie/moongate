@@ -31,9 +31,6 @@ fn AuthService::register_routes(
   router.add_handler(Delete, "/auth/account", (r, w) => {
     self.handle_auth_remove_account(r, w)
   })
-  router.add_handler(Post, "/auth/account", (r, w) => {
-    self.handle_auth_remove_account(r, w)
-  })
   router.add_handler(Post, "/auth/default-account", (r, w) => {
     self.handle_auth_set_default_account(r, w)
   })
@@ -80,9 +77,6 @@ fn AuthService::register_routes(
     self.handle_copilot_logout(w)
   })
   router.add_handler(Delete, "/copilot/account", (r, w) => {
-    self.handle_copilot_remove_account(r, w)
-  })
-  router.add_handler(Post, "/copilot/account", (r, w) => {
     self.handle_copilot_remove_account(r, w)
   })
   router.add_handler(Get, "/copilot/default-account", (r, w) => {

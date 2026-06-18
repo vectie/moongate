@@ -50,7 +50,7 @@ async fn run_copilot_cli_command(
       check_usage_endpoint(args, "/copilot/authenticated")
     "copilot_logout" =>
       check_json_post_endpoint(args, "/copilot/logout", "Copilot")
-    "copilot_remove_account" => copilot_account_post(args, "/copilot/account")
+    "copilot_remove_account" => copilot_account_delete(args, "/copilot/account")
     "copilot_set_default_account" =>
       copilot_account_post(args, "/copilot/default-account")
     "copilot_get_token" =>
@@ -99,6 +99,16 @@ async fn copilot_account_post(args : Array[String], path : String) -> Unit {
     return
   }
   check_json_post_endpoint(args, path, "Copilot")
+}
+
+///|
+async fn copilot_account_delete(args : Array[String], path : String) -> Unit {
+  guard copilot_account_path(args, path) is Some(path) else {
+    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    logger.error("Missing required Copilot arg: --account-id")
+    return
+  }
+  check_json_delete_endpoint(args, path, "Copilot")
 }
 
 ///|
