@@ -1243,25 +1243,29 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.usage.handle_usage_sync_session(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/list_sessions", (_, w) => {
-    self.handle_list_sessions(w)
+    self.session.handle_list_sessions(w)
   })
   router.add_handler(@httpx.Method::Post, "/list_sessions", (_, w) => {
-    self.handle_list_sessions(w)
+    self.session.handle_list_sessions(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_session_messages", (r, w) => {
-    self.handle_get_session_messages(r, w)
+    self.session.handle_get_session_messages(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_session_messages", (r, w) => {
-    self.handle_get_session_messages(r, w)
+    self.session.handle_get_session_messages(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/launch_session_terminal", (r, w) => {
-    self.handle_launch_session_terminal(r, w)
+    self.session.handle_launch_session_terminal(
+      r,
+      w,
+      moon_session_terminal_from_settings(self.config.app_settings),
+    )
   })
   router.add_handler(@httpx.Method::Post, "/delete_session", (r, w) => {
-    self.handle_delete_session(r, w)
+    self.session.handle_delete_session(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/delete_sessions", (r, w) => {
-    self.handle_delete_sessions(r, w)
+    self.session.handle_delete_sessions(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/model-pricing", (_, w) => {
     self.handle_usage_model_pricing(w)
