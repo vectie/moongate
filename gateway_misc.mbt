@@ -6036,7 +6036,7 @@ fn OpenAIChatSseState::push_chat_sse_message(
   }
   match message.get("function_call") {
     Some(Object(function_call)) =>
-      self.push_chat_sse_legacy_function_call(function_call)
+      self.push_chat_sse_function_call_snapshot(function_call)
     _ => ()
   }
 }
@@ -6065,7 +6065,7 @@ fn OpenAIChatSseState::push_chat_sse_delta(
   }
   match delta.get("function_call") {
     Some(Object(function_call)) =>
-      self.push_chat_sse_legacy_function_call(function_call)
+      self.push_chat_sse_function_call_snapshot(function_call)
     _ => ()
   }
 }
@@ -6108,7 +6108,7 @@ fn OpenAIChatSseState::push_chat_sse_tool_call(
 }
 
 ///|
-fn OpenAIChatSseState::push_chat_sse_legacy_function_call(
+fn OpenAIChatSseState::push_chat_sse_function_call_snapshot(
   self : OpenAIChatSseState,
   function_call : Map[String, Json],
 ) -> Unit {

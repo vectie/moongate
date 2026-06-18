@@ -6573,9 +6573,9 @@ test "ccs chat sse parser preserves object form tool arguments" {
 }
 
 ///|
-test "ccs chat sse parser maps legacy function call snapshots" {
+test "moonstat chat sse parser maps function call snapshots" {
   let sse =
-    #|data: {"id":"chatcmpl_legacy_fn","model":"gpt-4o","choices":[{"index":0,"message":{"role":"assistant","content":null,"function_call":{"name":"lookup","arguments":"{\"q\":\"moon\"}"}},"finish_reason":"function_call"}]}
+    #|data: {"id":"chatcmpl_function_fn","model":"gpt-4o","choices":[{"index":0,"message":{"role":"assistant","content":null,"function_call":{"name":"lookup","arguments":"{\"q\":\"moon\"}"}},"finish_reason":"function_call"}]}
     #|
   guard parse_claude_compatible_non_stream_body_with_diagnostics(
       "openai_chat",
