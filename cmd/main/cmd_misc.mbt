@@ -25,7 +25,6 @@ fn print_help() -> Unit {
   println("  codex uninstall           Remove Moonstat Codex config block")
   println("  codex status              Show Codex config.toml Moonstat status")
   println("  models fetch              Fetch provider model catalogs")
-  println("  fetch_models_for_config   Fetch provider model catalogs")
   println("  models candidates         Print /v1/models candidate URLs")
   println("  auth status               Show OAuth account status")
   println("  auth start-login          Start OAuth device login")
@@ -34,7 +33,7 @@ fn print_help() -> Unit {
   println("  stream-check all          Check all provider stream paths")
   println("  stream-check config       Show stream check configuration")
   println("  stream-check config set   Update stream check configuration")
-  println("  update_tray_menu          Refresh desktop tray menu state")
+  println("  runtime tray-menu update  Refresh desktop tray menu state")
   println("  suite manifest            Print Moon suite service manifest")
   println("  suite status              Print Moon suite status contract")
   println("  suite write-status        Write ~/.moonsuite/suite-status.json")
@@ -50,14 +49,12 @@ fn print_help() -> Unit {
   println("  mcp list/upsert/delete/toggle  Manage MCP servers")
   println("  mcp config/upsert-config       Manage app MCP config view")
   println("  prompt list/upsert/delete      Manage prompt records")
+  println("  proxy start            Enable proxy routing and print server info")
   println(
-    "  proxy start-proxy-server  Enable proxy routing and print server info",
+    "  proxy stop             Disable proxy routing when no takeover is active",
   )
   println(
-    "  proxy stop-proxy-server   Disable proxy routing when no takeover is active",
-  )
-  println(
-    "  proxy stop-proxy-with-restore  Disable proxy routing and clear takeover state",
+    "  proxy stop-with-restore  Disable proxy routing and clear takeover state",
   )
   println("  proxy config           Show proxy server config")
   println("  proxy global-config    Show global proxy config")
@@ -126,11 +123,10 @@ fn print_help() -> Unit {
   println("  usage trends     Show hourly/daily usage trends")
   println("  usage limits     Show provider limit status")
   println("  usage sync       Sync Claude/Codex/Gemini/OpenCode session logs")
-  println("  list_sessions  List known sessions")
-  println("  get_session_messages --provider-id <id> --source-path <path>")
-  println(
-    "  delete_session --provider-id <id> --session-id <id> --source-path <path>",
-  )
+  println("  sessions list      List known sessions")
+  println("  sessions messages  Read session messages")
+  println("  sessions delete    Delete one session")
+  println("  sessions delete-many  Delete multiple sessions")
   println("  usage providers  Show provider statistics")
   println("  usage models     Show model statistics")
   println("  usage sources    Show data source breakdown")
@@ -213,7 +209,7 @@ fn print_help() -> Unit {
   println("  moonstat suite write-status --port 15721")
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat proxy status          # Show proxy status")
-  println("  moonstat proxy start-proxy-server")
+  println("  moonstat proxy start")
   println(
     "  moonstat proxy switch-proxy-provider --app-type codex --provider-id codex-oauth",
   )
