@@ -1,6 +1,9 @@
 ///|
 pub async fn start(args : ArrayView[String]) -> Unit {
   let arr = args.to_array()
+  if run_registered_cli_command(arr) {
+    return
+  }
   match arr[1:] {
     ["start", ..] => start_gateway(arr)
     ["login", ..] => do_login(arr)
@@ -132,14 +135,6 @@ pub async fn start(args : ArrayView[String]) -> Unit {
     ["stream-check", "config", ..]
     | ["stream-check", "get-stream-check-config", ..] =>
       check_usage_endpoint(arr, "/get_stream_check_config")
-    ["suite", "manifest", ..] => print_suite_manifest(arr)
-    ["suite", "status", ..] => print_suite_status(arr)
-    ["suite", "write-status", ..] => write_suite_status(arr)
-    ["suite", "moonclaw-providers", ..] | ["suite", "provider-manifest", ..] =>
-      print_moonclaw_providers_file(arr)
-    ["suite", "write-moonclaw-providers", ..]
-    | ["suite", "write-provider-manifest", ..] =>
-      write_moonclaw_providers_file(arr)
     ["status", ..] => check_status(arr)
     ["health", ..] => check_health(arr)
     ["stats", ..] => check_stats(arr)

@@ -6,6 +6,31 @@ test "has flag matches exact CLI option" {
 }
 
 ///|
+test "registered cli commands match suite command aliases" {
+  assert_true(registered_cli_commands().length() == 5)
+  assert_true(
+    cli_args_match_pattern(
+      ["moonstat", "suite", "manifest", "--host", "127.0.0.1"],
+      "suite manifest",
+    ),
+  )
+  assert_false(cli_args_match_pattern(["moonstat", "suite"], "suite status"))
+  assert_true(
+    registered_cli_command_id(["moonstat", "suite", "provider-manifest"]) ==
+    Some("suite_moonclaw_providers"),
+  )
+  assert_true(
+    registered_cli_command_id([
+      "moonstat", "suite", "write-provider-manifest", "--path", "/tmp/providers.json",
+    ]) ==
+    Some("suite_write_moonclaw_providers"),
+  )
+  assert_true(
+    registered_cli_command_id(["moonstat", "usage", "summary"]) == None,
+  )
+}
+
+///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),
