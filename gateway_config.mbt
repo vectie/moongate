@@ -1267,8 +1267,8 @@ async fn ConfigService::handle_upsert_mcp_server_in_config(
 }
 
 ///|
-async fn Gateway::handle_import_default_config(
-  self : Gateway,
+async fn ProxyService::handle_import_default_config(
+  self : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -1277,7 +1277,7 @@ async fn Gateway::handle_import_default_config(
     write_usage_bad_request(w, "missing_app")
     return
   }
-  match moon_import_default_config_json(self.proxy.provider_router, app_type) {
+  match moon_import_default_config_json(self.provider_router, app_type) {
     Ok(result) => write_usage_json(w, result)
     Err(error) => write_usage_bad_request(w, error)
   }

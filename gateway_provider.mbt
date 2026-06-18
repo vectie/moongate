@@ -903,19 +903,19 @@ async fn ProxyService::handle_open_provider_terminal(
 }
 
 ///|
-fn Gateway::current_claude_desktop_provider(
-  self : Gateway,
+fn ProxyService::current_claude_desktop_provider(
+  self : ProxyService,
 ) -> ProviderRouteTarget? {
-  match self.proxy.provider_router.current_provider_id("claude-desktop") {
+  match self.provider_router.current_provider_id("claude-desktop") {
     Some(provider_id) =>
-      self.proxy.provider_router.provider_by_id("claude-desktop", provider_id)
+      self.provider_router.provider_by_id("claude-desktop", provider_id)
     None => None
   }
 }
 
 ///|
-async fn Gateway::handle_import_claude_desktop_providers_from_claude(
-  self : Gateway,
+async fn ProxyService::handle_import_claude_desktop_providers_from_claude(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(
@@ -925,8 +925,8 @@ async fn Gateway::handle_import_claude_desktop_providers_from_claude(
 }
 
 ///|
-async fn Gateway::handle_ensure_claude_desktop_official_provider(
-  self : Gateway,
+async fn ProxyService::handle_ensure_claude_desktop_official_provider(
+  self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(
@@ -936,12 +936,14 @@ async fn Gateway::handle_ensure_claude_desktop_official_provider(
 }
 
 ///|
-fn Gateway::ensure_claude_desktop_official_provider(self : Gateway) -> Bool {
-  if self.proxy.provider_router.provider_by_id("claude-desktop", "codex-oauth")
+fn ProxyService::ensure_claude_desktop_official_provider(
+  self : ProxyService,
+) -> Bool {
+  if self.provider_router.provider_by_id("claude-desktop", "codex-oauth")
     is Some(_) {
     return false
   }
-  self.proxy.provider_router.upsert_provider(
+  self.provider_router.upsert_provider(
     ProviderRouteTarget::new(
       app_type="claude-desktop",
       provider_id="codex-oauth",
@@ -950,24 +952,23 @@ fn Gateway::ensure_claude_desktop_official_provider(self : Gateway) -> Bool {
       model_mapping=moon_model_mapping_from_env(),
     ),
   )
-  if self.proxy.provider_router.current_provider_id("claude-desktop") is None {
-    self.proxy.provider_router.set_current_provider(
-      "claude-desktop", "codex-oauth",
-    )
+  if self.provider_router.current_provider_id("claude-desktop") is None {
+    self.provider_router.set_current_provider("claude-desktop", "codex-oauth")
   }
   true
 }
 
 ///|
-fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
+fn ProxyService::import_claude_desktop_providers_from_claude(
+  self : ProxyService,
+) -> Int {
   ignore(self.ensure_claude_desktop_official_provider())
   let mut imported = 0
-  guard self.proxy.provider_router.providers.get("claude")
-    is Some(claude_providers) else {
+  guard self.provider_router.providers.get("claude") is Some(claude_providers) else {
     return imported
   }
   for provider in claude_providers.values() {
-    if self.proxy.provider_router.provider_by_id(
+    if self.provider_router.provider_by_id(
         "claude-desktop",
         provider.provider_id,
       )
@@ -986,7 +987,7 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
     guard import_decision is Some((import_mode, claude_desktop_model_routes)) else {
       continue
     }
-    self.proxy.provider_router.upsert_provider(
+    self.provider_router.upsert_provider(
       ProviderRouteTarget::new(
         app_type="claude-desktop",
         provider_id=provider.provider_id,
@@ -1007,14 +1008,12 @@ fn Gateway::import_claude_desktop_providers_from_claude(self : Gateway) -> Int {
     )
     imported += 1
   }
-  if self.proxy.provider_router.current_provider_id("claude-desktop") is None {
-    match self.proxy.provider_router.current_provider_id("claude") {
+  if self.provider_router.current_provider_id("claude-desktop") is None {
+    match self.provider_router.current_provider_id("claude") {
       Some(provider_id) =>
-        if self.proxy.provider_router.provider_by_id(
-            "claude-desktop", provider_id,
-          )
+        if self.provider_router.provider_by_id("claude-desktop", provider_id)
           is Some(_) {
-          self.proxy.provider_router.set_current_provider(
+          self.provider_router.set_current_provider(
             "claude-desktop", provider_id,
           )
         }

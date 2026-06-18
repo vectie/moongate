@@ -828,12 +828,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.proxy.handle_sync_current_providers_live(self.usage, w)
   })
   router.add_handler(@httpx.Method::Post, "/import_default_config", (r, w) => {
-    self.handle_import_default_config(r, w)
+    self.proxy.handle_import_default_config(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/import_default_config_test_hook", (
     r,
     w,
-  ) => self.handle_import_default_config(r, w))
+  ) => self.proxy.handle_import_default_config(r, w))
   router.add_handler(@httpx.Method::Get, "/get_providers", (r, w) => {
     self.proxy.handle_get_providers(r, w)
   })
@@ -886,12 +886,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(
     @httpx.Method::Post,
     "/import_claude_desktop_providers_from_claude",
-    (_, w) => self.handle_import_claude_desktop_providers_from_claude(w),
+    (_, w) => self.proxy.handle_import_claude_desktop_providers_from_claude(w),
   )
   router.add_handler(
     @httpx.Method::Post,
     "/ensure_claude_desktop_official_provider",
-    (_, w) => self.handle_ensure_claude_desktop_official_provider(w),
+    (_, w) => self.proxy.handle_ensure_claude_desktop_official_provider(w),
   )
   router.add_handler(@httpx.Method::Get, "/read_live_provider_settings", (r, w) => {
     self.proxy.handle_read_live_provider_settings(r, w)

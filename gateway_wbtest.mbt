@@ -2250,6 +2250,43 @@ async test "external utility endpoints are owned by proxy service" {
 }
 
 ///|
+async test "provider config endpoints are owned by proxy service" {
+  let provider_source = @fsx.read_file("gateway_provider.mbt")
+  let config_source = @fsx.read_file("gateway_config.mbt")
+  let sources = provider_source + config_source
+  let core_source = @fsx.read_file("gateway_core.mbt")
+  for
+    handler in [
+      "handle_import_default_config", "handle_import_claude_desktop_providers_from_claude",
+      "handle_ensure_claude_desktop_official_provider",
+    ] {
+    assert_true(sources.contains("async fn ProxyService::\{handler}("))
+    assert_false(sources.contains("async fn Gateway::\{handler}("))
+  }
+  assert_true(
+    provider_source.contains(
+      "fn ProxyService::current_claude_desktop_provider(",
+    ),
+  )
+  assert_false(
+    provider_source.contains("fn Gateway::current_claude_desktop_provider("),
+  )
+  assert_true(
+    core_source.contains("self.proxy.handle_import_default_config(r, w)"),
+  )
+  assert_true(
+    core_source.contains(
+      "self.proxy.handle_import_claude_desktop_providers_from_claude(w)",
+    ),
+  )
+  assert_true(
+    core_source.contains(
+      "self.proxy.handle_ensure_claude_desktop_official_provider(w)",
+    ),
+  )
+}
+
+///|
 async test "skill endpoints are owned by skill service" {
   let skill_source = @fsx.read_file("gateway_misc.mbt")
   let core_source = @fsx.read_file("gateway_core.mbt")
@@ -9159,7 +9196,7 @@ test "ccs imports missing claude providers into claude desktop namespace" {
       ),
     ),
   )
-  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
+  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 1)
   guard gateway.proxy.provider_router.provider_by_id(
       "claude-desktop", "claude-extra",
     )
@@ -9167,7 +9204,7 @@ test "ccs imports missing claude providers into claude desktop namespace" {
     fail("expected imported provider")
   }
   assert_eq(imported.claude_desktop_mode, Some("direct"))
-  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
+  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 0)
 }
 
 ///|
@@ -9238,7 +9275,7 @@ test "ccs import skips claude providers without direct or proxy compatibility" {
       settings_config=Some({ "env": {}.to_json() }.to_json()),
     ),
   )
-  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 0)
+  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 0)
   assert_true(
     gateway.proxy.provider_router.provider_by_id("claude-desktop", "incomplete")
     is None,
@@ -9262,7 +9299,7 @@ test "ccs import derives claude desktop routes from claude provider env" {
       ),
     ),
   )
-  assert_eq(gateway.import_claude_desktop_providers_from_claude(), 1)
+  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 1)
   guard gateway.proxy.provider_router.provider_by_id(
       "claude-desktop", "env-routes",
     )

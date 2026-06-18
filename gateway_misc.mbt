@@ -4006,7 +4006,7 @@ fn Gateway::claude_desktop_status_json(
   self : Gateway,
   status : @claude_desktop.ClaudeDesktopStatus,
 ) -> Json {
-  let provider = self.current_claude_desktop_provider()
+  let provider = self.proxy.current_claude_desktop_provider()
   let mode = match provider {
     Some(provider) => provider.claude_desktop_mode_for_status()
     None => None
