@@ -43,6 +43,20 @@ fn codex_oauth_headers(
 }
 
 ///|
+async fn AuthService::codex_client(
+  self : AuthService,
+  creds : @codex.Credentials,
+  accept~ : String,
+  session_id? : String? = None,
+) -> @http.Client {
+  let _ = self
+  @http.Client::new(
+    "https://chatgpt.com",
+    headers=codex_oauth_headers(creds, accept, session_id),
+  )
+}
+
+///|
 fn normalize_codex_oauth_request(json : Json) -> Json {
   guard json is Object(obj) else { return json }
   obj["store"] = Json::boolean(false)

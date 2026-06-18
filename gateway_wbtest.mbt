@@ -2368,7 +2368,9 @@ async test "external utility endpoints are owned by proxy service" {
 
 ///|
 async test "provider config endpoints are owned by proxy service" {
+  let codex_openai_source = @fsx.read_file("gateway_codex_openai.mbt")
   let provider_source = @fsx.read_file("gateway_provider.mbt")
+  let auth_source = @fsx.read_file("gateway_auth.mbt")
   let claude_desktop_source = @fsx.read_file("gateway_claude_desktop.mbt")
   let endpoint_source = @fsx.read_file("gateway_provider_endpoints.mbt")
   let stream_check_source = @fsx.read_file("gateway_stream_check.mbt")
@@ -2379,7 +2381,9 @@ async test "provider config endpoints are owned by proxy service" {
   let workspace_route_source = @fsx.read_file("gateway_workspace_routes.mbt")
   let omo_source = @fsx.read_file("omo.mbt")
   let usage_source = @fsx.read_file("gateway_usage.mbt")
-  let sources = provider_source +
+  let sources = codex_openai_source +
+    provider_source +
+    auth_source +
     claude_desktop_source +
     endpoint_source +
     stream_check_source +
@@ -2417,6 +2421,26 @@ async test "provider config endpoints are owned by proxy service" {
     assert_false(misc_source.contains("async fn ProxyService::\{handler}("))
   }
   for
+    handler in [
+      "handle_codex_responses", "handle_chat_completions", "forward_non_streaming_chat_completion",
+      "forward_streaming_chat_completion", "forward_non_streaming_codex_response",
+      "forward_streaming_codex_response",
+    ] {
+    assert_true(
+      codex_openai_source.contains("async fn ProxyService::\{handler}("),
+    )
+    assert_false(misc_source.contains("async fn ProxyService::\{handler}("))
+  }
+  for
+    helper in [
+      "fn codex_forward_failed_error_message(", "fn codex_forward_failed_error_json(",
+      "fn codex_forward_failed_error_body(", "fn codex_backend_responses_endpoint(",
+      "fn endpoint_with_request_query(", "fn codex_request_model(",
+    ] {
+    assert_true(codex_openai_source.contains(helper))
+    assert_false(misc_source.contains(helper))
+  }
+  for
     helper in [
       "struct StreamCheckConfig", "fn StreamCheckConfig::default(", "fn StreamCheckConfig::to_json(",
       "fn stream_check_int_request(", "fn stream_check_string_request(", "fn stream_check_model_for_app(",
@@ -2451,7 +2475,8 @@ async test "provider config endpoints are owned by proxy service" {
     ),
   )
   assert_false(sources.contains("fn Gateway::codex_provider_outbound_request("))
-  assert_true(sources.contains("async fn AuthService::codex_client("))
+  assert_true(auth_source.contains("async fn AuthService::codex_client("))
+  assert_false(misc_source.contains("async fn AuthService::codex_client("))
   assert_false(sources.contains("async fn Gateway::codex_client("))
   assert_true(core_source.contains("self.proxy.register_inference_routes("))
   assert_true(route_source.contains("self.handle_models(w)"))
