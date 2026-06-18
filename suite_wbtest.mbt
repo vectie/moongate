@@ -171,7 +171,6 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET|POST /deeplinks/parse")))
   assert_true(routes.contains(Json::string("GET|POST /deeplinks/merge")))
   assert_true(routes.contains(Json::string("POST /deeplinks/import")))
-  assert_true(routes.contains(Json::string("POST /deeplinks/import-unified")))
   assert_true(routes.contains(Json::string("POST /sync/webdav/test")))
   assert_true(routes.contains(Json::string("POST /sync/webdav/upload")))
   assert_true(routes.contains(Json::string("POST /sync/webdav/download")))
@@ -601,13 +600,12 @@ fn moon_tauri_command_surface() -> Array[String] {
     "s3_sync_save_settings", "s3_sync_fetch_remote_info", "save_file_dialog", "open_file_dialog",
     "open_zip_file_dialog", "create_db_backup", "list_db_backups", "restore_db_backup",
     "rename_db_backup", "delete_db_backup", "parse_deeplink", "merge_deeplink_config",
-    "import_from_deeplink", "import_from_deeplink_unified", "list_sessions", "get_session_messages",
-    "delete_session", "delete_sessions", "launch_session_terminal", "read_omo_local_file",
-    "get_current_omo_provider_id", "disable_current_omo", "read_omo_slim_local_file",
-    "get_current_omo_slim_provider_id", "disable_current_omo_slim", "read_workspace_file",
-    "write_workspace_file", "list_daily_memory_files", "read_daily_memory_file",
-    "write_daily_memory_file", "delete_daily_memory_file", "search_daily_memory_files",
-    "open_workspace_directory",
+    "import_from_deeplink", "list_sessions", "get_session_messages", "delete_session",
+    "delete_sessions", "launch_session_terminal", "read_omo_local_file", "get_current_omo_provider_id",
+    "disable_current_omo", "read_omo_slim_local_file", "get_current_omo_slim_provider_id",
+    "disable_current_omo_slim", "read_workspace_file", "write_workspace_file", "list_daily_memory_files",
+    "read_daily_memory_file", "write_daily_memory_file", "delete_daily_memory_file",
+    "search_daily_memory_files", "open_workspace_directory",
   ]
 }
 
@@ -621,7 +619,7 @@ test "suite manifest omits legacy Moonstat command route surface" {
   guard manifest is Object(obj) else { fail("expected manifest object") }
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 60)
+  assert_eq(moon_commands.length(), 59)
   for command in moon_commands {
     assert_false(suite_routes_include_path(routes, "/\{command}"))
   }
@@ -642,7 +640,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 async test "gateway omits legacy Moonstat command route handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let moon_commands = moon_tauri_command_surface()
-  assert_eq(moon_commands.length(), 60)
+  assert_eq(moon_commands.length(), 59)
   for command in moon_commands {
     assert_false(gateway_source_registers_path(source, "/\{command}"))
   }

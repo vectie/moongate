@@ -296,8 +296,8 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("parse_deeplink"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "deeplink", "import-unified"]) ==
-    Some("import_from_deeplink_unified"),
+    registered_cli_command_id(["moonstat", "deeplink", "import"]) ==
+    Some("import_from_deeplink"),
   )
   assert_true(
     registered_cli_command_id(["moonstat", "settings", "get"]) ==
@@ -1150,11 +1150,11 @@ test "top level moonstat config command names build config paths" {
   assert_eq(
     deeplink_request_path(
       [
-        "moonstat", "deeplink", "import-unified", "--url", "moonstat://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8",
+        "moonstat", "deeplink", "import", "--url", "moonstat://v1/import?resource=prompt&app=codex&name=Daily&content=SGVsbG8",
       ],
-      "/deeplinks/import-unified",
+      "/deeplinks/import",
     ),
-    "/deeplinks/import-unified?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dprompt%26app%3Dcodex%26name%3DDaily%26content%3DSGVsbG8",
+    "/deeplinks/import?url=moonstat%3A%2F%2Fv1%2Fimport%3Fresource%3Dprompt%26app%3Dcodex%26name%3DDaily%26content%3DSGVsbG8",
   )
   assert_eq(
     sync_settings_path(

@@ -55,10 +55,6 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "search_skills_sh", patterns: ["skills search"] },
     { id: "get_skills", patterns: ["skills list"] },
     { id: "get_skills_for_app", patterns: ["skills app"] },
-    { id: "install_skill_for_app", patterns: ["skills install-for-app"] },
-    { id: "install_skill", patterns: ["skills install"] },
-    { id: "uninstall_skill_for_app", patterns: ["skills uninstall-for-app"] },
-    { id: "uninstall_skill", patterns: ["skills uninstall"] },
     { id: "get_skill_repos", patterns: ["skills repos"] },
     { id: "add_skill_repo", patterns: ["skills repo add"] },
     { id: "remove_skill_repo", patterns: ["skills repo remove"] },
@@ -381,10 +377,6 @@ fn registered_cli_commands() -> Array[CliCommandSpec] {
     { id: "parse_deeplink", patterns: ["deeplink parse"] },
     { id: "merge_deeplink_config", patterns: ["deeplink merge"] },
     { id: "import_from_deeplink", patterns: ["deeplink import"] },
-    {
-      id: "import_from_deeplink_unified",
-      patterns: ["deeplink import-unified"],
-    },
     { id: "get_settings", patterns: ["settings get"] },
     { id: "save_settings", patterns: ["settings save"] },
     { id: "restart_app", patterns: ["runtime restart"] },
@@ -743,38 +735,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some("get_skills_for_app") => {
       check_usage_endpoint(args, skill_app_path(args, "/skills/app"))
-      true
-    }
-    Some("install_skill") => {
-      check_json_post_endpoint(
-        args,
-        skill_install_path(args, "/skills/install"),
-        "Skills",
-      )
-      true
-    }
-    Some("install_skill_for_app") => {
-      check_json_post_endpoint(
-        args,
-        skill_install_path(args, "/skills/install-for-app"),
-        "Skills",
-      )
-      true
-    }
-    Some("uninstall_skill") => {
-      check_json_post_endpoint(
-        args,
-        skill_id_path(args, "/skills/uninstall"),
-        "Skills",
-      )
-      true
-    }
-    Some("uninstall_skill_for_app") => {
-      check_json_post_endpoint(
-        args,
-        skill_id_path(args, "/skills/uninstall-for-app"),
-        "Skills",
-      )
       true
     }
     Some("get_skill_repos") => {
@@ -1357,14 +1317,6 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       check_json_post_endpoint(
         args,
         deeplink_request_path(args, "/deeplinks/import"),
-        "Deeplink",
-      )
-      true
-    }
-    Some("import_from_deeplink_unified") => {
-      check_json_post_endpoint(
-        args,
-        deeplink_request_path(args, "/deeplinks/import-unified"),
         "Deeplink",
       )
       true

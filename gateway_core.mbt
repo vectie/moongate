@@ -35,9 +35,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   let router = @httpx.Router::new()
   let file_server = @httpx.FileServer::new("public")
   router.add_handler(Post, "/v1/messages", (r, w) => self.handle_messages(r, w))
-  router.add_handler(Post, "/claude/v1/messages", (r, w) => {
-    self.handle_messages(r, w)
-  })
   router.add_handler(Post, "/claude-desktop/v1/messages", (r, w) => {
     self.handle_messages(r, w)
   })
@@ -63,26 +60,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     )
   })
   router.add_handler(Post, "/v1/chat/completions", (r, w) => {
-    self.proxy.handle_chat_completions(
-      self.auth,
-      self.usage,
-      self.session,
-      self.model,
-      r,
-      w,
-    )
-  })
-  router.add_handler(Post, "/v1/v1/chat/completions", (r, w) => {
-    self.proxy.handle_chat_completions(
-      self.auth,
-      self.usage,
-      self.session,
-      self.model,
-      r,
-      w,
-    )
-  })
-  router.add_handler(Post, "/codex/v1/chat/completions", (r, w) => {
     self.proxy.handle_chat_completions(
       self.auth,
       self.usage,
@@ -123,26 +100,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
       w,
     )
   })
-  router.add_handler(Post, "/v1/v1/responses", (r, w) => {
-    self.proxy.handle_codex_responses(
-      self.auth,
-      self.usage,
-      self.session,
-      self.model,
-      r,
-      w,
-    )
-  })
-  router.add_handler(Post, "/codex/v1/responses", (r, w) => {
-    self.proxy.handle_codex_responses(
-      self.auth,
-      self.usage,
-      self.session,
-      self.model,
-      r,
-      w,
-    )
-  })
   router.add_handler(Post, "/responses/compact", (r, w) => {
     self.proxy.handle_codex_responses(
       self.auth,
@@ -155,28 +112,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     )
   })
   router.add_handler(Post, "/v1/responses/compact", (r, w) => {
-    self.proxy.handle_codex_responses(
-      self.auth,
-      self.usage,
-      self.session,
-      self.model,
-      r,
-      w,
-      compact=true,
-    )
-  })
-  router.add_handler(Post, "/v1/v1/responses/compact", (r, w) => {
-    self.proxy.handle_codex_responses(
-      self.auth,
-      self.usage,
-      self.session,
-      self.model,
-      r,
-      w,
-      compact=true,
-    )
-  })
-  router.add_handler(Post, "/codex/v1/responses/compact", (r, w) => {
     self.proxy.handle_codex_responses(
       self.auth,
       self.usage,
@@ -391,10 +326,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.config.handle_merge_deeplink_config(r, w)
   })
   router.add_handler(Post, "/deeplinks/import", (r, w) => {
-    self.config.handle_import_from_deeplink(self.proxy, r, w, legacy=true)
-  })
-  router.add_handler(Post, "/deeplinks/import-unified", (r, w) => {
-    self.config.handle_import_from_deeplink(self.proxy, r, w, legacy=false)
+    self.config.handle_import_from_deeplink(self.proxy, r, w)
   })
   router.add_handler(Post, "/sync/webdav/test", (r, w) => {
     self.config.handle_webdav_test_connection(r, w)
@@ -540,18 +472,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(Get, "/skills", (_, w) => self.skills.handle_get_skills(w))
   router.add_handler(Get, "/skills/app", (_, w) => {
     self.skills.handle_get_skills(w)
-  })
-  router.add_handler(Post, "/skills/install", (r, w) => {
-    self.skills.handle_install_skill_legacy(r, w, "claude")
-  })
-  router.add_handler(Post, "/skills/install-for-app", (r, w) => {
-    self.skills.handle_install_skill_for_app(r, w)
-  })
-  router.add_handler(Post, "/skills/uninstall", (r, w) => {
-    self.skills.handle_uninstall_skill_legacy(r, w)
-  })
-  router.add_handler(Post, "/skills/uninstall-for-app", (r, w) => {
-    self.skills.handle_uninstall_skill_legacy(r, w)
   })
   router.add_handler(Get, "/skills/repos", (_, w) => {
     self.skills.handle_get_skill_repos(w)

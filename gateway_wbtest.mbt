@@ -2217,12 +2217,7 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   assert_true(core_source.contains("self.config.handle_parse_deeplink(r, w)"))
   assert_true(
     core_source.contains(
-      "self.config.handle_import_from_deeplink(self.proxy, r, w, legacy=true)",
-    ),
-  )
-  assert_true(
-    core_source.contains(
-      "self.config.handle_import_from_deeplink(self.proxy, r, w, legacy=false)",
+      "self.config.handle_import_from_deeplink(self.proxy, r, w)",
     ),
   )
   assert_true(
@@ -2552,7 +2547,6 @@ async test "skill endpoints are owned by skill service" {
       "handle_toggle_skill_app", "handle_scan_unmanaged_skills", "handle_import_skills_from_apps",
       "handle_discover_available_skills", "handle_check_skill_updates", "handle_update_skill",
       "handle_migrate_skill_storage", "handle_search_skills_sh", "handle_get_skills",
-      "handle_install_skill_legacy", "handle_install_skill_for_app", "handle_uninstall_skill_legacy",
       "handle_get_skill_repos", "handle_add_skill_repo", "handle_remove_skill_repo",
       "handle_install_skills_from_zip",
     ] {
@@ -3573,7 +3567,7 @@ test "codex responses endpoints preserve request query" {
   assert_eq(
     codex_backend_responses_endpoint(
       true,
-      request_path="/codex/v1/responses/compact?beta=true",
+      request_path="/v1/responses/compact?beta=true",
     ),
     "/backend-api/codex/responses/compact?beta=true",
   )
@@ -5599,7 +5593,7 @@ test "claude compatible provider endpoints preserve ccs query semantics" {
     claude_transform_endpoint(
       "openai_responses",
       false,
-      request_path="/claude/v1/messages?conversation=abc&beta=true",
+      request_path="/v1/messages?conversation=abc&beta=true",
     ),
     "/v1/responses?conversation=abc",
   )

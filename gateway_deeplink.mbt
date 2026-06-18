@@ -22,7 +22,6 @@ async fn ConfigService::handle_import_from_deeplink(
   proxy : ProxyService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
-  legacy~ : Bool,
 ) -> Unit {
   let body = proxy_json_body(r)
   guard moon_deeplink_request_payload(r.path, body) is Some(request) else {
@@ -30,21 +29,7 @@ async fn ConfigService::handle_import_from_deeplink(
     return
   }
   match self.moon_import_from_deeplink_json(proxy, request) {
-    Some(Object(obj)) =>
-      if legacy {
-        match obj.get("id") {
-          Some(String(id)) => write_usage_json(w, Json::string(id))
-          _ => write_usage_bad_request(w, "invalid_deeplink_import")
-        }
-      } else {
-        write_usage_json(w, Json::object(obj))
-      }
-    Some(result) =>
-      if legacy {
-        write_usage_bad_request(w, "invalid_deeplink_import")
-      } else {
-        write_usage_json(w, result)
-      }
+    Some(result) => write_usage_json(w, result)
     None => write_usage_bad_request(w, "invalid_deeplink_import")
   }
 }

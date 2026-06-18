@@ -1353,7 +1353,7 @@ fn claude_transform_endpoint(
 
 ///|
 fn is_claude_messages_path(path : StringView) -> Bool {
-  path == "/v1/messages" || path == "/claude/v1/messages"
+  path == "/v1/messages"
 }
 
 ///|
@@ -3424,81 +3424,6 @@ async fn SkillService::handle_get_skills(
 ) -> Unit {
   ignore(self)
   write_usage_json(w, moon_get_skills_json())
-}
-
-///|
-async fn SkillService::handle_install_skill_legacy(
-  self : SkillService,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-  app : String,
-) -> Unit {
-  ignore(self)
-  let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["directory", "id", "key"])
-    is Some(directory) else {
-    write_usage_bad_request(w, "missing_directory")
-    return
-  }
-  let install_name = moon_skill_install_name(directory)
-  if install_name.is_empty() {
-    write_usage_bad_request(w, "invalid_directory")
-    return
-  }
-  let skill = {
-    "key": Json::string("local:\{install_name}"),
-    "name": Json::string(install_name),
-    "description": Json::string(""),
-    "directory": Json::string(install_name),
-  }.to_json()
-  ignore(moon_install_skill_unified_json(skill, app))
-  write_usage_json(w, Json::boolean(true))
-}
-
-///|
-async fn SkillService::handle_install_skill_for_app(
-  self : SkillService,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  ignore(self)
-  let body = proxy_json_body(r)
-  let app = proxy_string_request(r.path, body, ["app", "appType", "app_type"]).unwrap_or(
-    "claude",
-  )
-  guard proxy_string_request(r.path, body, ["directory", "id", "key"])
-    is Some(directory) else {
-    write_usage_bad_request(w, "missing_directory")
-    return
-  }
-  let install_name = moon_skill_install_name(directory)
-  if install_name.is_empty() {
-    write_usage_bad_request(w, "invalid_directory")
-    return
-  }
-  let skill = {
-    "key": Json::string("local:\{install_name}"),
-    "name": Json::string(install_name),
-    "description": Json::string(""),
-    "directory": Json::string(install_name),
-  }.to_json()
-  ignore(moon_install_skill_unified_json(skill, app))
-  write_usage_json(w, Json::boolean(true))
-}
-
-///|
-async fn SkillService::handle_uninstall_skill_legacy(
-  self : SkillService,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  ignore(self)
-  let body = proxy_json_body(r)
-  guard proxy_string_request(r.path, body, ["directory", "id"]) is Some(id) else {
-    write_usage_bad_request(w, "missing_directory")
-    return
-  }
-  write_usage_json(w, moon_uninstall_skill_unified_json(id))
 }
 
 ///|
