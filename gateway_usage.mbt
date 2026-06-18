@@ -645,58 +645,6 @@ async fn UsageService::handle_usage_request_detail(
 }
 
 ///|
-async fn Gateway::handle_stats(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_stats(w)
-}
-
-///|
-async fn Gateway::handle_metrics(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_metrics(w)
-}
-
-///|
-async fn Gateway::handle_usage_logs(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_logs(r, w, self.pricing_override_rows())
-}
-
-///|
-async fn Gateway::handle_usage_summary(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_summary(r, w)
-}
-
-///|
-async fn Gateway::handle_usage_summary_by_app(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_summary_by_app(r, w)
-}
-
-///|
-async fn Gateway::handle_usage_trends(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_trends(r, w)
-}
-
-///|
 async fn Gateway::handle_usage_provider_limits(
   self : Gateway,
   r : @httpx.RequestReader,
@@ -739,32 +687,6 @@ async fn Gateway::handle_usage_provider_limits(
       monthly_limit_usd~,
     ),
   )
-}
-
-///|
-async fn Gateway::handle_usage_provider_stats(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_provider_stats(r, w)
-}
-
-///|
-async fn Gateway::handle_usage_model_stats(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_model_stats(r, w)
-}
-
-///|
-async fn Gateway::handle_usage_data_sources(
-  self : Gateway,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_data_sources(w)
 }
 
 ///|
@@ -846,24 +768,6 @@ async fn Gateway::handle_test_usage_script(
   }
   self.usage.usage_cache.put_script(app_type, provider_id, result)
   write_usage_json(w, result.to_json())
-}
-
-///|
-async fn Gateway::handle_usage_sync_session(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_sync_session(r, w)
-}
-
-///|
-async fn Gateway::handle_usage_request_detail(
-  self : Gateway,
-  r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  self.usage.handle_usage_request_detail(r, w, self.pricing_override_rows())
 }
 
 ///|

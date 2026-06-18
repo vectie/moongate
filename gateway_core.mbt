@@ -96,10 +96,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_status(w)
   })
   router.add_handler(@httpx.Method::Get, "/stats", (_, w) => {
-    self.handle_stats(w)
+    self.usage.handle_stats(w)
   })
   router.add_handler(@httpx.Method::Get, "/metrics", (_, w) => {
-    self.handle_metrics(w)
+    self.usage.handle_metrics(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_claude_config_status", (_, w) => {
     self.handle_get_config_status(w, "claude")
@@ -1084,52 +1084,52 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_proxy_running(w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/logs", (r, w) => {
-    self.handle_usage_logs(r, w)
+    self.usage.handle_usage_logs(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Post, "/usage/logs", (r, w) => {
-    self.handle_usage_logs(r, w)
+    self.usage.handle_usage_logs(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Get, "/get_request_logs", (r, w) => {
-    self.handle_usage_logs(r, w)
+    self.usage.handle_usage_logs(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Post, "/get_request_logs", (r, w) => {
-    self.handle_usage_logs(r, w)
+    self.usage.handle_usage_logs(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Get, "/usage/summary", (r, w) => {
-    self.handle_usage_summary(r, w)
+    self.usage.handle_usage_summary(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/summary", (r, w) => {
-    self.handle_usage_summary(r, w)
+    self.usage.handle_usage_summary(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_usage_summary", (r, w) => {
-    self.handle_usage_summary(r, w)
+    self.usage.handle_usage_summary(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_usage_summary", (r, w) => {
-    self.handle_usage_summary(r, w)
+    self.usage.handle_usage_summary(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/summary/by-app", (r, w) => {
-    self.handle_usage_summary_by_app(r, w)
+    self.usage.handle_usage_summary_by_app(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/summary/by-app", (r, w) => {
-    self.handle_usage_summary_by_app(r, w)
+    self.usage.handle_usage_summary_by_app(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_usage_summary_by_app", (r, w) => {
-    self.handle_usage_summary_by_app(r, w)
+    self.usage.handle_usage_summary_by_app(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_usage_summary_by_app", (r, w) => {
-    self.handle_usage_summary_by_app(r, w)
+    self.usage.handle_usage_summary_by_app(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/trends", (r, w) => {
-    self.handle_usage_trends(r, w)
+    self.usage.handle_usage_trends(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/trends", (r, w) => {
-    self.handle_usage_trends(r, w)
+    self.usage.handle_usage_trends(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_usage_trends", (r, w) => {
-    self.handle_usage_trends(r, w)
+    self.usage.handle_usage_trends(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_usage_trends", (r, w) => {
-    self.handle_usage_trends(r, w)
+    self.usage.handle_usage_trends(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/provider-limits", (r, w) => {
     self.handle_usage_provider_limits(r, w)
@@ -1144,40 +1144,40 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_usage_provider_limits(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/provider-stats", (r, w) => {
-    self.handle_usage_provider_stats(r, w)
+    self.usage.handle_usage_provider_stats(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/provider-stats", (r, w) => {
-    self.handle_usage_provider_stats(r, w)
+    self.usage.handle_usage_provider_stats(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_provider_stats", (r, w) => {
-    self.handle_usage_provider_stats(r, w)
+    self.usage.handle_usage_provider_stats(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_provider_stats", (r, w) => {
-    self.handle_usage_provider_stats(r, w)
+    self.usage.handle_usage_provider_stats(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/model-stats", (r, w) => {
-    self.handle_usage_model_stats(r, w)
+    self.usage.handle_usage_model_stats(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/model-stats", (r, w) => {
-    self.handle_usage_model_stats(r, w)
+    self.usage.handle_usage_model_stats(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/get_model_stats", (r, w) => {
-    self.handle_usage_model_stats(r, w)
+    self.usage.handle_usage_model_stats(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/get_model_stats", (r, w) => {
-    self.handle_usage_model_stats(r, w)
+    self.usage.handle_usage_model_stats(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/data-sources", (_, w) => {
-    self.handle_usage_data_sources(w)
+    self.usage.handle_usage_data_sources(w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/data-sources", (_, w) => {
-    self.handle_usage_data_sources(w)
+    self.usage.handle_usage_data_sources(w)
   })
   router.add_handler(@httpx.Method::Get, "/get_usage_data_sources", (_, w) => {
-    self.handle_usage_data_sources(w)
+    self.usage.handle_usage_data_sources(w)
   })
   router.add_handler(@httpx.Method::Post, "/get_usage_data_sources", (_, w) => {
-    self.handle_usage_data_sources(w)
+    self.usage.handle_usage_data_sources(w)
   })
   router.add_handler(@httpx.Method::Get, "/queryProviderUsage", (r, w) => {
     self.handle_query_provider_usage(r, w)
@@ -1219,10 +1219,10 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_test_usage_script(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/usage/sync-session", (r, w) => {
-    self.handle_usage_sync_session(r, w)
+    self.usage.handle_usage_sync_session(r, w)
   })
   router.add_handler(@httpx.Method::Post, "/sync_session_usage", (r, w) => {
-    self.handle_usage_sync_session(r, w)
+    self.usage.handle_usage_sync_session(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/list_sessions", (_, w) => {
     self.handle_list_sessions(w)
@@ -1267,13 +1267,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.handle_usage_delete_model_pricing(r, w)
   })
   router.add_handler(@httpx.Method::Get, "/usage/request-detail/*path", (r, w) => {
-    self.handle_usage_request_detail(r, w)
+    self.usage.handle_usage_request_detail(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Get, "/get_request_detail", (r, w) => {
-    self.handle_usage_request_detail(r, w)
+    self.usage.handle_usage_request_detail(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Post, "/get_request_detail", (r, w) => {
-    self.handle_usage_request_detail(r, w)
+    self.usage.handle_usage_request_detail(r, w, self.pricing_override_rows())
   })
   router.add_handler(@httpx.Method::Post, "/stream_check_provider", (r, w) => {
     self.handle_stream_check_provider(r, w)
