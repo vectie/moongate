@@ -1,5 +1,5 @@
 ///|
-pub enum CredentialStatus {
+priv enum CredentialStatus {
   Valid
   Expired
   NotFound
@@ -7,15 +7,7 @@ pub enum CredentialStatus {
 } derive(Eq)
 
 ///|
-pub let credential_statuses : Array[CredentialStatus] = [
-  Valid,
-  Expired,
-  NotFound,
-  ParseError,
-]
-
-///|
-pub fn CredentialStatus::to_string(self : CredentialStatus) -> String {
+fn CredentialStatus::to_string(self : CredentialStatus) -> String {
   match self {
     Valid => "valid"
     Expired => "expired"
@@ -25,7 +17,7 @@ pub fn CredentialStatus::to_string(self : CredentialStatus) -> String {
 }
 
 ///|
-pub struct UsageData {
+priv struct UsageData {
   plan_name : String?
   extra : String?
   is_valid : Bool?
@@ -37,7 +29,7 @@ pub struct UsageData {
 }
 
 ///|
-pub fn UsageData::new(
+fn UsageData::new(
   plan_name? : String? = None,
   extra? : String? = None,
   is_valid? : Bool? = None,
@@ -51,7 +43,7 @@ pub fn UsageData::new(
 }
 
 ///|
-pub fn UsageData::to_json(self : UsageData) -> Json {
+fn UsageData::to_json(self : UsageData) -> Json {
   let obj : Map[String, Json] = Map([], capacity=0)
   match self.plan_name {
     Some(value) => obj.set("planName", Json::string(value))
@@ -158,14 +150,14 @@ fn usage_result_or_script_output_from_json(json : Json) -> UsageResult? {
 }
 
 ///|
-pub struct UsageResult {
+priv struct UsageResult {
   success : Bool
   data : Array[UsageData]?
   error : String?
 }
 
 ///|
-pub fn UsageResult::new(
+fn UsageResult::new(
   success : Bool,
   data? : Array[UsageData]? = None,
   error? : String? = None,
@@ -174,7 +166,7 @@ pub fn UsageResult::new(
 }
 
 ///|
-pub fn UsageResult::to_json(self : UsageResult) -> Json {
+fn UsageResult::to_json(self : UsageResult) -> Json {
   let obj : Map[String, Json] = { "success": Json::boolean(self.success) }
   match self.data {
     Some(rows) =>
@@ -216,7 +208,7 @@ fn usage_result_from_json(json : Json) -> UsageResult? {
 }
 
 ///|
-pub struct SubscriptionQuota {
+priv struct SubscriptionQuota {
   tool : String
   credential_status : CredentialStatus
   credential_message : String?
@@ -228,7 +220,7 @@ pub struct SubscriptionQuota {
 }
 
 ///|
-pub fn SubscriptionQuota::new(
+fn SubscriptionQuota::new(
   tool : String,
   credential_status? : CredentialStatus = Valid,
   credential_message? : String? = None,
@@ -251,12 +243,13 @@ pub fn SubscriptionQuota::new(
 }
 
 ///|
-pub fn SubscriptionQuota::not_found(tool : String) -> SubscriptionQuota {
+fn SubscriptionQuota::not_found(tool : String) -> SubscriptionQuota {
   SubscriptionQuota::new(tool, credential_status=NotFound, success=false)
 }
 
 ///|
-pub fn SubscriptionQuota::error(
+#warnings("-unused_value")
+fn SubscriptionQuota::error(
   tool : String,
   status : CredentialStatus,
   message : String,
@@ -270,7 +263,7 @@ pub fn SubscriptionQuota::error(
 }
 
 ///|
-pub fn SubscriptionQuota::to_json(self : SubscriptionQuota) -> Json {
+fn SubscriptionQuota::to_json(self : SubscriptionQuota) -> Json {
   let obj : Map[String, Json] = {
     "tool": Json::string(self.tool),
     "credentialStatus": Json::string(self.credential_status.to_string()),
@@ -297,18 +290,18 @@ pub fn SubscriptionQuota::to_json(self : SubscriptionQuota) -> Json {
 }
 
 ///|
-pub struct UsageCache {
+priv struct UsageCache {
   subscription : Map[String, SubscriptionQuota]
   script : Map[String, UsageResult]
 }
 
 ///|
-pub fn UsageCache::new() -> UsageCache {
+fn UsageCache::new() -> UsageCache {
   { subscription: Map([], capacity=0), script: Map([], capacity=0) }
 }
 
 ///|
-pub fn UsageCache::put_subscription(
+fn UsageCache::put_subscription(
   self : UsageCache,
   app_type : String,
   quota : SubscriptionQuota,
@@ -317,7 +310,7 @@ pub fn UsageCache::put_subscription(
 }
 
 ///|
-pub fn UsageCache::put_script(
+fn UsageCache::put_script(
   self : UsageCache,
   app_type : String,
   provider_id : String,
@@ -327,7 +320,7 @@ pub fn UsageCache::put_script(
 }
 
 ///|
-pub fn UsageCache::get_subscription(
+fn UsageCache::get_subscription(
   self : UsageCache,
   app_type : String,
 ) -> SubscriptionQuota? {
@@ -335,7 +328,7 @@ pub fn UsageCache::get_subscription(
 }
 
 ///|
-pub fn UsageCache::get_script(
+fn UsageCache::get_script(
   self : UsageCache,
   app_type : String,
   provider_id : String,
@@ -344,7 +337,8 @@ pub fn UsageCache::get_script(
 }
 
 ///|
-pub fn[R] UsageCache::with_subscription(
+#warnings("-unused_value")
+fn[R] UsageCache::with_subscription(
   self : UsageCache,
   app_type : String,
   f : (SubscriptionQuota) -> R,
@@ -356,7 +350,8 @@ pub fn[R] UsageCache::with_subscription(
 }
 
 ///|
-pub fn[R] UsageCache::with_script(
+#warnings("-unused_value")
+fn[R] UsageCache::with_script(
   self : UsageCache,
   app_type : String,
   provider_id : String,
@@ -369,7 +364,8 @@ pub fn[R] UsageCache::with_script(
 }
 
 ///|
-pub fn UsageCache::invalidate_script(
+#warnings("-unused_value")
+fn UsageCache::invalidate_script(
   self : UsageCache,
   app_type : String,
   provider_id : String,
@@ -378,7 +374,8 @@ pub fn UsageCache::invalidate_script(
 }
 
 ///|
-pub fn UsageCache::invalidate_subscription(
+#warnings("-unused_value")
+fn UsageCache::invalidate_subscription(
   self : UsageCache,
   app_type : String,
 ) -> Unit {

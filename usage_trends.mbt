@@ -5,7 +5,7 @@ const TREND_HOUR_SECONDS : Int = 60 * 60
 const TREND_DAY_SECONDS : Int = 24 * 60 * 60
 
 ///|
-pub fn TrafficStats::usage_trends_json(
+fn TrafficStats::usage_trends_json(
   self : TrafficStats,
   start_ts? : Int? = None,
   end_ts? : Int? = None,

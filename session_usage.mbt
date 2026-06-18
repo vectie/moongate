@@ -5,7 +5,7 @@ const CLAUDE_SESSION_REQUEST_ID_PREFIX : String = "session:"
 const SESSION_PROXY_DEDUP_WINDOW_SECONDS : Int = 600
 
 ///|
-pub struct SessionSyncResult {
+priv struct SessionSyncResult {
   mut imported : Int
   mut skipped : Int
   mut files_scanned : Int
@@ -13,7 +13,7 @@ pub struct SessionSyncResult {
 }
 
 ///|
-pub struct SessionFileSyncState {
+priv struct SessionFileSyncState {
   last_modified : Int64
   last_line_offset : Int
 }
@@ -71,12 +71,12 @@ priv struct OpenCodeMessageData {
 }
 
 ///|
-pub fn SessionSyncResult::new() -> SessionSyncResult {
+fn SessionSyncResult::new() -> SessionSyncResult {
   { imported: 0, skipped: 0, files_scanned: 0, errors: [] }
 }
 
 ///|
-pub fn SessionSyncResult::to_json(self : SessionSyncResult) -> Json {
+fn SessionSyncResult::to_json(self : SessionSyncResult) -> Json {
   {
     "imported": Json::number(self.imported.to_double()),
     "skipped": Json::number(self.skipped.to_double()),
@@ -86,7 +86,7 @@ pub fn SessionSyncResult::to_json(self : SessionSyncResult) -> Json {
 }
 
 ///|
-pub fn SessionFileSyncState::new(
+fn SessionFileSyncState::new(
   last_modified~ : Int64,
   last_line_offset~ : Int,
 ) -> SessionFileSyncState {
@@ -161,7 +161,7 @@ pub fn default_opencode_db_path() -> String {
 }
 
 ///|
-pub async fn TrafficStats::sync_session_logs(
+async fn TrafficStats::sync_session_logs(
   self : TrafficStats,
   claude_projects_dir? : String = default_claude_projects_dir(),
   codex_dir? : String = default_codex_config_dir(),
@@ -198,7 +198,8 @@ pub async fn TrafficStats::sync_session_logs(
 }
 
 ///|
-pub fn TrafficStats::ingest_opencode_message_json(
+#warnings("-unused_value")
+fn TrafficStats::ingest_opencode_message_json(
   self : TrafficStats,
   session_id~ : String,
   message_id~ : String,
@@ -221,7 +222,7 @@ pub fn TrafficStats::ingest_opencode_message_json(
 }
 
 ///|
-pub async fn TrafficStats::sync_opencode_session_database(
+async fn TrafficStats::sync_opencode_session_database(
   self : TrafficStats,
   db_path? : String = default_opencode_db_path(),
 ) -> SessionSyncResult {
@@ -393,7 +394,7 @@ fn TrafficStats::ingest_opencode_database_rows_json(
 }
 
 ///|
-pub async fn TrafficStats::sync_opencode_session_export(
+async fn TrafficStats::sync_opencode_session_export(
   self : TrafficStats,
   export_path? : String = default_opencode_export_path(),
 ) -> SessionSyncResult {
@@ -421,7 +422,7 @@ pub async fn TrafficStats::sync_opencode_session_export(
 }
 
 ///|
-pub fn TrafficStats::ingest_opencode_session_export_jsonl(
+fn TrafficStats::ingest_opencode_session_export_jsonl(
   self : TrafficStats,
   file_path~ : String,
   content~ : String,
@@ -518,7 +519,7 @@ pub fn TrafficStats::ingest_opencode_session_export_jsonl(
 }
 
 ///|
-pub async fn TrafficStats::sync_claude_session_logs(
+async fn TrafficStats::sync_claude_session_logs(
   self : TrafficStats,
   projects_dir? : String = default_claude_projects_dir(),
 ) -> SessionSyncResult {
@@ -548,7 +549,7 @@ pub async fn TrafficStats::sync_claude_session_logs(
 }
 
 ///|
-pub fn TrafficStats::ingest_claude_session_jsonl(
+fn TrafficStats::ingest_claude_session_jsonl(
   self : TrafficStats,
   file_path~ : String,
   content~ : String,
@@ -669,7 +670,7 @@ async fn collect_claude_jsonl_files(projects_dir : String) -> Array[String] {
 }
 
 ///|
-pub async fn TrafficStats::sync_codex_session_logs(
+async fn TrafficStats::sync_codex_session_logs(
   self : TrafficStats,
   codex_dir? : String = default_codex_config_dir(),
 ) -> SessionSyncResult {
@@ -697,7 +698,7 @@ pub async fn TrafficStats::sync_codex_session_logs(
 }
 
 ///|
-pub fn TrafficStats::ingest_codex_session_jsonl(
+fn TrafficStats::ingest_codex_session_jsonl(
   self : TrafficStats,
   file_path~ : String,
   content~ : String,
@@ -804,7 +805,7 @@ pub fn TrafficStats::ingest_codex_session_jsonl(
 }
 
 ///|
-pub async fn TrafficStats::sync_gemini_session_logs(
+async fn TrafficStats::sync_gemini_session_logs(
   self : TrafficStats,
   gemini_dir? : String = default_gemini_dir(),
 ) -> SessionSyncResult {
@@ -832,7 +833,7 @@ pub async fn TrafficStats::sync_gemini_session_logs(
 }
 
 ///|
-pub fn TrafficStats::ingest_gemini_session_json(
+fn TrafficStats::ingest_gemini_session_json(
   self : TrafficStats,
   file_path~ : String,
   content~ : String,

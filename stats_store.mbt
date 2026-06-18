@@ -16,7 +16,7 @@ pub fn default_moonstat_stats_dir() -> String {
 }
 
 ///|
-pub async fn TrafficStats::enable_persistent_store(
+async fn TrafficStats::enable_persistent_store(
   self : TrafficStats,
   storage_dir? : String = default_moonstat_stats_dir(),
 ) -> Unit {
@@ -27,7 +27,7 @@ pub async fn TrafficStats::enable_persistent_store(
 }
 
 ///|
-pub async fn TrafficStats::load_persistent_store(
+async fn TrafficStats::load_persistent_store(
   self : TrafficStats,
   storage_dir? : String = default_moonstat_stats_dir(),
 ) -> Unit {
@@ -38,7 +38,7 @@ pub async fn TrafficStats::load_persistent_store(
 }
 
 ///|
-pub async fn TrafficStats::save_persistent_store(self : TrafficStats) -> Unit {
+async fn TrafficStats::save_persistent_store(self : TrafficStats) -> Unit {
   guard self.storage_dir is Some(storage_dir) else { return }
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
     _ => return

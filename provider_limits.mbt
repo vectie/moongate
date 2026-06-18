@@ -1,11 +1,11 @@
 ///|
-pub struct ProviderLimitConfig {
+priv struct ProviderLimitConfig {
   daily_limit_usd : String?
   monthly_limit_usd : String?
 }
 
 ///|
-pub fn ProviderLimitConfig::new(
+fn ProviderLimitConfig::new(
   daily_limit_usd? : String? = None,
   monthly_limit_usd? : String? = None,
 ) -> ProviderLimitConfig {
@@ -13,7 +13,7 @@ pub fn ProviderLimitConfig::new(
 }
 
 ///|
-pub fn TrafficStats::set_provider_limits(
+fn TrafficStats::set_provider_limits(
   self : TrafficStats,
   provider_id : String,
   app_type : String,
@@ -27,7 +27,7 @@ pub fn TrafficStats::set_provider_limits(
 }
 
 ///|
-pub fn TrafficStats::provider_limit_status_json(
+fn TrafficStats::provider_limit_status_json(
   self : TrafficStats,
   provider_id : String,
   app_type : String,

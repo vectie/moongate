@@ -5,7 +5,7 @@ const REQUEST_LOG_LIMIT = 500
 const USAGE_ROLLUP_RETAIN_DAYS = 30
 
 ///|
-pub struct RequestLog {
+priv struct RequestLog {
   request_id : String
   provider_id : String
   provider_name : String?
@@ -36,7 +36,7 @@ pub struct RequestLog {
 }
 
 ///|
-pub struct UsageDailyRollup {
+priv struct UsageDailyRollup {
   date : String
   app_type : String
   provider_id : String
@@ -121,7 +121,7 @@ fn UsageDailyRollup::to_json(self : UsageDailyRollup) -> Json {
 }
 
 ///|
-pub fn RequestLog::new(
+fn RequestLog::new(
   request_id~ : String,
   provider_id~ : String,
   app_type~ : String,
@@ -179,7 +179,7 @@ pub fn RequestLog::new(
 }
 
 ///|
-pub fn RequestLog::to_json(self : RequestLog) -> Json {
+fn RequestLog::to_json(self : RequestLog) -> Json {
   {
     "request_id": Json::string(self.request_id),
     "provider_id": Json::string(self.provider_id),
@@ -214,7 +214,7 @@ pub fn RequestLog::to_json(self : RequestLog) -> Json {
 }
 
 ///|
-pub struct TrafficStats {
+priv struct TrafficStats {
   mut active_connections : Int
   mut total_requests : Int
   mut message_requests : Int
@@ -256,14 +256,14 @@ pub struct TrafficStats {
 }
 
 ///|
-pub struct ActiveTarget {
+priv struct ActiveTarget {
   app_type : String
   provider_id : String
   provider_name : String
 }
 
 ///|
-pub fn TrafficStats::new() -> TrafficStats {
+fn TrafficStats::new() -> TrafficStats {
   {
     active_connections: 0,
     total_requests: 0,
@@ -307,7 +307,7 @@ pub fn TrafficStats::new() -> TrafficStats {
 }
 
 ///|
-pub fn TrafficStats::set_active_target(
+fn TrafficStats::set_active_target(
   self : TrafficStats,
   app_type : String,
   provider_id : String,
@@ -328,7 +328,7 @@ pub fn TrafficStats::set_active_target(
 }
 
 ///|
-pub fn TrafficStats::record_inbound(
+fn TrafficStats::record_inbound(
   self : TrafficStats,
   request_bytes : Int,
 ) -> Unit {
@@ -353,7 +353,7 @@ pub fn TrafficStats::record_inbound(
 }
 
 ///|
-pub fn TrafficStats::record_request_context(
+fn TrafficStats::record_request_context(
   self : TrafficStats,
   app_type : String,
   model : String,
@@ -369,10 +369,7 @@ pub fn TrafficStats::record_request_context(
 }
 
 ///|
-pub fn TrafficStats::record_stream_mode(
-  self : TrafficStats,
-  stream : Bool,
-) -> Unit {
+fn TrafficStats::record_stream_mode(self : TrafficStats, stream : Bool) -> Unit {
   if stream {
     self.streaming_requests += 1
   } else {
@@ -382,7 +379,7 @@ pub fn TrafficStats::record_stream_mode(
 }
 
 ///|
-pub fn TrafficStats::record_bad_request(self : TrafficStats) -> Unit {
+fn TrafficStats::record_bad_request(self : TrafficStats) -> Unit {
   self.bad_requests += 1
   self.failed_responses += 1
   self.last_error = Some("bad_request")
@@ -391,7 +388,7 @@ pub fn TrafficStats::record_bad_request(self : TrafficStats) -> Unit {
 }
 
 ///|
-pub fn TrafficStats::record_unauthorized(self : TrafficStats) -> Unit {
+fn TrafficStats::record_unauthorized(self : TrafficStats) -> Unit {
   self.unauthorized_responses += 1
   self.failed_responses += 1
   self.last_error = Some("unauthorized")
@@ -400,7 +397,8 @@ pub fn TrafficStats::record_unauthorized(self : TrafficStats) -> Unit {
 }
 
 ///|
-pub fn TrafficStats::record_upstream_error(
+#warnings("-unused_value")
+fn TrafficStats::record_upstream_error(
   self : TrafficStats,
   response_bytes : Int,
 ) -> Unit {
@@ -408,7 +406,7 @@ pub fn TrafficStats::record_upstream_error(
 }
 
 ///|
-pub fn TrafficStats::record_upstream_error_status(
+fn TrafficStats::record_upstream_error_status(
   self : TrafficStats,
   response_bytes : Int,
   status_code : Int,
@@ -426,7 +424,7 @@ pub fn TrafficStats::record_upstream_error_status(
 }
 
 ///|
-pub fn TrafficStats::record_internal_error(self : TrafficStats) -> Unit {
+fn TrafficStats::record_internal_error(self : TrafficStats) -> Unit {
   self.failed_responses += 1
   self.last_error = Some("internal_error")
   self.record_completed_request(
@@ -438,7 +436,8 @@ pub fn TrafficStats::record_internal_error(self : TrafficStats) -> Unit {
 }
 
 ///|
-pub fn TrafficStats::record_success(
+#warnings("-unused_value")
+fn TrafficStats::record_success(
   self : TrafficStats,
   input_tokens : Int,
   output_tokens : Int,
@@ -458,7 +457,8 @@ pub fn TrafficStats::record_success(
 }
 
 ///|
-pub fn TrafficStats::record_success_usage(
+#warnings("-unused_value")
+fn TrafficStats::record_success_usage(
   self : TrafficStats,
   usage : TokenUsage,
   response_bytes : Int,
@@ -606,7 +606,7 @@ fn TrafficStats::record_completed_request(
 }
 
 ///|
-pub fn TrafficStats::record_request_log(
+fn TrafficStats::record_request_log(
   self : TrafficStats,
   log : RequestLog,
 ) -> Unit {
@@ -621,7 +621,7 @@ pub fn TrafficStats::record_request_log(
 }
 
 ///|
-pub fn TrafficStats::rollup_request_logs_before(
+fn TrafficStats::rollup_request_logs_before(
   self : TrafficStats,
   cutoff_ts : Int,
 ) -> Int {
@@ -659,7 +659,7 @@ pub fn TrafficStats::rollup_request_logs_before(
 }
 
 ///|
-pub fn TrafficStats::rollup_and_prune(
+fn TrafficStats::rollup_and_prune(
   self : TrafficStats,
   retain_days? : Int = USAGE_ROLLUP_RETAIN_DAYS,
   now_ts? : Int = trend_now_seconds(),
@@ -836,7 +836,7 @@ fn is_placeholder_pricing_model(model_id : String) -> Bool {
 }
 
 ///|
-pub fn TrafficStats::request_logs_json(
+fn TrafficStats::request_logs_json(
   self : TrafficStats,
   limit? : Int = 100,
 ) -> Json {
@@ -857,7 +857,8 @@ pub fn TrafficStats::request_logs_json(
 }
 
 ///|
-pub fn TrafficStats::usage_logs_json(
+#warnings("-unused_value")
+fn TrafficStats::usage_logs_json(
   self : TrafficStats,
   limit? : Int = 100,
 ) -> Json {
@@ -945,7 +946,8 @@ fn TrafficStats::usage_logs_paginated_json(
 }
 
 ///|
-pub fn TrafficStats::usage_summary_json(
+#warnings("-unused_value")
+fn TrafficStats::usage_summary_json(
   self : TrafficStats,
   app_type? : String? = None,
 ) -> Json {
@@ -977,7 +979,8 @@ fn TrafficStats::usage_summary_filtered_json(
 }
 
 ///|
-pub fn TrafficStats::usage_summary_by_app_json(self : TrafficStats) -> Json {
+#warnings("-unused_value")
+fn TrafficStats::usage_summary_by_app_json(self : TrafficStats) -> Json {
   self.usage_summary_by_app_filtered_json()
 }
 
@@ -1037,7 +1040,8 @@ fn TrafficStats::usage_summary_by_app_filtered_json(
 }
 
 ///|
-pub fn TrafficStats::provider_stats_json(
+#warnings("-unused_value")
+fn TrafficStats::provider_stats_json(
   self : TrafficStats,
   app_type? : String? = None,
 ) -> Json {
@@ -1092,7 +1096,8 @@ fn TrafficStats::provider_stats_filtered_json(
 }
 
 ///|
-pub fn TrafficStats::model_stats_json(
+#warnings("-unused_value")
+fn TrafficStats::model_stats_json(
   self : TrafficStats,
   app_type? : String? = None,
 ) -> Json {
@@ -1145,7 +1150,7 @@ fn TrafficStats::model_stats_filtered_json(
 }
 
 ///|
-pub fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
+fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
   let sources : Map[String, DataSourceStatsAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
     if !self.request_log_is_effective(log) {
@@ -1175,7 +1180,8 @@ pub fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
 }
 
 ///|
-pub fn TrafficStats::request_detail_json(
+#warnings("-unused_value")
+fn TrafficStats::request_detail_json(
   self : TrafficStats,
   request_id : String,
 ) -> Json? {
@@ -2066,7 +2072,7 @@ fn prometheus_metric(
 }
 
 ///|
-pub fn TrafficStats::to_json(self : TrafficStats) -> Json {
+fn TrafficStats::to_json(self : TrafficStats) -> Json {
   {
     "active_connections": Json::number(self.active_connections.to_double()),
     "total_requests": Json::number(self.total_requests.to_double()),
@@ -2102,7 +2108,7 @@ pub fn TrafficStats::to_json(self : TrafficStats) -> Json {
 }
 
 ///|
-pub fn TrafficStats::status_json(
+fn TrafficStats::status_json(
   self : TrafficStats,
   address : String,
   port : Int,

@@ -70,7 +70,7 @@ pub fn ModelMapping::to_json(self : ModelMapping) -> Json {
 }
 
 ///|
-pub fn ProviderRouteTarget::map_model_for_upstream(
+fn ProviderRouteTarget::map_model_for_upstream(
   self : ProviderRouteTarget,
   original_model : String,
 ) -> String {
