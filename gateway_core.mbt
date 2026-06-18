@@ -578,13 +578,13 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.add_handler(@httpx.Method::Get, "/proxy/config", (_, w) => {
     self.proxy.handle_proxy_config(
       w,
-      live_takeover_active=self.proxy_takeover_active(),
+      live_takeover_active=self.proxy.takeover_active(),
     )
   })
   router.add_handler(@httpx.Method::Get, "/get_proxy_config", (_, w) => {
     self.proxy.handle_proxy_config(
       w,
-      live_takeover_active=self.proxy_takeover_active(),
+      live_takeover_active=self.proxy.takeover_active(),
     )
   })
   router.add_handler(@httpx.Method::Post, "/proxy/config", (r, w) => {

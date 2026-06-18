@@ -1676,7 +1676,10 @@ test "provider selection errors use ccs proxy error codes" {
 ///|
 test "proxy config alias matches ccs default shape" {
   let gateway = Gateway::new(port=17001, host="127.0.0.2", model="gpt-5")
-  guard gateway.proxy_config_json() is Object(config) else {
+  guard gateway.proxy.config_json(
+      live_takeover_active=gateway.proxy.takeover_active(),
+    )
+    is Object(config) else {
     fail("expected proxy config object")
   }
   assert_eq(config["listen_address"], Json::string("127.0.0.2"))
@@ -1693,7 +1696,7 @@ test "proxy config alias matches ccs default shape" {
 ///|
 test "proxy global config alias matches ccs v3 shape" {
   let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
-  guard gateway.proxy_global_config_json() is Object(config) else {
+  guard gateway.proxy.global_config_json() is Object(config) else {
     fail("expected proxy global config object")
   }
   assert_eq(config["proxyEnabled"], Json::boolean(true))
@@ -1872,7 +1875,7 @@ test "openclaw health scanner accepts supported profiles and object env" {
 ///|
 test "proxy app config alias matches ccs app config shape" {
   let gateway = Gateway::new(port=17005, host="127.0.0.6", model="gpt-5")
-  guard gateway.proxy_app_config_json("claude") is Object(config) else {
+  guard gateway.proxy.app_config_json("claude") is Object(config) else {
     fail("expected proxy app config object")
   }
   assert_eq(config["appType"], Json::string("claude"))
@@ -1898,13 +1901,13 @@ test "proxy app config alias matches ccs app config shape" {
   assert_eq(config["circuit_error_rate_threshold"], Json::number(0.7))
   assert_eq(config["circuitMinRequests"], Json::number(15.0))
   assert_eq(config["circuit_min_requests"], Json::number(15.0))
-  guard gateway.proxy_app_config_json("gemini") is Object(gemini) else {
+  guard gateway.proxy.app_config_json("gemini") is Object(gemini) else {
     fail("expected gemini proxy app config object")
   }
   assert_eq(gemini["maxRetries"], Json::number(5.0))
   assert_eq(gemini["streamingFirstByteTimeout"], Json::number(60.0))
   assert_eq(gemini["circuitFailureThreshold"], Json::number(4.0))
-  guard gateway.proxy_app_config_json("unknown") is Object(unknown) else {
+  guard gateway.proxy.app_config_json("unknown") is Object(unknown) else {
     fail("expected unknown proxy app config object")
   }
   assert_eq(unknown["enabled"], Json::boolean(false))
@@ -1918,21 +1921,24 @@ test "proxy global config state updates ccs config shapes" {
   gateway.proxy.proxy_listen_port = 17007
   gateway.proxy.proxy_enable_logging = false
   gateway.proxy.proxy_takeover_enabled.set("codex", true)
-  guard gateway.proxy_global_config_json() is Object(global_config) else {
+  guard gateway.proxy.global_config_json() is Object(global_config) else {
     fail("expected global config object")
   }
   assert_eq(global_config["proxyEnabled"], Json::boolean(false))
   assert_eq(global_config["listenAddress"], Json::string("127.0.0.8"))
   assert_eq(global_config["listenPort"], Json::number(17007.0))
   assert_eq(global_config["enableLogging"], Json::boolean(false))
-  guard gateway.proxy_config_json() is Object(legacy_config) else {
+  guard gateway.proxy.config_json(
+      live_takeover_active=gateway.proxy.takeover_active(),
+    )
+    is Object(legacy_config) else {
     fail("expected legacy config object")
   }
   assert_eq(legacy_config["listen_address"], Json::string("127.0.0.8"))
   assert_eq(legacy_config["listen_port"], Json::number(17007.0))
   assert_eq(legacy_config["enable_logging"], Json::boolean(false))
   assert_eq(legacy_config["live_takeover_active"], Json::boolean(true))
-  guard gateway.proxy_takeover_status_json() is Object(takeover) else {
+  guard gateway.proxy.takeover_status_json() is Object(takeover) else {
     fail("expected takeover object")
   }
   assert_eq(takeover["codex"], Json::boolean(true))
@@ -1943,29 +1949,30 @@ test "proxy global config state updates ccs config shapes" {
 test "proxy lifecycle state matches ccs command aliases" {
   let gateway = Gateway::new(port=17016, host="127.0.0.16", model="gpt-5")
   gateway.proxy.proxy_enabled = false
-  guard gateway.proxy_server_info_json() is Object(server_info) else {
+  guard gateway.proxy.server_info_json(gateway.started_at_ms)
+    is Object(server_info) else {
     fail("expected server info")
   }
   assert_eq(server_info["address"], Json::string("127.0.0.16"))
   assert_eq(server_info["port"], Json::number(17016.0))
   gateway.proxy.proxy_takeover_enabled.set("codex", true)
-  assert_true(gateway.proxy_takeover_active())
+  assert_true(gateway.proxy.takeover_active())
   assert_eq(
     moon_stop_proxy_takeover_error(),
     "仍有应用处于代理接管状态，请先在设置中关闭对应应用接管后再停止本地路由。",
   )
-  gateway.proxy_clear_takeover()
-  assert_false(gateway.proxy_takeover_active())
+  gateway.proxy.clear_takeover()
+  assert_false(gateway.proxy.takeover_active())
   gateway.proxy.proxy_enabled = true
   gateway.proxy.proxy_app_enabled.set("claude", true)
   gateway.proxy.proxy_app_enabled.set("codex", true)
   gateway.proxy.proxy_app_enabled.set("gemini", true)
   gateway.proxy.provider_router.set_failover_queue("codex", ["codex-oauth"])
   gateway.proxy.provider_router.set_auto_failover("codex", true)
-  gateway.proxy_clear_enabled_apps_for_manual_stop()
-  assert_false(gateway.proxy_app_enabled_for_app("claude"))
-  assert_false(gateway.proxy_app_enabled_for_app("codex"))
-  assert_false(gateway.proxy_app_enabled_for_app("gemini"))
+  gateway.proxy.clear_enabled_apps_for_manual_stop()
+  assert_false(gateway.proxy.app_enabled_for_app("claude"))
+  assert_false(gateway.proxy.app_enabled_for_app("codex"))
+  assert_false(gateway.proxy.app_enabled_for_app("gemini"))
   assert_true(
     gateway.proxy.provider_router.auto_failover_enabled_for_app("codex"),
   )
@@ -1981,13 +1988,13 @@ test "proxy lifecycle state matches ccs command aliases" {
 ///|
 test "ccs auto failover enable requires proxy takeover" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
-  assert_true(gateway.can_set_auto_failover_ccs("codex", true))
-  assert_true(gateway.can_set_auto_failover_ccs("codex", false))
+  assert_true(gateway.proxy.can_set_auto_failover_ccs("codex", true))
+  assert_true(gateway.proxy.can_set_auto_failover_ccs("codex", false))
   gateway.proxy.proxy_app_enabled.set("codex", false)
-  assert_false(gateway.can_set_auto_failover_ccs("codex", true))
-  assert_true(gateway.can_set_auto_failover_ccs("codex", false))
+  assert_false(gateway.proxy.can_set_auto_failover_ccs("codex", true))
+  assert_true(gateway.proxy.can_set_auto_failover_ccs("codex", false))
   gateway.proxy.proxy_app_enabled.set("codex", true)
-  assert_true(gateway.can_set_auto_failover_ccs("codex", true))
+  assert_true(gateway.proxy.can_set_auto_failover_ccs("codex", true))
 }
 
 ///|
@@ -2082,7 +2089,7 @@ test "proxy app config state updates ccs app fields" {
     error_rate_threshold: 0.4,
     min_requests: 12,
   })
-  guard gateway.proxy_app_config_json("codex") is Object(config) else {
+  guard gateway.proxy.app_config_json("codex") is Object(config) else {
     fail("expected app config object")
   }
   assert_eq(config["enabled"], Json::boolean(false))
@@ -2107,10 +2114,10 @@ test "proxy app config circuit updates are app scoped" {
     error_rate_threshold: 0.5,
     min_requests: 13,
   })
-  guard gateway.proxy_app_config_json("claude") is Object(claude) else {
+  guard gateway.proxy.app_config_json("claude") is Object(claude) else {
     fail("expected claude app config object")
   }
-  guard gateway.proxy_app_config_json("codex") is Object(codex) else {
+  guard gateway.proxy.app_config_json("codex") is Object(codex) else {
     fail("expected codex app config object")
   }
   assert_eq(claude["circuitFailureThreshold"], Json::number(9.0))
@@ -2425,8 +2432,8 @@ test "proxy pricing config runtime overrides feed provider activation defaults" 
     provider_id="codex-oauth",
     provider_name="Codex OAuth",
   )
-  assert_eq(gateway.proxy_default_cost_multiplier_for_app("codex"), "1.75")
-  assert_eq(gateway.proxy_pricing_model_source_for_app("codex"), "request")
+  assert_eq(gateway.proxy.default_cost_multiplier_for_app("codex"), "1.75")
+  assert_eq(gateway.proxy.pricing_model_source_for_app("codex"), "request")
   assert_eq(gateway.provider_cost_multiplier(provider), "1.75")
   assert_eq(gateway.provider_pricing_model_source(provider), "request")
 }
@@ -2444,11 +2451,11 @@ test "proxy pricing config makes claude desktop inherit claude defaults like ccs
     provider_name="Claude Desktop",
   )
   assert_eq(
-    gateway.proxy_default_cost_multiplier_for_app("claude-desktop"),
+    gateway.proxy.default_cost_multiplier_for_app("claude-desktop"),
     "1.5",
   )
   assert_eq(
-    gateway.proxy_pricing_model_source_for_app("claude-desktop"),
+    gateway.proxy.pricing_model_source_for_app("claude-desktop"),
     "request",
   )
   assert_eq(gateway.provider_cost_multiplier(provider), "1.5")
@@ -2709,7 +2716,13 @@ test "proxy status alias matches ccs proxy status shape" {
   gateway.usage.stats.record_bad_request()
   gateway.usage.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
   gateway.usage.stats.last_request_at = Some("test-timestamp")
-  guard gateway.proxy_status_json() is Object(status) else {
+  guard gateway.proxy.status_json(
+      gateway.usage,
+      gateway.host,
+      gateway.port,
+      gateway.uptime_seconds(),
+    )
+    is Object(status) else {
     fail("expected proxy status object")
   }
   assert_eq(status["running"], Json::boolean(true))
@@ -2733,12 +2746,24 @@ test "proxy status alias matches ccs proxy status shape" {
 test "proxy status running follows ccs start stop state" {
   let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
   gateway.proxy.proxy_enabled = false
-  guard gateway.proxy_status_json() is Object(stopped) else {
+  guard gateway.proxy.status_json(
+      gateway.usage,
+      gateway.host,
+      gateway.port,
+      gateway.uptime_seconds(),
+    )
+    is Object(stopped) else {
     fail("expected stopped proxy status")
   }
   assert_eq(stopped["running"], Json::boolean(false))
   gateway.proxy.proxy_enabled = true
-  guard gateway.proxy_status_json() is Object(started) else {
+  guard gateway.proxy.status_json(
+      gateway.usage,
+      gateway.host,
+      gateway.port,
+      gateway.uptime_seconds(),
+    )
+    is Object(started) else {
     fail("expected started proxy status")
   }
   assert_eq(started["running"], Json::boolean(true))
@@ -2747,7 +2772,7 @@ test "proxy status running follows ccs start stop state" {
 ///|
 test "proxy takeover status alias is ccs-compatible standalone false state" {
   let gateway = Gateway::new(port=17003, host="127.0.0.4", model="gpt-5")
-  guard gateway.proxy_takeover_status_json() is Object(status) else {
+  guard gateway.proxy.takeover_status_json() is Object(status) else {
     fail("expected takeover status object")
   }
   assert_eq(status.size(), 5)

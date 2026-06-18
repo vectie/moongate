@@ -78,7 +78,7 @@ fn Gateway::provider_cost_multiplier(
 ) -> String {
   provider_cost_multiplier_from_default(
     provider,
-    self.proxy_default_cost_multiplier_for_app(provider.app_type),
+    self.proxy.default_cost_multiplier_for_app(provider.app_type),
   )
 }
 
@@ -158,7 +158,7 @@ fn Gateway::provider_pricing_model_source(
 ) -> String {
   provider_pricing_model_source_from_default(
     provider,
-    self.proxy_pricing_model_source_for_app(provider.app_type),
+    self.proxy.pricing_model_source_for_app(provider.app_type),
   )
 }
 
@@ -549,26 +549,11 @@ async fn Gateway::handle_proxy_status(
 }
 
 ///|
-fn Gateway::proxy_status_json(self : Gateway) -> Json {
-  self.proxy.status_json(
-    self.usage,
-    self.host,
-    self.port,
-    self.uptime_seconds(),
-  )
-}
-
-///|
 async fn Gateway::handle_proxy_start_server(
   self : Gateway,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   self.proxy.handle_proxy_start_server(w, self.started_at_ms)
-}
-
-///|
-fn Gateway::proxy_server_info_json(self : Gateway) -> Json {
-  self.proxy.server_info_json(self.started_at_ms)
 }
 
 ///|
@@ -593,11 +578,6 @@ async fn Gateway::handle_proxy_stop_with_restore(
 }
 
 ///|
-fn Gateway::proxy_config_json(self : Gateway) -> Json {
-  self.proxy.config_json(live_takeover_active=self.proxy_takeover_active())
-}
-
-///|
 fn moon_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int {
   match app_type {
     "claude" => 90
@@ -616,11 +596,6 @@ fn moon_proxy_streaming_idle_timeout_default(app_type : String) -> Int {
 ///|
 fn moon_proxy_non_streaming_timeout_default(_app_type : String) -> Int {
   600
-}
-
-///|
-fn Gateway::proxy_global_config_json(self : Gateway) -> Json {
-  self.proxy.global_config_json()
 }
 
 ///|
@@ -1040,44 +1015,6 @@ fn ProxyService::can_set_auto_failover_ccs(
 }
 
 ///|
-fn Gateway::proxy_app_config_json(self : Gateway, app_type : String) -> Json {
-  self.proxy.app_config_json(app_type)
-}
-
-///|
-fn Gateway::proxy_default_cost_multiplier_for_app(
-  self : Gateway,
-  app_type : String,
-) -> String {
-  self.proxy.default_cost_multiplier_for_app(app_type)
-}
-
-///|
-fn Gateway::proxy_pricing_model_source_for_app(
-  self : Gateway,
-  app_type : String,
-) -> String {
-  self.proxy.pricing_model_source_for_app(app_type)
-}
-
-///|
-fn Gateway::proxy_app_enabled_for_app(
-  self : Gateway,
-  app_type : String,
-) -> Bool {
-  self.proxy.app_enabled_for_app(app_type)
-}
-
-///|
-fn Gateway::can_set_auto_failover_ccs(
-  self : Gateway,
-  app_type : String,
-  enabled : Bool,
-) -> Bool {
-  self.proxy.can_set_auto_failover_ccs(app_type, enabled)
-}
-
-///|
 async fn ProxyService::handle_proxy_provider_health(
   self : ProxyService,
   r : @httpx.RequestReader,
@@ -1427,31 +1364,6 @@ fn ProxyService::clear_enabled_apps_for_manual_stop(
   for app_type in ["claude", "codex", "gemini"] {
     self.proxy_app_enabled.set(app_type, false)
   }
-}
-
-///|
-fn Gateway::proxy_takeover_status_json(self : Gateway) -> Json {
-  self.proxy.takeover_status_json()
-}
-
-///|
-fn Gateway::proxy_takeover_for_app(self : Gateway, app_type : String) -> Bool {
-  self.proxy.takeover_for_app(app_type)
-}
-
-///|
-fn Gateway::proxy_takeover_active(self : Gateway) -> Bool {
-  self.proxy.takeover_active()
-}
-
-///|
-fn Gateway::proxy_clear_takeover(self : Gateway) -> Unit {
-  self.proxy.clear_takeover()
-}
-
-///|
-fn Gateway::proxy_clear_enabled_apps_for_manual_stop(self : Gateway) -> Unit {
-  self.proxy.clear_enabled_apps_for_manual_stop()
 }
 
 ///|

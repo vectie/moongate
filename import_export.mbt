@@ -94,8 +94,8 @@ async fn Gateway::moon_export_snapshot_json(self : Gateway) -> Json {
 ///|
 fn Gateway::moon_export_proxy_json(self : Gateway) -> Json {
   {
-    "globalConfig": self.proxy_global_config_json(),
-    "takeoverStatus": self.proxy_takeover_status_json(),
+    "globalConfig": self.proxy.global_config_json(),
+    "takeoverStatus": self.proxy.takeover_status_json(),
     "appConfigs": self.moon_export_proxy_app_configs_json(),
     "defaultCostMultipliers": moon_string_map_json(
       self.proxy.proxy_default_cost_multipliers,
@@ -114,7 +114,7 @@ fn Gateway::moon_export_proxy_json(self : Gateway) -> Json {
 fn Gateway::moon_export_proxy_app_configs_json(self : Gateway) -> Json {
   let obj : Map[String, Json] = Map([], capacity=0)
   for app in moon_suite_app_types() {
-    obj[app] = self.proxy_app_config_json(app)
+    obj[app] = self.proxy.app_config_json(app)
   }
   Json::object(obj)
 }
