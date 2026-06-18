@@ -399,6 +399,17 @@ test "registered cli commands match suite command aliases and status commands" {
 }
 
 ///|
+test "proxy cli dispatcher owns only proxy command family" {
+  assert_true(cli_proxy_command_id("update_proxy_config"))
+  assert_true(cli_proxy_command_id("set_proxy_takeover_for_app"))
+  assert_true(cli_proxy_command_id("switch_proxy_provider"))
+  assert_true(cli_proxy_command_id("is_proxy_running"))
+  assert_false(cli_proxy_command_id("get_providers"))
+  assert_false(cli_proxy_command_id("suite_manifest"))
+  assert_false(cli_proxy_command_id("auth_get_status"))
+}
+
+///|
 test "usage sync path accepts standalone projects dir override" {
   assert_eq(
     usage_sync_path(["moonstat", "usage", "sync"]),

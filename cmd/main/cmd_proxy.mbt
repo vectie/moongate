@@ -265,6 +265,109 @@ async fn check_proxy_running(args : Array[String]) -> Unit {
 }
 
 ///|
+fn cli_proxy_command_id(command_id : String) -> Bool {
+  match command_id {
+    "update_proxy_config"
+    | "get_proxy_config"
+    | "update_global_proxy_config"
+    | "get_global_proxy_config"
+    | "set_global_proxy_url"
+    | "get_global_proxy_url"
+    | "update_proxy_config_for_app"
+    | "get_proxy_config_for_app"
+    | "set_default_cost_multiplier"
+    | "get_default_cost_multiplier"
+    | "set_pricing_model_source"
+    | "get_pricing_model_source"
+    | "update_circuit_breaker_config"
+    | "get_circuit_breaker_config"
+    | "add_to_failover_queue"
+    | "remove_from_failover_queue"
+    | "get_failover_queue"
+    | "set_auto_failover_enabled"
+    | "get_auto_failover_enabled"
+    | "set_proxy_takeover_for_app"
+    | "get_proxy_takeover_status"
+    | "get_proxy_status"
+    | "start_proxy_server"
+    | "stop_proxy_server"
+    | "stop_proxy_with_restore"
+    | "test_proxy_url"
+    | "get_upstream_proxy_status"
+    | "scan_local_proxies"
+    | "get_default_cost_multiplier_test_hook"
+    | "set_default_cost_multiplier_test_hook"
+    | "get_pricing_model_source_test_hook"
+    | "set_pricing_model_source_test_hook"
+    | "get_provider_health"
+    | "get_circuit_breaker_stats"
+    | "reset_circuit_breaker"
+    | "get_available_providers_for_failover"
+    | "is_live_takeover_active"
+    | "switch_proxy_provider"
+    | "is_proxy_running" => true
+    _ => false
+  }
+}
+
+///|
+async fn run_proxy_cli_command(
+  command_id : String,
+  args : Array[String],
+) -> Unit {
+  match command_id {
+    "update_proxy_config" => update_proxy_config(args)
+    "get_proxy_config" => check_proxy_config(args)
+    "update_global_proxy_config" => update_proxy_global_config(args)
+    "get_global_proxy_config" => check_proxy_global_config(args)
+    "set_global_proxy_url" => set_global_proxy_url(args)
+    "get_global_proxy_url" =>
+      check_usage_endpoint(args, "/get_global_proxy_url")
+    "update_proxy_config_for_app" => update_proxy_app_config(args)
+    "get_proxy_config_for_app" => check_proxy_app_config(args)
+    "set_default_cost_multiplier" => set_proxy_default_cost_multiplier(args)
+    "get_default_cost_multiplier" => check_proxy_default_cost_multiplier(args)
+    "set_pricing_model_source" => set_proxy_pricing_model_source(args)
+    "get_pricing_model_source" => check_proxy_pricing_model_source(args)
+    "update_circuit_breaker_config" => update_proxy_circuit_breaker_config(args)
+    "get_circuit_breaker_config" => check_proxy_circuit_breaker_config(args)
+    "add_to_failover_queue" => add_proxy_failover_queue(args)
+    "remove_from_failover_queue" => remove_proxy_failover_queue(args)
+    "get_failover_queue" => check_proxy_failover_queue(args)
+    "set_auto_failover_enabled" => set_proxy_auto_failover_enabled(args)
+    "get_auto_failover_enabled" => check_proxy_auto_failover_enabled(args)
+    "set_proxy_takeover_for_app" => set_proxy_takeover_status(args)
+    "get_proxy_takeover_status" => check_proxy_takeover_status(args)
+    "get_proxy_status" => check_proxy_status(args)
+    "start_proxy_server" => start_proxy_server(args)
+    "stop_proxy_server" => stop_proxy_server(args)
+    "stop_proxy_with_restore" => stop_proxy_with_restore(args)
+    "test_proxy_url" => test_global_proxy_url(args)
+    "get_upstream_proxy_status" =>
+      check_usage_endpoint(args, "/get_upstream_proxy_status")
+    "scan_local_proxies" => check_usage_endpoint(args, "/scan_local_proxies")
+    "get_default_cost_multiplier_test_hook" =>
+      check_proxy_default_cost_multiplier_test_hook(args)
+    "set_default_cost_multiplier_test_hook" =>
+      set_proxy_default_cost_multiplier_test_hook(args)
+    "get_pricing_model_source_test_hook" =>
+      check_proxy_pricing_model_source_test_hook(args)
+    "set_pricing_model_source_test_hook" =>
+      set_proxy_pricing_model_source_test_hook(args)
+    "get_provider_health" => check_proxy_provider_health(args)
+    "get_circuit_breaker_stats" => check_proxy_circuit_breaker_stats(args)
+    "reset_circuit_breaker" => reset_proxy_circuit_breaker(args)
+    "get_available_providers_for_failover" =>
+      check_proxy_available_failover_providers(args)
+    "is_live_takeover_active" =>
+      check_proxy_endpoint(args, "/is_live_takeover_active")
+    "switch_proxy_provider" => switch_proxy_provider(args)
+    "is_proxy_running" => check_proxy_running(args)
+    _ => ()
+  }
+}
+
+///|
 async fn check_providers(args : Array[String]) -> Unit {
   check_json_endpoint(
     args,
