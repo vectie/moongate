@@ -16,9 +16,6 @@ fn ProxyService::register_inference_routes(
     self.handle_messages(auth, usage, config, session, model, logger, r, w)
   })
   for method_ in @httpx.methods {
-    router.add_handler(method_, "/v1beta/*path", (r, w) => {
-      self.handle_gemini(usage, r, w)
-    })
     router.add_handler(method_, "/gemini/v1beta/*path", (r, w) => {
       self.handle_gemini(usage, r, w)
     })

@@ -277,7 +277,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("POST /v1/responses")))
   assert_true(routes.contains(Json::string("POST /v1/responses/compact")))
   assert_true(routes.contains(Json::string("POST /v1/chat/completions")))
-  assert_true(routes.contains(Json::string("ANY /v1beta/*path")))
+  assert_false(routes.contains(Json::string("ANY /v1beta/*path")))
   assert_true(routes.contains(Json::string("ANY /gemini/v1beta/*path")))
   assert_true(routes.contains(Json::string("ANY /gemini/v1/*path")))
   guard obj["apps"] is Array(apps) else { fail("expected apps") }

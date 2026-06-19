@@ -657,6 +657,6 @@ fn moonstat_suite_routes() -> Array[String] {
     "GET /openclaw/env", "POST /openclaw/env", "GET /openclaw/tools", "POST /openclaw/tools",
     "GET /hermes/model-config", "GET /hermes/memory", "POST /hermes/memory", "GET /hermes/memory-limits",
     "POST /hermes/memory-enabled", "POST /hermes/web-ui", "POST /hermes/dashboard",
-    "POST /config/models", "ANY /v1beta/*path", "ANY /gemini/v1beta/*path", "ANY /gemini/v1/*path",
+    "POST /config/models", "ANY /gemini/v1beta/*path", "ANY /gemini/v1/*path",
   ]
 }

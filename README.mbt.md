@@ -322,7 +322,6 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /v1/responses/compact`
 - `POST /v1/chat/completions`
 - `POST /openclaw/v1/chat/completions`
-- `ANY /v1beta/*path`
 - `ANY /gemini/v1beta/*path`
 - `ANY /gemini/v1/*path`
 
