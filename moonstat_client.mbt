@@ -943,11 +943,7 @@ pub fn moonstat_base_url_from_suite_status(status : Json) -> String? {
       }
       match moonstat_base_url_from_json_object(obj) {
         Some(base_url) => Some(base_url)
-        None =>
-          match obj.get("health_url") {
-            Some(String(url)) => moonstat_client_strip_suffix(url, "/health")
-            _ => None
-          }
+        None => None
       }
     }
     _ => None
@@ -960,19 +956,5 @@ fn moonstat_base_url_from_json_object(obj : Map[String, Json]) -> String? {
     Some(String(url)) if !url.trim().is_empty() =>
       Some(moonstat_client_normalize_base_url(url))
     _ => None
-  }
-}
-
-///|
-fn moonstat_client_strip_suffix(value : String, suffix : String) -> String? {
-  let trimmed = value.trim().to_owned()
-  if trimmed.has_suffix(suffix) {
-    Some(
-      moonstat_client_normalize_base_url(
-        trimmed[:trimmed.length() - suffix.length()].to_owned(),
-      ),
-    )
-  } else {
-    None
   }
 }
