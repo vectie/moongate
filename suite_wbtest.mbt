@@ -653,74 +653,85 @@ async test "suite status writes discovery file" {
     guard @json.parse(content) is Object(obj) else {
       fail("expected suite status json")
     }
-    assert_eq(obj["contract"], Json::string("moon.suite.status.v1"))
+    assert_eq(obj["contract"], Json::string("moon.suite.status.v2"))
     assert_eq(obj["ready"], Json::boolean(true))
-    assert_eq(obj["openai_base_url"], Json::string("http://127.0.0.1:17000/v1"))
+    assert_true(obj.get("openai_base_url") is None)
+    assert_true(obj.get("usage_logs_url") is None)
+    assert_true(obj.get("capabilities") is None)
+    assert_true(obj.get("commands") is None)
+    assert_true(obj.get("suite_integrations") is None)
+    guard obj["manifest"] is Object(manifest) else {
+      fail("expected manifest object")
+    }
     assert_eq(
-      obj["usage_logs_url"],
+      manifest["openai_base_url"],
+      Json::string("http://127.0.0.1:17000/v1"),
+    )
+    assert_eq(
+      manifest["usage_logs_url"],
       Json::string("http://127.0.0.1:17000/usage/logs"),
     )
     assert_eq(
-      obj["usage_summary_url"],
+      manifest["usage_summary_url"],
       Json::string("http://127.0.0.1:17000/usage/summary"),
     )
     assert_eq(
-      obj["usage_trends_url"],
+      manifest["usage_trends_url"],
       Json::string("http://127.0.0.1:17000/usage/trends"),
     )
     assert_eq(
-      obj["usage_provider_limits_url"],
+      manifest["usage_provider_limits_url"],
       Json::string("http://127.0.0.1:17000/usage/provider-limits"),
     )
     assert_eq(
-      obj["provider_presets_url"],
+      manifest["provider_presets_url"],
       Json::string("http://127.0.0.1:17000/providers/presets"),
     )
     assert_eq(
-      obj["usage_sync_session_url"],
+      manifest["usage_sync_session_url"],
       Json::string("http://127.0.0.1:17000/usage/sync-session"),
     )
     assert_eq(
-      obj["stream_check_all_providers_url"],
+      manifest["stream_check_all_providers_url"],
       Json::string("http://127.0.0.1:17000/proxy/stream-check/all"),
     )
     assert_eq(
-      obj["config_status_url"],
+      manifest["config_status_url"],
       Json::string("http://127.0.0.1:17000/config/status"),
     )
     assert_eq(
-      obj["usage_request_logs_file"],
+      manifest["usage_request_logs_file"],
       Json::string(
         @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
       ),
     )
     assert_eq(
-      obj["usage_session_sync_file"],
+      manifest["usage_session_sync_file"],
       Json::string(
         @pathx.join(default_moonstat_stats_dir(), MOONSTAT_SESSION_SYNC_FILE),
       ),
     )
     assert_eq(
-      obj["usage_model_pricing_file"],
+      manifest["usage_model_pricing_file"],
       Json::string(
         @pathx.join(default_moonstat_stats_dir(), MOONSTAT_MODEL_PRICING_FILE),
       ),
     )
     assert_eq(
-      obj["usage_opencode_export_file"],
+      manifest["usage_opencode_export_file"],
       Json::string(default_opencode_export_path()),
     )
     assert_eq(
-      obj["usage_opencode_db_file"],
+      manifest["usage_opencode_db_file"],
       Json::string(default_opencode_db_path()),
     )
-    guard obj["capabilities"] is Array(capabilities) else {
+    guard manifest["capabilities"] is Array(capabilities) else {
       fail("expected capabilities")
     }
     assert_true(capabilities.contains(Json::string("session-usage-sync")))
     assert_true(capabilities.contains(Json::string("moonstat-stream-check")))
     assert_true(capabilities.contains(Json::string("provider-presets")))
-    guard obj["suite_integrations"] is Object(integrations) else {
+    guard manifest["suite_integrations"] is Object(integrations) else {
       fail("expected suite integrations")
     }
     guard integrations["moondesk"] is Object(moondesk) else {
@@ -738,7 +749,9 @@ async test "suite status writes discovery file" {
       moondesk["stream_check_provider_url"],
       Json::string("http://127.0.0.1:17000/proxy/stream-check/provider"),
     )
-    guard obj["commands"] is Object(commands) else { fail("expected commands") }
+    guard manifest["commands"] is Object(commands) else {
+      fail("expected commands")
+    }
     assert_eq(commands["start"], Json::string("moonstat start --port 17000"))
     assert_eq(
       commands["codex_install"],
@@ -752,9 +765,6 @@ async test "suite status writes discovery file" {
       commands["provider_presets"],
       Json::string("moonstat provider presets list --app-type <app_type>"),
     )
-    guard obj["manifest"] is Object(manifest) else {
-      fail("expected manifest object")
-    }
     assert_eq(manifest["default_port"], Json::number(17000.0))
   })
 }
@@ -777,7 +787,14 @@ async test "suite status can publish running startup state" {
     }
     assert_eq(obj["status"], Json::string("running"))
     assert_eq(obj["ready"], Json::boolean(true))
-    assert_eq(obj["health_url"], Json::string("http://127.0.0.1:17001/health"))
+    assert_true(obj.get("health_url") is None)
+    guard obj["manifest"] is Object(manifest) else {
+      fail("expected manifest object")
+    }
+    assert_eq(
+      manifest["health_url"],
+      Json::string("http://127.0.0.1:17001/health"),
+    )
   })
 }
 

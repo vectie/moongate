@@ -1,7 +1,7 @@
 ///|
 test "suite contract owns moonstat identity and urls" {
   assert_eq(manifest_contract(), "moon.suite.service.v1")
-  assert_eq(status_contract(), "moon.suite.status.v1")
+  assert_eq(status_contract(), "moon.suite.status.v2")
   assert_eq(service_name(), "moonstat")
   assert_eq(project_name(), "moonstat")
   assert_eq(version(), "0.1.0")

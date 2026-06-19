@@ -68,20 +68,7 @@ pub fn moonstat_suite_status_json(
     "ready": Json::boolean(ready),
     "manifest": moonstat_suite_manifest_json(host~, port~, model~),
     "status_path": Json::string(default_moonstat_suite_status_path()),
-    "capabilities": moonstat_suite_capabilities_json(),
-    "commands": moonstat_suite_commands_json(port, model),
-    "suite_integrations": moonstat_suite_integrations_json(host, port, model),
-    "openai_base_url": Json::string(moonstat_openai_base_url(host, port)),
-    "anthropic_base_url": Json::string(moonstat_base_url(host, port)),
-    "claude_desktop_base_url": Json::string(
-      moonstat_claude_desktop_base_url(host, port),
-    ),
-    "model": Json::string(model),
   }
-  moonstat_merge_suite_fields(
-    status_json,
-    moonstat_suite_shared_fields(host, port),
-  )
   Json::object(status_json)
 }
 

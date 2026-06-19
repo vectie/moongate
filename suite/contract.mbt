@@ -5,7 +5,7 @@ pub fn manifest_contract() -> String {
 
 ///|
 pub fn status_contract() -> String {
-  "moon.suite.status.v1"
+  "moon.suite.status.v2"
 }
 
 ///|
