@@ -16,19 +16,19 @@ fn provider_cli_commands() -> Array[CliCommandSpec] {
     { id: "open_provider_terminal", patterns: ["provider terminal"] },
     { id: "import_default_config", patterns: ["proxy import-default-config"] },
     {
-      id: "get_claude_desktop_status",
+      id: "claude_desktop_provider_status",
       patterns: ["provider claude-desktop status"],
     },
     {
-      id: "get_claude_desktop_default_routes",
+      id: "claude_desktop_provider_default_routes",
       patterns: ["provider claude-desktop default-routes"],
     },
     {
-      id: "import_claude_desktop_providers_from_claude",
+      id: "claude_desktop_provider_import",
       patterns: ["provider claude-desktop import"],
     },
     {
-      id: "ensure_claude_desktop_official_provider",
+      id: "claude_desktop_provider_official",
       patterns: ["provider claude-desktop official"],
     },
     { id: "provider_live_ids", patterns: ["provider live-ids"] },
@@ -97,15 +97,15 @@ async fn run_provider_cli_command(
     "read_live_provider_settings" => check_live_provider_settings(args)
     "open_provider_terminal" => open_provider_terminal(args)
     "import_default_config" => import_default_config(args)
-    "get_claude_desktop_status" =>
+    "claude_desktop_provider_status" =>
       check_usage_endpoint(args, "/providers/claude-desktop/status")
-    "get_claude_desktop_default_routes" =>
+    "claude_desktop_provider_default_routes" =>
       check_usage_endpoint(args, "/providers/claude-desktop/default-routes")
-    "import_claude_desktop_providers_from_claude" =>
+    "claude_desktop_provider_import" =>
       check_json_post_endpoint(
         args, "/providers/claude-desktop/import", "Provider",
       )
-    "ensure_claude_desktop_official_provider" =>
+    "claude_desktop_provider_official" =>
       check_json_post_endpoint(
         args, "/providers/claude-desktop/official", "Provider",
       )

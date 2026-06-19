@@ -22,7 +22,7 @@ fn moon_scan_local_proxies_json() -> Json {
 }
 
 ///|
-async fn ProxyService::handle_get_claude_desktop_status(
+async fn ProxyService::handle_claude_desktop_provider_status(
   self : ProxyService,
   host : String,
   port : Int,
@@ -131,7 +131,7 @@ fn claude_desktop_missing_route_mappings(
 }
 
 ///|
-async fn ProxyService::handle_get_claude_desktop_default_routes(
+async fn ProxyService::handle_claude_desktop_provider_default_routes(
   self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {

@@ -205,16 +205,16 @@ fn ProxyService::register_management_routes(
     self.handle_open_provider_terminal(r, w)
   })
   router.add_handler(Get, "/providers/claude-desktop/status", (_, w) => {
-    self.handle_get_claude_desktop_status(host, port, w)
+    self.handle_claude_desktop_provider_status(host, port, w)
   })
   router.add_handler(Get, "/providers/claude-desktop/default-routes", (_, w) => {
-    self.handle_get_claude_desktop_default_routes(w)
+    self.handle_claude_desktop_provider_default_routes(w)
   })
   router.add_handler(Post, "/providers/claude-desktop/import", (_, w) => {
-    self.handle_import_claude_desktop_providers_from_claude(w)
+    self.handle_claude_desktop_provider_import(w)
   })
   router.add_handler(Post, "/providers/claude-desktop/official", (_, w) => {
-    self.handle_ensure_claude_desktop_official_provider(w)
+    self.handle_claude_desktop_provider_official(w)
   })
   router.add_handler(Get, "/providers/live-settings", (r, w) => {
     self.handle_read_live_provider_settings(r, w)

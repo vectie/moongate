@@ -187,10 +187,10 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /skills/repos?owner=vectie&name=moonstat-skills&branch=main`
 - `POST /skills/repos/remove?owner=vectie&name=moonstat-skills`
 - `POST /skills/install-zip?filePath=/tmp/traffic-stats&currentApp=codex`
-- `GET /get_claude_desktop_status`
-- `GET /get_claude_desktop_default_routes`
-- `POST /import_claude_desktop_providers_from_claude`
-- `POST /ensure_claude_desktop_official_provider`
+- `GET /providers/claude-desktop/status`
+- `GET /providers/claude-desktop/default-routes`
+- `POST /providers/claude-desktop/import`
+- `POST /providers/claude-desktop/official`
 - `GET /config/app-path`
 - `GET /config/app-folder/open`
 - `GET /settings`

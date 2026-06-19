@@ -1039,29 +1039,29 @@ fn ProxyService::current_claude_desktop_provider(
 }
 
 ///|
-async fn ProxyService::handle_import_claude_desktop_providers_from_claude(
+async fn ProxyService::handle_claude_desktop_provider_import(
   self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(
     w,
-    Json::number(self.import_claude_desktop_providers_from_claude().to_double()),
+    Json::number(self.import_claude_desktop_providers().to_double()),
   )
 }
 
 ///|
-async fn ProxyService::handle_ensure_claude_desktop_official_provider(
+async fn ProxyService::handle_claude_desktop_provider_official(
   self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(
     w,
-    Json::boolean(self.ensure_claude_desktop_official_provider()),
+    Json::boolean(self.ensure_official_claude_desktop_provider()),
   )
 }
 
 ///|
-fn ProxyService::ensure_claude_desktop_official_provider(
+fn ProxyService::ensure_official_claude_desktop_provider(
   self : ProxyService,
 ) -> Bool {
   if self.provider_router.provider_by_id("claude-desktop", "codex-oauth")
@@ -1084,10 +1084,8 @@ fn ProxyService::ensure_claude_desktop_official_provider(
 }
 
 ///|
-fn ProxyService::import_claude_desktop_providers_from_claude(
-  self : ProxyService,
-) -> Int {
-  ignore(self.ensure_claude_desktop_official_provider())
+fn ProxyService::import_claude_desktop_providers(self : ProxyService) -> Int {
+  ignore(self.ensure_official_claude_desktop_provider())
   let mut imported = 0
   guard self.provider_router.providers.get("claude") is Some(claude_providers) else {
     return imported

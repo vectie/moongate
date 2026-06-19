@@ -2596,18 +2596,18 @@ async test "provider config endpoints are owned by proxy service" {
   let core_source = @fsx.read_file("gateway_core.mbt")
   for
     handler in [
-      "handle_import_default_config", "handle_import_claude_desktop_providers_from_claude",
-      "handle_ensure_claude_desktop_official_provider", "handle_scan_local_proxies",
-      "handle_test_api_endpoints", "handle_get_custom_endpoints", "handle_add_custom_endpoint",
-      "handle_remove_custom_endpoint", "handle_update_endpoint_last_used", "handle_get_claude_desktop_status",
-      "handle_get_claude_desktop_default_routes", "handle_get_current_omo_provider_id",
-      "handle_disable_current_omo", "handle_stream_check_provider", "handle_stream_check_all_providers",
-      "handle_models", "handle_claude_desktop_models", "handle_gemini", "handle_chat_completions",
-      "forward_non_streaming_chat_completion", "forward_streaming_chat_completion",
-      "handle_codex_responses", "forward_non_streaming_codex_response", "forward_streaming_codex_response",
-      "handle_messages", "forward_non_streaming_claude_compatible_request", "handle_non_streaming_request",
-      "forward_streaming_claude_compatible_request", "forward_successful_claude_compatible_stream",
-      "handle_streaming_request", "forward_openai_chat_sse_as_anthropic", "forward_anthropic_sse_passthrough",
+      "handle_import_default_config", "handle_claude_desktop_provider_import", "handle_claude_desktop_provider_official",
+      "handle_scan_local_proxies", "handle_test_api_endpoints", "handle_get_custom_endpoints",
+      "handle_add_custom_endpoint", "handle_remove_custom_endpoint", "handle_update_endpoint_last_used",
+      "handle_claude_desktop_provider_status", "handle_claude_desktop_provider_default_routes",
+      "handle_get_current_omo_provider_id", "handle_disable_current_omo", "handle_stream_check_provider",
+      "handle_stream_check_all_providers", "handle_models", "handle_claude_desktop_models",
+      "handle_gemini", "handle_chat_completions", "forward_non_streaming_chat_completion",
+      "forward_streaming_chat_completion", "handle_codex_responses", "forward_non_streaming_codex_response",
+      "forward_streaming_codex_response", "handle_messages", "forward_non_streaming_claude_compatible_request",
+      "handle_non_streaming_request", "forward_streaming_claude_compatible_request",
+      "forward_successful_claude_compatible_stream", "handle_streaming_request",
+      "forward_openai_chat_sse_as_anthropic", "forward_anthropic_sse_passthrough",
       "forward_gemini_native_sse_as_anthropic",
     ] {
     assert_true(sources.contains("async fn ProxyService::\{handler}("))
@@ -2774,14 +2774,10 @@ async test "provider config endpoints are owned by proxy service" {
   assert_true(route_source.contains("self.handle_stream_check_provider("))
   assert_true(route_source.contains("self.handle_stream_check_all_providers("))
   assert_true(
-    route_source.contains(
-      "self.handle_import_claude_desktop_providers_from_claude(w)",
-    ),
+    route_source.contains("self.handle_claude_desktop_provider_import(w)"),
   )
   assert_true(
-    route_source.contains(
-      "self.handle_ensure_claude_desktop_official_provider(w)",
-    ),
+    route_source.contains("self.handle_claude_desktop_provider_official(w)"),
   )
   assert_true(route_source.contains("self.handle_scan_local_proxies(w)"))
   assert_true(route_source.contains("self.handle_test_api_endpoints(r, w)"))
@@ -2793,15 +2789,17 @@ async test "provider config endpoints are owned by proxy service" {
   )
   assert_true(
     route_source.contains(
-      "self.handle_get_claude_desktop_status(host, port, w)",
+      "self.handle_claude_desktop_provider_status(host, port, w)",
     ),
   )
   assert_true(
-    route_source.contains("self.handle_get_claude_desktop_default_routes(w)"),
+    route_source.contains(
+      "self.handle_claude_desktop_provider_default_routes(w)",
+    ),
   )
   for
     handler in [
-      "handle_scan_local_proxies", "handle_get_claude_desktop_status", "handle_get_claude_desktop_default_routes",
+      "handle_scan_local_proxies", "handle_claude_desktop_provider_status", "handle_claude_desktop_provider_default_routes",
     ] {
     assert_true(
       claude_desktop_source.contains("async fn ProxyService::\{handler}("),
@@ -10281,7 +10279,7 @@ test "moonstat imports missing claude providers into claude desktop namespace" {
       ),
     ),
   )
-  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 1)
+  assert_eq(gateway.proxy.import_claude_desktop_providers(), 1)
   guard gateway.proxy.provider_router.provider_by_id(
       "claude-desktop", "claude-extra",
     )
@@ -10289,7 +10287,7 @@ test "moonstat imports missing claude providers into claude desktop namespace" {
     fail("expected imported provider")
   }
   assert_eq(imported.claude_desktop_mode, Some("direct"))
-  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 0)
+  assert_eq(gateway.proxy.import_claude_desktop_providers(), 0)
 }
 
 ///|
@@ -10361,7 +10359,7 @@ test "moonstat import skips claude providers without direct or proxy compatibili
       settings_config=Some({ "env": empty_env.to_json() }.to_json()),
     ),
   )
-  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 0)
+  assert_eq(gateway.proxy.import_claude_desktop_providers(), 0)
   assert_true(
     gateway.proxy.provider_router.provider_by_id("claude-desktop", "incomplete")
     is None,
@@ -10385,7 +10383,7 @@ test "moonstat import derives claude desktop routes from claude provider env" {
       ),
     ),
   )
-  assert_eq(gateway.proxy.import_claude_desktop_providers_from_claude(), 1)
+  assert_eq(gateway.proxy.import_claude_desktop_providers(), 1)
   guard gateway.proxy.provider_router.provider_by_id(
       "claude-desktop", "env-routes",
     )

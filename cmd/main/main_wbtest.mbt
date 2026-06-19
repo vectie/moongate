@@ -221,7 +221,7 @@ test "registered cli commands match suite command aliases and status commands" {
     registered_cli_command_id([
       "moonstat", "provider", "claude-desktop", "official",
     ]) ==
-    Some("ensure_claude_desktop_official_provider"),
+    Some("claude_desktop_provider_official"),
   )
   assert_true(
     registered_cli_command_id([
