@@ -335,7 +335,8 @@ async fn check_status(args : Array[String]) -> Unit {
   })
   match creds_result {
     Ok(_) => logger.info("Credentials loaded")
-    Err(_) => logger.warn("Credentials NOT loaded, please run: moonstat login")
+    Err(_) =>
+      logger.warn("Credentials NOT loaded, please run: moonstat auth login")
   }
 }
 

@@ -1,22 +1,6 @@
 ///|
-async fn do_login(_args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  logger.info("Starting OpenAI Codex OAuth login flow...")
-  try {
-    let creds = @codex.start_oauth_flow()
-    logger.info("Login successful!")
-    logger.info("Email: \{@codex.extract_token_claims(creds.idToken).email}")
-    @codex.save_credentials(creds)
-    logger.info("Credentials saved to ~/.moonsuite/codex-credentials.json")
-  } catch {
-    err => logger.error("Login failed: \{err}")
-  }
-}
-
-///|
 fn auth_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "login", patterns: ["login"] },
     { id: "auth_start_login", patterns: ["auth login"] },
     { id: "auth_poll_for_account", patterns: ["auth poll"] },
     { id: "auth_list_accounts", patterns: ["auth accounts"] },
@@ -33,7 +17,6 @@ async fn run_auth_cli_command(
   args : Array[String],
 ) -> Unit {
   match command_id {
-    "login" => do_login(args)
     "auth_start_login" => auth_start_login(args)
     "auth_poll_for_account" => auth_poll_for_account(args)
     "auth_list_accounts" => auth_list_accounts(args)

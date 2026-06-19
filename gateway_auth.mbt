@@ -71,7 +71,7 @@ async fn AuthService::load_startup_credentials(
     }
     Err(_) =>
       logger.info(
-        "Codex OAuth credentials not loaded; standalone Moonstat remains available and codex-oauth routes can be enabled with: moonstat login",
+        "Codex OAuth credentials not loaded; standalone Moonstat remains available and codex-oauth routes can be enabled with: moonstat auth login",
       )
   }
 }

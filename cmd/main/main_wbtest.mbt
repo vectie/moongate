@@ -64,6 +64,11 @@ test "registered cli commands match suite command aliases and status commands" {
     registered_cli_command_id(["moonstat", "claude-desktop", "remove"]) is None,
   )
   assert_true(registered_cli_command_id(["moonstat", "help"]) == Some("help"))
+  assert_true(registered_cli_command_id(["moonstat", "login"]) is None)
+  assert_true(
+    registered_cli_command_id(["moonstat", "auth", "login"]) ==
+    Some("auth_start_login"),
+  )
   assert_true(registered_cli_command_id(["moonstat", "--help"]) is None)
   assert_true(
     registered_cli_command_id(["moonstat", "version"]) == Some("version"),

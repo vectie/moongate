@@ -25,9 +25,8 @@ moon run cmd/main -- start --host 127.0.0.1 --port 15721 --model gpt-5
 Login uses Codex OAuth credentials:
 
 ```sh
-moon run cmd/main -- login
-moon run cmd/main -- auth status
 moon run cmd/main -- auth login
+moon run cmd/main -- auth status
 moon run cmd/main -- auth poll --device-code dev_... --user-code USER-CODE
 ```
 

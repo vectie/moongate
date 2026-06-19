@@ -140,7 +140,6 @@ fn print_help() -> Unit {
   println("  usage pricing set       Upsert model pricing")
   println("  usage pricing delete    Delete model pricing")
   println("  usage detail     Show one request detail by id")
-  println("  login       Login to OpenAI Codex OAuth")
   println("  health      Check gateway health")
   println("  metrics     Show Prometheus gateway metrics")
   println("  version     Show version")
