@@ -303,6 +303,88 @@ test "moonstat client requires suite status and manifest contracts" {
 }
 
 ///|
+test "moonstat client parses typed agent clients from suite status" {
+  let status = moonstat_suite_status_json(
+    host="127.0.0.1",
+    port=18081,
+    model="gpt-5",
+  )
+  guard moonstat_agent_clients_from_suite_status(status) is Ok(clients) else {
+    fail("expected parsed agent clients")
+  }
+  assert_eq(clients.length(), 8)
+  guard moonstat_client_agent_client_by_id(clients, "codex") is Some(codex) else {
+    fail("expected codex agent client")
+  }
+  assert_eq(codex.app_type, "codex")
+  assert_eq(codex.protocol, "openai-responses")
+  assert_eq(codex.base_url, "http://127.0.0.1:18081/v1")
+  assert_eq(codex.primary_route, "POST /v1/responses")
+  assert_eq(
+    codex.setup_command,
+    Some("moonstat codex install --port 18081 --model gpt-5"),
+  )
+  guard moonstat_client_agent_client_by_id(clients, "openclaw")
+    is Some(openclaw) else {
+    fail("expected openclaw agent client")
+  }
+  assert_eq(openclaw.app_type, "openclaw")
+  assert_eq(openclaw.base_url, "http://127.0.0.1:18081/openclaw/v1")
+  assert_eq(openclaw.primary_route, "POST /openclaw/v1/chat/completions")
+  guard moonstat_client_agent_client_by_id(clients, "gemini") is Some(gemini) else {
+    fail("expected gemini agent client")
+  }
+  assert_eq(gemini.protocol, "gemini-compatible")
+  assert_eq(gemini.setup_command, None)
+}
+
+///|
+test "moonstat client rejects malformed agent client contracts" {
+  assert_true(
+    moonstat_agent_clients_from_manifest(
+      { "agent_clients": Json::array([]) }.to_json(),
+    )
+    is Err(_),
+  )
+  let wrong_status_contract = {
+    "contract": Json::string("moon.suite.status.v1"),
+    "service": Json::string("moonstat"),
+    "manifest": moonstat_suite_manifest_json(port=18081),
+  }.to_json()
+  assert_true(
+    moonstat_agent_clients_from_suite_status(wrong_status_contract) is Err(_),
+  )
+  let missing_id_manifest = moonstat_suite_manifest_json(port=18081)
+  guard missing_id_manifest is Object(manifest_obj) else {
+    fail("expected manifest object")
+  }
+  manifest_obj["agent_clients"] = Json::array([
+    {
+      "app_type": Json::string("codex"),
+      "protocol": Json::string("openai-compatible"),
+      "base_url": Json::string("http://127.0.0.1:18081/v1"),
+      "primary_route": Json::string("POST /v1/chat/completions"),
+    }.to_json(),
+  ])
+  assert_true(
+    moonstat_agent_clients_from_manifest(Json::object(manifest_obj)) is Err(_),
+  )
+}
+
+///|
+fn moonstat_client_agent_client_by_id(
+  clients : Array[MoonstatAgentClient],
+  id : String,
+) -> MoonstatAgentClient? {
+  for client in clients {
+    if client.id == id {
+      return Some(client)
+    }
+  }
+  None
+}
+
+///|
 test "moonstat client parses typed models from suite response shapes" {
   let catalog = {
     "models": [

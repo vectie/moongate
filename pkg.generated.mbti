@@ -94,6 +94,10 @@ pub fn moon_strip_entity_headers_for_rebuilt_body(Map[String, String]) -> Map[St
 
 pub fn moon_strip_hop_by_hop_response_headers(Map[String, String]) -> Map[String, String]
 
+pub fn moonstat_agent_clients_from_manifest(Json) -> Result[Array[MoonstatAgentClient], String]
+
+pub fn moonstat_agent_clients_from_suite_status(Json) -> Result[Array[MoonstatAgentClient], String]
+
 pub fn moonstat_base_url_from_suite_status(Json) -> String?
 
 pub fn moonstat_models_from_json(Json) -> Result[Array[MoonstatModel], String]
@@ -164,6 +168,17 @@ pub enum MoonProxyError {
   Unknown(String)
 }
 pub fn MoonProxyError::to_string(Self) -> String
+
+pub struct MoonstatAgentClient {
+  id : String
+  app_type : String
+  protocol : String
+  base_url : String
+  primary_route : String
+  setup_command : String?
+  usage : String?
+}
+pub fn MoonstatAgentClient::from_json(Json) -> Result[Self, String]
 
 pub struct MoonstatClient {
   base_url : String

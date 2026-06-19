@@ -112,6 +112,17 @@ pub struct MoonstatUsageSummary {
 }
 
 ///|
+pub struct MoonstatAgentClient {
+  id : String
+  app_type : String
+  protocol : String
+  base_url : String
+  primary_route : String
+  setup_command : String?
+  usage : String?
+}
+
+///|
 pub struct MoonstatClient {
   base_url : String
   api_key : String?
@@ -1761,6 +1772,83 @@ pub fn MoonstatUsageSummary::from_json(
     cache_hit_rate: moonstat_json_double_field(obj, "cacheHitRate").unwrap_or(
       0.0,
     ),
+  })
+}
+
+///|
+pub fn moonstat_agent_clients_from_suite_status(
+  status : Json,
+) -> Result[Array[MoonstatAgentClient], String] {
+  let obj = match status {
+    Object(obj) if moonstat_suite_status_contract_valid(obj) => obj
+    _ => return Err("moonstat suite status contract is invalid")
+  }
+  match obj.get("manifest") {
+    Some(Object(manifest)) if moonstat_suite_manifest_contract_valid(manifest) =>
+      moonstat_agent_clients_from_manifest(Json::object(manifest))
+    _ => Err("moonstat suite status has no valid manifest")
+  }
+}
+
+///|
+pub fn moonstat_agent_clients_from_manifest(
+  manifest : Json,
+) -> Result[Array[MoonstatAgentClient], String] {
+  let obj = match manifest {
+    Object(obj) if moonstat_suite_manifest_contract_valid(obj) => obj
+    _ => return Err("moonstat suite manifest contract is invalid")
+  }
+  let rows = match obj.get("agent_clients") {
+    Some(Array(rows)) => rows
+    Some(_) => return Err("moonstat agent_clients field is not an array")
+    None => return Err("moonstat suite manifest has no agent_clients")
+  }
+  let clients : Array[MoonstatAgentClient] = []
+  for row in rows {
+    match MoonstatAgentClient::from_json(row) {
+      Ok(client) => clients.push(client)
+      Err(err) => return Err(err)
+    }
+  }
+  Ok(clients)
+}
+
+///|
+pub fn MoonstatAgentClient::from_json(
+  json : Json,
+) -> Result[MoonstatAgentClient, String] {
+  let obj = match json {
+    Object(obj) => obj
+    _ => return Err("moonstat agent client entry is not an object")
+  }
+  let id = match moonstat_json_string_field(obj, "id") {
+    Some(value) => value
+    None => return Err("moonstat agent client entry has no id")
+  }
+  let app_type = match moonstat_json_string_field(obj, "app_type") {
+    Some(value) => value
+    None => return Err("moonstat agent client entry has no app_type")
+  }
+  let protocol = match moonstat_json_string_field(obj, "protocol") {
+    Some(value) => value
+    None => return Err("moonstat agent client entry has no protocol")
+  }
+  let base_url = match moonstat_json_string_field(obj, "base_url") {
+    Some(value) => moonstat_client_normalize_base_url(value)
+    None => return Err("moonstat agent client entry has no base_url")
+  }
+  let primary_route = match moonstat_json_string_field(obj, "primary_route") {
+    Some(value) => value
+    None => return Err("moonstat agent client entry has no primary_route")
+  }
+  Ok({
+    id,
+    app_type,
+    protocol,
+    base_url,
+    primary_route,
+    setup_command: moonstat_json_string_field(obj, "setup_command"),
+    usage: moonstat_json_string_field(obj, "usage"),
   })
 }
 
