@@ -1158,8 +1158,7 @@ async fn fetch_provider_models(args : Array[String]) -> Unit {
     logger.error("Missing required --api-key")
     return
   }
-  let is_full_url = has_flag(args, "--full-url") ||
-    has_flag(args, "--is-full-url")
+  let is_full_url = has_flag(args, "--full-url")
   let models_url = parse_string_arg(args, "--models-url")
   let user_agent = parse_string_arg(args, "--user-agent")
   let result = @moonstat.fetch_models(

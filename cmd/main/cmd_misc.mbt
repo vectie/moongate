@@ -1500,8 +1500,7 @@ async fn print_model_candidates(args : Array[String]) -> Unit {
     logger.error("Missing required --base-url")
     return
   }
-  let is_full_url = has_flag(args, "--full-url") ||
-    has_flag(args, "--is-full-url")
+  let is_full_url = has_flag(args, "--full-url")
   let models_url = parse_string_arg(args, "--models-url")
   match
     @moonstat.build_models_url_candidates(base_url, is_full_url, models_url) {
