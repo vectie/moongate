@@ -569,6 +569,88 @@ async test "moonclaw providers file writer materializes suite provider config" {
 }
 
 ///|
+test "suite manifest publishes agent client framework contracts" {
+  let manifest = moonstat_suite_manifest_json(
+    host="127.0.0.1",
+    port=18081,
+    model="gpt-5",
+  )
+  guard manifest is Object(obj) else { fail("expected manifest object") }
+  guard obj["agent_clients"] is Array(clients) else {
+    fail("expected agent clients")
+  }
+  assert_eq(clients.length(), 8)
+  for
+    id in [
+      "codex", "claude-code", "claude-desktop", "openclaw", "opencode", "gemini",
+      "github-copilot", "openai-compatible",
+    ] {
+    assert_true(suite_agent_client_by_id(clients, id) is Some(_))
+  }
+  guard suite_agent_client_by_id(clients, "codex") is Some(codex) else {
+    fail("expected codex client")
+  }
+  assert_eq(codex["protocol"], Json::string("openai-responses"))
+  assert_eq(codex["base_url"], Json::string("http://127.0.0.1:18081/v1"))
+  assert_eq(codex["primary_route"], Json::string("POST /v1/responses"))
+  assert_eq(
+    codex["setup_command"],
+    Json::string("moonstat codex install --port 18081 --model gpt-5"),
+  )
+  guard suite_agent_client_by_id(clients, "claude-desktop")
+    is Some(claude_desktop) else {
+    fail("expected claude desktop client")
+  }
+  assert_eq(
+    claude_desktop["base_url"],
+    Json::string("http://127.0.0.1:18081/claude-desktop/v1"),
+  )
+  assert_eq(
+    claude_desktop["primary_route"],
+    Json::string("POST /claude-desktop/v1/messages"),
+  )
+  guard suite_agent_client_by_id(clients, "openclaw") is Some(openclaw) else {
+    fail("expected openclaw client")
+  }
+  assert_eq(openclaw["app_type"], Json::string("openclaw"))
+  assert_eq(
+    openclaw["primary_route"],
+    Json::string("POST /openclaw/v1/chat/completions"),
+  )
+  guard suite_agent_client_by_id(clients, "gemini") is Some(gemini) else {
+    fail("expected gemini client")
+  }
+  assert_eq(gemini["protocol"], Json::string("gemini-compatible"))
+  assert_eq(gemini["primary_route"], Json::string("ANY /gemini/v1beta/*path"))
+  guard suite_agent_client_by_id(clients, "opencode") is Some(opencode) else {
+    fail("expected opencode client")
+  }
+  assert_eq(
+    opencode["setup_command"],
+    Json::string("moonstat provider opencode import-live"),
+  )
+  guard suite_agent_client_by_id(clients, "github-copilot") is Some(copilot) else {
+    fail("expected copilot client")
+  }
+  assert_eq(copilot["primary_route"], Json::string("GET /copilot/models"))
+}
+
+///|
+fn suite_agent_client_by_id(
+  clients : Array[Json],
+  id : String,
+) -> Map[String, Json]? {
+  for client in clients {
+    guard client is Object(obj) else { continue }
+    match obj.get("id") {
+      Some(String(value)) if value == id => return Some(obj)
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
 fn suite_routes_include_path(routes : Array[Json], path : String) -> Bool {
   let needle = " \{path}"
   routes.any(route => {

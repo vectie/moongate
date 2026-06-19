@@ -42,6 +42,7 @@ pub fn moonstat_suite_manifest_json(
         "moondesk", "operator-shell", "Read the suite status file and display gateway health, model catalog, and traffic counters.",
       ),
     ]),
+    "agent_clients": moonstat_suite_agent_clients_json(host, port, model),
     "suite_integrations": moonstat_suite_integrations_json(host, port, model),
     "commands": moonstat_suite_commands_json(port, model),
     "cli": moonstat_suite_commands_json(port, model),
@@ -192,6 +193,92 @@ fn suite_app_json(id : String, role : String, usage : String) -> Json {
   Json::object({
     "id": Json::string(id),
     "role": Json::string(role),
+    "usage": Json::string(usage),
+  })
+}
+
+///|
+fn moonstat_suite_agent_clients_json(
+  host : String,
+  port : Int,
+  model : String,
+) -> Json {
+  let base_url = moonstat_base_url(host, port)
+  let openai_base_url = moonstat_openai_base_url(host, port)
+  let claude_desktop_base_url = moonstat_claude_desktop_base_url(host, port)
+  Json::array([
+    suite_agent_client_json(
+      "codex",
+      "codex",
+      "openai-responses",
+      openai_base_url,
+      "POST /v1/responses",
+      "moonstat codex install --port \{port} --model \{model}",
+      "Codex config.toml managed provider block using the Responses API.",
+    ),
+    suite_agent_client_json(
+      "claude-code", "claude", "anthropic-compatible", base_url, "POST /v1/messages",
+      "", "Claude Code and Anthropic-compatible clients using Moonstat provider routing.",
+    ),
+    suite_agent_client_json(
+      "claude-desktop",
+      "claude-desktop",
+      "anthropic-compatible",
+      claude_desktop_base_url,
+      "POST /claude-desktop/v1/messages",
+      "moonstat claude-desktop install --port \{port}",
+      "Claude Desktop gateway profile with optional local bearer token.",
+    ),
+    suite_agent_client_json(
+      "openclaw",
+      "openclaw",
+      "openai-compatible",
+      "\{base_url}/openclaw/v1",
+      "POST /openclaw/v1/chat/completions",
+      "moonstat provider openclaw import-live",
+      "OpenClaw chat completions and OpenClaw config/provider management routes.",
+    ),
+    suite_agent_client_json(
+      "opencode", "opencode", "openai-compatible", openai_base_url, "POST /v1/chat/completions",
+      "moonstat provider opencode import-live", "OpenCode provider import, proxy routing, and session usage sync.",
+    ),
+    suite_agent_client_json(
+      "gemini",
+      "gemini",
+      "gemini-compatible",
+      "\{base_url}/gemini",
+      "ANY /gemini/v1beta/*path",
+      "",
+      "Gemini-compatible proxy routes with native usage accounting.",
+    ),
+    suite_agent_client_json(
+      "github-copilot", "copilot", "copilot-auth", base_url, "GET /copilot/models",
+      "moonstat copilot login", "GitHub Copilot OAuth, model catalog, token, and usage endpoints.",
+    ),
+    suite_agent_client_json(
+      "openai-compatible", "codex", "openai-compatible", openai_base_url, "POST /v1/chat/completions",
+      "", "Generic OpenAI-compatible clients using Moonstat as the local provider edge.",
+    ),
+  ])
+}
+
+///|
+fn suite_agent_client_json(
+  id : String,
+  app_type : String,
+  protocol : String,
+  base_url : String,
+  primary_route : String,
+  setup_command : String,
+  usage : String,
+) -> Json {
+  Json::object({
+    "id": Json::string(id),
+    "app_type": Json::string(app_type),
+    "protocol": Json::string(protocol),
+    "base_url": Json::string(base_url),
+    "primary_route": Json::string(primary_route),
+    "setup_command": Json::string(setup_command),
     "usage": Json::string(usage),
   })
 }

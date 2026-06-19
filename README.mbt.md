@@ -480,6 +480,10 @@ to the upstream `/v1beta/...` and `/v1/...` paths.
 Moonstat is the network edge for local Moon apps. Point Codex-style clients,
 MoonClaw provider checks, or Moondesk/Moontown integration probes at
 `http://127.0.0.1:15721` and use `/status` or `/stats` for health dashboards.
+The suite manifest also publishes an `agent_clients` array for Codex,
+Claude Code, Claude Desktop, OpenClaw, OpenCode, Gemini, GitHub Copilot, and
+generic OpenAI-compatible clients, with each client's app type, protocol, base
+URL, primary route, and setup command when Moonstat owns one.
 
 MoonBook remains the durable output owner, Moontown owns scheduling and standing
 goals, MoonClaw owns execution, and Moondesk owns the local operator UI.
