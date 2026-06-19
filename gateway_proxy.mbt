@@ -342,7 +342,7 @@ async fn ProxyService::handle_set_global_proxy_url(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   let url = proxy_string_request(r.path, config, "url").unwrap_or("")
   let trimmed = url.trim().to_owned()
   if trimmed.is_empty() {
@@ -366,7 +366,7 @@ async fn ProxyService::handle_test_proxy_url(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   let url = proxy_string_request(r.path, config, "url").unwrap_or("")
   write_usage_json(w, proxy_test_result_json(url))
 }
@@ -394,7 +394,7 @@ async fn ProxyService::apply_global_config_request(
   r : @httpx.RequestReader,
 ) -> Bool {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   let proxy_enabled = proxy_bool_request(r.path, config, "proxyEnabled")
   let listen_address = proxy_string_request(r.path, config, "listenAddress")
   let listen_port = proxy_int_request(r.path, config, "listenPort")
@@ -607,7 +607,7 @@ async fn ProxyService::handle_proxy_set_default_cost_multiplier(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
@@ -646,7 +646,7 @@ async fn ProxyService::handle_proxy_set_pricing_model_source(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
@@ -701,7 +701,7 @@ async fn ProxyService::apply_app_config_request(
   r : @httpx.RequestReader,
 ) -> String? {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   let app_type = match proxy_app_type_from_request(r.path, config) {
     Some(app_type) if !app_type.trim().is_empty() => app_type.trim().to_owned()
     _ => return None
@@ -1011,7 +1011,7 @@ async fn ProxyService::handle_proxy_set_takeover_for_app(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
     write_usage_bad_request(w, "missing_app_type")
     return
@@ -1030,7 +1030,7 @@ async fn ProxyService::switch_provider_from_request(
   r : @httpx.RequestReader,
 ) -> Result[ProviderRouteTarget, String] {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   guard proxy_app_type_from_request(r.path, config) is Some(app_type) else {
     return Err("missing_app_type")
   }
@@ -1179,18 +1179,6 @@ async fn proxy_json_body(r : @httpx.RequestReader) -> Json? {
     return None
   }
   Some(@json.parse(body) catch { _ => return None })
-}
-
-///|
-fn proxy_embedded_config(body : Json?) -> Json? {
-  match body {
-    Some(Object(obj)) =>
-      match obj.get("config") {
-        Some(Object(config)) => Some(Json::object(config))
-        _ => body
-      }
-    _ => body
-  }
 }
 
 ///|

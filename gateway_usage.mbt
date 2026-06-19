@@ -944,7 +944,7 @@ async fn UsageService::handle_query_provider_usage(
   provider_router : ProviderRouter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   guard proxy_string_request(r.path, config, "providerId") is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return
@@ -1045,7 +1045,7 @@ async fn UsageService::handle_test_usage_script(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let body = proxy_json_body(r)
-  let config = proxy_embedded_config(body)
+  let config = body
   guard proxy_string_request(r.path, config, "providerId") is Some(provider_id) else {
     write_usage_bad_request(w, "missing_provider_id")
     return

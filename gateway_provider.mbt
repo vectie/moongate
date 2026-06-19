@@ -1543,14 +1543,7 @@ fn provider_string_from_request(
   body : Json?,
   key : String,
 ) -> String? {
-  match proxy_string_request(path, body, key) {
-    Some(value) => return Some(value)
-    None => ()
-  }
-  match provider_body_payload(body) {
-    Some(payload) => proxy_string_request(path, Some(payload), key)
-    None => None
-  }
+  proxy_string_request(path, body, key)
 }
 
 ///|
@@ -1559,31 +1552,12 @@ fn provider_bool_from_request(
   body : Json?,
   key : String,
 ) -> Bool? {
-  match proxy_bool_request(path, body, key) {
-    Some(value) => return Some(value)
-    None => ()
-  }
-  match provider_body_payload(body) {
-    Some(payload) => proxy_bool_request(path, Some(payload), key)
-    None => None
-  }
-}
-
-///|
-fn provider_body_payload(body : Json?) -> Json? {
-  match body {
-    Some(Object(obj)) =>
-      match obj.get("provider") {
-        Some(Object(provider)) => Some(Json::object(provider))
-        _ => body
-      }
-    _ => body
-  }
+  proxy_bool_request(path, body, key)
 }
 
 ///|
 fn provider_settings_config_from_body(body : Json?) -> Json? {
-  guard provider_body_payload(body) is Some(Object(obj)) else { return None }
+  guard body is Some(Object(obj)) else { return None }
   match obj.get("settingsConfig") {
     Some(settings) =>
       Some(provider_settings_config_with_inline_metadata(settings, obj))
@@ -1764,7 +1738,7 @@ fn provider_merge_inline_meta(existing : Json?, incoming : Json) -> Json {
 
 ///|
 fn universal_provider_from_request(path : StringView, body : Json?) -> Json? {
-  match provider_body_payload(body) {
+  match body {
     Some(Object(obj)) =>
       if json_string_from_map(obj, "id") is Some(id) && !id.trim().is_empty() {
         return Some(Json::object(obj))
@@ -1924,7 +1898,7 @@ fn provider_target_from_request(
 
 ///|
 fn provider_claude_desktop_mode_from_body(body : Json?) -> String? {
-  guard provider_body_payload(body) is Some(Object(obj)) else { return None }
+  guard body is Some(Object(obj)) else { return None }
   match json_non_empty_string_from_map(obj, "claudeDesktopMode") {
     Some(mode) => normalize_claude_desktop_mode(mode)
     None => None
@@ -1936,7 +1910,7 @@ fn provider_model_mapping_from_request(
   path : StringView,
   body : Json?,
 ) -> ModelMapping? {
-  match provider_body_payload(body) {
+  match body {
     Some(Object(obj)) =>
       match obj.get("modelMapping") {
         Some(Object(mapping_obj)) =>
@@ -1978,7 +1952,7 @@ fn provider_claude_desktop_model_routes_from_body(
   body : Json?,
 ) -> Map[String, ClaudeDesktopModelRoute] {
   let routes : Map[String, ClaudeDesktopModelRoute] = Map([], capacity=0)
-  guard provider_body_payload(body) is Some(Object(obj)) else { return routes }
+  guard body is Some(Object(obj)) else { return routes }
   match provider_claude_desktop_routes_object(obj) {
     Some(route_obj) => provider_add_claude_desktop_routes(routes, route_obj)
     None => ()

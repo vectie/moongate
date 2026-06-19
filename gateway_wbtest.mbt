@@ -899,18 +899,22 @@ test "universal provider helper builds moonstat provider shape from query args" 
   guard universal_provider_from_request(
       "/providers/universal",
       Some(
-        {
-          "provider": {
-            "id": Json::string("wrapped"),
-            "name": Json::string("Wrapped"),
-          }.to_json(),
-        }.to_json(),
+        { "id": Json::string("direct"), "name": Json::string("Direct") }.to_json(),
       ),
     )
-    is Some(wrapped_provider) else {
-    fail("expected wrapped provider")
+    is Some(direct_provider) else {
+    fail("expected direct provider")
   }
-  json_inspect(wrapped_provider, content={ "id": "wrapped", "name": "Wrapped" })
+  json_inspect(direct_provider, content={ "id": "direct", "name": "Direct" })
+  assert_true(
+    universal_provider_from_request(
+      "/providers/universal",
+      Some(
+        { "provider": { "id": Json::string("wrapped") }.to_json() }.to_json(),
+      ),
+    )
+    is None,
+  )
 }
 
 ///|
@@ -919,20 +923,18 @@ test "provider target parses moonstat claude desktop route metadata" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("desktop-provider"),
-            "name": Json::string("Desktop Provider"),
-            "notes": Json::string("Pinned fallback"),
-            "modelMapping": { "sonnetModel": Json::string("mapping-fallback") }.to_json(),
-            "claudeDesktopMode": Json::string("proxy"),
-            "claudeDesktopModelRoutes": {
-              "claude-sonnet-4-6": {
-                "model": Json::string("deepseek-v4-flash [1M]"),
-                "labelOverride": Json::string("DeepSeek V4 Flash"),
-                "supports1m": Json::boolean(true),
-              }.to_json(),
-              "claude-opus-4-8": Json::string("upstream-opus"),
+          "id": Json::string("desktop-provider"),
+          "name": Json::string("Desktop Provider"),
+          "notes": Json::string("Pinned fallback"),
+          "modelMapping": { "sonnetModel": Json::string("mapping-fallback") }.to_json(),
+          "claudeDesktopMode": Json::string("proxy"),
+          "claudeDesktopModelRoutes": {
+            "claude-sonnet-4-6": {
+              "model": Json::string("deepseek-v4-flash [1M]"),
+              "labelOverride": Json::string("DeepSeek V4 Flash"),
+              "supports1m": Json::boolean(true),
             }.to_json(),
+            "claude-opus-4-8": Json::string("upstream-opus"),
           }.to_json(),
         }.to_json(),
       ),
@@ -968,15 +970,13 @@ test "provider target ignores retired provider request aliases" {
       "/providers?id=legacy&category=official&websiteUrl=https%3A%2F%2Flegacy.example&is_full_url=true&fullUrl=true",
       Some(
         {
-          "provider": {
-            "settings_config": {
-              "apiKey": Json::string("sk-legacy"),
-              "baseUrl": Json::string("https://legacy.example/v1"),
-            }.to_json(),
-            "model_mapping": { "sonnetModel": Json::string("legacy-sonnet") }.to_json(),
-            "claude_desktop_mode": Json::string("direct"),
-            "limit_daily_usd": Json::string("1.00"),
+          "settings_config": {
+            "apiKey": Json::string("sk-legacy"),
+            "baseUrl": Json::string("https://legacy.example/v1"),
           }.to_json(),
+          "model_mapping": { "sonnetModel": Json::string("legacy-sonnet") }.to_json(),
+          "claude_desktop_mode": Json::string("direct"),
+          "limit_daily_usd": Json::string("1.00"),
         }.to_json(),
       ),
       "codex",
@@ -1002,12 +1002,10 @@ test "provider target preserves provider limit metadata" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("limited-provider"),
-            "name": Json::string("Limited Provider"),
-            "limitDailyUsd": Json::string("0.10"),
-            "limitMonthlyUsd": Json::string("3.5"),
-          }.to_json(),
+          "id": Json::string("limited-provider"),
+          "name": Json::string("Limited Provider"),
+          "limitDailyUsd": Json::string("0.10"),
+          "limitMonthlyUsd": Json::string("3.5"),
         }.to_json(),
       ),
       "codex",
@@ -1217,16 +1215,14 @@ test "provider target does not derive runtime fields from stored settings" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("stored-settings"),
-            "settingsConfig": {
-              "apiFormat": Json::string("openai_chat"),
-              "baseUrl": Json::string("https://settings.example/v1"),
-              "apiKey": Json::string("sk-settings"),
-              "options": {
-                "baseURL": Json::string("https://opencode.example/v1"),
-                "apiKey": Json::string("sk-opencode"),
-              }.to_json(),
+          "id": Json::string("stored-settings"),
+          "settingsConfig": {
+            "apiFormat": Json::string("openai_chat"),
+            "baseUrl": Json::string("https://settings.example/v1"),
+            "apiKey": Json::string("sk-settings"),
+            "options": {
+              "baseURL": Json::string("https://opencode.example/v1"),
+              "apiKey": Json::string("sk-opencode"),
             }.to_json(),
           }.to_json(),
         }.to_json(),
@@ -1250,12 +1246,10 @@ test "provider target does not derive runtime fields from stored settings" {
       "/providers?baseUrl=https%3A%2F%2Fexplicit.example%2Fv1&apiKey=sk-explicit&apiFormat=openai_chat",
       Some(
         {
-          "provider": {
-            "id": Json::string("explicit-provider"),
-            "settingsConfig": {
-              "baseUrl": Json::string("https://settings.example/v1"),
-              "apiKey": Json::string("sk-settings"),
-            }.to_json(),
+          "id": Json::string("explicit-provider"),
+          "settingsConfig": {
+            "baseUrl": Json::string("https://settings.example/v1"),
+            "apiKey": Json::string("sk-settings"),
           }.to_json(),
         }.to_json(),
       ),
@@ -1273,9 +1267,7 @@ test "provider target does not derive runtime fields from stored settings" {
 test "provider target resolves provider type from explicit fields" {
   guard provider_target_from_request(
       "/providers?baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey=sk-or",
-      Some(
-        { "provider": { "id": Json::string("openrouter-explicit") }.to_json() }.to_json(),
-      ),
+      Some({ "id": Json::string("openrouter-explicit") }.to_json()),
       "claude",
     )
     is Some(openrouter) else {
@@ -1287,10 +1279,8 @@ test "provider target resolves provider type from explicit fields" {
       "/providers?baseUrl=https%3A%2F%2Fproxy.example&apiKey=bearer-token",
       Some(
         {
-          "provider": {
-            "id": Json::string("bearer-settings"),
-            "settingsConfig": { "authMode": Json::string("bearer_only") }.to_json(),
-          }.to_json(),
+          "id": Json::string("bearer-settings"),
+          "settingsConfig": { "authMode": Json::string("bearer_only") }.to_json(),
         }.to_json(),
       ),
       "claude",
@@ -1301,9 +1291,7 @@ test "provider target resolves provider type from explicit fields" {
   assert_eq(bearer.provider_type, None)
   guard provider_target_from_request(
       "/providers?apiKey=ya29.access-token",
-      Some(
-        { "provider": { "id": Json::string("gemini-oauth") }.to_json() }.to_json(),
-      ),
+      Some({ "id": Json::string("gemini-oauth") }.to_json()),
       "gemini",
     )
     is Some(gemini) else {
@@ -1314,15 +1302,13 @@ test "provider target resolves provider type from explicit fields" {
       "/providers?apiFormat=gemini_native&apiKey=ya29.claude-gemini",
       Some(
         {
-          "provider": {
-            "id": Json::string("claude-gemini"),
-            "settingsConfig": {
-              "env": {
-                "ANTHROPIC_BASE_URL": Json::string(
-                  "https://generativelanguage.googleapis.com",
-                ),
-                "GEMINI_API_KEY": Json::string("ya29.claude-gemini"),
-              }.to_json(),
+          "id": Json::string("claude-gemini"),
+          "settingsConfig": {
+            "env": {
+              "ANTHROPIC_BASE_URL": Json::string(
+                "https://generativelanguage.googleapis.com",
+              ),
+              "GEMINI_API_KEY": Json::string("ya29.claude-gemini"),
             }.to_json(),
           }.to_json(),
         }.to_json(),
@@ -1339,16 +1325,14 @@ test "provider target resolves provider type from explicit fields" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("claude-gemini-legacy-format"),
-            "settingsConfig": {
-              "api_format": Json::string("gemini_native"),
-              "env": {
-                "ANTHROPIC_BASE_URL": Json::string(
-                  "https://generativelanguage.googleapis.com",
-                ),
-                "GEMINI_API_KEY": Json::string("ya29.legacy"),
-              }.to_json(),
+          "id": Json::string("claude-gemini-legacy-format"),
+          "settingsConfig": {
+            "api_format": Json::string("gemini_native"),
+            "env": {
+              "ANTHROPIC_BASE_URL": Json::string(
+                "https://generativelanguage.googleapis.com",
+              ),
+              "GEMINI_API_KEY": Json::string("ya29.legacy"),
             }.to_json(),
           }.to_json(),
         }.to_json(),
@@ -1364,14 +1348,12 @@ test "provider target resolves provider type from explicit fields" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("managed-meta"),
-            "settingsConfig": {
-              "meta": {
-                "authBinding": {
-                  "source": Json::string("managedAccount"),
-                  "authProvider": Json::string("github-copilot"),
-                }.to_json(),
+          "id": Json::string("managed-meta"),
+          "settingsConfig": {
+            "meta": {
+              "authBinding": {
+                "source": Json::string("managedAccount"),
+                "authProvider": Json::string("github-copilot"),
               }.to_json(),
             }.to_json(),
           }.to_json(),
@@ -1391,13 +1373,11 @@ test "provider target requires explicit moonstat api format" {
       "/providers?apiFormat=openai_chat",
       Some(
         {
-          "provider": {
-            "id": Json::string("openrouter-explicit-format"),
-            "settingsConfig": {
-              "apiFormat": Json::string("openai_chat"),
-              "env": {
-                "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
-              }.to_json(),
+          "id": Json::string("openrouter-explicit-format"),
+          "settingsConfig": {
+            "apiFormat": Json::string("openai_chat"),
+            "env": {
+              "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
             }.to_json(),
           }.to_json(),
         }.to_json(),
@@ -1413,12 +1393,10 @@ test "provider target requires explicit moonstat api format" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("openrouter-missing-format"),
-            "settingsConfig": {
-              "env": {
-                "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
-              }.to_json(),
+          "id": Json::string("openrouter-missing-format"),
+          "settingsConfig": {
+            "env": {
+              "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
             }.to_json(),
           }.to_json(),
         }.to_json(),
@@ -1437,24 +1415,22 @@ test "provider target stores sibling meta without deriving runtime fields" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("codex-oauth-meta"),
-            "name": Json::string("Codex OAuth Meta"),
-            "settingsConfig": {
-              "env": {
-                "ANTHROPIC_BASE_URL": Json::string(
-                  "https://chatgpt.com/backend-api/codex",
-                ),
-                "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
-              }.to_json(),
+          "id": Json::string("codex-oauth-meta"),
+          "name": Json::string("Codex OAuth Meta"),
+          "settingsConfig": {
+            "env": {
+              "ANTHROPIC_BASE_URL": Json::string(
+                "https://chatgpt.com/backend-api/codex",
+              ),
+              "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
             }.to_json(),
-            "meta": {
-              "providerType": Json::string("codex-oauth"),
-              "apiFormat": Json::string("openai_responses"),
-              "promptCacheKey": Json::string("stable-cache-key"),
-              "codexFastMode": Json::boolean(false),
-              "customUserAgent": Json::string("  codex_cli_rs/1.2.3  "),
-            }.to_json(),
+          }.to_json(),
+          "meta": {
+            "providerType": Json::string("codex-oauth"),
+            "apiFormat": Json::string("openai_responses"),
+            "promptCacheKey": Json::string("stable-cache-key"),
+            "codexFastMode": Json::boolean(false),
+            "customUserAgent": Json::string("  codex_cli_rs/1.2.3  "),
           }.to_json(),
         }.to_json(),
       ),
@@ -1479,21 +1455,19 @@ test "provider target defaults missing moonstat codex fast mode to false" {
       "/providers?providerType=codex-oauth&apiFormat=openai_responses",
       Some(
         {
-          "provider": {
-            "id": Json::string("codex-oauth-default"),
-            "name": Json::string("Codex OAuth Default"),
-            "settingsConfig": {
-              "env": {
-                "ANTHROPIC_BASE_URL": Json::string(
-                  "https://chatgpt.com/backend-api/codex",
-                ),
-                "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
-              }.to_json(),
+          "id": Json::string("codex-oauth-default"),
+          "name": Json::string("Codex OAuth Default"),
+          "settingsConfig": {
+            "env": {
+              "ANTHROPIC_BASE_URL": Json::string(
+                "https://chatgpt.com/backend-api/codex",
+              ),
+              "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
             }.to_json(),
-            "meta": {
-              "providerType": Json::string("codex-oauth"),
-              "apiFormat": Json::string("openai_responses"),
-            }.to_json(),
+          }.to_json(),
+          "meta": {
+            "providerType": Json::string("codex-oauth"),
+            "apiFormat": Json::string("openai_responses"),
           }.to_json(),
         }.to_json(),
       ),
@@ -1513,13 +1487,9 @@ test "provider target keeps moonstat custom user agent metadata" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("ua-provider"),
-            "name": Json::string("UA Provider"),
-            "meta": {
-              "customUserAgent": Json::string("  claude-cli/2.1.161  "),
-            }.to_json(),
-          }.to_json(),
+          "id": Json::string("ua-provider"),
+          "name": Json::string("UA Provider"),
+          "meta": { "customUserAgent": Json::string("  claude-cli/2.1.161  ") }.to_json(),
         }.to_json(),
       ),
       "claude",
@@ -1542,13 +1512,11 @@ test "official provider ignores moonstat custom user agent metadata" {
       "/providers",
       Some(
         {
-          "provider": {
-            "id": Json::string("official-ua-provider"),
-            "name": Json::string("Official UA Provider"),
-            "providerType": Json::string("official"),
-            "customUserAgent": Json::string("claude-cli/2.1.161"),
-            "meta": { "customUserAgent": Json::string("codex_cli_rs/0.99") }.to_json(),
-          }.to_json(),
+          "id": Json::string("official-ua-provider"),
+          "name": Json::string("Official UA Provider"),
+          "providerType": Json::string("official"),
+          "customUserAgent": Json::string("claude-cli/2.1.161"),
+          "meta": { "customUserAgent": Json::string("codex_cli_rs/0.99") }.to_json(),
         }.to_json(),
       ),
       "codex",
@@ -2978,7 +2946,7 @@ test "stream check config accepts moonstat canonical body and query fields" {
   let config = stream_check_config_from_request(
     "/proxy/stream-check/config?geminiModel=gemini-test&testPrompt=Ping",
     (
-      #|{"config":{"timeoutSecs":30,"maxRetries":1,"degradedThresholdMs":5000,"claudeModel":"claude-test","codexModel":"codex-test"}}
+      #|{"timeoutSecs":30,"maxRetries":1,"degradedThresholdMs":5000,"claudeModel":"claude-test","codexModel":"codex-test"}
     ),
     StreamCheckConfig::default(),
   )
@@ -3000,16 +2968,13 @@ test "stream check config accepts moonstat canonical body and query fields" {
   )
   assert_true(
     stream_check_config_from_request(
-      "/proxy/stream-check/config?timeout_secs=30",
+      "/proxy/stream-check/config",
       (
-        #|{"config":{"max_retries":1,"claude_model":"legacy"}}
+        #|{"config":{"timeoutSecs":30,"maxRetries":1,"claudeModel":"legacy"}}
       ),
       StreamCheckConfig::default(),
     )
-    is Some(legacy_config) &&
-    legacy_config.timeout_secs == StreamCheckConfig::default().timeout_secs &&
-    legacy_config.max_retries == StreamCheckConfig::default().max_retries &&
-    legacy_config.claude_model == StreamCheckConfig::default().claude_model,
+    is None,
   )
 }
 

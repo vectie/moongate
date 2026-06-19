@@ -160,7 +160,7 @@ fn moon_json_config_from_request(
   current : Json,
   setters : Array[(String, String, String)],
 ) -> Json {
-  let source = proxy_embedded_config(body)
+  let source = body
   let base = match current {
     Object(_) => moon_json_deep_copy(current)
     _ =>
@@ -1337,13 +1337,12 @@ fn stream_check_config_from_request(
     Some(parsed)
   }
   let obj = match parsed_body {
-    Some(Object(root)) =>
-      match root.get("config") {
-        Some(Object(config_obj)) => Some(config_obj)
-        _ => Some(root)
-      }
+    Some(Object(root)) => Some(root)
     Some(_) => return None
     None => None
+  }
+  if !stream_check_config_request_has_fields(path, obj) {
+    return None
   }
   match stream_check_int_request(path, obj, "timeoutSecs") {
     Some(value) if value > 0 => config = { ..config, timeout_secs: value }
@@ -1386,6 +1385,27 @@ fn stream_check_config_from_request(
     None => ()
   }
   Some(config)
+}
+
+///|
+fn stream_check_config_request_has_fields(
+  path : StringView,
+  obj : Map[String, Json]?,
+) -> Bool {
+  for
+    key in [
+      "timeoutSecs", "maxRetries", "degradedThresholdMs", "claudeModel", "codexModel",
+      "geminiModel", "testPrompt",
+    ] {
+    if usage_query_value(path, key) is Some(_) {
+      return true
+    }
+    match obj {
+      Some(obj) if obj.get(key) is Some(_) => return true
+      _ => ()
+    }
+  }
+  false
 }
 
 ///|
