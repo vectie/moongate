@@ -415,7 +415,8 @@ test "chat completion response converts back to codex response" {
       #|  "usage": {
       #|    "prompt_tokens": 10,
       #|    "completion_tokens": 5,
-      #|    "prompt_tokens_details": { "cached_tokens": 3 }
+      #|    "prompt_tokens_details": { "cached_tokens": 3 },
+      #|    "completion_tokens_details": { "reasoning_tokens": 2 }
       #|  }
       #|}
     ),
@@ -438,6 +439,10 @@ test "chat completion response converts back to codex response" {
     fail("expected details")
   }
   assert_eq(details["cached_tokens"], Json::number(3.0))
+  guard usage["output_tokens_details"] is Object(output_details) else {
+    fail("expected output details")
+  }
+  assert_eq(output_details["reasoning_tokens"], Json::number(2.0))
 }
 
 ///|
@@ -520,6 +525,10 @@ test "chat completion stream converts text to codex responses events" {
     fail("expected usage details")
   }
   assert_eq(details["cached_tokens"], Json::number(1.0))
+  guard usage["output_tokens_details"] is Object(output_details) else {
+    fail("expected usage output details")
+  }
+  assert_eq(output_details["reasoning_tokens"], Json::number(0.0))
 }
 
 ///|

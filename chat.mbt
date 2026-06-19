@@ -1015,6 +1015,9 @@ fn openai_chat_usage_to_codex_usage(usage : Json?) -> Json {
     return Json::object({
       "input_tokens": Json::number(0.0),
       "output_tokens": Json::number(0.0),
+      "output_tokens_details": Json::object({
+        "reasoning_tokens": Json::number(0.0),
+      }),
     })
   }
   let input_tokens = json_int(obj, "prompt_tokens").unwrap_or(0)
@@ -1023,11 +1026,18 @@ fn openai_chat_usage_to_codex_usage(usage : Json?) -> Json {
     Some(Object(details)) => json_int(details, "cached_tokens").unwrap_or(0)
     _ => 0
   }
+  let reasoning_tokens = match obj.get("completion_tokens_details") {
+    Some(Object(details)) => json_int(details, "reasoning_tokens").unwrap_or(0)
+    _ => 0
+  }
   Json::object({
     "input_tokens": Json::number(input_tokens.to_double()),
     "output_tokens": Json::number(output_tokens.to_double()),
     "input_tokens_details": Json::object({
       "cached_tokens": Json::number(cached_tokens.to_double()),
+    }),
+    "output_tokens_details": Json::object({
+      "reasoning_tokens": Json::number(reasoning_tokens.to_double()),
     }),
   })
 }
