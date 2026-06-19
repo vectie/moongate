@@ -1003,9 +1003,11 @@ fn stream_check_provider_path(args : Array[String]) -> String? {
 
 ///|
 async fn check_usage_providers(args : Array[String]) -> Unit {
-  check_usage_endpoint(
-    args,
-    usage_filtered_path(args, "/usage/provider-stats", app_filter=true),
+  print_usage_json_result(
+    "Usage providers",
+    cli_moonstat_client(args).usage_provider_stats(
+      query=Some(usage_query(args, app_filter=true)),
+    ),
   )
 }
 

@@ -7,19 +7,50 @@ pub struct MoonstatUsageQuery {
   end_date : String?
   app_type : String?
   provider_id : String?
+  provider_name : String?
+  model : String?
+  status_code : String?
   page : Int?
   page_size : Int?
 }
 
 ///|
 pub fn MoonstatUsageQuery::empty() -> MoonstatUsageQuery {
+  MoonstatUsageQuery::new(
+    start_date=None,
+    end_date=None,
+    app_type=None,
+    provider_id=None,
+    provider_name=None,
+    model=None,
+    status_code=None,
+    page=None,
+    page_size=None,
+  )
+}
+
+///|
+pub fn MoonstatUsageQuery::new(
+  start_date~ : String?,
+  end_date~ : String?,
+  app_type~ : String?,
+  provider_id~ : String?,
+  provider_name~ : String?,
+  model~ : String?,
+  status_code~ : String?,
+  page~ : Int?,
+  page_size~ : Int?,
+) -> MoonstatUsageQuery {
   {
-    start_date: None,
-    end_date: None,
-    app_type: None,
-    provider_id: None,
-    page: None,
-    page_size: None,
+    start_date,
+    end_date,
+    app_type,
+    provider_id,
+    provider_name,
+    model,
+    status_code,
+    page,
+    page_size,
   }
 }
 
@@ -34,12 +65,29 @@ pub struct MoonstatSessionSyncQuery {
 
 ///|
 pub fn MoonstatSessionSyncQuery::empty() -> MoonstatSessionSyncQuery {
+  MoonstatSessionSyncQuery::new(
+    projects_dir=None,
+    codex_dir=None,
+    gemini_dir=None,
+    opencode_export_path=None,
+    opencode_db_path=None,
+  )
+}
+
+///|
+pub fn MoonstatSessionSyncQuery::new(
+  projects_dir~ : String?,
+  codex_dir~ : String?,
+  gemini_dir~ : String?,
+  opencode_export_path~ : String?,
+  opencode_db_path~ : String?,
+) -> MoonstatSessionSyncQuery {
   {
-    projects_dir: None,
-    codex_dir: None,
-    gemini_dir: None,
-    opencode_export_path: None,
-    opencode_db_path: None,
+    projects_dir,
+    codex_dir,
+    gemini_dir,
+    opencode_export_path,
+    opencode_db_path,
   }
 }
 
@@ -227,6 +275,9 @@ pub fn MoonstatClient::usage_provider_limits_url(
     end_date: None,
     app_type: Some(app_type),
     provider_id: Some(provider_id),
+    provider_name: None,
+    model: None,
+    status_code: None,
     page: None,
     page_size: None,
   }
@@ -248,6 +299,9 @@ pub fn MoonstatClient::usage_provider_usage_url(
     end_date: None,
     app_type: Some(app_type),
     provider_id: Some(provider_id),
+    provider_name: None,
+    model: None,
+    status_code: None,
     page: None,
     page_size: None,
   }
@@ -415,6 +469,9 @@ pub async fn MoonstatClient::usage_provider_limits(
     end_date: None,
     app_type: Some(app_type),
     provider_id: Some(provider_id),
+    provider_name: None,
+    model: None,
+    status_code: None,
     page: None,
     page_size: None,
   }
@@ -434,6 +491,9 @@ pub async fn MoonstatClient::usage_provider_usage(
     end_date: None,
     app_type: Some(app_type),
     provider_id: Some(provider_id),
+    provider_name: None,
+    model: None,
+    status_code: None,
     page: None,
     page_size: None,
   }
@@ -748,6 +808,21 @@ fn moonstat_usage_query_string(query : MoonstatUsageQuery?) -> String? {
   match query.provider_id {
     Some(value) if !value.trim().is_empty() =>
       parts.push(moonstat_client_query_pair("providerId", value))
+    _ => ()
+  }
+  match query.provider_name {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("providerName", value))
+    _ => ()
+  }
+  match query.model {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("model", value))
+    _ => ()
+  }
+  match query.status_code {
+    Some(value) if !value.trim().is_empty() =>
+      parts.push(moonstat_client_query_pair("statusCode", value))
     _ => ()
   }
   match query.page {

@@ -74,13 +74,12 @@ async fn run_usage_cli_command(
     "get_model_stats" => check_usage_models(args)
     "get_request_logs" => check_usage_logs(args)
     "get_request_detail" => check_usage_detail(args)
-    "get_model_pricing" => check_usage_endpoint(args, "/usage/model-pricing")
+    "get_model_pricing" => check_usage_model_pricing(args)
     "update_model_pricing" => update_usage_pricing(args)
     "delete_model_pricing" => delete_usage_pricing(args)
     "check_provider_limits" => check_usage_limits(args)
     "sync_session_usage" => sync_session_usage(args)
-    "get_usage_data_sources" =>
-      check_usage_endpoint(args, "/usage/data-sources")
+    "get_usage_data_sources" => check_usage_data_sources(args)
     "query_provider_usage" => check_usage_provider_script(args)
     "get_balance" => check_balance(args)
     "get_subscription_quota" => check_subscription_quota(args)
@@ -98,28 +97,40 @@ async fn run_usage_cli_command(
 
 ///|
 async fn check_usage_logs(args : Array[String]) -> Unit {
-  check_usage_endpoint(args, usage_logs_path(args))
+  print_usage_json_result(
+    "Usage logs",
+    cli_moonstat_client(args).usage_logs(query=Some(usage_logs_query(args))),
+  )
 }
 
 ///|
 async fn check_usage_summary(args : Array[String]) -> Unit {
-  check_usage_endpoint(
-    args,
-    usage_filtered_path(args, "/usage/summary", app_filter=true),
+  print_usage_json_result(
+    "Usage summary",
+    cli_moonstat_client(args).usage_summary(
+      query=Some(usage_query(args, app_filter=true)),
+    ),
   )
 }
 
 ///|
 async fn check_usage_apps(args : Array[String]) -> Unit {
-  check_usage_endpoint(
-    args,
-    usage_filtered_path(args, "/usage/summary/by-app", app_filter=false),
+  print_usage_json_result(
+    "Usage apps",
+    cli_moonstat_client(args).usage_summary_by_app(
+      query=Some(usage_query(args, app_filter=false)),
+    ),
   )
 }
 
 ///|
 async fn check_usage_trends(args : Array[String]) -> Unit {
-  check_usage_endpoint(args, usage_trends_path(args))
+  print_usage_json_result(
+    "Usage trends",
+    cli_moonstat_client(args).usage_trends(
+      query=Some(usage_query(args, app_filter=true)),
+    ),
+  )
 }
 
 ///|
@@ -129,9 +140,11 @@ async fn check_usage_limits(args : Array[String]) -> Unit {
 
 ///|
 async fn check_usage_models(args : Array[String]) -> Unit {
-  check_usage_endpoint(
-    args,
-    usage_filtered_path(args, "/usage/model-stats", app_filter=true),
+  print_usage_json_result(
+    "Usage models",
+    cli_moonstat_client(args).usage_model_stats(
+      query=Some(usage_query(args, app_filter=true)),
+    ),
   )
 }
 
@@ -162,85 +175,68 @@ async fn test_usage_script(args : Array[String]) -> Unit {
 
 ///|
 async fn sync_session_usage(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  let path = usage_sync_path(args)
-  try {
-    let client = @http.Client::new(url, headers={})
-    defer client.close()
-    let response = client.post(path, "{}")
-    let body = client.read_all().text()
-    if response.code == 200 {
-      println(body)
+  print_usage_json_result(
+    "Usage sync",
+    cli_moonstat_client(args).usage_sync_session(
+      query=Some(usage_sync_query(args)),
+    ),
+  )
+}
+
+///|
+fn usage_query(
+  args : Array[String],
+  app_filter~ : Bool,
+) -> @moonstat.MoonstatUsageQuery {
+  @moonstat.MoonstatUsageQuery::new(
+    start_date=parse_string_arg(args, "--start-date"),
+    end_date=parse_string_arg(args, "--end-date"),
+    app_type=if app_filter {
+      parse_string_arg(args, "--app-type")
     } else {
-      logger.error("Usage sync failed: \{response.code} \{body}")
-    }
-  } catch {
-    err => logger.error("Usage sync failed: \{err}")
-  }
+      None
+    },
+    provider_id=None,
+    provider_name=None,
+    model=None,
+    status_code=None,
+    page=None,
+    page_size=None,
+  )
 }
 
 ///|
-fn usage_trends_path(args : Array[String]) -> String {
-  usage_filtered_path(args, "/usage/trends", app_filter=true)
+fn usage_logs_query(args : Array[String]) -> @moonstat.MoonstatUsageQuery {
+  @moonstat.MoonstatUsageQuery::new(
+    start_date=parse_string_arg(args, "--start-date"),
+    end_date=parse_string_arg(args, "--end-date"),
+    app_type=parse_string_arg(args, "--app-type"),
+    provider_id=None,
+    provider_name=parse_string_arg(args, "--provider-name"),
+    model=parse_string_arg(args, "--model"),
+    status_code=parse_string_arg(args, "--status-code"),
+    page=parse_optional_int_arg(args, "--page"),
+    page_size=parse_optional_int_arg(args, "--page-size"),
+  )
 }
 
 ///|
-fn usage_logs_path(args : Array[String]) -> String {
-  let query = usage_date_app_query(args, app_filter=true)
-  match parse_string_arg(args, "--page") {
-    Some(value) => query.push(cli_query_pair("page", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--page-size") {
-    Some(value) => query.push(cli_query_pair("pageSize", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--provider-name") {
-    Some(value) => query.push(cli_query_pair("providerName", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--model") {
-    Some(value) => query.push(cli_query_pair("model", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--status-code") {
-    Some(value) => query.push(cli_query_pair("statusCode", value))
-    None => ()
-  }
-  cli_path_with_query("/usage/logs", query)
+fn usage_sync_query(args : Array[String]) -> @moonstat.MoonstatSessionSyncQuery {
+  @moonstat.MoonstatSessionSyncQuery::new(
+    projects_dir=parse_string_arg(args, "--projects-dir"),
+    codex_dir=parse_string_arg(args, "--codex-dir"),
+    gemini_dir=parse_string_arg(args, "--gemini-dir"),
+    opencode_export_path=parse_string_arg(args, "--opencode-export-path"),
+    opencode_db_path=parse_string_arg(args, "--opencode-db-path"),
+  )
 }
 
 ///|
-fn usage_filtered_path(
-  args : Array[String],
-  base_path : String,
-  app_filter~ : Bool,
-) -> String {
-  cli_path_with_query(base_path, usage_date_app_query(args, app_filter~))
-}
-
-///|
-fn usage_date_app_query(
-  args : Array[String],
-  app_filter~ : Bool,
-) -> Array[String] {
-  let query : Array[String] = []
-  match parse_string_arg(args, "--start-date") {
-    Some(value) => query.push(cli_query_pair("startDate", value))
-    None => ()
+fn parse_optional_int_arg(args : Array[String], name : String) -> Int? {
+  match parse_string_arg(args, name) {
+    Some(value) => Some(@string.parse_int(value[:])) catch { _ => None }
+    None => None
   }
-  match parse_string_arg(args, "--end-date") {
-    Some(value) => query.push(cli_query_pair("endDate", value))
-    None => ()
-  }
-  if app_filter {
-    match parse_string_arg(args, "--app-type") {
-      Some(value) => query.push(cli_query_pair("appType", value))
-      None => ()
-    }
-  }
-  query
 }
 
 ///|
@@ -270,38 +266,24 @@ fn usage_limits_path(args : Array[String]) -> String {
 }
 
 ///|
-fn usage_sync_path(args : Array[String]) -> String {
-  let query : Array[String] = []
-  match parse_string_arg(args, "--projects-dir") {
-    Some(value) => query.push(cli_query_pair("projectsDir", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--codex-dir") {
-    Some(value) => query.push(cli_query_pair("codexDir", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--gemini-dir") {
-    Some(value) => query.push(cli_query_pair("geminiDir", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--opencode-export-path") {
-    Some(value) => query.push(cli_query_pair("opencodeExportPath", value))
-    None => ()
-  }
-  match parse_string_arg(args, "--opencode-db-path") {
-    Some(value) => query.push(cli_query_pair("opencodeDbPath", value))
-    None => ()
-  }
-  if query.is_empty() {
-    "/usage/sync-session"
-  } else {
-    "/usage/sync-session?\{query.join("&")}"
-  }
+async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
+  check_json_endpoint(args, path, "Usage")
 }
 
 ///|
-async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
-  check_json_endpoint(args, path, "Usage")
+async fn check_usage_model_pricing(args : Array[String]) -> Unit {
+  print_usage_json_result(
+    "Usage pricing",
+    cli_moonstat_client(args).usage_model_pricing(),
+  )
+}
+
+///|
+async fn check_usage_data_sources(args : Array[String]) -> Unit {
+  print_usage_json_result(
+    "Usage data sources",
+    cli_moonstat_client(args).usage_data_sources(),
+  )
 }
 
 ///|
@@ -311,10 +293,22 @@ async fn check_usage_detail(args : Array[String]) -> Unit {
     logger.error("Missing required --request-id")
     return
   }
-  check_usage_endpoint(
-    args,
-    "/usage/request-detail/\{cli_url_encode(request_id)}",
+  print_usage_json_result(
+    "Usage detail",
+    cli_moonstat_client(args).usage_request_detail(request_id),
   )
+}
+
+///|
+async fn print_usage_json_result(
+  label : String,
+  result : Result[Json, String],
+) -> Unit {
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  match result {
+    Ok(body) => println(body.stringify())
+    Err(err) => logger.error("\{label} failed: \{err}")
+  }
 }
 
 ///|

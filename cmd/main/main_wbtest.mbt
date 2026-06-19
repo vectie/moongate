@@ -509,17 +509,24 @@ test "cli command route owns command family dispatch" {
 
 ///|
 test "usage sync path accepts standalone projects dir override" {
+  let client = @moonstat.MoonstatClient::new(base_url="http://127.0.0.1:15721")
   assert_eq(
-    usage_sync_path(["moonstat", "usage", "sync"]),
-    "/usage/sync-session",
+    client.usage_sync_session_url(
+      query=Some(usage_sync_query(["moonstat", "usage", "sync"])),
+    ),
+    "http://127.0.0.1:15721/usage/sync-session",
   )
   assert_eq(
-    usage_sync_path([
-      "moonstat", "usage", "sync", "--projects-dir", "/tmp/claude projects", "--codex-dir",
-      "/tmp/codex", "--gemini-dir", "/tmp/gemini", "--opencode-export-path", "/tmp/opencode/messages.jsonl",
-      "--opencode-db-path", "/tmp/opencode/opencode.db?mode=ro",
-    ]),
-    "/usage/sync-session?projectsDir=%2Ftmp%2Fclaude%20projects&codexDir=%2Ftmp%2Fcodex&geminiDir=%2Ftmp%2Fgemini&opencodeExportPath=%2Ftmp%2Fopencode%2Fmessages.jsonl&opencodeDbPath=%2Ftmp%2Fopencode%2Fopencode.db%3Fmode%3Dro",
+    client.usage_sync_session_url(
+      query=Some(
+        usage_sync_query([
+          "moonstat", "usage", "sync", "--projects-dir", "/tmp/claude projects",
+          "--codex-dir", "/tmp/codex", "--gemini-dir", "/tmp/gemini", "--opencode-export-path",
+          "/tmp/opencode/messages.jsonl", "--opencode-db-path", "/tmp/opencode/opencode.db?mode=ro",
+        ]),
+      ),
+    ),
+    "http://127.0.0.1:15721/usage/sync-session?projectsDir=%2Ftmp%2Fclaude%20projects&codexDir=%2Ftmp%2Fcodex&geminiDir=%2Ftmp%2Fgemini&opencodeExportPath=%2Ftmp%2Fopencode%2Fmessages.jsonl&opencodeDbPath=%2Ftmp%2Fopencode%2Fopencode.db%3Fmode%3Dro",
   )
 }
 
@@ -551,12 +558,16 @@ test "usage pricing paths accept moonstat editable pricing args" {
 
 ///|
 test "usage filter paths encode moonstat query values" {
+  let client = @moonstat.MoonstatClient::new(base_url="http://127.0.0.1:15721")
+  let trend_args = [
+    "moonstat", "usage", "trends", "--start-date", "10", "--end-date", "20", "--app-type",
+    "claude desktop",
+  ]
   assert_eq(
-    usage_trends_path([
-      "moonstat", "usage", "trends", "--start-date", "10", "--end-date", "20", "--app-type",
-      "claude desktop",
-    ]),
-    "/usage/trends?startDate=10&endDate=20&appType=claude%20desktop",
+    client.usage_trends_url(
+      query=Some(usage_query(trend_args, app_filter=true)),
+    ),
+    "http://127.0.0.1:15721/usage/trends?startDate=10&endDate=20&appType=claude%20desktop",
   )
   assert_eq(
     usage_limits_path([
@@ -633,37 +644,47 @@ test "copilot grouped commands build canonical auth paths" {
 
 ///|
 test "usage aggregate paths accept moonstat date and app filters" {
+  let client = @moonstat.MoonstatClient::new(base_url="http://127.0.0.1:15721")
   let args = [
     "moonstat", "usage", "summary", "--start-date", "10", "--end-date", "20", "--app-type",
     "claude desktop",
   ]
   assert_eq(
-    usage_filtered_path(args, "/usage/summary", app_filter=true),
-    "/usage/summary?startDate=10&endDate=20&appType=claude%20desktop",
+    client.usage_summary_url(query=Some(usage_query(args, app_filter=true))),
+    "http://127.0.0.1:15721/usage/summary?startDate=10&endDate=20&appType=claude%20desktop",
   )
   assert_eq(
-    usage_filtered_path(args, "/usage/summary/by-app", app_filter=false),
-    "/usage/summary/by-app?startDate=10&endDate=20",
+    client.usage_summary_by_app_url(
+      query=Some(usage_query(args, app_filter=false)),
+    ),
+    "http://127.0.0.1:15721/usage/summary/by-app?startDate=10&endDate=20",
   )
   assert_eq(
-    usage_filtered_path(args, "/usage/provider-stats", app_filter=true),
-    "/usage/provider-stats?startDate=10&endDate=20&appType=claude%20desktop",
+    client.usage_provider_stats_url(
+      query=Some(usage_query(args, app_filter=true)),
+    ),
+    "http://127.0.0.1:15721/usage/provider-stats?startDate=10&endDate=20&appType=claude%20desktop",
   )
   assert_eq(
-    usage_filtered_path(args, "/usage/model-stats", app_filter=true),
-    "/usage/model-stats?startDate=10&endDate=20&appType=claude%20desktop",
+    client.usage_model_stats_url(query=Some(usage_query(args, app_filter=true))),
+    "http://127.0.0.1:15721/usage/model-stats?startDate=10&endDate=20&appType=claude%20desktop",
   )
 }
 
 ///|
 test "usage logs path accepts moonstat filters and pagination" {
+  let client = @moonstat.MoonstatClient::new(base_url="http://127.0.0.1:15721")
   assert_eq(
-    usage_logs_path([
-      "moonstat", "usage", "logs", "--page", "2", "--page-size", "25", "--app-type",
-      "codex", "--provider-name", "Codex OAuth", "--model", "anthropic/claude-sonnet",
-      "--status-code", "200", "--start-date", "10", "--end-date", "20",
-    ]),
-    "/usage/logs?startDate=10&endDate=20&appType=codex&page=2&pageSize=25&providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200",
+    client.usage_logs_url(
+      query=Some(
+        usage_logs_query([
+          "moonstat", "usage", "logs", "--page", "2", "--page-size", "25", "--app-type",
+          "codex", "--provider-name", "Codex OAuth", "--model", "anthropic/claude-sonnet",
+          "--status-code", "200", "--start-date", "10", "--end-date", "20",
+        ]),
+      ),
+    ),
+    "http://127.0.0.1:15721/usage/logs?startDate=10&endDate=20&appType=codex&providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200&page=2&pageSize=25",
   )
 }
 
@@ -677,20 +698,25 @@ test "usage detail path encodes moonstat request ids" {
 
 ///|
 test "usage kebab-case flags build canonical paths" {
+  let client = @moonstat.MoonstatClient::new(base_url="http://127.0.0.1:15721")
   let args = [
     "moonstat", "usage", "summary", "--start-date", "10", "--end-date", "20", "--app-type",
     "codex",
   ]
   assert_eq(
-    usage_filtered_path(args, "/usage/summary", app_filter=true),
-    "/usage/summary?startDate=10&endDate=20&appType=codex",
+    client.usage_summary_url(query=Some(usage_query(args, app_filter=true))),
+    "http://127.0.0.1:15721/usage/summary?startDate=10&endDate=20&appType=codex",
   )
   assert_eq(
-    usage_logs_path([
-      "moonstat", "usage", "logs", "--page", "1", "--page-size", "50", "--app-type",
-      "claude",
-    ]),
-    "/usage/logs?appType=claude&page=1&pageSize=50",
+    client.usage_logs_url(
+      query=Some(
+        usage_logs_query([
+          "moonstat", "usage", "logs", "--page", "1", "--page-size", "50", "--app-type",
+          "claude",
+        ]),
+      ),
+    ),
+    "http://127.0.0.1:15721/usage/logs?appType=claude&page=1&pageSize=50",
   )
   assert_eq(
     usage_limits_path([

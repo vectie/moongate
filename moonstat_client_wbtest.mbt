@@ -45,6 +45,9 @@ test "moonstat client builds usage query URLs" {
     end_date: Some("20"),
     app_type: Some("codex"),
     provider_id: Some("Codex OAuth"),
+    provider_name: None,
+    model: None,
+    status_code: None,
     page: Some(2),
     page_size: Some(25),
   }
@@ -104,12 +107,15 @@ test "moonstat client omits empty usage query values" {
     end_date: None,
     app_type: Some("  "),
     provider_id: None,
+    provider_name: Some("Codex OAuth"),
+    model: Some("anthropic/claude-sonnet"),
+    status_code: Some("200"),
     page: None,
     page_size: Some(50),
   }
   assert_eq(
     client.usage_logs_url(query=Some(query)),
-    "http://127.0.0.1:15721/usage/logs?pageSize=50",
+    "http://127.0.0.1:15721/usage/logs?providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200&pageSize=50",
   )
   assert_eq(
     client.usage_logs_url(query=Some(MoonstatUsageQuery::empty())),

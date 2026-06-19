@@ -240,16 +240,21 @@ pub struct MoonstatSessionSyncQuery {
   opencode_db_path : String?
 }
 pub fn MoonstatSessionSyncQuery::empty() -> Self
+pub fn MoonstatSessionSyncQuery::new(projects_dir~ : String?, codex_dir~ : String?, gemini_dir~ : String?, opencode_export_path~ : String?, opencode_db_path~ : String?) -> Self
 
 pub struct MoonstatUsageQuery {
   start_date : String?
   end_date : String?
   app_type : String?
   provider_id : String?
+  provider_name : String?
+  model : String?
+  status_code : String?
   page : Int?
   page_size : Int?
 }
 pub fn MoonstatUsageQuery::empty() -> Self
+pub fn MoonstatUsageQuery::new(start_date~ : String?, end_date~ : String?, app_type~ : String?, provider_id~ : String?, provider_name~ : String?, model~ : String?, status_code~ : String?, page~ : Int?, page_size~ : Int?) -> Self
 
 pub struct MoonstatUsageSummary {
   total_requests : Int
