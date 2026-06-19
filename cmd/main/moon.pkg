@@ -6,7 +6,6 @@ import {
   "vectie/moonlib/os",
   "vectie/moonstat/internal/pino",
   "vectie/moonstat/internal/hosts",
-  "vectie/moonstat/oauth/codex",
   "moonbitlang/core/encoding/utf8" @encoding/utf8,
   "moonbitlang/core/string",
   "moonbitlang/async",

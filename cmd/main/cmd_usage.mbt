@@ -328,16 +328,6 @@ async fn check_status(args : Array[String]) -> Unit {
     Ok(body) => logger.info("Gateway is running: \{body.stringify()}")
     Err(_) => logger.warn("Gateway is NOT running")
   }
-
-  // 检查凭据
-  let creds_result : Result[@codex.Credentials, Error] = cli_async_result(() => {
-    @codex.load_credentials()
-  })
-  match creds_result {
-    Ok(_) => logger.info("Credentials loaded")
-    Err(_) =>
-      logger.warn("Credentials NOT loaded, please run: moonstat auth login")
-  }
 }
 
 ///|
