@@ -120,11 +120,6 @@ fn moon_delete_session_requests_from_json(
 ) -> Array[MoonDeleteSessionRequest]? {
   let raw_items = match value {
     Some(Array(items)) => Some(items)
-    Some(Object(obj)) =>
-      match obj.get("items") {
-        Some(Array(items)) => Some(items)
-        _ => None
-      }
     _ => None
   }
   guard raw_items is Some(raw_items) else { return None }

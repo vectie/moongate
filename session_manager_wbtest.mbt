@@ -43,7 +43,7 @@ test "moonstat claude session parser reclassifies tool result messages" {
 }
 
 ///|
-test "moonstat delete sessions parser accepts raw arrays and items wrapper" {
+test "moonstat delete sessions parser accepts direct arrays only" {
   let item = {
     "providerId": Json::string("codex"),
     "sessionId": Json::string("s1"),
@@ -51,11 +51,12 @@ test "moonstat delete sessions parser accepts raw arrays and items wrapper" {
   }.to_json()
   let raw = moon_delete_session_requests_from_json(Some(Json::array([item])))
   assert_eq(raw.unwrap().length(), 1)
-  let wrapped = moon_delete_session_requests_from_json(
-    Some({ "items": Json::array([item]) }.to_json()),
+  assert_true(
+    moon_delete_session_requests_from_json(
+      Some({ "items": Json::array([item]) }.to_json()),
+    )
+    is None,
   )
-  assert_eq(wrapped.unwrap()[0].provider_id, "codex")
-  assert_eq(wrapped.unwrap()[0].session_id, "s1")
 }
 
 ///|
