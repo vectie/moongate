@@ -31,53 +31,34 @@ fn usage_cli_commands() -> Array[CliCommandSpec] {
 ///|
 async fn check_health(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  try {
-    let client = @http.Client::new(url, headers={})
-    defer client.close()
-    let response = client.get("/health")
-    if response.code == 200 {
-      let body = client.read_all().text()
-      println("Gateway health: \{body}")
-    } else {
-      logger.error("Health check failed: \{response.code}")
-    }
-  } catch {
-    err => logger.error("Health check failed: \{err}")
+  match cli_moonstat_client(args).health() {
+    Ok(body) => println("Gateway health: \{body.stringify()}")
+    Err(err) => logger.error("Health check failed: \{err}")
   }
 }
 
 ///|
 async fn check_stats(args : Array[String]) -> Unit {
-  check_text_endpoint(args, "/stats", "Stats")
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  match cli_moonstat_client(args).stats() {
+    Ok(body) => println(body.stringify())
+    Err(err) => logger.error("Stats check failed: \{err}")
+  }
 }
 
 ///|
 async fn check_metrics(args : Array[String]) -> Unit {
-  check_text_endpoint(args, "/metrics", "Metrics")
+  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  match cli_moonstat_client(args).metrics() {
+    Ok(body) => println(body)
+    Err(err) => logger.error("Metrics check failed: \{err}")
+  }
 }
 
 ///|
-async fn check_text_endpoint(
-  args : Array[String],
-  path : String,
-  label : String,
-) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+fn cli_moonstat_client(args : Array[String]) -> @moonstat.MoonstatClient {
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  try {
-    let client = @http.Client::new(url, headers={})
-    defer client.close()
-    let response = client.get(path)
-    if response.code == 200 {
-      let body = client.read_all().text()
-      println(body)
-    } else {
-      logger.error("\{label} check failed: \{response.code}")
-    }
-  } catch {
-    err => logger.error("\{label} check failed: \{err}")
-  }
+  @moonstat.MoonstatClient::new(base_url=url)
 }
 
 ///|
@@ -339,7 +320,6 @@ async fn check_usage_detail(args : Array[String]) -> Unit {
 ///|
 async fn check_status(args : Array[String]) -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
 
   // 检查 hosts reroute 状态
   let hosts_installed = @hosts.is_reroute_installed()
@@ -350,18 +330,9 @@ async fn check_status(args : Array[String]) -> Unit {
   }
 
   // 检查网关是否在运行
-  try {
-    let client = @http.Client::new(url, headers={})
-    defer client.close()
-    let response = client.get("/status")
-    if response.code == 200 {
-      let body = client.read_all().text()
-      logger.info("Gateway is running: \{body}")
-    } else {
-      logger.warn("Gateway is NOT running")
-    }
-  } catch {
-    _ => logger.warn("Gateway is NOT running")
+  match cli_moonstat_client(args).status() {
+    Ok(body) => logger.info("Gateway is running: \{body.stringify()}")
+    Err(_) => logger.warn("Gateway is NOT running")
   }
 
   // 检查凭据
