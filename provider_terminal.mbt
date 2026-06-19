@@ -92,7 +92,7 @@ fn moon_provider_terminal_env(
 ) -> Map[String, String] {
   let env : Map[String, String] = {}
   match provider.settings_config {
-    Some(Object(obj)) => {
+    Some(Object(obj)) =>
       match obj.get("env") {
         Some(Object(raw_env)) =>
           for key in raw_env.keys() {
@@ -102,21 +102,6 @@ fn moon_provider_terminal_env(
           }
         _ => ()
       }
-      if app_type == "codex" {
-        match obj.get("auth") {
-          Some(String(value)) if !value.trim().is_empty() =>
-            env["OPENAI_API_KEY"] = value
-          _ => ()
-        }
-      }
-      if app_type == "gemini" {
-        match obj.get("api_key") {
-          Some(String(value)) if !value.trim().is_empty() =>
-            env["GEMINI_API_KEY"] = value
-          _ => ()
-        }
-      }
-    }
     _ => ()
   }
   match provider.base_url {

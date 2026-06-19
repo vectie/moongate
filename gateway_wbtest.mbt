@@ -4867,15 +4867,7 @@ fn mimo_anthropic_claude_desktop_provider(
     provider_id="mimo",
     provider_name="MiMo",
     api_format~,
-    settings_config=Some(
-      {
-        "env": {
-          "ANTHROPIC_BASE_URL": Json::string(
-            "https://api.xiaomimimo.com/anthropic",
-          ),
-        }.to_json(),
-      }.to_json(),
-    ),
+    base_url=Some("https://api.xiaomimimo.com/anthropic"),
     claude_desktop_model_routes=routes,
   )
 }

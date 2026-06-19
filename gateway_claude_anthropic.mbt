@@ -470,28 +470,10 @@ fn ProviderRouteTarget::uses_anthropic_messages_format(
 
 ///|
 fn ProviderRouteTarget::has_mimo_endpoint(self : ProviderRouteTarget) -> Bool {
-  guard self.settings_config is Some(Object(settings)) else { return false }
-  match settings.get("env") {
-    Some(Object(env)) =>
-      match json_string_from_map(env, "ANTHROPIC_BASE_URL") {
-        Some(value) if is_mimo_identifier(value) => return true
-        _ => ()
-      }
-    _ => ()
+  match self.base_url {
+    Some(value) => is_mimo_identifier(value)
+    _ => false
   }
-  match json_string_from_map(settings, "base_url") {
-    Some(value) if is_mimo_identifier(value) => return true
-    _ => ()
-  }
-  match json_string_from_map(settings, "baseURL") {
-    Some(value) if is_mimo_identifier(value) => return true
-    _ => ()
-  }
-  match json_string_from_map(settings, "apiEndpoint") {
-    Some(value) if is_mimo_identifier(value) => return true
-    _ => ()
-  }
-  false
 }
 
 ///|

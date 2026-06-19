@@ -1,5 +1,5 @@
 ///|
-test "moonstat provider terminal env extracts app-specific fields" {
+test "moonstat provider terminal env uses canonical provider fields" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",
     provider_id="p1",
@@ -9,12 +9,14 @@ test "moonstat provider terminal env extracts app-specific fields" {
     settings_config=Some(
       {
         "auth": Json::string("sk-auth"),
+        "api_key": Json::string("sk-gemini-app-native"),
         "env": Json::object({ "EXTRA_FLAG": Json::string("1") }),
       }.to_json(),
     ),
   )
   let env = moon_provider_terminal_env(provider, "codex")
   assert_eq(env["OPENAI_API_KEY"], "sk-test")
+  assert_false(env["OPENAI_API_KEY"] == "sk-auth")
   assert_eq(env["OPENAI_BASE_URL"], "https://api.example.test/v1")
   assert_eq(env["EXTRA_FLAG"], "1")
 }
