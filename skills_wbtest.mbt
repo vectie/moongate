@@ -27,10 +27,10 @@ async test "moonstat skill repos install toggle backup and restore" {
 
   let installed = moon_install_skill_unified_json(
     {
-      "key": Json::string("vectie/moonstat-skills:traffic-stats"),
-      "name": Json::string("Traffic Stats"),
+      "key": Json::string("vectie/moonstat-skills:moonstat-usage"),
+      "name": Json::string("Moonstat Usage"),
       "description": Json::string("Moonstat skill"),
-      "directory": Json::string("traffic-stats"),
+      "directory": Json::string("moonstat-usage"),
       "repoOwner": Json::string("vectie"),
       "repoName": Json::string("moonstat-skills"),
       "repoBranch": Json::string("main"),
@@ -39,13 +39,18 @@ async test "moonstat skill repos install toggle backup and restore" {
     state_path=path,
   )
   guard installed is Object(installed_obj) else { fail("expected skill") }
-  assert_eq(installed_obj["directory"], Json::string("traffic-stats"))
+  assert_eq(installed_obj["directory"], Json::string("moonstat-usage"))
   guard installed_obj["apps"] is Object(apps) else { fail("expected apps") }
   assert_eq(apps["codex"], Json::boolean(true))
   assert_eq(apps["claude"], Json::boolean(false))
 
   assert_eq(
-    moon_toggle_skill_app_json("traffic-stats", "hermes", true, state_path=path),
+    moon_toggle_skill_app_json(
+      "moonstat-usage",
+      "hermes",
+      true,
+      state_path=path,
+    ),
     Json::boolean(true),
   )
   guard moon_get_installed_skills_json(path~) is Array(skills) else {
@@ -58,7 +63,7 @@ async test "moonstat skill repos install toggle backup and restore" {
   }
   assert_eq(toggled_apps["hermes"], Json::boolean(true))
 
-  guard moon_uninstall_skill_unified_json("traffic-stats", state_path=path)
+  guard moon_uninstall_skill_unified_json("moonstat-usage", state_path=path)
     is Object(uninstall_result) else {
     fail("expected uninstall result")
   }
@@ -117,13 +122,13 @@ async test "moonstat skill storage migration moves installed directories" {
     let state_path = @pathx.join(tmpdir, "skills_state.json")
     let moonstat_dir = @pathx.join(tmpdir, "moonstat-skills")
     let unified_dir = @pathx.join(tmpdir, "unified-skills")
-    let movable_dir = @pathx.join(moonstat_dir, "traffic-stats")
+    let movable_dir = @pathx.join(moonstat_dir, "moonstat-usage")
     let skipped_source_dir = @pathx.join(moonstat_dir, "already-there")
     let skipped_dest_dir = @pathx.join(unified_dir, "already-there")
     @fsx.make_directory(movable_dir, recursive=true, exists_ok=true)
     @fsx.make_directory(skipped_source_dir, recursive=true, exists_ok=true)
     @fsx.make_directory(skipped_dest_dir, recursive=true, exists_ok=true)
-    @fsx.write_to_file(@pathx.join(movable_dir, "SKILL.md"), "# Traffic Stats")
+    @fsx.write_to_file(@pathx.join(movable_dir, "SKILL.md"), "# Moonstat Usage")
     @fsx.write_to_file(
       @pathx.join(skipped_source_dir, "SKILL.md"),
       "# Source copy",
@@ -134,9 +139,9 @@ async test "moonstat skill storage migration moves installed directories" {
         {
           "installed": Json::array([
             {
-              "id": Json::string("local:traffic-stats"),
-              "directory": Json::string("traffic-stats"),
-              "name": Json::string("Traffic Stats"),
+              "id": Json::string("local:moonstat-usage"),
+              "directory": Json::string("moonstat-usage"),
+              "name": Json::string("Moonstat Usage"),
             }.to_json(),
             {
               "id": Json::string("local:already-there"),
@@ -166,7 +171,7 @@ async test "moonstat skill storage migration moves installed directories" {
     assert_eq(result["errors"], Json::array([]))
     assert_false(@fs.exists(movable_dir))
     assert_true(
-      @fsx.exists_as_file(@pathx.join(unified_dir, "traffic-stats/SKILL.md")),
+      @fsx.exists_as_file(@pathx.join(unified_dir, "moonstat-usage/SKILL.md")),
     )
     assert_true(
       @fsx.exists_as_file(@pathx.join(skipped_source_dir, "SKILL.md")),
@@ -196,7 +201,7 @@ async test "moonstat install skills from zip source scans and copies skill dirs"
   @fsx.with_temporary_directory("moonstat-skill-zip-XXXXXX", async fn(tmpdir) {
     let state_path = @pathx.join(tmpdir, "skills_state.json")
     let source_dir = @pathx.join(tmpdir, "bundle")
-    let nested_skill = @pathx.join(source_dir, "packs/traffic-stats")
+    let nested_skill = @pathx.join(source_dir, "packs/moonstat-usage")
     let conflict_skill = @pathx.join(source_dir, "already-there")
     let moonstat_dir = @pathx.join(tmpdir, "moonstat-skills")
     let unified_dir = @pathx.join(tmpdir, "unified-skills")
@@ -205,11 +210,11 @@ async test "moonstat install skills from zip source scans and copies skill dirs"
     @fsx.make_directory(conflict_skill, recursive=true, exists_ok=true)
     let skill_md =
       #|---
-      #|name: Traffic Stats
+      #|name: Moonstat Usage
       #|description: Watch traffic and usage.
       #|---
       #|
-      #|# Traffic Stats
+      #|# Moonstat Usage
     @fsx.write_to_file(@pathx.join(nested_skill, "SKILL.md"), skill_md)
     @fsx.write_to_file(@pathx.join(nested_skill, "notes.txt"), "usage")
     @fsx.write_to_file(@pathx.join(conflict_skill, "SKILL.md"), "# Existing")
@@ -244,18 +249,18 @@ async test "moonstat install skills from zip source scans and copies skill dirs"
     }
     assert_eq(installed.length(), 1)
     guard installed[0] is Object(skill) else { fail("expected skill object") }
-    assert_eq(skill["directory"], Json::string("traffic-stats"))
-    assert_eq(skill["name"], Json::string("Traffic Stats"))
+    assert_eq(skill["directory"], Json::string("moonstat-usage"))
+    assert_eq(skill["name"], Json::string("Moonstat Usage"))
     assert_eq(skill["description"], Json::string("Watch traffic and usage."))
     guard skill["contentHash"] is String(hash) else {
       fail("expected content hash")
     }
     assert_eq(hash.length(), 64)
     assert_true(
-      @fsx.exists_as_file(@pathx.join(unified_dir, "traffic-stats/SKILL.md")),
+      @fsx.exists_as_file(@pathx.join(unified_dir, "moonstat-usage/SKILL.md")),
     )
     assert_true(
-      @fsx.exists_as_file(@pathx.join(app_dir, "traffic-stats/SKILL.md")),
+      @fsx.exists_as_file(@pathx.join(app_dir, "moonstat-usage/SKILL.md")),
     )
     assert_false(@fs.exists(@pathx.join(unified_dir, "already-there")))
 

@@ -1,5 +1,5 @@
 ///|
-test "traffic stats records proxy counters" {
+test "moonstat usage records proxy counters" {
   let stats = TrafficStats::new()
   stats.record_inbound(120)
   stats.record_stream_mode(false)
@@ -158,7 +158,7 @@ test "request log json matches moonstat proxy_request_logs shape" {
 }
 
 ///|
-test "traffic stats writes request logs from request context" {
+test "moonstat usage writes request logs from request context" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
@@ -199,7 +199,7 @@ test "traffic stats writes request logs from request context" {
 }
 
 ///|
-test "traffic stats uses moonstat session request id for message usage" {
+test "moonstat usage uses moonstat session request id for message usage" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("claude", "anthropic", "Anthropic")
@@ -226,7 +226,7 @@ test "traffic stats uses moonstat session request id for message usage" {
 }
 
 ///|
-test "traffic stats request pricing uses moonstat outbound model context" {
+test "moonstat usage request pricing uses moonstat outbound model context" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target(
@@ -257,7 +257,7 @@ test "traffic stats request pricing uses moonstat outbound model context" {
 }
 
 ///|
-test "traffic stats empty usage falls back to moonstat outbound model context" {
+test "moonstat usage empty usage falls back to moonstat outbound model context" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("claude", "router", "Router")
@@ -278,7 +278,7 @@ test "traffic stats empty usage falls back to moonstat outbound model context" {
 }
 
 ///|
-test "traffic stats leaves moonstat error pricing model empty" {
+test "moonstat usage leaves moonstat error pricing model empty" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target(
@@ -314,7 +314,7 @@ test "traffic stats leaves moonstat error pricing model empty" {
 }
 
 ///|
-test "traffic stats can price gateway requests with moonstat model pricing overrides" {
+test "moonstat usage can price gateway requests with moonstat model pricing overrides" {
   let stats = TrafficStats::new()
   stats.record_inbound(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
@@ -338,7 +338,7 @@ test "traffic stats can price gateway requests with moonstat model pricing overr
 }
 
 ///|
-test "traffic stats honors moonstat model pricing delete tombstones" {
+test "moonstat usage honors moonstat model pricing delete tombstones" {
   let stats = TrafficStats::new()
   let deleted : Map[String, Bool] = Map([], capacity=0)
   deleted.set("gpt-5", true)
@@ -357,7 +357,7 @@ test "traffic stats honors moonstat model pricing delete tombstones" {
 }
 
 ///|
-test "traffic stats keeps request log retention bounded" {
+test "moonstat usage keeps request log retention bounded" {
   let stats = TrafficStats::new()
   for i in 0..<505 {
     stats.record_request_log(
@@ -2036,7 +2036,7 @@ test "provider limit status allows standalone query limits" {
 }
 
 ///|
-test "traffic stats backfills missing costs after moonstat pricing update" {
+test "moonstat usage backfills missing costs after moonstat pricing update" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2075,7 +2075,7 @@ test "traffic stats backfills missing costs after moonstat pricing update" {
 }
 
 ///|
-test "traffic stats backfill keeps moonstat claude fresh input with cache read" {
+test "moonstat usage backfill keeps moonstat claude fresh input with cache read" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2102,7 +2102,7 @@ test "traffic stats backfill keeps moonstat claude fresh input with cache read" 
 }
 
 ///|
-test "traffic stats backfill uses persisted moonstat pricing model" {
+test "moonstat usage backfill uses persisted moonstat pricing model" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2197,7 +2197,7 @@ test "request detail lazily backfills missing costs like moonstat reads" {
 }
 
 ///|
-test "traffic stats backfill does not use request model for real unpriced model" {
+test "moonstat usage backfill does not use request model for real unpriced model" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2222,7 +2222,7 @@ test "traffic stats backfill does not use request model for real unpriced model"
 }
 
 ///|
-test "traffic stats exports prometheus metrics" {
+test "moonstat usage exports prometheus metrics" {
   let stats = TrafficStats::new()
   stats.record_inbound(128)
   stats.record_stream_mode(true)

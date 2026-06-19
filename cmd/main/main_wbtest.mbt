@@ -930,9 +930,9 @@ test "proxy grouped commands build canonical paths" {
   )
   assert_eq(
     import_skills_from_apps_body([
-      "moonstat", "skills", "import-apps", "--imports", "[{\"directory\":\"traffic-stats\",\"apps\":{\"codex\":true}}]",
+      "moonstat", "skills", "import-apps", "--imports", "[{\"directory\":\"moonstat-usage\",\"apps\":{\"codex\":true}}]",
     ]),
-    Some("[{\"directory\":\"traffic-stats\",\"apps\":{\"codex\":true}}]"),
+    Some("[{\"directory\":\"moonstat-usage\",\"apps\":{\"codex\":true}}]"),
   )
   assert_eq(
     import_skills_from_apps_body([
@@ -1545,27 +1545,27 @@ test "top level moonstat skill commands build paths" {
   assert_eq(
     skill_install_path(
       [
-        "moonstat", "skills", "install-unified", "--directory", "traffic stats",
-        "--name", "Traffic Stats", "--description", "Routes and usage", "--current-app",
+        "moonstat", "skills", "install-unified", "--directory", "moonstat usage",
+        "--name", "Moonstat Usage", "--description", "Routes and usage", "--current-app",
         "codex",
       ],
       "/skills/install-unified",
     ),
-    "/skills/install-unified?directory=traffic%20stats&name=Traffic%20Stats&description=Routes%20and%20usage&currentApp=codex",
+    "/skills/install-unified?directory=moonstat%20usage&name=Moonstat%20Usage&description=Routes%20and%20usage&currentApp=codex",
   )
   assert_eq(
     skill_toggle_app_path([
-      "moonstat", "skills", "toggle-app", "--id", "traffic-stats", "--app-type",
+      "moonstat", "skills", "toggle-app", "--id", "moonstat-usage", "--app-type",
       "hermes", "--enabled", "true",
     ]),
-    "/skills/toggle-app?id=traffic-stats&appType=hermes&enabled=true",
+    "/skills/toggle-app?id=moonstat-usage&appType=hermes&enabled=true",
   )
   assert_eq(
     skill_restore_backup_path([
-      "moonstat", "skills", "backup", "restore", "--backup-id", "traffic-stats-1",
+      "moonstat", "skills", "backup", "restore", "--backup-id", "moonstat-usage-1",
       "--current-app", "claude",
     ]),
-    "/skills/backups/restore?backupId=traffic-stats-1&currentApp=claude",
+    "/skills/backups/restore?backupId=moonstat-usage-1&currentApp=claude",
   )
   assert_eq(
     skill_search_path([
