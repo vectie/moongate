@@ -32,7 +32,6 @@ priv struct ProxyService {
   proxy_default_cost_multipliers : Map[String, String]
   proxy_pricing_model_sources : Map[String, String]
   mut upstream_proxy_url : String?
-  mut last_external_url : String?
 }
 
 ///|
@@ -52,7 +51,6 @@ fn ProxyService::new(host : String, port : Int) -> ProxyService {
     proxy_default_cost_multipliers: Map([], capacity=0),
     proxy_pricing_model_sources: Map([], capacity=0),
     upstream_proxy_url: None,
-    last_external_url: None,
   }
 }
 
@@ -143,12 +141,12 @@ fn WorkspaceService::new() -> WorkspaceService {
 ///|
 /// RuntimeService handles app runtime status and local tool lifecycle endpoints.
 priv struct RuntimeService {
-  _unit : Unit
+  mut last_external_url : String?
 }
 
 ///|
 fn RuntimeService::new() -> RuntimeService {
-  { _unit: () }
+  { last_external_url: None }
 }
 
 ///|

@@ -29,8 +29,8 @@ async fn RuntimeService::handle_pick_directory(
 }
 
 ///|
-async fn ProxyService::handle_open_external(
-  self : ProxyService,
+async fn RuntimeService::handle_open_external(
+  self : RuntimeService,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -43,8 +43,8 @@ async fn ProxyService::handle_open_external(
 }
 
 ///|
-fn ProxyService::record_external_open(
-  self : ProxyService,
+fn RuntimeService::record_external_open(
+  self : RuntimeService,
   raw_url : String,
 ) -> String {
   let normalized = moon_normalize_external_url(raw_url)
@@ -65,8 +65,8 @@ async fn RuntimeService::handle_copy_text_to_clipboard(
 }
 
 ///|
-async fn ProxyService::handle_check_for_updates(
-  self : ProxyService,
+async fn RuntimeService::handle_check_for_updates(
+  self : RuntimeService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self.record_external_open(moon_update_url()))

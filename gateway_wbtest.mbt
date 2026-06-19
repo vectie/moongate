@@ -2530,9 +2530,7 @@ async test "runtime endpoints are owned by runtime service" {
     assert_false(runtime_source.contains("async fn Gateway::\{handler}("))
     assert_false(misc_source.contains("async fn RuntimeService::\{handler}("))
   }
-  assert_true(
-    core_source.contains("self.runtime.register_routes(router, self.proxy)"),
-  )
+  assert_true(core_source.contains("self.runtime.register_routes(router)"))
   for
     handler in [
       "handle_pick_directory", "handle_update_tray_menu", "handle_get_tool_versions",
@@ -2549,20 +2547,20 @@ async test "runtime endpoints are owned by runtime service" {
 }
 
 ///|
-async test "external utility endpoints are owned by proxy service" {
+async test "external utility endpoints are owned by runtime service" {
   let source = @fsx.read_file("gateway_runtime.mbt")
   let misc_source = @fsx.read_file("gateway_misc.mbt")
   let route_source = @fsx.read_file("gateway_runtime_routes.mbt")
   for handler in ["handle_open_external", "handle_check_for_updates"] {
-    assert_true(source.contains("async fn ProxyService::\{handler}("))
+    assert_true(source.contains("async fn RuntimeService::\{handler}("))
     assert_false(source.contains("async fn Gateway::\{handler}("))
-    assert_false(misc_source.contains("async fn ProxyService::\{handler}("))
+    assert_false(misc_source.contains("async fn RuntimeService::\{handler}("))
   }
-  assert_true(source.contains("fn ProxyService::record_external_open("))
+  assert_true(source.contains("fn RuntimeService::record_external_open("))
   assert_false(source.contains("fn Gateway::record_external_open("))
-  assert_false(misc_source.contains("fn ProxyService::record_external_open("))
-  assert_true(route_source.contains("proxy.handle_open_external(r, w)"))
-  assert_true(route_source.contains("proxy.handle_check_for_updates(w)"))
+  assert_false(misc_source.contains("fn RuntimeService::record_external_open("))
+  assert_true(route_source.contains("self.handle_open_external(r, w)"))
+  assert_true(route_source.contains("self.handle_check_for_updates(w)"))
 }
 
 ///|
@@ -2910,28 +2908,31 @@ test "gateway defaults are owned by suite contract" {
 
 ///|
 test "standalone external open records moonstat normalized target" {
-  let proxy = ProxyService::new("127.0.0.9", 17008)
-  assert_eq(proxy.last_external_url, None)
+  let runtime = RuntimeService::new()
+  assert_eq(runtime.last_external_url, None)
   assert_eq(
-    proxy.record_external_open("github.com/vectie/moonstat"),
+    runtime.record_external_open("github.com/vectie/moonstat"),
     "https://github.com/vectie/moonstat",
   )
-  assert_eq(proxy.last_external_url, Some("https://github.com/vectie/moonstat"))
   assert_eq(
-    proxy.record_external_open("HTTP://github.com/vectie/moonstat"),
+    runtime.last_external_url,
+    Some("https://github.com/vectie/moonstat"),
+  )
+  assert_eq(
+    runtime.record_external_open("HTTP://github.com/vectie/moonstat"),
     "https://HTTP://github.com/vectie/moonstat",
   )
   assert_eq(
-    proxy.last_external_url,
+    runtime.last_external_url,
     Some("https://HTTP://github.com/vectie/moonstat"),
   )
 }
 
 ///|
 test "standalone update check records moonstat release target" {
-  let proxy = ProxyService::new("127.0.0.9", 17008)
-  assert_eq(proxy.record_external_open(moon_update_url()), moon_update_url())
-  assert_eq(proxy.last_external_url, Some(moon_update_url()))
+  let runtime = RuntimeService::new()
+  assert_eq(runtime.record_external_open(moon_update_url()), moon_update_url())
+  assert_eq(runtime.last_external_url, Some(moon_update_url()))
 }
 
 ///|

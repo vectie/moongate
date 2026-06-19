@@ -42,7 +42,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.runtime.uptime_seconds(self.started_at_ms),
   )
   self.config.register_routes(router, self.proxy, self.host, bound_port)
-  self.runtime.register_routes(router, self.proxy)
+  self.runtime.register_routes(router)
   self.workspace.register_routes(router, self.config, self.proxy, self.logger)
   self.skills.register_routes(router, self.config)
   self.proxy.register_management_routes(

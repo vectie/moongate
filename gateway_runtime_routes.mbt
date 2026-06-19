@@ -2,19 +2,18 @@
 fn RuntimeService::register_routes(
   self : RuntimeService,
   router : @httpx.Router,
-  proxy : ProxyService,
 ) -> Unit {
   router.add_handler(Post, "/files/directories/pick", (r, w) => {
     self.handle_pick_directory(r, w)
   })
   router.add_handler(Post, "/runtime/open-external", (r, w) => {
-    proxy.handle_open_external(r, w)
+    self.handle_open_external(r, w)
   })
   router.add_handler(Post, "/runtime/clipboard/text", (r, w) => {
     self.handle_copy_text_to_clipboard(r, w)
   })
   router.add_handler(Post, "/runtime/updates/check", (_, w) => {
-    proxy.handle_check_for_updates(w)
+    self.handle_check_for_updates(w)
   })
   router.add_handler(Post, "/runtime/tray-menu/update", (_, w) => {
     self.handle_update_tray_menu(w)
