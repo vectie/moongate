@@ -265,8 +265,6 @@ pub async fn MoonstatClient::route_chat(Self, Json) -> Result[Json, String]
 pub fn MoonstatClient::route_chat_url(Self) -> String
 pub async fn MoonstatClient::route_messages(Self, Json) -> Result[Json, String]
 pub fn MoonstatClient::route_messages_url(Self) -> String
-pub async fn MoonstatClient::route_openclaw_chat(Self, Json) -> Result[Json, String]
-pub fn MoonstatClient::route_openclaw_chat_url(Self) -> String
 pub async fn MoonstatClient::route_response(Self, Json) -> Result[Json, String]
 pub async fn MoonstatClient::route_response_compact(Self, Json) -> Result[Json, String]
 pub fn MoonstatClient::route_response_compact_url(Self) -> String

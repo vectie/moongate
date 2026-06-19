@@ -127,27 +127,6 @@ Moonstat currently exposes the standalone local routes below:
 - `DELETE /providers/live?appType=codex&id=custom`
 - `POST /providers/switch?appType=codex&id=custom`
 - `GET /providers/live-settings?appType=codex`
-- `GET /providers/live-ids?appType=openclaw`
-- `GET /providers/live-provider?appType=openclaw&providerId=custom`
-- `POST /providers/import-live?appType=openclaw`
-- `GET /openclaw/config-health`
-- `GET /openclaw/default-model`
-- `POST /openclaw/default-model?primary=gpt-5&fallbacks=sonnet,opus`
-- `GET /openclaw/model-catalog`
-- `POST /openclaw/model-catalog?catalog={"fast":{"alias":"f"}}`
-- `GET /openclaw/agents-defaults`
-- `POST /openclaw/agents-defaults?defaults={"model":{"primary":"gpt-5"}}`
-- `GET /openclaw/env`
-- `POST /openclaw/env?key=OPENAI_API_KEY&value=...`
-- `GET /openclaw/tools`
-- `POST /openclaw/tools?allow=bash,read&deny=write`
-- `GET /hermes/model-config`
-- `GET /hermes/memory?kind=memory`
-- `POST /hermes/memory?kind=memory&content=...`
-- `GET /hermes/memory-limits`
-- `POST /hermes/memory-enabled?kind=user&enabled=false`
-- `POST /hermes/web-ui?path=/`
-- `POST /hermes/dashboard`
 - `GET /config/claude/status`
 - `GET /config/status?appType=codex`
 - `GET /config/claude-code/path`
@@ -173,7 +152,7 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /skills/backups/restore?backupId=moonstat-usage-1&currentApp=claude`
 - `POST /skills/install-unified?directory=moonstat-usage&currentApp=codex`
 - `POST /skills/uninstall-unified?id=moonstat-usage`
-- `POST /skills/toggle-app?id=moonstat-usage&appType=hermes&enabled=true`
+- `POST /skills/toggle-app?id=moonstat-usage&appType=codex&enabled=true`
 - `GET /skills/unmanaged`
 - `POST /skills/import-apps`
 - `GET /skills/discover`
@@ -253,8 +232,6 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /prompts/import-file?appType=codex&path=/tmp/prompts.md`
 - `GET /prompts/current-file?appType=codex&path=/tmp/prompts.md`
 - `POST /providers/import-live?appType=opencode`
-- `POST /providers/import-live?appType=openclaw`
-- `POST /providers/import-live?appType=hermes`
 - `GET /providers/universal`
 - `GET /providers/universal/item?id=custom`
 - `POST /providers/universal?id=custom&name=Custom&apps=claude,codex`
@@ -321,7 +298,6 @@ Moonstat currently exposes the standalone local routes below:
 - `POST /v1/responses`
 - `POST /v1/responses/compact`
 - `POST /v1/chat/completions`
-- `POST /openclaw/v1/chat/completions`
 - `ANY /gemini/v1beta/*path`
 - `ANY /gemini/v1/*path`
 
@@ -380,12 +356,11 @@ Moonstat keeps these settings in standalone gateway state, preserves hidden
 WebDAV/S3 secrets during `save_settings`, validates optimizer
 `cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
 as deterministic local state changes instead of mutating the desktop OS.
-OpenClaw workspace commands are exposed as `/workspace/memory...` and
-`/workspace/files...` routes. Standalone mode stores the same whitelisted
-workspace files and `memory/YYYY-MM-DD.md` daily memory files under
-`~/.moonsuite/openclaw/workspace`, returns Moonstat camelCase metadata, and keeps
-directory opening non-destructive while still ensuring the target directory
-exists.
+Workspace commands are exposed as `/workspace/memory...` and
+`/workspace/files...` routes. Standalone mode stores whitelisted workspace files
+and `memory/YYYY-MM-DD.md` daily memory files under `~/.moonsuite/moonstat`,
+returns Moonstat camelCase metadata, and keeps directory opening non-destructive
+while still ensuring the target directory exists.
 MCP and prompt commands are exposed through `/mcp/...` and `/prompts...`
 routes. Standalone mode stores MCP servers and prompts in gateway memory,
 exports the Claude `mcpServers` JSON text shape, validates command names, and

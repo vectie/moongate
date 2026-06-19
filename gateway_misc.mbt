@@ -21,8 +21,6 @@ pub struct Gateway {
   priv runtime : RuntimeService
   /// Skill discovery, installation, migration, and repository operations
   priv skills : SkillService
-  /// OpenClaw and Hermes provider config
-  priv openclaw : OpenClawService
 }
 
 ///|
@@ -46,7 +44,6 @@ pub fn Gateway::new(
     workspace: WorkspaceService::new(),
     runtime: RuntimeService::new(),
     skills: SkillService::new(),
-    openclaw: OpenClawService::new(),
   }
 }
 
@@ -161,9 +158,6 @@ fn claude_api_format_needs_transform(api_format : String) -> Bool {
 
 ///|
 const MOONSTAT_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
-
-///|
-const HERMES_WEB_OFFLINE_ERROR = "hermes_web_offline"
 
 ///|
 fn moon_is_managed_account_upstream_url(url : String) -> Bool {
@@ -1021,60 +1015,6 @@ fn json_non_empty_string_from_map(
     _ => None
   }
 }
-
-///|
-fn suite_write_outcome_json() -> Json {
-  let empty : Map[String, Json] = {}
-  Json::object(empty)
-}
-
-///|
-fn suite_object_payload(body : Json?, key : String) -> Json? {
-  match body {
-    Some(Object(obj)) =>
-      match obj.get(key) {
-        Some(Object(_)) if obj.length() == 1 => None
-        _ => Some(Json::object(obj))
-      }
-    _ => None
-  }
-}
-
-///|
-fn suite_object_request(path : StringView, body : Json?, key : String) -> Json? {
-  match suite_object_payload(body, key) {
-    Some(payload) => return Some(payload)
-    None => ()
-  }
-  match usage_query_value(path, key) {
-    Some(raw) => {
-      let parsed = @json.parse(raw) catch { _ => return None }
-      match parsed {
-        Object(obj) => Some(Json::object(obj))
-        _ => None
-      }
-    }
-    None => None
-  }
-}
-
-///|
-fn split_csv_json(value : String) -> Json {
-  let items : Array[Json] = []
-  for raw in value.split(",") {
-    let trimmed = raw.trim().to_owned()
-    if !trimmed.is_empty() {
-      items.push(Json::string(trimmed))
-    }
-  }
-  Json::array(items)
-}
-
-///|
-const HERMES_DASHBOARD_COMMAND = "hermes dashboard"
-
-///|
-const HERMES_DASHBOARD_LOG_PATH = "/tmp/moonstat_hermes_dashboard.log"
 
 ///|
 fn normalize_claude_desktop_mode(mode : String) -> String? {

@@ -34,11 +34,6 @@ pub fn MoonstatClient::route_chat_url(self : MoonstatClient) -> String {
 }
 
 ///|
-pub fn MoonstatClient::route_openclaw_chat_url(self : MoonstatClient) -> String {
-  self.endpoint("/openclaw/v1/chat/completions")
-}
-
-///|
 pub fn MoonstatClient::route_response_url(self : MoonstatClient) -> String {
   self.endpoint("/v1/responses")
 }

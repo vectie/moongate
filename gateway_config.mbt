@@ -1266,22 +1266,6 @@ async fn ConfigService::handle_apply_claude_plugin_config(
 }
 
 ///|
-async fn OpenClawService::handle_scan_openclaw_config_health(
-  self : OpenClawService,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  write_usage_json(w, self.openclaw_config_health_json())
-}
-
-///|
-async fn OpenClawService::handle_get_hermes_model_config(
-  self : OpenClawService,
-  w : @httpx.ResponseWriter,
-) -> Unit {
-  write_usage_json(w, self.hermes_model_config.unwrap_or(Json::null()))
-}
-
-///|
 fn stream_check_config_from_request(
   path : StringView,
   body : String,
@@ -1389,58 +1373,6 @@ async fn ConfigService::handle_save_stream_check_config(
     }
     None => write_usage_bad_request(w, "invalid_stream_check_config")
   }
-}
-
-///|
-fn OpenClawService::openclaw_config_health_json(self : OpenClawService) -> Json {
-  let defaults = self.openclaw_agents_defaults.unwrap_or(Json::object({}))
-  let config = {
-    "tools": self.openclaw_tools,
-    "agents": { "defaults": defaults }.to_json(),
-    "env": self.openclaw_env,
-  }.to_json()
-  openclaw_config_health_from_json(config)
-}
-
-///|
-fn openclaw_config_health_from_json(config : Json) -> Json {
-  let warnings : Array[Json] = []
-  match openclaw_nested_json(config, ["tools", "profile"]) {
-    Some(String(profile)) =>
-      if !openclaw_tools_profile_is_supported(profile) {
-        warnings.push(
-          openclaw_health_warning_json(
-            "invalid_tools_profile",
-            "tools.profile uses unsupported value '\{profile}'.",
-            Some("tools.profile"),
-          ),
-        )
-      }
-    _ => ()
-  }
-  match openclaw_nested_json(config, ["env", "vars"]) {
-    Some(Object(_)) | None => ()
-    Some(_) =>
-      warnings.push(
-        openclaw_health_warning_json(
-          "stringified_env_vars",
-          "env.vars should be an object. The current value looks stringified or malformed.",
-          Some("env.vars"),
-        ),
-      )
-  }
-  match openclaw_nested_json(config, ["env", "shellEnv"]) {
-    Some(Object(_)) | None => ()
-    Some(_) =>
-      warnings.push(
-        openclaw_health_warning_json(
-          "stringified_env_shell_env",
-          "env.shellEnv should be an object. The current value looks stringified or malformed.",
-          Some("env.shellEnv"),
-        ),
-      )
-  }
-  Json::array(warnings)
 }
 
 ///|

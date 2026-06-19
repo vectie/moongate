@@ -54,7 +54,6 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     self.runtime.uptime_seconds(self.started_at_ms),
     self.config.stream_check_config,
   )
-  self.openclaw.register_routes(router)
   self.usage.register_routes(router, self.auth, self.proxy.provider_router)
   self.session.register_routes(
     router,

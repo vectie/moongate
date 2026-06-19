@@ -28,20 +28,6 @@ async fn run_suite_cli_command(
 }
 
 ///|
-async fn set_suite_json_config(
-  args : Array[String],
-  base_path : String,
-  flag : String,
-) -> Unit {
-  guard parse_string_arg(args, flag) is Some(raw) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
-    logger.error("Missing required \{flag}")
-    return
-  }
-  post_json_body_endpoint(args, base_path, raw, "Suite")
-}
-
-///|
 fn print_suite_manifest(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())

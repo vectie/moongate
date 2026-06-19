@@ -256,11 +256,9 @@ test "suite manifest publishes moonstat service contract" {
     "POST /providers", "POST /providers/update", "POST /providers/switch", "GET /providers/live-settings",
     "GET /providers/live-ids", "GET /providers/live-provider", "POST /providers/import-live",
     "POST /proxy/reset-circuit-breaker", "GET /mcp/servers", "POST /mcp/servers",
-    "DELETE /mcp/servers", "GET /prompts", "POST /prompts", "DELETE /prompts", "GET /openclaw/config-health",
-    "GET /openclaw/default-model", "POST /openclaw/default-model", "GET /hermes/model-config",
-    "GET /hermes/memory", "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
-    "POST /providers/universal", "DELETE /providers/universal", "POST /providers/test-endpoints",
-    "POST /config/models",
+    "DELETE /mcp/servers", "GET /prompts", "POST /prompts", "DELETE /prompts", "GET /providers/universal",
+    "GET /providers/universal/item", "POST /providers/universal", "DELETE /providers/universal",
+    "POST /providers/test-endpoints", "POST /config/models",
   ]
   for route in control_routes {
     assert_true(routes.contains(Json::string(route)))
@@ -579,14 +577,15 @@ test "suite manifest publishes agent client framework contracts" {
   guard obj["agentClients"] is Array(clients) else {
     fail("expected agent clients")
   }
-  assert_eq(clients.length(), 8)
+  assert_eq(clients.length(), 7)
   for
     id in [
-      "codex", "claude-code", "claude-desktop", "openclaw", "opencode", "gemini",
-      "github-copilot", "openai-compatible",
+      "codex", "claude-code", "claude-desktop", "opencode", "gemini", "github-copilot",
+      "openai-compatible",
     ] {
     assert_true(suite_agent_client_by_id(clients, id) is Some(_))
   }
+  assert_true(suite_agent_client_by_id(clients, "openclaw") is None)
   guard suite_agent_client_by_id(clients, "codex") is Some(codex) else {
     fail("expected codex client")
   }
@@ -608,14 +607,6 @@ test "suite manifest publishes agent client framework contracts" {
   assert_eq(
     claude_desktop["primaryRoute"],
     Json::string("POST /claude-desktop/v1/messages"),
-  )
-  guard suite_agent_client_by_id(clients, "openclaw") is Some(openclaw) else {
-    fail("expected openclaw client")
-  }
-  assert_eq(openclaw["appType"], Json::string("openclaw"))
-  assert_eq(
-    openclaw["primaryRoute"],
-    Json::string("POST /openclaw/v1/chat/completions"),
   )
   guard suite_agent_client_by_id(clients, "gemini") is Some(gemini) else {
     fail("expected gemini client")

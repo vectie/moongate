@@ -159,30 +159,3 @@ priv struct SkillService {
 fn SkillService::new() -> SkillService {
   { _unit: () }
 }
-
-///|
-/// OpenClawService handles OpenClaw and Hermes provider configuration.
-priv struct OpenClawService {
-  mut openclaw_default_model : Json?
-  mut openclaw_model_catalog : Json?
-  mut openclaw_agents_defaults : Json?
-  mut openclaw_env : Json
-  mut openclaw_tools : Json
-  hermes_model_config : Json?
-  hermes_memory : Map[String, String]
-  hermes_memory_enabled : Map[String, Bool]
-}
-
-///|
-fn OpenClawService::new() -> OpenClawService {
-  {
-    openclaw_default_model: None,
-    openclaw_model_catalog: None,
-    openclaw_agents_defaults: None,
-    openclaw_env: Json::object({}),
-    openclaw_tools: openclaw_default_tools_json(),
-    hermes_model_config: None,
-    hermes_memory: Map([], capacity=2),
-    hermes_memory_enabled: Map([("memory", true), ("user", true)], capacity=2),
-  }
-}

@@ -1077,7 +1077,6 @@ fn ProxyService::takeover_status_json(self : ProxyService) -> Json {
     "codex": Json::boolean(self.takeover_for_app("codex")),
     "gemini": Json::boolean(self.takeover_for_app("gemini")),
     "opencode": Json::boolean(self.takeover_for_app("opencode")),
-    "openclaw": Json::boolean(self.takeover_for_app("openclaw")),
   }.to_json()
 }
 
@@ -1091,7 +1090,7 @@ fn ProxyService::takeover_for_app(
 
 ///|
 fn ProxyService::takeover_active(self : ProxyService) -> Bool {
-  for app_type in ["claude", "codex", "gemini", "opencode", "openclaw"] {
+  for app_type in ["claude", "codex", "gemini", "opencode"] {
     if self.takeover_for_app(app_type) {
       return true
     }
@@ -1101,7 +1100,7 @@ fn ProxyService::takeover_active(self : ProxyService) -> Bool {
 
 ///|
 fn ProxyService::clear_takeover(self : ProxyService) -> Unit {
-  for app_type in ["claude", "codex", "gemini", "opencode", "openclaw"] {
+  for app_type in ["claude", "codex", "gemini", "opencode"] {
     self.proxy_takeover_enabled.set(app_type, false)
   }
 }

@@ -47,7 +47,7 @@ fn moon_normalize_external_url(url : String) -> String {
 
 ///|
 fn moon_tool_names() -> Array[String] {
-  ["claude", "codex", "gemini", "opencode", "openclaw", "hermes"]
+  ["claude", "codex", "gemini", "opencode"]
 }
 
 ///|
@@ -445,8 +445,6 @@ fn moon_tool_display_name(tool : String) -> String {
     "codex" => "Codex"
     "gemini" => "Gemini CLI"
     "opencode" => "OpenCode"
-    "openclaw" => "OpenClaw"
-    "hermes" => "Hermes"
     _ => "Unknown"
   }
 }
@@ -466,9 +464,6 @@ fn moon_tool_install_command(tool : String) -> String {
         "bash -c 'tmp=$(mktemp) && curl -fsSL https://opencode.ai/install -o $tmp && bash $tmp; status=$?; rm -f $tmp; exit $status'",
         "npm i -g opencode-ai@latest",
       )
-    "openclaw" => "npm i -g openclaw@latest"
-    "hermes" =>
-      "bash -c 'tmp=$(mktemp) && curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh -o $tmp && bash $tmp; status=$?; rm -f $tmp; exit $status'"
     _ => ""
   }
 }
@@ -495,9 +490,8 @@ fn moon_anchored_tool_update_command(
 ) -> String? {
   let quoted = moon_quote_path_if_needed(install.path)
   match tool {
-    "claude" | "codex" | "openclaw" => Some("\{quoted} update")
+    "claude" | "codex" => Some("\{quoted} update")
     "opencode" => Some("\{quoted} upgrade")
-    "hermes" => Some("\{quoted} update")
     "gemini" =>
       match moon_sibling_bin(install.path, "npm") {
         Some(npm) =>
@@ -522,12 +516,6 @@ fn moon_static_tool_update_command(tool : String) -> String {
     "gemini" => "npm i -g @google/gemini-cli@latest"
     "opencode" =>
       moon_chain_commands("opencode upgrade", "npm i -g opencode-ai@latest")
-    "openclaw" =>
-      moon_chain_commands("openclaw update --yes", "npm i -g openclaw@latest")
-    "hermes" =>
-      moon_chain_commands(
-        "hermes update", "bash -c 'tmp=$(mktemp) && curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh -o $tmp && bash $tmp; status=$?; rm -f $tmp; exit $status'",
-      )
     _ => ""
   }
 }

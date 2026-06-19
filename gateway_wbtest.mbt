@@ -453,20 +453,6 @@ test "moonstat read command parsers accept canonical json payload keys" {
     ),
     Some("node"),
   )
-  assert_eq(
-    hermes_memory_kind_from_request(
-      "/hermes/memory",
-      Some({ "kind": Json::string("user") }.to_json()),
-    ),
-    Some("user"),
-  )
-  assert_eq(
-    hermes_memory_kind_from_request(
-      "/hermes/memory",
-      Some({ "memory_kind": Json::string("user") }.to_json()),
-    ),
-    None,
-  )
 }
 
 ///|
@@ -1853,175 +1839,6 @@ test "moonstat local proxy scan expands mixed ports into http and socks5 entries
 }
 
 ///|
-test "suite config helpers mirror moonstat openclaw hermes shapes" {
-  json_inspect(openclaw_default_tools_json(), content={
-    "allow": [],
-    "deny": [],
-  })
-  json_inspect(
-    openclaw_default_model_from_request(
-      "/openclaw/default-model?primary=gpt-5&fallbacks=sonnet%2Copus",
-      None,
-    ).unwrap(),
-    content={ "primary": "gpt-5", "fallbacks": ["sonnet", "opus"] },
-  )
-  json_inspect(
-    suite_object_request(
-      "/openclaw/model-catalog?catalog=%7B%22fast%22%3A%7B%22alias%22%3A%22f%22%7D%7D",
-      None,
-      "catalog",
-    ).unwrap(),
-    content={ "fast": { "alias": "f" } },
-  )
-  json_inspect(
-    suite_object_request(
-      "/openclaw/model-catalog",
-      Some({ "fast": { "alias": "f" } }.to_json()),
-      "catalog",
-    ).unwrap(),
-    content={ "fast": { "alias": "f" } },
-  )
-  assert_true(
-    suite_object_request(
-      "/openclaw/model-catalog",
-      Some({ "catalog": { "fast": { "alias": "f" } } }.to_json()),
-      "catalog",
-    )
-    is None,
-  )
-  json_inspect(
-    openclaw_default_model_from_request(
-      "/openclaw/default-model",
-      Some(
-        {
-          "primary": Json::string("gpt-5"),
-          "fallbacks": Json::array([Json::string("sonnet")]),
-        }.to_json(),
-      ),
-    ).unwrap(),
-    content={ "primary": "gpt-5", "fallbacks": ["sonnet"] },
-  )
-  assert_true(
-    openclaw_default_model_from_request(
-      "/openclaw/default-model",
-      Some({ "model": { "primary": "gpt-5" } }.to_json()),
-    )
-    is None,
-  )
-  json_inspect(
-    openclaw_env_from_request(
-      "/openclaw/env",
-      Some({ "OPENAI_API_KEY": "sk-new" }.to_json()),
-    ).unwrap(),
-    content={ "OPENAI_API_KEY": "sk-new" },
-  )
-  assert_true(
-    openclaw_env_from_request(
-      "/openclaw/env",
-      Some({ "env": { "OPENAI_API_KEY": "sk-old" } }.to_json()),
-    )
-    is None,
-  )
-  json_inspect(
-    hermes_memory_limits_json(Map([("memory", false), ("user", true)])),
-    content={
-      "memory": 2200,
-      "user": 1375,
-      "memoryEnabled": false,
-      "userEnabled": true,
-    },
-  )
-  assert_eq(
-    hermes_memory_kind_from_request("/hermes/memory?kind=user", None),
-    Some("user"),
-  )
-  assert_eq(
-    hermes_memory_kind_from_request("/hermes/memory?kind=bad", None),
-    None,
-  )
-  assert_eq(
-    hermes_memory_kind_from_request("/hermes/memory?memoryKind=user", None),
-    None,
-  )
-  assert_true(
-    openclaw_env_from_request(
-      "/openclaw/env?name=OPENAI_API_KEY&value=sk-old",
-      None,
-    )
-    is None,
-  )
-  assert_eq(hermes_web_port_from_request("/hermes/web-ui?port=9120"), 9120)
-  assert_eq(
-    proxy_string_request(
-      "/hermes/web-ui",
-      Some({ "path": Json::string("/config") }.to_json()),
-      "path",
-    ),
-    Some("/config"),
-  )
-  assert_eq(hermes_web_ui_path(""), "/")
-  assert_eq(hermes_web_ui_path("settings/models"), "/settings/models")
-  assert_eq(hermes_web_ui_path("/settings/models"), "/settings/models")
-  assert_eq(
-    hermes_web_ui_target_url(9120, "settings/models"),
-    "http://127.0.0.1:9120/settings/models",
-  )
-  assert_eq(hermes_web_ui_probe_url(9120), "http://127.0.0.1:9120/api/status")
-  assert_eq(HERMES_DASHBOARD_COMMAND, "hermes dashboard")
-  assert_eq(
-    hermes_dashboard_background_shell_command(),
-    "nohup hermes dashboard >/tmp/moonstat_hermes_dashboard.log 2>&1 &",
-  )
-}
-
-///|
-test "openclaw health scanner reports current moonstat warning rules" {
-  let config = {
-    "tools": { "profile": Json::string("dangerous") }.to_json(),
-    "agents": {
-      "defaults": {
-        "timeout": Json::number(30.0),
-        "timeoutSeconds": Json::number(30.0),
-      }.to_json(),
-    }.to_json(),
-    "env": {
-      "vars": Json::string("{\"OPENAI_API_KEY\":\"sk\"}"),
-      "shellEnv": Json::array([]),
-    }.to_json(),
-  }.to_json()
-  json_inspect(openclaw_config_health_from_json(config), content=[
-    {
-      "code": "invalid_tools_profile",
-      "message": "tools.profile uses unsupported value 'dangerous'.",
-      "path": "tools.profile",
-    },
-    {
-      "code": "stringified_env_vars",
-      "message": "env.vars should be an object. The current value looks stringified or malformed.",
-      "path": "env.vars",
-    },
-    {
-      "code": "stringified_env_shell_env",
-      "message": "env.shellEnv should be an object. The current value looks stringified or malformed.",
-      "path": "env.shellEnv",
-    },
-  ])
-}
-
-///|
-test "openclaw health scanner accepts supported profiles and object env" {
-  let config = {
-    "tools": { "profile": Json::string("coding") }.to_json(),
-    "agents": { "defaults": { "timeoutSeconds": Json::number(30.0) }.to_json() }.to_json(),
-    "env": {
-      "vars": { "OPENAI_API_KEY": Json::string("sk") }.to_json(),
-      "shellEnv": { "PATH": Json::string("/usr/bin") }.to_json(),
-    }.to_json(),
-  }.to_json()
-  assert_eq(openclaw_config_health_from_json(config), Json::array([]))
-}
-
-///|
 test "proxy app config exposes standalone moonstat shape" {
   let gateway = Gateway::new(port=17005, host="127.0.0.6", model="gpt-5")
   guard gateway.proxy.app_config_json("claude") is Object(config) else {
@@ -2897,36 +2714,6 @@ async test "session endpoints are owned by session service" {
 }
 
 ///|
-async test "openclaw endpoints are owned by openclaw service" {
-  let config_source = @fsx.read_file("gateway_config.mbt")
-  let openclaw_source = @fsx.read_file("gateway_openclaw.mbt")
-  let route_source = @fsx.read_file("gateway_openclaw_routes.mbt")
-  let sources = config_source + openclaw_source
-  let core_source = @fsx.read_file("gateway_core.mbt")
-  for
-    handler in [
-      "handle_scan_openclaw_config_health", "handle_get_openclaw_default_model",
-      "handle_set_openclaw_default_model", "handle_get_openclaw_model_catalog", "handle_set_openclaw_model_catalog",
-      "handle_get_openclaw_agents_defaults", "handle_set_openclaw_agents_defaults",
-      "handle_get_openclaw_env", "handle_set_openclaw_env", "handle_get_openclaw_tools",
-      "handle_set_openclaw_tools", "handle_get_hermes_model_config", "handle_get_hermes_memory",
-      "handle_set_hermes_memory", "handle_get_hermes_memory_limits", "handle_set_hermes_memory_enabled",
-      "handle_open_hermes_web_ui", "handle_launch_hermes_dashboard",
-    ] {
-    assert_true(sources.contains("async fn OpenClawService::\{handler}("))
-    assert_false(sources.contains("async fn Gateway::\{handler}("))
-    assert_true(route_source.contains("self.\{handler}("))
-  }
-  assert_true(
-    config_source.contains("fn OpenClawService::openclaw_config_health_json("),
-  )
-  assert_false(
-    config_source.contains("fn Gateway::openclaw_config_health_json("),
-  )
-  assert_true(core_source.contains("self.openclaw.register_routes(router)"))
-}
-
-///|
 test "standalone tray update mirrors moonstat no tray result" {
   assert_eq(moon_update_tray_menu_result(), Json::boolean(false))
 }
@@ -3711,12 +3498,12 @@ test "proxy takeover status alias is moonstat-compatible standalone false state"
   guard gateway.proxy.takeover_status_json() is Object(status) else {
     fail("expected takeover status object")
   }
-  assert_eq(status.length(), 5)
+  assert_eq(status.length(), 4)
   assert_eq(status["claude"], Json::boolean(false))
   assert_eq(status["codex"], Json::boolean(false))
   assert_eq(status["gemini"], Json::boolean(false))
   assert_eq(status["opencode"], Json::boolean(false))
-  assert_eq(status["openclaw"], Json::boolean(false))
+  assert_eq(status.get("openclaw"), None)
 }
 
 ///|

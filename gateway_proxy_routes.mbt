@@ -26,17 +26,6 @@ fn ProxyService::register_inference_routes(
   router.add_handler(Post, "/v1/chat/completions", (r, w) => {
     self.handle_chat_completions(auth, usage, session, model, r, w)
   })
-  router.add_handler(Post, "/openclaw/v1/chat/completions", (r, w) => {
-    self.handle_chat_completions(
-      auth,
-      usage,
-      session,
-      model,
-      r,
-      w,
-      app_type="openclaw",
-    )
-  })
   router.add_handler(Post, "/v1/responses", (r, w) => {
     self.handle_codex_responses(auth, usage, session, model, r, w)
   })
@@ -229,7 +218,7 @@ fn ProxyService::register_management_routes(
     self.handle_get_live_provider(
       r,
       w,
-      usage_query_value(r.path, "appType").unwrap_or("openclaw"),
+      usage_query_value(r.path, "appType").unwrap_or("opencode"),
     )
   })
   router.add_handler(Post, "/providers/import-live", (r, w) => {

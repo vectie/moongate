@@ -242,8 +242,8 @@ test "registered cli commands match suite command aliases and status commands" {
   assert_true(
     registered_cli_command_id([
       "moonstat", "provider", "openclaw", "import-live",
-    ]) ==
-    Some("import_openclaw_providers_from_live"),
+    ])
+    is None,
   )
   assert_true(
     registered_cli_command_id([
@@ -269,32 +269,27 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("model_candidates"),
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "openclaw", "config-health"]) ==
-    Some("scan_openclaw_config_health"),
+    registered_cli_command_id(["moonstat", "openclaw", "config-health"]) == None,
   )
   assert_true(
     registered_cli_command_id(["moonstat", "openclaw", "model-catalog", "set"]) ==
-    Some("set_openclaw_model_catalog"),
+    None,
   )
   assert_true(
     registered_cli_command_id(["moonstat", "openclaw", "agents-defaults"]) ==
-    Some("get_openclaw_agents_defaults"),
+    None,
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "openclaw", "tools", "set"]) ==
-    Some("set_openclaw_tools"),
+    registered_cli_command_id(["moonstat", "openclaw", "tools", "set"]) == None,
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "hermes", "memory"]) ==
-    Some("get_hermes_memory"),
+    registered_cli_command_id(["moonstat", "hermes", "memory"]) == None,
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "hermes", "web-ui"]) ==
-    Some("open_hermes_web_ui"),
+    registered_cli_command_id(["moonstat", "hermes", "web-ui"]) == None,
   )
   assert_true(
-    registered_cli_command_id(["moonstat", "hermes", "dashboard"]) ==
-    Some("launch_hermes_dashboard"),
+    registered_cli_command_id(["moonstat", "hermes", "dashboard"]) == None,
   )
   assert_true(
     registered_cli_command_id(["moonstat", "config", "status"]) ==
@@ -923,26 +918,6 @@ test "proxy grouped commands build canonical paths" {
     "/proxy/import-default-config?appType=codex",
   )
   assert_eq(
-    openclaw_default_model_path([
-      "moonstat", "openclaw", "default-model", "set", "--primary", "gpt-5", "--fallbacks",
-      "sonnet,opus",
-    ]),
-    Some("/openclaw/default-model?primary=gpt-5&fallbacks=sonnet%2Copus"),
-  )
-  assert_eq(
-    hermes_memory_path([
-      "moonstat", "hermes", "memory", "set", "--kind", "memory", "--content", "hello world",
-    ]),
-    Some("/hermes/memory?kind=memory&content=hello%20world"),
-  )
-  assert_eq(
-    hermes_memory_enabled_path([
-      "moonstat", "hermes", "memory-enabled", "set", "--kind", "user", "--enabled",
-      "false",
-    ]),
-    Some("/hermes/memory-enabled?kind=user&enabled=false"),
-  )
-  assert_eq(
     delete_sessions_body([
       "moonstat", "sessions", "delete-many", "--items", "[{\"providerId\":\"codex\",\"sessionId\":\"s1\",\"sourcePath\":\"/tmp/s1.jsonl\"}]",
     ]),
@@ -1032,28 +1007,6 @@ test "provider grouped commands build canonical paths" {
   assert_eq(
     provider_live_ids_path("opencode"),
     "/providers/live-ids?appType=opencode",
-  )
-  assert_eq(
-    provider_live_provider_path(
-      [
-        "moonstat", "provider", "openclaw", "live-get", "--provider-id", "open claw",
-      ],
-      "openclaw",
-    ),
-    Some("/providers/live-provider?appType=openclaw&providerId=open%20claw"),
-  )
-  assert_eq(
-    provider_live_provider_path(
-      [
-        "moonstat", "provider", "hermes", "live-get", "--provider-id", "hermes/a",
-      ],
-      "hermes",
-    ),
-    Some("/providers/live-provider?appType=hermes&providerId=hermes%2Fa"),
-  )
-  assert_eq(
-    provider_import_live_path("openclaw"),
-    "/providers/import-live?appType=openclaw",
   )
   assert_eq(
     universal_provider_id_path(

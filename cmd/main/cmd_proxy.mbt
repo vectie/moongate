@@ -592,19 +592,6 @@ async fn check_named_live_provider_ids(
 }
 
 ///|
-async fn check_named_live_provider(
-  args : Array[String],
-  app_type : String,
-) -> Unit {
-  guard provider_live_provider_path(args, app_type) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
-    logger.error("Missing required --provider-id")
-    return
-  }
-  check_json_endpoint(args, path, "Provider")
-}
-
-///|
 async fn import_named_live_providers(
   args : Array[String],
   app_type : String,

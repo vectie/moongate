@@ -11,10 +11,6 @@ test "moonstat client builds core endpoint URLs" {
     client.route_chat_url(),
     "http://127.0.0.1:4199/v1/chat/completions",
   )
-  assert_eq(
-    client.route_openclaw_chat_url(),
-    "http://127.0.0.1:4199/openclaw/v1/chat/completions",
-  )
   assert_eq(client.route_response_url(), "http://127.0.0.1:4199/v1/responses")
   assert_eq(
     client.route_response_compact_url(),
@@ -322,7 +318,7 @@ test "moonstat client parses typed agent clients from suite status" {
   guard moonstat_agent_clients_from_suite_status(status) is Ok(clients) else {
     fail("expected parsed agent clients")
   }
-  assert_eq(clients.length(), 8)
+  assert_eq(clients.length(), 7)
   guard moonstat_client_agent_client_by_id(clients, "codex") is Some(codex) else {
     fail("expected codex agent client")
   }
@@ -334,13 +330,7 @@ test "moonstat client parses typed agent clients from suite status" {
     codex.setup_command,
     Some("moonstat codex install --port 18081 --model gpt-5"),
   )
-  guard moonstat_client_agent_client_by_id(clients, "openclaw")
-    is Some(openclaw) else {
-    fail("expected openclaw agent client")
-  }
-  assert_eq(openclaw.app_type, "openclaw")
-  assert_eq(openclaw.base_url, "http://127.0.0.1:18081/openclaw/v1")
-  assert_eq(openclaw.primary_route, "POST /openclaw/v1/chat/completions")
+  assert_true(moonstat_client_agent_client_by_id(clients, "openclaw") is None)
   guard moonstat_client_agent_client_by_id(clients, "gemini") is Some(gemini) else {
     fail("expected gemini agent client")
   }

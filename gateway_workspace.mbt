@@ -45,13 +45,28 @@ fn moon_daily_memory_date(filename : String) -> String {
 }
 
 ///|
+fn moonstat_workspace_root_dir() -> String {
+  @pathx.join(@pathx.join(moon_home_dir(), ".moonsuite"), "moonstat")
+}
+
+///|
+fn moonstat_workspace_dir() -> String {
+  @pathx.join(moonstat_workspace_root_dir(), "workspace")
+}
+
+///|
+fn moonstat_memory_dir() -> String {
+  @pathx.join(moonstat_workspace_root_dir(), "memory")
+}
+
+///|
 fn moon_workspace_file_path(filename : String) -> String {
-  @pathx.join(moon_openclaw_workspace_dir(), filename)
+  @pathx.join(moonstat_workspace_dir(), filename)
 }
 
 ///|
 fn moon_daily_memory_file_path(filename : String) -> String {
-  @pathx.join(moon_openclaw_memory_dir(), filename)
+  @pathx.join(moonstat_memory_dir(), filename)
 }
 
 ///|
@@ -75,7 +90,7 @@ async fn moon_daily_memory_info_json(path : String, filename : String) -> Json {
 
 ///|
 async fn moon_list_daily_memory_files_json() -> Json {
-  let memory_dir = moon_openclaw_memory_dir()
+  let memory_dir = moonstat_memory_dir()
   if !@fsx.exists(memory_dir) {
     return Json::array([])
   }
@@ -110,7 +125,7 @@ async fn moon_list_daily_memory_files_json() -> Json {
 ///|
 async fn moon_search_daily_memory_files_json(query : String) -> Json {
   let trimmed = query.trim().to_owned()
-  let memory_dir = moon_openclaw_memory_dir()
+  let memory_dir = moonstat_memory_dir()
   if trimmed.is_empty() || !@fsx.exists(memory_dir) {
     return Json::array([])
   }
@@ -430,7 +445,7 @@ async fn WorkspaceService::handle_write_daily_memory_file(
     return
   }
   let content = proxy_string_request(r.path, body, "content").unwrap_or("")
-  if !moon_ensure_directory(moon_openclaw_memory_dir()) {
+  if !moon_ensure_directory(moonstat_memory_dir()) {
     write_usage_bad_request(w, "daily_memory_directory_failed")
     return
   }
@@ -521,7 +536,7 @@ async fn WorkspaceService::handle_write_workspace_file(
     return
   }
   let content = proxy_string_request(r.path, body, "content").unwrap_or("")
-  if !moon_ensure_directory(moon_openclaw_workspace_dir()) {
+  if !moon_ensure_directory(moonstat_workspace_dir()) {
     write_usage_bad_request(w, "workspace_directory_failed")
     return
   }
@@ -546,9 +561,9 @@ async fn WorkspaceService::handle_open_workspace_directory(
     "workspace",
   )
   let target = if subdir == "memory" {
-    moon_openclaw_memory_dir()
+    moonstat_memory_dir()
   } else {
-    moon_openclaw_workspace_dir()
+    moonstat_workspace_dir()
   }
   if !moon_ensure_directory(target) {
     write_usage_bad_request(w, "workspace_directory_failed")
