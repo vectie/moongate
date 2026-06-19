@@ -198,7 +198,6 @@ async fn TrafficStats::sync_session_logs(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::ingest_opencode_message_json(
   self : TrafficStats,
   session_id~ : String,

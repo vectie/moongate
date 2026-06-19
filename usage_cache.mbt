@@ -246,7 +246,6 @@ fn SubscriptionQuota::not_found(tool : String) -> SubscriptionQuota {
 }
 
 ///|
-#warnings("-unused_value")
 fn SubscriptionQuota::error(
   tool : String,
   status : CredentialStatus,
@@ -335,7 +334,6 @@ fn UsageCache::get_script(
 }
 
 ///|
-#warnings("-unused_value")
 fn[R] UsageCache::with_subscription(
   self : UsageCache,
   app_type : String,
@@ -348,7 +346,6 @@ fn[R] UsageCache::with_subscription(
 }
 
 ///|
-#warnings("-unused_value")
 fn[R] UsageCache::with_script(
   self : UsageCache,
   app_type : String,
@@ -362,7 +359,6 @@ fn[R] UsageCache::with_script(
 }
 
 ///|
-#warnings("-unused_value")
 fn UsageCache::invalidate_script(
   self : UsageCache,
   app_type : String,
@@ -372,7 +368,6 @@ fn UsageCache::invalidate_script(
 }
 
 ///|
-#warnings("-unused_value")
 fn UsageCache::invalidate_subscription(
   self : UsageCache,
   app_type : String,

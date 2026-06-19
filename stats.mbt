@@ -397,7 +397,6 @@ fn TrafficStats::record_unauthorized(self : TrafficStats) -> Unit {
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::record_upstream_error(
   self : TrafficStats,
   response_bytes : Int,
@@ -436,7 +435,6 @@ fn TrafficStats::record_internal_error(self : TrafficStats) -> Unit {
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::record_success(
   self : TrafficStats,
   input_tokens : Int,
@@ -457,7 +455,6 @@ fn TrafficStats::record_success(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::record_success_usage(
   self : TrafficStats,
   usage : TokenUsage,
@@ -857,7 +854,6 @@ fn TrafficStats::request_logs_json(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::usage_logs_json(
   self : TrafficStats,
   limit? : Int = 100,
@@ -946,7 +942,6 @@ fn TrafficStats::usage_logs_paginated_json(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::usage_summary_json(
   self : TrafficStats,
   app_type? : String? = None,
@@ -979,7 +974,6 @@ fn TrafficStats::usage_summary_filtered_json(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::usage_summary_by_app_json(self : TrafficStats) -> Json {
   self.usage_summary_by_app_filtered_json()
 }
@@ -1040,7 +1034,6 @@ fn TrafficStats::usage_summary_by_app_filtered_json(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::provider_stats_json(
   self : TrafficStats,
   app_type? : String? = None,
@@ -1096,7 +1089,6 @@ fn TrafficStats::provider_stats_filtered_json(
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::model_stats_json(
   self : TrafficStats,
   app_type? : String? = None,
@@ -1180,7 +1172,6 @@ fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
 }
 
 ///|
-#warnings("-unused_value")
 fn TrafficStats::request_detail_json(
   self : TrafficStats,
   request_id : String,
