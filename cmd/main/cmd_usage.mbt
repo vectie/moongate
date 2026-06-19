@@ -340,35 +340,58 @@ async fn check_status(args : Array[String]) -> Unit {
 }
 
 ///|
+fn claude_desktop_status_json(
+  status : @claude_desktop.ClaudeDesktopStatus,
+) -> Json {
+  Json::object({
+    "configured": Json::boolean(status.configured),
+    "profilePath": Json::string(status.profile_path),
+    "metaPath": Json::string(status.meta_path),
+    "tokenConfigured": Json::boolean(status.token_configured),
+  })
+}
+
+///|
 async fn status_claude_desktop() -> Unit {
   let status = @claude_desktop.status()
-  println(
-    Json::object({
-      "configured": Json::boolean(status.configured),
-      "profile_path": Json::string(status.profile_path),
-      "meta_path": Json::string(status.meta_path),
-      "token_configured": Json::boolean(status.token_configured),
-    }).stringify(indent=2),
+  println(claude_desktop_status_json(status).stringify(indent=2))
+}
+
+///|
+fn codex_status_json(status : @codex_config.CodexConfigStatus) -> Json {
+  codex_status_fields_json(
+    configured=status.configured,
+    config_path=status.config_path,
+    base_url=status.base_url,
+    model=status.model,
   )
+}
+
+///|
+fn codex_status_fields_json(
+  configured~ : Bool,
+  config_path~ : String,
+  base_url~ : String?,
+  model~ : String?,
+) -> Json {
+  Json::object({
+    "configured": Json::boolean(configured),
+    "configPath": Json::string(config_path),
+    "baseUrl": match base_url {
+      Some(value) => Json::string(value)
+      None => Json::null()
+    },
+    "model": match model {
+      Some(value) => Json::string(value)
+      None => Json::null()
+    },
+  })
 }
 
 ///|
 async fn status_codex() -> Unit {
   let status = @codex_config.status()
-  println(
-    Json::object({
-      "configured": Json::boolean(status.configured),
-      "config_path": Json::string(status.config_path),
-      "base_url": match status.base_url {
-        Some(value) => Json::string(value)
-        None => Json::null()
-      },
-      "model": match status.model {
-        Some(value) => Json::string(value)
-        None => Json::null()
-      },
-    }).stringify(indent=2),
-  )
+  println(codex_status_json(status).stringify(indent=2))
 }
 
 ///|

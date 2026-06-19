@@ -6,6 +6,34 @@ test "has flag matches exact CLI option" {
 }
 
 ///|
+test "status json uses canonical moonstat cli keys" {
+  let claude = @claude_desktop.ClaudeDesktopStatus::new(
+    configured=true,
+    profile_path="/tmp/profile.json",
+    meta_path="/tmp/meta.json",
+    config_library_path="/tmp/configLibrary",
+    token_configured=true,
+  )
+  let claude_body = claude_desktop_status_json(claude).stringify()
+  assert_true(claude_body.contains("\"profilePath\""))
+  assert_true(claude_body.contains("\"metaPath\""))
+  assert_true(claude_body.contains("\"tokenConfigured\""))
+  assert_false(claude_body.contains("\"profile_path\""))
+  assert_false(claude_body.contains("\"meta_path\""))
+  assert_false(claude_body.contains("\"token_configured\""))
+  let codex_body = codex_status_fields_json(
+    configured=true,
+    config_path="/tmp/config.toml",
+    base_url=Some("http://127.0.0.1:15721/v1"),
+    model=Some("gpt-5"),
+  ).stringify()
+  assert_true(codex_body.contains("\"configPath\""))
+  assert_true(codex_body.contains("\"baseUrl\""))
+  assert_false(codex_body.contains("\"config_path\""))
+  assert_false(codex_body.contains("\"base_url\""))
+}
+
+///|
 test "registered cli commands match suite command aliases and status commands" {
   assert_true(registered_cli_command_id(["moonstat", "start"]) == Some("start"))
   assert_true(
