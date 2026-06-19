@@ -149,13 +149,35 @@ test "moonstat client discovers from suite status manifest" {
 }
 
 ///|
-test "moonstat client requires suite status manifest base url" {
+test "moonstat client requires suite status and manifest contracts" {
   let root_base = { "base_url": Json::string("http://127.0.0.1:4199/") }.to_json()
   assert_true(MoonstatClient::from_suite_status(root_base) is None)
   let health_only = {
     "health_url": Json::string("http://127.0.0.1:4299/health"),
   }.to_json()
   assert_true(MoonstatClient::from_suite_status(health_only) is None)
+  let manifest_only = {
+    "manifest": { "base_url": Json::string("http://127.0.0.1:4199") }.to_json(),
+  }.to_json()
+  assert_true(MoonstatClient::from_suite_status(manifest_only) is None)
+  let wrong_status_contract = {
+    "contract": Json::string("moon.suite.status.v1"),
+    "service": Json::string("moonstat"),
+    "manifest": moonstat_suite_manifest_json(port=4199),
+  }.to_json()
+  assert_true(MoonstatClient::from_suite_status(wrong_status_contract) is None)
+  let wrong_manifest_contract = {
+    "contract": Json::string(@suite.status_contract()),
+    "service": Json::string("moonstat"),
+    "manifest": {
+      "contract": Json::string("moon.suite.service.v0"),
+      "service": Json::string("moonstat"),
+      "base_url": Json::string("http://127.0.0.1:4199"),
+    }.to_json(),
+  }.to_json()
+  assert_true(
+    MoonstatClient::from_suite_status(wrong_manifest_contract) is None,
+  )
 }
 
 ///|

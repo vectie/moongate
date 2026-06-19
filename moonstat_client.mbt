@@ -932,13 +932,34 @@ fn moonstat_json_int64_field(obj : Map[String, Json], key : String) -> Int64? {
 ///|
 pub fn moonstat_base_url_from_suite_status(status : Json) -> String? {
   match status {
-    Object(obj) =>
-      match obj.get("manifest") {
-        Some(Object(manifest)) => moonstat_base_url_from_json_object(manifest)
-        _ => None
-      }
+    Object(obj) if moonstat_suite_status_contract_valid(obj) =>
+      moonstat_base_url_from_suite_status_object(obj)
     _ => None
   }
+}
+
+///|
+fn moonstat_suite_status_contract_valid(obj : Map[String, Json]) -> Bool {
+  moonstat_json_string_field(obj, "contract") == Some(@suite.status_contract()) &&
+  moonstat_json_string_field(obj, "service") == Some(@suite.service_name())
+}
+
+///|
+fn moonstat_base_url_from_suite_status_object(
+  obj : Map[String, Json],
+) -> String? {
+  match obj.get("manifest") {
+    Some(Object(manifest)) if moonstat_suite_manifest_contract_valid(manifest) =>
+      moonstat_base_url_from_json_object(manifest)
+    _ => None
+  }
+}
+
+///|
+fn moonstat_suite_manifest_contract_valid(obj : Map[String, Json]) -> Bool {
+  moonstat_json_string_field(obj, "contract") ==
+  Some(@suite.manifest_contract()) &&
+  moonstat_json_string_field(obj, "service") == Some(@suite.service_name())
 }
 
 ///|
