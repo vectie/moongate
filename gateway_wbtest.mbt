@@ -1874,6 +1874,55 @@ test "suite config helpers mirror moonstat openclaw hermes shapes" {
     content={ "fast": { "alias": "f" } },
   )
   json_inspect(
+    suite_object_request(
+      "/openclaw/model-catalog",
+      Some({ "fast": { "alias": "f" } }.to_json()),
+      "catalog",
+    ).unwrap(),
+    content={ "fast": { "alias": "f" } },
+  )
+  assert_true(
+    suite_object_request(
+      "/openclaw/model-catalog",
+      Some({ "catalog": { "fast": { "alias": "f" } } }.to_json()),
+      "catalog",
+    )
+    is None,
+  )
+  json_inspect(
+    openclaw_default_model_from_request(
+      "/openclaw/default-model",
+      Some(
+        {
+          "primary": Json::string("gpt-5"),
+          "fallbacks": Json::array([Json::string("sonnet")]),
+        }.to_json(),
+      ),
+    ).unwrap(),
+    content={ "primary": "gpt-5", "fallbacks": ["sonnet"] },
+  )
+  assert_true(
+    openclaw_default_model_from_request(
+      "/openclaw/default-model",
+      Some({ "model": { "primary": "gpt-5" } }.to_json()),
+    )
+    is None,
+  )
+  json_inspect(
+    openclaw_env_from_request(
+      "/openclaw/env",
+      Some({ "OPENAI_API_KEY": "sk-new" }.to_json()),
+    ).unwrap(),
+    content={ "OPENAI_API_KEY": "sk-new" },
+  )
+  assert_true(
+    openclaw_env_from_request(
+      "/openclaw/env",
+      Some({ "env": { "OPENAI_API_KEY": "sk-old" } }.to_json()),
+    )
+    is None,
+  )
+  json_inspect(
     hermes_memory_limits_json(Map([("memory", false), ("user", true)])),
     content={
       "memory": 2200,

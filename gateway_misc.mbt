@@ -1067,9 +1067,8 @@ fn suite_object_payload(body : Json?, key : String) -> Json? {
   match body {
     Some(Object(obj)) =>
       match obj.get(key) {
-        Some(Object(nested)) => Some(Json::object(nested))
-        Some(_) => None
-        None => Some(Json::object(obj))
+        Some(Object(_)) if obj.length() == 1 => None
+        _ => Some(Json::object(obj))
       }
     _ => None
   }
