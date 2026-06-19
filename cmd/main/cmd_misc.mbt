@@ -12,8 +12,8 @@ fn print_help() -> Unit {
   println("")
   println("Commands:")
   println("  start       Start the gateway server")
-  println("  install     Install hosts reroute (requires sudo)")
-  println("  uninstall   Remove hosts reroute (requires sudo)")
+  println("  hosts install    Install hosts reroute (requires sudo)")
+  println("  hosts uninstall  Remove hosts reroute (requires sudo)")
   println(
     "  claude-desktop install    Configure Claude Desktop gateway profile",
   )
@@ -198,7 +198,7 @@ fn print_help() -> Unit {
   println("  --min-requests <n>          Minimum requests for error-rate open")
   println("")
   println("Examples:")
-  println("  sudo moonstat install          # Install hosts reroute")
+  println("  sudo moonstat hosts install    # Install hosts reroute")
   println("  moonstat start                 # Start gateway on 127.0.0.1:15721")
   println("  moonstat start --port 80       # Start gateway on port 80")
   println("  moonstat claude-desktop install --port 15721")
@@ -281,7 +281,7 @@ fn print_help() -> Unit {
   )
   println("  moonstat usage pricing delete --model-id gpt-x")
   println("  moonstat usage detail --request-id req_x")
-  println("  moonstat uninstall             # Remove hosts reroute")
+  println("  moonstat hosts uninstall       # Remove hosts reroute")
 }
 
 ///|
