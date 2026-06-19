@@ -127,6 +127,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(routes.contains(Json::string("GET /auth/status")))
   assert_true(routes.contains(Json::string("GET /auth/accounts")))
   assert_true(routes.contains(Json::string("POST /auth/login")))
+  assert_false(routes.contains(Json::string("POST /login")))
   assert_true(routes.contains(Json::string("POST /auth/poll")))
   assert_true(routes.contains(Json::string("DELETE /auth/account")))
   assert_false(routes.contains(Json::string("DELETE|POST /auth/account")))
@@ -264,8 +265,18 @@ test "suite manifest publishes moonstat service contract" {
   for route in control_routes {
     assert_true(routes.contains(Json::string(route)))
   }
+  for
+    route in [
+      "GET /models", "POST /responses", "POST /responses/compact", "POST /chat/completions",
+      "POST /login",
+    ] {
+    assert_false(routes.contains(Json::string(route)))
+  }
+  assert_true(routes.contains(Json::string("GET /v1/models")))
   assert_true(routes.contains(Json::string("POST /v1/messages")))
-  assert_true(routes.contains(Json::string("POST /login")))
+  assert_true(routes.contains(Json::string("POST /v1/responses")))
+  assert_true(routes.contains(Json::string("POST /v1/responses/compact")))
+  assert_true(routes.contains(Json::string("POST /v1/chat/completions")))
   assert_true(routes.contains(Json::string("ANY /v1beta/*path")))
   assert_true(routes.contains(Json::string("ANY /gemini/v1beta/*path")))
   assert_true(routes.contains(Json::string("ANY /gemini/v1/*path")))
@@ -630,10 +641,13 @@ async test "gateway omits legacy Moonstat command route handlers" {
   for
     path in [
       "/providers/delete", "/providers/live/remove", "/providers/universal/delete",
-      "/providers/endpoints/remove",
+      "/providers/endpoints/remove", "/models", "/responses", "/responses/compact",
+      "/chat/completions",
     ] {
     assert_false(gateway_source_registers_path(proxy_routes, path))
   }
+  let auth_routes = @fsx.read_file("gateway_auth_routes.mbt")
+  assert_false(gateway_source_registers_path(auth_routes, "/login"))
   let config_routes = @fsx.read_file("gateway_config_routes.mbt")
   assert_false(
     config_routes.contains("router.add_handler(Post, \"/backups/db/delete\""),

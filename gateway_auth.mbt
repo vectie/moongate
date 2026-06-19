@@ -518,30 +518,6 @@ async fn write_auth_error(w : @httpx.ResponseWriter, message : String) -> Unit {
 }
 
 ///|
-async fn AuthService::handle_login(
-  self : AuthService,
-  _r : @httpx.RequestReader,
-  w : @httpx.ResponseWriter,
-  logger : @pino.Logger,
-) -> Unit {
-  w.header().set("Content-Type", "application/json")
-  try {
-    let creds = @codex.start_oauth_flow()
-    self.credentials = Some(creds)
-    logger.info("Login successful")
-    w.write_header(@status.Ok)
-    w.write("{\"status\":\"ok\",\"message\":\"Login successful\"}")
-  } catch {
-    _ => {
-      logger.error("Login failed")
-      w.write_header(@status.InternalServerError)
-      w.write("{\"error\":\"Login failed\"}")
-    }
-  }
-  w.flush()
-}
-
-///|
 fn token_usage_from_claude_compatible_response(
   body : Json,
   api_format : String,

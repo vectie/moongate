@@ -2,7 +2,6 @@
 fn AuthService::register_routes(
   self : AuthService,
   router : @httpx.Router,
-  logger : @pino.Logger,
 ) -> Unit {
   router.add_handler(Post, "/auth/login", (r, w) => {
     self.handle_auth_start_login(r, w)
@@ -61,5 +60,4 @@ fn AuthService::register_routes(
   router.add_handler(Get, "/copilot/usage", (r, w) => {
     self.handle_copilot_get_usage(r, w)
   })
-  router.add_handler(Post, "/login", (r, w) => self.handle_login(r, w, logger))
 }

@@ -26,9 +26,6 @@ fn ProxyService::register_inference_routes(
       self.handle_gemini(usage, r, w)
     })
   }
-  router.add_handler(Post, "/chat/completions", (r, w) => {
-    self.handle_chat_completions(auth, usage, session, model, r, w)
-  })
   router.add_handler(Post, "/v1/chat/completions", (r, w) => {
     self.handle_chat_completions(auth, usage, session, model, r, w)
   })
@@ -43,19 +40,12 @@ fn ProxyService::register_inference_routes(
       app_type="openclaw",
     )
   })
-  router.add_handler(Post, "/responses", (r, w) => {
-    self.handle_codex_responses(auth, usage, session, model, r, w)
-  })
   router.add_handler(Post, "/v1/responses", (r, w) => {
     self.handle_codex_responses(auth, usage, session, model, r, w)
-  })
-  router.add_handler(Post, "/responses/compact", (r, w) => {
-    self.handle_codex_responses(auth, usage, session, model, r, w, compact=true)
   })
   router.add_handler(Post, "/v1/responses/compact", (r, w) => {
     self.handle_codex_responses(auth, usage, session, model, r, w, compact=true)
   })
-  router.add_handler(Get, "/models", (_, w) => self.handle_models(w))
   router.add_handler(Get, "/v1/models", (_, w) => self.handle_models(w))
   router.add_handler(Get, "/claude-desktop/v1/models", (r, w) => {
     self.handle_claude_desktop_models(auth, usage, r, w)

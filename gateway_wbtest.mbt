@@ -2218,9 +2218,7 @@ async test "auth endpoints are owned by auth service" {
     assert_true(auth_sources.contains("async fn AuthService::\{handler}("))
     assert_false(auth_sources.contains("async fn Gateway::\{handler}("))
   }
-  assert_true(
-    core_source.contains("self.auth.register_routes(router, self.logger)"),
-  )
+  assert_true(core_source.contains("self.auth.register_routes(router)"))
   for
     handler in [
       "handle_auth_start_login", "handle_auth_get_status", "handle_copilot_get_token",
