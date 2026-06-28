@@ -306,6 +306,50 @@ a {
   min-width: 72px;
 }
 
+.snippet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.snippet-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px 12px;
+  align-items: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 13px;
+  background: #fbfcfd;
+}
+
+.snippet-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.snippet-card code {
+  display: block;
+  grid-column: 1 / -1;
+  min-height: 64px;
+  overflow: hidden;
+  border: 1px solid #dbe7e5;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #f3faf8;
+  color: #134e4a;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.snippet-card button {
+  min-width: 72px;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: var(--accent);
@@ -858,6 +902,7 @@ textarea {
   .readiness-cards,
   .operator-action-grid,
   .connection-grid,
+  .snippet-grid,
   .panel-grid,
   .usage-metrics,
   .detail-grid,
@@ -885,6 +930,7 @@ textarea {
   .readiness-cards,
   .operator-action-grid,
   .connection-grid,
+  .snippet-grid,
   .panel-grid,
   .usage-metrics,
   .detail-grid,

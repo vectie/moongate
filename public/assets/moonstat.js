@@ -149,6 +149,31 @@ function connectionUrl(path) {
   return new URL(path, shellApiBase()).toString();
 }
 
+function clientSnippet(kind) {
+  if (kind === "openai-env") {
+    return `OPENAI_BASE_URL=${connectionUrl("v" + "1")}\nOPENAI_API_KEY=moonstat`;
+  }
+  if (kind === "anthropic-env") {
+    return `ANTHROPIC_BASE_URL=${shellApiBase()}\nANTHROPIC_API_KEY=moonstat`;
+  }
+  if (kind === "openclaw-env") {
+    return `OPENCLAW_BASE_URL=${connectionUrl("openclaw/v" + "1")}\nOPENCLAW_API_KEY=moonstat`;
+  }
+  if (kind === "metrics-url") {
+    return connectionUrl("/metrics");
+  }
+  return shellApiBase();
+}
+
+function renderConnectionValues() {
+  document.querySelectorAll("[data-url-path]").forEach((node) => {
+    node.textContent = connectionUrl(node.dataset.urlPath);
+  });
+  document.querySelectorAll("[data-snippet]").forEach((node) => {
+    node.textContent = clientSnippet(node.dataset.snippet);
+  });
+}
+
 async function copyText(value) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     await navigator.clipboard.writeText(value);
@@ -200,11 +225,18 @@ $("operator-actions")?.addEventListener("click", (event) => {
 
 $("connection-board")?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-copy-path]");
-  if (!button) return;
-  const url = connectionUrl(button.dataset.copyPath);
-  copyText(url)
-    .then(() => text("connection-copy-status", `Copied ${button.dataset.copyPath}`))
-    .catch(showError);
+  const snippetButton = event.target.closest("button[data-copy-snippet]");
+  if (button) {
+    const url = connectionUrl(button.dataset.copyPath);
+    copyText(url)
+      .then(() => text("connection-copy-status", `Copied ${button.dataset.copyPath}`))
+      .catch(showError);
+  } else if (snippetButton) {
+    const value = clientSnippet(snippetButton.dataset.copySnippet);
+    copyText(value)
+      .then(() => text("connection-copy-status", "Snippet copied"))
+      .catch(showError);
+  }
 });
 
 $("refresh")?.addEventListener("click", () => {
@@ -360,6 +392,7 @@ clearProviderForm("claude");
 renderReadiness({});
 renderRequestDetail(null);
 renderStreamCheckResults([]);
+renderConnectionValues();
 
 $("provider-clear")?.addEventListener("click", () => {
   clearProviderForm($("provider-app").value);

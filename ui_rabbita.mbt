@@ -236,6 +236,20 @@ fn moonstat_rabbita_connection_board() -> @html.Html {
         "Metrics", "/metrics", "Prometheus scrape",
       ),
     ]),
+    @html.div(class="snippet-grid", [
+      moonstat_rabbita_connection_snippet(
+        "OpenAI env", "openai-env", "Base URL for OpenAI-compatible clients",
+      ),
+      moonstat_rabbita_connection_snippet(
+        "Anthropic env", "anthropic-env", "Base URL for Claude-compatible clients",
+      ),
+      moonstat_rabbita_connection_snippet(
+        "OpenClaw env", "openclaw-env", "Base URL for OpenClaw clients",
+      ),
+      moonstat_rabbita_connection_snippet(
+        "Metrics URL", "metrics-url", "Prometheus scrape target",
+      ),
+    ]),
   ])
 }
 
@@ -247,11 +261,29 @@ fn moonstat_rabbita_connection_card(
 ) -> @html.Html {
   @html.article(class="connection-card", [
     @html.div([@html.strong(title), @html.small(detail)]),
-    @html.code(path),
+    @html.code(attrs=@html.Attrs::build().data_set("url-path", path), path),
     @html.button(
       type_="button",
       class="button-secondary",
       attrs=@html.Attrs::build().data_set("copy-path", path),
+      "Copy",
+    ),
+  ])
+}
+
+///|
+fn moonstat_rabbita_connection_snippet(
+  title : String,
+  snippet : String,
+  detail : String,
+) -> @html.Html {
+  @html.article(class="snippet-card", [
+    @html.div([@html.strong(title), @html.small(detail)]),
+    @html.code(attrs=@html.Attrs::build().data_set("snippet", snippet), ""),
+    @html.button(
+      type_="button",
+      class="button-secondary",
+      attrs=@html.Attrs::build().data_set("copy-snippet", snippet),
       "Copy",
     ),
   ])
