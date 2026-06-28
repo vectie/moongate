@@ -172,6 +172,10 @@ contract over HTTP. The contract also includes a machine-readable
 
 Moonstat currently exposes the standalone local routes below:
 
+- `GET /`
+- `GET /assets/moonstat.css`
+- `GET /assets/moonstat-core.js`
+- `GET /assets/moonstat.js`
 - `GET /health`
 - `GET /status`
 - `GET /stats`

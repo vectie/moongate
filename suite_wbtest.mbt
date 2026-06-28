@@ -97,6 +97,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(capabilities.contains(Json::string("suite-discovery")))
   assert_true(routes.contains(Json::string("GET /")))
   assert_true(routes.contains(Json::string("GET /assets/moonstat.css")))
+  assert_true(routes.contains(Json::string("GET /assets/moonstat-core.js")))
   assert_true(routes.contains(Json::string("GET /assets/moonstat.js")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /suite/manifest")))
@@ -544,6 +545,25 @@ test "suite manifest publishes moonstat service contract" {
     Json::string("moonstat provider presets list --app-type <app_type>"),
   )
   assert_eq(obj["cli"], obj["commands"])
+}
+
+///|
+async test "suite manifest advertises standalone ui assets used by index" {
+  let html = @fsx.read_file("public/index.html")
+  let manifest = moonstat_suite_manifest_json(
+    host="127.0.0.1",
+    port=15721,
+    model="gpt-5",
+  )
+  guard manifest is Object(obj) else { fail("expected manifest object") }
+  guard obj["routes"] is Array(routes) else { fail("expected routes") }
+  for
+    asset in [
+      "/assets/moonstat.css", "/assets/moonstat-core.js", "/assets/moonstat.js",
+    ] {
+    assert_true(html.contains(asset))
+    assert_true(routes.contains(Json::string("GET \{asset}")))
+  }
 }
 
 ///|
