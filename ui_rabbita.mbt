@@ -68,6 +68,7 @@ fn moonstat_rabbita_shell_view(
     ),
     @html.script(src="/assets/moonstat-core.js", moonstat_rabbita_empty()),
     @html.script(src="/assets/moonstat-frameworks.js", moonstat_rabbita_empty()),
+    @html.script(src="/assets/moonstat-usage.js", moonstat_rabbita_empty()),
     @html.script(src="/assets/moonstat.js", moonstat_rabbita_empty()),
   ])
 }
