@@ -2507,7 +2507,7 @@ async test "workspace endpoints are owned by workspace service" {
       "handle_write_daily_memory_file", "handle_search_daily_memory_files", "handle_delete_daily_memory_file",
       "handle_read_workspace_file", "handle_write_workspace_file", "handle_open_workspace_directory",
       "handle_import_prompt_from_file", "handle_get_current_prompt_file_content",
-      "write_static_file", "handle_register_page", "handle_rabbita_dashboard_page",
+      "write_static_file", "handle_register_page", "handle_dashboard_page",
     ] {
     assert_true(
       workspace_source.contains("async fn WorkspaceService::\{handler}("),
@@ -2517,8 +2517,10 @@ async test "workspace endpoints are owned by workspace service" {
   assert_true(core_source.contains("self.workspace.register_routes("))
   assert_true(core_source.contains("bound_port"))
   assert_true(route_source.contains("self.handle_save_file_dialog(r, w)"))
+  assert_true(route_source.contains("router.add_handler(Get, \"/\","))
+  assert_true(route_source.contains("router.add_handler(Get, \"/ui/rabbita\""))
   assert_true(
-    route_source.contains("self.handle_rabbita_dashboard_page(w, host, port)"),
+    route_source.contains("self.handle_dashboard_page(w, host, port)"),
   )
   assert_true(
     route_source.contains("self.handle_read_omo_local_file(w, slim=false)"),

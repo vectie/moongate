@@ -597,7 +597,7 @@ async fn WorkspaceService::handle_register_page(
 }
 
 ///|
-async fn WorkspaceService::handle_rabbita_dashboard_page(
+async fn WorkspaceService::handle_dashboard_page(
   self : WorkspaceService,
   w : @httpx.ResponseWriter,
   host : String,

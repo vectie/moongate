@@ -67,13 +67,13 @@ curl http://127.0.0.1:15721/metrics
 moon run cmd/main -- usage logs
 ```
 
-Open the operator UI at `http://127.0.0.1:15721/ui/rabbita`, or launch it
-through Lepusa with the checked-in `lepusa.json` manifest. The legacy static
-browser fallback remains at `http://127.0.0.1:15721/`. Lepusa is the frontend
-framework and desktop shell; it owns the system WebView, localhost service
-lifecycle, readiness probe, service discovery, and opener capability. The
-Moonstat gateway serves the generated Rabbita dashboard at `/ui/rabbita`, so
-the same view works in a browser and inside the Lepusa shell. The UI reads the
+Open the operator UI at `http://127.0.0.1:15721/` or
+`http://127.0.0.1:15721/ui/rabbita`, or launch it through Lepusa with the
+checked-in `lepusa.json` manifest. Lepusa is the frontend framework and desktop
+shell; it owns the system WebView, localhost service lifecycle, readiness
+probe, service discovery, and opener capability. The Moonstat gateway serves
+the generated Rabbita dashboard at both `/` and `/ui/rabbita`, so the same view
+works in a browser and inside the Lepusa shell. The UI reads the
 same `/status`, `/proxy/status`,
 `/usage/*`, and `/metrics` surfaces used by the CLI and suite integrations. The
 UI also

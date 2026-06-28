@@ -73,7 +73,7 @@ fn moonstat_rabbita_sidebar() -> @html.Html {
           attrs=@html.Attrs::build().aria_hidden("true"),
           "M",
         ),
-        @html.div([@html.strong("Moonstat"), @html.span("Lepusa Rabbita shell")]),
+        @html.div([@html.strong("Moonstat"), @html.span("Local gateway")]),
       ]),
       @html.nav(class="nav", [
         moonstat_rabbita_nav_link("#overview", "Overview"),

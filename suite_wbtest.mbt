@@ -549,8 +549,8 @@ test "suite manifest publishes moonstat service contract" {
 }
 
 ///|
-async test "suite manifest advertises standalone ui assets used by index" {
-  let html = @fsx.read_file("public/index.html")
+async test "suite manifest advertises standalone ui assets used by generated dashboard" {
+  let html = moonstat_rabbita_document_html()
   let manifest = moonstat_suite_manifest_json(
     host="127.0.0.1",
     port=15721,

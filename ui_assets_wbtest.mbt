@@ -1,6 +1,6 @@
 ///|
-async test "moonstat ui assets expose operator dashboard at public root" {
-  let html = @fsx.read_file("public/index.html")
+async test "moonstat generated dashboard exposes operator ui surface" {
+  let html = moonstat_rabbita_document_html()
   assert_true(html.contains("<title>Moonstat</title>"))
   assert_true(html.contains("/assets/moonstat.css"))
   assert_true(html.contains("/assets/moonstat-core.js"))
@@ -262,7 +262,7 @@ async test "moonstat rabbita lepusa preview manifest parses" {
   assert_eq(parsed["rootHtml"], expected["rootHtml"])
   assert_eq(parsed["startup"], expected["startup"])
   assert_true(manifest.contains("\"rootHtml\""))
-  assert_true(manifest.contains("Lepusa Rabbita shell"))
+  assert_true(manifest.contains("Local gateway"))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))
   assert_true(manifest.contains("\"localhost\""))
   assert_false(manifest.contains("../lepusa"))

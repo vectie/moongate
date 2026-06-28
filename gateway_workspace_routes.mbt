@@ -7,11 +7,14 @@ fn WorkspaceService::register_routes(
   host : String,
   port : Int,
 ) -> Unit {
+  router.add_handler(Get, "/", (_, w) => {
+    self.handle_dashboard_page(w, host, port)
+  })
   router.add_handler(Get, "/participant/register", (_, w) => {
     self.handle_register_page(logger, w)
   })
   router.add_handler(Get, "/ui/rabbita", (_, w) => {
-    self.handle_rabbita_dashboard_page(w, host, port)
+    self.handle_dashboard_page(w, host, port)
   })
   router.add_handler(Post, "/files/dialogs/save", (r, w) => {
     self.handle_save_file_dialog(r, w)
