@@ -26,6 +26,7 @@ fn moonstat_rabbita_shell_view(
         @html.main_(class="main", [
           moonstat_rabbita_topbar(),
           moonstat_rabbita_readiness_strip(),
+          moonstat_rabbita_operator_workflow(),
           @html.section(class="status-grid", [
             moonstat_rabbita_metric_card(
               "Gateway", "gateway-state", "gateway-detail", "Loading status",
@@ -157,6 +158,50 @@ fn moonstat_rabbita_readiness_strip() -> @html.Html {
         moonstat_rabbita_empty(),
       ),
     ],
+  )
+}
+
+///|
+fn moonstat_rabbita_operator_workflow() -> @html.Html {
+  @html.section(id="operator-actions", class="operator-workflow", [
+    @html.div(class="operator-workflow-head", [
+      @html.div([
+        @html.p(class="eyebrow", "Workflow"),
+        @html.h2("Operator Actions"),
+      ]),
+      @html.span(id="operator-action-status", "Ready"),
+    ]),
+    @html.div(class="operator-action-grid", [
+      moonstat_rabbita_operator_action(
+        "start-proxy", "Start Proxy", "Bring local routing online",
+      ),
+      moonstat_rabbita_operator_action(
+        "sync-live", "Sync Providers", "Import current live configuration",
+      ),
+      moonstat_rabbita_operator_action(
+        "refresh-setup", "Check Setup", "Validate auth, tools, MCP, and config",
+      ),
+      moonstat_rabbita_operator_action(
+        "stream-check", "Check Streams", "Probe selected framework providers",
+      ),
+      moonstat_rabbita_operator_action(
+        "write-suite", "Write Suite Status", "Publish Moon suite discovery state",
+      ),
+    ]),
+  ])
+}
+
+///|
+fn moonstat_rabbita_operator_action(
+  action : String,
+  title : String,
+  detail : String,
+) -> @html.Html {
+  @html.button(
+    type_="button",
+    class="operator-action",
+    attrs=@html.Attrs::build().data_set("operator-action", action),
+    [@html.strong(title), @html.span(detail)],
   )
 }
 

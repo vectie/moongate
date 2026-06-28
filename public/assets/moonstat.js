@@ -132,7 +132,45 @@ function showError(error) {
   if (message) message.textContent = error && error.message ? error.message : String(error);
   if (box) box.hidden = false;
   text("ui-updated", "Refresh failed");
+  text("operator-action-status", "Action failed");
 }
+
+function setOperatorStatus(value) {
+  text("operator-action-status", value);
+}
+
+async function runOperatorAction(action) {
+  const labels = {
+    "start-proxy": "Starting proxy",
+    "sync-live": "Syncing providers",
+    "refresh-setup": "Checking setup",
+    "stream-check": "Checking streams",
+    "write-suite": "Writing suite status",
+  };
+  setOperatorStatus(labels[action] || "Running action");
+  if (action === "start-proxy") {
+    await postJson(endpoints.proxyStart);
+    await refresh();
+  } else if (action === "sync-live") {
+    await postJson(endpoints.syncLive);
+    await refresh();
+  } else if (action === "refresh-setup") {
+    await loadSetupStatus();
+  } else if (action === "stream-check") {
+    const rows = await postJson(endpoints.streamCheckAll, { appType: selectedResilienceApp(), proxyTargetsOnly: true });
+    renderStreamCheckResults(Array.isArray(rows) ? rows : []);
+  } else if (action === "write-suite") {
+    await postJson(endpoints.suiteWriteStatus);
+    await loadSuite();
+  }
+  setOperatorStatus("Ready");
+}
+
+$("operator-actions")?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-operator-action]");
+  if (!button) return;
+  runOperatorAction(button.dataset.operatorAction).catch(showError);
+});
 
 $("refresh")?.addEventListener("click", () => {
   refresh().catch(showError);

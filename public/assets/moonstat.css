@@ -169,6 +169,71 @@ a {
   line-height: 1.15;
 }
 
+.operator-workflow {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 16px;
+  background: white;
+  box-shadow: var(--shadow);
+}
+
+.operator-workflow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#operator-action-status {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.operator-action-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.operator-action {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 92px;
+  border-color: var(--panel-border);
+  padding: 13px;
+  background: #f8fbfb;
+  color: var(--text);
+  text-align: left;
+}
+
+.operator-action:hover {
+  border-color: #8bc6bf;
+  background: #edf8f6;
+  color: var(--text);
+}
+
+.operator-action strong,
+.operator-action span {
+  display: block;
+}
+
+.operator-action strong {
+  font-size: 14px;
+}
+
+.operator-action span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: var(--accent);
@@ -719,6 +784,7 @@ textarea {
 
   .status-grid,
   .readiness-cards,
+  .operator-action-grid,
   .panel-grid,
   .usage-metrics,
   .detail-grid,
@@ -744,6 +810,7 @@ textarea {
 
   .status-grid,
   .readiness-cards,
+  .operator-action-grid,
   .panel-grid,
   .usage-metrics,
   .detail-grid,
