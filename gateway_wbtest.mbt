@@ -181,7 +181,10 @@ async test "gateway startup publishes the bound port for suite discovery" {
 async test "suite http endpoints are registered by gateway suite routes" {
   let core_source = @fsx.read_file("gateway_core.mbt")
   let route_source = @fsx.read_file("gateway_suite_routes.mbt")
-  assert_true(core_source.contains("self.register_suite_routes(router)"))
+  assert_true(
+    core_source.contains("self.register_suite_routes(router, bound_port)"),
+  )
+  assert_true(route_source.contains("bound_port : Int"))
   for
     route in [
       "/suite/manifest", "/suite/status", "/suite/status/write", "/suite/moonclaw-providers",
@@ -193,6 +196,8 @@ async test "suite http endpoints are registered by gateway suite routes" {
   assert_true(route_source.contains("write_moonstat_suite_status("))
   assert_true(route_source.contains("moonstat_moonclaw_providers_file_json("))
   assert_true(route_source.contains("write_moonstat_moonclaw_providers_file("))
+  assert_true(route_source.contains("port=bound_port"))
+  assert_false(route_source.contains("port=self.port"))
 }
 
 ///|

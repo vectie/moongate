@@ -2,19 +2,22 @@
 fn Gateway::register_suite_routes(
   self : Gateway,
   router : @httpx.Router,
+  bound_port : Int,
 ) -> Unit {
   router.add_handler(Get, "/suite/manifest", (_, w) => {
-    self.handle_suite_manifest(w)
+    self.handle_suite_manifest(w, bound_port)
   })
-  router.add_handler(Get, "/suite/status", (_, w) => self.handle_suite_status(w))
+  router.add_handler(Get, "/suite/status", (_, w) => {
+    self.handle_suite_status(w, bound_port)
+  })
   router.add_handler(Post, "/suite/status/write", (r, w) => {
-    self.handle_suite_write_status(r, w)
+    self.handle_suite_write_status(r, w, bound_port)
   })
   router.add_handler(Get, "/suite/moonclaw-providers", (_, w) => {
-    self.handle_suite_moonclaw_providers(w)
+    self.handle_suite_moonclaw_providers(w, bound_port)
   })
   router.add_handler(Post, "/suite/moonclaw-providers/write", (r, w) => {
-    self.handle_suite_write_moonclaw_providers(r, w)
+    self.handle_suite_write_moonclaw_providers(r, w, bound_port)
   })
 }
 
@@ -22,12 +25,13 @@ fn Gateway::register_suite_routes(
 async fn Gateway::handle_suite_manifest(
   self : Gateway,
   w : @httpx.ResponseWriter,
+  bound_port : Int,
 ) -> Unit {
   write_usage_json(
     w,
     moonstat_suite_manifest_json(
       host=self.host,
-      port=self.port,
+      port=bound_port,
       model=self.model,
     ),
   )
@@ -37,12 +41,13 @@ async fn Gateway::handle_suite_manifest(
 async fn Gateway::handle_suite_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
+  bound_port : Int,
 ) -> Unit {
   write_usage_json(
     w,
     moonstat_suite_status_json(
       host=self.host,
-      port=self.port,
+      port=bound_port,
       model=self.model,
       status="running",
       ready=true,
@@ -55,6 +60,7 @@ async fn Gateway::handle_suite_write_status(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
+  bound_port : Int,
 ) -> Unit {
   let body = proxy_json_body(r)
   let path = proxy_string_request(r.path, body, "path").unwrap_or(
@@ -65,7 +71,7 @@ async fn Gateway::handle_suite_write_status(
   let written = write_moonstat_suite_status(
     path~,
     host=self.host,
-    port=self.port,
+    port=bound_port,
     model=self.model,
     status~,
     ready~,
@@ -82,12 +88,13 @@ async fn Gateway::handle_suite_write_status(
 async fn Gateway::handle_suite_moonclaw_providers(
   self : Gateway,
   w : @httpx.ResponseWriter,
+  bound_port : Int,
 ) -> Unit {
   write_usage_json(
     w,
     moonstat_moonclaw_providers_file_json(
       host=self.host,
-      port=self.port,
+      port=bound_port,
       model=self.model,
     ),
   )
@@ -98,6 +105,7 @@ async fn Gateway::handle_suite_write_moonclaw_providers(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
+  bound_port : Int,
 ) -> Unit {
   let body = proxy_json_body(r)
   let path = proxy_string_request(r.path, body, "path").unwrap_or(
@@ -106,7 +114,7 @@ async fn Gateway::handle_suite_write_moonclaw_providers(
   let written = write_moonstat_moonclaw_providers_file(
     path~,
     host=self.host,
-    port=self.port,
+    port=bound_port,
     model=self.model,
   ) catch {
     err => {

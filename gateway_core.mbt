@@ -61,7 +61,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     moon_session_terminal_from_settings(self.config.app_settings),
   )
   self.auth.register_routes(router)
-  self.register_suite_routes(router)
+  self.register_suite_routes(router, bound_port)
   router.set_not_found_handler(file_server.handler())
   self.logger.info("Gateway started on \{self.host}:\{bound_port}")
   server.serve(router.handler())
