@@ -577,7 +577,8 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
 fn moonstat_suite_routes() -> Array[String] {
   [
     "GET /", "GET /ui/rabbita", "GET /assets/moonstat.css", "GET /assets/moonstat-core.js",
-    "GET /assets/moonstat-frameworks.js", "GET /assets/moonstat-usage.js", "GET /assets/moonstat.js",
+    "GET /assets/moonstat-frameworks.js", "GET /assets/moonstat-usage.js", "GET /assets/moonstat-setup.js",
+    "GET /assets/moonstat-suite.js", "GET /assets/moonstat-resilience.js", "GET /assets/moonstat.js",
     "GET /participant/register", "GET /suite/manifest", "GET /suite/status", "POST /suite/status/write",
     "GET /suite/moonclaw-providers", "POST /suite/moonclaw-providers/write", "GET /health",
     "GET /status", "GET /stats", "GET /metrics", "GET /usage/logs", "GET /usage/summary",

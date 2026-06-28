@@ -107,6 +107,11 @@ test "suite manifest publishes moonstat service contract" {
     routes.contains(Json::string("GET /assets/moonstat-frameworks.js")),
   )
   assert_true(routes.contains(Json::string("GET /assets/moonstat-usage.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moonstat-setup.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moonstat-suite.js")))
+  assert_true(
+    routes.contains(Json::string("GET /assets/moonstat-resilience.js")),
+  )
   assert_true(routes.contains(Json::string("GET /assets/moonstat.js")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /suite/manifest")))
@@ -569,7 +574,8 @@ async test "suite manifest advertises standalone ui assets used by generated das
   for
     asset in [
       "/assets/moonstat.css", "/assets/moonstat-core.js", "/assets/moonstat-frameworks.js",
-      "/assets/moonstat-usage.js", "/assets/moonstat.js",
+      "/assets/moonstat-usage.js", "/assets/moonstat-setup.js", "/assets/moonstat-suite.js",
+      "/assets/moonstat-resilience.js", "/assets/moonstat.js",
     ] {
     assert_true(html.contains(asset))
     assert_true(routes.contains(Json::string("GET \{asset}")))

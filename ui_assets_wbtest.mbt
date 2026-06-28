@@ -6,6 +6,9 @@ async test "moonstat generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moonstat-core.js"))
   assert_true(html.contains("/assets/moonstat-frameworks.js"))
   assert_true(html.contains("/assets/moonstat-usage.js"))
+  assert_true(html.contains("/assets/moonstat-setup.js"))
+  assert_true(html.contains("/assets/moonstat-suite.js"))
+  assert_true(html.contains("/assets/moonstat-resilience.js"))
   assert_true(html.contains("/assets/moonstat.js"))
   assert_true(html.contains("data-moonstat-framework-apps="))
   assert_true(html.contains("data-moonstat-sections="))
@@ -75,8 +78,23 @@ async test "moonstat ui fetches current backend route surface" {
   let core = @fsx.read_file("public/assets/moonstat-core.js")
   let frameworks = @fsx.read_file("public/assets/moonstat-frameworks.js")
   let usage = @fsx.read_file("public/assets/moonstat-usage.js")
+  let setup = @fsx.read_file("public/assets/moonstat-setup.js")
+  let suite = @fsx.read_file("public/assets/moonstat-suite.js")
+  let resilience = @fsx.read_file("public/assets/moonstat-resilience.js")
   let js = @fsx.read_file("public/assets/moonstat.js")
-  let assets = core + "\n" + frameworks + "\n" + usage + "\n" + js
+  let assets = core +
+    "\n" +
+    frameworks +
+    "\n" +
+    usage +
+    "\n" +
+    setup +
+    "\n" +
+    suite +
+    "\n" +
+    resilience +
+    "\n" +
+    js
   let endpoint_contract = moonstat_ui_endpoints_json().stringify()
   let required = [
     "/health", "/status", "/proxy/status", "/usage/summary", "/usage/summary/by-app",
@@ -112,15 +130,18 @@ async test "moonstat ui fetches current backend route surface" {
   assert_false(js.contains("function providerPayloadFromForm"))
   assert_true(usage.contains("loadUsageExplorer"))
   assert_false(js.contains("function loadUsageExplorer"))
-  assert_true(js.contains("loadSetupStatus"))
-  assert_true(js.contains("loadSuite"))
-  assert_true(js.contains("loadResilience"))
+  assert_true(setup.contains("loadSetupStatus"))
+  assert_true(suite.contains("loadSuite"))
+  assert_true(resilience.contains("loadResilience"))
+  assert_false(js.contains("function loadSetupStatus"))
+  assert_false(js.contains("function loadSuite"))
+  assert_false(js.contains("function loadResilience"))
   assert_true(js.contains("safeGetJson(endpoints.health)"))
   assert_true(js.contains("Promise.allSettled"))
   assert_true(js.contains("panel warning"))
-  assert_true(js.contains("renderSuiteApps"))
-  assert_true(js.contains("renderSetupConfigRows"))
-  assert_true(js.contains("renderStreamCheckResults"))
+  assert_true(suite.contains("renderSuiteApps"))
+  assert_true(setup.contains("renderSetupConfigRows"))
+  assert_true(resilience.contains("renderStreamCheckResults"))
   assert_true(usage.contains("renderRequestDetail"))
   assert_true(usage.contains("renderLogs"))
   assert_true(js.contains("renderReadiness"))
@@ -274,6 +295,9 @@ async test "moonstat ui endpoint literals are advertised by suite manifest" {
   let core = @fsx.read_file("public/assets/moonstat-core.js")
   let frameworks = @fsx.read_file("public/assets/moonstat-frameworks.js")
   let usage = @fsx.read_file("public/assets/moonstat-usage.js")
+  let setup = @fsx.read_file("public/assets/moonstat-setup.js")
+  let suite = @fsx.read_file("public/assets/moonstat-suite.js")
+  let resilience = @fsx.read_file("public/assets/moonstat-resilience.js")
   let js = @fsx.read_file("public/assets/moonstat.js")
   let manifest = moonstat_suite_manifest_json(port=15721)
   guard manifest is Object(obj) else { fail("expected manifest object") }
@@ -282,6 +306,9 @@ async test "moonstat ui endpoint literals are advertised by suite manifest" {
     ui_route_literals_from_asset(core) +
     ui_route_literals_from_asset(frameworks) +
     ui_route_literals_from_asset(usage) +
+    ui_route_literals_from_asset(setup) +
+    ui_route_literals_from_asset(suite) +
+    ui_route_literals_from_asset(resilience) +
     ui_route_literals_from_asset(js)
   assert_true(endpoint_routes.length() > 45)
   for route in endpoint_routes {
@@ -350,6 +377,9 @@ async test "moonstat rabbita shell renders lepusa preview structure" {
   assert_true(html.contains("/assets/moonstat-core.js"))
   assert_true(html.contains("/assets/moonstat-frameworks.js"))
   assert_true(html.contains("/assets/moonstat-usage.js"))
+  assert_true(html.contains("/assets/moonstat-setup.js"))
+  assert_true(html.contains("/assets/moonstat-suite.js"))
+  assert_true(html.contains("/assets/moonstat-resilience.js"))
   assert_true(html.contains("/assets/moonstat.js"))
   assert_true(html.contains("Proxy, providers, and spend in one place."))
   assert_true(document.contains("<html"))
@@ -372,6 +402,9 @@ async test "moonstat rabbita document is routable standalone dashboard html" {
   assert_true(document.contains("/assets/moonstat-core.js"))
   assert_true(document.contains("/assets/moonstat-frameworks.js"))
   assert_true(document.contains("/assets/moonstat-usage.js"))
+  assert_true(document.contains("/assets/moonstat-setup.js"))
+  assert_true(document.contains("/assets/moonstat-suite.js"))
+  assert_true(document.contains("/assets/moonstat-resilience.js"))
   assert_true(document.contains("/assets/moonstat.js"))
   for
     id in [
