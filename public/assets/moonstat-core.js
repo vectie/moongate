@@ -50,15 +50,27 @@ const endpoints = {
   suiteWriteMoonclawProviders: "/suite/moonclaw-providers/write",
 };
 
-const frameworkApps = [
-  { id: "claude", label: "Claude Code", mode: "single" },
-  { id: "claude-desktop", label: "Claude Desktop", mode: "single", desktop: true },
-  { id: "codex", label: "Codex", mode: "single" },
-  { id: "gemini", label: "Gemini", mode: "single" },
-  { id: "opencode", label: "OpenCode", mode: "additive" },
-  { id: "openclaw", label: "OpenClaw", mode: "additive" },
-  { id: "hermes", label: "Hermes", mode: "additive" },
-];
+function readFrameworkApps() {
+  const shell = document.querySelector("[data-moonstat-framework-apps]");
+  const raw = shell ? shell.getAttribute("data-moonstat-framework-apps") : "";
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((app) => app && typeof app.id === "string" && typeof app.label === "string")
+      .map((app) => ({
+        id: app.id,
+        label: app.label,
+        mode: app.mode === "additive" ? "additive" : "single",
+        desktop: app.desktop === true,
+      }));
+  } catch (_error) {
+    return [];
+  }
+}
+
+const frameworkApps = readFrameworkApps();
 
 const $ = (id) => document.getElementById(id);
 

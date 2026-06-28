@@ -28,6 +28,7 @@ pub fn moonstat_suite_manifest_json(
     "routes": Json::array(
       moonstat_suite_routes().map(fn(route) { Json::string(route) }),
     ),
+    "frameworkApps": moonstat_framework_apps_json(),
     "apps": Json::array([
       suite_app_json(
         "moonclaw", "agent-runtime", "Use moonstat as the OpenAI-compatible or Anthropic-compatible local edge for agent provider calls.",
@@ -194,6 +195,42 @@ fn suite_app_json(id : String, role : String, usage : String) -> Json {
     "role": Json::string(role),
     "usage": Json::string(usage),
   })
+}
+
+///|
+pub fn moonstat_framework_apps_json() -> Json {
+  Json::array([
+    moonstat_framework_app_json("claude", "Claude Code", "single"),
+    moonstat_framework_app_json(
+      "claude-desktop",
+      "Claude Desktop",
+      "single",
+      desktop=true,
+    ),
+    moonstat_framework_app_json("codex", "Codex", "single"),
+    moonstat_framework_app_json("gemini", "Gemini", "single"),
+    moonstat_framework_app_json("opencode", "OpenCode", "additive"),
+    moonstat_framework_app_json("openclaw", "OpenClaw", "additive"),
+    moonstat_framework_app_json("hermes", "Hermes", "additive"),
+  ])
+}
+
+///|
+fn moonstat_framework_app_json(
+  id : String,
+  label : String,
+  mode : String,
+  desktop? : Bool = false,
+) -> Json {
+  let app = {
+    "id": Json::string(id),
+    "label": Json::string(label),
+    "mode": Json::string(mode),
+  }
+  if desktop {
+    app["desktop"] = Json::boolean(true)
+  }
+  Json::object(app)
 }
 
 ///|

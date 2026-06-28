@@ -6,7 +6,12 @@ fn moonstat_rabbita_shell_view(
     @html.link(rel="stylesheet", href="/assets/moonstat.css"),
     @html.div(
       class="shell",
-      attrs=@html.Attrs::build().data_set("moonstat-api-base", api_base),
+      attrs=@html.Attrs::build()
+        .data_set("moonstat-api-base", api_base)
+        .data_set(
+          "moonstat-framework-apps",
+          moonstat_framework_apps_json().stringify(),
+        ),
       [
         moonstat_rabbita_sidebar(),
         @html.main_(class="main", [

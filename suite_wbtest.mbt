@@ -89,6 +89,7 @@ test "suite manifest publishes moonstat service contract" {
   guard obj["capabilities"] is Array(capabilities) else {
     fail("expected capabilities")
   }
+  assert_eq(obj["frameworkApps"], moonstat_framework_apps_json())
   assert_true(capabilities.contains(Json::string("openai-compatible-proxy")))
   assert_true(capabilities.contains(Json::string("moonstat-usage-statistics")))
   assert_true(capabilities.contains(Json::string("moonstat-stream-check")))

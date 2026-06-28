@@ -100,6 +100,8 @@ pub fn moonstat_agent_clients_from_suite_status(Json) -> Result[Array[MoonstatAg
 
 pub fn moonstat_base_url_from_suite_status(Json) -> String?
 
+pub fn moonstat_framework_apps_json() -> Json
+
 pub fn moonstat_lepusa_manifest(port? : Int) -> String
 
 pub fn moonstat_lepusa_manifest_json(port? : Int) -> Json

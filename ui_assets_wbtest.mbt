@@ -5,6 +5,13 @@ async test "moonstat generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moonstat.css"))
   assert_true(html.contains("/assets/moonstat-core.js"))
   assert_true(html.contains("/assets/moonstat.js"))
+  assert_true(html.contains("data-moonstat-framework-apps="))
+  for
+    app in [
+      "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw", "hermes",
+    ] {
+    assert_true(html.contains(app))
+  }
   assert_true(html.contains("Provider Health"))
   assert_true(html.contains("Provider Control"))
   assert_true(html.contains("Provider Editor"))
@@ -55,12 +62,9 @@ async test "moonstat ui fetches current backend route surface" {
   for route in required {
     assert_true(assets.contains(route))
   }
-  for
-    app in [
-      "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw", "hermes",
-    ] {
-    assert_true(assets.contains(app))
-  }
+  assert_true(core.contains("readFrameworkApps"))
+  assert_true(core.contains("data-moonstat-framework-apps"))
+  assert_false(core.contains("const frameworkApps = ["))
   assert_true(core.contains("fetch(path"))
   assert_true(core.contains("postJson"))
   assert_true(core.contains("deleteJson"))
@@ -80,6 +84,46 @@ async test "moonstat ui fetches current backend route surface" {
   assert_true(core.contains("recordCount"))
   assert_true(assets.contains("defaultModel"))
   assert_true(js.contains("setInterval"))
+}
+
+///|
+fn ui_framework_app_by_id(
+  apps : Array[Json],
+  id : String,
+) -> Map[String, Json]? {
+  for app in apps {
+    guard app is Object(obj) else { continue }
+    if obj["id"] == Json::string(id) {
+      return Some(obj)
+    }
+  }
+  None
+}
+
+///|
+test "moonstat framework app metadata preserves active framework support" {
+  guard moonstat_framework_apps_json() is Array(apps) else {
+    fail("expected framework app array")
+  }
+  assert_eq(apps.length(), 7)
+  for
+    id in [
+      "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw", "hermes",
+    ] {
+    assert_true(ui_framework_app_by_id(apps, id) is Some(_))
+  }
+  guard ui_framework_app_by_id(apps, "claude-desktop") is Some(desktop) else {
+    fail("expected claude desktop framework")
+  }
+  assert_eq(desktop["label"], Json::string("Claude Desktop"))
+  assert_eq(desktop["mode"], Json::string("single"))
+  assert_eq(desktop["desktop"], Json::boolean(true))
+  for id in ["opencode", "openclaw", "hermes"] {
+    guard ui_framework_app_by_id(apps, id) is Some(additive) else {
+      fail("expected additive framework \{id}")
+    }
+    assert_eq(additive["mode"], Json::string("additive"))
+  }
 }
 
 ///|
