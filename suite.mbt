@@ -119,6 +119,7 @@ fn moonstat_suite_shared_fields(host : String, port : Int) -> Map[String, Json] 
     "statusUrl": Json::string("\{base_url}/status"),
     "statsUrl": Json::string("\{base_url}/stats"),
     "metricsUrl": Json::string("\{base_url}/metrics"),
+    "dashboardUrl": Json::string("\{base_url}/"),
     "usageLogsUrl": Json::string("\{base_url}/usage/logs"),
     "usageSummaryUrl": Json::string("\{base_url}/usage/summary"),
     "usageSummaryByAppUrl": Json::string("\{base_url}/usage/summary/by-app"),
@@ -323,6 +324,7 @@ fn moonstat_suite_integrations_json(
         "moonstat suite write-moonclaw-providers --path .moonclaw/providers.json",
       ),
       "healthUrl": Json::string("\{base_url}/health"),
+      "dashboardUrl": Json::string("\{base_url}/"),
       "metricsUrl": Json::string("\{base_url}/metrics"),
       "usageSummaryUrl": Json::string("\{base_url}/usage/summary"),
       "usageLogsUrl": Json::string("\{base_url}/usage/logs"),
@@ -359,6 +361,7 @@ fn moonstat_suite_integrations_json(
     "moontown": Json::object({
       "role": Json::string("scheduler-network-watch"),
       "healthUrl": Json::string("\{base_url}/health"),
+      "dashboardUrl": Json::string("\{base_url}/"),
       "statusUrl": Json::string("\{base_url}/status"),
       "statsUrl": Json::string("\{base_url}/stats"),
       "metricsUrl": Json::string("\{base_url}/metrics"),
@@ -400,6 +403,7 @@ fn moonstat_suite_integrations_json(
     "moondesk": Json::object({
       "role": Json::string("operator-dashboard"),
       "suiteStatusFile": Json::string(default_moonstat_suite_status_path()),
+      "dashboardUrl": Json::string("\{base_url}/"),
       "healthUrl": Json::string("\{base_url}/health"),
       "statusUrl": Json::string("\{base_url}/status"),
       "statsUrl": Json::string("\{base_url}/stats"),
@@ -568,8 +572,9 @@ fn moonstat_suite_commands_json(port : Int, model : String) -> Json {
 ///|
 fn moonstat_suite_routes() -> Array[String] {
   [
-    "GET /participant/register", "GET /health", "GET /status", "GET /stats", "GET /metrics",
-    "GET /usage/logs", "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
+    "GET /", "GET /assets/moonstat.css", "GET /assets/moonstat.js", "GET /participant/register",
+    "GET /health", "GET /status", "GET /stats", "GET /metrics", "GET /usage/logs",
+    "GET /usage/summary", "GET /usage/summary/by-app", "GET /usage/provider-stats",
     "GET /usage/trends", "GET /usage/provider-limits", "GET /usage/model-stats",
     "GET /usage/data-sources", "POST /usage/sync-session", "GET /usage/model-pricing",
     "POST /usage/model-pricing", "DELETE /usage/model-pricing", "GET /usage/request-detail/*path",

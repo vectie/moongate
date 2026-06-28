@@ -11,6 +11,7 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(obj["defaultHost"], Json::string("127.0.0.1"))
   assert_eq(obj["defaultPort"], Json::number(15721.0))
   assert_eq(obj["baseUrl"], Json::string("http://127.0.0.1:15721"))
+  assert_eq(obj["dashboardUrl"], Json::string("http://127.0.0.1:15721/"))
   assert_eq(
     obj["statusFile"],
     Json::string(default_moonstat_suite_status_path()),
@@ -94,6 +95,9 @@ test "suite manifest publishes moonstat service contract" {
   assert_true(capabilities.contains(Json::string("moonstat-skills-management")))
   assert_true(capabilities.contains(Json::string("provider-presets")))
   assert_true(capabilities.contains(Json::string("suite-discovery")))
+  assert_true(routes.contains(Json::string("GET /")))
+  assert_true(routes.contains(Json::string("GET /assets/moonstat.css")))
+  assert_true(routes.contains(Json::string("GET /assets/moonstat.js")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /stats")))
   assert_true(routes.contains(Json::string("GET /metrics")))

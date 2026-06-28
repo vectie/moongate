@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moonstat</title>
+    <link rel="stylesheet" href="/assets/moonstat.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Moonstat navigation">
+        <div class="brand">
+          <span class="mark" aria-hidden="true">M</span>
+          <div>
+            <strong>Moonstat</strong>
+            <span>Local gateway</span>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#overview">Overview</a>
+          <a href="#providers">Providers</a>
+          <a href="#usage">Usage</a>
+          <a href="#requests">Requests</a>
+        </nav>
+        <div class="sidebar-footer">
+          <span id="ui-updated">Waiting for data</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="topbar" id="overview">
+          <div>
+            <p class="eyebrow">Operator Console</p>
+            <h1>Proxy, providers, and spend in one place.</h1>
+          </div>
+          <div class="actions">
+            <button id="refresh" type="button">Refresh</button>
+            <a class="button-secondary" href="/metrics" target="_blank" rel="noreferrer">Metrics</a>
+          </div>
+        </section>
+
+        <section class="status-grid" aria-label="Gateway status">
+          <article class="metric-card">
+            <span>Gateway</span>
+            <strong id="gateway-state">-</strong>
+            <small id="gateway-detail">Loading status</small>
+          </article>
+          <article class="metric-card">
+            <span>Proxy</span>
+            <strong id="proxy-state">-</strong>
+            <small id="proxy-detail">Loading proxy</small>
+          </article>
+          <article class="metric-card">
+            <span>Requests</span>
+            <strong id="request-total">-</strong>
+            <small id="request-detail">Across all apps</small>
+          </article>
+          <article class="metric-card">
+            <span>Spend</span>
+            <strong id="cost-total">-</strong>
+            <small id="cost-detail">Estimated total</small>
+          </article>
+        </section>
+
+        <section class="panel-grid">
+          <article class="panel wide" id="providers">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Routing</p>
+                <h2>Provider Health</h2>
+              </div>
+              <span id="provider-count" class="pill">0 providers</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>App</th>
+                    <th>Status</th>
+                    <th>Model</th>
+                    <th>Last Error</th>
+                  </tr>
+                </thead>
+                <tbody id="provider-rows"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel" id="usage">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Usage</p>
+                <h2>By App</h2>
+              </div>
+            </div>
+            <div id="app-usage" class="stack"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Models</p>
+                <h2>Top Models</h2>
+              </div>
+            </div>
+            <div id="model-usage" class="stack"></div>
+          </article>
+
+          <article class="panel wide" id="requests">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Recent</p>
+                <h2>Request Log</h2>
+              </div>
+              <a class="text-link" href="/usage/logs" target="_blank" rel="noreferrer">JSON</a>
+            </div>
+            <div id="request-log" class="log-list"></div>
+          </article>
+        </section>
+
+        <section class="error-box" id="error-box" hidden>
+          <strong>Data refresh failed</strong>
+          <p id="error-message"></p>
+        </section>
+      </main>
+    </div>
+    <script src="/assets/moonstat.js"></script>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "identifier": "dev.vectie.moonstat",
+  "productName": "Moonstat",
+  "version": "0.1.0",
+  "runtime": {
+    "backend": "system-webview",
+    "assetProtocol": "lepusa",
+    "devtools": false
+  },
+  "window": {
+    "label": "main",
+    "title": "Moonstat",
+    "width": 1180,
+    "height": 780,
+    "resizable": true,
+    "source": {
+      "localhost": {
+        "port": 15721,
+        "path": "/",
+        "readinessPath": "/health",
+        "command": ["moon", "run", "cmd/main", "--", "start"]
+      }
+    }
+  },
+  "plugins": [
+    { "name": "localhost" },
+    { "name": "serviceDiscovery" },
+    { "name": "opener" }
+  ],
+  "capabilities": [
+    {
+      "name": "main",
+      "windows": ["main"],
+      "permissions": ["localhost", "service-discovery", "opener"]
+    }
+  ],
+  "startup": { "effect": "connect-moonstat" }
+}

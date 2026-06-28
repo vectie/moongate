@@ -65,6 +65,14 @@ curl http://127.0.0.1:15721/metrics
 moon run cmd/main -- usage logs
 ```
 
+Open the standalone operator UI at `http://127.0.0.1:15721/`. It is served by
+Moonstat itself and reads the same `/status`, `/proxy/status`, `/usage/*`, and
+`/metrics` surfaces used by the CLI and suite integrations.
+
+For a desktop shell, use published Lepusa against the checked-in
+`lepusa.json` manifest. The manifest wraps the existing Moonstat gateway as a
+localhost app and does not depend on local `../lepusa` or `../rba` workspaces.
+
 ## Feature Testing Focus
 
 Use the current codebase for end-to-end feature testing. The highest-value
