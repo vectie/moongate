@@ -104,6 +104,10 @@ pub fn moonstat_models_from_json(Json) -> Result[Array[MoonstatModel], String]
 
 pub fn moonstat_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
 
+pub fn moonstat_rabbita_lepusa_manifest(api_base? : String) -> String
+
+pub fn moonstat_rabbita_lepusa_manifest_json(api_base? : String) -> Json
+
 pub fn moonstat_rabbita_shell_html(api_base? : String) -> String
 
 pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json

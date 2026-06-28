@@ -146,6 +146,10 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("suite_moonclaw_providers"),
   )
   assert_true(
+    registered_cli_command_id(["moonstat", "suite", "lepusa-rabbita"]) ==
+    Some("suite_lepusa_rabbita"),
+  )
+  assert_true(
     registered_cli_command_id([
       "moonstat", "suite", "write-moonclaw-providers", "--path", "/tmp/providers.json",
     ]) ==

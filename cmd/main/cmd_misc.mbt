@@ -35,6 +35,7 @@ fn print_help() -> Unit {
   println("  stream-check config set   Update stream check configuration")
   println("  runtime tray-menu update  Refresh desktop tray menu state")
   println("  suite manifest            Print Moon suite service manifest")
+  println("  suite lepusa-rabbita      Print Lepusa Rabbita preview manifest")
   println("  suite status              Print Moon suite status contract")
   println("  suite write-status        Write ~/.moonsuite/suite-status.json")
   println("  suite moonclaw-providers  Print MoonClaw providers.json")
@@ -206,6 +207,7 @@ fn print_help() -> Unit {
     "  moonstat models fetch --base-url https://api.example.com --api-key sk-...",
   )
   println("  moonstat suite write-status --port 15721")
+  println("  moonstat suite lepusa-rabbita --port 15721")
   println("  claude                         # Use Claude CLI through moonstat")
   println("  moonstat proxy status          # Show proxy status")
   println("  moonstat proxy start")

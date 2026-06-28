@@ -2,6 +2,7 @@
 fn suite_cli_commands() -> Array[CliCommandSpec] {
   [
     { id: "suite_manifest", patterns: ["suite manifest"] },
+    { id: "suite_lepusa_rabbita", patterns: ["suite lepusa-rabbita"] },
     { id: "suite_status", patterns: ["suite status"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
     { id: "suite_moonclaw_providers", patterns: ["suite moonclaw-providers"] },
@@ -19,6 +20,7 @@ async fn run_suite_cli_command(
 ) -> Unit {
   match command_id {
     "suite_manifest" => print_suite_manifest(args)
+    "suite_lepusa_rabbita" => print_lepusa_rabbita_manifest(args)
     "suite_status" => print_suite_status(args)
     "suite_write_status" => write_suite_status(args)
     "suite_moonclaw_providers" => print_moonclaw_providers_file(args)
@@ -51,6 +53,17 @@ fn print_suite_manifest(args : Array[String]) -> Unit {
   println(
     @moonstat.moonstat_suite_manifest_json(host~, port~, model~).stringify(
       indent=2,
+    ),
+  )
+}
+
+///|
+fn print_lepusa_rabbita_manifest(args : Array[String]) -> Unit {
+  let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
+  println(
+    @moonstat.moonstat_rabbita_lepusa_manifest(
+      api_base=@suite.base_url(host, port),
     ),
   )
 }

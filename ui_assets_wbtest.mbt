@@ -201,6 +201,7 @@ async test "moonstat rabbita shell renders lepusa preview structure" {
 ///|
 async test "moonstat rabbita lepusa preview manifest parses" {
   let manifest = @fsx.read_file("lepusa.rabbita.json")
+  let generated = moonstat_rabbita_lepusa_manifest_json()
   match @lepusa_project.ProjectConfig::load("lepusa.rabbita.json") {
     Ok(project) => {
       let _ = project.manifest()
@@ -211,8 +212,17 @@ async test "moonstat rabbita lepusa preview manifest parses" {
         "published Lepusa ProjectConfig failed to load moonstat rabbita preview manifest: \{problems.join("; ")}",
       )
   }
+  guard @json.parse(manifest) is Object(parsed) else {
+    fail("expected lepusa.rabbita.json object")
+  }
+  guard generated is Object(expected) else {
+    fail("expected generated rabbita lepusa manifest object")
+  }
+  assert_eq(parsed["identifier"], expected["identifier"])
+  assert_eq(parsed["rootHtml"], expected["rootHtml"])
+  assert_eq(parsed["startup"], expected["startup"])
   assert_true(manifest.contains("\"rootHtml\""))
-  assert_true(manifest.contains("Moonstat Rabbita Shell"))
+  assert_true(manifest.contains("Lepusa Rabbita shell"))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))
   assert_true(manifest.contains("\"localhost\""))
   assert_false(manifest.contains("../lepusa"))

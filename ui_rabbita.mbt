@@ -110,3 +110,53 @@ pub fn moonstat_rabbita_shell_html(
     @rabbita.static_cell(moonstat_rabbita_shell_view(api_base~)),
   )
 }
+
+///|
+pub fn moonstat_rabbita_lepusa_manifest_json(
+  api_base? : String = "http://127.0.0.1:15721",
+) -> Json {
+  Json::object({
+    "identifier": Json::string("dev.vectie.moonstat.rabbita"),
+    "productName": Json::string("Moonstat Rabbita Preview"),
+    "version": Json::string("0.1.0"),
+    "rootHtml": Json::string(moonstat_rabbita_shell_html(api_base~)),
+    "runtime": Json::object({
+      "backend": Json::string("system-webview"),
+      "assetProtocol": Json::string("lepusa"),
+      "devtools": Json::boolean(false),
+    }),
+    "window": Json::object({
+      "label": Json::string("main"),
+      "title": Json::string("Moonstat"),
+      "width": Json::number(1180.0),
+      "height": Json::number(780.0),
+      "resizable": Json::boolean(true),
+    }),
+    "plugins": Json::array([
+      Json::object({ "name": Json::string("localhost") }),
+      Json::object({ "name": Json::string("serviceDiscovery") }),
+      Json::object({ "name": Json::string("opener") }),
+    ]),
+    "capabilities": Json::array([
+      Json::object({
+        "name": Json::string("main"),
+        "windows": Json::array([Json::string("main")]),
+        "permissions": Json::array([
+          Json::string("localhost"),
+          Json::string("service-discovery"),
+          Json::string("opener"),
+        ]),
+      }),
+    ]),
+    "startup": Json::object({
+      "effect": Json::string("connect-moonstat-rabbita-preview"),
+    }),
+  })
+}
+
+///|
+pub fn moonstat_rabbita_lepusa_manifest(
+  api_base? : String = "http://127.0.0.1:15721",
+) -> String {
+  moonstat_rabbita_lepusa_manifest_json(api_base~).stringify(indent=2)
+}
