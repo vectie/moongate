@@ -160,6 +160,14 @@ button:hover {
   background: var(--accent-strong);
 }
 
+button.danger {
+  background: #991b1b;
+}
+
+button.danger:hover {
+  background: #7f1d1d;
+}
+
 .button-secondary {
   display: inline-flex;
   align-items: center;
@@ -281,6 +289,34 @@ th {
 
 td {
   overflow-wrap: anywhere;
+}
+
+td small {
+  display: block;
+  color: var(--muted);
+}
+
+select {
+  width: min(260px, 100%);
+  min-height: 34px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: white;
+  color: var(--text);
+  font: inherit;
+}
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inline-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
 }
 
 .stack,

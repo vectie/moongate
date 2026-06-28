@@ -19,6 +19,7 @@
         <nav class="nav">
           <a href="#overview">Overview</a>
           <a href="#providers">Providers</a>
+          <a href="#frameworks">Frameworks</a>
           <a href="#usage">Usage</a>
           <a href="#requests">Requests</a>
         </nav>
@@ -35,6 +36,8 @@
           </div>
           <div class="actions">
             <button id="refresh" type="button">Refresh</button>
+            <button id="proxy-start" type="button">Start Proxy</button>
+            <button id="proxy-stop" type="button" class="danger">Stop Proxy</button>
             <a class="button-secondary" href="/metrics" target="_blank" rel="noreferrer">Metrics</a>
           </div>
         </section>
@@ -63,6 +66,30 @@
         </section>
 
         <section class="panel-grid">
+          <article class="panel wide" id="frameworks">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Frameworks</p>
+                <h2>Provider Control</h2>
+              </div>
+              <button id="sync-live" type="button" class="button-secondary">Sync Live</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Framework</th>
+                    <th>Mode</th>
+                    <th>Current</th>
+                    <th>Providers</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="framework-rows"></tbody>
+              </table>
+            </div>
+          </article>
+
           <article class="panel wide" id="providers">
             <div class="panel-head">
               <div>

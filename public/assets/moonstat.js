@@ -2,11 +2,24 @@ const endpoints = {
   health: "/health",
   status: "/status",
   proxy: "/proxy/status",
+  proxyStart: "/proxy/start",
+  proxyStop: "/proxy/stop",
+  syncLive: "/proxy/sync-current-providers-live",
   usageSummary: "/usage/summary",
   usageByApp: "/usage/summary/by-app",
   modelStats: "/usage/model-stats",
   logs: "/usage/logs?limit=8",
 };
+
+const frameworkApps = [
+  { id: "claude", label: "Claude Code", mode: "single" },
+  { id: "claude-desktop", label: "Claude Desktop", mode: "single", desktop: true },
+  { id: "codex", label: "Codex", mode: "single" },
+  { id: "gemini", label: "Gemini", mode: "single" },
+  { id: "opencode", label: "OpenCode", mode: "additive" },
+  { id: "openclaw", label: "OpenClaw", mode: "additive" },
+  { id: "hermes", label: "Hermes", mode: "additive" },
+];
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,6 +32,25 @@ async function getJson(path) {
   const response = await fetch(path, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`${path} returned ${response.status}`);
   return response.json();
+}
+
+async function postJson(path, body) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: body == null ? undefined : JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+  const textBody = await response.text();
+  return textBody ? JSON.parse(textBody) : null;
+}
+
+function endpoint(path, params) {
+  const url = new URL(path, window.location.origin);
+  for (const [key, value] of Object.entries(params || {})) {
+    if (value != null && value !== "") url.searchParams.set(key, String(value));
+  }
+  return `${url.pathname}${url.search}`;
 }
 
 function number(value) {
@@ -48,6 +80,14 @@ function arrayFrom(value, keys) {
     if (Array.isArray(value[key])) return value[key];
   }
   return [];
+}
+
+function objectRows(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.entries(value).map(([id, row]) => ({
+    id,
+    ...(row && typeof row === "object" ? row : {}),
+  }));
 }
 
 function firstString(object, keys, fallback = "-") {
@@ -97,6 +137,56 @@ function renderProviderRows(data) {
     `;
     target.appendChild(tr);
   }
+}
+
+function renderFrameworkRows(rows) {
+  const target = $("framework-rows");
+  if (!target) return;
+  target.innerHTML = "";
+  for (const row of rows) {
+    const providers = row.providers || [];
+    const providerCount = providers.length;
+    const current = row.current || "";
+    const mode = row.mode === "additive" ? "Additive" : "Single";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.id)}</small></td>
+      <td><span class="state ${row.error ? "bad" : "good"}">${escapeHtml(row.error ? "Error" : mode)}</span></td>
+      <td>${renderCurrentProvider(row, providers, current)}</td>
+      <td>${providerCount} configured</td>
+      <td>${renderFrameworkActions(row, providerCount)}</td>
+    `;
+    target.appendChild(tr);
+  }
+}
+
+function renderCurrentProvider(row, providers, current) {
+  if (row.error) return `<small>${escapeHtml(row.error)}</small>`;
+  if (row.mode === "additive") return `<small>Multiple live providers</small>`;
+  if (providers.length === 0) return `<small>No providers</small>`;
+  const options = providers
+    .map((provider) => {
+      const id = firstString(provider, ["id", "providerId"]);
+      const name = firstString(provider, ["name", "providerName"], id);
+      const selected = id === current ? " selected" : "";
+      return `<option value="${escapeHtml(id)}"${selected}>${escapeHtml(name)}</option>`;
+    })
+    .join("");
+  return `<select data-app="${escapeHtml(row.id)}" aria-label="${escapeHtml(row.label)} provider">${options}</select>`;
+}
+
+function renderFrameworkActions(row, providerCount) {
+  if (row.error) return `<button type="button" data-action="reload-app" data-app="${escapeHtml(row.id)}">Retry</button>`;
+  const actions = [
+    `<button type="button" data-action="import-live" data-app="${escapeHtml(row.id)}">Import Live</button>`,
+  ];
+  if (row.mode !== "additive" && providerCount > 0) {
+    actions.unshift(`<button type="button" data-action="switch-provider" data-app="${escapeHtml(row.id)}">Switch</button>`);
+  }
+  if (row.desktop) {
+    actions.push(`<button type="button" data-action="claude-desktop-import">Import Claude</button>`);
+  }
+  return `<div class="inline-actions">${actions.join("")}</div>`;
 }
 
 function renderStack(id, rows, labelKeys) {
@@ -166,6 +256,27 @@ function updateTotals(summary, stats) {
   text("cost-total", money(totalCost));
 }
 
+async function loadFrameworkRow(app) {
+  try {
+    const [providersJson, currentJson] = await Promise.all([
+      getJson(endpoint("/providers", { appType: app.id })),
+      getJson(endpoint("/providers/current", { appType: app.id })),
+    ]);
+    return {
+      ...app,
+      providers: objectRows(providersJson),
+      current: typeof currentJson === "string" ? currentJson : "",
+    };
+  } catch (error) {
+    return { ...app, providers: [], current: "", error: error.message || String(error) };
+  }
+}
+
+async function loadFrameworks() {
+  const rows = await Promise.all(frameworkApps.map(loadFrameworkRow));
+  renderFrameworkRows(rows);
+}
+
 async function refresh() {
   $("error-box").hidden = true;
   const [health, status, proxy, summary, byApp, modelStats, logs] =
@@ -189,6 +300,7 @@ async function refresh() {
 
   updateTotals(summary, status);
   renderProviderRows(status.provider_routes || status.active_targets || []);
+  await loadFrameworks();
   renderStack("app-usage", arrayFrom(byApp, ["apps", "items", "data"]), ["appType", "app", "name"]);
   renderStack("model-usage", arrayFrom(modelStats, ["models", "items", "data"]), ["model", "modelId", "name"]);
   renderLogs(logs);
@@ -205,6 +317,36 @@ function showError(error) {
 
 $("refresh")?.addEventListener("click", () => {
   refresh().catch(showError);
+});
+
+$("proxy-start")?.addEventListener("click", () => {
+  postJson(endpoints.proxyStart).then(refresh).catch(showError);
+});
+
+$("proxy-stop")?.addEventListener("click", () => {
+  postJson(endpoints.proxyStop).then(refresh).catch(showError);
+});
+
+$("sync-live")?.addEventListener("click", () => {
+  postJson(endpoints.syncLive).then(refresh).catch(showError);
+});
+
+$("framework-rows")?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const appType = button.dataset.app;
+  const action = button.dataset.action;
+  if (action === "reload-app") {
+    refresh().catch(showError);
+  } else if (action === "switch-provider") {
+    const select = Array.from(document.querySelectorAll("select[data-app]"))
+      .find((node) => node.dataset.app === appType);
+    if (select) postJson("/providers/switch", { appType, id: select.value }).then(refresh).catch(showError);
+  } else if (action === "import-live") {
+    postJson(endpoint("/providers/import-live", { appType })).then(refresh).catch(showError);
+  } else if (action === "claude-desktop-import") {
+    postJson("/providers/claude-desktop/import").then(refresh).catch(showError);
+  }
 });
 
 refresh().catch(showError);
