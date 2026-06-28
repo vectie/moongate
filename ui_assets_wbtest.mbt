@@ -12,6 +12,10 @@ async test "moonstat ui assets expose operator dashboard at public root" {
   assert_true(html.contains("Refresh Setup"))
   assert_true(html.contains("Import MCP Apps"))
   assert_true(html.contains("Import Claude Desktop"))
+  assert_true(html.contains("Resilience Control"))
+  assert_true(html.contains("Save Circuit"))
+  assert_true(html.contains("Save Stream"))
+  assert_true(html.contains("Check App"))
   assert_true(html.contains("Save Provider"))
   assert_true(html.contains("Delete Provider"))
   assert_true(html.contains("Test Provider"))
@@ -38,6 +42,9 @@ async test "moonstat ui fetches current backend route surface" {
     "/auth/status", "/config/status", "/config/folder/open", "/providers/claude-desktop/status",
     "/mcp/servers", "/mcp/import-apps", "/settings", "/runtime/portable-mode", "/tools/versions",
     "/proxy/running", "/proxy/takeover-status", "/plugin/claude/status", "/plugin/claude/applied",
+    "/proxy/circuit-breaker-config", "/proxy/circuit-breaker-stats", "/proxy/reset-circuit-breaker",
+    "/proxy/failover-queue", "/proxy/available-failover-providers", "/proxy/auto-failover-enabled",
+    "/usage/provider-limits", "/proxy/stream-check/all", "/proxy/stream-check/config",
   ]
   for route in required {
     assert_true(assets.contains(route))
@@ -54,7 +61,9 @@ async test "moonstat ui fetches current backend route surface" {
   assert_true(js.contains("providerPayloadFromForm"))
   assert_true(js.contains("loadUsageExplorer"))
   assert_true(js.contains("loadSetupStatus"))
+  assert_true(js.contains("loadResilience"))
   assert_true(js.contains("renderSetupConfigRows"))
+  assert_true(js.contains("renderStreamCheckResults"))
   assert_true(js.contains("renderRequestDetail"))
   assert_true(core.contains("safeGetJson"))
   assert_true(core.contains("recordCount"))

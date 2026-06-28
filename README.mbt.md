@@ -76,8 +76,11 @@ summary, trend, provider, model, request-log, and request-detail views through
 the same `/usage/*` endpoints used by automation. The setup panel checks auth,
 config, runtime, tool, Claude Desktop, MCP, Claude plugin, proxy-running, and
 proxy-takeover state through the same standalone management routes used by CLI
-automation. The frontend stays framework-free for now: `moonstat-core.js` owns
-shared route/helper code and `moonstat.js` owns dashboard behavior.
+automation. The resilience panel manages failover queues, auto-failover,
+circuit-breaker config/stats, provider limits, and stream-check config/results
+through the same `/proxy/*` and `/usage/provider-limits` routes. The frontend
+stays framework-free for now: `moonstat-core.js` owns shared route/helper code
+and `moonstat.js` owns dashboard behavior.
 
 For a desktop shell, use published Lepusa against the checked-in
 `lepusa.json` manifest. The manifest wraps the existing Moonstat gateway as a

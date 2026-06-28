@@ -21,6 +21,7 @@
           <a href="#providers">Providers</a>
           <a href="#frameworks">Frameworks</a>
           <a href="#setup">Setup</a>
+          <a href="#resilience">Resilience</a>
           <a href="#usage">Usage</a>
           <a href="#usage-explorer">Explorer</a>
           <a href="#requests">Requests</a>
@@ -226,6 +227,93 @@
                 <tbody id="setup-config-rows"></tbody>
               </table>
             </div>
+          </article>
+
+          <article class="panel wide" id="resilience">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Routing</p>
+                <h2>Resilience Control</h2>
+              </div>
+              <div class="filter-row">
+                <select id="resilience-app" aria-label="Resilience framework"></select>
+                <select id="resilience-provider" aria-label="Resilience provider"></select>
+                <button id="resilience-refresh" type="button" class="button-secondary">Refresh</button>
+              </div>
+            </div>
+            <div class="usage-metrics">
+              <div>
+                <span>Auto Failover</span>
+                <strong id="resilience-auto-state">-</strong>
+              </div>
+              <div>
+                <span>Circuit</span>
+                <strong id="resilience-circuit-state">-</strong>
+              </div>
+              <div>
+                <span>Queue</span>
+                <strong id="resilience-queue-count">-</strong>
+              </div>
+              <div>
+                <span>Limits</span>
+                <strong id="resilience-limit-state">-</strong>
+              </div>
+            </div>
+            <div class="resilience-grid">
+              <div class="setup-card">
+                <div class="setup-card-head">
+                  <strong>Circuit Breaker</strong>
+                  <span id="resilience-circuit-status" class="state warn">Loading</span>
+                </div>
+                <form id="circuit-form" class="compact-form">
+                  <label><span>Failure Threshold</span><input id="circuit-failure-threshold" inputmode="numeric" /></label>
+                  <label><span>Success Threshold</span><input id="circuit-success-threshold" inputmode="numeric" /></label>
+                  <label><span>Timeout Seconds</span><input id="circuit-timeout-seconds" inputmode="numeric" /></label>
+                  <label><span>Error Rate</span><input id="circuit-error-rate-threshold" inputmode="decimal" /></label>
+                  <label><span>Min Requests</span><input id="circuit-min-requests" inputmode="numeric" /></label>
+                  <div class="inline-actions">
+                    <button type="submit">Save Circuit</button>
+                    <button id="resilience-reset-circuit" type="button" class="button-secondary">Reset Selected</button>
+                  </div>
+                </form>
+              </div>
+              <div class="setup-card">
+                <div class="setup-card-head">
+                  <strong>Stream Check</strong>
+                  <span id="resilience-stream-status" class="state warn">Loading</span>
+                </div>
+                <form id="stream-form" class="compact-form">
+                  <label><span>Timeout Seconds</span><input id="stream-timeout-secs" inputmode="numeric" /></label>
+                  <label><span>Max Retries</span><input id="stream-max-retries" inputmode="numeric" /></label>
+                  <label><span>Degraded MS</span><input id="stream-degraded-threshold-ms" inputmode="numeric" /></label>
+                  <label><span>Codex Model</span><input id="stream-codex-model" /></label>
+                  <label><span>Claude Model</span><input id="stream-claude-model" /></label>
+                  <label><span>Gemini Model</span><input id="stream-gemini-model" /></label>
+                  <label class="span-2"><span>Prompt</span><input id="stream-test-prompt" /></label>
+                  <div class="inline-actions span-2">
+                    <button type="submit">Save Stream</button>
+                    <button id="resilience-stream-check" type="button" class="button-secondary">Check App</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div class="resilience-grid">
+              <div class="setup-card">
+                <div class="setup-card-head">
+                  <strong>Failover Queue</strong>
+                  <button id="resilience-toggle-auto" type="button" class="button-secondary">Toggle Auto</button>
+                </div>
+                <div id="failover-queue" class="stack"></div>
+              </div>
+              <div class="setup-card">
+                <div class="setup-card-head">
+                  <strong>Available Providers</strong>
+                  <button id="resilience-add-selected" type="button" class="button-secondary">Add Selected</button>
+                </div>
+                <div id="available-failover" class="stack"></div>
+              </div>
+            </div>
+            <div id="stream-check-results" class="log-list"></div>
           </article>
 
           <article class="panel wide" id="providers">

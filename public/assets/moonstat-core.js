@@ -30,6 +30,15 @@ const endpoints = {
   takeoverStatus: "/proxy/takeover-status",
   pluginClaudeStatus: "/plugin/claude/status",
   pluginClaudeApplied: "/plugin/claude/applied",
+  circuitConfig: "/proxy/circuit-breaker-config",
+  circuitStats: "/proxy/circuit-breaker-stats",
+  resetCircuit: "/proxy/reset-circuit-breaker",
+  failoverQueue: "/proxy/failover-queue",
+  availableFailover: "/proxy/available-failover-providers",
+  autoFailover: "/proxy/auto-failover-enabled",
+  providerLimits: "/usage/provider-limits",
+  streamCheckAll: "/proxy/stream-check/all",
+  streamCheckConfig: "/proxy/stream-check/config",
 };
 
 const frameworkApps = [
