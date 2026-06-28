@@ -42,6 +42,10 @@ You can browse and install extra skills here:
 - UI work should wait until the Lepusa desktop framework settles. Backend,
   suite, proxy, usage, and test coverage work can continue now.
 
+- When UI or desktop integration starts, use published Rabbita and Lepusa
+  packages in `moon.mod`. Do not wire Moonstat to local `../rba` or `../lepusa`
+  workspaces except for temporary inspection or upstream validation.
+
 - Known structural cleanup backlog: split remaining large files such as
   `cmd/main/cmd_misc.mbt`, `gateway_provider.mbt`,
   `gateway_claude_anthropic.mbt`, and `gateway_usage.mbt` when tests expose

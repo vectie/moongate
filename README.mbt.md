@@ -30,6 +30,11 @@ such as `cmd/main/cmd_misc.mbt`, `gateway_provider.mbt`,
 friction or before a release-hardening pass. UI work is intentionally deferred
 until the Lepusa desktop framework settles.
 
+When desktop or UI integration starts, depend on published packages rather than
+local sibling checkouts. Use published Rabbita (`moonbit-community/rabbita`) and
+published Lepusa (`vectie/lepusa`) releases in `moon.mod`; keep `../rba` and
+`../lepusa` only as reference/test worktrees for reading upstream behavior.
+
 ## Run
 
 ```sh
