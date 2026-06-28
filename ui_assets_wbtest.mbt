@@ -6,6 +6,7 @@ async test "moonstat generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moonstat-core.js"))
   assert_true(html.contains("/assets/moonstat.js"))
   assert_true(html.contains("data-moonstat-framework-apps="))
+  assert_true(html.contains("data-moonstat-sections="))
   assert_true(html.contains("data-moonstat-endpoints="))
   assert_true(html.contains("data-moonstat-readiness-cards="))
   assert_true(html.contains("/health"))
@@ -43,6 +44,28 @@ async test "moonstat generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Stop Proxy"))
   assert_true(html.contains("Sync Live"))
   assert_true(html.contains("Request Log"))
+}
+
+///|
+test "moonstat ui section metadata drives primary navigation" {
+  guard moonstat_ui_sections_json() is Array(sections) else {
+    fail("expected section array")
+  }
+  assert_eq(sections.length(), 9)
+  let html = moonstat_rabbita_shell_html()
+  for
+    id in [
+      "overview", "providers", "frameworks", "setup", "suite", "resilience", "usage",
+      "usage-explorer", "requests",
+    ] {
+    assert_true(html.contains("href=\"#\{id}\""))
+    assert_true(
+      sections.any(section => {
+        guard section is Object(obj) else { return false }
+        obj["id"] == Json::string(id) && obj["target"] == Json::string("#\{id}")
+      }),
+    )
+  }
 }
 
 ///|

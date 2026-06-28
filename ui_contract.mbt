@@ -35,6 +35,35 @@ fn moonstat_framework_app_json(
 }
 
 ///|
+fn moonstat_ui_sections() -> Array[(String, String)] {
+  [
+    ("overview", "Overview"),
+    ("providers", "Providers"),
+    ("frameworks", "Frameworks"),
+    ("setup", "Setup"),
+    ("suite", "Suite"),
+    ("resilience", "Resilience"),
+    ("usage", "Usage"),
+    ("usage-explorer", "Explorer"),
+    ("requests", "Requests"),
+  ]
+}
+
+///|
+pub fn moonstat_ui_sections_json() -> Json {
+  Json::array(
+    moonstat_ui_sections().map(fn(section) {
+      let (id, label) = section
+      Json::object({
+        "id": Json::string(id),
+        "label": Json::string(label),
+        "target": Json::string("#\{id}"),
+      })
+    }),
+  )
+}
+
+///|
 pub fn moonstat_ui_endpoints_json() -> Json {
   Json::object({
     "health": Json::string("/health"),

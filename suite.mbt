@@ -29,6 +29,7 @@ pub fn moonstat_suite_manifest_json(
       moonstat_suite_routes().map(fn(route) { Json::string(route) }),
     ),
     "frameworkApps": moonstat_framework_apps_json(),
+    "uiSections": moonstat_ui_sections_json(),
     "uiEndpoints": moonstat_ui_endpoints_json(),
     "uiReadinessCards": moonstat_ui_readiness_cards_json(),
     "apps": Json::array([
