@@ -646,12 +646,28 @@ fn suite_finding_by_product(findings : Array[Json], product : String) -> Json? {
 }
 
 ///|
+fn suite_finding_by_legacy_path(findings : Array[Json], path : String) -> Json? {
+  for finding in findings {
+    guard finding is Object(obj) else { continue }
+    if obj["legacyPath"] == Json::string(path) {
+      return Some(finding)
+    }
+  }
+  None
+}
+
+///|
 async test "suite drift report derives canonical paths from moonsuite contract" {
   @fsx.with_temporary_directory("moonstat-suite-drift-clean-XXXXXX", tmpdir => {
-    let report = moonstat_suite_drift_report_json(suite_root=tmpdir)
+    let global_tmp = @pathx.join(tmpdir, "global-tmp")
+    let report = moonstat_suite_drift_report_json(
+      suite_root=tmpdir,
+      global_tmp_root=global_tmp,
+    )
     guard report is Object(obj) else { fail("expected drift report") }
     assert_eq(obj["contract"], Json::string("moonstat.suite.drift.v1"))
     assert_eq(obj["contractSource"], Json::string("vectie/moonlib/moonsuite"))
+    assert_eq(obj["globalTmpRoot"], Json::string(global_tmp))
     guard obj["canonical"] is Object(canonical) else {
       fail("expected canonical paths")
     }
@@ -663,6 +679,18 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       canonical["moonclawProviders"],
       Json::string(
         @pathx.join(tmpdir, ".moonsuite/products/moonclaw/providers.json"),
+      ),
+    )
+    assert_eq(
+      canonical["moonroboGatewayCommands"],
+      Json::string(
+        @pathx.join(tmpdir, ".moonsuite/products/moonrobo/gateway-commands"),
+      ),
+    )
+    assert_eq(
+      canonical["moonroboSdkE1Snapshot"],
+      Json::string(
+        @pathx.join(tmpdir, ".tmp/products/moonrobo/sdk-e1/snapshot.json"),
       ),
     )
     guard obj["findings"] is Array(findings) else {
@@ -678,8 +706,31 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
     assert_eq(moonclaw_obj["detected"], Json::boolean(false))
     assert_eq(moonclaw_obj["legacyPath"], Json::string(".moonclaw"))
     assert_eq(
+      moonclaw_obj["probePath"],
+      Json::string(@pathx.join(tmpdir, ".moonclaw")),
+    )
+    assert_eq(moonclaw_obj["scope"], Json::string("suite-root"))
+    assert_eq(
       moonclaw_obj["canonicalPath"],
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonclaw")),
+    )
+    guard suite_finding_by_legacy_path(
+        findings,
+        @pathx.join(global_tmp, "moonrobo-sdk-e1-bridge-snapshot-test.json"),
+      )
+      is Some(snapshot) else {
+      fail("expected moonrobo sdk e1 snapshot finding")
+    }
+    guard snapshot is Object(snapshot_obj) else {
+      fail("expected moonrobo sdk e1 snapshot finding object")
+    }
+    assert_eq(snapshot_obj["status"], Json::string("clear"))
+    assert_eq(snapshot_obj["scope"], Json::string("global-tmp"))
+    assert_eq(
+      snapshot_obj["canonicalPath"],
+      Json::string(
+        @pathx.join(tmpdir, ".tmp/products/moonrobo/sdk-e1/snapshot.json"),
+      ),
     )
   })
 }
@@ -687,9 +738,13 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
 ///|
 async test "suite drift report flags legacy product homes when present" {
   @fsx.with_temporary_directory("moonstat-suite-drift-legacy-XXXXXX", tmpdir => {
+    let global_tmp = @pathx.join(tmpdir, "global-tmp")
     @fsx.make_directory(@pathx.join(tmpdir, ".moontown"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonclaw"))
-    let report = moonstat_suite_drift_report_json(suite_root=tmpdir)
+    let report = moonstat_suite_drift_report_json(
+      suite_root=tmpdir,
+      global_tmp_root=global_tmp,
+    )
     guard report is Object(obj) else { fail("expected drift report") }
     guard obj["summary"] is Object(summary) else {
       fail("expected drift summary")
@@ -710,6 +765,90 @@ async test "suite drift report flags legacy product homes when present" {
       assert_eq(
         finding_obj["contractSource"],
         Json::string("vectie/moonlib/moonsuite"),
+      )
+    }
+  })
+}
+
+///|
+async test "suite drift report flags repo-local runtime and global temp drift" {
+  @fsx.with_temporary_directory("moonstat-suite-drift-runtime-XXXXXX", tmpdir => {
+    let global_tmp = @pathx.join(tmpdir, "global-tmp")
+    @fsx.make_directory(
+      @pathx.join(tmpdir, "runs/gateway-commands"),
+      recursive=true,
+    )
+    @fsx.make_directory(@pathx.join(tmpdir, "runs/robo-loops"), recursive=true)
+    @fsx.make_directory(
+      @pathx.join(tmpdir, "runs/proof-sessions"),
+      recursive=true,
+    )
+    @fsx.make_directory(@pathx.join(tmpdir, "moonclaw-jobs"))
+    @fsx.make_directory(@pathx.join(tmpdir, "moonstat"))
+    @fsx.make_directory(global_tmp, recursive=true)
+    @fsx.write_to_file(
+      @pathx.join(global_tmp, "moonrobo-sdk-e1-bridge-snapshot-test.json"),
+      "{}",
+    )
+    @fsx.write_to_file(
+      @pathx.join(global_tmp, "moonrobo-sdk-e1-bridge-command-test.json"),
+      "{}",
+    )
+    let report = moonstat_suite_drift_report_json(
+      suite_root=tmpdir,
+      global_tmp_root=global_tmp,
+    )
+    guard report is Object(obj) else { fail("expected drift report") }
+    guard obj["summary"] is Object(summary) else {
+      fail("expected drift summary")
+    }
+    assert_eq(summary["detected"], Json::number(7.0))
+    guard obj["findings"] is Array(findings) else {
+      fail("expected drift findings")
+    }
+    for
+      path in [
+        "runs/gateway-commands", "runs/robo-loops", "runs/proof-sessions", "moonclaw-jobs",
+        "moonstat",
+      ] {
+      guard suite_finding_by_legacy_path(findings, path) is Some(finding) else {
+        fail("expected \{path} finding")
+      }
+      guard finding is Object(finding_obj) else {
+        fail("expected \{path} finding object")
+      }
+      assert_eq(finding_obj["status"], Json::string("drift"))
+      assert_eq(finding_obj["detected"], Json::boolean(true))
+      assert_eq(finding_obj["scope"], Json::string("suite-root"))
+      assert_eq(
+        finding_obj["probePath"],
+        Json::string(@pathx.join(tmpdir, path)),
+      )
+    }
+    for
+      file in [
+        "moonrobo-sdk-e1-bridge-snapshot-test.json", "moonrobo-sdk-e1-bridge-command-test.json",
+      ] {
+      let legacy_path = @pathx.join(global_tmp, file)
+      guard suite_finding_by_legacy_path(findings, legacy_path) is Some(finding) else {
+        fail("expected \{file} finding")
+      }
+      guard finding is Object(finding_obj) else {
+        fail("expected \{file} finding object")
+      }
+      assert_eq(finding_obj["status"], Json::string("drift"))
+      assert_eq(finding_obj["detected"], Json::boolean(true))
+      assert_eq(finding_obj["scope"], Json::string("global-tmp"))
+      assert_eq(finding_obj["probePath"], Json::string(legacy_path))
+      assert_true(
+        finding_obj["canonicalPath"] ==
+        Json::string(
+          @pathx.join(tmpdir, ".tmp/products/moonrobo/sdk-e1/snapshot.json"),
+        ) ||
+        finding_obj["canonicalPath"] ==
+        Json::string(
+          @pathx.join(tmpdir, ".tmp/products/moonrobo/sdk-e1/command.json"),
+        ),
       )
     }
   })

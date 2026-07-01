@@ -5,7 +5,9 @@ const SUITE_STATUS_FILE = "suite-status.json"
 priv struct SuiteLegacyDriftCandidate {
   product : String
   legacy_path : String
+  probe_path : String
   canonical_path : String
+  scope : String
   reason : String
 }
 
@@ -103,16 +105,20 @@ pub fn moonstat_suite_status_json(
 ///|
 pub async fn moonstat_suite_drift_report_json(
   suite_root? : String = ".",
+  global_tmp_root? : String = "/tmp",
 ) -> Json {
   let root = moonstat_normalize_suite_root(suite_root)
+  let global_tmp = moonstat_normalize_suite_root(global_tmp_root)
   let findings = []
-  for candidate in moonstat_suite_legacy_drift_candidates(root) {
-    let detected = @fsx.exists(@pathx.join(root, candidate.legacy_path))
+  for candidate in moonstat_suite_legacy_drift_candidates(root, global_tmp) {
+    let detected = @fsx.exists(candidate.probe_path)
     findings.push(
       moonstat_suite_drift_finding_json(
         candidate.product,
         candidate.legacy_path,
+        candidate.probe_path,
         candidate.canonical_path,
+        candidate.scope,
         candidate.reason,
         detected,
       ),
@@ -123,6 +129,7 @@ pub async fn moonstat_suite_drift_report_json(
     "suiteRoot": Json::string(root),
     "contractSource": Json::string("vectie/moonlib/moonsuite"),
     "role": Json::string("validator-reporter"),
+    "globalTmpRoot": Json::string(global_tmp),
     "canonical": moonstat_suite_canonical_paths_json(root),
     "findings": Json::array(findings),
     "summary": Json::object({
@@ -162,6 +169,28 @@ fn moonstat_suite_canonical_paths_json(root : String) -> Json {
     "moonstatHome": Json::string(@moonsuite.product_dir(root, "moonstat")),
     "moonclawHome": Json::string(@moonsuite.product_dir(root, "moonclaw")),
     "moontownHome": Json::string(@moonsuite.product_dir(root, "moontown")),
+    "moonroboHome": Json::string(@moonsuite.product_dir(root, "moonrobo")),
+    "moonroboGatewayCommands": Json::string(
+      @moonsuite.product_artifact(root, "moonrobo", "gateway-commands"),
+    ),
+    "moonroboRoboLoops": Json::string(
+      @moonsuite.product_artifact(root, "moonrobo", "robo-loops"),
+    ),
+    "moonroboProofSessions": Json::string(
+      @moonsuite.product_artifact(root, "moonrobo", "proof-sessions"),
+    ),
+    "moonroboSdkE1Snapshot": Json::string(
+      @pathx.join(
+        @moonsuite.product_tmp_dir(root, "moonrobo"),
+        "sdk-e1/snapshot.json",
+      ),
+    ),
+    "moonroboSdkE1Command": Json::string(
+      @pathx.join(
+        @moonsuite.product_tmp_dir(root, "moonrobo"),
+        "sdk-e1/command.json",
+      ),
+    ),
     "moonclawProviders": Json::string(
       @moonsuite.product_artifact(root, "moonclaw", "providers.json"),
     ),
@@ -177,46 +206,132 @@ fn moonstat_suite_canonical_paths_json(root : String) -> Json {
 ///|
 fn moonstat_suite_legacy_drift_candidates(
   root : String,
+  global_tmp_root : String,
 ) -> Array[SuiteLegacyDriftCandidate] {
   [
-    {
-      product: "moontown",
-      legacy_path: ".moontown",
-      canonical_path: @moonsuite.product_dir(root, "moontown"),
-      reason: "Moontown runtime state belongs under the MoonSuite product home.",
-    },
-    {
-      product: "moonclaw",
-      legacy_path: ".moonclaw",
-      canonical_path: @moonsuite.product_dir(root, "moonclaw"),
-      reason: "MoonClaw runtime state belongs under the MoonSuite product home.",
-    },
-    {
-      product: "moondesk",
-      legacy_path: ".moontown/moondesk-daemon",
-      canonical_path: @moonsuite.product_dir(root, "moondesk"),
-      reason: "Moondesk daemon state belongs under the Moondesk product home.",
-    },
-    {
-      product: "mooncode",
-      legacy_path: "moonclaw-jobs",
-      canonical_path: @moonsuite.product_artifact(root, "moonclaw", "jobs"),
-      reason: "MoonClaw jobs belong under the MoonClaw product home.",
-    },
-    {
-      product: "moonstat",
-      legacy_path: "moonstat",
-      canonical_path: @moonsuite.product_dir(root, "moonstat"),
-      reason: "MoonStat state belongs under the MoonStat product home.",
-    },
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moontown",
+      ".moontown",
+      @moonsuite.product_dir(root, "moontown"),
+      "Moontown runtime state belongs under the MoonSuite product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonclaw",
+      ".moonclaw",
+      @moonsuite.product_dir(root, "moonclaw"),
+      "MoonClaw runtime state belongs under the MoonSuite product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moondesk",
+      ".moontown/moondesk-daemon",
+      @moonsuite.product_dir(root, "moondesk"),
+      "Moondesk daemon state belongs under the Moondesk product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonclaw",
+      "moonclaw-jobs",
+      @moonsuite.product_artifact(root, "moonclaw", "jobs"),
+      "MoonClaw jobs belong under the MoonClaw product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonstat",
+      "moonstat",
+      @moonsuite.product_dir(root, "moonstat"),
+      "MoonStat state belongs under the MoonStat product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonrobo",
+      "runs/gateway-commands",
+      @moonsuite.product_artifact(root, "moonrobo", "gateway-commands"),
+      "MoonRobo gateway commands belong under the MoonRobo product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonrobo",
+      "runs/robo-loops",
+      @moonsuite.product_artifact(root, "moonrobo", "robo-loops"),
+      "MoonRobo loop artifacts belong under the MoonRobo product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonrobo",
+      "runs/proof-sessions",
+      @moonsuite.product_artifact(root, "moonrobo", "proof-sessions"),
+      "MoonRobo proof sessions belong under the MoonRobo product home.",
+    ),
+    moonstat_suite_global_tmp_drift_candidate(
+      global_tmp_root,
+      "moonrobo",
+      "moonrobo-sdk-e1-bridge-snapshot-test.json",
+      @pathx.join(
+        @moonsuite.product_tmp_dir(root, "moonrobo"),
+        "sdk-e1/snapshot.json",
+      ),
+      "MoonRobo SDK E1 snapshots belong under the suite product tmp home.",
+    ),
+    moonstat_suite_global_tmp_drift_candidate(
+      global_tmp_root,
+      "moonrobo",
+      "moonrobo-sdk-e1-bridge-command-test.json",
+      @pathx.join(
+        @moonsuite.product_tmp_dir(root, "moonrobo"),
+        "sdk-e1/command.json",
+      ),
+      "MoonRobo SDK E1 commands belong under the suite product tmp home.",
+    ),
   ]
+}
+
+///|
+fn moonstat_suite_root_drift_candidate(
+  root : String,
+  product : String,
+  legacy_path : String,
+  canonical_path : String,
+  reason : String,
+) -> SuiteLegacyDriftCandidate {
+  {
+    product,
+    legacy_path,
+    probe_path: @pathx.join(root, legacy_path),
+    canonical_path,
+    scope: "suite-root",
+    reason,
+  }
+}
+
+///|
+fn moonstat_suite_global_tmp_drift_candidate(
+  global_tmp_root : String,
+  product : String,
+  legacy_filename : String,
+  canonical_path : String,
+  reason : String,
+) -> SuiteLegacyDriftCandidate {
+  let probe_path = @pathx.join(global_tmp_root, legacy_filename)
+  {
+    product,
+    legacy_path: probe_path,
+    probe_path,
+    canonical_path,
+    scope: "global-tmp",
+    reason,
+  }
 }
 
 ///|
 fn moonstat_suite_drift_finding_json(
   product : String,
   legacy_path : String,
+  probe_path : String,
   canonical_path : String,
+  scope : String,
   reason : String,
   detected : Bool,
 ) -> Json {
@@ -225,7 +340,9 @@ fn moonstat_suite_drift_finding_json(
     "status": Json::string(if detected { "drift" } else { "clear" }),
     "detected": Json::boolean(detected),
     "legacyPath": Json::string(legacy_path),
+    "probePath": Json::string(probe_path),
     "canonicalPath": Json::string(canonical_path),
+    "scope": Json::string(scope),
     "source": Json::string("moonstat"),
     "contractSource": Json::string("vectie/moonlib/moonsuite"),
     "reason": Json::string(reason),

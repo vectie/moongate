@@ -120,7 +120,7 @@ pub fn moonstat_rabbita_shell_dom_ids() -> Array[String]
 
 pub fn moonstat_rabbita_shell_html(api_base? : String) -> String
 
-pub async fn moonstat_suite_drift_report_json(suite_root? : String) -> Json
+pub async fn moonstat_suite_drift_report_json(suite_root? : String, global_tmp_root? : String) -> Json
 
 pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
 
