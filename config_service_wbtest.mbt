@@ -1,8 +1,14 @@
 ///|
 test "config service owns settings and config blob mutations" {
   let config = ConfigService::new()
-  assert_eq(moon_app_config_dir(), ".moonsuite/products/moonstat")
-  assert_eq(moon_app_config_path(), ".moonsuite/products/moonstat/config.json")
+  let expected_app_config_dir = moon_app_config_dir_for_workspace_root(
+    moonstat_active_workspace_root(),
+  )
+  assert_eq(moon_app_config_dir(), expected_app_config_dir)
+  assert_eq(
+    moon_app_config_path(),
+    @pathx.join(expected_app_config_dir, "config.json"),
+  )
   config.save_settings_json(
     {
       "launchOnStartup": Json::boolean(true),

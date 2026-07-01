@@ -2341,6 +2341,17 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   let import_export_source = @fsx.read_file("import_export.mbt")
   let sync_source = @fsx.read_file("sync.mbt")
   let route_source = @fsx.read_file("gateway_config_routes.mbt")
+  let suite_root = "/tmp/moonstat-config-suite"
+  let book_root = @pathx.join(suite_root, "books/research-demo")
+  let app_config_dir = moon_app_config_dir_for_workspace_root(book_root)
+  assert_eq(
+    app_config_dir,
+    @pathx.join(suite_root, ".moonsuite/products/moonstat"),
+  )
+  assert_false(app_config_dir.contains("books/research-demo/.moonsuite"))
+  assert_false(
+    config_source.contains("@moonsuite.product_dir(\"\", \"moonstat\")"),
+  )
   let config_sources = misc_source +
     config_source +
     config_runtime_source +

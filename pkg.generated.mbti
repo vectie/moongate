@@ -44,9 +44,13 @@ pub fn default_gemini_dir() -> String
 
 pub fn default_moonstat_moonclaw_providers_file_path() -> String
 
+pub fn default_moonstat_moonclaw_providers_file_path_for_workspace_root(String) -> String
+
 pub fn default_moonstat_stats_dir() -> String
 
 pub fn default_moonstat_suite_status_path() -> String
+
+pub fn default_moonstat_suite_status_path_for_workspace_root(String) -> String
 
 pub fn default_opencode_data_dir() -> String
 
@@ -109,6 +113,8 @@ pub fn moonstat_lepusa_manifest_json(port? : Int) -> Json
 pub fn moonstat_models_from_json(Json) -> Result[Array[MoonstatModel], String]
 
 pub fn moonstat_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
+
+pub fn moonstat_product_home_for_workspace_root(String) -> String
 
 pub fn moonstat_rabbita_document_html(api_base? : String) -> String
 

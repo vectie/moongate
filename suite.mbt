@@ -13,17 +13,44 @@ priv struct SuiteLegacyDriftCandidate {
 
 ///|
 fn moonstat_moonclaw_providers_file() -> String {
-  @moonsuite.product_artifact("", "moonclaw", "providers.json")
+  moonstat_moonclaw_providers_file_for_workspace_root(
+    moonstat_active_workspace_root(),
+  )
+}
+
+///|
+fn moonstat_moonclaw_providers_file_for_workspace_root(root : String) -> String {
+  @moonsuite.product_artifact_for_workspace_root(
+    root, "moonclaw", "providers.json",
+  )
 }
 
 ///|
 fn moonstat_moonclaw_models_file() -> String {
-  @moonsuite.product_artifact("", "moonclaw", "models/models.json")
+  moonstat_moonclaw_models_file_for_workspace_root(
+    moonstat_active_workspace_root(),
+  )
+}
+
+///|
+fn moonstat_moonclaw_models_file_for_workspace_root(root : String) -> String {
+  @moonsuite.product_artifact_for_workspace_root(
+    root, "moonclaw", "models/models.json",
+  )
 }
 
 ///|
 fn moonstat_moonclaw_config_file() -> String {
-  @moonsuite.product_artifact("", "moonclaw", "config.json")
+  moonstat_moonclaw_config_file_for_workspace_root(
+    moonstat_active_workspace_root(),
+  )
+}
+
+///|
+fn moonstat_moonclaw_config_file_for_workspace_root(root : String) -> String {
+  @moonsuite.product_artifact_for_workspace_root(
+    root, "moonclaw", "config.json",
+  )
 }
 
 ///|
@@ -440,12 +467,39 @@ pub async fn write_moonstat_suite_status(
 
 ///|
 pub fn default_moonstat_suite_status_path() -> String {
-  @pathx.join(@moonsuite.state_dir(""), SUITE_STATUS_FILE)
+  default_moonstat_suite_status_path_for_workspace_root(
+    moonstat_active_workspace_root(),
+  )
+}
+
+///|
+pub fn default_moonstat_suite_status_path_for_workspace_root(
+  root : String,
+) -> String {
+  @pathx.join(
+    @moonsuite.state_dir(@moonsuite.suite_root_for_workspace_root(root)),
+    SUITE_STATUS_FILE,
+  )
 }
 
 ///|
 fn default_moonstat_dir() -> String {
-  @moonsuite.product_dir("", "moonstat")
+  moonstat_product_home_for_workspace_root(moonstat_active_workspace_root())
+}
+
+///|
+fn moonstat_active_workspace_root() -> String {
+  @os.cwd() catch {
+    _ => "."
+  }
+}
+
+///|
+pub fn moonstat_product_home_for_workspace_root(root : String) -> String {
+  @moonsuite.product_dir(
+    @moonsuite.suite_root_for_workspace_root(root),
+    "moonstat",
+  )
 }
 
 ///|
@@ -641,6 +695,12 @@ fn moonstat_suite_integrations_json(
   let moonclaw_models_file = moonstat_moonclaw_models_file()
   let moonclaw_config_file = moonstat_moonclaw_config_file()
   let moonclaw_providers_file = moonstat_moonclaw_providers_file()
+  let home_moonclaw_models_file = @moonsuite.product_artifact(
+    "~", "moonclaw", "models/models.json",
+  )
+  let home_moonclaw_config_file = @moonsuite.product_artifact(
+    "~", "moonclaw", "config.json",
+  )
   let moonclaw_providers_write_command = "moonstat suite write-moonclaw-providers --path \{moonclaw_providers_file}"
   Json::object({
     "moonclaw": Json::object({
@@ -654,15 +714,15 @@ fn moonstat_suite_integrations_json(
       ]),
       "moonclawModelsPathCandidates": Json::array([
         Json::string(moonclaw_models_file),
-        Json::string("~/\{moonclaw_models_file}"),
+        Json::string(home_moonclaw_models_file),
       ]),
       "moonclawProviderName": Json::string("moonstat"),
       "moonclawProviderModelId": Json::string(model),
       "moonclawProviderConfigPaths": Json::array([
         Json::string(moonclaw_models_file),
-        Json::string("~/\{moonclaw_models_file}"),
+        Json::string(home_moonclaw_models_file),
         Json::string(moonclaw_config_file),
-        Json::string("~/\{moonclaw_config_file}"),
+        Json::string(home_moonclaw_config_file),
       ]),
       "moonclawProvidersFileJson": moonclaw_providers_file_json(
         openai_base_url, model,
@@ -832,6 +892,13 @@ pub async fn write_moonstat_moonclaw_providers_file(
 ///|
 pub fn default_moonstat_moonclaw_providers_file_path() -> String {
   moonstat_moonclaw_providers_file()
+}
+
+///|
+pub fn default_moonstat_moonclaw_providers_file_path_for_workspace_root(
+  root : String,
+) -> String {
+  moonstat_moonclaw_providers_file_for_workspace_root(root)
 }
 
 ///|

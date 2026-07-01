@@ -40,7 +40,12 @@ fn moon_config_file_path(app : String) -> String {
 
 ///|
 fn moon_app_config_dir() -> String {
-  @moonsuite.product_dir("", "moonstat")
+  moon_app_config_dir_for_workspace_root(moonstat_active_workspace_root())
+}
+
+///|
+fn moon_app_config_dir_for_workspace_root(root : String) -> String {
+  moonstat_product_home_for_workspace_root(root)
 }
 
 ///|
