@@ -507,9 +507,9 @@ common-snippet, and environment routes use `/config/status`, `/config/dir`,
 `/config/env/delete`, and `/config/env/restore`; folder open and directory pick
 use `/config/folder/open` and `/files/directories/pick`. File-sourced env
 conflicts are backed up under
-`.moonsuite/backups`, removed from shell config files, and restored from that
-backup JSON; process environment conflicts remain non-destructive for Unix
-system entries. Snippets are kept in gateway memory.
+`.moonsuite/products/moonstat/backups`, removed from shell config files, and
+restored from that backup JSON; process environment conflicts remain
+non-destructive for Unix system entries. Snippets are kept in gateway memory.
 Settings and Claude plugin commands use `/settings...` routes plus the Claude
 plugin/onboarding routes.
 Moonstat keeps these settings in standalone gateway state, preserves hidden
