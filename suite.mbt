@@ -201,7 +201,7 @@ fn moonstat_suite_canonical_paths_json(root : String) -> Json {
       @moonsuite.product_artifact(root, "moonclaw", "config.json"),
     ),
     "mooncodeSessions": Json::string(
-      @moonsuite.product_artifact(root, "mooncode", "sessions"),
+      @moonsuite.product_artifact(root, "moonclaw", "mooncode/sessions"),
     ),
   })
 }
@@ -324,12 +324,12 @@ async fn moonstat_suite_book_drift_candidates(
       moonstat_suite_book_drift_candidate(
         book_root,
         book_id,
-        "mooncode",
+        "moonclaw",
         ".moonclaw/mooncode/sessions",
         @moonsuite.product_artifact_for_book_root(
-          book_root, "mooncode", "sessions",
+          book_root, "moonclaw", "mooncode/sessions",
         ),
-        "Book-local MoonCode sidecar sessions belong under the MoonCode product home.",
+        "Book-local MoonCode sidecar sessions belong under the MoonClaw product home.",
       ),
     )
   }

@@ -700,7 +700,9 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
     )
     assert_eq(
       canonical["mooncodeSessions"],
-      Json::string(@pathx.join(tmpdir, ".moonsuite/products/mooncode/sessions")),
+      Json::string(
+        @pathx.join(tmpdir, ".moonsuite/products/moonclaw/mooncode/sessions"),
+      ),
     )
     guard obj["findings"] is Array(findings) else {
       fail("expected drift findings")
@@ -831,12 +833,14 @@ async test "suite drift report flags book-local moonclaw and mooncode state" {
     guard session_finding is Object(session_obj) else {
       fail("expected session finding object")
     }
-    assert_eq(session_obj["product"], Json::string("mooncode"))
+    assert_eq(session_obj["product"], Json::string("moonclaw"))
     assert_eq(session_obj["status"], Json::string("drift"))
     assert_eq(session_obj["scope"], Json::string("book-root"))
     assert_eq(
       session_obj["canonicalPath"],
-      Json::string(@pathx.join(tmpdir, ".moonsuite/products/mooncode/sessions")),
+      Json::string(
+        @pathx.join(tmpdir, ".moonsuite/products/moonclaw/mooncode/sessions"),
+      ),
     )
   })
 }
