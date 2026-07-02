@@ -686,6 +686,10 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonchat")),
     )
     assert_eq(
+      canonical["moonvisHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonvis")),
+    )
+    assert_eq(
       canonical["moonclawProviders"],
       Json::string(
         @pathx.join(tmpdir, ".moonsuite/products/moonclaw/providers.json"),
@@ -777,6 +781,7 @@ async test "suite drift report flags legacy product homes when present" {
     @fsx.make_directory(@pathx.join(tmpdir, ".moontown"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonclaw"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonchat"))
+    @fsx.make_directory(@pathx.join(tmpdir, ".moonvis"))
     let report = moonstat_suite_drift_report_json(
       suite_root=tmpdir,
       global_tmp_root=global_tmp,
@@ -785,11 +790,11 @@ async test "suite drift report flags legacy product homes when present" {
     guard obj["summary"] is Object(summary) else {
       fail("expected drift summary")
     }
-    assert_eq(summary["detected"], Json::number(3.0))
+    assert_eq(summary["detected"], Json::number(4.0))
     guard obj["findings"] is Array(findings) else {
       fail("expected drift findings")
     }
-    for product in ["moontown", "moonclaw", "moonchat"] {
+    for product in ["moontown", "moonclaw", "moonchat", "moonvis"] {
       guard suite_finding_by_product(findings, product) is Some(finding) else {
         fail("expected \{product} finding")
       }
@@ -812,6 +817,16 @@ async test "suite drift report flags legacy product homes when present" {
     assert_eq(
       moonchat_obj["canonicalPath"],
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonchat")),
+    )
+    guard suite_finding_by_legacy_path(findings, ".moonvis") is Some(moonvis) else {
+      fail("expected moonvis legacy home finding")
+    }
+    guard moonvis is Object(moonvis_obj) else {
+      fail("expected moonvis finding object")
+    }
+    assert_eq(
+      moonvis_obj["canonicalPath"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonvis")),
     )
   })
 }
