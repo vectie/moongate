@@ -203,6 +203,10 @@ fn moonstat_suite_canonical_paths_json(root : String) -> Json {
     "books": Json::string(@moonsuite.books_root(root)),
     "tmp": Json::string(@moonsuite.tmp_root(root)),
     "productRegistry": Json::string(@moonsuite.product_registry_path(root)),
+    "moondeskHome": Json::string(moonstat_product_state_path(root, "moondesk")),
+    "moonbookHome": Json::string(moonstat_product_state_path(root, "moonbook")),
+    "moonwikiHome": Json::string(moonstat_product_state_path(root, "moonwiki")),
+    "mooncodeHome": Json::string(moonstat_product_state_path(root, "mooncode")),
     "moonstatHome": Json::string(moonstat_product_state_path(root, "moonstat")),
     "moonclawHome": Json::string(moonstat_product_state_path(root, "moonclaw")),
     "moontownHome": Json::string(moonstat_product_state_path(root, "moontown")),
@@ -211,6 +215,11 @@ fn moonstat_suite_canonical_paths_json(root : String) -> Json {
     "moonmoonHome": Json::string(moonstat_product_state_path(root, "moonmoon")),
     "moonchatHome": Json::string(moonstat_product_state_path(root, "moonchat")),
     "moonvisHome": Json::string(moonstat_product_state_path(root, "moonvis")),
+    "bookkeeperHome": Json::string(
+      moonstat_product_state_path(root, "bookkeeper"),
+    ),
+    "lepusaHome": Json::string(moonstat_product_state_path(root, "lepusa")),
+    "rabbitaHome": Json::string(moonstat_product_state_path(root, "rabbita")),
     "moonroboGatewayCommands": Json::string(
       @moonsuite.product_artifact(root, "moonrobo", "gateway-commands"),
     ),

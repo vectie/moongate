@@ -678,6 +678,22 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       fail("expected canonical paths")
     }
     assert_eq(
+      canonical["moondeskHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moondesk")),
+    )
+    assert_eq(
+      canonical["moonbookHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonbook")),
+    )
+    assert_eq(
+      canonical["moonwikiHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonwiki")),
+    )
+    assert_eq(
+      canonical["mooncodeHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/mooncode")),
+    )
+    assert_eq(
       canonical["moonstatHome"],
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonstat")),
     )
@@ -696,6 +712,18 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
     assert_eq(
       canonical["moonvisHome"],
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonvis")),
+    )
+    assert_eq(
+      canonical["bookkeeperHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/bookkeeper")),
+    )
+    assert_eq(
+      canonical["lepusaHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/lepusa")),
+    )
+    assert_eq(
+      canonical["rabbitaHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/rabbita")),
     )
     assert_eq(
       canonical["moonclawProviders"],
