@@ -1,8 +1,9 @@
 ///|
 fn moon_openclaw_workspace_dir() -> String {
-  @pathx.join(
-    @pathx.join(@pathx.join(moon_home_dir(), ".moonsuite"), "openclaw"),
-    "workspace",
+  @moonsuite.product_artifact_for_workspace_root(
+    moonstat_active_workspace_root(),
+    "moonstat",
+    "openclaw/workspace",
   )
 }
 

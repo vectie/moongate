@@ -9602,6 +9602,17 @@ test "gemini native response converts to anthropic message with usage" {
 }
 
 ///|
+test "openclaw workspace is moonstat product-owned state" {
+  let workspace = moon_openclaw_workspace_dir()
+  let product_home = moonstat_product_home_for_workspace_root(
+    moonstat_active_workspace_root(),
+  )
+  assert_eq(workspace, @pathx.join(product_home, "openclaw/workspace"))
+  assert_eq(moon_openclaw_memory_dir(), @pathx.join(workspace, "memory"))
+  assert_false(workspace.contains("/.moonsuite/openclaw/workspace"))
+}
+
+///|
 test "moonstat config helpers require canonical suite app paths" {
   assert_eq(moon_normalize_app_type("claude-desktop"), "claude-desktop")
   assert_eq(moon_normalize_app_type("opencode"), "opencode")

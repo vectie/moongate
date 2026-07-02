@@ -519,7 +519,7 @@ as deterministic local state changes instead of mutating the desktop OS.
 OpenClaw workspace commands are exposed as `/workspace/memory...` and
 `/workspace/files...` routes. Standalone mode stores the same whitelisted
 workspace files and `memory/YYYY-MM-DD.md` daily memory files under
-`~/.moonsuite/openclaw/workspace`, returns Moonstat camelCase metadata, and keeps
+`.moonsuite/products/moonstat/openclaw/workspace`, returns Moonstat camelCase metadata, and keeps
 directory opening non-destructive while still ensuring the target directory
 exists.
 MCP and prompt commands are exposed through `/mcp/...` and `/prompts...`
