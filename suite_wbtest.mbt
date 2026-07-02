@@ -682,6 +682,10 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonstat")),
     )
     assert_eq(
+      canonical["moonchatHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonchat")),
+    )
+    assert_eq(
       canonical["moonclawProviders"],
       Json::string(
         @pathx.join(tmpdir, ".moonsuite/products/moonclaw/providers.json"),
@@ -772,6 +776,7 @@ async test "suite drift report flags legacy product homes when present" {
     let global_tmp = @pathx.join(tmpdir, "global-tmp")
     @fsx.make_directory(@pathx.join(tmpdir, ".moontown"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonclaw"))
+    @fsx.make_directory(@pathx.join(tmpdir, ".moonchat"))
     let report = moonstat_suite_drift_report_json(
       suite_root=tmpdir,
       global_tmp_root=global_tmp,
@@ -780,11 +785,11 @@ async test "suite drift report flags legacy product homes when present" {
     guard obj["summary"] is Object(summary) else {
       fail("expected drift summary")
     }
-    assert_eq(summary["detected"], Json::number(2.0))
+    assert_eq(summary["detected"], Json::number(3.0))
     guard obj["findings"] is Array(findings) else {
       fail("expected drift findings")
     }
-    for product in ["moontown", "moonclaw"] {
+    for product in ["moontown", "moonclaw", "moonchat"] {
       guard suite_finding_by_product(findings, product) is Some(finding) else {
         fail("expected \{product} finding")
       }
@@ -798,6 +803,16 @@ async test "suite drift report flags legacy product homes when present" {
         Json::string("vectie/moonlib/moonsuite"),
       )
     }
+    guard suite_finding_by_legacy_path(findings, ".moonchat") is Some(moonchat) else {
+      fail("expected moonchat legacy home finding")
+    }
+    guard moonchat is Object(moonchat_obj) else {
+      fail("expected moonchat finding object")
+    }
+    assert_eq(
+      moonchat_obj["canonicalPath"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonchat")),
+    )
   })
 }
 
