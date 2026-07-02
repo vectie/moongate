@@ -1,0 +1,17 @@
+///|
+test "codex credentials path is moonstat product-owned state" {
+  let path = get_credentials_path()
+  let expected = @moonsuite.product_artifact_for_workspace_root(
+    codex_active_workspace_root(),
+    "moonstat",
+    "auth/codex-credentials.json",
+  )
+  assert_eq(path, expected)
+  assert_false(path.contains("/.moonsuite/codex-credentials.json"))
+}
+
+///|
+test "codex cli auth remains external source of truth" {
+  let path = get_codex_auth_path() catch { _ => "" }
+  assert_true(path == "" || path.has_suffix("/.codex/auth.json"))
+}

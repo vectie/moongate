@@ -8,7 +8,7 @@ const COPILOT_GHES_CLIENT_ID = "Ov23li8tweQw6odWQebz"
 const COPILOT_DEFAULT_DOMAIN = "github.com"
 
 ///|
-const COPILOT_CREDENTIALS_FILE = ".moonsuite/copilot-credentials.json"
+const COPILOT_CREDENTIALS_ARTIFACT = "auth/copilot-credentials.json"
 
 ///|
 const COPILOT_EDITOR_VERSION = "vscode/1.110.1"
@@ -52,15 +52,12 @@ priv struct CopilotDeviceCodeResponse {
 } derive(ToJson)
 
 ///|
-fn copilot_home() -> String raise Error {
-  @os.home() catch {
-    err => raise CopilotAuthError("Failed to get home directory: \{err}")
-  }
-}
-
-///|
-fn copilot_credentials_path() -> String raise Error {
-  @pathx.join(copilot_home(), COPILOT_CREDENTIALS_FILE)
+fn copilot_credentials_path() -> String {
+  @moonsuite.product_artifact_for_workspace_root(
+    moonstat_active_workspace_root(),
+    "moonstat",
+    COPILOT_CREDENTIALS_ARTIFACT,
+  )
 }
 
 ///|

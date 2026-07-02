@@ -255,3 +255,15 @@ async test "remove gateway enterprise config keeps unrelated enterprise fields" 
     })
   })
 }
+
+///|
+test "claude desktop gateway token is moonstat product-owned state" {
+  let path = gateway_token_path()
+  let expected = @moonsuite.product_artifact_for_workspace_root(
+    claude_desktop_active_workspace_root(),
+    "moonstat",
+    "auth/claude-desktop-gateway-token",
+  )
+  assert_eq(path, expected)
+  assert_false(path.contains("/.moonsuite/claude_desktop_gateway_token"))
+}

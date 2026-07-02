@@ -565,9 +565,9 @@ model-list command against `chatgpt.com/backend-api/codex/models`, returning the
 same fetched model array shape as provider model fetch. The `/auth/...` endpoints
 manage `codex_oauth`: status/list expose the local
 Moonstat Codex account, start/poll use OpenAI's device-code flow, and
-remove/logout clear `~/.moonsuite/codex-credentials.json`. For
+remove/logout clear `.moonsuite/products/moonstat/auth/codex-credentials.json`. For
 `github_copilot`, the same `/auth/...` surface delegates to the Copilot
-device-code flow and `~/.moonsuite/copilot-credentials.json`; the dedicated
+device-code flow and `.moonsuite/products/moonstat/auth/copilot-credentials.json`; the dedicated
 `/copilot/...` endpoints expose Copilot account, token, model, and usage
 commands against GitHub/Copilot APIs. `/usage/coding-plan-quota`
 queries coding-plan quota for Kimi, Zhipu CN/EN, MiniMax CN/EN,
@@ -583,7 +583,7 @@ external database dependency.
 For Claude Desktop standalone setup, run
 `moonstat claude-desktop install --port 15721`. Moonstat writes the same gateway
 profile shape under Claude Desktop's `Claude-3p/configLibrary`, stores a
-local token at `~/.moonsuite/claude_desktop_gateway_token`, and the gateway reads
+local token at `.moonsuite/products/moonstat/auth/claude-desktop-gateway-token`, and the gateway reads
 that token automatically. Use `moonstat claude-desktop uninstall` to restore the
 profile mode.
 

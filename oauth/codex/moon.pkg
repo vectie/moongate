@@ -2,6 +2,7 @@ import {
   "vectie/moonlib/rand",
   "vectie/moonlib/os",
   "vectie/moonlib/pathx",
+  "vectie/moonlib/moonsuite",
   "vectie/moonlib/fsx",
   "vectie/moonstat/internal/httpx",
   "vectie/moonlib/spawn",

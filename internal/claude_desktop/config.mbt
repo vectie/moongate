@@ -11,7 +11,7 @@ const CONFIG_FILE = "claude_desktop_config.json"
 const CONFIG_LIBRARY_DIR = "configLibrary"
 
 ///|
-const TOKEN_FILE = "claude_desktop_gateway_token"
+const TOKEN_ARTIFACT = "auth/claude-desktop-gateway-token"
 
 ///|
 pub struct ClaudeDesktopInstall {
@@ -232,9 +232,9 @@ async fn gateway_token_from_file() -> String? {
 
 ///|
 async fn write_gateway_token(token : String) -> Unit {
-  let dir = moonstat_dir()
-  @fsx.make_directory(dir, recursive=true, exists_ok=true)
-  @fsx.write_to_file(gateway_token_path(), token + "\n", create=0o600)
+  let path = gateway_token_path()
+  @fsx.make_directory(@pathx.dirname(path), recursive=true, exists_ok=true)
+  @fsx.write_to_file(path, token + "\n", create=0o600)
 }
 
 ///|
@@ -549,13 +549,19 @@ fn claude_desktop_paths() -> ClaudeDesktopPaths {
 }
 
 ///|
-fn moonstat_dir() -> String {
-  @pathx.join(home_dir(), ".moonsuite")
+fn claude_desktop_active_workspace_root() -> String {
+  @os.cwd() catch {
+    _ => "."
+  }
 }
 
 ///|
 fn gateway_token_path() -> String {
-  @pathx.join(moonstat_dir(), TOKEN_FILE)
+  @moonsuite.product_artifact_for_workspace_root(
+    claude_desktop_active_workspace_root(),
+    "moonstat",
+    TOKEN_ARTIFACT,
+  )
 }
 
 ///|

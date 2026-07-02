@@ -9613,6 +9613,18 @@ test "openclaw workspace is moonstat product-owned state" {
 }
 
 ///|
+test "copilot credentials are moonstat product-owned state" {
+  let path = copilot_credentials_path()
+  let expected = @moonsuite.product_artifact_for_workspace_root(
+    moonstat_active_workspace_root(),
+    "moonstat",
+    "auth/copilot-credentials.json",
+  )
+  assert_eq(path, expected)
+  assert_false(path.contains("/.moonsuite/copilot-credentials.json"))
+}
+
+///|
 test "moonstat config helpers require canonical suite app paths" {
   assert_eq(moon_normalize_app_type("claude-desktop"), "claude-desktop")
   assert_eq(moon_normalize_app_type("opencode"), "opencode")

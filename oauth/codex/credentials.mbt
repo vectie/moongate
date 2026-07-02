@@ -83,8 +83,19 @@ fn get_home() -> String raise Error {
 }
 
 ///|
-fn get_credentials_path() -> String raise Error {
-  @pathx.join(get_home(), CREDENTIALS_FILE)
+fn codex_active_workspace_root() -> String {
+  @os.cwd() catch {
+    _ => "."
+  }
+}
+
+///|
+fn get_credentials_path() -> String {
+  @moonsuite.product_artifact_for_workspace_root(
+    codex_active_workspace_root(),
+    "moonstat",
+    CREDENTIALS_ARTIFACT,
+  )
 }
 
 ///|
