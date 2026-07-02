@@ -682,6 +682,14 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonstat")),
     )
     assert_eq(
+      canonical["moonfishHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonfish")),
+    )
+    assert_eq(
+      canonical["moonmoonHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonmoon")),
+    )
+    assert_eq(
       canonical["moonchatHome"],
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonchat")),
     )
@@ -780,6 +788,8 @@ async test "suite drift report flags legacy product homes when present" {
     let global_tmp = @pathx.join(tmpdir, "global-tmp")
     @fsx.make_directory(@pathx.join(tmpdir, ".moontown"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonclaw"))
+    @fsx.make_directory(@pathx.join(tmpdir, ".moonfish"))
+    @fsx.make_directory(@pathx.join(tmpdir, ".moonmoon"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonchat"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moonvis"))
     let report = moonstat_suite_drift_report_json(
@@ -790,11 +800,14 @@ async test "suite drift report flags legacy product homes when present" {
     guard obj["summary"] is Object(summary) else {
       fail("expected drift summary")
     }
-    assert_eq(summary["detected"], Json::number(4.0))
+    assert_eq(summary["detected"], Json::number(6.0))
     guard obj["findings"] is Array(findings) else {
       fail("expected drift findings")
     }
-    for product in ["moontown", "moonclaw", "moonchat", "moonvis"] {
+    for
+      product in [
+        "moontown", "moonclaw", "moonfish", "moonmoon", "moonchat", "moonvis",
+      ] {
       guard suite_finding_by_product(findings, product) is Some(finding) else {
         fail("expected \{product} finding")
       }
@@ -817,6 +830,26 @@ async test "suite drift report flags legacy product homes when present" {
     assert_eq(
       moonchat_obj["canonicalPath"],
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonchat")),
+    )
+    guard suite_finding_by_legacy_path(findings, ".moonfish") is Some(moonfish) else {
+      fail("expected moonfish legacy home finding")
+    }
+    guard moonfish is Object(moonfish_obj) else {
+      fail("expected moonfish finding object")
+    }
+    assert_eq(
+      moonfish_obj["canonicalPath"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonfish")),
+    )
+    guard suite_finding_by_legacy_path(findings, ".moonmoon") is Some(moonmoon) else {
+      fail("expected moonmoon legacy home finding")
+    }
+    guard moonmoon is Object(moonmoon_obj) else {
+      fail("expected moonmoon finding object")
+    }
+    assert_eq(
+      moonmoon_obj["canonicalPath"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonmoon")),
     )
     guard suite_finding_by_legacy_path(findings, ".moonvis") is Some(moonvis) else {
       fail("expected moonvis legacy home finding")

@@ -207,6 +207,8 @@ fn moonstat_suite_canonical_paths_json(root : String) -> Json {
     "moonclawHome": Json::string(moonstat_product_state_path(root, "moonclaw")),
     "moontownHome": Json::string(moonstat_product_state_path(root, "moontown")),
     "moonroboHome": Json::string(moonstat_product_state_path(root, "moonrobo")),
+    "moonfishHome": Json::string(moonstat_product_state_path(root, "moonfish")),
+    "moonmoonHome": Json::string(moonstat_product_state_path(root, "moonmoon")),
     "moonchatHome": Json::string(moonstat_product_state_path(root, "moonchat")),
     "moonvisHome": Json::string(moonstat_product_state_path(root, "moonvis")),
     "moonroboGatewayCommands": Json::string(
@@ -285,6 +287,20 @@ async fn moonstat_suite_legacy_drift_candidates(
       "moonstat",
       moonstat_product_state_path(root, "moonstat"),
       "MoonStat state belongs under the MoonStat product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonfish",
+      ".moonfish",
+      moonstat_product_state_path(root, "moonfish"),
+      "MoonFish runtime state belongs under the MoonSuite product home.",
+    ),
+    moonstat_suite_root_drift_candidate(
+      root,
+      "moonmoon",
+      ".moonmoon",
+      moonstat_product_state_path(root, "moonmoon"),
+      "MoonMoon runtime state belongs under the MoonSuite product home.",
     ),
     moonstat_suite_root_drift_candidate(
       root,
