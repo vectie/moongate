@@ -37,6 +37,35 @@ checkouts. Moonstat imports published Rabbita (`moonbit-community/rabbita`) and
 published Lepusa (`vectie/lepusa`) releases in `moon.mod`; keep `../rba` and
 `../lepusa` only as reference/test worktrees for reading upstream behavior.
 
+## Product Scope And Boundary
+
+Moonstat owns observability and local model/proxy integration:
+
+- localhost gateway and provider routing
+- framework compatibility for Codex/OpenAI, Claude/Anthropic, Gemini,
+  OpenCode, OpenClaw, Hermes, Claude Desktop, GitHub Copilot, and suite
+  adapters
+- usage logs, summaries, pricing, quota, request detail, and session sync
+- provider CRUD, failover, circuit breakers, stream checks, and resilience
+  reports
+- suite discovery/status projection and contract-drift reporting
+- Rabbita/Lepusa dashboard shell for local operator control
+
+Moonstat does not own shared filesystem path construction, durable MoonBook
+truth, MoonClaw execution, Moontown scheduling, or Moondesk desktop browsing.
+MoonLib owns layout contracts; Moonstat validates and reports their observed
+state.
+
+## Implementation Guidance
+
+Keep framework support additive. Cleanup should remove stale aliases and dead
+compatibility shims, not active provider integrations. Large files can be split
+when a feature test exposes friction, but splitting should preserve the public
+route and CLI contracts.
+
+The frontend shell should keep reading generated MoonBit route/section
+contracts instead of growing separate JavaScript navigation lists.
+
 ## Run
 
 ```sh
@@ -159,6 +188,24 @@ projects:
 (cd ../moontown && moon test src/plugin/moonstat --target native --deny-warn)
 (cd ../moonbook && moon test plugins/moonstat --target native --deny-warn)
 ```
+
+## Worth Noticing
+
+- Provider credentials and gateway logs must stay redacted.
+- Streaming bugs are usually integration bugs; test first byte, idle timeout,
+  SSE conversion, cancellation, and fallback behavior together.
+- Suite status should report drift from MoonLib contracts, not define new path
+  contracts.
+- Desktop manifests should use published Lepusa/Rabbita packages.
+
+## Future Plan
+
+- Finish feature testing across all active framework integrations.
+- Split large gateway/usage/provider files after tests make the boundaries
+  clear.
+- Harden clean install, auth, provider import, and dashboard setup flows.
+- Expand suite-drift reports without making Moonstat a required dependency for
+  product path construction.
 
 Provider model discovery probes `/v1/models`-style catalogs and returns the
 Moonstat frontend wire shape, `[{ "id": "...", "ownedBy": "..." }]`:
