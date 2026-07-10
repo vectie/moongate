@@ -37,7 +37,8 @@ Baseline observed on 2026-07-10:
   test state must be isolated under a temporary product home.
 - The only GitHub workflow prepares the Copilot coding agent. It does not run
   Moonstat checks or tests on ordinary pushes and pull requests.
-- The inspected CCS baseline is `98ccde00`. Recent CCS changes include a
+- The inspected canonical CCS baseline is `98ccde00`; the configured fork and
+  canonical `main` matched on 2026-07-10. Recent CCS changes include a
   persisted dashboard refresh interval and Zhipu team-plan quota support.
   Moonstat already has substantial 1M-context backend support.
 
@@ -255,14 +256,15 @@ moving target to control Moonstat development.
 
 Work:
 
-- Add a CCS parity ledger that records the reviewed CCS commit, feature area,
+- Maintain `CCS_PARITY.md` as the ledger of reviewed CCS commit, feature area,
   Moonstat implementation, tests, intentional differences, and status.
 - Compare behavior, configuration effects, failure modes, and persisted data,
   not only route or command names.
 - Review new CCS commits on a regular cadence and classify each as required,
   intentionally different, UI-deferred, or obsolete compatibility.
-- Address the currently observed gaps: persisted dashboard refresh interval and
-  Zhipu team-plan quota queries.
+- Persisted dashboard refresh interval, Zhipu team-plan quota, and transient
+  quota keep-last-good behavior are implemented. Next address structured Codex
+  TOML handling and per-app MCP import failure reporting.
 - Confirm current 1M-context support across primary and fallback Claude model
   routes; leave only the Lepusa presentation control deferred.
 - Keep provider presets generated or mechanically comparable so additions and

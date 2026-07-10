@@ -559,10 +559,13 @@ restored from that backup JSON; process environment conflicts remain
 non-destructive for Unix system entries. Snippets are kept in gateway memory.
 Settings and Claude plugin commands use `/settings...` routes plus the Claude
 plugin/onboarding routes.
-Moonstat keeps these settings in standalone gateway state, preserves hidden
+Moonstat atomically persists these settings to
+`.moonsuite/products/moonstat/config.json`, preserves hidden
 WebDAV/S3 secrets during `save_settings`, validates optimizer
 `cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
 as deterministic local state changes instead of mutating the desktop OS.
+`usageDashboardRefreshIntervalMs` accepts `0`, `5000`, `10000`, `30000`, or
+`60000`; `0` disables automatic dashboard refresh.
 OpenClaw workspace commands are exposed as `/workspace/memory...` and
 `/workspace/files...` routes. Standalone mode stores the same whitelisted
 workspace files and `memory/YYYY-MM-DD.md` daily memory files under
@@ -586,9 +589,10 @@ URL normalization, newest-first listing, and best-effort last-used updates.
 `/usage/logs` returns
 recent `proxy_request_logs` rows with Moonstat provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.
-Gateway startup loads file-backed usage state from
-`.moonsuite/products/moonstat/proxy_request_logs.jsonl` and session sync offsets from
-`.moonsuite/products/moonstat/session_log_sync.jsonl`; editable model pricing is stored
+Gateway startup loads the versioned, atomically replaced usage snapshot from
+`.moonsuite/products/moonstat/usage_store_v1.json`. Existing request-log,
+daily-rollup, and session-sync JSONL files remain migration inputs; editable
+model pricing is stored
 in `.moonsuite/products/moonstat/model_pricing.jsonl`. Manual `moonstat usage sync` saves usage
 state after importing Claude, Codex, Gemini, and OpenCode-compatible session logs.
 OpenCode sync reads `opencode.db` directly when `sqlite3` is available, honoring
@@ -619,7 +623,19 @@ device-code flow and `.moonsuite/products/moonstat/auth/copilot-credentials.json
 commands against GitHub/Copilot APIs. `/usage/coding-plan-quota`
 queries coding-plan quota for Kimi, Zhipu CN/EN, MiniMax CN/EN,
 and ZenMux-compatible quota URLs, returning the same `SubscriptionQuota` tier
-names and fields.
+names and fields. Zhipu Team Plan uses `codingPlanProvider=zhipu_team` plus
+`teamOrganizationId` and `teamProjectId`; Moonstat sends `type=2` and the
+`bigmodel-organization` and `bigmodel-project` headers. Quota queries retain a
+recent successful value for up to ten minutes across network errors, timeouts,
+HTTP 429, and HTTP 5xx responses. Authentication and parse failures remain
+immediate.
+
+Privileged management routes require the mode-`0600` control token at
+`.moonsuite/products/moonstat/control-token`. `MoonstatClient` reads it
+automatically for local operations or accepts `control_token`; direct callers
+can send `X-Moonstat-Control-Token`. Inference routes retain their OpenAI,
+Anthropic, Gemini, OpenClaw, and Claude Desktop authentication semantics. Host
+and Origin checks reject cross-origin browser access and DNS rebinding.
 
 Claude Desktop gateway routes are open by default for standalone local use. Set
 `MOONSTAT_CLAUDE_DESKTOP_TOKEN` or `CLAUDE_DESKTOP_GATEWAY_TOKEN` to require
