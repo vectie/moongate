@@ -275,12 +275,14 @@ fn ProxyService::active_provider_target(
 async fn ProxyService::handle_models(
   _self : ProxyService,
   w : @httpx.ResponseWriter,
+  model : String,
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(
     moon_models_endpoint_response_json(
       @codex_config.active_model_catalog_json(),
+      fallback_model=model,
     ).stringify(),
   )
   w.flush()

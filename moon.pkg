@@ -4,6 +4,7 @@ import {
   "vectie/moonstat/suite",
   "vectie/moonlib/fsx",
   "vectie/moonlib/moonsuite",
+  "vectie/moonlib/pipeline",
   "vectie/moonstat/internal/claude_desktop",
   "vectie/moonstat/internal/codex_config",
   "moonbitlang/core/json",

@@ -2798,7 +2798,7 @@ async test "provider config endpoints are owned by proxy service" {
   assert_true(core_source.contains("self.auth.load_startup_credentials("))
   assert_false(core_source.contains("@codex.load_credentials()"))
   assert_true(core_source.contains("self.proxy.register_inference_routes("))
-  assert_true(route_source.contains("self.handle_models(w)"))
+  assert_true(route_source.contains("self.handle_models(w, model)"))
   assert_true(route_source.contains("self.handle_gemini(usage, r, w)"))
   assert_true(route_source.contains("self.handle_messages("))
   assert_true(route_source.contains("self.handle_chat_completions("))

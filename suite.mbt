@@ -141,6 +141,8 @@ pub fn moonstat_suite_status_json(
 ) -> Json {
   let status_json = {
     "contract": Json::string(@suite.status_contract()),
+    "modelRouteContract": Json::string(@pipeline.ModelRoute.id()),
+    "runReceiptContract": Json::string(@pipeline.RunReceipt.id()),
     "service": Json::string(@suite.service_name()),
     "status": Json::string(status),
     "ready": Json::boolean(ready),

@@ -307,7 +307,10 @@ async fn print_cli_json_result(
   let logger = @pino.logger("moonstat", @pino.Transport::console())
   match result {
     Ok(body) => println(body.stringify())
-    Err(err) => logger.error("\{label} failed: \{err}")
+    Err(err) => {
+      logger.error("\{label} failed: \{err}")
+      @os.exit(1)
+    }
   }
 }
 

@@ -218,10 +218,12 @@ pub struct MoonstatClient {
   control_token : String?
   user_agent : String?
 }
+pub async fn MoonstatClient::delete_json(Self, String) -> Result[Json, String]
 pub async fn MoonstatClient::discover(path? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
 pub fn MoonstatClient::endpoint(Self, String) -> String
 pub fn MoonstatClient::from_host(host? : String, port? : Int, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
 pub fn MoonstatClient::from_suite_status(Json, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self?
+pub async fn MoonstatClient::get_json(Self, String) -> Result[Json, String]
 pub async fn MoonstatClient::health(Self) -> Result[Json, String]
 pub fn MoonstatClient::health_url(Self) -> String
 pub async fn MoonstatClient::metrics(Self) -> Result[String, String]
@@ -230,6 +232,7 @@ pub async fn MoonstatClient::model_catalog(Self) -> Result[Array[MoonstatModel],
 pub async fn MoonstatClient::models(Self) -> Result[Json, String]
 pub fn MoonstatClient::models_url(Self) -> String
 pub fn MoonstatClient::new(base_url? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
+pub async fn MoonstatClient::post_json(Self, String, Json) -> Result[Json, String]
 pub async fn MoonstatClient::proxy_add_failover_queue(Self, String, String) -> Result[Json, String]
 pub fn MoonstatClient::proxy_add_failover_queue_url(Self, String, String) -> String
 pub async fn MoonstatClient::proxy_app_config(Self, String) -> Result[Json, String]

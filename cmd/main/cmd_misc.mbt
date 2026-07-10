@@ -1319,21 +1319,7 @@ async fn check_json_endpoint(
   path : String,
   label : String,
 ) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  try {
-    let client = @http.Client::Client(url, headers={})
-    defer client.close()
-    let response = client.get(path)
-    if response.code == 200 {
-      let body = client.read_all().text()
-      println(body)
-    } else {
-      logger.error("\{label} check failed: \{response.code}")
-    }
-  } catch {
-    err => logger.error("\{label} check failed: \{err}")
-  }
+  print_cli_json_result(label, cli_moonstat_client(args).get_json(path))
 }
 
 ///|
@@ -1342,21 +1328,7 @@ async fn check_json_post_endpoint(
   path : String,
   label : String,
 ) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  try {
-    let client = @http.Client::Client(url, headers={})
-    defer client.close()
-    let response = client.post(path, "{}")
-    if response.code == 200 {
-      let body = client.read_all().text()
-      println(body)
-    } else {
-      logger.error("\{label} update failed: \{response.code}")
-    }
-  } catch {
-    err => logger.error("\{label} update failed: \{err}")
-  }
+  print_cli_json_result(label, cli_moonstat_client(args).post_json(path, {}))
 }
 
 ///|
@@ -1366,23 +1338,17 @@ async fn post_json_body_endpoint(
   body : String,
   label : String,
 ) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  try {
-    let client = @http.Client::Client(url, headers={
-      "Content-Type": "application/json",
-    })
-    defer client.close()
-    let response = client.post(path, body)
-    if response.code == 200 {
-      let body = client.read_all().text()
-      println(body)
-    } else {
-      logger.error("\{label} update failed: \{response.code}")
+  let request = @json.parse(body) catch {
+    err => {
+      let logger = @pino.logger("moonstat", @pino.Transport::console())
+      logger.error("\{label} update failed: invalid request JSON: \{err}")
+      @os.exit(1)
     }
-  } catch {
-    err => logger.error("\{label} update failed: \{err}")
   }
+  print_cli_json_result(
+    label,
+    cli_moonstat_client(args).post_json(path, request),
+  )
 }
 
 ///|
@@ -1391,22 +1357,7 @@ async fn check_json_delete_endpoint(
   path : String,
   label : String,
 ) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  try {
-    let client = @http.Client::Client(url, headers={})
-    defer client.close()
-    client.request(Delete, path)
-    let response = client.end_request()
-    let body = client.read_all().text()
-    if response.code == 200 {
-      println(body)
-    } else {
-      logger.error("\{label} delete failed: \{response.code} \{body}")
-    }
-  } catch {
-    err => logger.error("\{label} delete failed: \{err}")
-  }
+  print_cli_json_result(label, cli_moonstat_client(args).delete_json(path))
 }
 
 ///|

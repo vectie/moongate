@@ -212,6 +212,11 @@ fn codex_model_catalog_json(model : String) -> Json {
 }
 
 ///|
+pub fn model_catalog_json(model : String) -> Json {
+  codex_model_catalog_json(normalized_model(model))
+}
+
+///|
 priv struct CodexCatalogModelSpec {
   model : String
   display_name : String

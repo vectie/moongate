@@ -6,6 +6,8 @@ pub async fn active_model_catalog_json() -> Json?
 
 pub async fn install_proxy_config(String, Int, String) -> Result[CodexConfigInstall, String]
 
+pub fn model_catalog_json(String) -> Json
+
 pub async fn status() -> CodexConfigStatus
 
 pub async fn uninstall_proxy_config() -> Result[Unit, String]

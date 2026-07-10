@@ -13,6 +13,14 @@ async fn MoonstatClient::get_json_path(
 }
 
 ///|
+pub async fn MoonstatClient::get_json(
+  self : MoonstatClient,
+  path : String,
+) -> Result[Json, String] {
+  self.get_json_path(path)
+}
+
+///|
 async fn MoonstatClient::post_json_path(
   self : MoonstatClient,
   path : String,
@@ -29,6 +37,15 @@ async fn MoonstatClient::post_json_path(
 }
 
 ///|
+pub async fn MoonstatClient::post_json(
+  self : MoonstatClient,
+  path : String,
+  request : Json,
+) -> Result[Json, String] {
+  self.post_json_path(path, request)
+}
+
+///|
 async fn MoonstatClient::delete_json_path(
   self : MoonstatClient,
   path : String,
@@ -40,6 +57,14 @@ async fn MoonstatClient::delete_json_path(
       }
     Err(err) => Err(err)
   }
+}
+
+///|
+pub async fn MoonstatClient::delete_json(
+  self : MoonstatClient,
+  path : String,
+) -> Result[Json, String] {
+  self.delete_json_path(path)
 }
 
 ///|
