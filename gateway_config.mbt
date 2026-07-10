@@ -65,6 +65,7 @@ fn moon_default_app_settings_json() -> Json {
     "silentStartup": Json::boolean(false),
     "enableLocalProxy": Json::boolean(false),
     "enableFailoverToggle": Json::boolean(false),
+    "usageDashboardRefreshIntervalMs": Json::number(30000),
     "preserveCodexOfficialAuthOnSwitch": Json::boolean(false),
     "skillSyncMethod": Json::string("auto"),
     "skillStorageLocation": Json::string("unified"),
@@ -120,6 +121,11 @@ fn moon_merge_settings_for_save(incoming : Json, existing : Json) -> Json {
   guard incoming is Object(incoming_obj) else { return existing }
   guard existing is Object(existing_obj) else { return incoming }
   let next = incoming_obj
+  for key, value in existing_obj {
+    if next.get(key) is None {
+      next[key] = value
+    }
+  }
   moon_preserve_missing_settings_object(next, existing_obj, "webdavSync")
   moon_preserve_missing_settings_object(next, existing_obj, "s3Sync")
   moon_preserve_missing_settings_object(next, existing_obj, "localMigrations")
@@ -127,6 +133,18 @@ fn moon_merge_settings_for_save(incoming : Json, existing : Json) -> Json {
   moon_preserve_secret_if_empty(next, existing_obj, "webdavSync", "password")
   moon_preserve_secret_if_empty(next, existing_obj, "s3Sync", "secretAccessKey")
   Json::object(next)
+}
+
+///|
+fn moon_settings_with_defaults(settings : Json) -> Json {
+  guard moon_default_app_settings_json() is Object(defaults) else {
+    return settings
+  }
+  guard settings is Object(saved) else { return Json::object(defaults) }
+  for key, value in saved {
+    defaults[key] = value
+  }
+  Json::object(defaults)
 }
 
 ///|
@@ -294,6 +312,34 @@ fn ConfigService::save_settings_json(
     }
     _ => ()
   }
+}
+
+///|
+async fn ConfigService::load_settings_store(
+  self : ConfigService,
+  path? : String = moon_app_config_path(),
+) -> Unit {
+  if !@fsx.exists_as_file(path) {
+    return
+  }
+  let parsed = @json.parse(@fsx.read_file(path))
+  guard parsed is Object(_) else { return }
+  self.save_settings_json(moon_settings_with_defaults(parsed))
+}
+
+///|
+async fn ConfigService::save_settings_store(
+  self : ConfigService,
+  settings : Json,
+  path? : String = moon_app_config_path(),
+) -> Unit raise Error {
+  let next = moon_merge_settings_for_save(settings, self.app_settings)
+  let parent = @pathx.dirname(path)
+  if !parent.is_empty() && parent != "." {
+    @fsx.make_directory(parent, recursive=true, exists_ok=true)
+  }
+  atomic_write_store_file(path, next.stringify(indent=2) + "\n")
+  self.save_settings_json(next)
 }
 
 ///|
@@ -972,7 +1018,17 @@ async fn ConfigService::handle_save_settings(
 ) -> Unit {
   match proxy_json_body(r) {
     Some(settings) => {
-      self.save_settings_json(settings)
+      self.save_settings_store(settings) catch {
+        error => {
+          moonstat_write_json_error(
+            w,
+            @status.InternalServerError,
+            "moonstat_settings_write_failed",
+            "Failed to persist Moonstat settings: \{error}",
+          )
+          return
+        }
+      }
       write_usage_json(w, Json::boolean(true))
     }
     None => write_usage_bad_request(w, "invalid_settings")

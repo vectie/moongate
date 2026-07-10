@@ -412,4 +412,23 @@ $("provider-test")?.addEventListener("click", () => {
 });
 
 refresh().catch(showError);
-setInterval(() => refresh().catch(showError), 30000);
+
+const supportedRefreshIntervals = new Set([0, 5000, 10000, 30000, 60000]);
+
+function normalizedRefreshInterval(value) {
+  return supportedRefreshIntervals.has(value) ? value : 30000;
+}
+
+async function scheduleDashboardRefresh() {
+  const settings = await safeGetJson(endpoints.settings);
+  const interval = normalizedRefreshInterval(
+    settings.ok ? settings.data?.usageDashboardRefreshIntervalMs : undefined,
+  );
+  if (interval === 0) return;
+  setTimeout(async () => {
+    await refresh().catch(showError);
+    scheduleDashboardRefresh().catch(showError);
+  }, interval);
+}
+
+scheduleDashboardRefresh().catch(showError);

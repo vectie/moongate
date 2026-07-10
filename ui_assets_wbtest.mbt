@@ -184,7 +184,8 @@ async test "moonstat ui fetches current backend route surface" {
   assert_true(core.contains("safeGetJson"))
   assert_true(core.contains("recordCount"))
   assert_true(assets.contains("defaultModel"))
-  assert_true(js.contains("setInterval"))
+  assert_true(js.contains("usageDashboardRefreshIntervalMs"))
+  assert_true(js.contains("setTimeout"))
 }
 
 ///|

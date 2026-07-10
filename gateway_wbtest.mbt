@@ -570,6 +570,10 @@ test "moonstat settings defaults mirror desktop command payloads" {
   }
   assert_eq(proxy_json_bool(settings, "showInTray"), Some(true))
   assert_eq(proxy_json_bool(settings, "launchOnStartup"), Some(false))
+  assert_eq(
+    store_json_int_or_zero(settings, "usageDashboardRefreshIntervalMs"),
+    30000,
+  )
   assert_eq(json_string_from_map(settings, "skillSyncMethod"), Some("auto"))
   assert_eq(
     json_string_from_map(settings, "skillStorageLocation"),
@@ -707,6 +711,29 @@ test "moonstat save settings merge preserves omitted sync secrets" {
   }
   assert_eq(json_string_from_map(s3, "secretAccessKey"), Some("s3-secret"))
   assert_true(merged.get("localMigrations") is Some(_))
+}
+
+///|
+async test "moonstat settings persist refresh interval and preserve defaults" {
+  let dir = @pathx.join("/tmp", "moonstat-settings-\{@async.now().to_int()}")
+  let path = @pathx.join(dir, "config.json")
+  let saved = ConfigService::new()
+  saved.save_settings_store(
+    { "usageDashboardRefreshIntervalMs": Json::number(10000) }.to_json(),
+    path~,
+  )
+
+  let loaded = ConfigService::new()
+  loaded.load_settings_store(path~)
+  guard loaded.settings_json() is Object(settings) else {
+    fail("expected persisted settings")
+  }
+  assert_eq(
+    store_json_int_or_zero(settings, "usageDashboardRefreshIntervalMs"),
+    10000,
+  )
+  assert_eq(proxy_json_bool(settings, "showInTray"), Some(true))
+  assert_eq(json_string_from_map(settings, "skillSyncMethod"), Some("auto"))
 }
 
 ///|
