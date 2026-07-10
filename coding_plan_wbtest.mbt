@@ -91,6 +91,46 @@ test "moonstat coding plan parses zhipu token windows by unit" {
 }
 
 ///|
+test "moonstat zhipu team quota request matches CCS contract" {
+  let request = moon_zhipu_team_quota_request(
+    "team-key", "org-123", "project-456",
+  )
+  assert_eq(
+    request.url,
+    "https://open.bigmodel.cn/api/monitor/usage/quota/limit?type=2",
+  )
+  assert_eq(request.headers["Authorization"], "team-key")
+  assert_eq(request.headers["bigmodel-organization"], "org-123")
+  assert_eq(request.headers["bigmodel-project"], "project-456")
+  assert_eq(request.headers["Content-Type"], "application/json")
+}
+
+///|
+async test "moonstat zhipu team quota rejects incomplete credentials before network" {
+  for
+    credentials in [
+      ("team-key", Some("org-123"), None),
+      ("team-key", None, Some("project-456")),
+      ("", Some("org-123"), Some("project-456")),
+    ] {
+    let quota = moon_get_coding_plan_quota(
+      "https://open.bigmodel.cn/api/paas/v4",
+      credentials.0,
+      coding_plan_provider=Some("Zhipu_Team"),
+      team_organization_id=credentials.1,
+      team_project_id=credentials.2,
+    )
+    assert_false(quota.success)
+    assert_true(quota.credential_status == NotFound)
+    assert_true(
+      quota.error
+      .unwrap_or("")
+      .contains("API key + organization ID + project ID"),
+    )
+  }
+}
+
+///|
 test "moonstat coding plan parses minimax general model only" {
   let tiers = moon_parse_minimax_tiers(
     {

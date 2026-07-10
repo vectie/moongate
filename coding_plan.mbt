@@ -28,6 +28,12 @@ priv struct MoonZhipuEntry {
 }
 
 ///|
+priv struct MoonCodingPlanHttpRequest {
+  url : String
+  headers : Map[String, String]
+}
+
+///|
 fn moon_detect_coding_plan_provider(
   base_url : String,
 ) -> MoonCodingPlanProvider? {
@@ -53,7 +59,26 @@ fn moon_detect_coding_plan_provider(
 async fn moon_get_coding_plan_quota(
   base_url : String,
   api_key : String,
+  coding_plan_provider? : String? = None,
+  team_organization_id? : String? = None,
+  team_project_id? : String? = None,
 ) -> SubscriptionQuota {
+  if coding_plan_provider.unwrap_or("").trim().to_lower() == "zhipu_team" {
+    let organization_id = team_organization_id.unwrap_or("").trim().to_owned()
+    let project_id = team_project_id.unwrap_or("").trim().to_owned()
+    if api_key.trim().is_empty() ||
+      organization_id.is_empty() ||
+      project_id.is_empty() {
+      return moon_quota_error(
+        MOONSTAT_CODING_PLAN_TOOL,
+        NotFound,
+        "Zhipu team plan needs the API key + organization ID + project ID",
+      )
+    }
+    return moon_query_zhipu_team_coding_plan(
+      api_key, organization_id, project_id,
+    )
+  }
   if api_key.trim().is_empty() {
     return SubscriptionQuota::not_found(MOONSTAT_CODING_PLAN_TOOL)
   }
@@ -197,6 +222,52 @@ fn moon_zhipu_quota_base(base_url : String) -> String {
     "https://open.bigmodel.cn"
   } else {
     "https://api.z.ai"
+  }
+}
+
+///|
+fn moon_zhipu_team_quota_request(
+  api_key : String,
+  organization_id : String,
+  project_id : String,
+  quota_url? : String = "https://open.bigmodel.cn/api/monitor/usage/quota/limit",
+) -> MoonCodingPlanHttpRequest {
+  {
+    url: "\{quota_url}?type=2",
+    headers: {
+      "Authorization": api_key,
+      "bigmodel-organization": organization_id,
+      "bigmodel-project": project_id,
+      "Content-Type": "application/json",
+      "Accept-Language": "en-US,en",
+    },
+  }
+}
+
+///|
+async fn moon_query_zhipu_team_coding_plan(
+  api_key : String,
+  organization_id : String,
+  project_id : String,
+) -> SubscriptionQuota {
+  let request = moon_zhipu_team_quota_request(
+    api_key, organization_id, project_id,
+  )
+  match
+    moon_fetch_json_get(
+      request.url,
+      request.headers,
+      expired_message="Authentication failed",
+    ) {
+    Err(error) =>
+      if error.status == Expired {
+        moon_coding_plan_auth_error(
+          moon_status_code_from_message(error.message),
+        )
+      } else {
+        moon_coding_plan_error(error.message)
+      }
+    Ok(body) => moon_parse_zhipu_coding_plan(body)
   }
 }
 

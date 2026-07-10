@@ -1072,7 +1072,21 @@ async fn UsageService::handle_get_coding_plan_quota(
     write_usage_bad_request(w, "missing_api_key")
     return
   }
-  let quota = moon_get_coding_plan_quota(base_url, api_key)
+  let quota = moon_get_coding_plan_quota(
+    base_url,
+    api_key,
+    coding_plan_provider=proxy_string_request(
+      r.path,
+      body,
+      "codingPlanProvider",
+    ),
+    team_organization_id=proxy_string_request(
+      r.path,
+      body,
+      "teamOrganizationId",
+    ),
+    team_project_id=proxy_string_request(r.path, body, "teamProjectId"),
+  )
   self.usage_cache.put_subscription(quota.tool, quota)
   write_usage_json(w, quota.to_json())
 }
@@ -1427,7 +1441,17 @@ async fn test_usage_script_template_result(
       let api_key = proxy_string_request(path, body, "apiKey").unwrap_or("")
       Some(
         moon_token_plan_usage_result_from_quota(
-          moon_get_coding_plan_quota(base_url, api_key),
+          moon_get_coding_plan_quota(
+            base_url,
+            api_key,
+            coding_plan_provider=proxy_string_request(
+              path, body, "codingPlanProvider",
+            ),
+            team_organization_id=proxy_string_request(
+              path, body, "teamOrganizationId",
+            ),
+            team_project_id=proxy_string_request(path, body, "teamProjectId"),
+          ),
         ),
       )
     }
