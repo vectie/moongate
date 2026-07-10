@@ -32,8 +32,8 @@ async fn TrafficStats::load_persistent_store(
   storage_dir? : String = default_moonstat_stats_dir(),
 ) -> Unit {
   self.enable_persistent_store(storage_dir~)
-  self.load_request_logs_from_store()
   self.load_daily_rollups_from_store()
+  self.load_request_logs_from_store()
   self.load_session_sync_state_from_store()
 }
 
@@ -197,6 +197,11 @@ fn usage_daily_rollup_from_store_json(json : Json) -> UsageDailyRollup? {
     app_type,
     provider_id,
     provider_name: store_json_optional_string(obj, "provider_name"),
+    data_source: store_json_string_or_default(
+      obj,
+      "data_source",
+      rollup_default_data_source(provider_id),
+    ),
     model,
     request_model: store_json_optional_string(obj, "request_model"),
     pricing_model: store_json_optional_string(obj, "pricing_model"),
@@ -212,6 +217,17 @@ fn usage_daily_rollup_from_store_json(json : Json) -> UsageDailyRollup? {
     ),
     avg_latency_ms: store_json_int_or_zero(obj, "avg_latency_ms"),
   })
+}
+
+///|
+fn rollup_default_data_source(provider_id : String) -> String {
+  match provider_id {
+    "_session" => "session_log"
+    "_codex_session" => "codex_session"
+    "_gemini_session" => "gemini_session"
+    "_opencode_session" => "opencode_session"
+    _ => "proxy"
+  }
 }
 
 ///|

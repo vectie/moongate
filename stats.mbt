@@ -41,6 +41,7 @@ priv struct UsageDailyRollup {
   app_type : String
   provider_id : String
   provider_name : String?
+  data_source : String
   model : String
   request_model : String?
   pricing_model : String?
@@ -61,6 +62,7 @@ fn UsageDailyRollup::new(log : RequestLog) -> UsageDailyRollup {
     app_type: log.app_type,
     provider_id: log.provider_id,
     provider_name: log.provider_name,
+    data_source: request_log_data_source(log),
     model: log.model,
     request_model: log.request_model,
     pricing_model: log.pricing_model,
@@ -102,6 +104,7 @@ fn UsageDailyRollup::to_json(self : UsageDailyRollup) -> Json {
     "app_type": Json::string(self.app_type),
     "provider_id": Json::string(self.provider_id),
     "provider_name": optional_string_json(self.provider_name),
+    "data_source": Json::string(self.data_source),
     "model": Json::string(self.model),
     "request_model": optional_string_json(self.request_model),
     "pricing_model": optional_string_json(self.pricing_model),
@@ -607,14 +610,36 @@ fn TrafficStats::record_request_log(
   self : TrafficStats,
   log : RequestLog,
 ) -> Unit {
+  self.request_logs.push(log)
   let len = self.request_logs.length()
-  if len >= REQUEST_LOG_LIMIT {
+  if len > REQUEST_LOG_LIMIT {
+    let evicted = self.request_logs[0]
+    self.rollup_request_log(evicted)
     for i in 1..<len {
       self.request_logs[i - 1] = self.request_logs[i]
     }
-    self.request_logs.truncate(REQUEST_LOG_LIMIT - 1)
+    self.request_logs.truncate(REQUEST_LOG_LIMIT)
   }
-  self.request_logs.push(log)
+}
+
+///|
+fn TrafficStats::rollup_request_log(
+  self : TrafficStats,
+  log : RequestLog,
+) -> Unit {
+  if !self.request_log_is_effective(log) {
+    return
+  }
+  let key = usage_daily_rollup_key_from_log(log)
+  for rollup in self.daily_rollups {
+    if usage_daily_rollup_key(rollup) == key {
+      rollup.add_log(log)
+      return
+    }
+  }
+  let rollup = UsageDailyRollup::new(log)
+  rollup.add_log(log)
+  self.daily_rollups.push(rollup)
 }
 
 ///|
@@ -622,10 +647,6 @@ fn TrafficStats::rollup_request_logs_before(
   self : TrafficStats,
   cutoff_ts : Int,
 ) -> Int {
-  let rollup_indices : Map[String, Int] = Map([], capacity=0)
-  for i in 0..<self.daily_rollups.length() {
-    rollup_indices.set(usage_daily_rollup_key(self.daily_rollups[i]), i)
-  }
   let retained : Array[RequestLog] = []
   let mut deleted = 0
   for log in self.request_logs {
@@ -634,19 +655,7 @@ fn TrafficStats::rollup_request_logs_before(
       continue
     }
     deleted += 1
-    if !self.request_log_is_effective(log) {
-      continue
-    }
-    let key = usage_daily_rollup_key_from_log(log)
-    match rollup_indices.get(key) {
-      Some(index) => self.daily_rollups[index].add_log(log)
-      None => {
-        let rollup = UsageDailyRollup::new(log)
-        rollup.add_log(log)
-        rollup_indices.set(key, self.daily_rollups.length())
-        self.daily_rollups.push(rollup)
-      }
-    }
+    self.rollup_request_log(log)
   }
   self.request_logs.truncate(0)
   for log in retained {
@@ -1155,6 +1164,14 @@ fn TrafficStats::usage_data_sources_json(self : TrafficStats) -> Json {
     acc.add(log)
     sources.set(data_source, acc)
   }
+  for rollup in self.daily_rollups {
+    let data_source = rollup.data_source
+    let acc = sources
+      .get(data_source)
+      .unwrap_or(DataSourceStatsAccumulator::new(data_source))
+    acc.add_rollup(rollup)
+    sources.set(data_source, acc)
+  }
   let rows : Array[DataSourceStatsAccumulator] = []
   for source in sources.keys() {
     guard sources.get(source) is Some(acc) else { continue }
@@ -1493,6 +1510,15 @@ fn DataSourceStatsAccumulator::add(
 ) -> Unit {
   self.request_count += 1
   self.total_cost_nano += request_log_total_cost_nano(log)
+}
+
+///|
+fn DataSourceStatsAccumulator::add_rollup(
+  self : DataSourceStatsAccumulator,
+  rollup : UsageDailyRollup,
+) -> Unit {
+  self.request_count += rollup.request_count
+  self.total_cost_nano += rollup.total_cost_nano
 }
 
 ///|
@@ -1857,12 +1883,12 @@ fn usage_daily_rollup_pricing_model(rollup : UsageDailyRollup) -> String {
 
 ///|
 fn usage_daily_rollup_key(rollup : UsageDailyRollup) -> String {
-  "\{rollup.date}|\{rollup.app_type}|\{rollup.provider_id}|\{rollup.model}|\{optional_key_part(rollup.request_model)}|\{optional_key_part(rollup.pricing_model)}"
+  "\{rollup.date}|\{rollup.app_type}|\{rollup.provider_id}|\{rollup.data_source}|\{rollup.model}|\{optional_key_part(rollup.request_model)}|\{optional_key_part(rollup.pricing_model)}"
 }
 
 ///|
 fn usage_daily_rollup_key_from_log(log : RequestLog) -> String {
-  "\{trend_local_day_key(log.created_at)}|\{log.app_type}|\{log.provider_id}|\{log.model}|\{optional_key_part(log.request_model)}|\{optional_key_part(log.pricing_model)}"
+  "\{trend_local_day_key(log.created_at)}|\{log.app_type}|\{log.provider_id}|\{request_log_data_source(log)}|\{log.model}|\{optional_key_part(log.request_model)}|\{optional_key_part(log.pricing_model)}"
 }
 
 ///|

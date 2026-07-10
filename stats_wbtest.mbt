@@ -375,6 +375,59 @@ test "moonstat usage keeps request log retention bounded" {
   assert_eq(stats.request_logs.length(), 500)
   assert_eq(stats.request_logs[0].request_id, "req-5")
   assert_eq(stats.request_logs[499].request_id, "req-504")
+  assert_eq(stats.daily_rollups.length(), 1)
+  assert_eq(stats.daily_rollups[0].request_count, 5)
+  guard stats.usage_summary_json() is Object(summary) else {
+    fail("expected usage summary")
+  }
+  assert_eq(summary["totalRequests"], Json::number(505.0))
+}
+
+///|
+test "moonstat usage preserves aggregates beyond detail retention" {
+  let stats = TrafficStats::new()
+  for i in 0..<10_000 {
+    stats.record_request_log(
+      RequestLog::new(
+        request_id="req-volume-\{i}",
+        provider_id="provider-volume",
+        provider_name=Some("Provider Volume"),
+        app_type="codex",
+        model="gpt-volume",
+        pricing_model=Some("gpt-volume"),
+        usage=TokenUsage::new(input_tokens=1, output_tokens=2),
+        total_cost_usd="0.000003",
+        status_code=200,
+        latency_ms=10,
+        created_at=1_700_000_000,
+        data_source="proxy",
+      ),
+    )
+  }
+  assert_eq(stats.request_logs.length(), REQUEST_LOG_LIMIT)
+  assert_eq(stats.daily_rollups.length(), 1)
+  assert_eq(stats.daily_rollups[0].request_count, 9_500)
+  guard stats.usage_summary_json() is Object(summary) else {
+    fail("expected usage summary")
+  }
+  assert_eq(summary["totalRequests"], Json::number(10_000.0))
+  assert_eq(summary["totalInputTokens"], Json::number(10_000.0))
+  assert_eq(summary["totalOutputTokens"], Json::number(20_000.0))
+  assert_eq(summary["totalCost"], Json::string("0.030000"))
+  guard stats.provider_stats_json() is Array([Object(provider)]) else {
+    fail("expected provider stats")
+  }
+  assert_eq(provider["requestCount"], Json::number(10_000.0))
+  assert_eq(provider["totalTokens"], Json::number(30_000.0))
+  guard stats.model_stats_json() is Array([Object(model)]) else {
+    fail("expected model stats")
+  }
+  assert_eq(model["requestCount"], Json::number(10_000.0))
+  guard stats.usage_data_sources_json() is Array([Object(source)]) else {
+    fail("expected data source stats")
+  }
+  assert_eq(source["dataSource"], Json::string("proxy"))
+  assert_eq(source["requestCount"], Json::number(10_000.0))
 }
 
 ///|
@@ -1615,6 +1668,7 @@ fn moon_test_rollup(
   date : String,
   provider_id? : String = "p1",
   provider_name? : String? = None,
+  data_source? : String = "proxy",
   app_type? : String = "claude",
   model? : String = "claude-3",
   request_count~ : Int,
@@ -1631,6 +1685,7 @@ fn moon_test_rollup(
     app_type,
     provider_id,
     provider_name,
+    data_source,
     model,
     request_model: None,
     pricing_model: None,

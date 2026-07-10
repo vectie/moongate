@@ -99,6 +99,45 @@ async test "persistent store keeps session sync offsets across stats restart" {
 }
 
 ///|
+async test "persistent store preserves aggregates beyond detail retention" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-store-retention-\{@async.now().to_int()}",
+  )
+  let stats = TrafficStats::new()
+  stats.enable_persistent_store(storage_dir=dir)
+  for i in 0..<1_000 {
+    stats.record_request_log(
+      RequestLog::new(
+        request_id="req-store-retention-\{i}",
+        provider_id="provider-store",
+        app_type="codex",
+        model="gpt-store",
+        usage=TokenUsage::new(input_tokens=2, output_tokens=3),
+        total_cost_usd="0.000005",
+        status_code=200,
+        created_at=1_700_000_000,
+        data_source="proxy",
+      ),
+    )
+  }
+  stats.save_persistent_store()
+
+  let loaded = TrafficStats::new()
+  loaded.load_persistent_store(storage_dir=dir)
+  assert_eq(loaded.request_logs.length(), REQUEST_LOG_LIMIT)
+  assert_eq(loaded.daily_rollups.length(), 1)
+  assert_eq(loaded.daily_rollups[0].request_count, 500)
+  guard loaded.usage_summary_json() is Object(summary) else {
+    fail("expected reloaded usage summary")
+  }
+  assert_eq(summary["totalRequests"], Json::number(1_000.0))
+  assert_eq(summary["totalInputTokens"], Json::number(2_000.0))
+  assert_eq(summary["totalOutputTokens"], Json::number(3_000.0))
+  assert_eq(summary["totalCost"], Json::string("0.005000"))
+}
+
+///|
 async test "gateway completion records are persisted automatically" {
   let dir = @pathx.join(
     "/tmp",
