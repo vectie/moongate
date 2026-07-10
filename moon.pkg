@@ -18,6 +18,7 @@ import {
   "moonbitlang/async/io",
   "moonbit-community/rabbita",
   "moonbit-community/rabbita/html",
+  "moonbit-community/rabbita/url",
   "vectie/moonstat/internal/httpx",
   "vectie/moonstat/internal/httpx/status",
   "vectie/moonstat/internal/net",
