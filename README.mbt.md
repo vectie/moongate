@@ -15,7 +15,8 @@ The proxy listens on `127.0.0.1:15721` by default.
 Moonstat is currently in a feature-testing phase. The backend, suite discovery,
 typed client surface, metrics route, and framework integrations are in place, so
 new work should prioritize validating real workflows before more structural
-cleanup.
+cleanup. The ordered correctness, hardening, parity, packaging, and deferred UI
+work is tracked in [PLAN.md](PLAN.md).
 
 Framework integrations are product features and should remain supported:
 Codex/OpenAI-compatible clients, Claude/Anthropic-compatible clients, Claude
@@ -200,12 +201,11 @@ projects:
 
 ## Future Plan
 
-- Finish feature testing across all active framework integrations.
-- Split large gateway/usage/provider files after tests make the boundaries
-  clear.
-- Harden clean install, auth, provider import, and dashboard setup flows.
-- Expand suite-drift reports without making Moonstat a required dependency for
-  product path construction.
+The detailed execution plan is maintained in [PLAN.md](PLAN.md). Its immediate
+order is usage-accounting correctness, durable storage, control-plane security,
+process-level feature tests, removal of false compatibility surface, explicit
+CCS parity tracking, and standalone Lepusa packaging. Broad UI work remains
+deferred until the published Lepusa framework settles.
 
 Provider model discovery probes `/v1/models`-style catalogs and returns the
 Moonstat frontend wire shape, `[{ "id": "...", "ownedBy": "..." }]`:
