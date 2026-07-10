@@ -1,6 +1,9 @@
 ///|
 pub async fn Gateway::start(self : Gateway) -> Unit {
   self.logger.info("Starting Moonstat gateway on \{self.host}:\{self.port}")
+  self.control.initialize() catch {
+    err => self.logger.error("Failed to initialize control token: \{err}")
+  }
   self.usage.load_model_pricing_store()
   ignore(
     self.usage.load_and_reconcile_persistent_store(
@@ -71,6 +74,11 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.set_not_found_handler(file_server.handler())
   self.logger.info("Gateway started on \{self.host}:\{bound_port}")
   server.serve(
-    moonstat_security_handler(router.handler(), self.host, bound_port),
+    moonstat_security_handler(
+      router.handler(),
+      self.control,
+      self.host,
+      bound_port,
+    ),
   )
 }

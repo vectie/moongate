@@ -126,6 +126,7 @@ pub struct MoonstatAgentClient {
 pub struct MoonstatClient {
   base_url : String
   api_key : String?
+  control_token : String?
   user_agent : String?
 }
 
@@ -133,11 +134,13 @@ pub struct MoonstatClient {
 pub fn MoonstatClient::new(
   base_url? : String = MOONSTAT_DEFAULT_CLIENT_BASE_URL,
   api_key? : String? = None,
+  control_token? : String? = None,
   user_agent? : String? = None,
 ) -> MoonstatClient {
   {
     base_url: moonstat_client_normalize_base_url(base_url),
     api_key,
+    control_token,
     user_agent,
   }
 }
@@ -147,11 +150,13 @@ pub fn MoonstatClient::from_host(
   host? : String = @suite.default_host(),
   port? : Int = @suite.default_port(),
   api_key? : String? = None,
+  control_token? : String? = None,
   user_agent? : String? = None,
 ) -> MoonstatClient {
   MoonstatClient::new(
     base_url=@suite.base_url(host, port),
     api_key~,
+    control_token~,
     user_agent~,
   )
 }

@@ -74,6 +74,16 @@ fn UsageService::new() -> UsageService {
 }
 
 ///|
+priv struct ControlPlaneAuth {
+  mut token : String?
+}
+
+///|
+fn ControlPlaneAuth::new() -> ControlPlaneAuth {
+  { token: None }
+}
+
+///|
 /// ConfigService handles settings, presets, import/export, and app configuration.
 priv struct ConfigService {
   mut app_settings : Json

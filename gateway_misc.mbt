@@ -23,6 +23,8 @@ pub struct Gateway {
   priv skills : SkillService
   /// OpenClaw and Hermes provider config
   priv openclaw : OpenClawService
+  /// Authentication for privileged local management operations.
+  priv control : ControlPlaneAuth
 }
 
 ///|
@@ -47,6 +49,7 @@ pub fn Gateway::new(
     runtime: RuntimeService::new(),
     skills: SkillService::new(),
     openclaw: OpenClawService::new(),
+    control: ControlPlaneAuth::new(),
   }
 }
 

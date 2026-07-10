@@ -69,3 +69,59 @@ test "gateway security supports explicit non-loopback bind authority" {
     ),
   )
 }
+
+///|
+test "gateway security keeps inference public and protects control plane" {
+  assert_false(moonstat_route_requires_control(Post, "/v1/chat/completions"))
+  assert_false(
+    moonstat_route_requires_control(Post, "/openclaw/v1/chat/completions"),
+  )
+  assert_false(
+    moonstat_route_requires_control(Post, "/claude-desktop/v1/messages"),
+  )
+  assert_false(moonstat_route_requires_control(Get, "/health"))
+  assert_false(moonstat_route_requires_control(Get, "/assets/moonstat.js"))
+  assert_true(moonstat_route_requires_control(Get, "/providers"))
+  assert_true(moonstat_route_requires_control(Post, "/providers"))
+  assert_true(moonstat_route_requires_control(Get, "/copilot/token"))
+  assert_true(moonstat_route_requires_control(Get, "/workspace/files"))
+  assert_true(moonstat_route_requires_control(Post, "/suite/status/write"))
+}
+
+///|
+test "gateway control bootstrap requires a same-origin browser" {
+  assert_true(
+    moonstat_control_bootstrap_allowed(
+      { "origin": "http://127.0.0.1:15721", "sec-fetch-site": "same-origin" },
+      "127.0.0.1",
+      15721,
+    ),
+  )
+  assert_false(moonstat_control_bootstrap_allowed({}, "127.0.0.1", 15721))
+  assert_false(
+    moonstat_control_bootstrap_allowed(
+      { "origin": "http://127.0.0.1:15721", "sec-fetch-site": "cross-site" },
+      "127.0.0.1",
+      15721,
+    ),
+  )
+}
+
+///|
+async test "gateway control token persists and authenticates" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-control-token-\{@async.now().to_int()}",
+  )
+  let path = @pathx.join(dir, MOONSTAT_CONTROL_TOKEN_FILE)
+  let first = ControlPlaneAuth::new()
+  first.initialize(path~)
+  guard first.token is Some(token) else { fail("expected control token") }
+  assert_true(token.has_prefix("mst_req_"))
+  assert_true(first.authorized({ "x-moonstat-control-token": token }))
+  assert_false(first.authorized({ "x-moonstat-control-token": "wrong" }))
+
+  let second = ControlPlaneAuth::new()
+  second.initialize(path~)
+  assert_eq(second.token, Some(token))
+}

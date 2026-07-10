@@ -38,6 +38,20 @@ test "moonstat host client maps wildcard host to loopback" {
 }
 
 ///|
+test "moonstat client keeps inference and control credentials separate" {
+  let client = MoonstatClient::new(
+    api_key=Some("provider-key"),
+    control_token=Some("control-key"),
+  )
+  let headers = client.headers(
+    "GET",
+    resolved_control_token=client.control_token,
+  )
+  assert_eq(headers["Authorization"], "Bearer provider-key")
+  assert_eq(headers["x-moonstat-control-token"], "control-key")
+}
+
+///|
 test "moonstat client builds usage query URLs" {
   let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
   let query = {

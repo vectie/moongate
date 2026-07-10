@@ -43,13 +43,31 @@ const frameworkApps = readFrameworkApps();
 
 const $ = (id) => document.getElementById(id);
 
+const controlTokenPromise = fetch("/control/bootstrap", {
+  headers: { Accept: "application/json" },
+})
+  .then((response) => {
+    if (!response.ok) throw new Error(`control bootstrap returned ${response.status}`);
+    return response.json();
+  })
+  .then((payload) => (payload && typeof payload.token === "string" ? payload.token : ""));
+
+async function requestHeaders(extra) {
+  const token = await controlTokenPromise;
+  return {
+    Accept: "application/json",
+    ...(token ? { "X-Moonstat-Control-Token": token } : {}),
+    ...(extra || {}),
+  };
+}
+
 function text(id, value) {
   const node = $(id);
   if (node) node.textContent = value == null || value === "" ? "-" : String(value);
 }
 
 async function getJson(path) {
-  const response = await fetch(path, { headers: { Accept: "application/json" } });
+  const response = await fetch(path, { headers: await requestHeaders() });
   if (!response.ok) throw new Error(`${path} returned ${response.status}`);
   return response.json();
 }
@@ -57,7 +75,7 @@ async function getJson(path) {
 async function postJson(path, body) {
   const response = await fetch(path, {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    headers: await requestHeaders({ "Content-Type": "application/json" }),
     body: body == null ? undefined : JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`${path} returned ${response.status}`);
@@ -68,7 +86,7 @@ async function postJson(path, body) {
 async function deleteJson(path, body) {
   const response = await fetch(path, {
     method: "DELETE",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    headers: await requestHeaders({ "Content-Type": "application/json" }),
     body: body == null ? undefined : JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`${path} returned ${response.status}`);

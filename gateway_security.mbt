@@ -1,6 +1,7 @@
 ///|
 fn moonstat_security_handler(
   next : @httpx.Handler,
+  control : ControlPlaneAuth,
   configured_host : String,
   port : Int,
 ) -> @httpx.Handler {
@@ -9,8 +10,99 @@ fn moonstat_security_handler(
       moonstat_write_security_error(w)
       return
     }
+    let path = r.path.to_owned().split("?").head().unwrap_or("").to_owned()
+    if path == "/control/bootstrap" {
+      if r.method_ != Get ||
+        !moonstat_control_bootstrap_allowed(r.headers, configured_host, port) {
+        moonstat_write_security_error(w)
+        return
+      }
+      control.write_bootstrap(w)
+      return
+    }
+    if moonstat_route_requires_control(r.method_, path) &&
+      !control.authorized(r.headers) {
+      moonstat_write_control_auth_error(w)
+      return
+    }
     next(r, w)
   }
+}
+
+///|
+fn moonstat_control_bootstrap_allowed(
+  headers : Map[String, String],
+  configured_host : String,
+  port : Int,
+) -> Bool {
+  guard headers.get("origin") is Some(origin) else { return false }
+  if !moonstat_origin_allowed(origin, configured_host, port) {
+    return false
+  }
+  match headers.get("sec-fetch-site") {
+    Some(site) => site == "same-origin"
+    None => true
+  }
+}
+
+///|
+fn moonstat_route_requires_control(
+  method_ : @httpx.Method,
+  path : String,
+) -> Bool {
+  if moonstat_inference_route(method_, path) ||
+    moonstat_public_route(method_, path) ||
+    moonstat_static_route(method_, path) {
+    return false
+  }
+  true
+}
+
+///|
+fn moonstat_inference_route(method_ : @httpx.Method, path : String) -> Bool {
+  match method_ {
+    Post =>
+      path == "/v1/messages" ||
+      path == "/claude-desktop/v1/messages" ||
+      path == "/v1/chat/completions" ||
+      path == "/openclaw/v1/chat/completions" ||
+      path == "/v1/responses" ||
+      path == "/v1/responses/compact" ||
+      path.has_prefix("/gemini/v1/") ||
+      path.has_prefix("/gemini/v1beta/")
+    Get =>
+      path == "/v1/models" ||
+      path == "/claude-desktop/v1/models" ||
+      path.has_prefix("/gemini/v1/") ||
+      path.has_prefix("/gemini/v1beta/")
+    _ => false
+  }
+}
+
+///|
+fn moonstat_public_route(method_ : @httpx.Method, path : String) -> Bool {
+  method_ == Get &&
+  (
+    path == "/health" ||
+    path == "/status" ||
+    path == "/stats" ||
+    path == "/metrics" ||
+    path == "/suite/manifest" ||
+    path == "/suite/status" ||
+    path == "/suite/moonclaw-providers"
+  )
+}
+
+///|
+fn moonstat_static_route(method_ : @httpx.Method, path : String) -> Bool {
+  method_ == Get &&
+  (
+    path == "/" ||
+    path == "/ui/rabbita" ||
+    path == "/participant/register" ||
+    path == "/favicon.ico" ||
+    path.has_prefix("/assets/")
+  )
 }
 
 ///|
@@ -79,14 +171,37 @@ fn moonstat_port_allowed(actual : Int?, expected : Int) -> Bool {
 
 ///|
 async fn moonstat_write_security_error(w : @httpx.ResponseWriter) -> Unit {
+  moonstat_write_json_error(
+    w,
+    @status.Forbidden,
+    "moonstat_untrusted_request_authority",
+    "Host or Origin is not trusted by Moonstat",
+  )
+}
+
+///|
+async fn moonstat_write_control_auth_error(w : @httpx.ResponseWriter) -> Unit {
+  moonstat_write_json_error(
+    w,
+    @status.Unauthorized,
+    "moonstat_control_auth_required",
+    "A valid Moonstat control token is required",
+  )
+}
+
+///|
+async fn moonstat_write_json_error(
+  w : @httpx.ResponseWriter,
+  status_code : Int,
+  code : String,
+  message : String,
+) -> Unit {
   w.header().set("Content-Type", "application/json")
-  w.write_header(@status.Forbidden)
+  w.header().set("Cache-Control", "no-store")
+  w.write_header(status_code)
   w.write(
     {
-      "error": {
-        "code": Json::string("moonstat_untrusted_request_authority"),
-        "message": Json::string("Host or Origin is not trusted by Moonstat"),
-      }.to_json(),
+      "error": { "code": Json::string(code), "message": Json::string(message) }.to_json(),
     }
     .to_json()
     .stringify(),

@@ -42,6 +42,8 @@ pub fn default_codex_config_dir() -> String
 
 pub fn default_gemini_dir() -> String
 
+pub fn default_moonstat_control_token_path() -> String
+
 pub fn default_moonstat_moonclaw_providers_file_path() -> String
 
 pub fn default_moonstat_moonclaw_providers_file_path_for_workspace_root(String) -> String
@@ -213,12 +215,13 @@ pub fn MoonstatAgentClient::from_json(Json) -> Result[Self, String]
 pub struct MoonstatClient {
   base_url : String
   api_key : String?
+  control_token : String?
   user_agent : String?
 }
-pub async fn MoonstatClient::discover(path? : String, api_key? : String?, user_agent? : String?) -> Self
+pub async fn MoonstatClient::discover(path? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
 pub fn MoonstatClient::endpoint(Self, String) -> String
-pub fn MoonstatClient::from_host(host? : String, port? : Int, api_key? : String?, user_agent? : String?) -> Self
-pub fn MoonstatClient::from_suite_status(Json, api_key? : String?, user_agent? : String?) -> Self?
+pub fn MoonstatClient::from_host(host? : String, port? : Int, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
+pub fn MoonstatClient::from_suite_status(Json, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self?
 pub async fn MoonstatClient::health(Self) -> Result[Json, String]
 pub fn MoonstatClient::health_url(Self) -> String
 pub async fn MoonstatClient::metrics(Self) -> Result[String, String]
@@ -226,7 +229,7 @@ pub fn MoonstatClient::metrics_url(Self) -> String
 pub async fn MoonstatClient::model_catalog(Self) -> Result[Array[MoonstatModel], String]
 pub async fn MoonstatClient::models(Self) -> Result[Json, String]
 pub fn MoonstatClient::models_url(Self) -> String
-pub fn MoonstatClient::new(base_url? : String, api_key? : String?, user_agent? : String?) -> Self
+pub fn MoonstatClient::new(base_url? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
 pub async fn MoonstatClient::proxy_add_failover_queue(Self, String, String) -> Result[Json, String]
 pub fn MoonstatClient::proxy_add_failover_queue_url(Self, String, String) -> String
 pub async fn MoonstatClient::proxy_app_config(Self, String) -> Result[Json, String]
