@@ -716,8 +716,7 @@ fn moon_copilot_uuid_from_sha256(input : String) -> String {
 
 ///|
 fn moon_copilot_random_uuid() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  gen.v4().to_string()
+  moonstat_random_id()
 }
 
 ///|

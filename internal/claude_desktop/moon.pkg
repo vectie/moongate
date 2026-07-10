@@ -7,4 +7,5 @@ import {
   "vectie/moonlib/pathx",
   "vectie/moonlib/moonsuite",
   "vectie/moonlib/uuid",
+  "vectie/moonstat/internal/rand",
 }

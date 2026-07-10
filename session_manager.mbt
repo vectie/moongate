@@ -327,8 +327,7 @@ async fn moon_session_warp_launch(
         "Failed to create temporary script directory for Warp: \{error}",
       )
   }
-  let gen = @uuid.generator(@random.Rand::new())
-  let script_path = @pathx.join(script_dir, "warp-\{gen.v4()}.sh")
+  let script_path = @pathx.join(script_dir, "warp-\{moonstat_random_id()}.sh")
   let script = [
     "#!/usr/bin/env sh",
     "",

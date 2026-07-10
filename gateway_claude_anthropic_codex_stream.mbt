@@ -108,9 +108,7 @@ fn convert_codex_to_anthropic(
 
 ///|
 fn generate_message_id() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  let uuid = gen.v4()
-  "msg_\{uuid}"
+  "msg_\{moonstat_random_id()}"
 }
 
 ///|

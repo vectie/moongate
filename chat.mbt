@@ -1910,7 +1910,5 @@ fn json_string_from_map(obj : Map[String, Json], key : String) -> String? {
 
 ///|
 fn generate_chat_completion_id() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  let uuid = gen.v4()
-  "chatcmpl_\{uuid}"
+  "chatcmpl_\{moonstat_random_id()}"
 }

@@ -12,8 +12,7 @@ fn extract_client_session_context(
 
 ///|
 fn generate_moon_session_id() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  gen.v4().to_string()
+  moonstat_random_id()
 }
 
 ///|

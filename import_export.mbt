@@ -289,8 +289,7 @@ async fn ConfigService::moon_create_db_backup_json(
 
 ///|
 fn moon_new_backup_filename() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  "moonstat-\{@os.unix_seconds()}-\{gen.v4()}.db"
+  "moonstat-\{@os.unix_seconds()}-\{moonstat_random_id()}.db"
 }
 
 ///|

@@ -240,8 +240,8 @@ async fn write_gateway_token(token : String) -> Unit {
 
 ///|
 fn generate_gateway_token() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  "moonstat-\{gen.v4()}"
+  let randomer = @rand.chacha8() catch { _ => @random.Rand::new() }
+  "moonstat-\{@uuid.generator(randomer).v4()}"
 }
 
 ///|

@@ -22,6 +22,7 @@ import {
   "vectie/moonstat/internal/httpx",
   "vectie/moonstat/internal/httpx/status",
   "vectie/moonstat/internal/net",
+  "vectie/moonstat/internal/rand",
   "vectie/moonlib/os",
   "vectie/moonlib/pathx",
   "vectie/moonstat/internal/pino",

@@ -2260,7 +2260,5 @@ fn active_targets_json(targets : Map[String, ActiveTarget]) -> Json {
 
 ///|
 fn generate_request_log_id() -> String {
-  let gen = @uuid.generator(@random.Rand::new())
-  let uuid = gen.v4()
-  "req_\{uuid}"
+  "req_\{moonstat_random_id()}"
 }

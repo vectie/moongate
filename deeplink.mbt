@@ -515,8 +515,7 @@ fn moon_deeplink_generated_id(name : String) -> String {
   }
   let sanitized = builder.to_string()
   let prefix = if sanitized.is_empty() { "provider" } else { sanitized }
-  let gen = @uuid.generator(@random.Rand::new())
-  "\{prefix}-\{gen.v4()}"
+  "\{prefix}-\{moonstat_random_id()}"
 }
 
 ///|

@@ -250,6 +250,7 @@ test "moonstat usage keeps interleaved request accounting isolated" {
   stats.record_stream_mode(codex, false)
 
   let claude = stats.begin_request(47)
+  assert_true(codex.request_id != claude.request_id)
   claude.set_active_target("claude", "anthropic", "Anthropic")
   claude.set_request_context(
     "claude",
