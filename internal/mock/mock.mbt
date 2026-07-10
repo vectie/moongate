@@ -363,7 +363,8 @@ fn init {
 /// Example:
 ///
 /// ```moonbit async
-/// async test (t : @test.Test) {
+/// async test {
+///   let t = @test.Test("isolated mock example")
 ///   @mock.run(t, ctx => {
 ///     let file = ctx.add_file("test.txt", content="Hello, World!")
 ///     let content = file.read()

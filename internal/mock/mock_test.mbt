@@ -1,5 +1,6 @@
 ///|
-async test "retry" (t : @test.Test) {
+async test "retry" {
+  let t = @test.Test("retry")
   try {
     @mock.run(t, retry=3, _ => assert_false(true))
     fail("should have failed")
@@ -16,14 +17,16 @@ async test "retry" (t : @test.Test) {
 }
 
 ///|
-async test "moon_home" (t : @test.Test) {
+async test "moon_home" {
+  let t = @test.Test("moon_home")
   @mock.run(t, mock => {
     inspect(mock.show(mock.moon_home), content="(mock:env:MOON_HOME)")
   })
 }
 
 ///|
-async test "add_json_tree" (t : @test.Test) {
+async test "add_json_tree" {
+  let t = @test.Test("add_json_tree")
   @mock.run(t, mock => {
     mock.add_json_tree({
       "file.txt": "hello",
@@ -51,7 +54,8 @@ async test "add_json_tree" (t : @test.Test) {
 }
 
 ///|
-async test "add_json_tree/empty_tree" (t : @test.Test) {
+async test "add_json_tree/empty_tree" {
+  let t = @test.Test("add_json_tree/empty_tree")
   @mock.run(t, mock => {
     mock.add_json_tree({})
     let entries = mock.cwd.list()
@@ -60,7 +64,8 @@ async test "add_json_tree/empty_tree" (t : @test.Test) {
 }
 
 ///|
-async test "add_json_tree/empty_content" (t : @test.Test) {
+async test "add_json_tree/empty_content" {
+  let t = @test.Test("add_json_tree/empty_content")
   @mock.run(t, mock => {
     mock.add_json_tree({ "empty.txt": "" })
     let file_path = @pathx.join(mock.cwd.path(), "empty.txt")
@@ -69,7 +74,8 @@ async test "add_json_tree/empty_content" (t : @test.Test) {
 }
 
 ///|
-async test "add_json_tree/directory_then_add_more" (t : @test.Test) {
+async test "add_json_tree/directory_then_add_more" {
+  let t = @test.Test("add_json_tree/directory_then_add_more")
   @mock.run(t, mock => {
     mock.add_json_tree({ "dir1": { "a.txt": "a" } })
     mock.add_json_tree({ "dir2": { "b.txt": "b" } })
@@ -81,7 +87,8 @@ async test "add_json_tree/directory_then_add_more" (t : @test.Test) {
 }
 
 ///|
-async test "add_json_tree/invalid_value_panics" (t : @test.Test) {
+async test "add_json_tree/invalid_value_panics" {
+  let t = @test.Test("add_json_tree/invalid_value_panics")
   @mock.run(t, mock => {
     try {
       mock.add_json_tree({ "file.txt": Json::number(42) })
@@ -93,7 +100,8 @@ async test "add_json_tree/invalid_value_panics" (t : @test.Test) {
 }
 
 ///|
-async test "add_json_tree/special_characters_in_filename" (t : @test.Test) {
+async test "add_json_tree/special_characters_in_filename" {
+  let t = @test.Test("add_json_tree/special_characters_in_filename")
   @mock.run(t, mock => {
     mock.add_json_tree({
       "file with spaces.txt": "content1",

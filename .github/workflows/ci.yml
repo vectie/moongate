@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Record toolchain
+        run: moon version --all
+
+      - name: Resolve dependencies
+        run: moon update
+
+      - name: Check formatting
+        run: moon fmt --check
+
+      - name: Generate and verify interfaces
+        run: |
+          moon info
+          git diff --exit-code -- '*.mbti'
+
+      - name: Check
+        run: moon check --target native --warn-list +73 --deny-warn
+
+      - name: Test
+        run: moon test --target native --deny-warn
+
+      - name: Verify isolated test state
+        run: |
+          test ! -e .moonsuite
+          git diff --exit-code

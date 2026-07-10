@@ -5,7 +5,8 @@ test "getpid" {
 }
 
 ///|
-async test "Manager::spawn" (t : @test.Test) {
+async test "Manager::spawn" {
+  let t = @test.Test("Manager::spawn")
   @mock.run(t, mock => {
     let manager = @spawn.Manager::new(cwd=mock.cwd.path())
     mock.group.spawn_bg(() => manager.start(), no_wait=true)
@@ -15,7 +16,8 @@ async test "Manager::spawn" (t : @test.Test) {
 }
 
 ///|
-async test "Manager::wait" (t : @test.Test) {
+async test "Manager::wait" {
+  let t = @test.Test("Manager::wait")
   @mock.run(t, mock => {
     let manager = @spawn.Manager::new(cwd=mock.cwd.path())
     mock.group.spawn_bg(() => manager.start(), no_wait=true)
@@ -26,7 +28,8 @@ async test "Manager::wait" (t : @test.Test) {
 }
 
 ///|
-async test "spawn/env" (t : @test.Test) {
+async test "spawn/env" {
+  let t = @test.Test("spawn/env")
   @mock.run(t, _ => {
     let process = @spawn.spawn("sh", ["-c", "echo $TEST_ENV_VAR"], env={
       "TEST_ENV_VAR": "hello_world",
@@ -37,7 +40,8 @@ async test "spawn/env" (t : @test.Test) {
 }
 
 ///|
-async test "redirect-stdin" (t : @test.Test) {
+async test "redirect-stdin" {
+  let t = @test.Test("redirect-stdin")
   @mock.run(t, _ => {
     let process = @spawn.spawn("cat", [], stdin="Hello, World!\n")
     json_inspect(process.status, content=0)
@@ -52,7 +56,8 @@ async test "redirect-stdin" (t : @test.Test) {
 }
 
 ///|
-async test "spawn/failed" (t : @test.Test) {
+async test "spawn/failed" {
+  let t = @test.Test("spawn/failed")
   @mock.run(t, _ => {
     let process = @spawn.spawn("sh", ["-c", "exit 42"])
     json_inspect(

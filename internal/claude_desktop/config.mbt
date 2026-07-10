@@ -81,20 +81,19 @@ pub async fn gateway_token() -> String? {
 
 ///|
 pub async fn get_or_create_gateway_token(token : String?) -> String {
+  let resolved = resolve_gateway_token(token)
+  write_gateway_token(resolved)
+  resolved
+}
+
+///|
+async fn resolve_gateway_token(token : String?) -> String {
   match token {
-    Some(value) if !value.trim().is_empty() => {
-      let normalized = value.trim().to_owned()
-      write_gateway_token(normalized)
-      normalized
-    }
+    Some(value) if !value.trim().is_empty() => value.trim().to_owned()
     _ =>
       match gateway_token() {
         Some(existing) => existing
-        None => {
-          let generated = generate_gateway_token()
-          write_gateway_token(generated)
-          generated
-        }
+        None => generate_gateway_token()
       }
   }
 }
@@ -121,9 +120,10 @@ async fn install_proxy_profile_at_paths(
     paths.threep_config_path,
     paths.profile_path,
     paths.meta_path,
+    gateway_token_path(),
   ])
   try {
-    let gateway_token = get_or_create_gateway_token(token)
+    let gateway_token = resolve_gateway_token(token)
     write_deployment_mode(paths.normal_config_path, "3p")
     write_deployment_mode(paths.threep_config_path, "3p")
     write_json_file(
@@ -131,6 +131,7 @@ async fn install_proxy_profile_at_paths(
       gateway_profile_json(base_url, gateway_token),
     )
     write_meta(paths.meta_path, Some(PROFILE_ID))
+    write_gateway_token(gateway_token)
     Ok({
       token: gateway_token,
       profile_path: paths.profile_path,
