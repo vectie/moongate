@@ -245,17 +245,6 @@ priv struct TrafficStats {
   mut last_error : String?
   request_logs : Array[RequestLog]
   daily_rollups : Array[UsageDailyRollup]
-  mut current_request_id : String?
-  mut current_request_started_at_ms : Int?
-  mut current_request_app_type : String?
-  mut current_request_model : String?
-  mut current_request_outbound_model : String?
-  mut current_request_session_id : String?
-  mut current_request_provider_type : String?
-  mut current_request_cost_multiplier : String
-  mut current_request_pricing_model_source : String
-  mut current_request_is_streaming : Bool
-  mut current_request_used_half_open_permit : Bool
 }
 
 ///|
@@ -263,6 +252,44 @@ priv struct ActiveTarget {
   app_type : String
   provider_id : String
   provider_name : String
+}
+
+///|
+priv struct UsageRequestContext {
+  request_id : String
+  started_at_ms : Int
+  mut app_type : String?
+  mut model : String?
+  mut outbound_model : String?
+  mut session_id : String?
+  mut provider_type : String?
+  mut provider_id : String?
+  mut provider_name : String?
+  mut cost_multiplier : String
+  mut pricing_model_source : String
+  mut is_streaming : Bool
+  mut used_half_open_permit : Bool
+  mut completed : Bool
+}
+
+///|
+fn UsageRequestContext::new(started_at_ms : Int) -> UsageRequestContext {
+  {
+    request_id: generate_request_log_id(),
+    started_at_ms,
+    app_type: None,
+    model: None,
+    outbound_model: None,
+    session_id: None,
+    provider_type: None,
+    provider_id: None,
+    provider_name: None,
+    cost_multiplier: "1.0",
+    pricing_model_source: "response",
+    is_streaming: false,
+    used_half_open_permit: false,
+    completed: false,
+  }
 }
 
 ///|
@@ -295,17 +322,6 @@ fn TrafficStats::new() -> TrafficStats {
     last_error: None,
     request_logs: [],
     daily_rollups: [],
-    current_request_id: None,
-    current_request_started_at_ms: None,
-    current_request_app_type: None,
-    current_request_model: None,
-    current_request_outbound_model: None,
-    current_request_session_id: None,
-    current_request_provider_type: None,
-    current_request_cost_multiplier: "1.0",
-    current_request_pricing_model_source: "response",
-    current_request_is_streaming: false,
-    current_request_used_half_open_permit: false,
   }
 }
 
@@ -315,8 +331,6 @@ fn TrafficStats::set_active_target(
   app_type : String,
   provider_id : String,
   provider_name : String,
-  cost_multiplier? : String = "1.0",
-  pricing_model_source? : String = "response",
 ) -> Unit {
   match self.active_targets.get(app_type) {
     Some(target) if target.provider_id != provider_id =>
@@ -325,16 +339,32 @@ fn TrafficStats::set_active_target(
   }
   self.current_provider = Some(provider_name)
   self.current_provider_id = Some(provider_id)
-  self.current_request_cost_multiplier = cost_multiplier
-  self.current_request_pricing_model_source = pricing_model_source
   self.active_targets.set(app_type, { app_type, provider_id, provider_name })
 }
 
 ///|
-fn TrafficStats::record_inbound(
+fn UsageRequestContext::set_active_target(
+  self : UsageRequestContext,
+  app_type : String,
+  provider_id : String,
+  provider_name : String,
+  used_half_open_permit? : Bool = false,
+  cost_multiplier? : String = "1.0",
+  pricing_model_source? : String = "response",
+) -> Unit {
+  self.app_type = Some(app_type)
+  self.provider_id = Some(provider_id)
+  self.provider_name = Some(provider_name)
+  self.used_half_open_permit = used_half_open_permit
+  self.cost_multiplier = cost_multiplier
+  self.pricing_model_source = pricing_model_source
+}
+
+///|
+fn TrafficStats::begin_request(
   self : TrafficStats,
   request_bytes : Int,
-) -> Unit {
+) -> UsageRequestContext {
   let now = @async.now()
   self.total_requests += 1
   self.message_requests += 1
@@ -342,74 +372,86 @@ fn TrafficStats::record_inbound(
   self.request_bytes += request_bytes
   self.last_request_at = Some(now.to_string())
   self.last_error = None
-  self.current_request_id = Some(generate_request_log_id())
-  self.current_request_started_at_ms = Some(now.to_int())
-  self.current_request_app_type = None
-  self.current_request_model = None
-  self.current_request_outbound_model = None
-  self.current_request_session_id = None
-  self.current_request_provider_type = None
-  self.current_request_cost_multiplier = "1.0"
-  self.current_request_pricing_model_source = "response"
-  self.current_request_is_streaming = false
-  self.current_request_used_half_open_permit = false
+  UsageRequestContext::new(now.to_int())
 }
 
 ///|
-fn TrafficStats::record_request_context(
-  self : TrafficStats,
+fn UsageRequestContext::set_request_context(
+  self : UsageRequestContext,
   app_type : String,
   model : String,
   outbound_model? : String? = None,
   session_id? : String? = None,
   provider_type? : String? = None,
 ) -> Unit {
-  self.current_request_app_type = Some(app_type)
-  self.current_request_model = Some(model)
-  self.current_request_outbound_model = outbound_model
-  self.current_request_session_id = session_id
-  self.current_request_provider_type = provider_type
+  self.app_type = Some(app_type)
+  self.model = Some(model)
+  self.outbound_model = outbound_model
+  self.session_id = session_id
+  self.provider_type = provider_type
 }
 
 ///|
-fn TrafficStats::record_stream_mode(self : TrafficStats, stream : Bool) -> Unit {
+fn TrafficStats::record_stream_mode(
+  self : TrafficStats,
+  context : UsageRequestContext,
+  stream : Bool,
+) -> Unit {
   if stream {
     self.streaming_requests += 1
   } else {
     self.non_streaming_requests += 1
   }
-  self.current_request_is_streaming = stream
+  context.is_streaming = stream
 }
 
 ///|
-fn TrafficStats::record_bad_request(self : TrafficStats) -> Unit {
+fn TrafficStats::record_bad_request(
+  self : TrafficStats,
+  context : UsageRequestContext,
+) -> Unit {
   self.bad_requests += 1
   self.failed_responses += 1
   self.last_error = Some("bad_request")
-  self.record_completed_request(400, TokenUsage::empty(), Some("bad_request"))
-  self.finish_request()
+  self.record_completed_request(
+    context,
+    400,
+    TokenUsage::empty(),
+    Some("bad_request"),
+  )
+  self.finish_request(context)
 }
 
 ///|
-fn TrafficStats::record_unauthorized(self : TrafficStats) -> Unit {
+fn TrafficStats::record_unauthorized(
+  self : TrafficStats,
+  context : UsageRequestContext,
+) -> Unit {
   self.unauthorized_responses += 1
   self.failed_responses += 1
   self.last_error = Some("unauthorized")
-  self.record_completed_request(401, TokenUsage::empty(), Some("unauthorized"))
-  self.finish_request()
+  self.record_completed_request(
+    context,
+    401,
+    TokenUsage::empty(),
+    Some("unauthorized"),
+  )
+  self.finish_request(context)
 }
 
 ///|
 fn TrafficStats::record_upstream_error(
   self : TrafficStats,
+  context : UsageRequestContext,
   response_bytes : Int,
 ) -> Unit {
-  self.record_upstream_error_status(response_bytes, 502)
+  self.record_upstream_error_status(context, response_bytes, 502)
 }
 
 ///|
 fn TrafficStats::record_upstream_error_status(
   self : TrafficStats,
+  context : UsageRequestContext,
   response_bytes : Int,
   status_code : Int,
 ) -> Unit {
@@ -418,28 +460,34 @@ fn TrafficStats::record_upstream_error_status(
   self.response_bytes += response_bytes
   self.last_error = Some("upstream_error")
   self.record_completed_request(
+    context,
     status_code,
     TokenUsage::empty(),
     Some("upstream_error"),
   )
-  self.finish_request()
+  self.finish_request(context)
 }
 
 ///|
-fn TrafficStats::record_internal_error(self : TrafficStats) -> Unit {
+fn TrafficStats::record_internal_error(
+  self : TrafficStats,
+  context : UsageRequestContext,
+) -> Unit {
   self.failed_responses += 1
   self.last_error = Some("internal_error")
   self.record_completed_request(
+    context,
     500,
     TokenUsage::empty(),
     Some("internal_error"),
   )
-  self.finish_request()
+  self.finish_request(context)
 }
 
 ///|
 fn TrafficStats::record_success(
   self : TrafficStats,
+  context : UsageRequestContext,
   input_tokens : Int,
   output_tokens : Int,
   response_bytes : Int,
@@ -450,20 +498,23 @@ fn TrafficStats::record_success(
   self.response_bytes += response_bytes
   self.last_error = None
   self.record_completed_request(
+    context,
     200,
     TokenUsage::new(input_tokens~, output_tokens~),
     None,
   )
-  self.finish_request()
+  self.finish_request(context)
 }
 
 ///|
 fn TrafficStats::record_success_usage(
   self : TrafficStats,
+  context : UsageRequestContext,
   usage : TokenUsage,
   response_bytes : Int,
 ) -> Unit {
   self.record_success_usage_with_pricing(
+    context,
     usage,
     response_bytes,
     [],
@@ -474,17 +525,19 @@ fn TrafficStats::record_success_usage(
 ///|
 fn TrafficStats::record_success_without_usage_log(
   self : TrafficStats,
+  context : UsageRequestContext,
   response_bytes : Int,
 ) -> Unit {
   self.successful_responses += 1
   self.response_bytes += response_bytes
   self.last_error = None
-  self.finish_request()
+  self.finish_request(context)
 }
 
 ///|
 fn TrafficStats::record_success_usage_with_pricing(
   self : TrafficStats,
+  context : UsageRequestContext,
   usage : TokenUsage,
   response_bytes : Int,
   pricing_overrides : Array[ModelPricing],
@@ -499,6 +552,7 @@ fn TrafficStats::record_success_usage_with_pricing(
   self.response_bytes += response_bytes
   self.last_error = None
   self.record_completed_request(
+    context,
     200,
     usage,
     None,
@@ -506,12 +560,13 @@ fn TrafficStats::record_success_usage_with_pricing(
     deleted_model_ids~,
     first_token_ms~,
   )
-  self.finish_request()
+  self.finish_request(context)
 }
 
 ///|
 fn TrafficStats::record_completed_request(
   self : TrafficStats,
+  context : UsageRequestContext,
   status_code : Int,
   usage : TokenUsage,
   error_message : String?,
@@ -519,22 +574,21 @@ fn TrafficStats::record_completed_request(
   deleted_model_ids? : Map[String, Bool] = Map([], capacity=0),
   first_token_ms? : Int? = None,
 ) -> Unit {
-  guard self.current_request_id is Some(fallback_request_id) else { return }
-  let request_id = usage.dedup_request_id(fallback_request_id)
-  let now_ms = @async.now().to_int()
-  let latency_ms = match self.current_request_started_at_ms {
-    Some(started_at) => max_int(now_ms - started_at, 0)
-    None => 0
+  if context.completed {
+    return
   }
+  let request_id = usage.dedup_request_id(context.request_id)
+  let now_ms = @async.now().to_int()
+  let latency_ms = max_int(now_ms - context.started_at_ms, 0)
   let model = match usage.model {
     Some(model) if !model.is_empty() => model
     _ =>
-      match self.current_request_outbound_model {
+      match context.outbound_model {
         Some(outbound_model) if !outbound_model.is_empty() => outbound_model
-        _ => self.current_request_model.unwrap_or("unknown")
+        _ => context.model.unwrap_or("unknown")
       }
   }
-  let request_model = match self.current_request_model {
+  let request_model = match context.model {
     Some(request_model) => Some(request_model)
     None => Some(model)
   }
@@ -543,12 +597,10 @@ fn TrafficStats::record_completed_request(
   } else {
     model
   }
-  let app_type = self.current_request_app_type.unwrap_or("unknown")
-  let pricing_model = match self.current_request_pricing_model_source {
+  let app_type = context.app_type.unwrap_or("unknown")
+  let pricing_model = match context.pricing_model_source {
     "request" =>
-      self.current_request_outbound_model.unwrap_or(
-        request_model.unwrap_or(model),
-      )
+      context.outbound_model.unwrap_or(request_model.unwrap_or(model))
     _ => model
   }
   let pricing = find_model_pricing(
@@ -557,7 +609,7 @@ fn TrafficStats::record_completed_request(
   let cost_multiplier = if error_message is Some(_) {
     "1.0"
   } else {
-    self.current_request_cost_multiplier
+    context.cost_multiplier
   }
   let cost = match pricing {
     Some(model_pricing) if usage.has_billable_tokens() =>
@@ -574,8 +626,8 @@ fn TrafficStats::record_completed_request(
   self.record_request_log(
     RequestLog::new(
       request_id~,
-      provider_id=self.current_provider_id.unwrap_or("unknown"),
-      provider_name=self.current_provider,
+      provider_id=context.provider_id.unwrap_or("unknown"),
+      provider_name=context.provider_name,
       app_type~,
       model=logged_model,
       request_model~,
@@ -597,9 +649,9 @@ fn TrafficStats::record_completed_request(
       first_token_ms~,
       duration_ms=Some(latency_ms),
       error_message~,
-      session_id=self.current_request_session_id,
-      provider_type=self.current_request_provider_type,
-      is_streaming=self.current_request_is_streaming,
+      session_id=context.session_id,
+      provider_type=context.provider_type,
+      is_streaming=context.is_streaming,
       cost_multiplier~,
     ),
   )
@@ -1925,19 +1977,17 @@ fn request_log_pricing_model(log : RequestLog) -> String {
 }
 
 ///|
-fn TrafficStats::finish_request(self : TrafficStats) -> Unit {
+fn TrafficStats::finish_request(
+  self : TrafficStats,
+  context : UsageRequestContext,
+) -> Unit {
+  if context.completed {
+    return
+  }
+  context.completed = true
   if self.active_connections > 0 {
     self.active_connections -= 1
   }
-  self.current_request_id = None
-  self.current_request_started_at_ms = None
-  self.current_request_app_type = None
-  self.current_request_model = None
-  self.current_request_outbound_model = None
-  self.current_request_session_id = None
-  self.current_request_provider_type = None
-  self.current_request_is_streaming = false
-  self.current_request_used_half_open_permit = false
 }
 
 ///|

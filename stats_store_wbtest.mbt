@@ -145,15 +145,18 @@ async test "gateway completion records are persisted automatically" {
   )
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.enable_persistent_store(storage_dir=dir)
-  gateway.usage.stats.record_inbound(32)
+  let success_request = gateway.usage.begin_request(32)
   gateway.usage.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
-  gateway.usage.stats.record_request_context(
+  success_request.activate_provider_target(
+    "codex", "codex-oauth", "Codex OAuth",
+  )
+  success_request.record_request_context(
     "codex",
     "gpt-5.5",
     session_id=Some("live-session"),
     provider_type=Some("codex"),
   )
-  gateway.usage.record_success_usage_with_provider(
+  success_request.record_success_usage_with_provider(
     gateway.proxy,
     TokenUsage::new(
       input_tokens=11,
@@ -164,16 +167,19 @@ async test "gateway completion records are persisted automatically" {
     128,
   )
 
-  gateway.usage.stats.record_inbound(12)
+  let failure_request = gateway.usage.begin_request(12)
   gateway.usage.stats.set_active_target(
     "gemini", "gemini-api-key", "Gemini API Key",
   )
-  gateway.usage.stats.record_request_context(
+  failure_request.activate_provider_target(
+    "gemini", "gemini-api-key", "Gemini API Key",
+  )
+  failure_request.record_request_context(
     "gemini",
     "gemini-2.5-pro",
     provider_type=Some("gemini"),
   )
-  gateway.usage.record_upstream_error_status_with_provider(
+  failure_request.record_upstream_error_status_with_provider(
     gateway.proxy,
     64,
     502,

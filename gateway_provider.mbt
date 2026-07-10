@@ -78,7 +78,7 @@ fn moonstat_default_provider_router() -> ProviderRouter {
 ///|
 fn ProxyService::activate_provider(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   app_type : String,
 ) -> ProviderRouteTarget? {
   let selected = self.provider_router.select_providers(app_type)
@@ -89,7 +89,7 @@ fn ProxyService::activate_provider(
 ///|
 fn ProxyService::activate_first_available_provider(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   app_type : String,
   providers : Array[ProviderRouteTarget],
 ) -> ProviderRouteTarget? {
@@ -99,7 +99,7 @@ fn ProxyService::activate_first_available_provider(
 ///|
 fn ProxyService::activate_first_available_provider_excluding(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
@@ -131,7 +131,7 @@ fn ProxyService::activate_first_available_provider_excluding(
 ///|
 fn ProxyService::activate_provider_target(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   app_type : String,
   provider : ProviderRouteTarget,
   bypass_circuit_breaker? : Bool = false,
@@ -156,7 +156,7 @@ fn ProxyService::activate_provider_target(
 ///|
 fn ProxyService::activate_next_provider_after_upstream_status(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
@@ -250,7 +250,7 @@ fn SessionService::codex_provider_outbound_request(
 ///|
 fn ProxyService::active_provider_target(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   providers : Array[ProviderRouteTarget],
 ) -> ProviderRouteTarget? {
   let _ = self
@@ -294,6 +294,7 @@ async fn ProxyService::handle_claude_desktop_models(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
+  let usage = usage.begin_request(0)
   guard auth.validate_claude_desktop_gateway_auth(self, usage, r, w) else {
     return
   }
@@ -302,6 +303,7 @@ async fn ProxyService::handle_claude_desktop_models(
   w.write_header(@status.Ok)
   w.write(claude_desktop_model_list_json(provider~).stringify())
   w.flush()
+  usage.finish_neutral(self)
 }
 
 ///|
@@ -313,7 +315,7 @@ async fn ProxyService::handle_gemini(
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  usage.record_inbound(body_str.length())
+  let usage = usage.begin_request(body_str.length())
   let _ = self.activate_provider(usage, "gemini")
   usage.record_request_context("gemini", "gemini")
   let request_json : Json = if body_str.is_empty() {
@@ -366,7 +368,7 @@ async fn ProxyService::handle_gemini(
 ///|
 async fn ProxyService::forward_gemini_get(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   url : String,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -410,7 +412,7 @@ async fn ProxyService::forward_gemini_get(
 ///|
 async fn ProxyService::forward_gemini_post(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   url : String,
   request_json : Json,
   w : @httpx.ResponseWriter,

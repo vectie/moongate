@@ -10,6 +10,9 @@ async fn ProxyService::handle_messages(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
+  let body = r.body.read_all()
+  let body_str = body.text()
+  let usage = usage.begin_request(body_str.length())
   let app_type = if r.path.has_prefix("/claude-desktop") {
     guard auth.validate_claude_desktop_gateway_auth(self, usage, r, w) else {
       return
@@ -18,9 +21,6 @@ async fn ProxyService::handle_messages(
   } else {
     "claude"
   }
-  let body = r.body.read_all()
-  let body_str = body.text()
-  usage.record_inbound(body_str.length())
   let active_provider = self.activate_provider(usage, app_type)
   usage.record_request_context(app_type, default_model)
   if active_provider is None && self.all_provider_circuits_open(app_type) {
@@ -164,7 +164,7 @@ fn ProxyService::upstream_claude_model(
 async fn ProxyService::forward_non_streaming_claude_compatible_request(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   config : ConfigService,
   session_store : SessionService,
   default_model : String,
@@ -1395,7 +1395,7 @@ fn append_openai_chat_tool_calls_as_anthropic(
 async fn ProxyService::handle_non_streaming_request(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   config : ConfigService,
   session_store : SessionService,
   default_model : String,
@@ -1510,7 +1510,7 @@ async fn ProxyService::handle_non_streaming_request(
 async fn ProxyService::forward_streaming_claude_compatible_request(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   config : ConfigService,
   session_store : SessionService,
   default_model : String,
@@ -1831,7 +1831,7 @@ async fn ProxyService::forward_streaming_claude_compatible_request(
 ///|
 async fn ProxyService::forward_successful_claude_compatible_stream(
   self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   session_store : SessionService,
   client : @http.Client,
   request_model : String,
@@ -1917,7 +1917,7 @@ async fn ProxyService::forward_successful_claude_compatible_stream(
 async fn ProxyService::handle_streaming_request(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   config : ConfigService,
   session_store : SessionService,
   default_model : String,

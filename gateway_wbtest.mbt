@@ -2278,7 +2278,7 @@ async test "usage accounting is owned by usage service" {
       "record_bad_request_with_provider", "record_unauthorized_with_provider", "record_upstream_error_status_with_provider",
       "record_internal_error_with_provider", "record_provider_result", "release_provider_permit_neutral",
     ] {
-    assert_true(usage_source.contains("UsageService::\{helper}("))
+    assert_true(usage_source.contains("UsageRequest::\{helper}("))
     assert_false(old_gateway_sources.contains("Gateway::\{helper}("))
   }
   for
@@ -2783,7 +2783,7 @@ async test "provider config endpoints are owned by proxy service" {
   )
   assert_true(
     usage_source.contains(
-      "async fn UsageService::write_provider_selection_error(",
+      "async fn UsageRequest::write_provider_selection_error(",
     ),
   )
   assert_false(
@@ -3683,8 +3683,8 @@ test "proxy provider health alias mirrors circuit breaker state" {
 ///|
 test "proxy status alias matches moonstat proxy status shape" {
   let gateway = Gateway::new(port=17002, host="127.0.0.3", model="gpt-5")
-  gateway.usage.stats.record_inbound(16)
-  gateway.usage.stats.record_bad_request()
+  let request = gateway.usage.begin_request(16)
+  gateway.usage.stats.record_bad_request(request.context)
   gateway.usage.stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
   gateway.usage.stats.last_request_at = Some("test-timestamp")
   guard gateway.proxy.status_json(
@@ -4784,16 +4784,12 @@ test "gateway records upstream failures into provider router before finish" {
     error_rate_threshold: 0.6,
     min_requests: 10,
   })
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
-  gateway.usage.record_provider_result(gateway.proxy, false)
-  gateway.usage.stats.record_upstream_error_status(0, 502)
-  assert_eq(gateway.usage.stats.current_request_app_type, None)
+  let usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(usage, "codex")
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
+  usage.record_provider_result(gateway.proxy, false)
+  gateway.usage.stats.record_upstream_error_status(usage.context, 0, 502)
+  assert_true(usage.context.completed)
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
     )
@@ -5246,17 +5242,17 @@ async test "gateway applies moonstat provider cost multiplier to request log" {
       ),
     ),
   )
-  gateway.usage.stats.record_inbound(10)
+  let usage = gateway.usage.begin_request(10)
   assert_true(
     gateway.proxy.activate_provider_target(
-      gateway.usage,
+      usage,
       "claude",
       provider,
       bypass_circuit_breaker=true,
     ),
   )
-  gateway.usage.stats.record_request_context("claude", "test-model")
-  gateway.usage.record_success_usage_with_provider(
+  usage.record_request_context("claude", "test-model")
+  usage.record_success_usage_with_provider(
     gateway.proxy,
     TokenUsage::new(
       input_tokens=1000,
@@ -5300,17 +5296,17 @@ async test "gateway ignores invalid moonstat provider cost multiplier" {
       ),
     ),
   )
-  gateway.usage.stats.record_inbound(10)
+  let usage = gateway.usage.begin_request(10)
   assert_true(
     gateway.proxy.activate_provider_target(
-      gateway.usage,
+      usage,
       "claude",
       provider,
       bypass_circuit_breaker=true,
     ),
   )
-  gateway.usage.stats.record_request_context("claude", "test-model")
-  gateway.usage.record_success_usage_with_provider(
+  usage.record_request_context("claude", "test-model")
+  usage.record_success_usage_with_provider(
     gateway.proxy,
     TokenUsage::new(
       input_tokens=1000,
@@ -5358,17 +5354,17 @@ async test "gateway applies moonstat request pricing model source" {
       ),
     ),
   )
-  gateway.usage.stats.record_inbound(10)
+  let usage = gateway.usage.begin_request(10)
   assert_true(
     gateway.proxy.activate_provider_target(
-      gateway.usage,
+      usage,
       "claude",
       provider,
       bypass_circuit_breaker=true,
     ),
   )
-  gateway.usage.stats.record_request_context("claude", "request-model")
-  gateway.usage.record_success_usage_with_provider(
+  usage.record_request_context("claude", "request-model")
+  usage.record_success_usage_with_provider(
     gateway.proxy,
     TokenUsage::new(
       input_tokens=1000,
@@ -5388,15 +5384,11 @@ async test "gateway applies moonstat request pricing model source" {
 ///|
 async test "gateway records billable moonstat stream usage once" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
-  gateway.usage.stats.record_stream_mode(true)
-  gateway.usage.record_success_stream_usage_with_provider(
+  let usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(usage, "codex")
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
+  usage.record_stream_mode(true)
+  usage.record_success_stream_usage_with_provider(
     gateway.proxy,
     Some(
       TokenUsage::new(
@@ -5428,15 +5420,11 @@ async test "gateway records billable moonstat stream usage once" {
 ///|
 async test "gateway records all zero moonstat stream usage request log" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
-  gateway.usage.stats.record_stream_mode(true)
-  gateway.usage.record_success_stream_usage_with_provider(
+  let usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(usage, "codex")
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
+  usage.record_stream_mode(true)
+  usage.record_success_stream_usage_with_provider(
     gateway.proxy,
     Some(TokenUsage::empty()),
     42,
@@ -5456,15 +5444,11 @@ async test "gateway records all zero moonstat stream usage request log" {
 ///|
 async test "gateway skips all zero moonstat transformed stream usage log" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
-  gateway.usage.stats.record_stream_mode(true)
-  gateway.usage.record_success_stream_usage_with_provider(
+  let usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(usage, "codex")
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
+  usage.record_stream_mode(true)
+  usage.record_success_stream_usage_with_provider(
     gateway.proxy,
     Some(TokenUsage::empty()),
     42,
@@ -5473,21 +5457,17 @@ async test "gateway skips all zero moonstat transformed stream usage log" {
   assert_eq(gateway.usage.stats.successful_responses, 1)
   assert_eq(gateway.usage.stats.response_bytes, 42)
   assert_eq(gateway.usage.stats.request_logs.length(), 0)
-  assert_true(gateway.usage.stats.current_request_id is None)
+  assert_true(usage.context.completed)
 }
 
 ///|
 async test "gateway records all zero moonstat nonstream usage request log" {
   let gateway = Gateway::new(port=0)
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
-  gateway.usage.stats.record_stream_mode(false)
-  gateway.usage.record_success_usage_with_provider(
+  let usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(usage, "codex")
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
+  usage.record_stream_mode(false)
+  usage.record_success_usage_with_provider(
     gateway.proxy,
     TokenUsage::empty(),
     42,
@@ -5539,29 +5519,25 @@ async test "gateway nonretryable upstream errors release half open permit" {
   ])
   gateway.proxy.provider_router.set_auto_failover("codex", true)
 
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  gateway.usage.stats.record_request_context(
+  let first_usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(first_usage, "codex")
+  first_usage.record_request_context(
     "codex",
     "gpt-5",
     provider_type=Some("codex"),
   )
-  gateway.usage.record_provider_result(gateway.proxy, false)
-  gateway.usage.stats.record_upstream_error_status(0, 502)
+  first_usage.record_provider_result(gateway.proxy, false)
+  gateway.usage.stats.record_upstream_error_status(first_usage.context, 0, 502)
 
-  gateway.usage.stats.record_inbound(10)
-  let _ = gateway.proxy.activate_provider(gateway.usage, "codex")
-  assert_true(gateway.usage.stats.current_request_used_half_open_permit)
-  gateway.usage.stats.record_request_context(
+  let second_usage = gateway.usage.begin_request(10)
+  let _ = gateway.proxy.activate_provider(second_usage, "codex")
+  assert_true(second_usage.context.used_half_open_permit)
+  second_usage.record_request_context(
     "codex",
     "gpt-5",
     provider_type=Some("codex"),
   )
-  gateway.usage.record_upstream_error_status_with_provider(
-    gateway.proxy,
-    0,
-    400,
-  )
+  second_usage.record_upstream_error_status_with_provider(gateway.proxy, 0, 400)
 
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
@@ -5573,10 +5549,10 @@ async test "gateway nonretryable upstream errors release half open permit" {
   assert_eq(stats.total_requests, 1)
   assert_eq(stats.failed_requests, 1)
 
-  gateway.usage.stats.record_inbound(10)
-  let third = gateway.proxy.activate_provider(gateway.usage, "codex")
+  let third_usage = gateway.usage.begin_request(10)
+  let third = gateway.proxy.activate_provider(third_usage, "codex")
   assert_true(third is Some(_))
-  assert_true(gateway.usage.stats.current_request_used_half_open_permit)
+  assert_true(third_usage.context.used_half_open_permit)
 }
 
 ///|
@@ -5589,18 +5565,14 @@ async test "gateway streaming success records provider health before request com
     error_rate_threshold: 0.6,
     min_requests: 10,
   })
-  gateway.usage.stats.record_inbound(16)
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
-  gateway.usage.stats.record_stream_mode(true)
-  let selected = gateway.proxy.activate_provider(gateway.usage, "codex")
+  let usage = gateway.usage.begin_request(16)
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
+  usage.record_stream_mode(true)
+  let selected = gateway.proxy.activate_provider(usage, "codex")
   guard selected is Some(provider) else { fail("expected provider") }
   assert_true(provider.provider_id == "codex-oauth")
 
-  gateway.usage.record_provider_result(gateway.proxy, true)
+  usage.record_provider_result(gateway.proxy, true)
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
     )
@@ -5610,11 +5582,10 @@ async test "gateway streaming success records provider health before request com
   assert_true(stats_after_first_chunk.total_requests == 1)
   assert_true(stats_after_first_chunk.failed_requests == 0)
   assert_true(gateway.usage.stats.successful_responses == 0)
-  guard gateway.usage.stats.current_request_id is Some(_) else {
-    fail("request should remain open until stream end")
-  }
+  assert_false(usage.context.request_id.is_empty())
+  assert_false(usage.context.completed)
 
-  gateway.usage.record_success_stream_usage_with_provider(
+  usage.record_success_stream_usage_with_provider(
     gateway.proxy,
     None,
     24,
@@ -5627,7 +5598,7 @@ async test "gateway streaming success records provider health before request com
   assert_true(gateway.usage.stats.request_logs[0].is_streaming)
   assert_true(gateway.usage.stats.request_logs[0].model == "gpt-5")
   assert_true(gateway.usage.stats.request_logs[0].first_token_ms == Some(7))
-  assert_true(gateway.usage.stats.current_request_id is None)
+  assert_true(usage.context.completed)
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
     )
@@ -5680,11 +5651,12 @@ test "gateway activation skips occupied half open provider in failover chain" {
   assert_true(occupied.allowed)
   assert_true(occupied.used_half_open_permit)
 
-  let selected = gateway.proxy.activate_provider(gateway.usage, "codex")
+  let usage = gateway.usage.begin_request(0)
+  let selected = gateway.proxy.activate_provider(usage, "codex")
   guard selected is Some(provider) else { fail("expected fallback provider") }
   assert_eq(provider.provider_id, "codex-alt")
   assert_eq(gateway.usage.stats.current_provider_id, Some("codex-alt"))
-  assert_false(gateway.usage.stats.current_request_used_half_open_permit)
+  assert_false(usage.context.used_half_open_permit)
 }
 
 ///|
@@ -5706,8 +5678,9 @@ test "gateway activation can exclude already attempted failover providers" {
     gateway.proxy.provider_router.upsert_provider(provider)
   }
   gateway.proxy.provider_router.set_auto_failover("codex", true)
+  let usage = gateway.usage.begin_request(0)
   let selected = gateway.proxy.activate_first_available_provider_excluding(
-    gateway.usage,
+    usage,
     "codex",
     providers,
     ["primary"],
@@ -5753,14 +5726,10 @@ test "gateway retryable upstream status activates next failover provider" {
   assert_true(selection.is_ok())
   assert_true(selection.providers.length() == 2)
 
-  gateway.usage.stats.record_inbound(10)
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
+  let usage = gateway.usage.begin_request(10)
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
   let first = gateway.proxy.activate_first_available_provider(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
   )
@@ -5769,7 +5738,7 @@ test "gateway retryable upstream status activates next failover provider" {
 
   let attempted : Array[String] = []
   let next = gateway.proxy.activate_next_provider_after_upstream_status(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
     attempted,
@@ -5783,7 +5752,7 @@ test "gateway retryable upstream status activates next failover provider" {
     fail("expected current provider id")
   }
   assert_true(current_provider_id == "codex-alt")
-  guard gateway.usage.stats.current_request_app_type is Some(current_app_type) else {
+  guard usage.context.app_type is Some(current_app_type) else {
     fail("expected current request app type")
   }
   assert_true(current_app_type == "codex")
@@ -5840,14 +5809,10 @@ test "gateway retryable upstream status respects moonstat max retries cap before
   assert_true(selection.is_ok())
   assert_eq(selection.providers.length(), 2)
 
-  gateway.usage.stats.record_inbound(10)
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
+  let usage = gateway.usage.begin_request(10)
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
   let first = gateway.proxy.activate_first_available_provider(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
   )
@@ -5856,7 +5821,7 @@ test "gateway retryable upstream status respects moonstat max retries cap before
 
   let attempted : Array[String] = []
   let next = gateway.proxy.activate_next_provider_after_upstream_status(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
     attempted,
@@ -5893,14 +5858,10 @@ test "gateway retryable final provider remains active for final upstream error" 
   assert_true(selection.is_ok())
   assert_true(selection.providers.length() == 1)
 
-  gateway.usage.stats.record_inbound(10)
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
+  let usage = gateway.usage.begin_request(10)
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
   let selected = gateway.proxy.activate_first_available_provider(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
   )
@@ -5909,7 +5870,7 @@ test "gateway retryable final provider remains active for final upstream error" 
 
   let attempted : Array[String] = []
   let next = gateway.proxy.activate_next_provider_after_upstream_status(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
     attempted,
@@ -5967,14 +5928,10 @@ test "gateway nonretryable upstream status does not activate failover provider" 
   assert_true(selection.is_ok())
   assert_true(selection.providers.length() == 2)
 
-  gateway.usage.stats.record_inbound(10)
-  gateway.usage.stats.record_request_context(
-    "codex",
-    "gpt-5",
-    provider_type=Some("codex"),
-  )
+  let usage = gateway.usage.begin_request(10)
+  usage.record_request_context("codex", "gpt-5", provider_type=Some("codex"))
   let selected = gateway.proxy.activate_first_available_provider(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
   )
@@ -5983,7 +5940,7 @@ test "gateway nonretryable upstream status does not activate failover provider" 
 
   let attempted : Array[String] = []
   let next = gateway.proxy.activate_next_provider_after_upstream_status(
-    gateway.usage,
+    usage,
     "codex",
     selection.providers,
     attempted,
@@ -6032,13 +5989,14 @@ test "gateway activation bypasses circuit breaker for single provider" {
   }
   assert_true(stats.state == Open)
 
-  let selected = gateway.proxy.activate_provider(gateway.usage, "codex")
+  let usage = gateway.usage.begin_request(0)
+  let selected = gateway.proxy.activate_provider(usage, "codex")
   guard selected is Some(provider) else {
     fail("single provider should bypass circuit gating")
   }
   assert_eq(provider.provider_id, "codex-oauth")
   assert_eq(gateway.usage.stats.current_provider_id, Some("codex-oauth"))
-  assert_false(gateway.usage.stats.current_request_used_half_open_permit)
+  assert_false(usage.context.used_half_open_permit)
 }
 
 ///|
@@ -9127,6 +9085,7 @@ test "openai chat stream tool calls keep distinct indexes" {
 ///|
 test "gateway detects active direct codex compatible provider" {
   let gateway = Gateway::new(port=0)
+  let usage = gateway.usage.begin_request(0)
   let providers = [
     ProviderRouteTarget::new(
       app_type="codex",
@@ -9137,8 +9096,7 @@ test "gateway detects active direct codex compatible provider" {
       api_key=Some("sk-test"),
     ),
   ]
-  guard gateway.proxy.active_provider_target(gateway.usage, providers)
-    is Some(active) else {
+  guard gateway.proxy.active_provider_target(usage, providers) is Some(active) else {
     fail("expected active provider")
   }
   assert_true(active.provider_id == "codex-openai")

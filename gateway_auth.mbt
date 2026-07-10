@@ -462,7 +462,7 @@ fn moon_token_plan_usage_extra(
 async fn AuthService::validate_claude_desktop_gateway_auth(
   self : AuthService,
   proxy : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Bool {

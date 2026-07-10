@@ -1,8 +1,8 @@
 ///|
 test "usage service exposes stats and metrics without gateway" {
   let usage = UsageService::new()
-  usage.record_inbound(120)
-  usage.stats.record_success(11, 17, 240)
+  let request = usage.begin_request(120)
+  usage.stats.record_success(request.context, 11, 17, 240)
   usage.stats.last_request_at = Some("test-timestamp")
   let json = usage.stats_json()
   json_inspect(json, content={
@@ -46,7 +46,8 @@ test "usage service exposes stats and metrics without gateway" {
 ///|
 test "usage service owns health response shape" {
   let usage = UsageService::new()
-  usage.record_inbound(24)
+  let request = usage.begin_request(24)
+  request.finish()
   guard usage.health_json(true) is Object(health) else {
     fail("expected health object")
   }
@@ -90,10 +91,9 @@ async test "usage service owns proxy status target and pricing state" {
 ///|
 test "usage service owns stream first-event timing" {
   let usage = UsageService::new()
-  assert_true(usage.first_stream_event_ms(Some(12)) is Some(12))
-  assert_true(usage.first_stream_event_ms(None) is Some(0))
-  usage.record_inbound(4)
-  guard usage.first_stream_event_ms(None) is Some(elapsed) else {
+  let request = usage.begin_request(4)
+  assert_true(request.first_stream_event_ms(Some(12)) is Some(12))
+  guard request.first_stream_event_ms(None) is Some(elapsed) else {
     fail("expected first event timing")
   }
   assert_true(elapsed >= 0)
@@ -102,8 +102,9 @@ test "usage service owns stream first-event timing" {
 ///|
 test "usage service owns provider bookkeeping context" {
   let usage = UsageService::new()
-  assert_true(usage.provider_request_context() is None)
-  usage.activate_provider_target(
+  let request = usage.begin_request(0)
+  assert_true(request.provider_request_context() is None)
+  request.activate_provider_target(
     "codex",
     "codex-oauth",
     "Codex OAuth",
@@ -111,20 +112,19 @@ test "usage service owns provider bookkeeping context" {
     cost_multiplier="1.5",
     pricing_model_source="request",
   )
-  assert_true(usage.provider_request_context() is None)
-  assert_true(usage.current_provider_id() is Some("codex-oauth"))
-  assert_eq(usage.stats.current_request_cost_multiplier, "1.5")
-  assert_eq(usage.stats.current_request_pricing_model_source, "request")
+  assert_true(request.current_provider_id() is Some("codex-oauth"))
+  assert_eq(request.context.cost_multiplier, "1.5")
+  assert_eq(request.context.pricing_model_source, "request")
 
-  usage.record_request_context("codex", "gpt-5")
-  guard usage.provider_request_context() is Some(context) else {
+  request.record_request_context("codex", "gpt-5")
+  guard request.provider_request_context() is Some(context) else {
     fail("expected provider context")
   }
   assert_eq(context.app_type, "codex")
   assert_eq(context.provider_id, "codex-oauth")
   assert_true(context.used_half_open_permit)
 
-  usage.set_last_error("upstream_error")
+  request.set_last_error("upstream_error")
   assert_true(usage.stats.last_error is Some("upstream_error"))
   usage.set_provider_limits(
     "codex-oauth",
@@ -140,16 +140,17 @@ test "usage service owns provider bookkeeping context" {
 ///|
 async test "usage service owns usage report json without gateway" {
   let usage = UsageService::new()
-  usage.record_inbound(64)
-  usage.record_request_context(
+  let request = usage.begin_request(64)
+  request.record_request_context(
     "codex",
     "gpt-5",
     outbound_model=Some("gpt-5-upstream"),
     session_id=Some("session-1"),
     provider_type=Some("openai_chat"),
   )
-  usage.record_stream_mode(false)
+  request.record_stream_mode(false)
   usage.stats.record_success_usage(
+    request.context,
     TokenUsage::new(
       input_tokens=5,
       output_tokens=7,
@@ -209,15 +210,16 @@ async test "usage service owns usage report json without gateway" {
 ///|
 async test "usage service owns completion and error accounting without gateway" {
   let usage = UsageService::new()
-  usage.record_inbound(32)
+  let request = usage.begin_request(32)
   usage.set_active_target("codex", "openai", "OpenAI")
-  usage.record_request_context(
+  request.activate_provider_target("codex", "openai", "OpenAI")
+  request.record_request_context(
     "codex",
     "gpt-5",
     provider_type=Some("openai_chat"),
   )
-  usage.record_stream_mode(false)
-  usage.record_success_usage(
+  request.record_stream_mode(false)
+  request.record_success_usage(
     TokenUsage::new(input_tokens=3, output_tokens=5, model=Some("gpt-5")),
     64,
     [],
@@ -228,22 +230,18 @@ async test "usage service owns completion and error accounting without gateway" 
   assert_eq(usage.stats.output_tokens, 5)
   assert_eq(usage.stats.request_logs.length(), 1)
 
-  usage.record_inbound(16)
-  usage.record_request_context("codex", "gpt-5")
-  usage.record_stream_mode(true)
-  usage.record_success_stream_usage(None, 24, [], skip_empty_usage=true)
+  let request = usage.begin_request(16)
+  request.record_request_context("codex", "gpt-5")
+  request.record_stream_mode(true)
+  request.record_success_stream_usage(None, 24, [], skip_empty_usage=true)
   assert_eq(usage.stats.total_requests, 2)
   assert_eq(usage.stats.successful_responses, 2)
   assert_eq(usage.stats.request_logs.length(), 1)
 
-  usage.record_inbound(8)
-  usage.record_bad_request()
-  usage.record_inbound(8)
-  usage.record_unauthorized()
-  usage.record_inbound(8)
-  usage.record_upstream_error_status(19, 502)
-  usage.record_inbound(8)
-  usage.record_internal_error()
+  usage.begin_request(8).record_bad_request()
+  usage.begin_request(8).record_unauthorized()
+  usage.begin_request(8).record_upstream_error_status(19, 502)
+  usage.begin_request(8).record_internal_error()
   assert_eq(usage.stats.total_requests, 6)
   assert_eq(usage.stats.failed_responses, 4)
   assert_eq(usage.stats.bad_requests, 1)

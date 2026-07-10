@@ -61,7 +61,7 @@ async fn ProxyService::handle_codex_responses(
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  usage.record_inbound(body_str.length())
+  let usage = usage.begin_request(body_str.length())
   let _ = self.activate_provider(usage, "codex")
   usage.record_request_context("codex", model)
   let json_result : Result[Json, Error] = moon_result(() => {
@@ -129,7 +129,7 @@ async fn ProxyService::handle_chat_completions(
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
-  usage.record_inbound(body_str.length())
+  let usage = usage.begin_request(body_str.length())
   let _ = self.activate_provider(usage, app_type)
   usage.record_request_context(app_type, model)
   let json_result : Result[Json, Error] = moon_result(() => {
@@ -195,7 +195,7 @@ async fn ProxyService::handle_chat_completions(
 async fn ProxyService::forward_non_streaming_chat_completion(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   session_store : SessionService,
   request : Json,
   response_model : String,
@@ -352,7 +352,7 @@ async fn ProxyService::forward_non_streaming_chat_completion(
 async fn ProxyService::forward_streaming_chat_completion(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   session_store : SessionService,
   request : Json,
   response_model : String,
@@ -614,7 +614,7 @@ async fn ProxyService::forward_streaming_chat_completion(
 async fn ProxyService::forward_non_streaming_codex_response(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   session_store : SessionService,
   model : String,
   request : Json,
@@ -798,7 +798,7 @@ fn codex_request_model(request : Json, fallback : String) -> String {
 async fn ProxyService::forward_streaming_codex_response(
   self : ProxyService,
   auth : AuthService,
-  usage : UsageService,
+  usage : UsageRequest,
   session_store : SessionService,
   model : String,
   request : Json,

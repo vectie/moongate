@@ -47,11 +47,25 @@ fn UsageService::status_json(
 }
 
 ///|
-fn UsageService::first_stream_event_ms(
+priv struct UsageRequest {
+  service : UsageService
+  context : UsageRequestContext
+}
+
+///|
+fn UsageService::begin_request(
   self : UsageService,
+  request_bytes : Int,
+) -> UsageRequest {
+  { service: self, context: self.stats.begin_request(request_bytes) }
+}
+
+///|
+fn UsageRequest::first_stream_event_ms(
+  self : UsageRequest,
   current : Int?,
 ) -> Int? {
-  moon_first_stream_event_ms(current, self.stats.current_request_started_at_ms)
+  moon_first_stream_event_ms(current, Some(self.context.started_at_ms))
 }
 
 ///|
@@ -72,8 +86,8 @@ priv struct ProviderUsageContext {
 }
 
 ///|
-fn UsageService::activate_provider_target(
-  self : UsageService,
+fn UsageRequest::activate_provider_target(
+  self : UsageRequest,
   app_type : String,
   provider_id : String,
   provider_name : String,
@@ -81,39 +95,38 @@ fn UsageService::activate_provider_target(
   cost_multiplier? : String = "1.0",
   pricing_model_source? : String = "response",
 ) -> Unit {
-  self.stats.current_request_used_half_open_permit = used_half_open_permit
-  self.stats.set_active_target(
+  self.context.set_active_target(
     app_type,
     provider_id,
     provider_name,
+    used_half_open_permit~,
     cost_multiplier~,
     pricing_model_source~,
   )
+  self.service.stats.set_active_target(app_type, provider_id, provider_name)
 }
 
 ///|
-fn UsageService::provider_request_context(
-  self : UsageService,
+fn UsageRequest::provider_request_context(
+  self : UsageRequest,
 ) -> ProviderUsageContext? {
-  guard self.stats.current_request_app_type is Some(app_type) else {
-    return None
-  }
-  guard self.stats.current_provider_id is Some(provider_id) else { return None }
+  guard self.context.app_type is Some(app_type) else { return None }
+  guard self.context.provider_id is Some(provider_id) else { return None }
   Some({
     app_type,
     provider_id,
-    used_half_open_permit: self.stats.current_request_used_half_open_permit,
+    used_half_open_permit: self.context.used_half_open_permit,
   })
 }
 
 ///|
-fn UsageService::current_provider_id(self : UsageService) -> String? {
-  self.stats.current_provider_id
+fn UsageRequest::current_provider_id(self : UsageRequest) -> String? {
+  self.context.provider_id
 }
 
 ///|
-fn UsageService::set_last_error(self : UsageService, error : String) -> Unit {
-  self.stats.last_error = Some(error)
+fn UsageRequest::set_last_error(self : UsageRequest, error : String) -> Unit {
+  self.service.stats.last_error = Some(error)
 }
 
 ///|
@@ -297,23 +310,15 @@ async fn UsageService::handle_usage_delete_model_pricing(
 }
 
 ///|
-fn UsageService::record_inbound(
-  self : UsageService,
-  request_bytes : Int,
-) -> Unit {
-  self.stats.record_inbound(request_bytes)
-}
-
-///|
-fn UsageService::record_request_context(
-  self : UsageService,
+fn UsageRequest::record_request_context(
+  self : UsageRequest,
   app_type : String,
   model : String,
   outbound_model? : String? = None,
   session_id? : String? = None,
   provider_type? : String? = None,
 ) -> Unit {
-  self.stats.record_request_context(
+  self.context.set_request_context(
     app_type,
     model,
     outbound_model~,
@@ -323,13 +328,13 @@ fn UsageService::record_request_context(
 }
 
 ///|
-fn UsageService::record_stream_mode(self : UsageService, stream : Bool) -> Unit {
-  self.stats.record_stream_mode(stream)
+fn UsageRequest::record_stream_mode(self : UsageRequest, stream : Bool) -> Unit {
+  self.service.stats.record_stream_mode(self.context, stream)
 }
 
 ///|
-fn UsageService::record_provider_result(
-  self : UsageService,
+fn UsageRequest::record_provider_result(
+  self : UsageRequest,
   proxy : ProxyService,
   success : Bool,
 ) -> Unit {
@@ -343,8 +348,8 @@ fn UsageService::record_provider_result(
 }
 
 ///|
-fn UsageService::release_provider_permit_neutral(
-  self : UsageService,
+fn UsageRequest::release_provider_permit_neutral(
+  self : UsageRequest,
   proxy : ProxyService,
 ) -> Unit {
   guard self.provider_request_context() is Some(context) else { return }
@@ -356,19 +361,37 @@ fn UsageService::release_provider_permit_neutral(
 }
 
 ///|
-async fn UsageService::record_success_usage_with_provider(
-  self : UsageService,
+fn UsageRequest::finish_neutral(
+  self : UsageRequest,
+  proxy : ProxyService,
+) -> Unit {
+  self.release_provider_permit_neutral(proxy)
+  self.finish()
+}
+
+///|
+fn UsageRequest::finish(self : UsageRequest) -> Unit {
+  self.service.stats.finish_request(self.context)
+}
+
+///|
+async fn UsageRequest::record_success_usage_with_provider(
+  self : UsageRequest,
   proxy : ProxyService,
   usage : TokenUsage,
   response_bytes : Int,
 ) -> Unit {
   self.record_provider_result(proxy, true)
-  self.record_success_usage(usage, response_bytes, self.pricing_override_rows())
+  self.record_success_usage(
+    usage,
+    response_bytes,
+    self.service.pricing_override_rows(),
+  )
 }
 
 ///|
-async fn UsageService::record_success_stream_usage_with_provider(
-  self : UsageService,
+async fn UsageRequest::record_success_stream_usage_with_provider(
+  self : UsageRequest,
   proxy : ProxyService,
   usage : TokenUsage?,
   response_bytes : Int,
@@ -382,31 +405,32 @@ async fn UsageService::record_success_stream_usage_with_provider(
   self.record_success_stream_usage(
     usage,
     response_bytes,
-    self.pricing_override_rows(),
+    self.service.pricing_override_rows(),
     first_token_ms~,
     skip_empty_usage~,
   )
 }
 
 ///|
-async fn UsageService::record_success_usage(
-  self : UsageService,
+async fn UsageRequest::record_success_usage(
+  self : UsageRequest,
   usage : TokenUsage,
   response_bytes : Int,
   pricing_overrides : Array[ModelPricing],
 ) -> Unit {
-  self.stats.record_success_usage_with_pricing(
+  self.service.stats.record_success_usage_with_pricing(
+    self.context,
     usage,
     response_bytes,
     pricing_overrides,
-    self.pricing_deleted_model_ids,
+    self.service.pricing_deleted_model_ids,
   )
-  self.stats.save_persistent_store()
+  self.service.stats.save_persistent_store()
 }
 
 ///|
-async fn UsageService::record_success_stream_usage(
-  self : UsageService,
+async fn UsageRequest::record_success_stream_usage(
+  self : UsageRequest,
   usage : TokenUsage?,
   response_bytes : Int,
   pricing_overrides : Array[ModelPricing],
@@ -417,31 +441,35 @@ async fn UsageService::record_success_stream_usage(
     match usage {
       Some(usage) if usage.has_billable_tokens() => ()
       _ => {
-        self.stats.record_success_without_usage_log(response_bytes)
-        self.stats.save_persistent_store()
+        self.service.stats.record_success_without_usage_log(
+          self.context,
+          response_bytes,
+        )
+        self.service.stats.save_persistent_store()
         return
       }
     }
   }
-  self.stats.record_success_usage_with_pricing(
+  self.service.stats.record_success_usage_with_pricing(
+    self.context,
     usage.unwrap_or(TokenUsage::empty()),
     response_bytes,
     pricing_overrides,
-    self.pricing_deleted_model_ids,
+    self.service.pricing_deleted_model_ids,
     first_token_ms~,
   )
-  self.stats.save_persistent_store()
+  self.service.stats.save_persistent_store()
 }
 
 ///|
-async fn UsageService::record_bad_request(self : UsageService) -> Unit {
-  self.stats.record_bad_request()
-  self.stats.save_persistent_store()
+async fn UsageRequest::record_bad_request(self : UsageRequest) -> Unit {
+  self.service.stats.record_bad_request(self.context)
+  self.service.stats.save_persistent_store()
 }
 
 ///|
-async fn UsageService::record_bad_request_with_provider(
-  self : UsageService,
+async fn UsageRequest::record_bad_request_with_provider(
+  self : UsageRequest,
   proxy : ProxyService,
 ) -> Unit {
   self.release_provider_permit_neutral(proxy)
@@ -449,14 +477,14 @@ async fn UsageService::record_bad_request_with_provider(
 }
 
 ///|
-async fn UsageService::record_unauthorized(self : UsageService) -> Unit {
-  self.stats.record_unauthorized()
-  self.stats.save_persistent_store()
+async fn UsageRequest::record_unauthorized(self : UsageRequest) -> Unit {
+  self.service.stats.record_unauthorized(self.context)
+  self.service.stats.save_persistent_store()
 }
 
 ///|
-async fn UsageService::record_unauthorized_with_provider(
-  self : UsageService,
+async fn UsageRequest::record_unauthorized_with_provider(
+  self : UsageRequest,
   proxy : ProxyService,
 ) -> Unit {
   self.release_provider_permit_neutral(proxy)
@@ -464,18 +492,22 @@ async fn UsageService::record_unauthorized_with_provider(
 }
 
 ///|
-async fn UsageService::record_upstream_error_status(
-  self : UsageService,
+async fn UsageRequest::record_upstream_error_status(
+  self : UsageRequest,
   response_bytes : Int,
   status_code : Int,
 ) -> Unit {
-  self.stats.record_upstream_error_status(response_bytes, status_code)
-  self.stats.save_persistent_store()
+  self.service.stats.record_upstream_error_status(
+    self.context,
+    response_bytes,
+    status_code,
+  )
+  self.service.stats.save_persistent_store()
 }
 
 ///|
-async fn UsageService::record_upstream_error_status_with_provider(
-  self : UsageService,
+async fn UsageRequest::record_upstream_error_status_with_provider(
+  self : UsageRequest,
   proxy : ProxyService,
   response_bytes : Int,
   status_code : Int,
@@ -489,8 +521,8 @@ async fn UsageService::record_upstream_error_status_with_provider(
 }
 
 ///|
-async fn UsageService::write_provider_selection_error(
-  self : UsageService,
+async fn UsageRequest::write_provider_selection_error(
+  self : UsageRequest,
   proxy : ProxyService,
   app_type : String,
   error : ProviderSelectionError,
@@ -511,14 +543,14 @@ async fn UsageService::write_provider_selection_error(
 }
 
 ///|
-async fn UsageService::record_internal_error(self : UsageService) -> Unit {
-  self.stats.record_internal_error()
-  self.stats.save_persistent_store()
+async fn UsageRequest::record_internal_error(self : UsageRequest) -> Unit {
+  self.service.stats.record_internal_error(self.context)
+  self.service.stats.save_persistent_store()
 }
 
 ///|
-async fn UsageService::record_internal_error_with_provider(
-  self : UsageService,
+async fn UsageRequest::record_internal_error_with_provider(
+  self : UsageRequest,
   proxy : ProxyService,
 ) -> Unit {
   self.release_provider_permit_neutral(proxy)

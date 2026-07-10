@@ -1,7 +1,7 @@
 ///|
 async fn ProxyService::forward_openai_chat_sse_as_anthropic(
   _self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   reader : &@io.Reader,
   events : Array[Json],
   w : @httpx.ResponseWriter,
@@ -51,7 +51,7 @@ fn openai_chat_stream_chunk_to_anthropic_events(
 ///|
 async fn ProxyService::forward_anthropic_sse_passthrough(
   _self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   reader : &@io.Reader,
   events : Array[Json],
   w : @httpx.ResponseWriter,
@@ -76,7 +76,7 @@ async fn ProxyService::forward_anthropic_sse_passthrough(
 ///|
 async fn ProxyService::forward_gemini_native_sse_as_anthropic(
   _self : ProxyService,
-  usage : UsageService,
+  usage : UsageRequest,
   gemini_shadow : GeminiShadowStore,
   reader : &@io.Reader,
   events : Array[Json],

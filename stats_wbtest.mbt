@@ -1,12 +1,12 @@
 ///|
 test "moonstat usage records proxy counters" {
   let stats = TrafficStats::new()
-  stats.record_inbound(120)
-  stats.record_stream_mode(false)
-  stats.record_unauthorized()
-  stats.record_inbound(80)
-  stats.record_stream_mode(true)
-  stats.record_success(11, 17, 240)
+  let unauthorized = stats.begin_request(120)
+  stats.record_stream_mode(unauthorized, false)
+  stats.record_unauthorized(unauthorized)
+  let success = stats.begin_request(80)
+  stats.record_stream_mode(success, true)
+  stats.record_success(success, 11, 17, 240)
   stats.last_request_at = Some("test-timestamp")
   let json = stats.to_json()
   json_inspect(json, content={
@@ -38,8 +38,8 @@ test "moonstat usage records proxy counters" {
 ///|
 test "traffic status json matches moonstat proxy status shape" {
   let stats = TrafficStats::new()
-  stats.record_inbound(10)
-  stats.record_bad_request()
+  let request = stats.begin_request(10)
+  stats.record_bad_request(request)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
   stats.last_request_at = Some("test-timestamp")
   let status = stats.status_json("127.0.0.1", 15721, 3)
@@ -160,11 +160,13 @@ test "request log json matches moonstat proxy_request_logs shape" {
 ///|
 test "moonstat usage writes request logs from request context" {
   let stats = TrafficStats::new()
-  stats.record_inbound(64)
+  let request = stats.begin_request(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
-  stats.record_request_context("codex", "gpt-5", session_id=Some("session-2"))
-  stats.record_stream_mode(false)
+  request.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  request.set_request_context("codex", "gpt-5", session_id=Some("session-2"))
+  stats.record_stream_mode(request, false)
   stats.record_success_usage(
+    request,
     TokenUsage::new(input_tokens=3, output_tokens=4, model=Some("gpt-5")),
     128,
   )
@@ -201,15 +203,17 @@ test "moonstat usage writes request logs from request context" {
 ///|
 test "moonstat usage uses moonstat session request id for message usage" {
   let stats = TrafficStats::new()
-  stats.record_inbound(64)
+  let request = stats.begin_request(64)
   stats.set_active_target("claude", "anthropic", "Anthropic")
-  stats.record_request_context(
+  request.set_active_target("claude", "anthropic", "Anthropic")
+  request.set_request_context(
     "claude",
     "claude-sonnet-4-6",
     session_id=Some("session-2"),
   )
-  stats.record_stream_mode(true)
+  stats.record_stream_mode(request, true)
   stats.record_success_usage(
+    request,
     TokenUsage::new(
       input_tokens=3,
       output_tokens=4,
@@ -226,21 +230,79 @@ test "moonstat usage uses moonstat session request id for message usage" {
 }
 
 ///|
+test "moonstat usage keeps interleaved request accounting isolated" {
+  let stats = TrafficStats::new()
+  let codex = stats.begin_request(31)
+  codex.set_active_target("codex", "openai", "OpenAI")
+  codex.set_request_context(
+    "codex",
+    "gpt-5",
+    session_id=Some("codex-session"),
+    provider_type=Some("openai_chat"),
+  )
+  stats.record_stream_mode(codex, false)
+
+  let claude = stats.begin_request(47)
+  claude.set_active_target("claude", "anthropic", "Anthropic")
+  claude.set_request_context(
+    "claude",
+    "claude-sonnet-4-6",
+    session_id=Some("claude-session"),
+    provider_type=Some("anthropic"),
+  )
+  stats.record_stream_mode(claude, true)
+  assert_eq(stats.active_connections, 2)
+
+  stats.record_success_usage(
+    claude,
+    TokenUsage::new(
+      input_tokens=7,
+      output_tokens=11,
+      model=Some("claude-sonnet-4-6"),
+    ),
+    101,
+  )
+  assert_eq(stats.active_connections, 1)
+  stats.record_success_usage(
+    codex,
+    TokenUsage::new(input_tokens=3, output_tokens=5, model=Some("gpt-5")),
+    59,
+  )
+
+  assert_eq(stats.active_connections, 0)
+  assert_eq(stats.request_logs.length(), 2)
+  let claude_log = stats.request_logs[0]
+  assert_eq(claude_log.app_type, "claude")
+  assert_eq(claude_log.provider_id, "anthropic")
+  assert_eq(claude_log.model, "claude-sonnet-4-6")
+  assert_eq(claude_log.session_id, Some("claude-session"))
+  assert_true(claude_log.is_streaming)
+  let codex_log = stats.request_logs[1]
+  assert_eq(codex_log.app_type, "codex")
+  assert_eq(codex_log.provider_id, "openai")
+  assert_eq(codex_log.model, "gpt-5")
+  assert_eq(codex_log.session_id, Some("codex-session"))
+  assert_false(codex_log.is_streaming)
+}
+
+///|
 test "moonstat usage request pricing uses moonstat outbound model context" {
   let stats = TrafficStats::new()
-  stats.record_inbound(64)
-  stats.set_active_target(
+  let request = stats.begin_request(64)
+  stats.set_active_target("claude", "router", "Router")
+  request.set_active_target(
     "claude",
     "router",
     "Router",
     pricing_model_source="request",
   )
-  stats.record_request_context(
+  request.set_request_context(
     "claude",
     "client-alias",
     outbound_model=Some("gpt-5"),
   )
   stats.record_success_usage(
+    request,
     TokenUsage::new(
       input_tokens=1000,
       output_tokens=0,
@@ -259,14 +321,15 @@ test "moonstat usage request pricing uses moonstat outbound model context" {
 ///|
 test "moonstat usage empty usage falls back to moonstat outbound model context" {
   let stats = TrafficStats::new()
-  stats.record_inbound(64)
+  let request = stats.begin_request(64)
   stats.set_active_target("claude", "router", "Router")
-  stats.record_request_context(
+  request.set_active_target("claude", "router", "Router")
+  request.set_request_context(
     "claude",
     "client-alias",
     outbound_model=Some("gpt-5"),
   )
-  stats.record_success_usage(TokenUsage::empty(), 128)
+  stats.record_success_usage(request, TokenUsage::empty(), 128)
   assert_eq(stats.request_logs.length(), 1)
   let log = stats.request_logs[0]
   assert_eq(log.model, "gpt-5")
@@ -280,21 +343,22 @@ test "moonstat usage empty usage falls back to moonstat outbound model context" 
 ///|
 test "moonstat usage leaves moonstat error pricing model empty" {
   let stats = TrafficStats::new()
-  stats.record_inbound(64)
-  stats.set_active_target(
+  let request = stats.begin_request(64)
+  stats.set_active_target("claude", "router", "Router")
+  request.set_active_target(
     "claude",
     "router",
     "Router",
     pricing_model_source="request",
     cost_multiplier="2.5",
   )
-  stats.record_request_context(
+  request.set_request_context(
     "claude",
     "client-alias",
     outbound_model=Some("gpt-5"),
   )
-  stats.record_stream_mode(true)
-  stats.record_upstream_error_status(25, 502)
+  stats.record_stream_mode(request, true)
+  stats.record_upstream_error_status(request, 25, 502)
   assert_eq(stats.request_logs.length(), 1)
   let log = stats.request_logs[0]
   assert_eq(log.model, "client-alias")
@@ -316,11 +380,13 @@ test "moonstat usage leaves moonstat error pricing model empty" {
 ///|
 test "moonstat usage can price gateway requests with moonstat model pricing overrides" {
   let stats = TrafficStats::new()
-  stats.record_inbound(64)
+  let request = stats.begin_request(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
-  stats.record_request_context("codex", "custom-priced")
-  stats.record_stream_mode(false)
+  request.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  request.set_request_context("codex", "custom-priced")
+  stats.record_stream_mode(request, false)
   stats.record_success_usage_with_pricing(
+    request,
     TokenUsage::new(
       input_tokens=10,
       output_tokens=5,
@@ -342,11 +408,13 @@ test "moonstat usage honors moonstat model pricing delete tombstones" {
   let stats = TrafficStats::new()
   let deleted : Map[String, Bool] = Map([], capacity=0)
   deleted.set("gpt-5", true)
-  stats.record_inbound(64)
+  let request = stats.begin_request(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
-  stats.record_request_context("codex", "gpt-5")
-  stats.record_stream_mode(false)
+  request.set_active_target("codex", "codex-oauth", "Codex OAuth")
+  request.set_request_context("codex", "gpt-5")
+  stats.record_stream_mode(request, false)
   stats.record_success_usage_with_pricing(
+    request,
     TokenUsage::new(input_tokens=10, output_tokens=5, model=Some("gpt-5")),
     128,
     [],
@@ -2279,9 +2347,10 @@ test "moonstat usage backfill does not use request model for real unpriced model
 ///|
 test "moonstat usage exports prometheus metrics" {
   let stats = TrafficStats::new()
-  stats.record_inbound(128)
-  stats.record_stream_mode(true)
+  let request = stats.begin_request(128)
+  stats.record_stream_mode(request, true)
   stats.record_success_usage(
+    request,
     TokenUsage::new(input_tokens=11, output_tokens=7),
     256,
   )
