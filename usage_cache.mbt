@@ -293,6 +293,9 @@ priv struct UsageCache {
 }
 
 ///|
+const MOONSTAT_USAGE_KEEP_LAST_GOOD_MS : Int64 = 10L * 60L * 1000L
+
+///|
 fn UsageCache::new() -> UsageCache {
   { subscription: Map([], capacity=0), script: Map([], capacity=0) }
 }
@@ -304,6 +307,50 @@ fn UsageCache::put_subscription(
   quota : SubscriptionQuota,
 ) -> Unit {
   self.subscription.set(app_type, quota)
+}
+
+///|
+fn SubscriptionQuota::is_transient_failure(self : SubscriptionQuota) -> Bool {
+  if self.success || self.credential_status != Valid {
+    return false
+  }
+  let message = self.error.unwrap_or("").to_lower()
+  if message.contains("network error") ||
+    message.contains("failed to read response") ||
+    message.contains("request failed") ||
+    message.contains("timed out") ||
+    message.contains("timeout") ||
+    message.contains("http 429") {
+    return true
+  }
+  for status in 500..<=599 {
+    if message.contains("http \{status}") {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn UsageCache::resolve_subscription(
+  self : UsageCache,
+  key : String,
+  fresh : SubscriptionQuota,
+  now_ms? : Int64 = moon_quota_now_millis(),
+) -> SubscriptionQuota {
+  if fresh.success || !fresh.is_transient_failure() {
+    self.put_subscription(key, fresh)
+    return fresh
+  }
+  match self.get_subscription(key) {
+    Some(cached) if cached.success =>
+      match cached.queried_at {
+        Some(queried_at) if now_ms >= queried_at &&
+          now_ms - queried_at < MOONSTAT_USAGE_KEEP_LAST_GOOD_MS => cached
+        _ => fresh
+      }
+    _ => fresh
+  }
 }
 
 ///|

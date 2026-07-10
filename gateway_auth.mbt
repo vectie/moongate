@@ -112,8 +112,9 @@ async fn AuthService::handle_get_codex_oauth_quota(
   let body = proxy_json_body(r)
   let account_id = proxy_string_request(r.path, body, "accountId")
   let quota = moon_get_codex_oauth_quota(account_id)
-  usage.usage_cache.put_subscription(quota.tool, quota)
-  write_usage_json(w, quota.to_json())
+  let cache_key = "codex_oauth\t\{account_id.unwrap_or("default")}"
+  let display = usage.usage_cache.resolve_subscription(cache_key, quota)
+  write_usage_json(w, display.to_json())
 }
 
 ///|

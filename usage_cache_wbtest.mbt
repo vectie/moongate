@@ -180,6 +180,59 @@ test "usage cache subscription invalidation matches moonstat" {
 }
 
 ///|
+test "usage cache keeps recent success across transient quota failures" {
+  let cache = UsageCache::new()
+  let success = SubscriptionQuota::new("codex", queried_at=Some(1_000L))
+  assert_true(
+    cache.resolve_subscription("codex", success, now_ms=1_000L).success,
+  )
+  for
+    message in [
+      "Network error: disconnected", "Failed to read response: reset", "API error (HTTP 429): rate limited",
+      "API error (HTTP 502): bad gateway", "request timed out",
+    ] {
+    let failure = moon_quota_error("codex", Valid, message)
+    let display = cache.resolve_subscription(
+      "codex",
+      failure,
+      now_ms=1_000L + 30_000L,
+    )
+    assert_true(display.success)
+    assert_eq(display.queried_at, Some(1_000L))
+  }
+}
+
+///|
+test "usage cache exposes deterministic and expired transient failures" {
+  let cache = UsageCache::new()
+  let success = SubscriptionQuota::new("codex", queried_at=Some(1_000L))
+  let _ = cache.resolve_subscription("codex", success, now_ms=1_000L)
+
+  let auth_failure = moon_quota_error(
+    "codex",
+    Expired,
+    "Authentication failed (HTTP 401)",
+  )
+  assert_false(
+    cache.resolve_subscription("codex", auth_failure, now_ms=2_000L).success,
+  )
+
+  let fresh = SubscriptionQuota::new("codex", queried_at=Some(3_000L))
+  let _ = cache.resolve_subscription("codex", fresh, now_ms=3_000L)
+  let transient = moon_quota_error(
+    "codex",
+    Valid,
+    "API error (HTTP 503): unavailable",
+  )
+  let expired = cache.resolve_subscription(
+    "codex",
+    transient,
+    now_ms=3_000L + MOONSTAT_USAGE_KEEP_LAST_GOOD_MS,
+  )
+  assert_false(expired.success)
+}
+
+///|
 test "usage cache result json matches moonstat usage result shape" {
   guard fake_usage_result().to_json() is Object(result) else {
     fail("expected usage result object")

@@ -1053,8 +1053,8 @@ async fn UsageService::handle_get_subscription_quota(
     return
   }
   let quota = moon_get_subscription_quota(tool)
-  self.usage_cache.put_subscription(quota.tool, quota)
-  write_usage_json(w, quota.to_json())
+  let display = self.usage_cache.resolve_subscription(quota.tool, quota)
+  write_usage_json(w, display.to_json())
 }
 
 ///|
@@ -1087,8 +1087,22 @@ async fn UsageService::handle_get_coding_plan_quota(
     ),
     team_project_id=proxy_string_request(r.path, body, "teamProjectId"),
   )
-  self.usage_cache.put_subscription(quota.tool, quota)
-  write_usage_json(w, quota.to_json())
+  let cache_key = "coding_plan\t\{coding_plan_provider_key(r.path, base_url, body)}"
+  let display = self.usage_cache.resolve_subscription(cache_key, quota)
+  write_usage_json(w, display.to_json())
+}
+
+///|
+fn coding_plan_provider_key(
+  path : StringView,
+  base_url : String,
+  body : Json?,
+) -> String {
+  match proxy_string_request(path, body, "codingPlanProvider") {
+    Some(provider) if !provider.trim().is_empty() =>
+      provider.trim().to_lower().to_owned()
+    _ => base_url.trim().to_lower().to_owned()
+  }
 }
 
 ///|
