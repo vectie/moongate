@@ -65,6 +65,13 @@ test "traffic status json matches moonstat proxy status shape" {
         "provider_name": "Codex OAuth",
       },
     ],
+    "storage": {
+      "enabled": false,
+      "healthy": true,
+      "failure_count": 0,
+      "last_error": null,
+      "last_success_at": null,
+    },
   })
 }
 

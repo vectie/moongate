@@ -11,6 +11,12 @@ const MOONSTAT_SESSION_SYNC_FILE : String = "session_log_sync.jsonl"
 const MOONSTAT_MODEL_PRICING_FILE : String = "model_pricing.jsonl"
 
 ///|
+const MOONSTAT_USAGE_STORE_FILE : String = "usage_store_v1.json"
+
+///|
+const MOONSTAT_USAGE_STORE_SCHEMA_VERSION : Int = 1
+
+///|
 pub fn default_moonstat_stats_dir() -> String {
   default_moonstat_dir()
 }
@@ -22,7 +28,7 @@ async fn TrafficStats::enable_persistent_store(
 ) -> Unit {
   self.storage_dir = Some(storage_dir)
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
-    _ => ()
+    error => self.mark_storage_failure("create_directory", "\{error}")
   }
 }
 
@@ -32,20 +38,202 @@ async fn TrafficStats::load_persistent_store(
   storage_dir? : String = default_moonstat_stats_dir(),
 ) -> Unit {
   self.enable_persistent_store(storage_dir~)
+  if self.load_usage_snapshot_from_store() {
+    return
+  }
   self.load_daily_rollups_from_store()
   self.load_request_logs_from_store()
   self.load_session_sync_state_from_store()
+  self.save_persistent_store()
 }
 
 ///|
 async fn TrafficStats::save_persistent_store(self : TrafficStats) -> Unit {
   guard self.storage_dir is Some(storage_dir) else { return }
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
-    _ => return
+    error => {
+      self.mark_storage_failure("create_directory", "\{error}")
+      return
+    }
   }
-  self.save_request_logs_to_store(storage_dir)
-  self.save_daily_rollups_to_store(storage_dir)
-  self.save_session_sync_state_to_store(storage_dir)
+  let path = @pathx.join(storage_dir, MOONSTAT_USAGE_STORE_FILE)
+  atomic_write_store_file(path, self.usage_store_json().stringify()) catch {
+    error => {
+      self.mark_storage_failure("write_snapshot", "\{error}")
+      return
+    }
+  }
+  self.mark_storage_success()
+}
+
+///|
+fn TrafficStats::mark_storage_failure(
+  self : TrafficStats,
+  operation : String,
+  message : String,
+) -> Unit {
+  self.storage_healthy = false
+  self.storage_failure_count += 1
+  self.storage_last_error = Some("\{operation}: \{message}")
+}
+
+///|
+fn TrafficStats::mark_storage_success(self : TrafficStats) -> Unit {
+  self.storage_healthy = true
+  self.storage_last_error = None
+  self.storage_last_success_at = Some(@async.now().to_string())
+}
+
+///|
+async fn atomic_write_store_file(
+  path : String,
+  content : String,
+) -> Unit raise Error {
+  let temp_path = "\{path}.tmp-\{generate_request_log_id()}"
+  @fs.write_file(
+    temp_path,
+    content,
+    create_mode=CreateOrTruncate,
+    permission=0o600,
+    sync=Full,
+  ) catch {
+    error => {
+      @fs.remove(temp_path) catch {
+        _ => ()
+      }
+      raise error
+    }
+  }
+  @fs.rename(temp_path, path, replace=true) catch {
+    error => {
+      @fs.remove(temp_path) catch {
+        _ => ()
+      }
+      raise error
+    }
+  }
+}
+
+///|
+fn TrafficStats::usage_store_json(self : TrafficStats) -> Json {
+  let request_logs : Array[Json] = []
+  for log in self.request_logs {
+    request_logs.push(log.to_json())
+  }
+  let daily_rollups : Array[Json] = []
+  for rollup in self.daily_rollups {
+    daily_rollups.push(rollup.to_json())
+  }
+  let session_sync : Array[Json] = []
+  for file_path, state in self.session_sync_state {
+    session_sync.push(
+      {
+        "filePath": Json::string(file_path),
+        "lastModified": Json::number(state.last_modified.to_double()),
+        "lastLineOffset": Json::number(state.last_line_offset.to_double()),
+      }.to_json(),
+    )
+  }
+  {
+    "schemaVersion": Json::number(
+      MOONSTAT_USAGE_STORE_SCHEMA_VERSION.to_double(),
+    ),
+    "requestLogs": Json::array(request_logs),
+    "dailyRollups": Json::array(daily_rollups),
+    "sessionSync": Json::array(session_sync),
+  }.to_json()
+}
+
+///|
+async fn TrafficStats::load_usage_snapshot_from_store(
+  self : TrafficStats,
+) -> Bool {
+  guard self.storage_dir is Some(storage_dir) else { return false }
+  let path = @pathx.join(storage_dir, MOONSTAT_USAGE_STORE_FILE)
+  if !@fsx.exists_as_file(path) {
+    return false
+  }
+  let content = @fsx.read_file(path) catch {
+    error => {
+      self.mark_storage_failure("read_snapshot", "\{error}")
+      return true
+    }
+  }
+  let parsed = @json.parse(content) catch {
+    error => {
+      self.mark_storage_failure("parse_snapshot", "\{error}")
+      return true
+    }
+  }
+  guard parsed is Object(obj) else {
+    self.mark_storage_failure("parse_snapshot", "expected object")
+    return true
+  }
+  if store_json_int_or_zero(obj, "schemaVersion") !=
+    MOONSTAT_USAGE_STORE_SCHEMA_VERSION {
+    self.mark_storage_failure("parse_snapshot", "unsupported schema version")
+    return true
+  }
+  guard obj.get("requestLogs") is Some(Array(request_rows)) else {
+    self.mark_storage_failure("parse_snapshot", "missing requestLogs")
+    return true
+  }
+  guard obj.get("dailyRollups") is Some(Array(rollup_rows)) else {
+    self.mark_storage_failure("parse_snapshot", "missing dailyRollups")
+    return true
+  }
+  guard obj.get("sessionSync") is Some(Array(session_rows)) else {
+    self.mark_storage_failure("parse_snapshot", "missing sessionSync")
+    return true
+  }
+  let request_logs : Array[RequestLog] = []
+  for row in request_rows {
+    guard request_log_from_store_json(row) is Some(log) else {
+      self.mark_storage_failure("parse_snapshot", "invalid request log")
+      return true
+    }
+    request_logs.push(log)
+  }
+  let daily_rollups : Array[UsageDailyRollup] = []
+  for row in rollup_rows {
+    guard usage_daily_rollup_from_store_json(row) is Some(rollup) else {
+      self.mark_storage_failure("parse_snapshot", "invalid daily rollup")
+      return true
+    }
+    daily_rollups.push(rollup)
+  }
+  let session_sync_state : Map[String, SessionFileSyncState] = Map(
+    [],
+    capacity=0,
+  )
+  for row in session_rows {
+    guard row is Object(session) else {
+      self.mark_storage_failure("parse_snapshot", "invalid session state")
+      return true
+    }
+    guard store_json_string(session, "filePath") is Some(file_path) else {
+      self.mark_storage_failure("parse_snapshot", "missing session file path")
+      return true
+    }
+    session_sync_state.set(
+      file_path,
+      SessionFileSyncState::new(
+        last_modified=store_json_int64_or_zero(session, "lastModified"),
+        last_line_offset=store_json_int_or_zero(session, "lastLineOffset"),
+      ),
+    )
+  }
+  self.request_logs.truncate(0)
+  for log in request_logs {
+    self.request_logs.push(log)
+  }
+  self.daily_rollups.truncate(0)
+  for rollup in daily_rollups {
+    self.daily_rollups.push(rollup)
+  }
+  self.session_sync_state = session_sync_state
+  self.mark_storage_success()
+  true
 }
 
 ///|
@@ -73,21 +261,6 @@ async fn TrafficStats::load_request_logs_from_store(
 }
 
 ///|
-async fn TrafficStats::save_request_logs_to_store(
-  self : TrafficStats,
-  storage_dir : String,
-) -> Unit {
-  let path = @pathx.join(storage_dir, MOONSTAT_REQUEST_LOGS_FILE)
-  let lines : Array[String] = []
-  for log in self.request_logs {
-    lines.push(log.to_json().stringify())
-  }
-  @fsx.write_to_file(path, lines.join("\n")) catch {
-    _ => ()
-  }
-}
-
-///|
 async fn TrafficStats::load_daily_rollups_from_store(
   self : TrafficStats,
 ) -> Unit {
@@ -108,21 +281,6 @@ async fn TrafficStats::load_daily_rollups_from_store(
       Some(rollup) => self.daily_rollups.push(rollup)
       None => ()
     }
-  }
-}
-
-///|
-async fn TrafficStats::save_daily_rollups_to_store(
-  self : TrafficStats,
-  storage_dir : String,
-) -> Unit {
-  let path = @pathx.join(storage_dir, MOONSTAT_DAILY_ROLLUPS_FILE)
-  let lines : Array[String] = []
-  for rollup in self.daily_rollups {
-    lines.push(rollup.to_json().stringify())
-  }
-  @fsx.write_to_file(path, lines.join("\n")) catch {
-    _ => ()
   }
 }
 
@@ -154,30 +312,6 @@ async fn TrafficStats::load_session_sync_state_from_store(
         last_line_offset=store_json_int_or_zero(obj, "lastLineOffset"),
       ),
     )
-  }
-}
-
-///|
-async fn TrafficStats::save_session_sync_state_to_store(
-  self : TrafficStats,
-  storage_dir : String,
-) -> Unit {
-  let path = @pathx.join(storage_dir, MOONSTAT_SESSION_SYNC_FILE)
-  let lines : Array[String] = []
-  for file_path, state in self.session_sync_state {
-    lines.push(
-      {
-        "filePath": Json::string(file_path),
-        "lastModified": Json::number(state.last_modified.to_double()),
-        "lastLineOffset": Json::number(state.last_line_offset.to_double()),
-        "lastSyncedAt": Json::number(@os.unix_seconds().to_double()),
-      }
-      .to_json()
-      .stringify(),
-    )
-  }
-  @fsx.write_to_file(path, lines.join("\n")) catch {
-    _ => ()
   }
 }
 

@@ -44,6 +44,10 @@ async test "persistent store reloads request logs and session sync state" {
     SessionFileSyncState::new(last_modified=7L, last_line_offset=9),
   )
   stats.save_persistent_store()
+  assert_true(@fsx.exists_as_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE)))
+  assert_false(
+    @fsx.exists_as_file(@pathx.join(dir, MOONSTAT_REQUEST_LOGS_FILE)),
+  )
 
   let loaded = TrafficStats::new()
   loaded.load_persistent_store(storage_dir=dir)
@@ -65,6 +69,157 @@ async test "persistent store reloads request logs and session sync state" {
   }
   assert_eq(state.last_modified, 7L)
   assert_eq(state.last_line_offset, 9)
+}
+
+///|
+async test "persistent store migrates legacy jsonl into versioned snapshot" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-store-legacy-\{@async.now().to_int()}",
+  )
+  @fsx.make_directory(dir, recursive=true, exists_ok=true)
+  let legacy_log = RequestLog::new(
+    request_id="req-legacy",
+    provider_id="openai",
+    provider_name=Some("OpenAI"),
+    app_type="codex",
+    model="gpt-5",
+    usage=TokenUsage::new(input_tokens=2, output_tokens=3),
+    status_code=200,
+    created_at=42,
+  )
+  @fsx.write_to_file(
+    @pathx.join(dir, MOONSTAT_REQUEST_LOGS_FILE),
+    legacy_log.to_json().stringify(),
+  )
+  @fsx.write_to_file(
+    @pathx.join(dir, MOONSTAT_SESSION_SYNC_FILE),
+    {
+      "filePath": Json::string("/tmp/legacy.jsonl"),
+      "lastModified": Json::number(9),
+      "lastLineOffset": Json::number(4),
+    }
+    .to_json()
+    .stringify(),
+  )
+
+  let loaded = TrafficStats::new()
+  loaded.load_persistent_store(storage_dir=dir)
+  assert_eq(loaded.request_logs.length(), 1)
+  assert_eq(loaded.request_logs[0].request_id, "req-legacy")
+  assert_true(loaded.storage_healthy)
+  assert_true(@fsx.exists_as_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE)))
+  let snapshot = @json.parse(
+    @fsx.read_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE)),
+  )
+  guard snapshot is Object(obj) else { fail("expected snapshot object") }
+  assert_eq(obj["schemaVersion"], Json::number(1))
+}
+
+///|
+async test "persistent store reports truncated snapshot as degraded" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-store-truncated-\{@async.now().to_int()}",
+  )
+  @fsx.make_directory(dir, recursive=true, exists_ok=true)
+  @fsx.write_to_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE), "{")
+  let usage = UsageService::new()
+  let stats = usage.stats
+  stats.load_persistent_store(storage_dir=dir)
+  assert_false(stats.storage_healthy)
+  assert_eq(stats.storage_failure_count, 1)
+  assert_true(stats.storage_last_error.unwrap_or("").contains("parse_snapshot"))
+  guard stats.storage_health_json() is Object(storage) else {
+    fail("expected storage health")
+  }
+  assert_eq(storage["healthy"], Json::boolean(false))
+  assert_true(stats.prometheus_metrics().contains("moonstat_storage_healthy 0"))
+  assert_true(
+    stats.prometheus_metrics().contains("moonstat_storage_failures_total 1"),
+  )
+}
+
+///|
+async test "persistent store ignores interrupted temporary snapshot" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-store-interrupted-\{@async.now().to_int()}",
+  )
+  let stats = TrafficStats::new()
+  stats.enable_persistent_store(storage_dir=dir)
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-committed",
+      provider_id="openai",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::empty(),
+      status_code=200,
+    ),
+  )
+  stats.save_persistent_store()
+  @fsx.write_to_file(
+    @pathx.join(dir, "\{MOONSTAT_USAGE_STORE_FILE}.tmp-crash"),
+    "{\"schemaVersion\":1",
+  )
+
+  let loaded = TrafficStats::new()
+  loaded.load_persistent_store(storage_dir=dir)
+  assert_true(loaded.storage_healthy)
+  assert_eq(loaded.request_logs.length(), 1)
+  assert_eq(loaded.request_logs[0].request_id, "req-committed")
+}
+
+///|
+async test "persistent store surfaces unavailable directory without losing memory state" {
+  let blocked = @pathx.join(
+    "/tmp",
+    "moonstat-store-blocked-\{@async.now().to_int()}",
+  )
+  @fsx.write_to_file(blocked, "not a directory")
+  let usage = UsageService::new()
+  let stats = usage.stats
+  stats.enable_persistent_store(storage_dir=blocked)
+  stats.record_request_log(
+    RequestLog::new(
+      request_id="req-memory",
+      provider_id="openai",
+      app_type="codex",
+      model="gpt-5",
+      usage=TokenUsage::empty(),
+      status_code=200,
+    ),
+  )
+  stats.save_persistent_store()
+  assert_false(stats.storage_healthy)
+  assert_true(stats.storage_failure_count >= 1)
+  assert_eq(stats.request_logs.length(), 1)
+  guard usage.health_json(true) is Object(health) else {
+    fail("expected health object")
+  }
+  assert_eq(health["status"], Json::string("degraded"))
+}
+
+///|
+async test "persistent store reports failed atomic replacement and cleans temp file" {
+  let dir = @pathx.join(
+    "/tmp",
+    "moonstat-store-rename-\{@async.now().to_int()}",
+  )
+  @fsx.make_directory(
+    @pathx.join(dir, MOONSTAT_USAGE_STORE_FILE),
+    recursive=true,
+    exists_ok=true,
+  )
+  let stats = TrafficStats::new()
+  stats.enable_persistent_store(storage_dir=dir)
+  stats.save_persistent_store()
+  assert_false(stats.storage_healthy)
+  assert_true(stats.storage_last_error.unwrap_or("").contains("write_snapshot"))
+  for name in @fs.readdir(dir) {
+    assert_false(name.contains(".tmp-"))
+  }
 }
 
 ///|

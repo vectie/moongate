@@ -241,6 +241,10 @@ priv struct TrafficStats {
   provider_limits : Map[String, ProviderLimitConfig]
   mut session_sync_state : Map[String, SessionFileSyncState]
   mut storage_dir : String?
+  mut storage_healthy : Bool
+  mut storage_failure_count : Int
+  mut storage_last_error : String?
+  mut storage_last_success_at : String?
   mut last_request_at : String?
   mut last_error : String?
   request_logs : Array[RequestLog]
@@ -318,6 +322,10 @@ fn TrafficStats::new() -> TrafficStats {
     provider_limits: Map([], capacity=0),
     session_sync_state: Map([], capacity=0),
     storage_dir: None,
+    storage_healthy: true,
+    storage_failure_count: 0,
+    storage_last_error: None,
+    storage_last_success_at: None,
     last_request_at: None,
     last_error: None,
     request_logs: [],
@@ -2075,6 +2083,20 @@ fn TrafficStats::prometheus_metrics(self : TrafficStats) -> String {
   prometheus_gauge(out, "moonstat_active_connections", self.active_connections)
   prometheus_gauge(
     out,
+    "moonstat_storage_healthy",
+    if self.storage_healthy {
+      1
+    } else {
+      0
+    },
+  )
+  prometheus_counter(
+    out,
+    "moonstat_storage_failures_total",
+    self.storage_failure_count,
+  )
+  prometheus_gauge(
+    out,
     "moonstat_recent_request_logs",
     self.request_logs.length(),
   )
@@ -2199,11 +2221,23 @@ fn TrafficStats::status_json(
     "last_error": optional_string_json(self.last_error),
     "failover_count": Json::number(self.failover_count.to_double()),
     "active_targets": active_targets_json(self.active_targets),
+    "storage": self.storage_health_json(),
   }
   if provider_routes is Some(routes) {
     status["provider_routes"] = routes
   }
   status.to_json()
+}
+
+///|
+fn TrafficStats::storage_health_json(self : TrafficStats) -> Json {
+  {
+    "enabled": Json::boolean(self.storage_dir is Some(_)),
+    "healthy": Json::boolean(self.storage_healthy),
+    "failure_count": Json::number(self.storage_failure_count.to_double()),
+    "last_error": optional_string_json(self.storage_last_error),
+    "last_success_at": optional_string_json(self.storage_last_success_at),
+  }.to_json()
 }
 
 ///|

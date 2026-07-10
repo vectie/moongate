@@ -9,10 +9,17 @@ fn UsageService::health_json(
   credentials_loaded : Bool,
 ) -> Json {
   {
-    "status": Json::string("healthy"),
+    "status": Json::string(
+      if self.stats.storage_healthy {
+        "healthy"
+      } else {
+        "degraded"
+      },
+    ),
     "timestamp": Json::string(@async.now().to_string()),
     "credentials_loaded": Json::boolean(credentials_loaded),
     "stats": self.stats_json(),
+    "storage": self.stats.storage_health_json(),
   }.to_json()
 }
 
