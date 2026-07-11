@@ -46,6 +46,35 @@ test "chat completions request converts to codex responses request" {
 }
 
 ///|
+test "streaming chat request applies Codex OAuth response constraints" {
+  let body = chat_parse_json_for_test(
+    (
+      #|{
+      #|  "model": "gpt-5.6-sol",
+      #|  "stream": true,
+      #|  "messages": [{ "role": "user", "content": "hi" }],
+      #|  "max_tokens": 1200,
+      #|  "temperature": 0.0,
+      #|  "top_p": 0.9
+      #|}
+    ),
+  )
+  let request = openai_chat_to_codex_response_request(body, "gpt-5.6-sol").unwrap()
+  guard request is Object(obj) else { fail("expected object") }
+  assert_eq(obj["stream"], Json::boolean(true))
+  assert_eq(obj["store"], Json::boolean(false))
+  assert_true(obj.get("max_output_tokens") is None)
+  assert_true(obj.get("temperature") is None)
+  assert_true(obj.get("top_p") is None)
+  assert_eq(
+    obj["include"],
+    Json::array([Json::string("reasoning.encrypted_content")]),
+  )
+  assert_eq(obj["tools"], Json::array([]))
+  assert_eq(obj["parallel_tool_calls"], Json::boolean(false))
+}
+
+///|
 test "chat completions request canonicalizes function arguments" {
   let body = chat_parse_json_for_test(
     (

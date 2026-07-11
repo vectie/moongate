@@ -219,6 +219,9 @@ fn openai_chat_to_codex_response_request(
   if obj.get("tool_choice") is Some(value) {
     request["tool_choice"] = openai_tool_choice_to_codex(value)
   }
+  if json_bool_from_map(obj, "stream").unwrap_or(false) {
+    apply_codex_oauth_responses_constraints(request, obj, false)
+  }
   Some(Json::object(request))
 }
 
