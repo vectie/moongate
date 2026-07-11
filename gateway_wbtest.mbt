@@ -3803,7 +3803,7 @@ test "codex provider forward failures use moonstat proxy error shape" {
   assert_eq(error["model"], Json::string("deepseek-chat"))
   assert_eq(error["endpoint"], Json::string("/responses?beta=true"))
   guard error["message"] is String(message) else { fail("expected message") }
-  assert_true(message.contains("Moonstat local proxy failed"))
+  assert_true(message.contains("MoonGate local proxy failed"))
   assert_true(message.contains("Provider: DeepSeek"))
   assert_true(message.contains("model: deepseek-chat"))
   assert_true(message.contains("cause: Codex upstream request failed"))

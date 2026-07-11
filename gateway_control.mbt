@@ -64,7 +64,7 @@ async fn ControlPlaneAuth::write_bootstrap(
       w,
       @status.ServiceUnavailable,
       "moonstat_control_token_unavailable",
-      "Moonstat control token is unavailable",
+      "MoonGate control token is unavailable",
     )
     return
   }

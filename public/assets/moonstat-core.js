@@ -56,7 +56,7 @@ async function requestHeaders(extra) {
   const token = await controlTokenPromise;
   return {
     Accept: "application/json",
-    ...(token ? { "X-Moonstat-Control-Token": token } : {}),
+    ...(token ? { "X-MoonGate-Control-Token": token } : {}),
     ...(extra || {}),
   };
 }

@@ -87,7 +87,7 @@ fn moonstat_rabbita_empty() -> Array[@html.Html] {
 fn moonstat_rabbita_sidebar() -> @html.Html {
   @html.aside(
     class="sidebar",
-    attrs=@html.Attrs::build().aria_label("Moonstat navigation"),
+    attrs=@html.Attrs::build().aria_label("MoonGate navigation"),
     [
       @html.div(class="brand", [
         @html.span(
@@ -95,7 +95,7 @@ fn moonstat_rabbita_sidebar() -> @html.Html {
           attrs=@html.Attrs::build().aria_hidden("true"),
           "M",
         ),
-        @html.div([@html.strong("Moonstat"), @html.span("Local gateway")]),
+        @html.div([@html.strong("MoonGate"), @html.span("Local gateway")]),
       ]),
       @html.nav(
         class="nav",
@@ -147,7 +147,7 @@ fn moonstat_rabbita_readiness_strip() -> @html.Html {
   @html.section(
     id="readiness",
     class="readiness-strip",
-    attrs=@html.Attrs::build().aria_label("Moonstat readiness"),
+    attrs=@html.Attrs::build().aria_label("MoonGate readiness"),
     [
       @html.div(class="readiness-head", [
         @html.p(class="eyebrow", "Readiness"),

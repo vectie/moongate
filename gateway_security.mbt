@@ -175,7 +175,7 @@ async fn moonstat_write_security_error(w : @httpx.ResponseWriter) -> Unit {
     w,
     @status.Forbidden,
     "moonstat_untrusted_request_authority",
-    "Host or Origin is not trusted by Moonstat",
+    "Host or Origin is not trusted by MoonGate",
   )
 }
 
@@ -185,7 +185,7 @@ async fn moonstat_write_control_auth_error(w : @httpx.ResponseWriter) -> Unit {
     w,
     @status.Unauthorized,
     "moonstat_control_auth_required",
-    "A valid Moonstat control token is required",
+    "A valid MoonGate control token is required",
   )
 }
 

@@ -158,7 +158,7 @@ async test "moonstat hermes sqlite sessions scan load and delete" {
 }
 
 ///|
-test "moonstat session terminal target follows Moonstat preferred terminal aliases" {
+test "moonstat session terminal target follows MoonGate preferred terminal aliases" {
   assert_eq(moon_session_terminal_target(None), "terminal")
   assert_eq(moon_session_terminal_target(Some("iterm2")), "iterm")
   assert_eq(moon_session_terminal_target(Some(" Ghostty ")), "ghostty")

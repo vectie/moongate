@@ -1864,14 +1864,14 @@ async fn ConfigService::moon_apply_webdav_snapshot(
   }
   let snapshot = @json.parse(db_text) catch {
     error =>
-      return Err("Downloaded db.sql is not valid Moonstat JSON: \{error}")
+      return Err("Downloaded db.sql is not valid MoonGate JSON: \{error}")
   }
   let skills_text = @encoding/utf8.decode(skills_zip) catch {
     _ => return Err("Downloaded skills.zip is not valid UTF-8.")
   }
   let skills = @json.parse(skills_text) catch {
     error =>
-      return Err("Downloaded skills.zip is not valid Moonstat JSON: \{error}")
+      return Err("Downloaded skills.zip is not valid MoonGate JSON: \{error}")
   }
   ignore(moon_skill_state_save(skills))
   self.moon_apply_import_snapshot(proxy, snapshot)

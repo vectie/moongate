@@ -6,7 +6,7 @@ async fn main {
 
 ///|
 fn print_help() -> Unit {
-  println("Moonstat - local AI traffic gateway and usage statistics")
+  println("MoonGate - local AI traffic gateway and usage statistics")
   println("")
   println("Usage: moonstat <command> [options]")
   println("")
@@ -20,10 +20,10 @@ fn print_help() -> Unit {
   println("  claude-desktop uninstall  Remove Claude Desktop gateway profile")
   println("  claude-desktop status     Show Claude Desktop profile status")
   println(
-    "  codex install             Configure Codex config.toml for Moonstat",
+    "  codex install             Configure Codex config.toml for MoonGate",
   )
-  println("  codex uninstall           Remove Moonstat Codex config block")
-  println("  codex status              Show Codex config.toml Moonstat status")
+  println("  codex uninstall           Remove MoonGate Codex config block")
+  println("  codex status              Show Codex config.toml MoonGate status")
   println("  models fetch              Fetch provider model catalogs")
   println("  models candidates         Print /v1/models candidate URLs")
   println("  auth status               Show OAuth account status")
@@ -298,7 +298,7 @@ async fn start_gateway(args : Array[String]) -> Unit {
   let model = parse_string_arg(args, "--model").unwrap_or(
     @suite.default_model(),
   )
-  logger.info("Starting Moonstat Gateway on \{host}:\{port}")
+  logger.info("Starting MoonGate Gateway on \{host}:\{port}")
   logger.info("Using Codex model: \{model}")
   let gateway = @moonstat.Gateway::new(port~, host~, model~)
   logger.info("Gateway started on \{gateway.host()}:\{gateway.port()}")
@@ -1402,7 +1402,7 @@ async fn install_claude_desktop(args : Array[String]) -> Unit {
       logger.info("Claude Desktop profile installed")
       logger.info("Gateway base URL: \{installed.base_url}")
       logger.info("Profile: \{installed.profile_path}")
-      logger.info("Token saved for Moonstat gateway auth")
+      logger.info("Token saved for MoonGate gateway auth")
     }
     Err(e) => logger.error(e)
   }
@@ -1427,11 +1427,11 @@ async fn install_codex(args : Array[String]) -> Unit {
   let model = parse_string_arg(args, "--model").unwrap_or(
     @suite.default_model(),
   )
-  logger.info("Installing Codex config.toml Moonstat provider...")
+  logger.info("Installing Codex config.toml MoonGate provider...")
   let result = @codex_config.install_proxy_config(host, port, model)
   match result {
     Ok(installed) => {
-      logger.info("Codex Moonstat provider installed")
+      logger.info("Codex MoonGate provider installed")
       logger.info("Config: \{installed.config_path}")
       logger.info("Gateway base URL: \{installed.base_url}")
       logger.info("Model: \{installed.model}")
@@ -1443,10 +1443,10 @@ async fn install_codex(args : Array[String]) -> Unit {
 ///|
 async fn uninstall_codex() -> Unit {
   let logger = @pino.logger("moonstat", @pino.Transport::console())
-  logger.info("Removing Codex config.toml Moonstat provider...")
+  logger.info("Removing Codex config.toml MoonGate provider...")
   let result = @codex_config.uninstall_proxy_config()
   match result {
-    Ok(_) => logger.info("Codex Moonstat provider removed")
+    Ok(_) => logger.info("Codex MoonGate provider removed")
     Err(e) => logger.error(e)
   }
 }

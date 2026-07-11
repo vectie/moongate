@@ -7,6 +7,7 @@ fn suite_cli_commands() -> Array[CliCommandSpec] {
     { id: "suite_status", patterns: ["suite status"] },
     { id: "suite_drift", patterns: ["suite drift"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
+    { id: "suite_session", patterns: ["suite session"] },
     { id: "suite_moonclaw_providers", patterns: ["suite moonclaw-providers"] },
     {
       id: "suite_write_moonclaw_providers",
@@ -27,10 +28,67 @@ async fn run_suite_cli_command(
     "suite_status" => print_suite_status(args)
     "suite_drift" => print_suite_drift(args)
     "suite_write_status" => write_suite_status(args)
+    "suite_session" => write_ai_session_receipt(args)
     "suite_moonclaw_providers" => print_moonclaw_providers_file(args)
     "suite_write_moonclaw_providers" => write_moonclaw_providers_file(args)
     _ => ()
   }
+}
+
+///|
+fn safe_session_id(value : String) -> Bool {
+  if value.trim().is_empty() {
+    return false
+  }
+  for char in value {
+    if !(char >= 'a' && char <= 'z') &&
+      !(char >= 'A' && char <= 'Z') &&
+      !(char >= '0' && char <= '9') &&
+      char != '-' &&
+      char != '_' {
+      return false
+    }
+  }
+  true
+}
+
+///|
+async fn ensure_session_dir(path : String) -> Unit {
+  if !@fs.exists(path) {
+    @fs.mkdir(path)
+  }
+}
+
+///|
+async fn write_ai_session_receipt(args : Array[String]) -> Unit {
+  let root = parse_string_arg(args, "--root").unwrap_or(".")
+  let session_id = parse_string_arg(args, "--session").unwrap_or("default")
+  if !safe_session_id(session_id) {
+    fail("MoonGate session id must be a safe slug")
+  }
+  let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
+  let port = parse_int_arg(args, "--port", default=@suite.default_port())
+  let model = parse_string_arg(args, "--model").unwrap_or(
+    @suite.default_model(),
+  )
+  let moonsuite = root + "/.moonsuite"
+  let products = moonsuite + "/products"
+  // The public product id is moongate, while the filesystem key remains the
+  // legacy technical interface moonstat until a separate path migration.
+  let product = products + "/moonstat"
+  let sessions = product + "/sessions"
+  let session = sessions + "/" + session_id
+  for path in [moonsuite, products, product, sessions, session] {
+    ensure_session_dir(path)
+  }
+  let receipt = @suite.ai_session_receipt(session_id, model, host, port)
+  @fs.write_file(
+    session + "/receipt.json",
+    @encoding/utf8.encode(receipt.stringify(indent=2) + "\n"),
+    create_mode=CreateOrTruncate,
+    permission=0o600,
+  )
+  println(receipt.stringify(indent=2))
 }
 
 ///|

@@ -211,9 +211,9 @@ fn provider_selection_error_message(
 ) -> String {
   match error {
     NoProvidersConfigured =>
-      "Moonstat local proxy has no configured provider for \{app_type}"
+      "MoonGate local proxy has no configured provider for \{app_type}"
     AllProvidersCircuitOpen =>
-      "Moonstat local proxy has no available \{app_type} provider because all provider circuits are open"
+      "MoonGate local proxy has no available \{app_type} provider because all provider circuits are open"
   }
 }
 

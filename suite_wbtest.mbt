@@ -1344,7 +1344,7 @@ fn moon_legacy_command_surface() -> Array[String] {
 }
 
 ///|
-test "suite manifest omits legacy Moonstat command route surface" {
+test "suite manifest omits legacy MoonGate command route surface" {
   let manifest = moonstat_suite_manifest_json(
     host="127.0.0.1",
     port=15721,
@@ -1371,7 +1371,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 }
 
 ///|
-async test "gateway omits legacy Moonstat command route handlers" {
+async test "gateway omits legacy MoonGate command route handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let legacy_commands = moon_legacy_command_surface()
   assert_eq(legacy_commands.length(), 59)

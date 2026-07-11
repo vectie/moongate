@@ -194,7 +194,7 @@ fn managed_block(base_url : String, model : String) -> String {
   "model_catalog_json = \"\{MODEL_CATALOG_FILE}\"\n" +
   "\n" +
   "[model_providers.\{PROVIDER_ID}]\n" +
-  "name = \"Moonstat\"\n" +
+  "name = \"MoonGate\"\n" +
   "base_url = \"\{base_url}\"\n" +
   "wire_api = \"responses\"\n" +
   "experimental_bearer_token = \"moonstat-local-proxy\"\n" +
@@ -355,7 +355,7 @@ fn json_trimmed_string(obj : Map[String, Json], key : String) -> String? {
 fn codex_model_catalog_entry_json(
   model : String,
   display_name? : String = model,
-  description? : String = "Moonstat local proxy model",
+  description? : String = "MoonGate local proxy model",
   context_window? : Int = 128000,
   priority? : Int = 0,
 ) -> Json {

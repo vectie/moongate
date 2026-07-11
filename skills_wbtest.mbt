@@ -28,8 +28,8 @@ async test "moonstat skill repos install toggle backup and restore" {
   let installed = moon_install_skill_unified_json(
     {
       "key": Json::string("vectie/moonstat-skills:moonstat-usage"),
-      "name": Json::string("Moonstat Usage"),
-      "description": Json::string("Moonstat skill"),
+      "name": Json::string("MoonGate Usage"),
+      "description": Json::string("MoonGate skill"),
       "directory": Json::string("moonstat-usage"),
       "repoOwner": Json::string("vectie"),
       "repoName": Json::string("moonstat-skills"),
@@ -128,7 +128,7 @@ async test "moonstat skill storage migration moves installed directories" {
     @fsx.make_directory(movable_dir, recursive=true, exists_ok=true)
     @fsx.make_directory(skipped_source_dir, recursive=true, exists_ok=true)
     @fsx.make_directory(skipped_dest_dir, recursive=true, exists_ok=true)
-    @fsx.write_to_file(@pathx.join(movable_dir, "SKILL.md"), "# Moonstat Usage")
+    @fsx.write_to_file(@pathx.join(movable_dir, "SKILL.md"), "# MoonGate Usage")
     @fsx.write_to_file(
       @pathx.join(skipped_source_dir, "SKILL.md"),
       "# Source copy",
@@ -141,7 +141,7 @@ async test "moonstat skill storage migration moves installed directories" {
             {
               "id": Json::string("local:moonstat-usage"),
               "directory": Json::string("moonstat-usage"),
-              "name": Json::string("Moonstat Usage"),
+              "name": Json::string("MoonGate Usage"),
             }.to_json(),
             {
               "id": Json::string("local:already-there"),
@@ -210,11 +210,11 @@ async test "moonstat install skills from zip source scans and copies skill dirs"
     @fsx.make_directory(conflict_skill, recursive=true, exists_ok=true)
     let skill_md =
       #|---
-      #|name: Moonstat Usage
+      #|name: MoonGate Usage
       #|description: Watch traffic and usage.
       #|---
       #|
-      #|# Moonstat Usage
+      #|# MoonGate Usage
     @fsx.write_to_file(@pathx.join(nested_skill, "SKILL.md"), skill_md)
     @fsx.write_to_file(@pathx.join(nested_skill, "notes.txt"), "usage")
     @fsx.write_to_file(@pathx.join(conflict_skill, "SKILL.md"), "# Existing")
@@ -250,7 +250,7 @@ async test "moonstat install skills from zip source scans and copies skill dirs"
     assert_eq(installed.length(), 1)
     guard installed[0] is Object(skill) else { fail("expected skill object") }
     assert_eq(skill["directory"], Json::string("moonstat-usage"))
-    assert_eq(skill["name"], Json::string("Moonstat Usage"))
+    assert_eq(skill["name"], Json::string("MoonGate Usage"))
     assert_eq(skill["description"], Json::string("Watch traffic and usage."))
     guard skill["contentHash"] is String(hash) else {
       fail("expected content hash")

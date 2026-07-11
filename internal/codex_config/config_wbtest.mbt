@@ -21,7 +21,7 @@ async test "codex config install writes moonstat-style local provider block" {
         #|model_catalog_json = "moonstat-model-catalog.json"
         #|
         #|[model_providers.moonstat]
-        #|name = "Moonstat"
+        #|name = "MoonGate"
         #|base_url = "http://127.0.0.1:15721/v1"
         #|wire_api = "responses"
         #|experimental_bearer_token = "moonstat-local-proxy"
@@ -82,7 +82,7 @@ async test "codex config reinstall replaces only managed block" {
         #|model_catalog_json = "moonstat-model-catalog.json"
         #|
         #|[model_providers.moonstat]
-        #|name = "Moonstat"
+        #|name = "MoonGate"
         #|base_url = "http://127.0.0.1:17890/v1"
         #|wire_api = "responses"
         #|experimental_bearer_token = "moonstat-local-proxy"

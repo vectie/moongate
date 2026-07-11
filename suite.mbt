@@ -321,14 +321,14 @@ async fn moonstat_suite_legacy_drift_candidates(
       "moontown",
       ".moontown",
       moonstat_product_state_path(root, "moontown"),
-      "Moontown runtime state belongs under the MoonSuite product home.",
+      "MoonTown runtime state belongs under the MoonSuite product home.",
     ),
     moonstat_suite_root_drift_candidate(
       root,
       "moondesk",
       ".moondesk",
       moonstat_product_state_path(root, "moondesk"),
-      "Moondesk runtime state belongs under the MoonSuite product home.",
+      "MoonDesk runtime state belongs under the MoonSuite product home.",
     ),
     moonstat_suite_root_drift_candidate(
       root,
@@ -363,7 +363,7 @@ async fn moonstat_suite_legacy_drift_candidates(
       "moondesk",
       ".moontown/moondesk-daemon",
       moonstat_product_state_path(root, "moondesk"),
-      "Moondesk daemon state belongs under the Moondesk product home.",
+      "MoonDesk daemon state belongs under the MoonDesk product home.",
     ),
     moonstat_suite_root_drift_candidate(
       root,
@@ -377,7 +377,7 @@ async fn moonstat_suite_legacy_drift_candidates(
       "moonstat",
       "moonstat",
       moonstat_product_state_path(root, "moonstat"),
-      "MoonStat state belongs under the MoonStat product home.",
+      "MoonGate state belongs under the MoonGate product home.",
     ),
     moonstat_suite_root_drift_candidate(
       root,
@@ -768,7 +768,7 @@ fn moonstat_suite_agent_clients_json(
     ),
     suite_agent_client_json(
       "claude-code", "claude", "anthropic-compatible", base_url, "POST /v1/messages",
-      "", "Claude Code and Anthropic-compatible clients using Moonstat provider routing.",
+      "", "Claude Code and Anthropic-compatible clients using MoonGate provider routing.",
     ),
     suite_agent_client_json(
       "claude-desktop",
@@ -807,7 +807,7 @@ fn moonstat_suite_agent_clients_json(
     ),
     suite_agent_client_json(
       "openai-compatible", "codex", "openai-compatible", openai_base_url, "POST /v1/chat/completions",
-      "", "Generic OpenAI-compatible clients using Moonstat as the local provider edge.",
+      "", "Generic OpenAI-compatible clients using MoonGate as the local provider edge.",
     ),
   ])
 }
@@ -1048,7 +1048,7 @@ fn moonclaw_model_config_json(openai_base_url : String, model : String) -> Json 
   Json::object({
     "name": Json::string("moonstat/\{model}"),
     "description": Json::string(
-      "Moonstat local OpenAI-compatible proxy model for the Moon suite.",
+      "MoonGate local OpenAI-compatible proxy model for the Moon suite.",
     ),
     "model_name": Json::string(model),
     "model_type": Json::string("saas/openai"),

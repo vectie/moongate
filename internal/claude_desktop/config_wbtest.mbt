@@ -101,7 +101,7 @@ async test "write meta recovers non object meta file like moonstat" {
     json_inspect(meta, content={
       "appliedId": "00000000-0000-4000-8000-000000157210",
       "entries": [
-        { "id": "00000000-0000-4000-8000-000000157210", "name": "Moonstat" },
+        { "id": "00000000-0000-4000-8000-000000157210", "name": "MoonGate" },
       ],
     })
   })

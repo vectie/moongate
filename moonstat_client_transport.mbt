@@ -112,7 +112,7 @@ async fn MoonstatClient::request_text_path(
     Ok(response_body)
   } else {
     Err(
-      "Moonstat HTTP \{response.code}: \{truncate_model_fetch_error_body(response_body)}",
+      "MoonGate HTTP \{response.code}: \{truncate_model_fetch_error_body(response_body)}",
     )
   }
 }

@@ -12,7 +12,7 @@ pub fn moonstat_rabbita_document_html(
             name="viewport",
             content="width=device-width, initial-scale=1",
           ),
-          @html.title("Moonstat"),
+          @html.title("MoonGate"),
         ]),
         @html.body([moonstat_rabbita_shell_view(api_base~)]),
       ]),
@@ -70,7 +70,7 @@ pub fn moonstat_rabbita_lepusa_manifest_json(
 ) -> Json {
   Json::object({
     "identifier": Json::string("dev.vectie.moonstat.rabbita"),
-    "productName": Json::string("Moonstat Rabbita Preview"),
+    "productName": Json::string("MoonGate Rabbita Preview"),
     "version": Json::string("0.1.0"),
     "rootHtml": Json::string(moonstat_rabbita_shell_html(api_base~)),
     "runtime": Json::object({
@@ -80,7 +80,7 @@ pub fn moonstat_rabbita_lepusa_manifest_json(
     }),
     "window": Json::object({
       "label": Json::string("main"),
-      "title": Json::string("Moonstat"),
+      "title": Json::string("MoonGate"),
       "width": Json::number(1180.0),
       "height": Json::number(780.0),
       "resizable": Json::boolean(true),
@@ -118,7 +118,7 @@ pub fn moonstat_rabbita_lepusa_manifest(
 pub fn moonstat_lepusa_manifest_json(port? : Int = 15721) -> Json {
   Json::object({
     "identifier": Json::string("dev.vectie.moonstat"),
-    "productName": Json::string("Moonstat"),
+    "productName": Json::string("MoonGate"),
     "version": Json::string("0.1.0"),
     "runtime": Json::object({
       "backend": Json::string("system-webview"),
@@ -127,7 +127,7 @@ pub fn moonstat_lepusa_manifest_json(port? : Int = 15721) -> Json {
     }),
     "window": Json::object({
       "label": Json::string("main"),
-      "title": Json::string("Moonstat"),
+      "title": Json::string("MoonGate"),
       "width": Json::number(1180.0),
       "height": Json::number(780.0),
       "resizable": Json::boolean(true),

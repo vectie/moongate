@@ -1,18 +1,18 @@
-# Moonstat
+# MoonGate
 
-Moonstat is the MoonBit-native local proxy/statistics gateway for the Moon
+MoonGate is the MoonBit-native local proxy/statistics gateway for the Moon
 suite. It is a standalone app and also fits beside:
 
 - MoonClaw: agent runtime and job executor
 - MoonBook: durable books, wiki, and output workspace
-- Moontown: scheduler and town control plane
-- Moondesk: desktop operator shell
+- MoonTown: scheduler and town control plane
+- MoonDesk: desktop operator shell
 
 The proxy listens on `127.0.0.1:15721` by default.
 
 ## Current Phase
 
-Moonstat is currently in a feature-testing phase. The backend, suite discovery,
+MoonGate is currently in a feature-testing phase. The backend, suite discovery,
 typed client surface, metrics route, and framework integrations are in place, so
 new work should prioritize validating real workflows before more structural
 cleanup. The ordered correctness, hardening, parity, packaging, and deferred UI
@@ -21,7 +21,7 @@ work is tracked in [PLAN.md](PLAN.md).
 Framework integrations are product features and should remain supported:
 Codex/OpenAI-compatible clients, Claude/Anthropic-compatible clients, Claude
 Desktop, OpenClaw, Hermes, Gemini, OpenCode-style logs, GitHub Copilot, and the
-MoonClaw/MoonBook/Moontown/Moondesk suite adapters. Cleanup should target stale
+MoonClaw/MoonBook/MoonTown/MoonDesk suite adapters. Cleanup should target stale
 old-version aliases, deprecated command shims, dead local probes, and
 unnecessary compatibility paths, not active framework support.
 
@@ -29,18 +29,18 @@ The main known cleanup backlog is organizational: split remaining large files
 such as `cmd/main/cmd_misc.mbt`, `gateway_provider.mbt`,
 `gateway_claude_anthropic.mbt`, and `gateway_usage.mbt` when testing exposes
 friction or before a release-hardening pass. Lepusa is the frontend/desktop
-framework for Moonstat. The checked-in `lepusa.json` wraps Moonstat's own
+framework for MoonGate. The checked-in `lepusa.json` wraps MoonGate's own
 localhost gateway as the standalone app shell, while the desktop dashboard
 payload is the generated Rabbita route at `/ui/rabbita`.
 
 Desktop/UI integration depends on published packages rather than local sibling
-checkouts. Moonstat imports published Rabbita (`moonbit-community/rabbita`) and
+checkouts. MoonGate imports published Rabbita (`moonbit-community/rabbita`) and
 published Lepusa (`vectie/lepusa`) releases in `moon.mod`; keep `../rba` and
 `../lepusa` only as reference/test worktrees for reading upstream behavior.
 
 ## Product Scope And Boundary
 
-Moonstat owns observability and local model/proxy integration:
+MoonGate owns observability and local model/proxy integration:
 
 - localhost gateway and provider routing
 - framework compatibility for Codex/OpenAI, Claude/Anthropic, Gemini,
@@ -52,9 +52,9 @@ Moonstat owns observability and local model/proxy integration:
 - suite discovery/status projection and contract-drift reporting
 - Rabbita/Lepusa dashboard shell for local operator control
 
-Moonstat does not own shared filesystem path construction, durable MoonBook
-truth, MoonClaw execution, Moontown scheduling, or Moondesk desktop browsing.
-MoonLib owns layout contracts; Moonstat validates and reports their observed
+MoonGate does not own shared filesystem path construction, durable MoonBook
+truth, MoonClaw execution, MoonTown scheduling, or MoonDesk desktop browsing.
+MoonLib owns layout contracts; MoonGate validates and reports their observed
 state.
 
 ## Implementation Guidance
@@ -101,7 +101,7 @@ Open the operator UI at `http://127.0.0.1:15721/` or
 `http://127.0.0.1:15721/ui/rabbita`, or launch it through Lepusa with the
 checked-in `lepusa.json` manifest. Lepusa is the frontend framework and desktop
 shell; it owns the system WebView, localhost service lifecycle, readiness
-probe, service discovery, and opener capability. The Moonstat gateway serves
+probe, service discovery, and opener capability. The MoonGate gateway serves
 the generated Rabbita dashboard at both `/` and `/ui/rabbita`, so the same view
 works in a browser and inside the Lepusa shell. The UI reads the
 same `/status`, `/proxy/status`,
@@ -121,7 +121,7 @@ proxy-takeover state through the same standalone management routes used by CLI
 automation. The resilience panel manages failover queues, auto-failover,
 circuit-breaker config/stats, provider limits, and stream-check config/results
 through the same `/proxy/*` and `/usage/provider-limits` routes. The suite
-panel reads and writes the MoonClaw/MoonBook/Moontown/Moondesk discovery
+panel reads and writes the MoonClaw/MoonBook/MoonTown/MoonDesk discovery
 contracts through `/suite/*` routes. `moonstat-core.js` owns shared
 route/helper code, `moonstat-frameworks.js` owns framework/provider controls,
 `moonstat-usage.js` owns usage and request-log views, `moonstat-setup.js` owns
@@ -136,7 +136,7 @@ hardcoded navigation, support, route, or readiness lists.
 
 For a desktop shell, use published Lepusa against the checked-in `lepusa.json`
 manifest. The manifest follows Lepusa's gateway-source shape, wraps the
-existing Moonstat gateway as a localhost app, opens `/ui/rabbita`, and does not
+existing MoonGate gateway as a localhost app, opens `/ui/rabbita`, and does not
 depend on local `../lepusa` or `../rba` workspaces. Regenerate the primary
 desktop manifest with `moon run cmd/main -- suite lepusa`.
 
@@ -165,7 +165,7 @@ areas are:
 - Provider management: CRUD, live import, universal providers, endpoint
   metadata, sort order, failover queues, auto-failover, and circuit breakers.
 - Suite discovery: `.moonsuite/suite-status.json` written by `start`, read by
-  MoonClaw, MoonBook, Moontown, and Moondesk adapters.
+  MoonClaw, MoonBook, MoonTown, and MoonDesk adapters.
 - Install/config flows: hosts reroute, Codex config, Claude Desktop profile,
   OpenClaw/Hermes state, MCP/prompt import, and skill storage operations.
 - Failure paths: missing credentials, bad provider auth, malformed request
@@ -208,7 +208,7 @@ CCS parity tracking, and standalone Lepusa packaging. Broad UI work remains
 deferred until the published Lepusa framework settles.
 
 Provider model discovery probes `/v1/models`-style catalogs and returns the
-Moonstat frontend wire shape, `[{ "id": "...", "ownedBy": "..." }]`:
+MoonGate frontend wire shape, `[{ "id": "...", "ownedBy": "..." }]`:
 
 ```sh
 moon run cmd/main -- models fetch --base-url https://api.example.com --api-key sk-...
@@ -226,7 +226,7 @@ moon run cmd/main -- suite write-status
 
 `suite manifest`, `suite status`, `GET /suite/manifest`, and `GET /suite/status`
 print JSON contracts for MoonClaw,
-MoonBook, Moontown, Moondesk, or any other local probe. They expose the
+MoonBook, MoonTown, MoonDesk, or any other local probe. They expose the
 gateway URLs, status file, capabilities, and command map needed by suite
 launchers. `suite write-status` and `POST /suite/status/write` write the same
 status contract to `.moonsuite/suite-status.json` by default, and `start`
@@ -239,17 +239,17 @@ contract over HTTP. The contract also includes a machine-readable
   `moonclawProvidersFileJson` provider entry, and the project/home config
   paths where MoonClaw can load that entry.
 - MoonBook gets usage summary/log/trend/data-source URLs, the durable usage log
-  and pricing files, and the MoonBook adapter package names used by Moondesk and
-  Moontown.
-- Moontown gets health/status/stats and provider-limit probe URLs plus the
+  and pricing files, and the MoonBook adapter package names used by MoonDesk and
+  MoonTown.
+- MoonTown gets health/status/stats and provider-limit probe URLs plus the
   MoonClaw provider-manifest path/command used for MoonBook task providers.
-- Moondesk gets the status file, health/status/stats, model catalog, and Claude
+- MoonDesk gets the status file, health/status/stats, model catalog, and Claude
   Desktop gateway base URL plus adapter packages for MoonClaw, MoonBook, and
-  Moontown.
+  MoonTown.
 
 ## Proxy Surface
 
-Moonstat currently exposes the standalone local routes below:
+MoonGate currently exposes the standalone local routes below:
 
 - `GET /`
 - `GET /assets/moonstat.css`
@@ -508,26 +508,26 @@ Moonstat currently exposes the standalone local routes below:
 - `ANY /gemini/v1beta/*path`
 - `ANY /gemini/v1/*path`
 
-`/status`, `/proxy/status`, and `/stats` include Moonstat request counts,
+`/status`, `/proxy/status`, and `/stats` include MoonGate request counts,
 success/failure counts, active connections, token totals, cache token totals,
 last request time, last error, current provider metadata, and success rate.
 `/proxy/takeover-status` and `/proxy/running` expose standalone HTTP endpoints
 for proxy control. Their POST endpoints accept camelCase JSON bodies or query
 parameters for standalone scripts. `/proxy/global-config`, `/proxy/app-config`,
 `/proxy/default-cost-multiplier`, and `/proxy/pricing-model-source` expose the
-Moonstat global/app config and pricing defaults using the same env-backed
+MoonGate global/app config and pricing defaults using the same env-backed
 settings that request accounting uses. Global/app config and takeover setters
-mutate Moonstat's standalone runtime state without requiring an external
+mutate MoonGate's standalone runtime state without requiring an external
 database.
 `/proxy/provider-health`, `/proxy/circuit-breaker-config`,
 `/proxy/circuit-breaker-stats`, and `/proxy/reset-circuit-breaker` expose
-failover health and circuit-breaker control over Moonstat's in-memory
+failover health and circuit-breaker control over MoonGate's in-memory
 router state. The circuit-breaker config update accepts the same camelCase
 shape across CLI and HTTP callers, including `failureThreshold`, `successThreshold`,
 `timeoutSeconds`, `errorRateThreshold`, and `minRequests`, and hot-applies it to
 existing breakers. `/proxy/failover-queue`,
 `/proxy/available-failover-providers`, and `/proxy/auto-failover-enabled`
-manage Moonstat's failover queue and app auto-failover settings using
+manage MoonGate's failover queue and app auto-failover settings using
 standalone provider router state. The standalone CLI accepts grouped proxy,
 failover, provider, and stream-check commands, for example
 `moonstat proxy start`,
@@ -543,11 +543,11 @@ current-provider state. `/providers/live-settings`,
 `/providers/sort-order` expose live settings, live sync, endpoint latency
 results, and `sortIndex` updates.
 `/providers/live-ids`, `/providers/live-provider`, and
-`/providers/import-live` expose suite-facing provider views against Moonstat's
+`/providers/import-live` expose suite-facing provider views against MoonGate's
 standalone provider router state. The standalone OpenClaw health scan returns an
-empty warning list because Moonstat does not own OpenClaw's live config file.
+empty warning list because MoonGate does not own OpenClaw's live config file.
 The OpenClaw default-model/catalog/agents/env/tools routes and Hermes
-model/memory/dashboard routes keep their JSON state in Moonstat, returning
+model/memory/dashboard routes keep their JSON state in MoonGate, returning
 `null` or defaults before a standalone caller sets them. Config-folder,
 common-snippet, and environment routes use `/config/status`, `/config/dir`,
 `/config/snippets`, `/config/snippets/extract`, `/config/env/conflicts`,
@@ -559,7 +559,7 @@ restored from that backup JSON; process environment conflicts remain
 non-destructive for Unix system entries. Snippets are kept in gateway memory.
 Settings and Claude plugin commands use `/settings...` routes plus the Claude
 plugin/onboarding routes.
-Moonstat atomically persists these settings to
+MoonGate atomically persists these settings to
 `.moonsuite/products/moonstat/config.json`, preserves hidden
 WebDAV/S3 secrets during `save_settings`, validates optimizer
 `cacheTtl`, and treats restart/update/autolaunch/plugin filesystem operations
@@ -569,7 +569,7 @@ as deterministic local state changes instead of mutating the desktop OS.
 OpenClaw workspace commands are exposed as `/workspace/memory...` and
 `/workspace/files...` routes. Standalone mode stores the same whitelisted
 workspace files and `memory/YYYY-MM-DD.md` daily memory files under
-`.moonsuite/products/moonstat/openclaw/workspace`, returns Moonstat camelCase metadata, and keeps
+`.moonsuite/products/moonstat/openclaw/workspace`, returns MoonGate camelCase metadata, and keeps
 directory opening non-destructive while still ensuring the target directory
 exists.
 MCP and prompt commands are exposed through `/mcp/...` and `/prompts...`
@@ -587,7 +587,7 @@ Claude/Codex/Gemini apps into concrete router providers named
 `/providers/endpoints/touch` manage provider custom endpoint metadata, including
 URL normalization, newest-first listing, and best-effort last-used updates.
 `/usage/logs` returns
-recent `proxy_request_logs` rows with Moonstat provider/app/model, token,
+recent `proxy_request_logs` rows with MoonGate provider/app/model, token,
 cache-token, cost, latency, status, session, streaming, and data-source fields.
 Gateway startup loads the versioned, atomically replaced usage snapshot from
 `.moonsuite/products/moonstat/usage_store_v1.json`. Existing request-log,
@@ -607,7 +607,7 @@ same `UsageResult` shape used by `usage provider-usage`.
 `/usage/subscription-quota` queries native subscription quota for
 `claude`, `codex`, and `gemini`. It reads the same macOS keychain entries and
 fallback credential files, calls the official quota endpoints, and returns the
-Moonstat `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
+MoonGate `SubscriptionQuota` JSON shape. Gemini expired-token refresh reads
 `MOONSTAT_GEMINI_OAUTH_CLIENT_ID` and `MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET`
 at runtime.
 `/usage/codex-oauth-quota` queries Codex OAuth quota over the
@@ -615,7 +615,7 @@ same WHAM usage protocol. `/usage/codex-oauth-models` fetches Codex OAuth
 model-list command against `chatgpt.com/backend-api/codex/models`, returning the
 same fetched model array shape as provider model fetch. The `/auth/...` endpoints
 manage `codex_oauth`: status/list expose the local
-Moonstat Codex account, start/poll use OpenAI's device-code flow, and
+MoonGate Codex account, start/poll use OpenAI's device-code flow, and
 remove/logout clear `.moonsuite/products/moonstat/auth/codex-credentials.json`. For
 `github_copilot`, the same `/auth/...` surface delegates to the Copilot
 device-code flow and `.moonsuite/products/moonstat/auth/copilot-credentials.json`; the dedicated
@@ -624,7 +624,7 @@ commands against GitHub/Copilot APIs. `/usage/coding-plan-quota`
 queries coding-plan quota for Kimi, Zhipu CN/EN, MiniMax CN/EN,
 and ZenMux-compatible quota URLs, returning the same `SubscriptionQuota` tier
 names and fields. Zhipu Team Plan uses `codingPlanProvider=zhipu_team` plus
-`teamOrganizationId` and `teamProjectId`; Moonstat sends `type=2` and the
+`teamOrganizationId` and `teamProjectId`; MoonGate sends `type=2` and the
 `bigmodel-organization` and `bigmodel-project` headers. Quota queries retain a
 recent successful value for up to ten minutes across network errors, timeouts,
 HTTP 429, and HTTP 5xx responses. Authentication and parse failures remain
@@ -633,18 +633,18 @@ immediate.
 Privileged management routes require the mode-`0600` control token at
 `.moonsuite/products/moonstat/control-token`. `MoonstatClient` reads it
 automatically for local operations or accepts `control_token`; direct callers
-can send `X-Moonstat-Control-Token`. Inference routes retain their OpenAI,
+can send `X-MoonGate-Control-Token`. Inference routes retain their OpenAI,
 Anthropic, Gemini, OpenClaw, and Claude Desktop authentication semantics. Host
 and Origin checks reject cross-origin browser access and DNS rebinding.
 
 Claude Desktop gateway routes are open by default for standalone local use. Set
 `MOONSTAT_CLAUDE_DESKTOP_TOKEN` or `CLAUDE_DESKTOP_GATEWAY_TOKEN` to require
 `Authorization: Bearer <token>` on `/claude-desktop/v1/models` and
-`/claude-desktop/v1/messages`, using Moonstat gateway-token behavior without an
+`/claude-desktop/v1/messages`, using MoonGate gateway-token behavior without an
 external database dependency.
 
 For Claude Desktop standalone setup, run
-`moonstat claude-desktop install --port 15721`. Moonstat writes the same gateway
+`moonstat claude-desktop install --port 15721`. MoonGate writes the same gateway
 profile shape under Claude Desktop's `Claude-3p/configLibrary`, stores a
 local token at `.moonsuite/products/moonstat/auth/claude-desktop-gateway-token`, and the gateway reads
 that token automatically. Use `moonstat claude-desktop uninstall` to restore the
@@ -653,13 +653,13 @@ profile mode.
 Claude model rerouting honors the standard Anthropic environment names:
 `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`,
 `ANTHROPIC_DEFAULT_SONNET_MODEL`, and `ANTHROPIC_DEFAULT_OPUS_MODEL`.
-When present, Moonstat maps the client's Haiku/Sonnet/Opus/default request
+When present, MoonGate maps the client's Haiku/Sonnet/Opus/default request
 model to that upstream model and strips the local `[1M]` context marker before
 forwarding.
 
 For Codex standalone setup, run
-`moonstat codex install --port 15721 --model gpt-5`. Moonstat writes a managed
-Moonstat provider block to `~/.codex/config.toml` using
+`moonstat codex install --port 15721 --model gpt-5`. MoonGate writes a managed
+MoonGate provider block to `~/.codex/config.toml` using
 `wire_api = "responses"` and `base_url = "http://127.0.0.1:15721/v1"`, matching
 local proxy takeover expectations while preserving unrelated user config. Use
 `moonstat codex uninstall` to remove only the managed block.
@@ -675,14 +675,14 @@ to the upstream `/v1beta/...` and `/v1/...` paths.
 
 ## Suite Role
 
-Moonstat is the network edge for local Moon apps. Point Codex-style clients,
-MoonClaw provider checks, or Moondesk/Moontown integration probes at
+MoonGate is the network edge for local Moon apps. Point Codex-style clients,
+MoonClaw provider checks, or MoonDesk/MoonTown integration probes at
 `http://127.0.0.1:15721` and use `/status` or `/stats` for health dashboards.
 The suite manifest also publishes an `agentClients` array for Codex,
 Claude Code, Claude Desktop, OpenClaw, OpenCode, Gemini, GitHub Copilot, and
 generic OpenAI-compatible clients, with each client's app type, protocol, base
-URL, primary route, and setup command when Moonstat owns one.
+URL, primary route, and setup command when MoonGate owns one.
 
-MoonBook remains the durable output owner, Moontown owns scheduling and standing
-goals, MoonClaw owns execution, and Moondesk owns the local operator UI.
-Moonstat owns local traffic rerouting and usage/statistics accounting.
+MoonBook remains the durable output owner, MoonTown owns scheduling and standing
+goals, MoonClaw owns execution, and MoonDesk owns the local operator UI.
+MoonGate owns local traffic rerouting and usage/statistics accounting.

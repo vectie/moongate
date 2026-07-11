@@ -1593,12 +1593,12 @@ test "top level moonstat skill commands build paths" {
     skill_install_path(
       [
         "moonstat", "skills", "install-unified", "--directory", "moonstat usage",
-        "--name", "Moonstat Usage", "--description", "Routes and usage", "--current-app",
+        "--name", "MoonGate Usage", "--description", "Routes and usage", "--current-app",
         "codex",
       ],
       "/skills/install-unified",
     ),
-    "/skills/install-unified?directory=moonstat%20usage&name=Moonstat%20Usage&description=Routes%20and%20usage&currentApp=codex",
+    "/skills/install-unified?directory=moonstat%20usage&name=MoonGate%20Usage&description=Routes%20and%20usage&currentApp=codex",
   )
   assert_eq(
     skill_toggle_app_path([

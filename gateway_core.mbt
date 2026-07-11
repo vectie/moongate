@@ -1,11 +1,11 @@
 ///|
 pub async fn Gateway::start(self : Gateway) -> Unit {
-  self.logger.info("Starting Moonstat gateway on \{self.host}:\{self.port}")
+  self.logger.info("Starting MoonGate gateway on \{self.host}:\{self.port}")
   self.control.initialize() catch {
     err => self.logger.error("Failed to initialize control token: \{err}")
   }
   self.config.load_settings_store() catch {
-    err => self.logger.warn("Failed to load Moonstat settings: \{err}")
+    err => self.logger.warn("Failed to load MoonGate settings: \{err}")
   }
   self.usage.load_model_pricing_store()
   ignore(

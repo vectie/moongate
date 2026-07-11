@@ -2,7 +2,7 @@
 const PROFILE_ID = "00000000-0000-4000-8000-000000157210"
 
 ///|
-const PROFILE_NAME = "Moonstat"
+const PROFILE_NAME = "MoonGate"
 
 ///|
 const CONFIG_FILE = "claude_desktop_config.json"

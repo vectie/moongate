@@ -1,7 +1,7 @@
-# Moonstat Hardening and Delivery Plan
+# MoonGate Hardening and Delivery Plan
 
 This plan turns the July 2026 project audit into an ordered delivery program.
-Moonstat is a feature-rich alpha: the proxy, provider integrations, usage
+MoonGate is a feature-rich alpha: the proxy, provider integrations, usage
 surface, suite discovery, typed client, metrics, CLI registry, and Rabbita
 dashboard exist, but correctness and release hardening still block a beta.
 
@@ -12,7 +12,7 @@ These constraints apply to every phase:
 - Preserve all active framework integrations: Codex and OpenAI-compatible
   clients, Claude and Anthropic-compatible clients, Claude Desktop, OpenClaw,
   Hermes, Gemini, OpenCode-style logs, GitHub Copilot, and the
-  MoonClaw/MoonBook/Moontown/Moondesk adapters.
+  MoonClaw/MoonBook/MoonTown/MoonDesk adapters.
 - Remove only stale aliases, deprecated command shims, dead probes, old-version
   compatibility paths, and APIs that claim functionality they do not provide.
 - Keep the gateway loopback-only by default. Any non-loopback mode must be an
@@ -36,15 +36,15 @@ Baseline observed on 2026-07-10:
 - The test suite can create a repository-local `.moonsuite` credential fixture;
   test state must be isolated under a temporary product home.
 - The only GitHub workflow prepares the Copilot coding agent. It does not run
-  Moonstat checks or tests on ordinary pushes and pull requests.
+  MoonGate checks or tests on ordinary pushes and pull requests.
 - The inspected canonical CCS baseline is `98ccde00`; the configured fork and
   canonical `main` matched on 2026-07-10. Recent CCS changes include a
   persisted dashboard refresh interval and Zhipu team-plan quota support.
-  Moonstat already has substantial 1M-context backend support.
+  MoonGate already has substantial 1M-context backend support.
 
 ## Completion Definition
 
-Moonstat is ready for beta when all of the following are true:
+MoonGate is ready for beta when all of the following are true:
 
 - Concurrent requests cannot overwrite each other's model, provider, session,
   stream, cost, or circuit-breaker accounting context.
@@ -59,7 +59,7 @@ Moonstat is ready for beta when all of the following are true:
   upstreams.
 - Advertised runtime and desktop operations are either implemented or removed
   from the supported contract.
-- A user can launch a packaged native Moonstat/Lepusa application without the
+- A user can launch a packaged native MoonGate/Lepusa application without the
   repository or MoonBit toolchain.
 - CCS parity is measured against an explicit baseline and reviewed as CCS moves.
 
@@ -88,7 +88,7 @@ Exit gate:
 
 ## Phase 1: Make Usage Accounting Correct
 
-Objective: make Moonstat's central statistics claim correct under concurrency
+Objective: make MoonGate's central statistics claim correct under concurrency
 and normal traffic volume.
 
 ### Request-scoped accounting
@@ -151,7 +151,7 @@ Work:
 
 Exit gate:
 
-- Killing Moonstat during a write cannot corrupt the last committed usage state.
+- Killing MoonGate during a write cannot corrupt the last committed usage state.
 - Storage failure is visible in health, status, logs, and metrics.
 - Current user data migrates without losing request details or aggregates.
 
@@ -164,7 +164,7 @@ Work:
 
 - Classify routes as public health, inference, read-only observability, or
   privileged control plane.
-- Generate and persist a Moonstat control token with restrictive file
+- Generate and persist a MoonGate control token with restrictive file
   permissions. Require it on privileged routes and support it in
   `MoonstatClient`, CLI, suite discovery, and Lepusa startup.
 - Validate Host and Origin for browser-facing localhost requests. Reject unsafe
@@ -185,7 +185,7 @@ Work:
 
 Exit gate:
 
-- An unauthenticated process or hostile browser page cannot mutate Moonstat or
+- An unauthenticated process or hostile browser page cannot mutate MoonGate or
   retrieve credentials.
 - Supported framework clients continue to use inference routes with their
   expected OpenAI, Anthropic, Gemini, OpenClaw, and Claude Desktop semantics.
@@ -201,7 +201,7 @@ Work:
 - Build deterministic local mock upstreams for OpenAI Responses, OpenAI Chat,
   Anthropic Messages, Gemini native, malformed responses, slow first byte,
   stalled streams, disconnects, rate limits, and upstream failures.
-- Start Moonstat on an ephemeral port in tests and make real HTTP requests
+- Start MoonGate on an ephemeral port in tests and make real HTTP requests
   through the gateway.
 - Cover non-streaming and streaming conversion, tool calls, media handling,
   cancellation, timeout, retry, failover, circuit-open, half-open, and recovery
@@ -210,7 +210,7 @@ Work:
   first-token latency, and error status for each scenario.
 - Test clean install/uninstall and config takeover/restore under temporary homes
   for Codex, Claude Desktop, OpenClaw, Hermes, Gemini, and OpenCode.
-- Run sibling adapter tests for MoonClaw, Moondesk, Moontown, and MoonBook when
+- Run sibling adapter tests for MoonClaw, MoonDesk, MoonTown, and MoonBook when
   suite contracts change.
 - Add a release smoke job that starts the built binary, waits for readiness,
   checks the UI and metrics, sends a mock inference request, and shuts down.
@@ -252,12 +252,12 @@ Exit gate:
 ## Phase 6: Manage CCS Parity Deliberately
 
 Objective: preserve the requested CCS behavior without allowing an unversioned
-moving target to control Moonstat development.
+moving target to control MoonGate development.
 
 Work:
 
 - Maintain `CCS_PARITY.md` as the ledger of reviewed CCS commit, feature area,
-  Moonstat implementation, tests, intentional differences, and status.
+  MoonGate implementation, tests, intentional differences, and status.
 - Compare behavior, configuration effects, failure modes, and persisted data,
   not only route or command names.
 - Review new CCS commits on a regular cadence and classify each as required,
@@ -276,12 +276,12 @@ Exit gate:
 
 - Every feature in the pinned CCS baseline has an explicit parity disposition.
 - Updating the baseline produces a reviewable list of new or changed behavior.
-- Intentional Moonstat differences are documented instead of hidden behind
+- Intentional MoonGate differences are documented instead of hidden behind
   placeholder endpoints.
 
 ## Phase 7: Deliver a Standalone Application
 
-Objective: let a user install and run Moonstat without a source checkout or
+Objective: let a user install and run MoonGate without a source checkout or
 MoonBit toolchain.
 
 Work:

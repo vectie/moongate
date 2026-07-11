@@ -14,6 +14,7 @@ import {
   "moonbitlang/core/string",
   "moonbitlang/async",
   "moonbitlang/async/http",
+  "moonbitlang/async/fs",
 }
 
 options(

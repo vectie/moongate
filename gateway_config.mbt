@@ -1024,7 +1024,7 @@ async fn ConfigService::handle_save_settings(
             w,
             @status.InternalServerError,
             "moonstat_settings_write_failed",
-            "Failed to persist Moonstat settings: \{error}",
+            "Failed to persist MoonGate settings: \{error}",
           )
           return
         }

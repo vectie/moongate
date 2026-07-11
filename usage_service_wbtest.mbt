@@ -82,10 +82,10 @@ async test "usage service owns proxy status target and pricing state" {
   assert_true(
     !usage.model_pricing_json().stringify().contains("moonstat-test-model"),
   )
-  let pricing = mp("moonstat-test-model", "Moonstat Test", "2", "4", "0", "0")
+  let pricing = mp("moonstat-test-model", "MoonGate Test", "2", "4", "0", "0")
   let _backfilled = usage.upsert_model_pricing(pricing)
   assert_eq(usage.pricing_override_rows().length(), 1)
-  assert_true(usage.model_pricing_json().stringify().contains("Moonstat Test"))
+  assert_true(usage.model_pricing_json().stringify().contains("MoonGate Test"))
 }
 
 ///|
@@ -356,7 +356,7 @@ async test "usage service owns model pricing backfill persistence" {
     ),
   )
   let backfilled = usage.upsert_model_pricing(
-    mp("moonstat-service-priced", "Moonstat Service Priced", "2", "4", "0", "0"),
+    mp("moonstat-service-priced", "MoonGate Service Priced", "2", "4", "0", "0"),
   )
   assert_eq(backfilled, 1)
   assert_eq(usage.stats.request_logs[0].total_cost_usd, "0.00004")

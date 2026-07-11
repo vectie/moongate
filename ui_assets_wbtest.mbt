@@ -1,7 +1,7 @@
 ///|
 async test "moonstat generated dashboard exposes operator ui surface" {
   let html = moonstat_rabbita_document_html()
-  assert_true(html.contains("<title>Moonstat</title>"))
+  assert_true(html.contains("<title>MoonGate</title>"))
   assert_true(html.contains("/assets/moonstat.css"))
   assert_true(html.contains("/assets/moonstat-core.js"))
   assert_true(html.contains("/assets/moonstat-frameworks.js"))
