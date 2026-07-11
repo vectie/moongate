@@ -87,10 +87,10 @@ You can browse and install extra skills here:
   `moon test --target native --deny-warn`.
 
 - Suite adapter validation when touching discovery/contracts:
-  `../moonclaw` `moon test plugin/moonstat --target native --deny-warn`,
-  `../moondesk` `moon test plugin/moonstat --target native --deny-warn`,
-  `../moontown` `moon test src/plugin/moonstat --target native --deny-warn`,
-  and `../moonbook` `moon test plugins/moonstat --target native --deny-warn`.
+  `../moonclaw` `moon test plugin/moongate --target native --deny-warn`,
+  `../moondesk` `moon test plugin/moongate --target native --deny-warn`,
+  `../moontown` `moon test src/plugin/moongate --target native --deny-warn`,
+  and `../moonbook` `moon test plugins/moongate --target native --deny-warn`.
 
 - Feature areas to exercise: proxy routing, streaming, usage accounting,
   provider management, suite status discovery, install/config flows, and

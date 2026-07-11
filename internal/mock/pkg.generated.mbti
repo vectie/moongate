@@ -1,14 +1,14 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/mock"
+package "vectie/moongate/internal/mock"
 
 import {
   "moonbitlang/async",
   "moonbitlang/core/random",
   "moonbitlang/core/test",
+  "vectie/moongate/clock",
+  "vectie/moongate/internal/pino",
+  "vectie/moongate/model",
   "vectie/moonlib/uuid",
-  "vectie/moonstat/clock",
-  "vectie/moonstat/internal/pino",
-  "vectie/moonstat/model",
 }
 
 // Values

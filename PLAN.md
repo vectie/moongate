@@ -63,6 +63,30 @@ MoonGate is ready for beta when all of the following are true:
   repository or MoonBit toolchain.
 - CCS parity is measured against an explicit baseline and reviewed as CCS moves.
 
+## Phase -1: Canonical MoonGate Identity
+
+Objective: converge every active technical surface and suite consumer on the
+MoonGate identity before further feature hardening.
+
+Work:
+
+- Rename the repository module, executable, environment prefix, runtime IDs,
+  state paths, assets, typed client, and plugin packages to moongate.
+- Update MoonLib, MoonBook, MoonClaw, MoonTown, MoonRobo, and MoonDesk imports,
+  configuration, startup checks, examples, and tests together.
+- Provide only a one-time, conflict-safe state migration bridge; do not keep a
+  second live runtime identity.
+- Preserve immutable MoonFlow evidence while appending canonical migration and
+  session receipts.
+
+Exit gate:
+
+- Ordinary runtime source contains no former technical identity.
+- State migration is non-destructive, idempotent, permission-safe, and produces
+  an auditable receipt.
+- Every affected repository passes its full checks and tests and publishes the
+  coordinated migration branch.
+
 ## Phase 0: Restore a Trustworthy Baseline
 
 Objective: make every future change start from a reproducible green baseline.
@@ -166,7 +190,7 @@ Work:
   privileged control plane.
 - Generate and persist a MoonGate control token with restrictive file
   permissions. Require it on privileged routes and support it in
-  `MoonstatClient`, CLI, suite discovery, and Lepusa startup.
+  `MoonGateClient`, CLI, suite discovery, and Lepusa startup.
 - Validate Host and Origin for browser-facing localhost requests. Reject unsafe
   non-loopback management access by default.
 - Restrict direct credential-returning routes such as Copilot token retrieval to

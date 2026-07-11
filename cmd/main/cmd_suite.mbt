@@ -8,6 +8,7 @@ fn suite_cli_commands() -> Array[CliCommandSpec] {
     { id: "suite_drift", patterns: ["suite drift"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
     { id: "suite_session", patterns: ["suite session"] },
+    { id: "suite_migrate_legacy_state", patterns: ["suite migrate-legacy-state"] },
     { id: "suite_moonclaw_providers", patterns: ["suite moonclaw-providers"] },
     {
       id: "suite_write_moonclaw_providers",
@@ -29,6 +30,7 @@ async fn run_suite_cli_command(
     "suite_drift" => print_suite_drift(args)
     "suite_write_status" => write_suite_status(args)
     "suite_session" => write_ai_session_receipt(args)
+    "suite_migrate_legacy_state" => migrate_legacy_moongate_state(args)
     "suite_moonclaw_providers" => print_moonclaw_providers_file(args)
     "suite_write_moonclaw_providers" => write_moonclaw_providers_file(args)
     _ => ()
@@ -73,9 +75,8 @@ async fn write_ai_session_receipt(args : Array[String]) -> Unit {
   )
   let moonsuite = root + "/.moonsuite"
   let products = moonsuite + "/products"
-  // The public product id is moongate, while the filesystem key remains the
-  // legacy technical interface moonstat until a separate path migration.
-  let product = products + "/moonstat"
+  // Product identity and storage use the same canonical key.
+  let product = products + "/moongate"
   let sessions = product + "/sessions"
   let session = sessions + "/" + session_id
   for path in [moonsuite, products, product, sessions, session] {
@@ -95,7 +96,7 @@ async fn write_ai_session_receipt(args : Array[String]) -> Unit {
 async fn print_suite_drift(args : Array[String]) -> Unit {
   let root = parse_string_arg(args, "--root").unwrap_or(".")
   println(
-    @moonstat.moonstat_suite_drift_report_json(suite_root=root).stringify(
+    @moongate.moongate_suite_drift_report_json(suite_root=root).stringify(
       indent=2,
     ),
   )
@@ -108,7 +109,7 @@ async fn set_suite_json_config(
   flag : String,
 ) -> Unit {
   guard parse_string_arg(args, flag) is Some(raw) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required \{flag}")
     return
   }
@@ -123,7 +124,7 @@ fn print_suite_manifest(args : Array[String]) -> Unit {
     @suite.default_model(),
   )
   println(
-    @moonstat.moonstat_suite_manifest_json(host~, port~, model~).stringify(
+    @moongate.moongate_suite_manifest_json(host~, port~, model~).stringify(
       indent=2,
     ),
   )
@@ -132,7 +133,7 @@ fn print_suite_manifest(args : Array[String]) -> Unit {
 ///|
 fn print_lepusa_manifest(args : Array[String]) -> Unit {
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
-  println(@moonstat.moonstat_lepusa_manifest(port~))
+  println(@moongate.moongate_lepusa_manifest(port~))
 }
 
 ///|
@@ -140,7 +141,7 @@ fn print_lepusa_rabbita_manifest(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   println(
-    @moonstat.moonstat_rabbita_lepusa_manifest(
+    @moongate.moongate_rabbita_lepusa_manifest(
       api_base=@suite.base_url(host, port),
     ),
   )

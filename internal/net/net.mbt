@@ -1,5 +1,5 @@
 ///|
-extern "c" fn tcp_localhost_port_open(port : Int, timeout_ms : Int) -> Int = "moonbit_moonstat_net_tcp_localhost_port_open"
+extern "c" fn tcp_localhost_port_open(port : Int, timeout_ms : Int) -> Int = "moonbit_moongate_net_tcp_localhost_port_open"
 
 ///|
 pub fn localhost_port_open(port : Int, timeout_ms? : Int = 100) -> Bool {

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/httpx/reason"
+package "vectie/moongate/internal/httpx/reason"
 
 // Values
 pub const Accepted : String = "Accepted"

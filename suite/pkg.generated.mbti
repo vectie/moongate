@@ -1,7 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/suite"
+package "vectie/moongate/suite"
 
 // Values
+pub fn ai_session_receipt(String, String, String, Int) -> Json
+
 pub fn base_url(String, Int) -> String
 
 pub fn claude_desktop_base_url(String, Int) -> String
@@ -17,6 +19,8 @@ pub fn manifest_contract() -> String
 pub fn normalize_host(String) -> String
 
 pub fn openai_base_url(String, Int) -> String
+
+pub fn product_name() -> String
 
 pub fn project_name() -> String
 

@@ -8,7 +8,7 @@ async fn main {
 fn print_help() -> Unit {
   println("MoonGate - local AI traffic gateway and usage statistics")
   println("")
-  println("Usage: moonstat <command> [options]")
+  println("Usage: moongate <command> [options]")
   println("")
   println("Commands:")
   println("  start       Start the gateway server")
@@ -40,6 +40,7 @@ fn print_help() -> Unit {
   println("  suite status              Print Moon suite status contract")
   println("  suite drift               Report MoonSuite legacy path drift")
   println("  suite write-status        Write .moonsuite/suite-status.json")
+  println("  suite migrate-legacy-state  Copy legacy MoonGate state without overwrites")
   println("  suite moonclaw-providers  Print MoonClaw providers.json")
   println(
     "  suite write-moonclaw-providers  Write \{@moonsuite.product_display_artifact("moonclaw", "providers.json")}",
@@ -181,7 +182,7 @@ fn print_help() -> Unit {
   println("  --conflicts <json>  JSON conflict array for env delete")
   println("  --imports <json>    JSON import array for skill import")
   println("  --items <json>      JSON item array for bulk commands")
-  println("  --target <loc>      Skill storage target: moonstat or unified")
+  println("  --target <loc>      Skill storage target: moongate or unified")
   println("  --script-code <json> JSON UsageResult for usage script tests")
   println("  --value <value>    Value for proxy scalar setter commands")
   println(
@@ -202,97 +203,97 @@ fn print_help() -> Unit {
   println("  --min-requests <n>          Minimum requests for error-rate open")
   println("")
   println("Examples:")
-  println("  sudo moonstat hosts install    # Install hosts reroute")
-  println("  moonstat start                 # Start gateway on 127.0.0.1:15721")
-  println("  moonstat start --port 80       # Start gateway on port 80")
-  println("  moonstat claude-desktop install --port 15721")
-  println("  moonstat codex install --port 15721 --model gpt-5")
+  println("  sudo moongate hosts install    # Install hosts reroute")
+  println("  moongate start                 # Start gateway on 127.0.0.1:15721")
+  println("  moongate start --port 80       # Start gateway on port 80")
+  println("  moongate claude-desktop install --port 15721")
+  println("  moongate codex install --port 15721 --model gpt-5")
   println(
-    "  moonstat models fetch --base-url https://api.example.com --api-key sk-...",
+    "  moongate models fetch --base-url https://api.example.com --api-key sk-...",
   )
-  println("  moonstat suite write-status --port 15721")
-  println("  moonstat suite lepusa --port 15721")
-  println("  moonstat suite lepusa-rabbita --port 15721")
-  println("  claude                         # Use Claude CLI through moonstat")
-  println("  moonstat proxy status          # Show proxy status")
-  println("  moonstat proxy start")
+  println("  moongate suite write-status --port 15721")
+  println("  moongate suite lepusa --port 15721")
+  println("  moongate suite lepusa-rabbita --port 15721")
+  println("  claude                         # Use Claude CLI through moongate")
+  println("  moongate proxy status          # Show proxy status")
+  println("  moongate proxy start")
   println(
-    "  moonstat proxy switch-provider --app-type codex --provider-id codex-oauth",
+    "  moongate proxy switch-provider --app-type codex --provider-id codex-oauth",
   )
-  println("  moonstat provider list --app-type codex")
+  println("  moongate provider list --app-type codex")
   println(
-    "  moonstat provider add --app-type codex --provider-id custom --name Custom --base-url https://api.example.com/v1 --api-key sk-...",
+    "  moongate provider add --app-type codex --provider-id custom --name Custom --base-url https://api.example.com/v1 --api-key sk-...",
   )
-  println("  moonstat provider switch --app-type codex --provider-id custom")
+  println("  moongate provider switch --app-type codex --provider-id custom")
   println(
-    "  moonstat provider endpoints add --app-type codex --provider-id custom --endpoint-url https://api.backup.example.com/v1",
-  )
-  println(
-    "  moonstat stream-check provider --app-type codex --provider-id codex-oauth",
+    "  moongate provider endpoints add --app-type codex --provider-id custom --endpoint-url https://api.backup.example.com/v1",
   )
   println(
-    "  moonstat stream-check all --app-type codex --proxy-targets-only true",
+    "  moongate stream-check provider --app-type codex --provider-id codex-oauth",
   )
   println(
-    "  moonstat stream-check config set --codex-model gpt-5.5@low --timeout-secs 45",
+    "  moongate stream-check all --app-type codex --proxy-targets-only true",
   )
   println(
-    "  moonstat mcp upsert --id filesystem --command npx --name Filesystem",
+    "  moongate stream-check config set --codex-model gpt-5.5@low --timeout-secs 45",
   )
   println(
-    "  moonstat mcp toggle --id filesystem --app-type codex --enabled true",
+    "  moongate mcp upsert --id filesystem --command npx --name Filesystem",
   )
   println(
-    "  moonstat prompt upsert --app-type codex --id review --name Review --content 'Review this change'",
-  )
-  println("  moonstat proxy app-config --app-type codex")
-  println(
-    "  moonstat proxy global-config set --proxy-enabled true --listen-address 127.0.0.1 --listen-port 15721",
+    "  moongate mcp toggle --id filesystem --app-type codex --enabled true",
   )
   println(
-    "  moonstat proxy app-config set --app-type codex --enabled true --max-retries 3",
+    "  moongate prompt upsert --app-type codex --id review --name Review --content 'Review this change'",
+  )
+  println("  moongate proxy app-config --app-type codex")
+  println(
+    "  moongate proxy global-config set --proxy-enabled true --listen-address 127.0.0.1 --listen-port 15721",
   )
   println(
-    "  moonstat proxy default-cost-multiplier set --app-type codex --value 1.25",
+    "  moongate proxy app-config set --app-type codex --enabled true --max-retries 3",
   )
   println(
-    "  moonstat proxy pricing-model-source set --app-type codex --value request",
+    "  moongate proxy default-cost-multiplier set --app-type codex --value 1.25",
   )
   println(
-    "  moonstat proxy takeover-status set --app-type codex --enabled true",
+    "  moongate proxy pricing-model-source set --app-type codex --value request",
   )
   println(
-    "  moonstat proxy provider-health --app-type codex --provider-id codex-oauth",
+    "  moongate proxy takeover-status set --app-type codex --enabled true",
   )
   println(
-    "  moonstat proxy circuit-breaker-config set --failure-threshold 4 --success-threshold 2 --timeout-seconds 60 --error-rate-threshold 0.6 --min-requests 10",
-  )
-  println("  moonstat proxy failover-queue --app-type codex")
-  println(
-    "  moonstat proxy failover-queue add --app-type codex --provider-id codex-oauth",
+    "  moongate proxy provider-health --app-type codex --provider-id codex-oauth",
   )
   println(
-    "  moonstat proxy auto-failover-enabled set --app-type codex --enabled true",
+    "  moongate proxy circuit-breaker-config set --failure-threshold 4 --success-threshold 2 --timeout-seconds 60 --error-rate-threshold 0.6 --min-requests 10",
   )
-  println("  moonstat stats                 # Show traffic counters")
-  println("  moonstat usage logs            # Show recent request logs")
-  println("  moonstat usage summary         # Show aggregate token/cost usage")
-  println("  moonstat usage trends --start-date 0 --end-date 86400")
-  println("  moonstat usage limits --provider-id codex-oauth --app-type codex")
+  println("  moongate proxy failover-queue --app-type codex")
   println(
-    "  moonstat usage sync --projects-dir ~/.claude/projects --codex-dir ~/.codex --gemini-dir ~/.gemini --opencode-db-path ~/.local/share/opencode/opencode.db",
+    "  moongate proxy failover-queue add --app-type codex --provider-id codex-oauth",
   )
   println(
-    "  moonstat usage pricing set --model-id gpt-x --display-name GPT-X --input-cost 1 --output-cost 2 --cache-read-cost 0.1 --cache-creation-cost 0",
+    "  moongate proxy auto-failover-enabled set --app-type codex --enabled true",
   )
-  println("  moonstat usage pricing delete --model-id gpt-x")
-  println("  moonstat usage detail --request-id req_x")
-  println("  moonstat hosts uninstall       # Remove hosts reroute")
+  println("  moongate stats                 # Show traffic counters")
+  println("  moongate usage logs            # Show recent request logs")
+  println("  moongate usage summary         # Show aggregate token/cost usage")
+  println("  moongate usage trends --start-date 0 --end-date 86400")
+  println("  moongate usage limits --provider-id codex-oauth --app-type codex")
+  println(
+    "  moongate usage sync --projects-dir ~/.claude/projects --codex-dir ~/.codex --gemini-dir ~/.gemini --opencode-db-path ~/.local/share/opencode/opencode.db",
+  )
+  println(
+    "  moongate usage pricing set --model-id gpt-x --display-name GPT-X --input-cost 1 --output-cost 2 --cache-read-cost 0.1 --cache-creation-cost 0",
+  )
+  println("  moongate usage pricing delete --model-id gpt-x")
+  println("  moongate usage detail --request-id req_x")
+  println("  moongate hosts uninstall       # Remove hosts reroute")
 }
 
 ///|
 async fn start_gateway(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let model = parse_string_arg(args, "--model").unwrap_or(
@@ -300,7 +301,7 @@ async fn start_gateway(args : Array[String]) -> Unit {
   )
   logger.info("Starting MoonGate Gateway on \{host}:\{port}")
   logger.info("Using Codex model: \{model}")
-  let gateway = @moonstat.Gateway::new(port~, host~, model~)
+  let gateway = @moongate.Gateway::new(port~, host~, model~)
   logger.info("Gateway started on \{gateway.host()}:\{gateway.port()}")
   gateway.start()
 }
@@ -317,7 +318,7 @@ async fn import_default_config(args : Array[String]) -> Unit {
 ///|
 async fn save_settings(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--settings") is Some(settings) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --settings JSON")
     return
   }
@@ -327,7 +328,7 @@ async fn save_settings(args : Array[String]) -> Unit {
 ///|
 async fn delete_sessions(args : Array[String]) -> Unit {
   guard delete_sessions_body(args) is Some(body) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --items JSON")
     return
   }
@@ -342,7 +343,7 @@ fn delete_sessions_body(args : Array[String]) -> String? {
 ///|
 async fn import_skills_from_apps(args : Array[String]) -> Unit {
   guard import_skills_from_apps_body(args) is Some(body) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --imports JSON")
     return
   }
@@ -357,7 +358,7 @@ fn import_skills_from_apps_body(args : Array[String]) -> String? {
 ///|
 async fn migrate_skill_storage(args : Array[String]) -> Unit {
   guard migrate_skill_storage_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --target")
     return
   }
@@ -377,7 +378,7 @@ fn migrate_skill_storage_path(args : Array[String]) -> String? {
 ///|
 async fn delete_env_vars(args : Array[String]) -> Unit {
   guard delete_env_vars_body(args) is Some(body) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --conflicts JSON")
     return
   }
@@ -397,7 +398,7 @@ async fn set_moon_json_config(
   label : String,
 ) -> Unit {
   guard moon_json_config_path(args, base_path, flag) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required \{flag} JSON or config field flags")
     return
   }
@@ -407,7 +408,7 @@ async fn set_moon_json_config(
 ///|
 async fn set_app_config_dir_override(args : Array[String]) -> Unit {
   guard app_config_dir_override_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --path or --clear")
     return
   }
@@ -417,7 +418,7 @@ async fn set_app_config_dir_override(args : Array[String]) -> Unit {
 ///|
 async fn set_auto_launch(args : Array[String]) -> Unit {
   guard set_auto_launch_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --enabled")
     return
   }
@@ -440,7 +441,7 @@ async fn set_config_snippet(
   app_required~ : Bool,
 ) -> Unit {
   guard config_snippet_path(args, base_path, app_required~) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --snippet")
     return
   }
@@ -450,7 +451,7 @@ async fn set_config_snippet(
 ///|
 async fn restore_env_backup(args : Array[String]) -> Unit {
   guard restore_env_backup_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --backup-path")
     return
   }
@@ -461,7 +462,7 @@ async fn restore_env_backup(args : Array[String]) -> Unit {
 async fn upsert_mcp_server(args : Array[String], base_path : String) -> Unit {
   guard mcp_upsert_path(args, base_path) is Some(path) &&
     mcp_upsert_body(args) is Some(body) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required MCP server args: --id or --server")
     return
   }
@@ -471,7 +472,7 @@ async fn upsert_mcp_server(args : Array[String], base_path : String) -> Unit {
 ///|
 async fn delete_mcp_server(args : Array[String], base_path : String) -> Unit {
   guard mcp_id_path(args, base_path) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --id")
     return
   }
@@ -481,7 +482,7 @@ async fn delete_mcp_server(args : Array[String], base_path : String) -> Unit {
 ///|
 async fn set_mcp_enabled(args : Array[String]) -> Unit {
   guard mcp_enabled_path(args, "/mcp/enabled") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required MCP args: --id --enabled")
     return
   }
@@ -491,7 +492,7 @@ async fn set_mcp_enabled(args : Array[String]) -> Unit {
 ///|
 async fn toggle_mcp_app(args : Array[String]) -> Unit {
   guard mcp_enabled_path(args, "/mcp/apps/toggle") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required MCP args: --id --enabled")
     return
   }
@@ -502,7 +503,7 @@ async fn toggle_mcp_app(args : Array[String]) -> Unit {
 async fn upsert_prompt(args : Array[String]) -> Unit {
   guard prompt_upsert_path(args) is Some(path) &&
     prompt_upsert_body(args) is Some(body) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required prompt args: --id")
     return
   }
@@ -512,7 +513,7 @@ async fn upsert_prompt(args : Array[String]) -> Unit {
 ///|
 async fn delete_prompt(args : Array[String]) -> Unit {
   guard prompt_id_path(args, "/prompts") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --id")
     return
   }
@@ -522,7 +523,7 @@ async fn delete_prompt(args : Array[String]) -> Unit {
 ///|
 async fn enable_prompt(args : Array[String]) -> Unit {
   guard prompt_id_path(args, "/prompts/enable") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --id")
     return
   }
@@ -532,7 +533,7 @@ async fn enable_prompt(args : Array[String]) -> Unit {
 ///|
 async fn test_api_endpoints(args : Array[String]) -> Unit {
   guard provider_test_endpoints_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --url or --urls")
     return
   }
@@ -671,7 +672,7 @@ fn tool_versions_path(args : Array[String]) -> String {
 ///|
 async fn run_tool_lifecycle_action(args : Array[String]) -> Unit {
   guard tool_lifecycle_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --action")
     return
   }
@@ -780,7 +781,7 @@ async fn post_sync_settings_endpoint(
   label : String,
 ) -> Unit {
   guard parse_string_arg(args, "--settings") is Some(settings) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --settings JSON")
     return
   }
@@ -1219,7 +1220,7 @@ fn stream_check_config_update_path(args : Array[String]) -> String {
 
 ///|
 async fn save_stream_check_config(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
   let path = stream_check_config_update_path(args)
   try {
@@ -1242,7 +1243,7 @@ async fn save_stream_check_config(args : Array[String]) -> Unit {
 ///|
 async fn check_balance(args : Array[String]) -> Unit {
   guard balance_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required balance args: --base-url --api-key")
     return
   }
@@ -1252,7 +1253,7 @@ async fn check_balance(args : Array[String]) -> Unit {
 ///|
 async fn check_subscription_quota(args : Array[String]) -> Unit {
   guard subscription_quota_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required subscription quota arg: --tool")
     return
   }
@@ -1262,7 +1263,7 @@ async fn check_subscription_quota(args : Array[String]) -> Unit {
 ///|
 async fn check_coding_plan_quota(args : Array[String]) -> Unit {
   guard coding_plan_quota_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required coding plan quota args: --base-url --api-key",
     )
@@ -1319,7 +1320,7 @@ async fn check_json_endpoint(
   path : String,
   label : String,
 ) -> Unit {
-  print_cli_json_result(label, cli_moonstat_client(args).get_json(path))
+  print_cli_json_result(label, cli_moongate_client(args).get_json(path))
 }
 
 ///|
@@ -1328,7 +1329,7 @@ async fn check_json_post_endpoint(
   path : String,
   label : String,
 ) -> Unit {
-  print_cli_json_result(label, cli_moonstat_client(args).post_json(path, {}))
+  print_cli_json_result(label, cli_moongate_client(args).post_json(path, {}))
 }
 
 ///|
@@ -1340,14 +1341,14 @@ async fn post_json_body_endpoint(
 ) -> Unit {
   let request = @json.parse(body) catch {
     err => {
-      let logger = @pino.logger("moonstat", @pino.Transport::console())
+      let logger = @pino.logger("moongate", @pino.Transport::console())
       logger.error("\{label} update failed: invalid request JSON: \{err}")
       @os.exit(1)
     }
   }
   print_cli_json_result(
     label,
-    cli_moonstat_client(args).post_json(path, request),
+    cli_moongate_client(args).post_json(path, request),
   )
 }
 
@@ -1357,12 +1358,12 @@ async fn check_json_delete_endpoint(
   path : String,
   label : String,
 ) -> Unit {
-  print_cli_json_result(label, cli_moonstat_client(args).delete_json(path))
+  print_cli_json_result(label, cli_moongate_client(args).delete_json(path))
 }
 
 ///|
 async fn install_reroute(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
 
   logger.info("Installing hosts reroute for port \{port}...")
@@ -1370,8 +1371,8 @@ async fn install_reroute(args : Array[String]) -> Unit {
   match result {
     Ok(_) => {
       logger.info("Hosts reroute installed successfully!")
-      logger.info("Now you can use: moonstat start --port \{port}")
-      logger.info("Then Anthropic API requests will route through moonstat.")
+      logger.info("Now you can use: moongate start --port \{port}")
+      logger.info("Then Anthropic API requests will route through moongate.")
     }
     Err(e) => logger.error("Failed to install: \{e}")
   }
@@ -1379,7 +1380,7 @@ async fn install_reroute(args : Array[String]) -> Unit {
 
 ///|
 async fn uninstall_reroute() -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
 
   logger.info("Removing hosts reroute...")
   let result = @hosts.uninstall_and_flush()
@@ -1391,7 +1392,7 @@ async fn uninstall_reroute() -> Unit {
 
 ///|
 async fn install_claude_desktop(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let token = parse_string_arg(args, "--token")
@@ -1410,7 +1411,7 @@ async fn install_claude_desktop(args : Array[String]) -> Unit {
 
 ///|
 async fn uninstall_claude_desktop() -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   logger.info("Removing Claude Desktop gateway profile...")
   let result = @claude_desktop.uninstall_proxy_profile()
   match result {
@@ -1421,7 +1422,7 @@ async fn uninstall_claude_desktop() -> Unit {
 
 ///|
 async fn install_codex(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let model = parse_string_arg(args, "--model").unwrap_or(
@@ -1442,7 +1443,7 @@ async fn install_codex(args : Array[String]) -> Unit {
 
 ///|
 async fn uninstall_codex() -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   logger.info("Removing Codex config.toml MoonGate provider...")
   let result = @codex_config.uninstall_proxy_config()
   match result {
@@ -1453,7 +1454,7 @@ async fn uninstall_codex() -> Unit {
 
 ///|
 async fn print_model_candidates(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   guard parse_string_arg(args, "--base-url") is Some(base_url) else {
     logger.error("Missing required --base-url")
     return
@@ -1461,7 +1462,7 @@ async fn print_model_candidates(args : Array[String]) -> Unit {
   let is_full_url = has_flag(args, "--full-url")
   let models_url = parse_string_arg(args, "--models-url")
   match
-    @moonstat.build_models_url_candidates(base_url, is_full_url, models_url) {
+    @moongate.build_models_url_candidates(base_url, is_full_url, models_url) {
     Ok(candidates) =>
       println(
         Json::array(candidates.map(fn(url) { Json::string(url) })).stringify(

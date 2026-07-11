@@ -1,5 +1,5 @@
 ///|
-test "moonstat provider presets include Unity2 across suite apps" {
+test "moongate provider presets include Unity2 across suite apps" {
   guard moon_provider_presets_json("/providers/presets") is Array(presets) else {
     fail("expected presets")
   }
@@ -29,7 +29,7 @@ test "moonstat provider presets include Unity2 across suite apps" {
 }
 
 ///|
-test "moonstat provider presets mirror visible moonstat app counts" {
+test "moongate provider presets mirror visible moongate app counts" {
   assert_eq(
     moon_visible_provider_presets(Some("claude"), "", "original").length(),
     63,
@@ -61,7 +61,7 @@ test "moonstat provider presets mirror visible moonstat app counts" {
 }
 
 ///|
-test "moonstat provider presets filter by app and search text" {
+test "moongate provider presets filter by app and search text" {
   guard moon_provider_presets_json(
       "/providers/presets?appType=gemini&query=unity2",
     )
@@ -84,7 +84,7 @@ test "moonstat provider presets filter by app and search text" {
 }
 
 ///|
-test "moonstat provider presets name sort keeps full visible set" {
+test "moongate provider presets name sort keeps full visible set" {
   let entries = moon_visible_provider_presets(None, "", "nameAsc")
   assert_eq(entries.length(), 354)
   assert_eq(moon_provider_preset_name(entries[0]), "自定义")
@@ -95,7 +95,7 @@ test "moonstat provider presets name sort keeps full visible set" {
 }
 
 ///|
-test "moonstat provider presets search across generated moonstat catalog" {
+test "moongate provider presets search across generated moongate catalog" {
   let pateway = moon_visible_provider_presets(None, "pateway", "original")
   assert_eq(pateway.length(), 3)
   let official = moon_visible_provider_presets(None, "official", "nameAsc")

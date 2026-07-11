@@ -1,25 +1,25 @@
 ///|
-test "moonstat external url normalization mirrors shell command behavior" {
+test "moongate external url normalization mirrors shell command behavior" {
   assert_eq(
-    moon_normalize_external_url("github.com/vectie/moonstat"),
-    "https://github.com/vectie/moonstat",
+    moon_normalize_external_url("github.com/vectie/moongate"),
+    "https://github.com/vectie/moongate",
   )
   assert_eq(
-    moon_normalize_external_url("https://github.com/vectie/moonstat"),
-    "https://github.com/vectie/moonstat",
+    moon_normalize_external_url("https://github.com/vectie/moongate"),
+    "https://github.com/vectie/moongate",
   )
   assert_eq(
-    moon_normalize_external_url("HTTP://github.com/vectie/moonstat"),
-    "https://HTTP://github.com/vectie/moonstat",
+    moon_normalize_external_url("HTTP://github.com/vectie/moongate"),
+    "https://HTTP://github.com/vectie/moongate",
   )
   assert_eq(
-    moon_normalize_external_url(" http://github.com/vectie/moonstat "),
-    "https:// http://github.com/vectie/moonstat ",
+    moon_normalize_external_url(" http://github.com/vectie/moongate "),
+    "https:// http://github.com/vectie/moongate ",
   )
 }
 
 ///|
-test "moonstat requested tool names keeps valid unique tools" {
+test "moongate requested tool names keeps valid unique tools" {
   assert_eq(moon_requested_tool_names(Some("codex,unknown,codex,claude")), [
     "codex", "claude",
   ])
@@ -27,12 +27,12 @@ test "moonstat requested tool names keeps valid unique tools" {
 }
 
 ///|
-test "moonstat standalone app shell defaults use local dialog null results" {
+test "moongate standalone app shell defaults use local dialog null results" {
   assert_eq(moon_dialog_result_json(), Json::null())
 }
 
 ///|
-test "moonstat tool lifecycle action and json tool parsing accepts standalone command inputs" {
+test "moongate tool lifecycle action and json tool parsing accepts standalone command inputs" {
   assert_true(moon_tool_lifecycle_action("install") is Some(Install))
   assert_true(moon_tool_lifecycle_action("update") is Some(Update))
   assert_eq(
@@ -50,7 +50,7 @@ test "moonstat tool lifecycle action and json tool parsing accepts standalone co
 }
 
 ///|
-test "moonstat tool lifecycle commands use official and npm fallbacks" {
+test "moongate tool lifecycle commands use official and npm fallbacks" {
   assert_true(
     moon_tool_install_command("claude").contains("claude.ai/install.sh"),
   )
@@ -66,7 +66,7 @@ test "moonstat tool lifecycle commands use official and npm fallbacks" {
 }
 
 ///|
-test "moonstat tool installation report uses anchored default command" {
+test "moongate tool installation report uses anchored default command" {
   let install = MoonToolInstallation::{
     path: "/opt/homebrew/bin/codex",
     real: "/opt/homebrew/bin/codex",

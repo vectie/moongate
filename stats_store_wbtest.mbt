@@ -2,7 +2,7 @@
 async test "persistent store reloads request logs and session sync state" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-roundtrip-\{@async.now().to_int()}",
+    "moongate-store-roundtrip-\{@async.now().to_int()}",
   )
   let stats = TrafficStats::new()
   stats.enable_persistent_store(storage_dir=dir)
@@ -44,9 +44,9 @@ async test "persistent store reloads request logs and session sync state" {
     SessionFileSyncState::new(last_modified=7L, last_line_offset=9),
   )
   stats.save_persistent_store()
-  assert_true(@fsx.exists_as_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE)))
+  assert_true(@fsx.exists_as_file(@pathx.join(dir, MOONGATE_USAGE_STORE_FILE)))
   assert_false(
-    @fsx.exists_as_file(@pathx.join(dir, MOONSTAT_REQUEST_LOGS_FILE)),
+    @fsx.exists_as_file(@pathx.join(dir, MOONGATE_REQUEST_LOGS_FILE)),
   )
 
   let loaded = TrafficStats::new()
@@ -75,7 +75,7 @@ async test "persistent store reloads request logs and session sync state" {
 async test "persistent store migrates legacy jsonl into versioned snapshot" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-legacy-\{@async.now().to_int()}",
+    "moongate-store-legacy-\{@async.now().to_int()}",
   )
   @fsx.make_directory(dir, recursive=true, exists_ok=true)
   let legacy_log = RequestLog::new(
@@ -89,11 +89,11 @@ async test "persistent store migrates legacy jsonl into versioned snapshot" {
     created_at=42,
   )
   @fsx.write_to_file(
-    @pathx.join(dir, MOONSTAT_REQUEST_LOGS_FILE),
+    @pathx.join(dir, MOONGATE_REQUEST_LOGS_FILE),
     legacy_log.to_json().stringify(),
   )
   @fsx.write_to_file(
-    @pathx.join(dir, MOONSTAT_SESSION_SYNC_FILE),
+    @pathx.join(dir, MOONGATE_SESSION_SYNC_FILE),
     {
       "filePath": Json::string("/tmp/legacy.jsonl"),
       "lastModified": Json::number(9),
@@ -108,9 +108,9 @@ async test "persistent store migrates legacy jsonl into versioned snapshot" {
   assert_eq(loaded.request_logs.length(), 1)
   assert_eq(loaded.request_logs[0].request_id, "req-legacy")
   assert_true(loaded.storage_healthy)
-  assert_true(@fsx.exists_as_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE)))
+  assert_true(@fsx.exists_as_file(@pathx.join(dir, MOONGATE_USAGE_STORE_FILE)))
   let snapshot = @json.parse(
-    @fsx.read_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE)),
+    @fsx.read_file(@pathx.join(dir, MOONGATE_USAGE_STORE_FILE)),
   )
   guard snapshot is Object(obj) else { fail("expected snapshot object") }
   assert_eq(obj["schemaVersion"], Json::number(1))
@@ -120,10 +120,10 @@ async test "persistent store migrates legacy jsonl into versioned snapshot" {
 async test "persistent store reports truncated snapshot as degraded" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-truncated-\{@async.now().to_int()}",
+    "moongate-store-truncated-\{@async.now().to_int()}",
   )
   @fsx.make_directory(dir, recursive=true, exists_ok=true)
-  @fsx.write_to_file(@pathx.join(dir, MOONSTAT_USAGE_STORE_FILE), "{")
+  @fsx.write_to_file(@pathx.join(dir, MOONGATE_USAGE_STORE_FILE), "{")
   let usage = UsageService::new()
   let stats = usage.stats
   stats.load_persistent_store(storage_dir=dir)
@@ -134,9 +134,9 @@ async test "persistent store reports truncated snapshot as degraded" {
     fail("expected storage health")
   }
   assert_eq(storage["healthy"], Json::boolean(false))
-  assert_true(stats.prometheus_metrics().contains("moonstat_storage_healthy 0"))
+  assert_true(stats.prometheus_metrics().contains("moongate_storage_healthy 0"))
   assert_true(
-    stats.prometheus_metrics().contains("moonstat_storage_failures_total 1"),
+    stats.prometheus_metrics().contains("moongate_storage_failures_total 1"),
   )
 }
 
@@ -144,7 +144,7 @@ async test "persistent store reports truncated snapshot as degraded" {
 async test "persistent store ignores interrupted temporary snapshot" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-interrupted-\{@async.now().to_int()}",
+    "moongate-store-interrupted-\{@async.now().to_int()}",
   )
   let stats = TrafficStats::new()
   stats.enable_persistent_store(storage_dir=dir)
@@ -160,7 +160,7 @@ async test "persistent store ignores interrupted temporary snapshot" {
   )
   stats.save_persistent_store()
   @fsx.write_to_file(
-    @pathx.join(dir, "\{MOONSTAT_USAGE_STORE_FILE}.tmp-crash"),
+    @pathx.join(dir, "\{MOONGATE_USAGE_STORE_FILE}.tmp-crash"),
     "{\"schemaVersion\":1",
   )
 
@@ -175,7 +175,7 @@ async test "persistent store ignores interrupted temporary snapshot" {
 async test "persistent store surfaces unavailable directory without losing memory state" {
   let blocked = @pathx.join(
     "/tmp",
-    "moonstat-store-blocked-\{@async.now().to_int()}",
+    "moongate-store-blocked-\{@async.now().to_int()}",
   )
   @fsx.write_to_file(blocked, "not a directory")
   let usage = UsageService::new()
@@ -205,10 +205,10 @@ async test "persistent store surfaces unavailable directory without losing memor
 async test "persistent store reports failed atomic replacement and cleans temp file" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-rename-\{@async.now().to_int()}",
+    "moongate-store-rename-\{@async.now().to_int()}",
   )
   @fsx.make_directory(
-    @pathx.join(dir, MOONSTAT_USAGE_STORE_FILE),
+    @pathx.join(dir, MOONGATE_USAGE_STORE_FILE),
     recursive=true,
     exists_ok=true,
   )
@@ -226,9 +226,9 @@ async test "persistent store reports failed atomic replacement and cleans temp f
 async test "persistent store keeps session sync offsets across stats restart" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-session-offset-\{@async.now().to_int()}",
+    "moongate-store-session-offset-\{@async.now().to_int()}",
   )
-  let file_path = "/tmp/moonstat-store-session-offset/source.jsonl"
+  let file_path = "/tmp/moongate-store-session-offset/source.jsonl"
   let content =
     #|{"type":"assistant","message":{"id":"msg_a","model":"unknown","usage":{"input_tokens":1,"output_tokens":2}},"timestamp":"1970-01-01T00:00:30Z"}
   let stats = TrafficStats::new()
@@ -257,7 +257,7 @@ async test "persistent store keeps session sync offsets across stats restart" {
 async test "persistent store preserves aggregates beyond detail retention" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-retention-\{@async.now().to_int()}",
+    "moongate-store-retention-\{@async.now().to_int()}",
   )
   let stats = TrafficStats::new()
   stats.enable_persistent_store(storage_dir=dir)
@@ -296,7 +296,7 @@ async test "persistent store preserves aggregates beyond detail retention" {
 async test "gateway completion records are persisted automatically" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-store-gateway-live-\{@async.now().to_int()}",
+    "moongate-store-gateway-live-\{@async.now().to_int()}",
   )
   let gateway = Gateway::new(port=0)
   gateway.usage.stats.enable_persistent_store(storage_dir=dir)

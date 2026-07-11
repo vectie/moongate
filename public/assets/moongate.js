@@ -140,8 +140,8 @@ function setOperatorStatus(value) {
 }
 
 function shellApiBase() {
-  const shell = document.querySelector("[data-moonstat-api-base]");
-  const value = shell ? shell.getAttribute("data-moonstat-api-base") : "";
+  const shell = document.querySelector("[data-moongate-api-base]");
+  const value = shell ? shell.getAttribute("data-moongate-api-base") : "";
   return value || window.location.origin;
 }
 
@@ -151,13 +151,13 @@ function connectionUrl(path) {
 
 function clientSnippet(kind) {
   if (kind === "openai-env") {
-    return `OPENAI_BASE_URL=${connectionUrl("v" + "1")}\nOPENAI_API_KEY=moonstat`;
+    return `OPENAI_BASE_URL=${connectionUrl("v" + "1")}\nOPENAI_API_KEY=moongate`;
   }
   if (kind === "anthropic-env") {
-    return `ANTHROPIC_BASE_URL=${shellApiBase()}\nANTHROPIC_API_KEY=moonstat`;
+    return `ANTHROPIC_BASE_URL=${shellApiBase()}\nANTHROPIC_API_KEY=moongate`;
   }
   if (kind === "openclaw-env") {
-    return `OPENCLAW_BASE_URL=${connectionUrl("openclaw/v" + "1")}\nOPENCLAW_API_KEY=moonstat`;
+    return `OPENCLAW_BASE_URL=${connectionUrl("openclaw/v" + "1")}\nOPENCLAW_API_KEY=moongate`;
   }
   if (kind === "metrics-url") {
     return connectionUrl("/metrics");

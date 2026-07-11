@@ -1,9 +1,9 @@
 ///|
-test "codex credentials path is moonstat product-owned state" {
+test "codex credentials path is moongate product-owned state" {
   let path = get_credentials_path()
   let expected = @moonsuite.product_artifact_for_workspace_root(
     codex_active_workspace_root(),
-    "moonstat",
+    "moongate",
     "auth/codex-credentials.json",
   )
   assert_eq(path, expected)

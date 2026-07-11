@@ -1,20 +1,23 @@
 supported_targets = "native"
 
 import {
-  "vectie/moonstat",
-  "vectie/moonstat/suite",
-  "vectie/moonstat/internal/claude_desktop",
-  "vectie/moonstat/internal/codex_config",
+  "vectie/moongate",
+  "vectie/moongate/suite",
+  "vectie/moongate/internal/claude_desktop",
+  "vectie/moongate/internal/codex_config",
   "vectie/moonlib/os",
+  "vectie/moonlib/fsx",
+  "vectie/moonlib/pathx",
   "vectie/moonlib/moonsuite",
-  "vectie/moonstat/internal/pino",
-  "vectie/moonstat/internal/hosts",
+  "vectie/moongate/internal/pino",
+  "vectie/moongate/internal/hosts",
   "moonbitlang/core/encoding/utf8" @encoding/utf8,
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonbitlang/async",
   "moonbitlang/async/http",
   "moonbitlang/async/fs",
+  "moonbitlang/async/io",
 }
 
 options(

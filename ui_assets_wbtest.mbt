@@ -1,19 +1,19 @@
 ///|
-async test "moonstat generated dashboard exposes operator ui surface" {
-  let html = moonstat_rabbita_document_html()
+async test "moongate generated dashboard exposes operator ui surface" {
+  let html = moongate_rabbita_document_html()
   assert_true(html.contains("<title>MoonGate</title>"))
-  assert_true(html.contains("/assets/moonstat.css"))
-  assert_true(html.contains("/assets/moonstat-core.js"))
-  assert_true(html.contains("/assets/moonstat-frameworks.js"))
-  assert_true(html.contains("/assets/moonstat-usage.js"))
-  assert_true(html.contains("/assets/moonstat-setup.js"))
-  assert_true(html.contains("/assets/moonstat-suite.js"))
-  assert_true(html.contains("/assets/moonstat-resilience.js"))
-  assert_true(html.contains("/assets/moonstat.js"))
-  assert_true(html.contains("data-moonstat-framework-apps="))
-  assert_true(html.contains("data-moonstat-sections="))
-  assert_true(html.contains("data-moonstat-endpoints="))
-  assert_true(html.contains("data-moonstat-readiness-cards="))
+  assert_true(html.contains("/assets/moongate.css"))
+  assert_true(html.contains("/assets/moongate-core.js"))
+  assert_true(html.contains("/assets/moongate-frameworks.js"))
+  assert_true(html.contains("/assets/moongate-usage.js"))
+  assert_true(html.contains("/assets/moongate-setup.js"))
+  assert_true(html.contains("/assets/moongate-suite.js"))
+  assert_true(html.contains("/assets/moongate-resilience.js"))
+  assert_true(html.contains("/assets/moongate.js"))
+  assert_true(html.contains("data-moongate-framework-apps="))
+  assert_true(html.contains("data-moongate-sections="))
+  assert_true(html.contains("data-moongate-endpoints="))
+  assert_true(html.contains("data-moongate-readiness-cards="))
   assert_true(html.contains("/health"))
   assert_true(html.contains("/proxy/status"))
   for
@@ -73,12 +73,12 @@ async test "moonstat generated dashboard exposes operator ui surface" {
 }
 
 ///|
-test "moonstat ui section metadata drives primary navigation" {
-  guard moonstat_ui_sections_json() is Array(sections) else {
+test "moongate ui section metadata drives primary navigation" {
+  guard moongate_ui_sections_json() is Array(sections) else {
     fail("expected section array")
   }
   assert_eq(sections.length(), 9)
-  let html = moonstat_rabbita_shell_html()
+  let html = moongate_rabbita_shell_html()
   for
     id in [
       "overview", "providers", "frameworks", "setup", "suite", "resilience", "usage",
@@ -95,14 +95,14 @@ test "moonstat ui section metadata drives primary navigation" {
 }
 
 ///|
-async test "moonstat ui fetches current backend route surface" {
-  let core = @fsx.read_file("public/assets/moonstat-core.js")
-  let frameworks = @fsx.read_file("public/assets/moonstat-frameworks.js")
-  let usage = @fsx.read_file("public/assets/moonstat-usage.js")
-  let setup = @fsx.read_file("public/assets/moonstat-setup.js")
-  let suite = @fsx.read_file("public/assets/moonstat-suite.js")
-  let resilience = @fsx.read_file("public/assets/moonstat-resilience.js")
-  let js = @fsx.read_file("public/assets/moonstat.js")
+async test "moongate ui fetches current backend route surface" {
+  let core = @fsx.read_file("public/assets/moongate-core.js")
+  let frameworks = @fsx.read_file("public/assets/moongate-frameworks.js")
+  let usage = @fsx.read_file("public/assets/moongate-usage.js")
+  let setup = @fsx.read_file("public/assets/moongate-setup.js")
+  let suite = @fsx.read_file("public/assets/moongate-suite.js")
+  let resilience = @fsx.read_file("public/assets/moongate-resilience.js")
+  let js = @fsx.read_file("public/assets/moongate.js")
   let assets = core +
     "\n" +
     frameworks +
@@ -116,7 +116,7 @@ async test "moonstat ui fetches current backend route surface" {
     resilience +
     "\n" +
     js
-  let endpoint_contract = moonstat_ui_endpoints_json().stringify()
+  let endpoint_contract = moongate_ui_endpoints_json().stringify()
   let required = [
     "/health", "/status", "/proxy/status", "/usage/summary", "/usage/summary/by-app",
     "/usage/trends", "/usage/provider-stats", "/usage/model-stats", "/usage/logs?limit=8",
@@ -136,9 +136,9 @@ async test "moonstat ui fetches current backend route surface" {
     assert_true(endpoint_contract.contains(route))
   }
   assert_true(core.contains("readShellJson"))
-  assert_true(core.contains("moonstat-endpoints"))
+  assert_true(core.contains("moongate-endpoints"))
   assert_true(core.contains("readReadinessCards"))
-  assert_true(core.contains("moonstat-readiness-cards"))
+  assert_true(core.contains("moongate-readiness-cards"))
   assert_false(core.contains("const endpoints = {"))
   assert_true(core.contains("readFrameworkApps"))
   assert_false(core.contains("const frameworkApps = ["))
@@ -203,8 +203,8 @@ fn ui_framework_app_by_id(
 }
 
 ///|
-test "moonstat framework app metadata preserves active framework support" {
-  guard moonstat_framework_apps_json() is Array(apps) else {
+test "moongate framework app metadata preserves active framework support" {
+  guard moongate_framework_apps_json() is Array(apps) else {
     fail("expected framework app array")
   }
   assert_eq(apps.length(), 7)
@@ -229,8 +229,8 @@ test "moonstat framework app metadata preserves active framework support" {
 }
 
 ///|
-test "moonstat ui endpoint metadata preserves dashboard route support" {
-  guard moonstat_ui_endpoints_json() is Object(endpoints) else {
+test "moongate ui endpoint metadata preserves dashboard route support" {
+  guard moongate_ui_endpoints_json() is Object(endpoints) else {
     fail("expected endpoint object")
   }
   assert_eq(endpoints["health"], Json::string("/health"))
@@ -253,8 +253,8 @@ test "moonstat ui endpoint metadata preserves dashboard route support" {
 }
 
 ///|
-test "moonstat readiness metadata preserves first run operator checklist" {
-  guard moonstat_ui_readiness_cards_json() is Array(cards) else {
+test "moongate readiness metadata preserves first run operator checklist" {
+  guard moongate_ui_readiness_cards_json() is Array(cards) else {
     fail("expected readiness card array")
   }
   assert_eq(cards.length(), 5)
@@ -319,7 +319,7 @@ fn ui_manifest_advertises_route(routes : Array[Json], path : String) -> Bool {
 ///|
 fn ui_route_literals_from_endpoint_contract() -> Array[String] {
   let routes : Array[String] = []
-  guard moonstat_ui_endpoints_json() is Object(endpoints) else { return routes }
+  guard moongate_ui_endpoints_json() is Object(endpoints) else { return routes }
   for key in endpoints.keys() {
     guard endpoints[key] is String(route) else { continue }
     routes.push(ui_strip_query(route))
@@ -328,15 +328,15 @@ fn ui_route_literals_from_endpoint_contract() -> Array[String] {
 }
 
 ///|
-async test "moonstat ui endpoint literals are advertised by suite manifest" {
-  let core = @fsx.read_file("public/assets/moonstat-core.js")
-  let frameworks = @fsx.read_file("public/assets/moonstat-frameworks.js")
-  let usage = @fsx.read_file("public/assets/moonstat-usage.js")
-  let setup = @fsx.read_file("public/assets/moonstat-setup.js")
-  let suite = @fsx.read_file("public/assets/moonstat-suite.js")
-  let resilience = @fsx.read_file("public/assets/moonstat-resilience.js")
-  let js = @fsx.read_file("public/assets/moonstat.js")
-  let manifest = moonstat_suite_manifest_json(port=15721)
+async test "moongate ui endpoint literals are advertised by suite manifest" {
+  let core = @fsx.read_file("public/assets/moongate-core.js")
+  let frameworks = @fsx.read_file("public/assets/moongate-frameworks.js")
+  let usage = @fsx.read_file("public/assets/moongate-usage.js")
+  let setup = @fsx.read_file("public/assets/moongate-setup.js")
+  let suite = @fsx.read_file("public/assets/moongate-suite.js")
+  let resilience = @fsx.read_file("public/assets/moongate-resilience.js")
+  let js = @fsx.read_file("public/assets/moongate.js")
+  let manifest = moongate_suite_manifest_json(port=15721)
   guard manifest is Object(obj) else { fail("expected manifest object") }
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   let endpoint_routes = ui_route_literals_from_endpoint_contract() +
@@ -356,7 +356,7 @@ async test "moonstat ui endpoint literals are advertised by suite manifest" {
 }
 
 ///|
-async test "moonstat lepusa manifest uses published package boundary shape" {
+async test "moongate lepusa manifest uses published package boundary shape" {
   let moon_mod = @fsx.read_file("moon.mod")
   let manifest = @fsx.read_file("lepusa.json")
   match @lepusa_project.ProjectConfig::load("lepusa.json") {
@@ -367,12 +367,12 @@ async test "moonstat lepusa manifest uses published package boundary shape" {
     }
     Err(problems) =>
       fail(
-        "published Lepusa ProjectConfig failed to load moonstat lepusa.json: \{problems.join("; ")}",
+        "published Lepusa ProjectConfig failed to load moongate lepusa.json: \{problems.join("; ")}",
       )
   }
   assert_true(moon_mod.contains("\"vectie/lepusa@0.1.0\""))
   assert_true(moon_mod.contains("\"moonbit-community/rabbita@0.12.4\""))
-  let generated = moonstat_lepusa_manifest_json()
+  let generated = moongate_lepusa_manifest_json()
   let parsed = @json.parse(manifest) catch {
     _ => fail("expected lepusa.json to parse")
   }
@@ -387,7 +387,7 @@ async test "moonstat lepusa manifest uses published package boundary shape" {
     ] {
     assert_eq(parsed_obj[key], generated_obj[key])
   }
-  assert_true(manifest.contains("\"identifier\": \"dev.vectie.moonstat\""))
+  assert_true(manifest.contains("\"identifier\": \"dev.vectie.moongate\""))
   assert_true(manifest.contains("\"backend\": \"system-webview\""))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))
   assert_true(manifest.contains("\"source\":"))
@@ -395,7 +395,7 @@ async test "moonstat lepusa manifest uses published package boundary shape" {
   assert_true(manifest.contains("\"port\": 15721"))
   assert_true(manifest.contains("\"path\": \"/ui/rabbita\""))
   assert_true(
-    moonstat_suite_manifest_json().stringify().contains("GET /ui/rabbita"),
+    moongate_suite_manifest_json().stringify().contains("GET /ui/rabbita"),
   )
   assert_true(manifest.contains("\"readinessPath\": \"/health\""))
   assert_true(manifest.contains("\"serviceDiscovery\""))
@@ -405,19 +405,19 @@ async test "moonstat lepusa manifest uses published package boundary shape" {
 }
 
 ///|
-async test "moonstat rabbita shell renders lepusa preview structure" {
-  let html = moonstat_rabbita_shell_html()
-  let document = moonstat_rabbita_document_html()
-  assert_true(html.contains("data-moonstat-api-base"))
+async test "moongate rabbita shell renders lepusa preview structure" {
+  let html = moongate_rabbita_shell_html()
+  let document = moongate_rabbita_document_html()
+  assert_true(html.contains("data-moongate-api-base"))
   assert_true(html.contains("http://127.0.0.1:15721"))
-  assert_true(html.contains("/assets/moonstat.css"))
-  assert_true(html.contains("/assets/moonstat-core.js"))
-  assert_true(html.contains("/assets/moonstat-frameworks.js"))
-  assert_true(html.contains("/assets/moonstat-usage.js"))
-  assert_true(html.contains("/assets/moonstat-setup.js"))
-  assert_true(html.contains("/assets/moonstat-suite.js"))
-  assert_true(html.contains("/assets/moonstat-resilience.js"))
-  assert_true(html.contains("/assets/moonstat.js"))
+  assert_true(html.contains("/assets/moongate.css"))
+  assert_true(html.contains("/assets/moongate-core.js"))
+  assert_true(html.contains("/assets/moongate-frameworks.js"))
+  assert_true(html.contains("/assets/moongate-usage.js"))
+  assert_true(html.contains("/assets/moongate-setup.js"))
+  assert_true(html.contains("/assets/moongate-suite.js"))
+  assert_true(html.contains("/assets/moongate-resilience.js"))
+  assert_true(html.contains("/assets/moongate.js"))
   assert_true(html.contains("Proxy, providers, and spend in one place."))
   assert_true(html.contains("Operator Actions"))
   assert_true(html.contains("data-operator-action=\"stream-check\""))
@@ -428,7 +428,7 @@ async test "moonstat rabbita shell renders lepusa preview structure" {
   assert_true(document.contains("<html"))
   assert_true(document.contains("<head"))
   assert_true(document.contains("<body"))
-  for id in moonstat_rabbita_shell_dom_ids() {
+  for id in moongate_rabbita_shell_dom_ids() {
     assert_true(
       html.contains("id=\"\{id}\""),
       msg="missing Rabbita shell id \{id}",
@@ -437,18 +437,18 @@ async test "moonstat rabbita shell renders lepusa preview structure" {
 }
 
 ///|
-async test "moonstat rabbita document is routable standalone dashboard html" {
-  let document = moonstat_rabbita_document_html()
+async test "moongate rabbita document is routable standalone dashboard html" {
+  let document = moongate_rabbita_document_html()
   assert_true(document.contains("<html"))
-  assert_true(document.contains("data-moonstat-api-base"))
-  assert_true(document.contains("/assets/moonstat.css"))
-  assert_true(document.contains("/assets/moonstat-core.js"))
-  assert_true(document.contains("/assets/moonstat-frameworks.js"))
-  assert_true(document.contains("/assets/moonstat-usage.js"))
-  assert_true(document.contains("/assets/moonstat-setup.js"))
-  assert_true(document.contains("/assets/moonstat-suite.js"))
-  assert_true(document.contains("/assets/moonstat-resilience.js"))
-  assert_true(document.contains("/assets/moonstat.js"))
+  assert_true(document.contains("data-moongate-api-base"))
+  assert_true(document.contains("/assets/moongate.css"))
+  assert_true(document.contains("/assets/moongate-core.js"))
+  assert_true(document.contains("/assets/moongate-frameworks.js"))
+  assert_true(document.contains("/assets/moongate-usage.js"))
+  assert_true(document.contains("/assets/moongate-setup.js"))
+  assert_true(document.contains("/assets/moongate-suite.js"))
+  assert_true(document.contains("/assets/moongate-resilience.js"))
+  assert_true(document.contains("/assets/moongate.js"))
   assert_true(document.contains("id=\"operator-actions\""))
   assert_true(document.contains("id=\"operator-action-status\""))
   assert_true(document.contains("id=\"connection-board\""))
@@ -459,7 +459,7 @@ async test "moonstat rabbita document is routable standalone dashboard html" {
     ] {
     assert_true(document.contains("id=\"\{id}\""))
   }
-  guard moonstat_suite_manifest_json() is Object(obj) else {
+  guard moongate_suite_manifest_json() is Object(obj) else {
     fail("expected suite manifest object")
   }
   guard obj["routes"] is Array(routes) else { fail("expected manifest routes") }
@@ -467,9 +467,9 @@ async test "moonstat rabbita document is routable standalone dashboard html" {
 }
 
 ///|
-async test "moonstat rabbita lepusa preview manifest parses" {
+async test "moongate rabbita lepusa preview manifest parses" {
   let manifest = @fsx.read_file("lepusa.rabbita.json")
-  let generated = moonstat_rabbita_lepusa_manifest_json()
+  let generated = moongate_rabbita_lepusa_manifest_json()
   match @lepusa_project.ProjectConfig::load("lepusa.rabbita.json") {
     Ok(project) => {
       let _ = project.manifest()
@@ -477,7 +477,7 @@ async test "moonstat rabbita lepusa preview manifest parses" {
     }
     Err(problems) =>
       fail(
-        "published Lepusa ProjectConfig failed to load moonstat rabbita preview manifest: \{problems.join("; ")}",
+        "published Lepusa ProjectConfig failed to load moongate rabbita preview manifest: \{problems.join("; ")}",
       )
   }
   guard @json.parse(manifest) is Object(parsed) else {

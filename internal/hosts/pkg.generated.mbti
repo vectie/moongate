@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/hosts"
+package "vectie/moongate/internal/hosts"
 
 // Values
 pub async fn check_permission() -> Bool

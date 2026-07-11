@@ -40,12 +40,12 @@ fn moon_config_file_path(app : String) -> String {
 
 ///|
 fn moon_app_config_dir() -> String {
-  moon_app_config_dir_for_workspace_root(moonstat_active_workspace_root())
+  moon_app_config_dir_for_workspace_root(moongate_active_workspace_root())
 }
 
 ///|
 fn moon_app_config_dir_for_workspace_root(root : String) -> String {
-  moonstat_product_home_for_workspace_root(root)
+  moongate_product_home_for_workspace_root(root)
 }
 
 ///|
@@ -1020,10 +1020,10 @@ async fn ConfigService::handle_save_settings(
     Some(settings) => {
       self.save_settings_store(settings) catch {
         error => {
-          moonstat_write_json_error(
+          moongate_write_json_error(
             w,
             @status.InternalServerError,
-            "moonstat_settings_write_failed",
+            "moongate_settings_write_failed",
             "Failed to persist MoonGate settings: \{error}",
           )
           return
@@ -1555,7 +1555,7 @@ fn body_snippet(body : String, max_chars : Int) -> String {
 
 ///|
 fn rectifier_media_heuristic_enabled(provider : ProviderRouteTarget?) -> Bool {
-  let config = moonstat_rectifier_config_from_env()
+  let config = moongate_rectifier_config_from_env()
   config.enabled &&
   config.request_media_heuristic &&
   provider_media_heuristic_enabled(provider)

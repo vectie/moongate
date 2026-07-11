@@ -4,7 +4,7 @@ import {
   "vectie/moonlib/pathx",
   "vectie/moonlib/moonsuite",
   "vectie/moonlib/fsx",
-  "vectie/moonstat/internal/httpx",
+  "vectie/moongate/internal/httpx",
   "vectie/moonlib/spawn",
   "moonbitlang/x/crypto",
   "moonbitlang/x/codec/base64",
@@ -15,5 +15,5 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/random",
   "moonbitlang/core/string",
-  "vectie/moonstat/internal/pino",
+  "vectie/moongate/internal/pino",
 }

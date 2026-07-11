@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/model"
+package "vectie/moongate/model"
 
 import {
   "moonbitlang/core/debug",

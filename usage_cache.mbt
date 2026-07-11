@@ -293,7 +293,7 @@ priv struct UsageCache {
 }
 
 ///|
-const MOONSTAT_USAGE_KEEP_LAST_GOOD_MS : Int64 = 10L * 60L * 1000L
+const MOONGATE_USAGE_KEEP_LAST_GOOD_MS : Int64 = 10L * 60L * 1000L
 
 ///|
 fn UsageCache::new() -> UsageCache {
@@ -346,7 +346,7 @@ fn UsageCache::resolve_subscription(
     Some(cached) if cached.success =>
       match cached.queried_at {
         Some(queried_at) if now_ms >= queried_at &&
-          now_ms - queried_at < MOONSTAT_USAGE_KEEP_LAST_GOOD_MS => cached
+          now_ms - queried_at < MOONGATE_USAGE_KEEP_LAST_GOOD_MS => cached
         _ => fresh
       }
     _ => fresh

@@ -2028,62 +2028,62 @@ fn TrafficStats::success_rate(self : TrafficStats) -> Double {
 ///|
 fn TrafficStats::prometheus_metrics(self : TrafficStats) -> String {
   let out = StringBuilder::new()
-  prometheus_counter(out, "moonstat_requests_total", self.total_requests)
+  prometheus_counter(out, "moongate_requests_total", self.total_requests)
   prometheus_counter(
     out,
-    "moonstat_message_requests_total",
+    "moongate_message_requests_total",
     self.message_requests,
   )
   prometheus_counter(
     out,
-    "moonstat_streaming_requests_total",
+    "moongate_streaming_requests_total",
     self.streaming_requests,
   )
   prometheus_counter(
     out,
-    "moonstat_non_streaming_requests_total",
+    "moongate_non_streaming_requests_total",
     self.non_streaming_requests,
   )
   prometheus_counter(
     out,
-    "moonstat_successful_responses_total",
+    "moongate_successful_responses_total",
     self.successful_responses,
   )
   prometheus_counter(
     out,
-    "moonstat_failed_responses_total",
+    "moongate_failed_responses_total",
     self.failed_responses,
   )
   prometheus_counter(
     out,
-    "moonstat_unauthorized_responses_total",
+    "moongate_unauthorized_responses_total",
     self.unauthorized_responses,
   )
-  prometheus_counter(out, "moonstat_bad_requests_total", self.bad_requests)
+  prometheus_counter(out, "moongate_bad_requests_total", self.bad_requests)
   prometheus_counter(
     out,
-    "moonstat_upstream_errors_total",
+    "moongate_upstream_errors_total",
     self.upstream_errors,
   )
-  prometheus_counter(out, "moonstat_input_tokens_total", self.input_tokens)
-  prometheus_counter(out, "moonstat_output_tokens_total", self.output_tokens)
+  prometheus_counter(out, "moongate_input_tokens_total", self.input_tokens)
+  prometheus_counter(out, "moongate_output_tokens_total", self.output_tokens)
   prometheus_counter(
     out,
-    "moonstat_cache_read_tokens_total",
+    "moongate_cache_read_tokens_total",
     self.cache_read_tokens,
   )
   prometheus_counter(
     out,
-    "moonstat_cache_creation_tokens_total",
+    "moongate_cache_creation_tokens_total",
     self.cache_creation_tokens,
   )
-  prometheus_counter(out, "moonstat_request_bytes_total", self.request_bytes)
-  prometheus_counter(out, "moonstat_response_bytes_total", self.response_bytes)
-  prometheus_counter(out, "moonstat_failovers_total", self.failover_count)
-  prometheus_gauge(out, "moonstat_active_connections", self.active_connections)
+  prometheus_counter(out, "moongate_request_bytes_total", self.request_bytes)
+  prometheus_counter(out, "moongate_response_bytes_total", self.response_bytes)
+  prometheus_counter(out, "moongate_failovers_total", self.failover_count)
+  prometheus_gauge(out, "moongate_active_connections", self.active_connections)
   prometheus_gauge(
     out,
-    "moonstat_storage_healthy",
+    "moongate_storage_healthy",
     if self.storage_healthy {
       1
     } else {
@@ -2092,22 +2092,22 @@ fn TrafficStats::prometheus_metrics(self : TrafficStats) -> String {
   )
   prometheus_counter(
     out,
-    "moonstat_storage_failures_total",
+    "moongate_storage_failures_total",
     self.storage_failure_count,
   )
   prometheus_gauge(
     out,
-    "moonstat_recent_request_logs",
+    "moongate_recent_request_logs",
     self.request_logs.length(),
   )
   prometheus_gauge(
     out,
-    "moonstat_recent_avg_latency_ms",
+    "moongate_recent_avg_latency_ms",
     self.recent_avg_latency_ms(),
   )
   prometheus_gauge_float(
     out,
-    "moonstat_success_rate_percent",
+    "moongate_success_rate_percent",
     self.success_rate(),
   )
   out.to_string()
@@ -2260,5 +2260,5 @@ fn active_targets_json(targets : Map[String, ActiveTarget]) -> Json {
 
 ///|
 fn generate_request_log_id() -> String {
-  "req_\{moonstat_random_id()}"
+  "req_\{moongate_random_id()}"
 }

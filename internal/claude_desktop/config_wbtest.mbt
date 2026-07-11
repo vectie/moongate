@@ -1,12 +1,12 @@
 ///|
-test "gateway profile matches moonstat profile shape" {
+test "gateway profile matches moongate profile shape" {
   let profile = gateway_profile_json(
-    "http://127.0.0.1:15721/claude-desktop", "moonstat-test-token",
+    "http://127.0.0.1:15721/claude-desktop", "moongate-test-token",
   )
   json_inspect(profile, content={
     "coworkEgressAllowedHosts": ["*"],
     "disableDeploymentModeChooser": true,
-    "inferenceGatewayApiKey": "moonstat-test-token",
+    "inferenceGatewayApiKey": "moongate-test-token",
     "inferenceGatewayAuthScheme": "bearer",
     "inferenceGatewayBaseUrl": "http://127.0.0.1:15721/claude-desktop",
     "inferenceProvider": "gateway",
@@ -27,7 +27,7 @@ test "local gateway base url normalizes wildcard host" {
 }
 
 ///|
-test "status stale raw model detection matches moonstat profile rules" {
+test "status stale raw model detection matches moongate profile rules" {
   assert_false(
     profile_has_stale_raw_models(
       Json::object({
@@ -58,7 +58,7 @@ test "status stale raw model detection matches moonstat profile rules" {
 
 ///|
 async test "write meta restores previous applied profile and preserves fields" {
-  @fsx.with_temporary_directory("moonstat-claude-meta-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-claude-meta-XXXXXX", tmpdir => {
     let meta_path = @pathx.join(tmpdir, "_meta.json")
     write_json_file(
       meta_path,
@@ -90,8 +90,8 @@ async test "write meta restores previous applied profile and preserves fields" {
 }
 
 ///|
-async test "write meta recovers non object meta file like moonstat" {
-  @fsx.with_temporary_directory("moonstat-claude-meta-shape-XXXXXX", tmpdir => {
+async test "write meta recovers non object meta file like moongate" {
+  @fsx.with_temporary_directory("moongate-claude-meta-shape-XXXXXX", tmpdir => {
     let meta_path = @pathx.join(tmpdir, "_meta.json")
     @fsx.write_to_file(meta_path, "[]")
 
@@ -109,7 +109,7 @@ async test "write meta recovers non object meta file like moonstat" {
 
 ///|
 async test "install proxy profile rolls back when profile write fails" {
-  @fsx.with_temporary_directory("moonstat-claude-install-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-claude-install-XXXXXX", tmpdir => {
     let normal_config_path = @pathx.join(
       @pathx.join(tmpdir, "Claude"),
       CONFIG_FILE,
@@ -149,7 +149,7 @@ async test "install proxy profile rolls back when profile write fails" {
       paths,
       "127.0.0.1",
       15721,
-      token=Some("moonstat-token"),
+      token=Some("moongate-token"),
     )
 
     assert_true(result is Err(_))
@@ -167,7 +167,7 @@ async test "install proxy profile rolls back when profile write fails" {
 
 ///|
 async test "uninstall proxy profile rolls back when meta write fails" {
-  @fsx.with_temporary_directory("moonstat-claude-uninstall-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-claude-uninstall-XXXXXX", tmpdir => {
     let normal_config_path = @pathx.join(
       @pathx.join(tmpdir, "Claude"),
       CONFIG_FILE,
@@ -205,7 +205,7 @@ async test "uninstall proxy profile rolls back when meta write fails" {
     write_json_file(
       paths.profile_path,
       gateway_profile_json(
-        "http://127.0.0.1:15721/claude-desktop", "moonstat-token",
+        "http://127.0.0.1:15721/claude-desktop", "moongate-token",
       ),
     )
     @fsx.write_to_file(blocked_meta_dir, "not a directory")
@@ -227,7 +227,7 @@ async test "uninstall proxy profile rolls back when meta write fails" {
 
 ///|
 async test "remove gateway enterprise config keeps unrelated enterprise fields" {
-  @fsx.with_temporary_directory("moonstat-claude-enterprise-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-claude-enterprise-XXXXXX", tmpdir => {
     let config_path = @pathx.join(tmpdir, "claude_desktop_config.json")
     write_json_file(
       config_path,
@@ -235,7 +235,7 @@ async test "remove gateway enterprise config keeps unrelated enterprise fields" 
         "deploymentMode": Json::string("1p"),
         "enterpriseConfig": Json::object({
           "disableDeploymentModeChooser": Json::boolean(true),
-          "inferenceGatewayApiKey": Json::string("moonstat-token"),
+          "inferenceGatewayApiKey": Json::string("moongate-token"),
           "inferenceGatewayAuthScheme": Json::string("bearer"),
           "inferenceGatewayBaseUrl": Json::string(
             "http://127.0.0.1:15721/claude-desktop",
@@ -257,11 +257,11 @@ async test "remove gateway enterprise config keeps unrelated enterprise fields" 
 }
 
 ///|
-test "claude desktop gateway token is moonstat product-owned state" {
+test "claude desktop gateway token is moongate product-owned state" {
   let path = gateway_token_path()
   let expected = @moonsuite.product_artifact_for_workspace_root(
     claude_desktop_active_workspace_root(),
-    "moonstat",
+    "moongate",
     "auth/claude-desktop-gateway-token",
   )
   assert_eq(path, expected)

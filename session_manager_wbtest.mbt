@@ -1,5 +1,5 @@
 ///|
-test "moonstat codex session parser extracts metadata and messages" {
+test "moongate codex session parser extracts metadata and messages" {
   let lines = [
     "{\"timestamp\":\"2026-03-06T21:50:12Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"codex-s1\",\"cwd\":\"/tmp/project\"}}",
     "{\"timestamp\":\"2026-03-06T21:50:13Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":\"hello codex\"}}",
@@ -20,7 +20,7 @@ test "moonstat codex session parser extracts metadata and messages" {
 }
 
 ///|
-test "moonstat claude session parser reclassifies tool result messages" {
+test "moongate claude session parser reclassifies tool result messages" {
   let content = [
     "{\"sessionId\":\"claude-s1\",\"cwd\":\"/tmp/claude\",\"timestamp\":\"2026-03-06T21:50:12Z\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"hello claude\"}}",
     "{\"timestamp\":\"2026-03-06T21:50:13Z\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\"}]}}",
@@ -43,7 +43,7 @@ test "moonstat claude session parser reclassifies tool result messages" {
 }
 
 ///|
-test "moonstat delete sessions parser accepts direct arrays only" {
+test "moongate delete sessions parser accepts direct arrays only" {
   let item = {
     "providerId": Json::string("codex"),
     "sessionId": Json::string("s1"),
@@ -60,8 +60,8 @@ test "moonstat delete sessions parser accepts direct arrays only" {
 }
 
 ///|
-async test "moonstat opencode sqlite sessions scan load and delete" {
-  @fsx.with_temporary_directory("moonstat-opencode-sqlite-XXXXXX", tmpdir => {
+async test "moongate opencode sqlite sessions scan load and delete" {
+  @fsx.with_temporary_directory("moongate-opencode-sqlite-XXXXXX", tmpdir => {
     let db_path = @pathx.join(tmpdir, "opencode.db")
     let setup =
       #|CREATE TABLE session(id TEXT PRIMARY KEY, title TEXT, directory TEXT, time_created INTEGER, time_updated INTEGER);
@@ -112,8 +112,8 @@ async test "moonstat opencode sqlite sessions scan load and delete" {
 }
 
 ///|
-async test "moonstat hermes sqlite sessions scan load and delete" {
-  @fsx.with_temporary_directory("moonstat-hermes-sqlite-XXXXXX", tmpdir => {
+async test "moongate hermes sqlite sessions scan load and delete" {
+  @fsx.with_temporary_directory("moongate-hermes-sqlite-XXXXXX", tmpdir => {
     let db_path = @pathx.join(tmpdir, "state.db")
     let setup =
       #|CREATE TABLE sessions(id TEXT PRIMARY KEY, title TEXT, cwd TEXT, started_at INTEGER, ended_at INTEGER);
@@ -158,7 +158,7 @@ async test "moonstat hermes sqlite sessions scan load and delete" {
 }
 
 ///|
-test "moonstat session terminal target follows MoonGate preferred terminal aliases" {
+test "moongate session terminal target follows MoonGate preferred terminal aliases" {
   assert_eq(moon_session_terminal_target(None), "terminal")
   assert_eq(moon_session_terminal_target(Some("iterm2")), "iterm")
   assert_eq(moon_session_terminal_target(Some(" Ghostty ")), "ghostty")
@@ -167,7 +167,7 @@ test "moonstat session terminal target follows MoonGate preferred terminal alias
 }
 
 ///|
-async test "moonstat session terminal app launch quotes cwd in applescript" {
+async test "moongate session terminal app launch quotes cwd in applescript" {
   let launch = moon_session_terminal_launch(
     "terminal",
     "claude --resume abc-123",
@@ -184,7 +184,7 @@ async test "moonstat session terminal app launch quotes cwd in applescript" {
 }
 
 ///|
-async test "moonstat session wezterm launch uses cwd argument and shell command" {
+async test "moongate session wezterm launch uses cwd argument and shell command" {
   let launch = moon_session_terminal_launch(
     "wezterm",
     "claude --resume abc-123",
@@ -200,7 +200,7 @@ async test "moonstat session wezterm launch uses cwd argument and shell command"
 }
 
 ///|
-async test "moonstat session custom terminal expands command and cwd" {
+async test "moongate session custom terminal expands command and cwd" {
   let launch = moon_session_terminal_launch(
     "custom",
     "codex resume s1",
@@ -217,8 +217,8 @@ async test "moonstat session custom terminal expands command and cwd" {
 }
 
 ///|
-async test "moonstat session warp launch writes self removing script and URL" {
-  @fsx.with_temporary_directory("moonstat-warp-session-XXXXXX", tmpdir => {
+async test "moongate session warp launch writes self removing script and URL" {
+  @fsx.with_temporary_directory("moongate-warp-session-XXXXXX", tmpdir => {
     let launch = moon_session_terminal_launch(
       "warp",
       "claude --resume warp-1",
@@ -231,7 +231,7 @@ async test "moonstat session warp launch writes self removing script and URL" {
     assert_true(launch.args[2].has_prefix("warp://action/new_tab?path="))
     assert_true(launch.args[2].contains("%2F"))
     let script_dir = @pathx.join(
-      @moonsuite.product_home_for_workspace_root(tmpdir, "moonstat").tmp_path,
+      @moonsuite.product_home_for_workspace_root(tmpdir, "moongate").tmp_path,
       "warp",
     )
     let entries = @fsx.list_directory(script_dir)
@@ -246,20 +246,20 @@ async test "moonstat session warp launch writes self removing script and URL" {
 }
 
 ///|
-async test "moonstat session warp launch uses suite temp for book roots" {
-  @fsx.with_temporary_directory("moonstat-warp-book-root-XXXXXX", tmpdir => {
+async test "moongate session warp launch uses suite temp for book roots" {
+  @fsx.with_temporary_directory("moongate-warp-book-root-XXXXXX", tmpdir => {
     let suite_root = @pathx.join(tmpdir, "suite")
     let book_root = @pathx.join(suite_root, "books/research")
     @fsx.make_directory(book_root, recursive=true, exists_ok=true)
     let launch = moon_session_terminal_launch(
       "warp",
-      "moonstat status",
+      "moongate status",
       Some(book_root),
       None,
     ).unwrap()
     assert_eq(launch.program, "open")
     let script_dir = @pathx.join(
-      @moonsuite.product_home_for_workspace_root(book_root, "moonstat").tmp_path,
+      @moonsuite.product_home_for_workspace_root(book_root, "moongate").tmp_path,
       "warp",
     )
     assert_true(script_dir.has_prefix(@pathx.join(suite_root, ".tmp")))

@@ -3,7 +3,7 @@ function renderStack(id, rows, labelKeys) {
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
-    target.innerHTML = `<div class="row-card"><strong>No data yet</strong><small>Use moonstat through the proxy to populate this panel.</small></div>`;
+    target.innerHTML = `<div class="row-card"><strong>No data yet</strong><small>Use moongate through the proxy to populate this panel.</small></div>`;
     return;
   }
   for (const row of rows.slice(0, 8)) {

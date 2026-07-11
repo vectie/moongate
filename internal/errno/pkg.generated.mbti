@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/errno"
+package "vectie/moongate/internal/errno"
 
 // Values
 pub let eacces : Int

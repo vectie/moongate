@@ -7,7 +7,7 @@ fn moon_wbtest_restore_env(key : String, value : String?) -> Unit {
 }
 
 ///|
-test "claude desktop model list matches moonstat response shape" {
+test "claude desktop model list matches moongate response shape" {
   json_inspect(claude_desktop_model_list_json(), content={
     "data": [
       {
@@ -36,7 +36,7 @@ test "claude desktop model list matches moonstat response shape" {
 }
 
 ///|
-test "claude desktop model list uses moonstat provider route metadata" {
+test "claude desktop model list uses moongate provider route metadata" {
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "claude-haiku-4-5": ClaudeDesktopModelRoute::new(
       model="haiku-upstream",
@@ -80,7 +80,7 @@ test "codex compact responses keep compact backend endpoint" {
 }
 
 ///|
-test "gemini model extraction trims moonstat query and action suffixes" {
+test "gemini model extraction trims moongate query and action suffixes" {
   assert_eq(
     gemini_model_from_endpoint(
       "/v1beta/models/gemini-pro:generateContent?key=abc",
@@ -102,7 +102,7 @@ test "gemini model extraction trims moonstat query and action suffixes" {
 }
 
 ///|
-test "usage request detail route extracts moonstat request id" {
+test "usage request detail route extracts moongate request id" {
   assert_eq(usage_request_detail_id("/usage/request-detail/req_123"), "req_123")
   assert_eq(usage_request_detail_id("req_123"), "req_123")
   assert_eq(
@@ -112,7 +112,7 @@ test "usage request detail route extracts moonstat request id" {
 }
 
 ///|
-test "usage query helpers parse moonstat trend parameters" {
+test "usage query helpers parse moongate trend parameters" {
   let path = "/usage/trends?startDate=10&endDate=20&appType=codex"
   assert_eq(usage_query_int(path, "startDate"), Some(10))
   assert_eq(usage_query_int(path, "endDate"), Some(20))
@@ -124,7 +124,7 @@ test "usage query helpers parse moonstat trend parameters" {
 }
 
 ///|
-test "usage query helpers parse moonstat provider limit parameters" {
+test "usage query helpers parse moongate provider limit parameters" {
   let path = "/usage/provider-limits?providerId=codex-oauth&appType=codex&dailyLimitUsd=0.10&monthlyLimitUsd=1.25"
   assert_eq(usage_query_value(path, "providerId"), Some("codex-oauth"))
   assert_eq(usage_query_value(path, "appType"), Some("codex"))
@@ -137,7 +137,7 @@ test "usage query helpers parse moonstat provider limit parameters" {
 }
 
 ///|
-test "usage script request accepts raw moonstat script output" {
+test "usage script request accepts raw moongate script output" {
   let path = "/usage/test-script?providerId=p1&appType=codex&scriptCode=%5B%7B%22planName%22%3A%22Team%22%2C%22total%22%3A100%2C%22used%22%3A40%2C%22remaining%22%3A60%2C%22unit%22%3A%22%25%22%7D%5D"
   guard usage_result_from_request(path, None) is Some(result) else {
     fail("expected usage result")
@@ -192,18 +192,18 @@ async test "suite http endpoints are registered by gateway suite routes" {
     ] {
     assert_true(route_source.contains(route))
   }
-  assert_true(route_source.contains("moonstat_suite_manifest_json("))
-  assert_true(route_source.contains("moonstat_suite_drift_report_json("))
-  assert_true(route_source.contains("write_moonstat_suite_status("))
-  assert_true(route_source.contains("moonstat_moonclaw_providers_file_json("))
-  assert_true(route_source.contains("write_moonstat_moonclaw_providers_file("))
+  assert_true(route_source.contains("moongate_suite_manifest_json("))
+  assert_true(route_source.contains("moongate_suite_drift_report_json("))
+  assert_true(route_source.contains("write_moongate_suite_status("))
+  assert_true(route_source.contains("moongate_moonclaw_providers_file_json("))
+  assert_true(route_source.contains("write_moongate_moonclaw_providers_file("))
   assert_true(route_source.contains("port=bound_port"))
   assert_false(route_source.contains("port=self.port"))
 }
 
 ///|
 async test "usage script github copilot template uses standalone native query" {
-  let path = "/usage/test-script?providerId=p1&appType=claude&templateType=github_copilot&accountId=moonstat-missing-account"
+  let path = "/usage/test-script?providerId=p1&appType=claude&templateType=github_copilot&accountId=moongate-missing-account"
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
   }
@@ -212,7 +212,7 @@ async test "usage script github copilot template uses standalone native query" {
 }
 
 ///|
-test "github copilot usage conversion mirrors moonstat premium row" {
+test "github copilot usage conversion mirrors moongate premium row" {
   let result = moon_copilot_usage_result_from_json(
     {
       "copilot_plan": Json::string("Individual"),
@@ -252,7 +252,7 @@ test "github copilot usage conversion reports malformed response" {
 }
 
 ///|
-async test "usage script balance template uses standalone moonstat native query" {
+async test "usage script balance template uses standalone moongate native query" {
   let path = "/usage/test-script?providerId=p1&appType=codex&templateType=balance&baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey="
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
@@ -271,7 +271,7 @@ async test "usage script balance template uses standalone moonstat native query"
 }
 
 ///|
-async test "usage script token plan template uses standalone moonstat native query" {
+async test "usage script token plan template uses standalone moongate native query" {
   let path = "/usage/test-script?providerId=p1&appType=codex&templateType=token_plan&baseUrl=https%3A%2F%2Fapi.kimi.com%2Fcoding&apiKey="
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
@@ -280,7 +280,7 @@ async test "usage script token plan template uses standalone moonstat native que
 }
 
 ///|
-async test "usage script official subscription template uses standalone moonstat native query" {
+async test "usage script official subscription template uses standalone moongate native query" {
   let path = "/usage/test-script?providerId=p1&tool=unknown&templateType=official_subscription"
   guard test_usage_script_template_result(path, None) is Some(result) else {
     fail("expected template result")
@@ -289,7 +289,7 @@ async test "usage script official subscription template uses standalone moonstat
 }
 
 ///|
-test "official subscription quota usage conversion mirrors moonstat rows" {
+test "official subscription quota usage conversion mirrors moongate rows" {
   let result = moon_subscription_usage_result_from_quota(
     SubscriptionQuota::new("claude", tiers=[
       moon_quota_tier_json("five_hour", 12.5, resets_at=Some("five-reset")),
@@ -324,7 +324,7 @@ test "official subscription quota usage conversion falls back to credential mess
 }
 
 ///|
-test "token plan quota usage conversion mirrors moonstat rows" {
+test "token plan quota usage conversion mirrors moongate rows" {
   let result = moon_token_plan_usage_result_from_quota(
     SubscriptionQuota::new(
       "coding_plan",
@@ -364,7 +364,7 @@ test "token plan quota usage conversion mirrors moonstat rows" {
 }
 
 ///|
-test "usage query helpers parse moonstat auto failover boolean parameters" {
+test "usage query helpers parse moongate auto failover boolean parameters" {
   assert_eq(
     proxy_bool_request(
       "/proxy/auto-failover-enabled?appType=codex&enabled=true",
@@ -396,18 +396,18 @@ test "pick directory parser accepts defaultPath payload key" {
   assert_eq(
     proxy_string_request(
       "/files/directories/pick",
-      Some({ "defaultPath": Json::string("/tmp/moonstat") }.to_json()),
+      Some({ "defaultPath": Json::string("/tmp/moongate") }.to_json()),
       "defaultPath",
     ),
-    Some("/tmp/moonstat"),
+    Some("/tmp/moongate"),
   )
   assert_eq(
     proxy_string_request(
-      "/files/directories/pick?defaultPath=/tmp/moonstat",
+      "/files/directories/pick?defaultPath=/tmp/moongate",
       None,
       "defaultPath",
     ),
-    Some("/tmp/moonstat"),
+    Some("/tmp/moongate"),
   )
   assert_eq(
     proxy_string_request(
@@ -420,7 +420,7 @@ test "pick directory parser accepts defaultPath payload key" {
 }
 
 ///|
-test "moonstat read command parsers accept canonical json payload keys" {
+test "moongate read command parsers accept canonical json payload keys" {
   let app_body = Some({ "appType": Json::string("codex") }.to_json())
   let app_type_body = Some({ "appType": Json::string("gemini") }.to_json())
   let provider_body = Some(
@@ -564,7 +564,7 @@ test "proxy failover command parsers accept canonical json payload keys" {
 }
 
 ///|
-test "moonstat settings defaults mirror desktop command payloads" {
+test "moongate settings defaults mirror desktop command payloads" {
   guard moon_default_app_settings_json() is Object(settings) else {
     fail("expected settings object")
   }
@@ -600,7 +600,7 @@ test "moonstat settings defaults mirror desktop command payloads" {
 }
 
 ///|
-test "auth and copilot request helpers accept only moonstat canonical keys" {
+test "auth and copilot request helpers accept only moongate canonical keys" {
   let canonical = Some(
     {
       "accountId": Json::string("ghe:42"),
@@ -671,7 +671,7 @@ test "auth and copilot request helpers accept only moonstat canonical keys" {
 }
 
 ///|
-test "moonstat save settings merge preserves omitted sync secrets" {
+test "moongate save settings merge preserves omitted sync secrets" {
   let existing = {
     "webdavSync": {
       "baseUrl": Json::string("https://dav.example.com"),
@@ -714,8 +714,8 @@ test "moonstat save settings merge preserves omitted sync secrets" {
 }
 
 ///|
-async test "moonstat settings persist refresh interval and preserve defaults" {
-  let dir = @pathx.join("/tmp", "moonstat-settings-\{@async.now().to_int()}")
+async test "moongate settings persist refresh interval and preserve defaults" {
+  let dir = @pathx.join("/tmp", "moongate-settings-\{@async.now().to_int()}")
   let path = @pathx.join(dir, "config.json")
   let saved = ConfigService::new()
   saved.save_settings_store(
@@ -737,7 +737,7 @@ async test "moonstat settings persist refresh interval and preserve defaults" {
 }
 
 ///|
-test "moonstat settings config query builders update defaults" {
+test "moongate settings config query builders update defaults" {
   let default_rectifier = moon_default_rectifier_config_json()
   guard moon_rectifier_config_from_request(
       "/settings/rectifier?requestThinkingSignature=false",
@@ -787,14 +787,14 @@ test "moonstat settings config query builders update defaults" {
 }
 
 ///|
-test "moonstat claude plugin detection matches managed primary api key" {
+test "moongate claude plugin detection matches managed primary api key" {
   assert_true(moon_json_primary_api_key_any("{\"primaryApiKey\":\"any\"}"))
   assert_false(moon_json_primary_api_key_any("{\"primaryApiKey\":\"real\"}"))
   assert_false(moon_json_primary_api_key_any("not-json"))
 }
 
 ///|
-test "moonstat workspace filename validators mirror OpenClaw whitelist" {
+test "moongate workspace filename validators mirror OpenClaw whitelist" {
   assert_true(moon_validate_workspace_filename("AGENTS.md"))
   assert_true(moon_validate_workspace_filename("BOOTSTRAP.md"))
   assert_false(moon_validate_workspace_filename("../AGENTS.md"))
@@ -812,7 +812,7 @@ test "moonstat workspace filename validators mirror OpenClaw whitelist" {
 }
 
 ///|
-test "moonstat daily memory search helpers count and snippet matches" {
+test "moongate daily memory search helpers count and snippet matches" {
   let (count, first) = moon_count_case_insensitive_matches(
     "Plan today. plan tomorrow. PLAN later.", "plan",
   )
@@ -825,7 +825,7 @@ test "moonstat daily memory search helpers count and snippet matches" {
 }
 
 ///|
-test "provider command helpers parse moonstat sort and endpoint test payloads" {
+test "provider command helpers parse moongate sort and endpoint test payloads" {
   let updates = provider_sort_updates_from_request(
     "/providers/sort-order?appType=codex&id=custom&sortIndex=2",
     None,
@@ -919,7 +919,7 @@ test "provider mutation helpers reject retired snake case aliases" {
 }
 
 ///|
-test "universal provider helper builds moonstat provider shape from query args" {
+test "universal provider helper builds moongate provider shape from query args" {
   guard universal_provider_from_request(
       "/providers/universal?id=u%201&name=Universal+One&providerType=openai-compatible&apps=claude,codex&baseUrl=https%3A%2F%2Fapi.example.com%2Fv1&apiKey=sk-test&codexModel=gpt-5&reasoningEffort=medium",
       None,
@@ -969,7 +969,7 @@ test "universal provider helper builds moonstat provider shape from query args" 
 }
 
 ///|
-test "provider target parses moonstat claude desktop route metadata" {
+test "provider target parses moongate claude desktop route metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1120,7 +1120,7 @@ test "gateway syncs provider limit metadata into usage limits" {
 }
 
 ///|
-test "gateway add provider follows moonstat current provider semantics" {
+test "gateway add provider follows moongate current provider semantics" {
   let gateway = Gateway::new(port=0)
   gateway.proxy.add_provider_target(
     gateway.usage,
@@ -1169,7 +1169,7 @@ test "gateway add provider follows moonstat current provider semantics" {
 }
 
 ///|
-test "gateway update provider follows moonstat rename guards" {
+test "gateway update provider follows moongate rename guards" {
   let gateway = Gateway::new(port=0)
   let missing_result = gateway.proxy.update_provider_target(
     gateway.usage,
@@ -1419,7 +1419,7 @@ test "provider target resolves provider type from explicit fields" {
 }
 
 ///|
-test "provider target requires explicit moonstat api format" {
+test "provider target requires explicit moongate api format" {
   guard provider_target_from_request(
       "/providers?apiFormat=openai_chat",
       Some(
@@ -1501,7 +1501,7 @@ test "provider target stores sibling meta without deriving runtime fields" {
 }
 
 ///|
-test "provider target defaults missing moonstat codex fast mode to false" {
+test "provider target defaults missing moongate codex fast mode to false" {
   guard provider_target_from_request(
       "/providers?providerType=codex-oauth&apiFormat=openai_responses",
       Some(
@@ -1533,7 +1533,7 @@ test "provider target defaults missing moonstat codex fast mode to false" {
 }
 
 ///|
-test "provider target keeps moonstat custom user agent metadata" {
+test "provider target keeps moongate custom user agent metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1558,7 +1558,7 @@ test "provider target keeps moonstat custom user agent metadata" {
 }
 
 ///|
-test "official provider ignores moonstat custom user agent metadata" {
+test "official provider ignores moongate custom user agent metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
@@ -1580,7 +1580,7 @@ test "official provider ignores moonstat custom user agent metadata" {
 }
 
 ///|
-test "moonstat custom user agent parser matches header value validation" {
+test "moongate custom user agent parser matches header value validation" {
   assert_eq(
     parse_custom_user_agent(Some("  CodexBot/1.0  ")),
     Some("CodexBot/1.0"),
@@ -1615,7 +1615,7 @@ test "codex compatible provider headers honor custom user agent" {
 }
 
 ///|
-test "usage query helpers parse moonstat request log parameters" {
+test "usage query helpers parse moongate request log parameters" {
   let path = "/usage/logs?page=2&pageSize=25&appType=codex&providerName=Codex+OAuth&model=anthropic%2Fclaude-sonnet-4.5&statusCode=200&startDate=10&endDate=20"
   assert_eq(usage_query_int(path, "page"), Some(2))
   assert_eq(usage_query_int(path, "pageSize"), Some(25))
@@ -1632,7 +1632,7 @@ test "usage query helpers parse moonstat request log parameters" {
 }
 
 ///|
-test "usage request log helpers parse moonstat structured body filters" {
+test "usage request log helpers parse moongate structured body filters" {
   let body = {
     "filters": {
       "appType": Json::string("codex"),
@@ -1663,7 +1663,7 @@ test "usage request log helpers parse moonstat structured body filters" {
 }
 
 ///|
-test "usage request log helpers let query override moonstat body filters" {
+test "usage request log helpers let query override moongate body filters" {
   let body = {
     "filters": {
       "appType": Json::string("claude"),
@@ -1683,7 +1683,7 @@ test "usage request log helpers let query override moonstat body filters" {
 }
 
 ///|
-test "usage aggregate helpers parse moonstat structured command args" {
+test "usage aggregate helpers parse moongate structured command args" {
   let body = {
     "startDate": Json::number(100.0),
     "endDate": Json::number(200.0),
@@ -1722,7 +1722,7 @@ test "usage aggregate helpers parse moonstat structured command args" {
 }
 
 ///|
-test "usage aggregate helpers prefer query params over moonstat body args" {
+test "usage aggregate helpers prefer query params over moongate body args" {
   let body = {
     "startDate": Json::number(100.0),
     "endDate": Json::number(200.0),
@@ -1790,8 +1790,8 @@ async test "provider usage query falls back to native balance credentials" {
 }
 
 ///|
-async test "moonstat open folder helper creates directory and returns boolean success" {
-  @fsx.with_temporary_directory("moonstat-open-folder-XXXXXX", async fn(
+async test "moongate open folder helper creates directory and returns boolean success" {
+  @fsx.with_temporary_directory("moongate-open-folder-XXXXXX", async fn(
     tmpdir,
   ) {
     let target = @pathx.join(tmpdir, "nested/config")
@@ -1806,21 +1806,21 @@ async test "moonstat open folder helper creates directory and returns boolean su
 }
 
 ///|
-test "provider selection errors use moonstat proxy error codes" {
+test "provider selection errors use moongate proxy error codes" {
   assert_eq(
     provider_selection_error_status(AllProvidersCircuitOpen),
     @status.ServiceUnavailable,
   )
   assert_eq(
     provider_selection_error_code(AllProvidersCircuitOpen),
-    "moonstat_all_providers_circuit_open",
+    "moongate_all_providers_circuit_open",
   )
   guard provider_selection_error_json(AllProvidersCircuitOpen, "codex")
     is Object(body) else {
     fail("expected provider selection error body")
   }
   guard body["error"] is Object(error) else { fail("expected error object") }
-  assert_eq(error["code"], Json::string("moonstat_all_providers_circuit_open"))
+  assert_eq(error["code"], Json::string("moongate_all_providers_circuit_open"))
   assert_eq(error["type"], Json::string("proxy_error"))
   assert_eq(error["param"], Json::null())
   assert_eq(error["app_type"], Json::string("codex"))
@@ -1836,7 +1836,7 @@ test "provider selection errors use moonstat proxy error codes" {
 }
 
 ///|
-test "proxy global config exposes standalone moonstat shape" {
+test "proxy global config exposes standalone moongate shape" {
   let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
   guard gateway.proxy.global_config_json() is Object(config) else {
     fail("expected proxy global config object")
@@ -1851,7 +1851,7 @@ test "proxy global config exposes standalone moonstat shape" {
 }
 
 ///|
-test "global proxy url helpers use moonstat response shapes" {
+test "global proxy url helpers use moongate response shapes" {
   assert_true(upstream_proxy_url_is_valid("http://127.0.0.1:7890"))
   assert_true(upstream_proxy_url_is_valid("socks5://127.0.0.1:1080"))
   assert_false(upstream_proxy_url_is_valid("ftp://127.0.0.1:21"))
@@ -1873,7 +1873,7 @@ test "global proxy url helpers use moonstat response shapes" {
 }
 
 ///|
-test "moonstat local proxy scan catalog mirrors moonstat common ports" {
+test "moongate local proxy scan catalog mirrors moongate common ports" {
   let ports = moon_local_proxy_ports()
   assert_eq(ports.length(), 8)
   assert_eq(ports[0], (7890, "http", true))
@@ -1887,7 +1887,7 @@ test "moonstat local proxy scan catalog mirrors moonstat common ports" {
 }
 
 ///|
-test "moonstat local proxy scan expands mixed ports into http and socks5 entries" {
+test "moongate local proxy scan expands mixed ports into http and socks5 entries" {
   json_inspect(
     Json::array(moon_detected_proxy_entries_json(7890, "http", true)),
     content=[
@@ -1904,7 +1904,7 @@ test "moonstat local proxy scan expands mixed ports into http and socks5 entries
 }
 
 ///|
-test "suite config helpers mirror moonstat openclaw hermes shapes" {
+test "suite config helpers mirror moongate openclaw hermes shapes" {
   json_inspect(openclaw_default_tools_json(), content={
     "allow": [],
     "deny": [],
@@ -2021,12 +2021,12 @@ test "suite config helpers mirror moonstat openclaw hermes shapes" {
   assert_eq(HERMES_DASHBOARD_COMMAND, "hermes dashboard")
   assert_eq(
     hermes_dashboard_background_shell_command(),
-    "nohup hermes dashboard >/tmp/moonstat_hermes_dashboard.log 2>&1 &",
+    "nohup hermes dashboard >/tmp/moongate_hermes_dashboard.log 2>&1 &",
   )
 }
 
 ///|
-test "openclaw health scanner reports current moonstat warning rules" {
+test "openclaw health scanner reports current moongate warning rules" {
   let config = {
     "tools": { "profile": Json::string("dangerous") }.to_json(),
     "agents": {
@@ -2073,7 +2073,7 @@ test "openclaw health scanner accepts supported profiles and object env" {
 }
 
 ///|
-test "proxy app config exposes standalone moonstat shape" {
+test "proxy app config exposes standalone moongate shape" {
   let gateway = Gateway::new(port=17005, host="127.0.0.6", model="gpt-5")
   guard gateway.proxy.app_config_json("claude") is Object(config) else {
     fail("expected proxy app config object")
@@ -2136,7 +2136,7 @@ test "proxy global config state updates standalone config shape" {
 }
 
 ///|
-test "proxy lifecycle state matches moonstat command aliases" {
+test "proxy lifecycle state matches moongate command aliases" {
   let gateway = Gateway::new(port=17016, host="127.0.0.16", model="gpt-5")
   gateway.proxy.proxy_enabled = false
   guard gateway.proxy.server_info_json(gateway.started_at_ms)
@@ -2176,7 +2176,7 @@ test "proxy lifecycle state matches moonstat command aliases" {
 }
 
 ///|
-test "moonstat auto failover enable requires proxy takeover" {
+test "moongate auto failover enable requires proxy takeover" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   assert_true(gateway.proxy.can_set_auto_failover("codex", true))
   assert_true(gateway.proxy.can_set_auto_failover("codex", false))
@@ -2188,7 +2188,7 @@ test "moonstat auto failover enable requires proxy takeover" {
 }
 
 ///|
-test "moonstat unit commands return null success body" {
+test "moongate unit commands return null success body" {
   assert_eq(moon_unit_success_json(), Json::null())
 }
 
@@ -2212,7 +2212,7 @@ fn service_handler_uses_unit_success(
 }
 
 ///|
-async test "moonstat proxy mutation command handlers return unit success bodies" {
+async test "moongate proxy mutation command handlers return unit success bodies" {
   let source = @fsx.read_file("gateway_proxy.mbt")
   for
     entry in [
@@ -2368,15 +2368,15 @@ async test "settings mcp and prompt endpoints are owned by config service" {
   let import_export_source = @fsx.read_file("import_export.mbt")
   let sync_source = @fsx.read_file("sync.mbt")
   let route_source = @fsx.read_file("gateway_config_routes.mbt")
-  let suite_root = "/tmp/moonstat-config-suite"
+  let suite_root = "/tmp/moongate-config-suite"
   let book_root = @pathx.join(suite_root, "books/research-demo")
   let app_config_dir = moon_app_config_dir_for_workspace_root(book_root)
   assert_eq(
     app_config_dir,
-    @pathx.join(suite_root, ".moonsuite/products/moonstat"),
+    @pathx.join(suite_root, ".moonsuite/products/moongate"),
   )
   assert_false(app_config_dir.contains("books/research-demo/.moonsuite"))
-  assert_false(config_source.contains("product_dir(\"\", \"moonstat\")"))
+  assert_false(config_source.contains("product_dir(\"\", \"moongate\")"))
   let config_sources = misc_source +
     config_source +
     config_runtime_source +
@@ -2989,7 +2989,7 @@ async test "openclaw endpoints are owned by openclaw service" {
 }
 
 ///|
-test "standalone tray update mirrors moonstat no tray result" {
+test "standalone tray update mirrors moongate no tray result" {
   assert_eq(moon_update_tray_menu_result(), Json::boolean(false))
 }
 
@@ -3001,36 +3001,36 @@ test "gateway defaults are owned by suite contract" {
 }
 
 ///|
-test "standalone external open records moonstat normalized target" {
+test "standalone external open records moongate normalized target" {
   let runtime = RuntimeService::new()
   assert_eq(runtime.last_external_url, None)
   assert_eq(
-    runtime.record_external_open("github.com/vectie/moonstat"),
-    "https://github.com/vectie/moonstat",
+    runtime.record_external_open("github.com/vectie/moongate"),
+    "https://github.com/vectie/moongate",
   )
   assert_eq(
     runtime.last_external_url,
-    Some("https://github.com/vectie/moonstat"),
+    Some("https://github.com/vectie/moongate"),
   )
   assert_eq(
-    runtime.record_external_open("HTTP://github.com/vectie/moonstat"),
-    "https://HTTP://github.com/vectie/moonstat",
+    runtime.record_external_open("HTTP://github.com/vectie/moongate"),
+    "https://HTTP://github.com/vectie/moongate",
   )
   assert_eq(
     runtime.last_external_url,
-    Some("https://HTTP://github.com/vectie/moonstat"),
+    Some("https://HTTP://github.com/vectie/moongate"),
   )
 }
 
 ///|
-test "standalone update check records moonstat release target" {
+test "standalone update check records moongate release target" {
   let runtime = RuntimeService::new()
   assert_eq(runtime.record_external_open(moon_update_url()), moon_update_url())
   assert_eq(runtime.last_external_url, Some(moon_update_url()))
 }
 
 ///|
-test "proxy app config state updates moonstat app fields" {
+test "proxy app config state updates moongate app fields" {
   let gateway = Gateway::new(port=17008, host="127.0.0.9", model="gpt-5")
   gateway.proxy.proxy_app_enabled.set("codex", false)
   gateway.proxy.provider_router.set_max_retries("codex", 5)
@@ -3086,7 +3086,7 @@ test "proxy app config circuit updates are app scoped" {
 }
 
 ///|
-test "stream check config accepts moonstat canonical body and query fields" {
+test "stream check config accepts moongate canonical body and query fields" {
   let config = stream_check_config_from_request(
     "/proxy/stream-check/config?geminiModel=gemini-test&testPrompt=Ping",
     (
@@ -3123,7 +3123,7 @@ test "stream check config accepts moonstat canonical body and query fields" {
 }
 
 ///|
-test "stream check result uses moonstat camelCase shape" {
+test "stream check result uses moongate camelCase shape" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3149,7 +3149,7 @@ test "stream check result uses moonstat camelCase shape" {
 }
 
 ///|
-test "stream check strips moonstat codex effort suffix from result model" {
+test "stream check strips moongate codex effort suffix from result model" {
   let gateway = Gateway::new(port=17018, host="127.0.0.18", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3175,7 +3175,7 @@ test "stream check strips moonstat codex effort suffix from result model" {
 }
 
 ///|
-test "stream check provider test config overrides global config like moonstat" {
+test "stream check provider test config overrides global config like moongate" {
   let gateway = Gateway::new(port=17019, host="127.0.0.19", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3232,7 +3232,7 @@ test "stream check provider test config overrides global config like moonstat" {
 }
 
 ///|
-test "stream check codex effort parser follows moonstat separators" {
+test "stream check codex effort parser follows moongate separators" {
   assert_eq(
     stream_check_parse_model_with_effort("gpt-5.1-codex@low").0,
     "gpt-5.1-codex",
@@ -3252,7 +3252,7 @@ test "stream check codex effort parser follows moonstat separators" {
 }
 
 ///|
-test "stream check all provider ids follow moonstat proxy target filter" {
+test "stream check all provider ids follow moongate proxy target filter" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -3285,7 +3285,7 @@ test "stream check all provider ids follow moonstat proxy target filter" {
 }
 
 ///|
-test "proxy config request parsers accept canonical moonstat fields" {
+test "proxy config request parsers accept canonical moongate fields" {
   let config = Some(
     {
       "proxyEnabled": Json::boolean(false),
@@ -3398,9 +3398,9 @@ test "proxy circuit config request parser merges partial app config" {
 }
 
 ///|
-test "proxy pricing config aliases use moonstat env-backed defaults" {
-  let cost_key = "MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER"
-  let source_key = "MOONSTAT_CODEX_PRICING_MODEL_SOURCE"
+test "proxy pricing config aliases use moongate env-backed defaults" {
+  let cost_key = "MOONGATE_CODEX_DEFAULT_COST_MULTIPLIER"
+  let source_key = "MOONGATE_CODEX_PRICING_MODEL_SOURCE"
   @os.unsetenv(cost_key) catch {
     _ => ()
   }
@@ -3436,7 +3436,7 @@ test "proxy pricing config runtime overrides feed provider activation defaults" 
 }
 
 ///|
-test "proxy pricing config makes claude desktop inherit claude defaults like moonstat" {
+test "proxy pricing config makes claude desktop inherit claude defaults like moongate" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   gateway.proxy.proxy_default_cost_multipliers.set("claude", "1.5")
   gateway.proxy.proxy_pricing_model_sources.set("claude", "request")
@@ -3460,7 +3460,7 @@ test "proxy pricing config makes claude desktop inherit claude defaults like moo
 }
 
 ///|
-test "common config snippet validation mirrors moonstat formats" {
+test "common config snippet validation mirrors moongate formats" {
   assert_eq(
     moon_validate_common_config_snippet("codex", "# comment only\n"),
     None,
@@ -3478,7 +3478,7 @@ test "common config snippet validation mirrors moonstat formats" {
 }
 
 ///|
-test "common config extraction strips moonstat provider-specific fields" {
+test "common config extraction strips moongate provider-specific fields" {
   let claude = moon_extract_common_config_snippet_json(
     "claude",
     Json::object({
@@ -3548,7 +3548,7 @@ test "codex common config extraction removes provider toml tables" {
 }
 
 ///|
-test "proxy circuit breaker config exposes moonstat shape" {
+test "proxy circuit breaker config exposes moongate shape" {
   let gateway = Gateway::new(port=17006, host="127.0.0.7", model="gpt-5")
   guard gateway.proxy.provider_router.circuit_config.to_json() is Object(config) else {
     fail("expected circuit config object")
@@ -3561,12 +3561,12 @@ test "proxy circuit breaker config exposes moonstat shape" {
 }
 
 ///|
-test "proxy circuit breaker config update accepts moonstat body and query shapes" {
+test "proxy circuit breaker config update accepts moongate body and query shapes" {
   let direct = @json.parse(
     "{\"failureThreshold\":5,\"successThreshold\":3,\"timeoutSeconds\":30,\"errorRateThreshold\":0.4,\"minRequests\":12}",
   )
   guard circuit_breaker_config_from_json(direct) is Some(config) else {
-    fail("expected direct moonstat circuit config")
+    fail("expected direct moongate circuit config")
   }
   assert_eq(config.failure_threshold, 5)
   assert_eq(config.success_threshold, 3)
@@ -3578,7 +3578,7 @@ test "proxy circuit breaker config update accepts moonstat body and query shapes
     "{\"config\":{\"failureThreshold\":6,\"successThreshold\":2,\"timeoutSeconds\":0,\"errorRateThreshold\":0.75,\"minRequests\":20}}",
   )
   guard circuit_breaker_config_from_json(wrapped) is Some(wrapped_config) else {
-    fail("expected wrapped moonstat circuit config")
+    fail("expected wrapped moongate circuit config")
   }
   assert_eq(wrapped_config.failure_threshold, 6)
   assert_eq(wrapped_config.timeout_seconds, 0)
@@ -3708,7 +3708,7 @@ test "proxy provider health alias mirrors circuit breaker state" {
 }
 
 ///|
-test "proxy status alias matches moonstat proxy status shape" {
+test "proxy status alias matches moongate proxy status shape" {
   let gateway = Gateway::new(port=17002, host="127.0.0.3", model="gpt-5")
   let request = gateway.usage.begin_request(16)
   gateway.usage.stats.record_bad_request(request.context)
@@ -3741,7 +3741,7 @@ test "proxy status alias matches moonstat proxy status shape" {
 }
 
 ///|
-test "proxy status running follows moonstat start stop state" {
+test "proxy status running follows moongate start stop state" {
   let gateway = Gateway::new(port=17004, host="127.0.0.5", model="gpt-5")
   gateway.proxy.proxy_enabled = false
   guard gateway.proxy.status_json(
@@ -3768,7 +3768,7 @@ test "proxy status running follows moonstat start stop state" {
 }
 
 ///|
-test "proxy takeover status alias is moonstat-compatible standalone false state" {
+test "proxy takeover status alias is moongate-compatible standalone false state" {
   let gateway = Gateway::new(port=17003, host="127.0.0.4", model="gpt-5")
   guard gateway.proxy.takeover_status_json() is Object(status) else {
     fail("expected takeover status object")
@@ -3782,7 +3782,7 @@ test "proxy takeover status alias is moonstat-compatible standalone false state"
 }
 
 ///|
-test "codex provider forward failures use moonstat proxy error shape" {
+test "codex provider forward failures use moongate proxy error shape" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",
     provider_id="deepseek",
@@ -3797,7 +3797,7 @@ test "codex provider forward failures use moonstat proxy error shape" {
   }
   guard body["error"] is Object(error) else { fail("expected error object") }
   assert_eq(error["type"], Json::string("proxy_error"))
-  assert_eq(error["code"], Json::string("moonstat_forward_failed"))
+  assert_eq(error["code"], Json::string("moongate_forward_failed"))
   assert_eq(error["param"], Json::null())
   assert_eq(error["provider"], Json::string("DeepSeek"))
   assert_eq(error["model"], Json::string("deepseek-chat"))
@@ -3810,7 +3810,7 @@ test "codex provider forward failures use moonstat proxy error shape" {
 }
 
 ///|
-test "usage pricing helpers parse and validate moonstat pricing query" {
+test "usage pricing helpers parse and validate moongate pricing query" {
   let path = "/usage/model-pricing?modelId=test-model&displayName=Test%20Model&inputCost=1.25&outputCost=2&cacheReadCost=0.10&cacheCreationCost=0"
   guard usage_pricing_from_request(path, None) is Some(pricing) else {
     fail("expected pricing")
@@ -3838,7 +3838,7 @@ test "usage pricing helpers parse and validate moonstat pricing query" {
 }
 
 ///|
-test "usage pricing helpers parse moonstat structured body update" {
+test "usage pricing helpers parse moongate structured body update" {
   let body = {
     "modelId": Json::string("body-model"),
     "displayName": Json::string("Body Model"),
@@ -3882,7 +3882,7 @@ test "usage pricing helpers prefer query over body args" {
 }
 
 ///|
-test "usage pricing validation mirrors moonstat required field messages" {
+test "usage pricing validation mirrors moongate required field messages" {
   let body = {
     "displayName": Json::string("Body Model"),
     "inputCost": Json::string("1"),
@@ -3914,7 +3914,7 @@ test "usage pricing validation mirrors moonstat required field messages" {
 }
 
 ///|
-test "usage pricing validation mirrors moonstat invalid price messages" {
+test "usage pricing validation mirrors moongate invalid price messages" {
   let negative = "/usage/model-pricing?modelId=m&displayName=M&inputCost=-1&outputCost=2&cacheReadCost=0&cacheCreationCost=0"
   assert_eq(
     usage_pricing_validation_error_from_request(negative, None),
@@ -3928,7 +3928,7 @@ test "usage pricing validation mirrors moonstat invalid price messages" {
 }
 
 ///|
-test "usage decimal validation mirrors moonstat frontend regex" {
+test "usage decimal validation mirrors moongate frontend regex" {
   assert_true(usage_non_negative_decimal("0"))
   assert_true(usage_non_negative_decimal("1.25"))
   assert_true(usage_non_negative_decimal(" 10 "))
@@ -3939,7 +3939,7 @@ test "usage decimal validation mirrors moonstat frontend regex" {
 }
 
 ///|
-test "usage request detail id accepts moonstat request detail query" {
+test "usage request detail id accepts moongate request detail query" {
   assert_eq(
     usage_request_detail_id("/usage/request-detail?requestId=session%3Amsg%2F1"),
     "session:msg/1",
@@ -3951,7 +3951,7 @@ test "usage request detail id accepts moonstat request detail query" {
 }
 
 ///|
-test "usage request detail id accepts moonstat structured body" {
+test "usage request detail id accepts moongate structured body" {
   let body = { "requestId": Json::string("session:body/1") }.to_json()
   assert_eq(
     usage_request_detail_id_from_request("/usage/request-detail", Some(body)),
@@ -3992,7 +3992,7 @@ test "usage model id helpers accept body and query precedence" {
 }
 
 ///|
-test "usage pricing store rows use moonstat field names" {
+test "usage pricing store rows use moongate field names" {
   let row = model_pricing_store_json(
     mp("test-model", "Test Model", "1", "2", "0.1", "0"),
     deleted=false,
@@ -4073,7 +4073,7 @@ test "claude desktop model normalization keeps route ids strict" {
 }
 
 ///|
-test "claude safe model id rejects moonstat unsafe ids" {
+test "claude safe model id rejects moongate unsafe ids" {
   assert_false(is_claude_safe_model_id("claude-sonnet-4-6 [1m]"))
   assert_false(is_claude_safe_model_id("claude-old"))
   assert_false(is_claude_safe_model_id("claude-3-5-sonnet-20241022"))
@@ -4085,7 +4085,7 @@ test "claude safe model id rejects moonstat unsafe ids" {
 }
 
 ///|
-test "moonstat session extraction uses claude metadata and headers" {
+test "moongate session extraction uses claude metadata and headers" {
   let body = @json.parse(
     (
       #|{
@@ -4113,7 +4113,7 @@ test "moonstat session extraction uses claude metadata and headers" {
 }
 
 ///|
-test "moonstat session context generates log id without upstream session" {
+test "moongate session context generates log id without upstream session" {
   let body = @json.parse(
     (
       #|{
@@ -4130,7 +4130,7 @@ test "moonstat session context generates log id without upstream session" {
 }
 
 ///|
-test "moonstat session context keeps client session for upstream" {
+test "moongate session context keeps client session for upstream" {
   let body = @json.parse(
     (
       #|{
@@ -4147,7 +4147,7 @@ test "moonstat session context keeps client session for upstream" {
 }
 
 ///|
-test "moonstat client format detects proxy path shapes" {
+test "moongate client format detects proxy path shapes" {
   assert_true(moon_client_format_from_path("/v1/messages") == Claude)
   assert_true(moon_client_format_from_path("/api/v1/messages") == Claude)
   assert_true(moon_client_format_from_path("/v1/responses") == Codex)
@@ -4171,7 +4171,7 @@ test "moonstat client format detects proxy path shapes" {
 }
 
 ///|
-test "moonstat client format falls back to body shape" {
+test "moongate client format falls back to body shape" {
   let claude_body = @json.parse(
     (
       #|{
@@ -4220,7 +4220,7 @@ test "moonstat client format falls back to body shape" {
 }
 
 ///|
-test "moonstat session extraction prefixes codex client ids" {
+test "moongate session extraction prefixes codex client ids" {
   let body = @json.parse(
     (
       #|{
@@ -4255,7 +4255,7 @@ test "moonstat session extraction prefixes codex client ids" {
 }
 
 ///|
-test "codex oauth headers propagate moonstat session headers" {
+test "codex oauth headers propagate moongate session headers" {
   let creds = @codex.Credentials::{
     idToken: "id",
     accessToken: "access",
@@ -4276,7 +4276,7 @@ test "codex oauth headers propagate moonstat session headers" {
 }
 
 ///|
-test "codex oauth headers trim empty moonstat session ids" {
+test "codex oauth headers trim empty moongate session ids" {
   let creds = @codex.Credentials::{
     idToken: "id",
     accessToken: "access",
@@ -4298,7 +4298,7 @@ test "codex oauth headers trim empty moonstat session ids" {
 }
 
 ///|
-test "moonstat managed account guard rejects copilot proxy placeholder" {
+test "moongate managed account guard rejects copilot proxy placeholder" {
   let result = moon_reject_proxy_managed_placeholder_for_upstream(
     "https://api.githubcopilot.com/chat/completions",
     { "Authorization": "Bearer PROXY_MANAGED" },
@@ -4311,7 +4311,7 @@ test "moonstat managed account guard rejects copilot proxy placeholder" {
 }
 
 ///|
-test "moonstat managed account guard rejects codex proxy placeholder" {
+test "moongate managed account guard rejects codex proxy placeholder" {
   let result = moon_reject_proxy_managed_placeholder_for_upstream(
     "https://chatgpt.com/backend-api/codex/responses",
     { "Authorization": "Bearer PROXY_MANAGED" },
@@ -4324,7 +4324,7 @@ test "moonstat managed account guard rejects codex proxy placeholder" {
 }
 
 ///|
-test "moonstat managed account guard is scoped to managed upstreams" {
+test "moongate managed account guard is scoped to managed upstreams" {
   let result = moon_reject_proxy_managed_placeholder_for_upstream(
     "https://api.example.com/v1/messages",
     { "Authorization": "Bearer PROXY_MANAGED" },
@@ -4333,7 +4333,7 @@ test "moonstat managed account guard is scoped to managed upstreams" {
 }
 
 ///|
-test "codex to anthropic response emits moonstat cache usage buckets" {
+test "codex to anthropic response emits moongate cache usage buckets" {
   let body = @json.parse(
     (
       #|{
@@ -4366,8 +4366,8 @@ test "codex to anthropic response emits moonstat cache usage buckets" {
 }
 
 ///|
-test "moonstat default provider router selects suite app targets" {
-  let router = moonstat_default_provider_router()
+test "moongate default provider router selects suite app targets" {
+  let router = moongate_default_provider_router()
   let codex = router.select_providers("codex", now_ms=1000)
   assert_true(codex.is_ok())
   match codex_provider_from_env() {
@@ -4395,19 +4395,19 @@ test "moonstat default provider router selects suite app targets" {
 }
 
 ///|
-test "claude provider env carries moonstat settings config" {
+test "claude provider env carries moongate settings config" {
   let keys = [
-    "MOONSTAT_CLAUDE_BASE_URL", "MOONSTAT_CLAUDE_API_KEY", "MOONSTAT_CLAUDE_SETTINGS_CONFIG",
+    "MOONGATE_CLAUDE_BASE_URL", "MOONGATE_CLAUDE_API_KEY", "MOONGATE_CLAUDE_SETTINGS_CONFIG",
   ]
   for key in keys {
     @os.unsetenv(key) catch {
       _ => ()
     }
   }
-  @os.setenv("MOONSTAT_CLAUDE_BASE_URL", "https://example.test", overwrite=true)
-  @os.setenv("MOONSTAT_CLAUDE_API_KEY", "secret", overwrite=true)
+  @os.setenv("MOONGATE_CLAUDE_BASE_URL", "https://example.test", overwrite=true)
+  @os.setenv("MOONGATE_CLAUDE_API_KEY", "secret", overwrite=true)
   @os.setenv(
-    "MOONSTAT_CLAUDE_SETTINGS_CONFIG",
+    "MOONGATE_CLAUDE_SETTINGS_CONFIG",
     (
       #|{
       #|  "modelCatalog": {
@@ -4434,21 +4434,21 @@ test "claude provider env carries moonstat settings config" {
 }
 
 ///|
-test "moonstat env providers ignore app native provider aliases" {
-  let old_moon_codex_base = @os.getenv("MOONSTAT_CODEX_BASE_URL") catch {
+test "moongate env providers ignore app native provider aliases" {
+  let old_moon_codex_base = @os.getenv("MOONGATE_CODEX_BASE_URL") catch {
     _ => None
   }
-  let old_moon_codex_key = @os.getenv("MOONSTAT_CODEX_API_KEY") catch {
+  let old_moon_codex_key = @os.getenv("MOONGATE_CODEX_API_KEY") catch {
     _ => None
   }
   let old_code_base = @os.getenv("CODEX_BASE_URL") catch { _ => None }
   let old_code_key = @os.getenv("CODEX_API_KEY") catch { _ => None }
   let old_openai_base = @os.getenv("OPENAI_BASE_URL") catch { _ => None }
   let old_openai_key = @os.getenv("OPENAI_API_KEY") catch { _ => None }
-  let old_moon_claude_base = @os.getenv("MOONSTAT_CLAUDE_BASE_URL") catch {
+  let old_moon_claude_base = @os.getenv("MOONGATE_CLAUDE_BASE_URL") catch {
     _ => None
   }
-  let old_moon_claude_key = @os.getenv("MOONSTAT_CLAUDE_API_KEY") catch {
+  let old_moon_claude_key = @os.getenv("MOONGATE_CLAUDE_API_KEY") catch {
     _ => None
   }
   let old_anthropic_base = @os.getenv("ANTHROPIC_BASE_URL") catch { _ => None }
@@ -4456,16 +4456,16 @@ test "moonstat env providers ignore app native provider aliases" {
   let old_anthropic_token = @os.getenv("ANTHROPIC_AUTH_TOKEN") catch {
     _ => None
   }
-  @os.unsetenv("MOONSTAT_CODEX_BASE_URL") catch {
+  @os.unsetenv("MOONGATE_CODEX_BASE_URL") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_CODEX_API_KEY") catch {
+  @os.unsetenv("MOONGATE_CODEX_API_KEY") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_CLAUDE_BASE_URL") catch {
+  @os.unsetenv("MOONGATE_CLAUDE_BASE_URL") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_CLAUDE_API_KEY") catch {
+  @os.unsetenv("MOONGATE_CLAUDE_API_KEY") catch {
     _ => ()
   }
   @os.setenv("CODEX_BASE_URL", "https://codex.example/v1", overwrite=true)
@@ -4477,38 +4477,38 @@ test "moonstat env providers ignore app native provider aliases" {
   @os.setenv("ANTHROPIC_AUTH_TOKEN", "anthropic-token", overwrite=true)
   assert_true(codex_provider_from_env() is None)
   assert_true(claude_provider_from_env("claude") is None)
-  moon_wbtest_restore_env("MOONSTAT_CODEX_BASE_URL", old_moon_codex_base)
-  moon_wbtest_restore_env("MOONSTAT_CODEX_API_KEY", old_moon_codex_key)
+  moon_wbtest_restore_env("MOONGATE_CODEX_BASE_URL", old_moon_codex_base)
+  moon_wbtest_restore_env("MOONGATE_CODEX_API_KEY", old_moon_codex_key)
   moon_wbtest_restore_env("CODEX_BASE_URL", old_code_base)
   moon_wbtest_restore_env("CODEX_API_KEY", old_code_key)
   moon_wbtest_restore_env("OPENAI_BASE_URL", old_openai_base)
   moon_wbtest_restore_env("OPENAI_API_KEY", old_openai_key)
-  moon_wbtest_restore_env("MOONSTAT_CLAUDE_BASE_URL", old_moon_claude_base)
-  moon_wbtest_restore_env("MOONSTAT_CLAUDE_API_KEY", old_moon_claude_key)
+  moon_wbtest_restore_env("MOONGATE_CLAUDE_BASE_URL", old_moon_claude_base)
+  moon_wbtest_restore_env("MOONGATE_CLAUDE_API_KEY", old_moon_claude_key)
   moon_wbtest_restore_env("ANTHROPIC_BASE_URL", old_anthropic_base)
   moon_wbtest_restore_env("ANTHROPIC_API_KEY", old_anthropic_key)
   moon_wbtest_restore_env("ANTHROPIC_AUTH_TOKEN", old_anthropic_token)
 }
 
 ///|
-test "moonstat full url flags ignore app native aliases" {
-  let old_moon_gemini = @os.getenv("MOONSTAT_GEMINI_FULL_URL") catch {
+test "moongate full url flags ignore app native aliases" {
+  let old_moon_gemini = @os.getenv("MOONGATE_GEMINI_FULL_URL") catch {
     _ => None
   }
   let old_gemini = @os.getenv("GEMINI_FULL_URL") catch { _ => None }
-  let old_moon_codex = @os.getenv("MOONSTAT_CODEX_FULL_URL") catch { _ => None }
+  let old_moon_codex = @os.getenv("MOONGATE_CODEX_FULL_URL") catch { _ => None }
   let old_codex = @os.getenv("CODEX_FULL_URL") catch { _ => None }
-  let old_moon_claude = @os.getenv("MOONSTAT_CLAUDE_FULL_URL") catch {
+  let old_moon_claude = @os.getenv("MOONGATE_CLAUDE_FULL_URL") catch {
     _ => None
   }
   let old_anthropic = @os.getenv("ANTHROPIC_FULL_URL") catch { _ => None }
-  @os.unsetenv("MOONSTAT_GEMINI_FULL_URL") catch {
+  @os.unsetenv("MOONGATE_GEMINI_FULL_URL") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_CODEX_FULL_URL") catch {
+  @os.unsetenv("MOONGATE_CODEX_FULL_URL") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_CLAUDE_FULL_URL") catch {
+  @os.unsetenv("MOONGATE_CLAUDE_FULL_URL") catch {
     _ => ()
   }
   @os.setenv("GEMINI_FULL_URL", "1", overwrite=true)
@@ -4517,32 +4517,32 @@ test "moonstat full url flags ignore app native aliases" {
   assert_false(gemini_base_is_full_url())
   assert_false(codex_base_is_full_url())
   assert_false(claude_base_is_full_url())
-  @os.setenv("MOONSTAT_GEMINI_FULL_URL", "1", overwrite=true)
-  @os.setenv("MOONSTAT_CODEX_FULL_URL", "1", overwrite=true)
-  @os.setenv("MOONSTAT_CLAUDE_FULL_URL", "1", overwrite=true)
+  @os.setenv("MOONGATE_GEMINI_FULL_URL", "1", overwrite=true)
+  @os.setenv("MOONGATE_CODEX_FULL_URL", "1", overwrite=true)
+  @os.setenv("MOONGATE_CLAUDE_FULL_URL", "1", overwrite=true)
   assert_true(gemini_base_is_full_url())
   assert_true(codex_base_is_full_url())
   assert_true(claude_base_is_full_url())
-  moon_wbtest_restore_env("MOONSTAT_GEMINI_FULL_URL", old_moon_gemini)
+  moon_wbtest_restore_env("MOONGATE_GEMINI_FULL_URL", old_moon_gemini)
   moon_wbtest_restore_env("GEMINI_FULL_URL", old_gemini)
-  moon_wbtest_restore_env("MOONSTAT_CODEX_FULL_URL", old_moon_codex)
+  moon_wbtest_restore_env("MOONGATE_CODEX_FULL_URL", old_moon_codex)
   moon_wbtest_restore_env("CODEX_FULL_URL", old_codex)
-  moon_wbtest_restore_env("MOONSTAT_CLAUDE_FULL_URL", old_moon_claude)
+  moon_wbtest_restore_env("MOONGATE_CLAUDE_FULL_URL", old_moon_claude)
   moon_wbtest_restore_env("ANTHROPIC_FULL_URL", old_anthropic)
 }
 
 ///|
-test "moonstat default cost multiplier env falls back per app" {
+test "moongate default cost multiplier env falls back per app" {
   let keys = [
-    "MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER", "MOONSTAT_DEFAULT_COST_MULTIPLIER",
+    "MOONGATE_CLAUDE_DEFAULT_COST_MULTIPLIER", "MOONGATE_DEFAULT_COST_MULTIPLIER",
   ]
   for key in keys {
     @os.unsetenv(key) catch {
       _ => ()
     }
   }
-  @os.setenv("MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER", "1.75", overwrite=true)
-  @os.setenv("MOONSTAT_DEFAULT_COST_MULTIPLIER", "2.0", overwrite=true)
+  @os.setenv("MOONGATE_CLAUDE_DEFAULT_COST_MULTIPLIER", "1.75", overwrite=true)
+  @os.setenv("MOONGATE_DEFAULT_COST_MULTIPLIER", "2.0", overwrite=true)
   let provider = ProviderRouteTarget::new(
     app_type="claude-desktop",
     provider_id="default-cost",
@@ -4563,84 +4563,84 @@ test "moonstat default cost multiplier env falls back per app" {
 }
 
 ///|
-test "moonstat pricing defaults ignore short and app native aliases" {
-  let old_moon_codex_cost = @os.getenv("MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER") catch {
+test "moongate pricing defaults ignore short and app native aliases" {
+  let old_moon_codex_cost = @os.getenv("MOONGATE_CODEX_DEFAULT_COST_MULTIPLIER") catch {
     _ => None
   }
-  let old_moon_default_cost = @os.getenv("MOONSTAT_DEFAULT_COST_MULTIPLIER") catch {
+  let old_moon_default_cost = @os.getenv("MOONGATE_DEFAULT_COST_MULTIPLIER") catch {
     _ => None
   }
-  let old_short_codex_cost = @os.getenv("MOONSTAT_CODEX_COST_MULTIPLIER") catch {
+  let old_short_codex_cost = @os.getenv("MOONGATE_CODEX_COST_MULTIPLIER") catch {
     _ => None
   }
   let old_app_codex_cost = @os.getenv("CODEX_COST_MULTIPLIER") catch {
     _ => None
   }
-  let old_moon_codex_source = @os.getenv("MOONSTAT_CODEX_PRICING_MODEL_SOURCE") catch {
+  let old_moon_codex_source = @os.getenv("MOONGATE_CODEX_PRICING_MODEL_SOURCE") catch {
     _ => None
   }
-  let old_moon_default_source = @os.getenv("MOONSTAT_PRICING_MODEL_SOURCE") catch {
+  let old_moon_default_source = @os.getenv("MOONGATE_PRICING_MODEL_SOURCE") catch {
     _ => None
   }
   let old_short_codex_source = @os.getenv(
-    "MOONSTAT_CODEX_DEFAULT_PRICING_MODEL_SOURCE",
+    "MOONGATE_CODEX_DEFAULT_PRICING_MODEL_SOURCE",
   ) catch {
     _ => None
   }
   let old_app_codex_source = @os.getenv("CODEX_PRICING_MODEL_SOURCE") catch {
     _ => None
   }
-  @os.unsetenv("MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER") catch {
+  @os.unsetenv("MOONGATE_CODEX_DEFAULT_COST_MULTIPLIER") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_DEFAULT_COST_MULTIPLIER") catch {
+  @os.unsetenv("MOONGATE_DEFAULT_COST_MULTIPLIER") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_CODEX_PRICING_MODEL_SOURCE") catch {
+  @os.unsetenv("MOONGATE_CODEX_PRICING_MODEL_SOURCE") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_PRICING_MODEL_SOURCE") catch {
+  @os.unsetenv("MOONGATE_PRICING_MODEL_SOURCE") catch {
     _ => ()
   }
-  @os.setenv("MOONSTAT_CODEX_COST_MULTIPLIER", "7.5", overwrite=true)
+  @os.setenv("MOONGATE_CODEX_COST_MULTIPLIER", "7.5", overwrite=true)
   @os.setenv("CODEX_COST_MULTIPLIER", "8.5", overwrite=true)
   @os.setenv(
-    "MOONSTAT_CODEX_DEFAULT_PRICING_MODEL_SOURCE",
+    "MOONGATE_CODEX_DEFAULT_PRICING_MODEL_SOURCE",
     "request",
     overwrite=true,
   )
   @os.setenv("CODEX_PRICING_MODEL_SOURCE", "request", overwrite=true)
   assert_eq(default_cost_multiplier_for_app("codex"), "1.0")
   assert_eq(default_pricing_model_source_for_app("codex"), "response")
-  @os.setenv("MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER", "1.25", overwrite=true)
-  @os.setenv("MOONSTAT_CODEX_PRICING_MODEL_SOURCE", "request", overwrite=true)
+  @os.setenv("MOONGATE_CODEX_DEFAULT_COST_MULTIPLIER", "1.25", overwrite=true)
+  @os.setenv("MOONGATE_CODEX_PRICING_MODEL_SOURCE", "request", overwrite=true)
   assert_eq(default_cost_multiplier_for_app("codex"), "1.25")
   assert_eq(default_pricing_model_source_for_app("codex"), "request")
   moon_wbtest_restore_env(
-    "MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER", old_moon_codex_cost,
+    "MOONGATE_CODEX_DEFAULT_COST_MULTIPLIER", old_moon_codex_cost,
   )
   moon_wbtest_restore_env(
-    "MOONSTAT_DEFAULT_COST_MULTIPLIER", old_moon_default_cost,
+    "MOONGATE_DEFAULT_COST_MULTIPLIER", old_moon_default_cost,
   )
   moon_wbtest_restore_env(
-    "MOONSTAT_CODEX_COST_MULTIPLIER", old_short_codex_cost,
+    "MOONGATE_CODEX_COST_MULTIPLIER", old_short_codex_cost,
   )
   moon_wbtest_restore_env("CODEX_COST_MULTIPLIER", old_app_codex_cost)
   moon_wbtest_restore_env(
-    "MOONSTAT_CODEX_PRICING_MODEL_SOURCE", old_moon_codex_source,
+    "MOONGATE_CODEX_PRICING_MODEL_SOURCE", old_moon_codex_source,
   )
   moon_wbtest_restore_env(
-    "MOONSTAT_PRICING_MODEL_SOURCE", old_moon_default_source,
+    "MOONGATE_PRICING_MODEL_SOURCE", old_moon_default_source,
   )
   moon_wbtest_restore_env(
-    "MOONSTAT_CODEX_DEFAULT_PRICING_MODEL_SOURCE", old_short_codex_source,
+    "MOONGATE_CODEX_DEFAULT_PRICING_MODEL_SOURCE", old_short_codex_source,
   )
   moon_wbtest_restore_env("CODEX_PRICING_MODEL_SOURCE", old_app_codex_source)
 }
 
 ///|
-test "moonstat provider cost multiplier overrides default env" {
-  let key = "MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER"
+test "moongate provider cost multiplier overrides default env" {
+  let key = "MOONGATE_CLAUDE_DEFAULT_COST_MULTIPLIER"
   @os.unsetenv(key) catch {
     _ => ()
   }
@@ -4672,8 +4672,8 @@ test "moonstat provider cost multiplier overrides default env" {
 }
 
 ///|
-test "invalid moonstat provider cost multiplier falls back to default env" {
-  let key = "MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER"
+test "invalid moongate provider cost multiplier falls back to default env" {
+  let key = "MOONGATE_CLAUDE_DEFAULT_COST_MULTIPLIER"
   @os.unsetenv(key) catch {
     _ => ()
   }
@@ -4705,17 +4705,17 @@ test "invalid moonstat provider cost multiplier falls back to default env" {
 }
 
 ///|
-test "moonstat default pricing model source env falls back per app" {
+test "moongate default pricing model source env falls back per app" {
   let keys = [
-    "MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE", "MOONSTAT_PRICING_MODEL_SOURCE",
+    "MOONGATE_CLAUDE_PRICING_MODEL_SOURCE", "MOONGATE_PRICING_MODEL_SOURCE",
   ]
   for key in keys {
     @os.unsetenv(key) catch {
       _ => ()
     }
   }
-  @os.setenv("MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE", "request", overwrite=true)
-  @os.setenv("MOONSTAT_PRICING_MODEL_SOURCE", "response", overwrite=true)
+  @os.setenv("MOONGATE_CLAUDE_PRICING_MODEL_SOURCE", "request", overwrite=true)
+  @os.setenv("MOONGATE_PRICING_MODEL_SOURCE", "response", overwrite=true)
   let provider = ProviderRouteTarget::new(
     app_type="claude-desktop",
     provider_id="default-pricing-source",
@@ -4736,8 +4736,8 @@ test "moonstat default pricing model source env falls back per app" {
 }
 
 ///|
-test "moonstat provider pricing model source overrides default env" {
-  let key = "MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE"
+test "moongate provider pricing model source overrides default env" {
+  let key = "MOONGATE_CLAUDE_PRICING_MODEL_SOURCE"
   @os.unsetenv(key) catch {
     _ => ()
   }
@@ -4769,8 +4769,8 @@ test "moonstat provider pricing model source overrides default env" {
 }
 
 ///|
-test "invalid moonstat provider pricing model source falls back to default env" {
-  let key = "MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE"
+test "invalid moongate provider pricing model source falls back to default env" {
+  let key = "MOONGATE_CLAUDE_PRICING_MODEL_SOURCE"
   @os.unsetenv(key) catch {
     _ => ()
   }
@@ -4829,7 +4829,7 @@ test "gateway records upstream failures into provider router before finish" {
 }
 
 ///|
-test "moonstat upstream status retryability matches client error bucket" {
+test "moongate upstream status retryability matches client error bucket" {
   assert_false(moon_upstream_status_retryable(400))
   assert_false(moon_upstream_status_retryable(405))
   assert_false(moon_upstream_status_retryable(406))
@@ -4844,7 +4844,7 @@ test "moonstat upstream status retryability matches client error bucket" {
 }
 
 ///|
-test "proxy service uses moonstat model mapping for upstream claude model" {
+test "proxy service uses moongate model mapping for upstream claude model" {
   let gateway = Gateway::new(port=0, model="gpt-default")
   let provider = ProviderRouteTarget::new(
     app_type="claude",
@@ -4900,7 +4900,7 @@ test "proxy service uses moonstat model mapping for upstream claude model" {
 }
 
 ///|
-test "proxy service uses moonstat claude desktop route metadata for upstream model" {
+test "proxy service uses moongate claude desktop route metadata for upstream model" {
   let gateway = Gateway::new(port=0, model="gpt-default")
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(
@@ -4964,7 +4964,7 @@ test "proxy service uses moonstat claude desktop route metadata for upstream mod
 }
 
 ///|
-test "proxy service repairs unsafe moonstat claude desktop route ids" {
+test "proxy service repairs unsafe moongate claude desktop route ids" {
   let gateway = Gateway::new(port=0, model="gpt-default")
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "gpt-5": ClaudeDesktopModelRoute::new(model="gpt-5-upstream [1M]"),
@@ -5159,7 +5159,7 @@ test "claude desktop mimo normalization is scoped to anthropic mimo providers" {
 }
 
 ///|
-test "claude desktop status reports moonstat profile and proxy route health" {
+test "claude desktop status reports moongate profile and proxy route health" {
   let gateway = Gateway::new(port=17111, host="127.0.0.11")
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -5245,7 +5245,7 @@ test "claude desktop status reports direct provider base url" {
 }
 
 ///|
-async test "gateway applies moonstat provider cost multiplier to request log" {
+async test "gateway applies moongate provider cost multiplier to request log" {
   let gateway = Gateway::new(port=0)
   gateway.usage.pricing_overrides.set("test-model", {
     model_id: "test-model",
@@ -5299,7 +5299,7 @@ async test "gateway applies moonstat provider cost multiplier to request log" {
 }
 
 ///|
-async test "gateway ignores invalid moonstat provider cost multiplier" {
+async test "gateway ignores invalid moongate provider cost multiplier" {
   let gateway = Gateway::new(port=0)
   gateway.usage.pricing_overrides.set("test-model", {
     model_id: "test-model",
@@ -5349,7 +5349,7 @@ async test "gateway ignores invalid moonstat provider cost multiplier" {
 }
 
 ///|
-async test "gateway applies moonstat request pricing model source" {
+async test "gateway applies moongate request pricing model source" {
   let gateway = Gateway::new(port=0)
   gateway.usage.pricing_overrides.set("request-model", {
     model_id: "request-model",
@@ -5409,7 +5409,7 @@ async test "gateway applies moonstat request pricing model source" {
 }
 
 ///|
-async test "gateway records billable moonstat stream usage once" {
+async test "gateway records billable moongate stream usage once" {
   let gateway = Gateway::new(port=0)
   let usage = gateway.usage.begin_request(10)
   let _ = gateway.proxy.activate_provider(usage, "codex")
@@ -5445,7 +5445,7 @@ async test "gateway records billable moonstat stream usage once" {
 }
 
 ///|
-async test "gateway records all zero moonstat stream usage request log" {
+async test "gateway records all zero moongate stream usage request log" {
   let gateway = Gateway::new(port=0)
   let usage = gateway.usage.begin_request(10)
   let _ = gateway.proxy.activate_provider(usage, "codex")
@@ -5469,7 +5469,7 @@ async test "gateway records all zero moonstat stream usage request log" {
 }
 
 ///|
-async test "gateway skips all zero moonstat transformed stream usage log" {
+async test "gateway skips all zero moongate transformed stream usage log" {
   let gateway = Gateway::new(port=0)
   let usage = gateway.usage.begin_request(10)
   let _ = gateway.proxy.activate_provider(usage, "codex")
@@ -5488,7 +5488,7 @@ async test "gateway skips all zero moonstat transformed stream usage log" {
 }
 
 ///|
-async test "gateway records all zero moonstat nonstream usage request log" {
+async test "gateway records all zero moongate nonstream usage request log" {
   let gateway = Gateway::new(port=0)
   let usage = gateway.usage.begin_request(10)
   let _ = gateway.proxy.activate_provider(usage, "codex")
@@ -5795,7 +5795,7 @@ test "gateway retryable upstream status activates next failover provider" {
 }
 
 ///|
-test "gateway retryable upstream status respects moonstat max retries cap before permits" {
+test "gateway retryable upstream status respects moongate max retries cap before permits" {
   let gateway = Gateway::new(port=0)
   gateway.proxy.provider_router.update_all_configs({
     failure_threshold: 1,
@@ -6027,7 +6027,7 @@ test "gateway activation bypasses circuit breaker for single provider" {
 }
 
 ///|
-test "codex compatible provider url follows moonstat base url rules" {
+test "codex compatible provider url follows moongate base url rules" {
   assert_true(
     codex_compatible_provider_url("https://api.openai.com", "/responses") ==
     "https://api.openai.com/v1/responses",
@@ -6053,7 +6053,7 @@ test "codex compatible provider url follows moonstat base url rules" {
 }
 
 ///|
-test "claude compatible provider api format follows moonstat endpoints" {
+test "claude compatible provider api format follows moongate endpoints" {
   let chat_provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="openai-chat",
@@ -6099,7 +6099,7 @@ test "claude compatible provider api format follows moonstat endpoints" {
 }
 
 ///|
-test "github copilot provider api format follows moonstat model vendor" {
+test "github copilot provider api format follows moongate model vendor" {
   let openai_copilot = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="copilot-openai",
@@ -6167,7 +6167,7 @@ test "github copilot provider api format follows moonstat model vendor" {
 }
 
 ///|
-test "claude compatible provider endpoints preserve moonstat query semantics" {
+test "claude compatible provider endpoints preserve moongate query semantics" {
   assert_eq(
     claude_transform_endpoint(
       "openai_chat",
@@ -6227,7 +6227,7 @@ test "claude compatible provider endpoints preserve moonstat query semantics" {
 }
 
 ///|
-test "moonstat streaming request detection mirrors proxy forwarder" {
+test "moongate streaming request detection mirrors proxy forwarder" {
   assert_true(
     moon_streaming_request("/v1/responses", @json.parse("{\"stream\":true}"), {}),
   )
@@ -6342,7 +6342,7 @@ test "claude stream upstream request forces stream true" {
 }
 
 ///|
-test "moonstat responses sse parser handles missing trailing blank line" {
+test "moongate responses sse parser handles missing trailing blank line" {
   let sse =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_tail","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
@@ -6363,7 +6363,7 @@ test "moonstat responses sse parser handles missing trailing blank line" {
 }
 
 ///|
-test "moonstat responses sse parser strips bom before parsing" {
+test "moongate responses sse parser strips bom before parsing" {
   let sse = "\u{feff}event: response.completed\n" +
     "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_bom\",\"status\":\"completed\",\"model\":\"gpt-5.4\",\"output\":[],\"usage\":{\"input_tokens\":3,\"output_tokens\":1}}}"
   guard parse_claude_compatible_non_stream_body_with_diagnostics(
@@ -6379,7 +6379,7 @@ test "moonstat responses sse parser strips bom before parsing" {
 }
 
 ///|
-test "moonstat responses stream parser accepts data field without space" {
+test "moongate responses stream parser accepts data field without space" {
   let block = "event:response.output_text.delta\n" +
     "data:{\"type\":\"response.output_text.delta\",\"delta\":\"hi\"}\n\n"
   let (done, parsed, event) = codex_stream_event_from_sse_block(
@@ -6398,7 +6398,7 @@ test "moonstat responses stream parser accepts data field without space" {
 }
 
 ///|
-test "moonstat responses stream parser skips non emitting lifecycle blocks" {
+test "moongate responses stream parser skips non emitting lifecycle blocks" {
   let block =
     #|event: response.in_progress
     #|data: {"type":"response.in_progress"}
@@ -6412,7 +6412,7 @@ test "moonstat responses stream parser skips non emitting lifecycle blocks" {
 }
 
 ///|
-test "moonstat responses stream parser converts response created to message start" {
+test "moongate responses stream parser converts response created to message start" {
   let block =
     #|event: response.created
     #|data: {"type":"response.created","response":{"id":"resp_start","status":"in_progress","model":"gpt-5.4","usage":{"input_tokens":12,"output_tokens":0,"input_tokens_details":{"cached_tokens":4}}}}
@@ -6438,7 +6438,7 @@ test "moonstat responses stream parser converts response created to message star
 }
 
 ///|
-test "moonstat responses stream parser preserves completed usage" {
+test "moongate responses stream parser preserves completed usage" {
   let block =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_done","status":"completed","model":"gpt-5.4","output":[],"usage":{"prompt_tokens":11,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":3}}}}
@@ -6464,7 +6464,7 @@ test "moonstat responses stream parser preserves completed usage" {
 }
 
 ///|
-test "moonstat responses stream parser maps incomplete max output to max tokens" {
+test "moongate responses stream parser maps incomplete max output to max tokens" {
   let block =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_max","status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},"model":"gpt-5.4","output":[],"usage":{"input_tokens":6,"output_tokens":2}}}
@@ -6484,7 +6484,7 @@ test "moonstat responses stream parser maps incomplete max output to max tokens"
 }
 
 ///|
-test "moonstat responses stream parser maps completed function output to tool use" {
+test "moongate responses stream parser maps completed function output to tool use" {
   let block =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_tool","status":"completed","model":"gpt-5.4","output":[{"type":"function_call","call_id":"call_1","name":"lookup","arguments":"{}"}],"usage":{"input_tokens":6,"output_tokens":2}}}
@@ -6504,7 +6504,7 @@ test "moonstat responses stream parser maps completed function output to tool us
 }
 
 ///|
-test "moonstat responses stream state starts text block before text delta" {
+test "moongate responses stream state starts text block before text delta" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let block =
     #|event: response.output_text.delta
@@ -6535,7 +6535,7 @@ test "moonstat responses stream state starts text block before text delta" {
 }
 
 ///|
-test "moonstat responses stream state closes dangling text on completed" {
+test "moongate responses stream state closes dangling text on completed" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let text_block =
     #|event: response.output_text.delta
@@ -6565,7 +6565,7 @@ test "moonstat responses stream state closes dangling text on completed" {
 }
 
 ///|
-test "moonstat responses stream state merges keyed text parts" {
+test "moongate responses stream state merges keyed text parts" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let first_added =
     #|event: response.content_part.added
@@ -6626,7 +6626,7 @@ test "moonstat responses stream state merges keyed text parts" {
 }
 
 ///|
-test "moonstat responses stream state closes keyed text without current index" {
+test "moongate responses stream state closes keyed text without current index" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added =
     #|event: response.content_part.added
@@ -6650,7 +6650,7 @@ test "moonstat responses stream state closes keyed text without current index" {
 }
 
 ///|
-test "moonstat responses stream state emits reasoning thinking blocks" {
+test "moongate responses stream state emits reasoning thinking blocks" {
   let state = ResponsesStreamState::new("o3")
   let reasoning_block =
     #|event: response.reasoning.delta
@@ -6700,7 +6700,7 @@ test "moonstat responses stream state emits reasoning thinking blocks" {
 }
 
 ///|
-test "moonstat responses stream state closes reasoning before text on completed" {
+test "moongate responses stream state closes reasoning before text on completed" {
   let state = ResponsesStreamState::new("o3")
   let reasoning_block =
     #|event: response.reasoning.delta
@@ -6728,7 +6728,7 @@ test "moonstat responses stream state closes reasoning before text on completed"
 }
 
 ///|
-test "moonstat responses stream state emits function call argument deltas" {
+test "moongate responses stream state emits function call argument deltas" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added_block =
     #|event: response.output_item.added
@@ -6798,7 +6798,7 @@ test "moonstat responses stream state emits function call argument deltas" {
 }
 
 ///|
-test "moonstat responses stream state sanitizes read tool empty pages" {
+test "moongate responses stream state sanitizes read tool empty pages" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added_block =
     #|event: response.output_item.added
@@ -6847,7 +6847,7 @@ test "moonstat responses stream state sanitizes read tool empty pages" {
 }
 
 ///|
-test "moonstat responses stream state read duplicate start preserves buffered args" {
+test "moongate responses stream state read duplicate start preserves buffered args" {
   let state = ResponsesStreamState::new("gpt-5.4")
   let added_block =
     #|event: response.output_item.added
@@ -6893,7 +6893,7 @@ test "moonstat responses stream state read duplicate start preserves buffered ar
 }
 
 ///|
-test "moonstat responses sse parser ignores truncated trailing block" {
+test "moongate responses sse parser ignores truncated trailing block" {
   let sse =
     #|event: response.completed
     #|data: {"type":"response.completed","response":{"id":"resp_ok","status":"completed","model":"gpt-5.4","output":[],"usage":{"input_tokens":3,"output_tokens":1}}}
@@ -6913,7 +6913,7 @@ test "moonstat responses sse parser ignores truncated trailing block" {
 }
 
 ///|
-test "moonstat responses sse parser collects output items" {
+test "moongate responses sse parser collects output items" {
   let sse =
     #|event: response.output_item.done
     #|data: {"type":"response.output_item.done","item":{"type":"function_call","call_id":"call_1","name":"lookup","arguments":"{\"q\":\"moon\"}"}}
@@ -6938,14 +6938,14 @@ test "moonstat responses sse parser collects output items" {
 }
 
 ///|
-test "moonstat sse body sniffing accepts bom and indented fields" {
+test "moongate sse body sniffing accepts bom and indented fields" {
   assert_true(body_looks_like_sse("\u{feff}\n  data: {}\n\n"))
   assert_true(body_looks_like_sse(": PROCESSING\n\ndata: {}\n\n"))
   assert_false(body_looks_like_sse("<html><body>blocked</body></html>"))
 }
 
 ///|
-test "moonstat upstream parse diagnostics include headers and body snippet" {
+test "moongate upstream parse diagnostics include headers and body snippet" {
   let headers = { "content-type": "text/html", "content-encoding": "gzip" }
   let suffix = body_diagnostics_suffix(headers, "<html>\r\nblocked\u{0}</html>")
   assert_true(suffix.contains("content-type: text/html"))
@@ -6954,7 +6954,7 @@ test "moonstat upstream parse diagnostics include headers and body snippet" {
 }
 
 ///|
-test "moonstat upstream parse diagnostics mark missing headers" {
+test "moongate upstream parse diagnostics mark missing headers" {
   let result = parse_claude_compatible_non_stream_body_with_diagnostics(
     "anthropic",
     "data: oops",
@@ -6968,13 +6968,13 @@ test "moonstat upstream parse diagnostics mark missing headers" {
 }
 
 ///|
-test "moonstat upstream parse diagnostics truncate long body snippets" {
+test "moongate upstream parse diagnostics truncate long body snippets" {
   let body = "abcdefghijklmnopqrstuvwxyz"
   assert_eq(body_snippet(body, 5), "abcde\u{2026}")
 }
 
 ///|
-test "moonstat response header stripping removes hop by hop and connection listed headers" {
+test "moongate response header stripping removes hop by hop and connection listed headers" {
   let headers = {
     "Content-Type": "application/json",
     "Connection": "Keep-Alive, X-Trace-Id, x-remove-too",
@@ -6999,7 +6999,7 @@ test "moonstat response header stripping removes hop by hop and connection liste
 }
 
 ///|
-test "moonstat rebuilt response header stripping removes stale entity headers" {
+test "moongate rebuilt response header stripping removes stale entity headers" {
   let headers = {
     "Content-Type": "application/json",
     "Content-Encoding": "gzip",
@@ -7016,7 +7016,7 @@ test "moonstat rebuilt response header stripping removes stale entity headers" {
 }
 
 ///|
-test "moonstat chat sse parser aggregates text and usage" {
+test "moongate chat sse parser aggregates text and usage" {
   let sse =
     #|data: {"id":"chatcmpl_1","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"Hel"},"finish_reason":null}]}
     #|
@@ -7044,7 +7044,7 @@ test "moonstat chat sse parser aggregates text and usage" {
 }
 
 ///|
-test "codex response conversion ignores invalid direct cache tokens like moonstat" {
+test "codex response conversion ignores invalid direct cache tokens like moongate" {
   let body = @json.parse(
     (
       #|{
@@ -7074,7 +7074,7 @@ test "codex response conversion ignores invalid direct cache tokens like moonsta
 }
 
 ///|
-test "moonstat chat sse parser merges tool call argument fragments" {
+test "moongate chat sse parser merges tool call argument fragments" {
   let sse =
     #|data: {"id":"chatcmpl_tool","model":"gpt-4o","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{\"q\""}}]},"finish_reason":null}]}
     #|
@@ -7108,7 +7108,7 @@ test "moonstat chat sse parser merges tool call argument fragments" {
 }
 
 ///|
-test "moonstat chat sse parser preserves object form tool arguments" {
+test "moongate chat sse parser preserves object form tool arguments" {
   let sse =
     #|data: {"id":"chatcmpl_obj_args","model":"gpt-4o","choices":[{"index":0,"message":{"role":"assistant","tool_calls":[{"id":"call_1","type":"function","function":{"name":"lookup","arguments":{"q":"moon","limit":2}}}]},"finish_reason":"tool_calls"}]}
     #|
@@ -7141,7 +7141,7 @@ test "moonstat chat sse parser preserves object form tool arguments" {
 }
 
 ///|
-test "moonstat chat sse parser maps function call snapshots" {
+test "moongate chat sse parser maps function call snapshots" {
   let sse =
     #|data: {"id":"chatcmpl_function_fn","model":"gpt-4o","choices":[{"index":0,"message":{"role":"assistant","content":null,"function_call":{"name":"lookup","arguments":"{\"q\":\"moon\"}"}},"finish_reason":"function_call"}]}
     #|
@@ -7174,7 +7174,7 @@ test "moonstat chat sse parser maps function call snapshots" {
 }
 
 ///|
-test "moonstat chat sse parser ignores truncated trailing block after done" {
+test "moongate chat sse parser ignores truncated trailing block after done" {
   let sse =
     #|data: {"id":"chatcmpl_ok","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}
     #|
@@ -7196,7 +7196,7 @@ test "moonstat chat sse parser ignores truncated trailing block after done" {
 }
 
 ///|
-test "moonstat chat sse parser rejects stream without choices" {
+test "moongate chat sse parser rejects stream without choices" {
   let sse =
     #|: keepalive
     #|
@@ -7213,7 +7213,7 @@ test "moonstat chat sse parser rejects stream without choices" {
 }
 
 ///|
-test "moonstat chat sse parser rejects event error" {
+test "moongate chat sse parser rejects event error" {
   let sse =
     #|data: {"id":"chatcmpl_ok","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}
     #|
@@ -7231,7 +7231,7 @@ test "moonstat chat sse parser rejects event error" {
 }
 
 ///|
-test "moonstat chat sse parser rejects close-truncated stream" {
+test "moongate chat sse parser rejects close-truncated stream" {
   let sse =
     #|data: {"id":"chatcmpl_partial","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"par"},"finish_reason":null}]}
     #|
@@ -7246,7 +7246,7 @@ test "moonstat chat sse parser rejects close-truncated stream" {
 }
 
 ///|
-test "moonstat chat sse parser accepts done without finish reason" {
+test "moongate chat sse parser accepts done without finish reason" {
   let sse =
     #|data: {"id":"chatcmpl_done","model":"gpt-4o","choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}
     #|
@@ -7269,7 +7269,7 @@ test "moonstat chat sse parser accepts done without finish reason" {
 }
 
 ///|
-test "moonstat upstream body filter removes private fields" {
+test "moongate upstream body filter removes private fields" {
   let body = @json.parse(
     (
       #|{
@@ -7315,7 +7315,7 @@ test "moonstat upstream body filter removes private fields" {
 }
 
 ///|
-test "moonstat json canonical string sorts nested object keys" {
+test "moongate json canonical string sorts nested object keys" {
   let left = @json.parse(
     (
       #|{
@@ -7346,7 +7346,7 @@ test "moonstat json canonical string sorts nested object keys" {
 }
 
 ///|
-test "moonstat upstream body filter supports private whitelist" {
+test "moongate upstream body filter supports private whitelist" {
   let body = @json.parse(
     (
       #|{
@@ -7370,7 +7370,7 @@ test "moonstat upstream body filter supports private whitelist" {
 }
 
 ///|
-test "moonstat upstream body preparation canonicalizes object order" {
+test "moongate upstream body preparation canonicalizes object order" {
   let body = @json.parse(
     (
       #|{
@@ -7398,7 +7398,7 @@ test "moonstat upstream body preparation canonicalizes object order" {
 }
 
 ///|
-test "moonstat upstream body filter preserves all schema name maps" {
+test "moongate upstream body filter preserves all schema name maps" {
   let body = @json.parse(
     (
       #|{
@@ -7444,7 +7444,7 @@ test "moonstat upstream body filter preserves all schema name maps" {
 }
 
 ///|
-test "moonstat thinking signature rectifier detects moonstat error phrases" {
+test "moongate thinking signature rectifier detects moongate error phrases" {
   let config = default_rectifier_config()
   assert_true(config.request_media_fallback)
   assert_true(config.request_media_heuristic)
@@ -7497,7 +7497,7 @@ test "moonstat thinking signature rectifier detects moonstat error phrases" {
 }
 
 ///|
-test "moonstat thinking signature rectifier removes legacy blocks and signatures" {
+test "moongate thinking signature rectifier removes legacy blocks and signatures" {
   let body = @json.parse(
     (
       #|{
@@ -7533,7 +7533,7 @@ test "moonstat thinking signature rectifier removes legacy blocks and signatures
 }
 
 ///|
-test "moonstat thinking signature rectifier removes top level thinking for tool chain" {
+test "moongate thinking signature rectifier removes top level thinking for tool chain" {
   let body = @json.parse(
     (
       #|{
@@ -7558,7 +7558,7 @@ test "moonstat thinking signature rectifier removes top level thinking for tool 
 }
 
 ///|
-test "moonstat thinking budget rectifier detects and normalizes budget errors" {
+test "moongate thinking budget rectifier detects and normalizes budget errors" {
   let config = default_rectifier_config()
   assert_true(
     should_rectify_thinking_budget(
@@ -7603,7 +7603,7 @@ test "moonstat thinking budget rectifier detects and normalizes budget errors" {
 }
 
 ///|
-test "moonstat thinking budget rectifier skips adaptive requests" {
+test "moongate thinking budget rectifier skips adaptive requests" {
   let body = @json.parse(
     (
       #|{
@@ -7625,7 +7625,7 @@ test "moonstat thinking budget rectifier skips adaptive requests" {
 }
 
 ///|
-test "moonstat rectifier retry body selects signature before budget" {
+test "moongate rectifier retry body selects signature before budget" {
   let body = @json.parse(
     (
       #|{
@@ -7653,7 +7653,7 @@ test "moonstat rectifier retry body selects signature before budget" {
 }
 
 ///|
-test "moonstat thinking optimizer uses adaptive mode for newer opus and sonnet" {
+test "moongate thinking optimizer uses adaptive mode for newer opus and sonnet" {
   let body = @json.parse(
     (
       #|{
@@ -7680,7 +7680,7 @@ test "moonstat thinking optimizer uses adaptive mode for newer opus and sonnet" 
 }
 
 ///|
-test "moonstat thinking optimizer injects legacy budget and beta" {
+test "moongate thinking optimizer injects legacy budget and beta" {
   let body = @json.parse(
     (
       #|{
@@ -7703,7 +7703,7 @@ test "moonstat thinking optimizer injects legacy budget and beta" {
 }
 
 ///|
-test "moonstat thinking optimizer upgrades small enabled legacy budget" {
+test "moongate thinking optimizer upgrades small enabled legacy budget" {
   let body = @json.parse(
     (
       #|{
@@ -7726,7 +7726,7 @@ test "moonstat thinking optimizer upgrades small enabled legacy budget" {
 }
 
 ///|
-test "moonstat thinking optimizer skips haiku models" {
+test "moongate thinking optimizer skips haiku models" {
   let body = @json.parse(
     (
       #|{
@@ -7740,18 +7740,18 @@ test "moonstat thinking optimizer skips haiku models" {
 }
 
 ///|
-test "moonstat thinking optimizer can be disabled for bedrock provider" {
+test "moongate thinking optimizer can be disabled for bedrock provider" {
   let keys = [
-    "MOONSTAT_OPTIMIZER_ENABLED", "MOONSTAT_THINKING_OPTIMIZER", "MOONSTAT_CACHE_INJECTION",
+    "MOONGATE_OPTIMIZER_ENABLED", "MOONGATE_THINKING_OPTIMIZER", "MOONGATE_CACHE_INJECTION",
   ]
   for key in keys {
     @os.unsetenv(key) catch {
       _ => ()
     }
   }
-  @os.setenv("MOONSTAT_OPTIMIZER_ENABLED", "true", overwrite=true)
-  @os.setenv("MOONSTAT_THINKING_OPTIMIZER", "false", overwrite=true)
-  @os.setenv("MOONSTAT_CACHE_INJECTION", "false", overwrite=true)
+  @os.setenv("MOONGATE_OPTIMIZER_ENABLED", "true", overwrite=true)
+  @os.setenv("MOONGATE_THINKING_OPTIMIZER", "false", overwrite=true)
+  @os.setenv("MOONGATE_CACHE_INJECTION", "false", overwrite=true)
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="bedrock-thinking-off",
@@ -7787,7 +7787,7 @@ test "moonstat thinking optimizer can be disabled for bedrock provider" {
 }
 
 ///|
-test "moonstat cache injector adds cache breakpoints at provider send sites" {
+test "moongate cache injector adds cache breakpoints at provider send sites" {
   let body = @json.parse(
     (
       #|{
@@ -7837,7 +7837,7 @@ test "moonstat cache injector adds cache breakpoints at provider send sites" {
 }
 
 ///|
-test "moonstat cache injector only upgrades ttl after four existing breakpoints" {
+test "moongate cache injector only upgrades ttl after four existing breakpoints" {
   let body = @json.parse(
     (
       #|{
@@ -7877,8 +7877,8 @@ test "moonstat cache injector only upgrades ttl after four existing breakpoints"
 }
 
 ///|
-test "moonstat optimizer runs only for enabled bedrock providers" {
-  let keys = ["MOONSTAT_OPTIMIZER_ENABLED", "MOONSTAT_CACHE_TTL"]
+test "moongate optimizer runs only for enabled bedrock providers" {
+  let keys = ["MOONGATE_OPTIMIZER_ENABLED", "MOONGATE_CACHE_TTL"]
   for key in keys {
     @os.unsetenv(key) catch {
       _ => ()
@@ -7909,8 +7909,8 @@ test "moonstat optimizer runs only for enabled bedrock providers" {
   )
   let disabled = prepare_upstream_request_body(body, provider=Some(provider))
   assert_eq(count_moon_cache_breakpoints(disabled), 0)
-  @os.setenv("MOONSTAT_OPTIMIZER_ENABLED", "true", overwrite=true)
-  @os.setenv("MOONSTAT_CACHE_TTL", "1h", overwrite=true)
+  @os.setenv("MOONGATE_OPTIMIZER_ENABLED", "true", overwrite=true)
+  @os.setenv("MOONGATE_CACHE_TTL", "1h", overwrite=true)
   let enabled = prepare_upstream_request_body(body, provider=Some(provider))
   assert_eq(count_moon_cache_breakpoints(enabled), 1)
   guard enabled is Object(enabled_obj) else { fail("expected enabled object") }
@@ -7933,7 +7933,7 @@ test "moonstat optimizer runs only for enabled bedrock providers" {
 }
 
 ///|
-test "moonstat media sanitizer replaces images for known text-only models" {
+test "moongate media sanitizer replaces images for known text-only models" {
   let body = @json.parse(
     (
       #|{
@@ -7981,7 +7981,7 @@ test "moonstat media sanitizer replaces images for known text-only models" {
 }
 
 ///|
-test "moonstat media sanitizer preserves images for unknown models" {
+test "moongate media sanitizer preserves images for unknown models" {
   let body = @json.parse(
     (
       #|{
@@ -8011,7 +8011,7 @@ test "moonstat media sanitizer preserves images for unknown models" {
 }
 
 ///|
-test "moonstat media sanitizer can disable curated text-only heuristic" {
+test "moongate media sanitizer can disable curated text-only heuristic" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="heuristic-off",
@@ -8059,16 +8059,16 @@ test "moonstat media sanitizer can disable curated text-only heuristic" {
 }
 
 ///|
-test "moonstat media sanitizer honors global heuristic toggle" {
+test "moongate media sanitizer honors global heuristic toggle" {
   let keys = [
-    "MOONSTAT_RECTIFIER_ENABLED", "MOONSTAT_RECTIFIER_MEDIA_HEURISTIC",
+    "MOONGATE_RECTIFIER_ENABLED", "MOONGATE_RECTIFIER_MEDIA_HEURISTIC",
   ]
   for key in keys {
     @os.unsetenv(key) catch {
       _ => ()
     }
   }
-  @os.setenv("MOONSTAT_RECTIFIER_MEDIA_HEURISTIC", "false", overwrite=true)
+  @os.setenv("MOONGATE_RECTIFIER_MEDIA_HEURISTIC", "false", overwrite=true)
   let body = @json.parse(
     (
       #|{
@@ -8092,7 +8092,7 @@ test "moonstat media sanitizer honors global heuristic toggle" {
     ),
   )
   let prepared = prepare_upstream_request_body(body)
-  @os.unsetenv("MOONSTAT_RECTIFIER_MEDIA_HEURISTIC") catch {
+  @os.unsetenv("MOONGATE_RECTIFIER_MEDIA_HEURISTIC") catch {
     _ => ()
   }
   guard prepared is Object(obj) else { fail("expected object") }
@@ -8105,7 +8105,7 @@ test "moonstat media sanitizer honors global heuristic toggle" {
 }
 
 ///|
-test "moonstat media sanitizer honors explicit provider text-only capability" {
+test "moongate media sanitizer honors explicit provider text-only capability" {
   let settings = @json.parse(
     (
       #|{
@@ -8155,7 +8155,7 @@ test "moonstat media sanitizer honors explicit provider text-only capability" {
 }
 
 ///|
-test "moonstat media sanitizer honors explicit provider image capability" {
+test "moongate media sanitizer honors explicit provider image capability" {
   let settings = @json.parse(
     (
       #|{
@@ -8209,7 +8209,7 @@ test "moonstat media sanitizer honors explicit provider image capability" {
 }
 
 ///|
-test "moonstat media sanitizer replaces nested and responses image blocks" {
+test "moongate media sanitizer replaces nested and responses image blocks" {
   let nested_body = @json.parse(
     (
       #|{
@@ -8287,7 +8287,7 @@ test "moonstat media sanitizer replaces nested and responses image blocks" {
 }
 
 ///|
-test "moonstat media retry detects unsupported image upstream errors" {
+test "moongate media retry detects unsupported image upstream errors" {
   let body = @json.parse(
     (
       #|{
@@ -8372,7 +8372,7 @@ test "moonstat media retry detects unsupported image upstream errors" {
 }
 
 ///|
-test "moonstat media retry ignores non media errors and bodies without images" {
+test "moongate media retry ignores non media errors and bodies without images" {
   let image_body = @json.parse(
     (
       #|{
@@ -8426,7 +8426,7 @@ test "moonstat media retry ignores non media errors and bodies without images" {
 }
 
 ///|
-test "moonstat model image support only accepts canonical field" {
+test "moongate model image support only accepts canonical field" {
   let canonical_provider = ProviderRouteTarget::new(
     app_type="claude-desktop",
     provider_id="catalog-canonical",
@@ -8494,7 +8494,7 @@ test "moonstat model image support only accepts canonical field" {
 }
 
 ///|
-test "moonstat media retry replacement is unconditional" {
+test "moongate media retry replacement is unconditional" {
   let body = @json.parse(
     (
       #|{
@@ -8529,7 +8529,7 @@ test "moonstat media retry replacement is unconditional" {
 }
 
 ///|
-test "moonstat media retry handles streaming upstream bodies" {
+test "moongate media retry handles streaming upstream bodies" {
   let body = @json.parse(
     (
       #|{
@@ -8871,7 +8871,7 @@ test "openai chat stream message delta includes zero usage without usage chunk" 
 }
 
 ///|
-test "openai chat stream subtracts cache creation from prompt usage like moonstat" {
+test "openai chat stream subtracts cache creation from prompt usage like moongate" {
   let state = OpenAIChatAnthropicStreamState::new()
   let chunk = @json.parse(
     (
@@ -8975,7 +8975,7 @@ test "openai chat stream clamps fresh input when cache exceeds prompt" {
 }
 
 ///|
-test "openai chat stream ignores invalid direct cache tokens like moonstat" {
+test "openai chat stream ignores invalid direct cache tokens like moongate" {
   let state = OpenAIChatAnthropicStreamState::new()
   let chunk = @json.parse(
     (
@@ -9436,7 +9436,7 @@ test "gemini native claude compatible provider uses gemini url and headers" {
 }
 
 ///|
-test "claude compatible provider headers honor moonstat inferred provider type auth" {
+test "claude compatible provider headers honor moongate inferred provider type auth" {
   let openrouter = claude_compatible_provider_headers(
     "sk-or",
     "anthropic",
@@ -9477,7 +9477,7 @@ test "claude compatible provider headers honor moonstat inferred provider type a
 }
 
 ///|
-test "claude compatible provider headers include moonstat copilot fingerprint and overrides" {
+test "claude compatible provider headers include moongate copilot fingerprint and overrides" {
   let headers = claude_compatible_provider_headers(
     "copilot-token",
     "openai_responses",
@@ -9506,7 +9506,7 @@ test "claude compatible provider headers include moonstat copilot fingerprint an
 }
 
 ///|
-test "anthropic claude compatible provider sends moonstat claude code beta headers" {
+test "anthropic claude compatible provider sends moongate claude code beta headers" {
   let headers = claude_compatible_provider_headers("anthropic-key", "anthropic")
   assert_eq(headers["x-api-key"], "anthropic-key")
   assert_eq(headers["anthropic-version"], "2023-06-01")
@@ -9585,10 +9585,10 @@ test "gemini native response converts to anthropic message with usage" {
 }
 
 ///|
-test "openclaw workspace is moonstat product-owned state" {
+test "openclaw workspace is moongate product-owned state" {
   let workspace = moon_openclaw_workspace_dir()
-  let product_home = moonstat_product_home_for_workspace_root(
-    moonstat_active_workspace_root(),
+  let product_home = moongate_product_home_for_workspace_root(
+    moongate_active_workspace_root(),
   )
   assert_eq(workspace, @pathx.join(product_home, "openclaw/workspace"))
   assert_eq(moon_openclaw_memory_dir(), @pathx.join(workspace, "memory"))
@@ -9596,11 +9596,11 @@ test "openclaw workspace is moonstat product-owned state" {
 }
 
 ///|
-test "copilot credentials are moonstat product-owned state" {
+test "copilot credentials are moongate product-owned state" {
   let path = copilot_credentials_path()
   let expected = @moonsuite.product_artifact_for_workspace_root(
-    moonstat_active_workspace_root(),
-    "moonstat",
+    moongate_active_workspace_root(),
+    "moongate",
     "auth/copilot-credentials.json",
   )
   assert_eq(path, expected)
@@ -9608,7 +9608,7 @@ test "copilot credentials are moonstat product-owned state" {
 }
 
 ///|
-test "moonstat config helpers require canonical suite app paths" {
+test "moongate config helpers require canonical suite app paths" {
   assert_eq(moon_normalize_app_type("claude-desktop"), "claude-desktop")
   assert_eq(moon_normalize_app_type("opencode"), "opencode")
   assert_eq(moon_normalize_app_type("omo-slim"), "omo-slim")
@@ -9631,7 +9631,7 @@ test "moonstat config helpers require canonical suite app paths" {
 }
 
 ///|
-async test "moonstat config status keeps moonstat object shape" {
+async test "moongate config status keeps moongate object shape" {
   guard moon_config_status_json("hermes") is Object(status) else {
     fail("expected status object")
   }
@@ -9643,7 +9643,7 @@ async test "moonstat config status keeps moonstat object shape" {
 }
 
 ///|
-test "moonstat env helpers preserve conflicts and known keys" {
+test "moongate env helpers preserve conflicts and known keys" {
   assert_eq(moon_env_conflict_keys("codex")[0], "OPENAI_API_KEY")
   assert_eq(moon_env_conflict_keys("hermes")[1], "HERMES_WEB_PORT")
   assert_eq(moon_env_conflict_keys("unknown")[0], "ANTHROPIC_API_KEY")
@@ -9674,8 +9674,8 @@ test "moonstat env helpers preserve conflicts and known keys" {
 }
 
 ///|
-async test "moonstat env helpers scan delete and restore file conflicts" {
-  @fsx.with_temporary_directory("moonstat-env-XXXXXX", async fn(tmpdir) {
+async test "moongate env helpers scan delete and restore file conflicts" {
+  @fsx.with_temporary_directory("moongate-env-XXXXXX", async fn(tmpdir) {
     let shell_path = @pathx.join(tmpdir, ".zshrc")
     @fsx.write_to_file(
       shell_path, "export OPENAI_API_KEY=\"sk-test\"\nKEEP=1\nOPENAI_BASE_URL='http://local'\n# OPENAI_ORG=skip\n",
@@ -9722,7 +9722,7 @@ async test "moonstat env helpers scan delete and restore file conflicts" {
 }
 
 ///|
-async test "moonstat env conflict helpers reject retired snake case keys" {
+async test "moongate env conflict helpers reject retired snake case keys" {
   let conflict = {
     "source_type": Json::string("system"),
     "var_name": Json::string("OPENAI_API_KEY"),
@@ -9734,7 +9734,7 @@ async test "moonstat env conflict helpers reject retired snake case keys" {
 }
 
 ///|
-test "moonstat config request helpers ignore retired snake case aliases" {
+test "moongate config request helpers ignore retired snake case aliases" {
   assert_eq(
     proxy_string_request(
       "/config/env/restore?backup_path=/tmp/legacy.json",
@@ -9754,7 +9754,7 @@ test "moonstat config request helpers ignore retired snake case aliases" {
 }
 
 ///|
-test "moonstat mcp helpers preserve server apps and config shape" {
+test "moongate mcp helpers preserve server apps and config shape" {
   let spec = {
     "name": Json::string("Filesystem"),
     "command": Json::string("npx"),
@@ -9780,7 +9780,7 @@ test "moonstat mcp helpers preserve server apps and config shape" {
 }
 
 ///|
-test "moonstat mcp request parser accepts canonical server JSON" {
+test "moongate mcp request parser accepts canonical server JSON" {
   let body = {
     "id": Json::string("shell"),
     "name": Json::string("Shell"),
@@ -9835,7 +9835,7 @@ test "moonstat mcp request parser accepts canonical server JSON" {
 }
 
 ///|
-test "moonstat mcp import helpers merge app configs" {
+test "moongate mcp import helpers merge app configs" {
   let servers : Map[String, Json] = {}
   let claude_root = {
     "mcpServers": {
@@ -9860,7 +9860,7 @@ test "moonstat mcp import helpers merge app configs" {
 }
 
 ///|
-test "moonstat mcp import normalizes gemini httpUrl specs" {
+test "moongate mcp import normalizes gemini httpUrl specs" {
   let servers : Map[String, Json] = {}
   let gemini_root = {
     "mcpServers": {
@@ -9880,7 +9880,7 @@ test "moonstat mcp import normalizes gemini httpUrl specs" {
 }
 
 ///|
-test "moonstat mcp import parses codex official toml servers" {
+test "moongate mcp import parses codex official toml servers" {
   let servers : Map[String, Json] = {}
   let content =
     #|[mcp_servers.filesystem]
@@ -9911,7 +9911,7 @@ test "moonstat mcp import parses codex official toml servers" {
 }
 
 ///|
-test "moonstat mcp import parses codex legacy toml servers" {
+test "moongate mcp import parses codex legacy toml servers" {
   let servers : Map[String, Json] = {}
   let content =
     #|[mcp.servers.web]
@@ -9946,7 +9946,7 @@ test "moonstat mcp import parses codex legacy toml servers" {
 }
 
 ///|
-test "moonstat prompt helpers keep app-scoped prompt records" {
+test "moongate prompt helpers keep app-scoped prompt records" {
   guard moon_prompt_from_request(
       "/prompts?appType=codex",
       Some(
@@ -10005,7 +10005,7 @@ test "moonstat prompt helpers keep app-scoped prompt records" {
 }
 
 ///|
-async test "moonstat prompt file helpers import and read prompt files" {
+async test "moongate prompt file helpers import and read prompt files" {
   assert_eq(
     moon_prompt_file_path("codex"),
     Ok(@pathx.join(moon_config_dir("codex"), "AGENTS.md")),
@@ -10015,7 +10015,7 @@ async test "moonstat prompt file helpers import and read prompt files" {
     Ok(@pathx.join(moon_config_dir("gemini"), "GEMINI.md")),
   )
   assert_true(moon_prompt_file_path("claude-desktop") is Err(_))
-  @fsx.with_temporary_directory("moonstat-prompt-XXXXXX", async fn(tmpdir) {
+  @fsx.with_temporary_directory("moongate-prompt-XXXXXX", async fn(tmpdir) {
     let prompt_path = @pathx.join(tmpdir, "AGENTS.md")
     let content = "# Codex prompt\n\nUse MoonBit."
     @fsx.write_to_file(prompt_path, content)
@@ -10068,8 +10068,8 @@ async test "moonstat prompt file helpers import and read prompt files" {
 }
 
 ///|
-async test "moonstat prompt enable writes prompt file and disables app siblings" {
-  @fsx.with_temporary_directory("moonstat-prompt-enable-XXXXXX", async fn(
+async test "moongate prompt enable writes prompt file and disables app siblings" {
+  @fsx.with_temporary_directory("moongate-prompt-enable-XXXXXX", async fn(
     tmpdir,
   ) {
     let prompt_path = @pathx.join(tmpdir, "AGENTS.md")
@@ -10123,7 +10123,7 @@ async test "moonstat prompt enable writes prompt file and disables app siblings"
 }
 
 ///|
-test "gemini native response synthesizes moonstat marked missing tool id" {
+test "gemini native response synthesizes moongate marked missing tool id" {
   let body = @json.parse(
     (
       #|{
@@ -10178,7 +10178,7 @@ test "gemini native prompt block converts to anthropic refusal" {
 }
 
 ///|
-test "moonstat claude desktop default routes match upstream command shape" {
+test "moongate claude desktop default routes match upstream command shape" {
   guard claude_desktop_default_routes_json() is Array(routes) else {
     fail("expected default routes")
   }
@@ -10190,17 +10190,17 @@ test "moonstat claude desktop default routes match upstream command shape" {
 }
 
 ///|
-test "moonstat model mapping env ignores moonstat prefixed aliases" {
-  let old_moon_default = @os.getenv("MOONSTAT_ANTHROPIC_MODEL") catch {
+test "moongate model mapping env ignores moongate prefixed aliases" {
+  let old_moon_default = @os.getenv("MOONGATE_ANTHROPIC_MODEL") catch {
     _ => None
   }
-  let old_moon_haiku = @os.getenv("MOONSTAT_ANTHROPIC_DEFAULT_HAIKU_MODEL") catch {
+  let old_moon_haiku = @os.getenv("MOONGATE_ANTHROPIC_DEFAULT_HAIKU_MODEL") catch {
     _ => None
   }
-  let old_moon_sonnet = @os.getenv("MOONSTAT_ANTHROPIC_DEFAULT_SONNET_MODEL") catch {
+  let old_moon_sonnet = @os.getenv("MOONGATE_ANTHROPIC_DEFAULT_SONNET_MODEL") catch {
     _ => None
   }
-  let old_moon_opus = @os.getenv("MOONSTAT_ANTHROPIC_DEFAULT_OPUS_MODEL") catch {
+  let old_moon_opus = @os.getenv("MOONGATE_ANTHROPIC_DEFAULT_OPUS_MODEL") catch {
     _ => None
   }
   let old_default = @os.getenv("ANTHROPIC_MODEL") catch { _ => None }
@@ -10223,9 +10223,9 @@ test "moonstat model mapping env ignores moonstat prefixed aliases" {
   @os.unsetenv("ANTHROPIC_DEFAULT_OPUS_MODEL") catch {
     _ => ()
   }
-  @os.setenv("MOONSTAT_ANTHROPIC_MODEL", "moon-default", overwrite=true)
+  @os.setenv("MOONGATE_ANTHROPIC_MODEL", "moon-default", overwrite=true)
   @os.setenv(
-    "MOONSTAT_ANTHROPIC_DEFAULT_SONNET_MODEL",
+    "MOONGATE_ANTHROPIC_DEFAULT_SONNET_MODEL",
     "moon-sonnet",
     overwrite=true,
   )
@@ -10235,15 +10235,15 @@ test "moonstat model mapping env ignores moonstat prefixed aliases" {
     fail("expected standard anthropic model mapping")
   }
   assert_eq(mapping.default_model, Some("anthropic-default"))
-  moon_wbtest_restore_env("MOONSTAT_ANTHROPIC_MODEL", old_moon_default)
+  moon_wbtest_restore_env("MOONGATE_ANTHROPIC_MODEL", old_moon_default)
   moon_wbtest_restore_env(
-    "MOONSTAT_ANTHROPIC_DEFAULT_HAIKU_MODEL", old_moon_haiku,
+    "MOONGATE_ANTHROPIC_DEFAULT_HAIKU_MODEL", old_moon_haiku,
   )
   moon_wbtest_restore_env(
-    "MOONSTAT_ANTHROPIC_DEFAULT_SONNET_MODEL", old_moon_sonnet,
+    "MOONGATE_ANTHROPIC_DEFAULT_SONNET_MODEL", old_moon_sonnet,
   )
   moon_wbtest_restore_env(
-    "MOONSTAT_ANTHROPIC_DEFAULT_OPUS_MODEL", old_moon_opus,
+    "MOONGATE_ANTHROPIC_DEFAULT_OPUS_MODEL", old_moon_opus,
   )
   moon_wbtest_restore_env("ANTHROPIC_MODEL", old_default)
   moon_wbtest_restore_env("ANTHROPIC_DEFAULT_HAIKU_MODEL", old_haiku)
@@ -10252,7 +10252,7 @@ test "moonstat model mapping env ignores moonstat prefixed aliases" {
 }
 
 ///|
-test "moonstat suggested claude desktop routes derive from provider env" {
+test "moongate suggested claude desktop routes derive from provider env" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="desktop-routes",
@@ -10287,7 +10287,7 @@ test "moonstat suggested claude desktop routes derive from provider env" {
 }
 
 ///|
-test "moonstat suggested claude desktop routes keep copilot 1m default false" {
+test "moongate suggested claude desktop routes keep copilot 1m default false" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="copilot-routes",
@@ -10311,7 +10311,7 @@ test "moonstat suggested claude desktop routes keep copilot 1m default false" {
 }
 
 ///|
-test "moonstat suggested claude desktop routes fallback to anthropic model" {
+test "moongate suggested claude desktop routes fallback to anthropic model" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="fallback-routes",
@@ -10332,7 +10332,7 @@ test "moonstat suggested claude desktop routes fallback to anthropic model" {
 }
 
 ///|
-test "moonstat imports missing claude providers into claude desktop namespace" {
+test "moongate imports missing claude providers into claude desktop namespace" {
   let gateway = Gateway::new(port=17071)
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -10393,7 +10393,7 @@ fn moon_direct_compatible_claude_desktop_provider(
 }
 
 ///|
-test "moonstat claude desktop direct compatibility filters unsafe providers" {
+test "moongate claude desktop direct compatibility filters unsafe providers" {
   assert_true(
     moon_direct_compatible_claude_desktop_provider().is_compatible_claude_desktop_direct_provider(),
   )
@@ -10421,7 +10421,7 @@ test "moonstat claude desktop direct compatibility filters unsafe providers" {
 }
 
 ///|
-test "moonstat import skips claude providers without direct or proxy compatibility" {
+test "moongate import skips claude providers without direct or proxy compatibility" {
   let gateway = Gateway::new(port=17073)
   let empty_env : Map[String, Json] = {}
   gateway.proxy.provider_router.upsert_provider(
@@ -10440,7 +10440,7 @@ test "moonstat import skips claude providers without direct or proxy compatibili
 }
 
 ///|
-test "moonstat import derives claude desktop routes from claude provider env" {
+test "moongate import derives claude desktop routes from claude provider env" {
   let gateway = Gateway::new(port=17072)
   gateway.proxy.provider_router.upsert_provider(
     ProviderRouteTarget::new(
@@ -10473,17 +10473,17 @@ test "moonstat import derives claude desktop routes from claude provider env" {
 }
 
 ///|
-test "moonstat skill repo request accepts query and json body shapes" {
+test "moongate skill repo request accepts query and json body shapes" {
   let empty_body : Map[String, Json] = {}
   guard moon_skill_repo_request_json(
-      "/skills/repos?owner=vectie&name=moonstat-skills&branch=main&enabled=true",
+      "/skills/repos?owner=vectie&name=moongate-skills&branch=main&enabled=true",
       Some(empty_body.to_json()),
     )
     is Some(Object(query_repo)) else {
     fail("expected query repo")
   }
   assert_eq(query_repo["owner"], Json::string("vectie"))
-  assert_eq(query_repo["name"], Json::string("moonstat-skills"))
+  assert_eq(query_repo["name"], Json::string("moongate-skills"))
   assert_eq(query_repo["branch"], Json::string("main"))
   assert_eq(query_repo["enabled"], Json::boolean(true))
 

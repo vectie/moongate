@@ -1,5 +1,5 @@
 ///|
-test "moonstat models endpoint advertises configured fallback model" {
+test "moongate models endpoint advertises configured fallback model" {
   let body = moon_models_endpoint_response_json(
     None,
     fallback_model="gpt-5.6-sol",
@@ -13,7 +13,7 @@ test "moonstat models endpoint advertises configured fallback model" {
 }
 
 ///|
-test "moonstat models endpoint replaces an empty active catalog" {
+test "moongate models endpoint replaces an empty active catalog" {
   let body = moon_models_endpoint_response_json(
     Some({ "models": Json::array([]) }),
     fallback_model="gpt-5.6-sol",
@@ -26,10 +26,10 @@ test "moonstat models endpoint replaces an empty active catalog" {
 }
 
 ///|
-test "moonstat models endpoint serves active catalog directly" {
+test "moongate models endpoint serves active catalog directly" {
   let catalog = {
     "models": Json::array([{ "slug": Json::string("gpt-5.7") }.to_json()]),
-    "provider": Json::string("moonstat"),
+    "provider": Json::string("moongate"),
   }.to_json()
   assert_eq(moon_models_endpoint_response_json(Some(catalog)), catalog)
 }

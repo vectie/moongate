@@ -92,7 +92,7 @@ test "cost calculator preserves small decimal rates" {
 }
 
 ///|
-test "model pricing lookup mirrors moonstat normalization cases" {
+test "model pricing lookup mirrors moongate normalization cases" {
   assert_eq(
     find_static_model_pricing("claude-sonnet-4-5-20250929").unwrap().model_id,
     "claude-sonnet-4-5-20250929",
@@ -160,7 +160,7 @@ test "model pricing lookup mirrors moonstat normalization cases" {
 }
 
 ///|
-test "static model pricing json uses moonstat field names" {
+test "static model pricing json uses moongate field names" {
   let pricing = static_model_pricing_json()
   guard pricing is Array(rows) else { fail("expected pricing array") }
   guard rows[0] is Object(first) else { fail("expected pricing row") }
@@ -173,7 +173,7 @@ test "static model pricing json uses moonstat field names" {
 }
 
 ///|
-test "model pricing json merges moonstat overrides and delete tombstones" {
+test "model pricing json merges moongate overrides and delete tombstones" {
   let deleted : Map[String, Bool] = Map([], capacity=0)
   deleted.set("gpt-5", true)
   let pricing = model_pricing_json(

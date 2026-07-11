@@ -25,8 +25,8 @@ fn codex_oauth_headers(
     "ChatGPT-Account-ID": creds.accountId,
     "Content-Type": "application/json",
     "Accept": accept,
-    "originator": "moonstat_gateway",
-    "User-Agent": "moonstat/1.0.0",
+    "originator": "moongate_gateway",
+    "User-Agent": "moongate/1.0.0",
   }
   match session_id {
     Some(id) => {
@@ -71,7 +71,7 @@ async fn AuthService::load_startup_credentials(
     }
     Err(_) =>
       logger.info(
-        "Codex OAuth credentials not loaded; standalone MoonGate remains available and codex-oauth routes can be enabled with: moonstat auth login",
+        "Codex OAuth credentials not loaded; standalone MoonGate remains available and codex-oauth routes can be enabled with: moongate auth login",
       )
   }
 }

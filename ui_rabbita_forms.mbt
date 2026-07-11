@@ -1,10 +1,10 @@
 ///|
-fn moonstat_rabbita_status_value(label : String, id : String) -> @html.Html {
+fn moongate_rabbita_status_value(label : String, id : String) -> @html.Html {
   @html.div([@html.span(label), @html.strong(id~, "-")])
 }
 
 ///|
-fn moonstat_rabbita_input_label(
+fn moongate_rabbita_input_label(
   label : String,
   id : String,
   placeholder : String,
@@ -22,12 +22,12 @@ fn moonstat_rabbita_input_label(
 }
 
 ///|
-fn moonstat_rabbita_password_label(label : String, id : String) -> @html.Html {
+fn moongate_rabbita_password_label(label : String, id : String) -> @html.Html {
   @html.label([@html.span(label), @html.input(input_type=Password, id~)])
 }
 
 ///|
-fn moonstat_rabbita_select_label(
+fn moongate_rabbita_select_label(
   label : String,
   id : String,
   options : Array[(String, String)],
@@ -45,7 +45,7 @@ fn moonstat_rabbita_select_label(
 }
 
 ///|
-fn moonstat_rabbita_check_label(
+fn moongate_rabbita_check_label(
   id : String,
   label : String,
   checked : Bool,

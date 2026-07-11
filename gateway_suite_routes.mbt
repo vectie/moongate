@@ -32,7 +32,7 @@ async fn Gateway::handle_suite_manifest(
 ) -> Unit {
   write_usage_json(
     w,
-    moonstat_suite_manifest_json(
+    moongate_suite_manifest_json(
       host=self.host,
       port=bound_port,
       model=self.model,
@@ -48,7 +48,7 @@ async fn Gateway::handle_suite_status(
 ) -> Unit {
   write_usage_json(
     w,
-    moonstat_suite_status_json(
+    moongate_suite_status_json(
       host=self.host,
       port=bound_port,
       model=self.model,
@@ -65,7 +65,7 @@ async fn Gateway::handle_suite_drift(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let root = proxy_string_request(r.path, None, "root").unwrap_or(".")
-  let report = moonstat_suite_drift_report_json(suite_root=root)
+  let report = moongate_suite_drift_report_json(suite_root=root)
   write_usage_json(w, report)
 }
 
@@ -78,11 +78,11 @@ async fn Gateway::handle_suite_write_status(
 ) -> Unit {
   let body = proxy_json_body(r)
   let path = proxy_string_request(r.path, body, "path").unwrap_or(
-    default_moonstat_suite_status_path(),
+    default_moongate_suite_status_path(),
   )
   let status = proxy_string_request(r.path, body, "status").unwrap_or("running")
   let ready = proxy_bool_request(r.path, body, "ready").unwrap_or(true)
-  let written = write_moonstat_suite_status(
+  let written = write_moongate_suite_status(
     path~,
     host=self.host,
     port=bound_port,
@@ -106,7 +106,7 @@ async fn Gateway::handle_suite_moonclaw_providers(
 ) -> Unit {
   write_usage_json(
     w,
-    moonstat_moonclaw_providers_file_json(
+    moongate_moonclaw_providers_file_json(
       host=self.host,
       port=bound_port,
       model=self.model,
@@ -123,9 +123,9 @@ async fn Gateway::handle_suite_write_moonclaw_providers(
 ) -> Unit {
   let body = proxy_json_body(r)
   let path = proxy_string_request(r.path, body, "path").unwrap_or(
-    default_moonstat_moonclaw_providers_file_path(),
+    default_moongate_moonclaw_providers_file_path(),
   )
-  let written = write_moonstat_moonclaw_providers_file(
+  let written = write_moongate_moonclaw_providers_file(
     path~,
     host=self.host,
     port=bound_port,

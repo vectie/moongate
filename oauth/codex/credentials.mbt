@@ -93,7 +93,7 @@ fn codex_active_workspace_root() -> String {
 fn get_credentials_path() -> String {
   @moonsuite.product_artifact_for_workspace_root(
     codex_active_workspace_root(),
-    "moonstat",
+    "moongate",
     CREDENTIALS_ARTIFACT,
   )
 }

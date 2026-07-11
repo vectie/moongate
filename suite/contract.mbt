@@ -10,7 +10,7 @@ pub fn status_contract() -> String {
 
 ///|
 pub fn service_name() -> String {
-  "moonstat"
+  "moongate"
 }
 
 ///|
@@ -20,7 +20,7 @@ pub fn product_name() -> String {
 
 ///|
 pub fn project_name() -> String {
-  "moonstat"
+  "moongate"
 }
 
 ///|

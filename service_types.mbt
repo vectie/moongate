@@ -37,7 +37,7 @@ priv struct ProxyService {
 ///|
 fn ProxyService::new(host : String, port : Int) -> ProxyService {
   {
-    provider_router: moonstat_default_provider_router(),
+    provider_router: moongate_default_provider_router(),
     gemini_shadow: GeminiShadowStore::new(),
     proxy_enabled: true,
     proxy_listen_address: host,

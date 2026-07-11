@@ -17,7 +17,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   let server = @httpx.Server::new(self.host, self.port, reuse_addr=true)
   let bound_port = server.port()
   try {
-    let status_path = write_moonstat_suite_status(
+    let status_path = write_moongate_suite_status(
       host=self.host,
       port=bound_port,
       model=self.model,
@@ -77,7 +77,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   router.set_not_found_handler(file_server.handler())
   self.logger.info("Gateway started on \{self.host}:\{bound_port}")
   server.serve(
-    moonstat_security_handler(
+    moongate_security_handler(
       router.handler(),
       self.control,
       self.host,

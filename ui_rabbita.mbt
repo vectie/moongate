@@ -1,65 +1,65 @@
 ///|
-fn moonstat_rabbita_shell_view(
+fn moongate_rabbita_shell_view(
   api_base? : String = "http://127.0.0.1:15721",
 ) -> @html.Html {
   @html.fragment([
-    @html.link(rel="stylesheet", href="/assets/moonstat.css"),
+    @html.link(rel="stylesheet", href="/assets/moongate.css"),
     @html.div(
       class="shell",
       attrs=@html.Attrs::build()
-        .data_set("moonstat-api-base", api_base)
+        .data_set("moongate-api-base", api_base)
         .data_set(
-          "moonstat-framework-apps",
-          moonstat_framework_apps_json().stringify(),
+          "moongate-framework-apps",
+          moongate_framework_apps_json().stringify(),
         )
         .data_set(
-          "moonstat-endpoints",
-          moonstat_ui_endpoints_json().stringify(),
+          "moongate-endpoints",
+          moongate_ui_endpoints_json().stringify(),
         )
         .data_set(
-          "moonstat-readiness-cards",
-          moonstat_ui_readiness_cards_json().stringify(),
+          "moongate-readiness-cards",
+          moongate_ui_readiness_cards_json().stringify(),
         )
-        .data_set("moonstat-sections", moonstat_ui_sections_json().stringify()),
+        .data_set("moongate-sections", moongate_ui_sections_json().stringify()),
       [
-        moonstat_rabbita_sidebar(),
+        moongate_rabbita_sidebar(),
         @html.main_(class="main", [
-          moonstat_rabbita_topbar(),
-          moonstat_rabbita_readiness_strip(),
-          moonstat_rabbita_operator_workflow(),
-          moonstat_rabbita_connection_board(),
+          moongate_rabbita_topbar(),
+          moongate_rabbita_readiness_strip(),
+          moongate_rabbita_operator_workflow(),
+          moongate_rabbita_connection_board(),
           @html.section(class="status-grid", [
-            moonstat_rabbita_metric_card(
+            moongate_rabbita_metric_card(
               "Gateway", "gateway-state", "gateway-detail", "Loading status",
             ),
-            moonstat_rabbita_metric_card(
+            moongate_rabbita_metric_card(
               "Proxy", "proxy-state", "proxy-detail", "Loading proxy",
             ),
-            moonstat_rabbita_metric_card(
+            moongate_rabbita_metric_card(
               "Requests", "request-total", "request-total-detail", "Across all apps",
             ),
-            moonstat_rabbita_metric_card(
+            moongate_rabbita_metric_card(
               "Spend", "cost-total", "cost-detail", "Estimated total",
             ),
           ]),
           @html.section(class="panel-grid", [
-            moonstat_rabbita_frameworks_panel(),
-            moonstat_rabbita_provider_editor_panel(),
-            moonstat_rabbita_setup_panel(),
-            moonstat_rabbita_suite_panel(),
-            moonstat_rabbita_resilience_panel(),
-            moonstat_rabbita_provider_health_panel(),
-            moonstat_rabbita_usage_panel(),
-            moonstat_rabbita_stack_panel("Models", "Top Models", "model-usage"),
-            moonstat_rabbita_usage_explorer_panel(),
-            moonstat_rabbita_stack_panel(
+            moongate_rabbita_frameworks_panel(),
+            moongate_rabbita_provider_editor_panel(),
+            moongate_rabbita_setup_panel(),
+            moongate_rabbita_suite_panel(),
+            moongate_rabbita_resilience_panel(),
+            moongate_rabbita_provider_health_panel(),
+            moongate_rabbita_usage_panel(),
+            moongate_rabbita_stack_panel("Models", "Top Models", "model-usage"),
+            moongate_rabbita_usage_explorer_panel(),
+            moongate_rabbita_stack_panel(
               "Providers", "Provider Usage", "provider-usage",
             ),
-            moonstat_rabbita_stack_panel(
+            moongate_rabbita_stack_panel(
               "Models", "Model Usage", "filtered-model-usage",
             ),
-            moonstat_rabbita_request_log_panel(),
-            moonstat_rabbita_request_detail_panel(),
+            moongate_rabbita_request_log_panel(),
+            moongate_rabbita_request_detail_panel(),
           ]),
           @html.section(id="error-box", class="error-box", hidden=true, [
             @html.strong("Data refresh failed"),
@@ -68,23 +68,23 @@ fn moonstat_rabbita_shell_view(
         ]),
       ],
     ),
-    @html.script(src="/assets/moonstat-core.js", moonstat_rabbita_empty()),
-    @html.script(src="/assets/moonstat-frameworks.js", moonstat_rabbita_empty()),
-    @html.script(src="/assets/moonstat-usage.js", moonstat_rabbita_empty()),
-    @html.script(src="/assets/moonstat-setup.js", moonstat_rabbita_empty()),
-    @html.script(src="/assets/moonstat-suite.js", moonstat_rabbita_empty()),
-    @html.script(src="/assets/moonstat-resilience.js", moonstat_rabbita_empty()),
-    @html.script(src="/assets/moonstat.js", moonstat_rabbita_empty()),
+    @html.script(src="/assets/moongate-core.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-frameworks.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-usage.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-setup.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-suite.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-resilience.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate.js", moongate_rabbita_empty()),
   ])
 }
 
 ///|
-fn moonstat_rabbita_empty() -> Array[@html.Html] {
+fn moongate_rabbita_empty() -> Array[@html.Html] {
   []
 }
 
 ///|
-fn moonstat_rabbita_sidebar() -> @html.Html {
+fn moongate_rabbita_sidebar() -> @html.Html {
   @html.aside(
     class="sidebar",
     attrs=@html.Attrs::build().aria_label("MoonGate navigation"),
@@ -99,9 +99,9 @@ fn moonstat_rabbita_sidebar() -> @html.Html {
       ]),
       @html.nav(
         class="nav",
-        moonstat_ui_sections().map(fn(section) {
+        moongate_ui_sections().map(fn(section) {
           let (id, label) = section
-          moonstat_rabbita_nav_link("#\{id}", label)
+          moongate_rabbita_nav_link("#\{id}", label)
         }),
       ),
       @html.div(class="sidebar-footer", [
@@ -112,12 +112,12 @@ fn moonstat_rabbita_sidebar() -> @html.Html {
 }
 
 ///|
-fn moonstat_rabbita_nav_link(href : String, label : String) -> @html.Html {
+fn moongate_rabbita_nav_link(href : String, label : String) -> @html.Html {
   @html.a(href~, label)
 }
 
 ///|
-fn moonstat_rabbita_topbar() -> @html.Html {
+fn moongate_rabbita_topbar() -> @html.Html {
   @html.section(id="overview", class="topbar", [
     @html.div([
       @html.p(class="eyebrow", "Operator Console"),
@@ -143,7 +143,7 @@ fn moonstat_rabbita_topbar() -> @html.Html {
 }
 
 ///|
-fn moonstat_rabbita_readiness_strip() -> @html.Html {
+fn moongate_rabbita_readiness_strip() -> @html.Html {
   @html.section(
     id="readiness",
     class="readiness-strip",
@@ -156,14 +156,14 @@ fn moonstat_rabbita_readiness_strip() -> @html.Html {
       @html.div(
         id="readiness-cards",
         class="readiness-cards",
-        moonstat_rabbita_empty(),
+        moongate_rabbita_empty(),
       ),
     ],
   )
 }
 
 ///|
-fn moonstat_rabbita_operator_workflow() -> @html.Html {
+fn moongate_rabbita_operator_workflow() -> @html.Html {
   @html.section(id="operator-actions", class="operator-workflow", [
     @html.div(class="operator-workflow-head", [
       @html.div([
@@ -173,19 +173,19 @@ fn moonstat_rabbita_operator_workflow() -> @html.Html {
       @html.span(id="operator-action-status", "Ready"),
     ]),
     @html.div(class="operator-action-grid", [
-      moonstat_rabbita_operator_action(
+      moongate_rabbita_operator_action(
         "start-proxy", "Start Proxy", "Bring local routing online",
       ),
-      moonstat_rabbita_operator_action(
+      moongate_rabbita_operator_action(
         "sync-live", "Sync Providers", "Import current live configuration",
       ),
-      moonstat_rabbita_operator_action(
+      moongate_rabbita_operator_action(
         "refresh-setup", "Check Setup", "Validate auth, tools, MCP, and config",
       ),
-      moonstat_rabbita_operator_action(
+      moongate_rabbita_operator_action(
         "stream-check", "Check Streams", "Probe selected framework providers",
       ),
-      moonstat_rabbita_operator_action(
+      moongate_rabbita_operator_action(
         "write-suite", "Write Suite Status", "Publish Moon suite discovery state",
       ),
     ]),
@@ -193,7 +193,7 @@ fn moonstat_rabbita_operator_workflow() -> @html.Html {
 }
 
 ///|
-fn moonstat_rabbita_operator_action(
+fn moongate_rabbita_operator_action(
   action : String,
   title : String,
   detail : String,
@@ -207,7 +207,7 @@ fn moonstat_rabbita_operator_action(
 }
 
 ///|
-fn moonstat_rabbita_connection_board() -> @html.Html {
+fn moongate_rabbita_connection_board() -> @html.Html {
   @html.section(id="connection-board", class="connection-board", [
     @html.div(class="connection-head", [
       @html.div([
@@ -217,36 +217,36 @@ fn moonstat_rabbita_connection_board() -> @html.Html {
       @html.span(id="connection-copy-status", "Copy full URLs"),
     ]),
     @html.div(class="connection-grid", [
-      moonstat_rabbita_connection_card(
+      moongate_rabbita_connection_card(
         "OpenAI Chat", "/v1/chat/completions", "OpenAI-compatible clients",
       ),
-      moonstat_rabbita_connection_card(
+      moongate_rabbita_connection_card(
         "OpenAI Responses", "/v1/responses", "Codex-style responses clients",
       ),
-      moonstat_rabbita_connection_card(
+      moongate_rabbita_connection_card(
         "Anthropic Messages", "/v1/messages", "Claude-compatible clients",
       ),
-      moonstat_rabbita_connection_card(
+      moongate_rabbita_connection_card(
         "Claude Desktop", "/claude-desktop/v1/messages", "Desktop gateway route",
       ),
-      moonstat_rabbita_connection_card(
+      moongate_rabbita_connection_card(
         "OpenClaw", "/openclaw/v1/chat/completions", "OpenClaw chat route",
       ),
-      moonstat_rabbita_connection_card(
+      moongate_rabbita_connection_card(
         "Metrics", "/metrics", "Prometheus scrape",
       ),
     ]),
     @html.div(class="snippet-grid", [
-      moonstat_rabbita_connection_snippet(
+      moongate_rabbita_connection_snippet(
         "OpenAI env", "openai-env", "Base URL for OpenAI-compatible clients",
       ),
-      moonstat_rabbita_connection_snippet(
+      moongate_rabbita_connection_snippet(
         "Anthropic env", "anthropic-env", "Base URL for Claude-compatible clients",
       ),
-      moonstat_rabbita_connection_snippet(
+      moongate_rabbita_connection_snippet(
         "OpenClaw env", "openclaw-env", "Base URL for OpenClaw clients",
       ),
-      moonstat_rabbita_connection_snippet(
+      moongate_rabbita_connection_snippet(
         "Metrics URL", "metrics-url", "Prometheus scrape target",
       ),
     ]),
@@ -254,7 +254,7 @@ fn moonstat_rabbita_connection_board() -> @html.Html {
 }
 
 ///|
-fn moonstat_rabbita_connection_card(
+fn moongate_rabbita_connection_card(
   title : String,
   path : String,
   detail : String,
@@ -272,7 +272,7 @@ fn moonstat_rabbita_connection_card(
 }
 
 ///|
-fn moonstat_rabbita_connection_snippet(
+fn moongate_rabbita_connection_snippet(
   title : String,
   snippet : String,
   detail : String,
@@ -290,7 +290,7 @@ fn moonstat_rabbita_connection_snippet(
 }
 
 ///|
-fn moonstat_rabbita_metric_card(
+fn moongate_rabbita_metric_card(
   label : String,
   value_id : String,
   detail_id : String,
@@ -304,7 +304,7 @@ fn moonstat_rabbita_metric_card(
 }
 
 ///|
-fn moonstat_rabbita_panel_head(
+fn moongate_rabbita_panel_head(
   eyebrow : String,
   title : String,
   actions : Array[@html.Html],
@@ -316,14 +316,14 @@ fn moonstat_rabbita_panel_head(
 }
 
 ///|
-fn moonstat_rabbita_table(
+fn moongate_rabbita_table(
   headers : Array[String],
   body_id : String,
 ) -> @html.Html {
   @html.div(class="table-wrap", [
     @html.table([
       @html.thead([@html.tr(headers.map(fn(header) { @html.th(header) }))]),
-      @html.tbody(id=body_id, moonstat_rabbita_empty()),
+      @html.tbody(id=body_id, moongate_rabbita_empty()),
     ]),
   ])
 }

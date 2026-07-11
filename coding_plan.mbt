@@ -1,8 +1,8 @@
 ///|
-const MOONSTAT_CODING_PLAN_TOOL = "coding_plan"
+const MOONGATE_CODING_PLAN_TOOL = "coding_plan"
 
 ///|
-const MOONSTAT_TIER_WEEKLY_LIMIT = "weekly_limit"
+const MOONGATE_TIER_WEEKLY_LIMIT = "weekly_limit"
 
 ///|
 priv enum MoonCodingPlanProvider {
@@ -70,7 +70,7 @@ async fn moon_get_coding_plan_quota(
       organization_id.is_empty() ||
       project_id.is_empty() {
       return moon_quota_error(
-        MOONSTAT_CODING_PLAN_TOOL,
+        MOONGATE_CODING_PLAN_TOOL,
         NotFound,
         "Zhipu team plan needs the API key + organization ID + project ID",
       )
@@ -80,7 +80,7 @@ async fn moon_get_coding_plan_quota(
     )
   }
   if api_key.trim().is_empty() {
-    return SubscriptionQuota::not_found(MOONSTAT_CODING_PLAN_TOOL)
+    return SubscriptionQuota::not_found(MOONGATE_CODING_PLAN_TOOL)
   }
   match moon_detect_coding_plan_provider(base_url) {
     Some(Kimi) => moon_query_kimi_coding_plan(api_key)
@@ -89,19 +89,19 @@ async fn moon_get_coding_plan_quota(
     Some(MiniMaxCn) => moon_query_minimax_coding_plan(api_key, true)
     Some(MiniMaxEn) => moon_query_minimax_coding_plan(api_key, false)
     Some(ZenMux) => moon_query_zenmux_coding_plan(base_url, api_key)
-    None => SubscriptionQuota::not_found(MOONSTAT_CODING_PLAN_TOOL)
+    None => SubscriptionQuota::not_found(MOONGATE_CODING_PLAN_TOOL)
   }
 }
 
 ///|
 fn moon_coding_plan_error(message : String) -> SubscriptionQuota {
-  moon_quota_error(MOONSTAT_CODING_PLAN_TOOL, Valid, message)
+  moon_quota_error(MOONGATE_CODING_PLAN_TOOL, Valid, message)
 }
 
 ///|
 fn moon_coding_plan_auth_error(status_code : Int) -> SubscriptionQuota {
   SubscriptionQuota::new(
-    MOONSTAT_CODING_PLAN_TOOL,
+    MOONGATE_CODING_PLAN_TOOL,
     credential_status=Expired,
     credential_message=Some("Invalid API key"),
     success=false,
@@ -169,7 +169,7 @@ fn moon_parse_kimi_coding_plan(body : Json) -> SubscriptionQuota {
       let used = (limit - remaining).max(0.0)
       tiers.push(
         moon_quota_tier_json(
-          MOONSTAT_TIER_WEEKLY_LIMIT,
+          MOONGATE_TIER_WEEKLY_LIMIT,
           if limit > 0.0 {
             used / limit * 100.0
           } else {
@@ -182,7 +182,7 @@ fn moon_parse_kimi_coding_plan(body : Json) -> SubscriptionQuota {
     _ => ()
   }
   SubscriptionQuota::new(
-    MOONSTAT_CODING_PLAN_TOOL,
+    MOONGATE_CODING_PLAN_TOOL,
     tiers~,
     queried_at=Some(moon_quota_now_millis()),
   )
@@ -291,7 +291,7 @@ fn moon_parse_zhipu_coding_plan(body : Json) -> SubscriptionQuota {
     _ => None
   }
   SubscriptionQuota::new(
-    MOONSTAT_CODING_PLAN_TOOL,
+    MOONGATE_CODING_PLAN_TOOL,
     credential_message=level,
     tiers=moon_parse_zhipu_token_tiers(data),
     queried_at=Some(moon_quota_now_millis()),
@@ -355,7 +355,7 @@ fn moon_parse_zhipu_token_tiers(data : Json) -> Array[Json] {
     Some(entry) =>
       tiers.push(
         moon_quota_tier_json(
-          MOONSTAT_TIER_WEEKLY_LIMIT,
+          MOONGATE_TIER_WEEKLY_LIMIT,
           entry.percentage,
           resets_at=entry.resets_at,
         ),
@@ -447,7 +447,7 @@ fn moon_parse_minimax_coding_plan(body : Json) -> SubscriptionQuota {
     _ => ()
   }
   SubscriptionQuota::new(
-    MOONSTAT_CODING_PLAN_TOOL,
+    MOONGATE_CODING_PLAN_TOOL,
     tiers=moon_parse_minimax_tiers(body),
     queried_at=Some(moon_quota_now_millis()),
   )
@@ -488,7 +488,7 @@ fn moon_parse_minimax_tiers(body : Json) -> Array[Json] {
       Some(remain_pct) =>
         tiers.push(
           moon_quota_tier_json(
-            MOONSTAT_TIER_WEEKLY_LIMIT,
+            MOONGATE_TIER_WEEKLY_LIMIT,
             100.0 - remain_pct,
             resets_at=match json_int64_from_map(item, "weekly_end_time") {
               Some(ms) => Some(@os.local_rfc3339(ms / 1000L))
@@ -556,7 +556,7 @@ fn moon_parse_zenmux_coding_plan(body : Json) -> SubscriptionQuota {
     Some(Object(row)) =>
       tiers.push(
         moon_quota_tier_json(
-          MOONSTAT_TIER_WEEKLY_LIMIT,
+          MOONGATE_TIER_WEEKLY_LIMIT,
           moon_json_double_from_map(row, "usage_percentage").unwrap_or(0.0) *
           100.0,
           resets_at=json_string_from_map(row, "resets_at"),
@@ -579,7 +579,7 @@ fn moon_parse_zenmux_coding_plan(body : Json) -> SubscriptionQuota {
     ""
   }
   SubscriptionQuota::new(
-    MOONSTAT_CODING_PLAN_TOOL,
+    MOONGATE_CODING_PLAN_TOOL,
     credential_message=if plan_info.is_empty() { None } else { Some(plan_info) },
     tiers~,
     queried_at=Some(moon_quota_now_millis()),

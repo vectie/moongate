@@ -1,17 +1,17 @@
 ///|
-const PROVIDER_ID = "moonstat"
+const PROVIDER_ID = "moongate"
 
 ///|
-const START_MARKER = "# >>> moonstat managed codex proxy"
+const START_MARKER = "# >>> moongate managed codex proxy"
 
 ///|
-const END_MARKER = "# <<< moonstat managed codex proxy"
+const END_MARKER = "# <<< moongate managed codex proxy"
 
 ///|
 const CONFIG_FILE = "config.toml"
 
 ///|
-const MODEL_CATALOG_FILE = "moonstat-model-catalog.json"
+const MODEL_CATALOG_FILE = "moongate-model-catalog.json"
 
 ///|
 pub struct CodexConfigInstall {
@@ -197,7 +197,7 @@ fn managed_block(base_url : String, model : String) -> String {
   "name = \"MoonGate\"\n" +
   "base_url = \"\{base_url}\"\n" +
   "wire_api = \"responses\"\n" +
-  "experimental_bearer_token = \"moonstat-local-proxy\"\n" +
+  "experimental_bearer_token = \"moongate-local-proxy\"\n" +
   END_MARKER
 }
 

@@ -59,24 +59,24 @@ fn default_rectifier_config() -> RectifierConfig {
 }
 
 ///|
-fn moonstat_rectifier_config_from_env() -> RectifierConfig {
+fn moongate_rectifier_config_from_env() -> RectifierConfig {
   let defaults = default_rectifier_config()
   {
-    enabled: env_bool_default(["MOONSTAT_RECTIFIER_ENABLED"], defaults.enabled),
+    enabled: env_bool_default(["MOONGATE_RECTIFIER_ENABLED"], defaults.enabled),
     request_thinking_signature: env_bool_default(
-      ["MOONSTAT_RECTIFIER_THINKING_SIGNATURE"],
+      ["MOONGATE_RECTIFIER_THINKING_SIGNATURE"],
       defaults.request_thinking_signature,
     ),
     request_thinking_budget: env_bool_default(
-      ["MOONSTAT_RECTIFIER_THINKING_BUDGET"],
+      ["MOONGATE_RECTIFIER_THINKING_BUDGET"],
       defaults.request_thinking_budget,
     ),
     request_media_fallback: env_bool_default(
-      ["MOONSTAT_RECTIFIER_MEDIA_FALLBACK"],
+      ["MOONGATE_RECTIFIER_MEDIA_FALLBACK"],
       defaults.request_media_fallback,
     ),
     request_media_heuristic: env_bool_default(
-      ["MOONSTAT_RECTIFIER_MEDIA_HEURISTIC"],
+      ["MOONGATE_RECTIFIER_MEDIA_HEURISTIC"],
       defaults.request_media_heuristic,
     ),
   }
@@ -320,7 +320,7 @@ fn moon_rectifier_retry_body(
   response_body : String,
   upstream_body : Json,
 ) -> MoonRectifierRetry? {
-  let config = moonstat_rectifier_config_from_env()
+  let config = moongate_rectifier_config_from_env()
   ignore(config.request_media_fallback || config.request_media_heuristic)
   let error_message = Some(response_body)
   if should_rectify_thinking_signature(error_message, config) {

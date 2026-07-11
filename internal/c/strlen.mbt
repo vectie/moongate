@@ -3,4 +3,4 @@
 ///
 /// The pointer must reference a sequence of bytes terminated by `0`. The
 /// result does not include the terminating null byte.
-pub extern "c" fn strlen(str : Pointer[Byte]) -> UInt64 = "moonbit_moonstat_c_strlen"
+pub extern "c" fn strlen(str : Pointer[Byte]) -> UInt64 = "moonbit_moongate_c_strlen"

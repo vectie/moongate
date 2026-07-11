@@ -1,31 +1,31 @@
 ///|
-pub fn MoonstatClient::from_suite_status(
+pub fn MoonGateClient::from_suite_status(
   status : Json,
   api_key? : String? = None,
   control_token? : String? = None,
   user_agent? : String? = None,
-) -> MoonstatClient? {
-  match moonstat_base_url_from_suite_status(status) {
+) -> MoonGateClient? {
+  match moongate_base_url_from_suite_status(status) {
     Some(base_url) =>
       Some(
-        MoonstatClient::new(base_url~, api_key~, control_token~, user_agent~),
+        MoonGateClient::new(base_url~, api_key~, control_token~, user_agent~),
       )
     None => None
   }
 }
 
 ///|
-pub async fn MoonstatClient::discover(
-  path? : String = default_moonstat_suite_status_path(),
+pub async fn MoonGateClient::discover(
+  path? : String = default_moongate_suite_status_path(),
   api_key? : String? = None,
   control_token? : String? = None,
   user_agent? : String? = None,
-) -> MoonstatClient {
+) -> MoonGateClient {
   let content = @fsx.read_file(path) catch { _ => "" }
   if !content.is_empty() {
     let parsed = @json.parse(content) catch { _ => Json::null() }
     match
-      MoonstatClient::from_suite_status(
+      MoonGateClient::from_suite_status(
         parsed,
         api_key~,
         control_token~,
@@ -35,5 +35,5 @@ pub async fn MoonstatClient::discover(
       None => ()
     }
   }
-  MoonstatClient::new(api_key~, control_token~, user_agent~)
+  MoonGateClient::new(api_key~, control_token~, user_agent~)
 }

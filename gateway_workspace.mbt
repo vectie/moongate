@@ -606,6 +606,6 @@ async fn WorkspaceService::handle_dashboard_page(
   ignore(self)
   w.header().set("Content-Type", "text/html; charset=utf-8")
   w.write_header(@status.Ok)
-  w.write(moonstat_rabbita_document_html(api_base=@suite.base_url(host, port)))
+  w.write(moongate_rabbita_document_html(api_base=@suite.base_url(host, port)))
   w.flush()
 }

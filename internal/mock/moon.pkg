@@ -11,9 +11,9 @@ import {
   "moonbitlang/async/os_error",
   "vectie/moonlib/os",
   "moonbitlang/async/semaphore",
-  "vectie/moonstat/internal/pino",
-  "vectie/moonstat/clock",
+  "vectie/moongate/internal/pino",
+  "vectie/moongate/clock",
   "moonbitlang/core/random",
   "vectie/moonlib/uuid",
-  "vectie/moonstat/model",
+  "vectie/moongate/model",
 }

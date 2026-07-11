@@ -1,20 +1,20 @@
 ///|
-const MOONSTAT_CONTROL_TOKEN_FILE = "control-token"
+const MOONGATE_CONTROL_TOKEN_FILE = "control-token"
 
 ///|
-const MOONSTAT_CONTROL_TOKEN_HEADER = "x-moonstat-control-token"
+const MOONGATE_CONTROL_TOKEN_HEADER = "x-moongate-control-token"
 
 ///|
-pub fn default_moonstat_control_token_path() -> String {
-  @pathx.join(default_moonstat_dir(), MOONSTAT_CONTROL_TOKEN_FILE)
+pub fn default_moongate_control_token_path() -> String {
+  @pathx.join(default_moongate_dir(), MOONGATE_CONTROL_TOKEN_FILE)
 }
 
 ///|
 async fn ControlPlaneAuth::initialize(
   self : ControlPlaneAuth,
-  path? : String = default_moonstat_control_token_path(),
+  path? : String = default_moongate_control_token_path(),
 ) -> Unit raise Error {
-  let configured_token = @os.getenv("MOONSTAT_CONTROL_TOKEN") catch {
+  let configured_token = @os.getenv("MOONGATE_CONTROL_TOKEN") catch {
     _ => None
   }
   match configured_token {
@@ -48,7 +48,7 @@ fn ControlPlaneAuth::authorized(
   headers : Map[String, String],
 ) -> Bool {
   guard self.token is Some(expected) else { return false }
-  guard headers.get(MOONSTAT_CONTROL_TOKEN_HEADER) is Some(actual) else {
+  guard headers.get(MOONGATE_CONTROL_TOKEN_HEADER) is Some(actual) else {
     return false
   }
   actual == expected
@@ -60,10 +60,10 @@ async fn ControlPlaneAuth::write_bootstrap(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   guard self.token is Some(token) else {
-    moonstat_write_json_error(
+    moongate_write_json_error(
       w,
       @status.ServiceUnavailable,
-      "moonstat_control_token_unavailable",
+      "moongate_control_token_unavailable",
       "MoonGate control token is unavailable",
     )
     return

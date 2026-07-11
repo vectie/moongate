@@ -1,6 +1,6 @@
 ///|
-test "moonstat deeplink parser accepts provider urls" {
-  let url = "moonstat://v1/import?resource=provider&appType=codex&name=OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=sk-test&enabled=true&usageAutoInterval=30"
+test "moongate deeplink parser accepts provider urls" {
+  let url = "moongate://v1/import?resource=provider&appType=codex&name=OpenAI&endpoint=https%3A%2F%2Fapi.openai.com%2Fv1&apiKey=sk-test&enabled=true&usageAutoInterval=30"
   guard moon_parse_deeplink_url_json(url) is Some(Object(obj)) else {
     fail("expected provider deeplink request")
   }
@@ -15,8 +15,8 @@ test "moonstat deeplink parser accepts provider urls" {
 }
 
 ///|
-test "moonstat deeplink parser decodes prompts and validates resources" {
-  let prompt_url = "moonstat://v1/import?resource=prompt&appType=codex&name=Daily&content=SGVsbG8&enabled=false"
+test "moongate deeplink parser decodes prompts and validates resources" {
+  let prompt_url = "moongate://v1/import?resource=prompt&appType=codex&name=Daily&content=SGVsbG8&enabled=false"
   guard moon_parse_deeplink_url_json(prompt_url) is Some(Object(prompt)) else {
     fail("expected prompt deeplink request")
   }
@@ -27,22 +27,22 @@ test "moonstat deeplink parser decodes prompts and validates resources" {
   assert_eq(moon_parse_deeplink_url_json("https://example.com"), None)
   assert_eq(
     moon_parse_deeplink_url_json(
-      "moonstat://v1/import?resource=skill&repo=missing-owner",
+      "moongate://v1/import?resource=skill&repo=missing-owner",
     ),
     None,
   )
 }
 
 ///|
-test "moonstat deeplink parser accepts mcp and skill requests" {
-  let mcp_url = "moonstat://v1/import?resource=mcp&apps=claude,codex&config=eyJtY3BTZXJ2ZXJzIjp7fX0"
+test "moongate deeplink parser accepts mcp and skill requests" {
+  let mcp_url = "moongate://v1/import?resource=mcp&apps=claude,codex&config=eyJtY3BTZXJ2ZXJzIjp7fX0"
   guard moon_parse_deeplink_url_json(mcp_url) is Some(Object(mcp)) else {
     fail("expected mcp deeplink request")
   }
   assert_eq(mcp["resource"], Json::string("mcp"))
   assert_eq(mcp["apps"], Json::string("claude,codex"))
   assert_eq(mcp["configFormat"], Json::string("json"))
-  let skill_url = "moonstat://v1/import?resource=skill&repo=vectie%2Fskills&branch=main&enabled=true"
+  let skill_url = "moongate://v1/import?resource=skill&repo=vectie%2Fskills&branch=main&enabled=true"
   guard moon_parse_deeplink_url_json(skill_url) is Some(Object(skill)) else {
     fail("expected skill deeplink request")
   }
@@ -53,8 +53,8 @@ test "moonstat deeplink parser accepts mcp and skill requests" {
 }
 
 ///|
-test "moonstat deeplink merge imports claude env config fields" {
-  let encoded = "eyJlbnYiOnsiQU5USFJPUElDX0FVVEhfVE9LRU4iOiJzay1tb29uc3RhdCIsIkFOVEhST1BJQ19CQVNFX1VSTCI6Imh0dHBzOi8vYXBpLmFudGhyb3BpYy5jb20vdjEvIiwiQU5USFJPUElDX01PREVMIjoiY2xhdWRlLXNvbm5ldCJ9fQ=="
+test "moongate deeplink merge imports claude env config fields" {
+  let encoded = "eyJlbnYiOnsiQU5USFJPUElDX0FVVEhfVE9LRU4iOiJzay1tb29uZ2F0ZSIsIkFOVEhST1BJQ19CQVNFX1VSTCI6Imh0dHBzOi8vYXBpLmFudGhyb3BpYy5jb20vdjEvIiwiQU5USFJPUElDX01PREVMIjoiY2xhdWRlLXNvbm5ldCJ9fQ=="
   let request = {
     "resource": Json::string("provider"),
     "appType": Json::string("claude"),
@@ -65,14 +65,14 @@ test "moonstat deeplink merge imports claude env config fields" {
   guard moon_merge_deeplink_config_json(request) is Some(Object(merged)) else {
     fail("expected merged provider deeplink")
   }
-  assert_eq(merged["apiKey"], Json::string("sk-moonstat"))
+  assert_eq(merged["apiKey"], Json::string("sk-moongate"))
   assert_eq(merged["endpoint"], Json::string("https://api.anthropic.com/v1/"))
   assert_eq(merged["model"], Json::string("claude-sonnet"))
   assert_eq(merged["homepage"], Json::string("https://anthropic.com"))
 }
 
 ///|
-test "moonstat deeplink merge ignores legacy provider config keys" {
+test "moongate deeplink merge ignores legacy provider config keys" {
   let encoded = "eyJhcGlfa2V5Ijoic2stbGVnYWN5IiwiYmFzZV91cmwiOiJodHRwczovL2xlZ2FjeS5leGFtcGxlL3YxIiwiYXBpS2V5Ijoic2stbmV3IiwiYmFzZVVybCI6Imh0dHBzOi8vbmV3LmV4YW1wbGUvdjEifQ=="
   guard moon_merge_deeplink_config_json(
       {

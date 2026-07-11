@@ -1,5 +1,5 @@
 ///|
-test "moonstat copilot classifier marks tool result continuations as agent before sanitize" {
+test "moongate copilot classifier marks tool result continuations as agent before sanitize" {
   let body = @json.parse(
     (
       #|{
@@ -24,7 +24,7 @@ test "moonstat copilot classifier marks tool result continuations as agent befor
 }
 
 ///|
-test "moonstat copilot sanitizer converts only orphan tool results" {
+test "moongate copilot sanitizer converts only orphan tool results" {
   let body = @json.parse(
     (
       #|{
@@ -61,7 +61,7 @@ test "moonstat copilot sanitizer converts only orphan tool results" {
 }
 
 ///|
-test "moonstat copilot optimizer merges tool result text and strips assistant thinking" {
+test "moongate copilot optimizer merges tool result text and strips assistant thinking" {
   let body = @json.parse(
     (
       #|{
@@ -129,7 +129,7 @@ test "moonstat copilot optimizer merges tool result text and strips assistant th
 }
 
 ///|
-test "moonstat copilot optimizer merges valid tool result text blocks" {
+test "moongate copilot optimizer merges valid tool result text blocks" {
   let body = @json.parse(
     (
       #|{
@@ -167,7 +167,7 @@ test "moonstat copilot optimizer merges valid tool result text blocks" {
 }
 
 ///|
-test "moonstat copilot optimizer downgrades warmup model for anthropic beta probes" {
+test "moongate copilot optimizer downgrades warmup model for anthropic beta probes" {
   let body = @json.parse(
     (
       #|{
@@ -197,7 +197,7 @@ test "moonstat copilot optimizer downgrades warmup model for anthropic beta prob
 }
 
 ///|
-test "moonstat copilot optimizer emits deterministic interaction headers" {
+test "moongate copilot optimizer emits deterministic interaction headers" {
   let body = @json.parse(
     (
       #|{
@@ -232,7 +232,7 @@ test "moonstat copilot optimizer emits deterministic interaction headers" {
 }
 
 ///|
-test "moonstat copilot optimizer marks subagent interaction header" {
+test "moongate copilot optimizer marks subagent interaction header" {
   let body = @json.parse(
     (
       #|{

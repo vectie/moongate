@@ -1,14 +1,14 @@
 ///|
 test "gateway security accepts local SDK requests without origin" {
   assert_true(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "127.0.0.1:15721" },
       "127.0.0.1",
       15721,
     ),
   )
   assert_true(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "localhost:15721" },
       "127.0.0.1",
       15721,
@@ -19,7 +19,7 @@ test "gateway security accepts local SDK requests without origin" {
 ///|
 test "gateway security accepts same-origin dashboard requests" {
   assert_true(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "127.0.0.1:15721", "origin": "http://127.0.0.1:15721" },
       "127.0.0.1",
       15721,
@@ -30,28 +30,28 @@ test "gateway security accepts same-origin dashboard requests" {
 ///|
 test "gateway security rejects DNS rebinding and cross-origin browsers" {
   assert_false(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "attacker.example:15721" },
       "127.0.0.1",
       15721,
     ),
   )
   assert_false(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "127.0.0.1:15721", "origin": "https://attacker.example" },
       "127.0.0.1",
       15721,
     ),
   )
   assert_false(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "127.0.0.1:15722" },
       "127.0.0.1",
       15721,
     ),
   )
   assert_false(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "127.0.0.1:15721", "origin": "null" },
       "127.0.0.1",
       15721,
@@ -62,7 +62,7 @@ test "gateway security rejects DNS rebinding and cross-origin browsers" {
 ///|
 test "gateway security supports explicit non-loopback bind authority" {
   assert_true(
-    moonstat_request_authority_allowed(
+    moongate_request_authority_allowed(
       { "host": "192.168.1.20:15721", "origin": "http://192.168.1.20:15721" },
       "192.168.1.20",
       15721,
@@ -72,34 +72,34 @@ test "gateway security supports explicit non-loopback bind authority" {
 
 ///|
 test "gateway security keeps inference public and protects control plane" {
-  assert_false(moonstat_route_requires_control(Post, "/v1/chat/completions"))
+  assert_false(moongate_route_requires_control(Post, "/v1/chat/completions"))
   assert_false(
-    moonstat_route_requires_control(Post, "/openclaw/v1/chat/completions"),
+    moongate_route_requires_control(Post, "/openclaw/v1/chat/completions"),
   )
   assert_false(
-    moonstat_route_requires_control(Post, "/claude-desktop/v1/messages"),
+    moongate_route_requires_control(Post, "/claude-desktop/v1/messages"),
   )
-  assert_false(moonstat_route_requires_control(Get, "/health"))
-  assert_false(moonstat_route_requires_control(Get, "/assets/moonstat.js"))
-  assert_true(moonstat_route_requires_control(Get, "/providers"))
-  assert_true(moonstat_route_requires_control(Post, "/providers"))
-  assert_true(moonstat_route_requires_control(Get, "/copilot/token"))
-  assert_true(moonstat_route_requires_control(Get, "/workspace/files"))
-  assert_true(moonstat_route_requires_control(Post, "/suite/status/write"))
+  assert_false(moongate_route_requires_control(Get, "/health"))
+  assert_false(moongate_route_requires_control(Get, "/assets/moongate.js"))
+  assert_true(moongate_route_requires_control(Get, "/providers"))
+  assert_true(moongate_route_requires_control(Post, "/providers"))
+  assert_true(moongate_route_requires_control(Get, "/copilot/token"))
+  assert_true(moongate_route_requires_control(Get, "/workspace/files"))
+  assert_true(moongate_route_requires_control(Post, "/suite/status/write"))
 }
 
 ///|
 test "gateway control bootstrap requires a same-origin browser" {
   assert_true(
-    moonstat_control_bootstrap_allowed(
+    moongate_control_bootstrap_allowed(
       { "origin": "http://127.0.0.1:15721", "sec-fetch-site": "same-origin" },
       "127.0.0.1",
       15721,
     ),
   )
-  assert_false(moonstat_control_bootstrap_allowed({}, "127.0.0.1", 15721))
+  assert_false(moongate_control_bootstrap_allowed({}, "127.0.0.1", 15721))
   assert_false(
-    moonstat_control_bootstrap_allowed(
+    moongate_control_bootstrap_allowed(
       { "origin": "http://127.0.0.1:15721", "sec-fetch-site": "cross-site" },
       "127.0.0.1",
       15721,
@@ -111,15 +111,15 @@ test "gateway control bootstrap requires a same-origin browser" {
 async test "gateway control token persists and authenticates" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-control-token-\{@async.now().to_int()}",
+    "moongate-control-token-\{@async.now().to_int()}",
   )
-  let path = @pathx.join(dir, MOONSTAT_CONTROL_TOKEN_FILE)
+  let path = @pathx.join(dir, MOONGATE_CONTROL_TOKEN_FILE)
   let first = ControlPlaneAuth::new()
   first.initialize(path~)
   guard first.token is Some(token) else { fail("expected control token") }
   assert_true(token.has_prefix("mst_req_"))
-  assert_true(first.authorized({ "x-moonstat-control-token": token }))
-  assert_false(first.authorized({ "x-moonstat-control-token": "wrong" }))
+  assert_true(first.authorized({ "x-moongate-control-token": token }))
+  assert_false(first.authorized({ "x-moongate-control-token": "wrong" }))
 
   let second = ControlPlaneAuth::new()
   second.initialize(path~)

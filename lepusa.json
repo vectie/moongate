@@ -1,5 +1,5 @@
 {
-  "identifier": "dev.vectie.moonstat",
+  "identifier": "dev.vectie.moongate",
   "productName": "MoonGate",
   "version": "0.1.0",
   "runtime": {
@@ -53,6 +53,6 @@
     }
   ],
   "startup": {
-    "effect": "connect-moonstat"
+    "effect": "connect-moongate"
   }
 }

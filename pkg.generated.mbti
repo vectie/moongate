@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat"
+package "vectie/moongate"
 
 // Values
 pub fn build_models_url_candidates(String, Bool, String?) -> Result[Array[String], String]
@@ -42,17 +42,17 @@ pub fn default_codex_config_dir() -> String
 
 pub fn default_gemini_dir() -> String
 
-pub fn default_moonstat_control_token_path() -> String
+pub fn default_moongate_control_token_path() -> String
 
-pub fn default_moonstat_moonclaw_providers_file_path() -> String
+pub fn default_moongate_moonclaw_providers_file_path() -> String
 
-pub fn default_moonstat_moonclaw_providers_file_path_for_workspace_root(String) -> String
+pub fn default_moongate_moonclaw_providers_file_path_for_workspace_root(String) -> String
 
-pub fn default_moonstat_stats_dir() -> String
+pub fn default_moongate_stats_dir() -> String
 
-pub fn default_moonstat_suite_status_path() -> String
+pub fn default_moongate_suite_status_path() -> String
 
-pub fn default_moonstat_suite_status_path_for_workspace_root(String) -> String
+pub fn default_moongate_suite_status_path_for_workspace_root(String) -> String
 
 pub fn default_opencode_data_dir() -> String
 
@@ -100,51 +100,51 @@ pub fn moon_strip_entity_headers_for_rebuilt_body(Map[String, String]) -> Map[St
 
 pub fn moon_strip_hop_by_hop_response_headers(Map[String, String]) -> Map[String, String]
 
-pub fn moonstat_agent_clients_from_manifest(Json) -> Result[Array[MoonstatAgentClient], String]
+pub fn moongate_agent_clients_from_manifest(Json) -> Result[Array[MoonGateAgentClient], String]
 
-pub fn moonstat_agent_clients_from_suite_status(Json) -> Result[Array[MoonstatAgentClient], String]
+pub fn moongate_agent_clients_from_suite_status(Json) -> Result[Array[MoonGateAgentClient], String]
 
-pub fn moonstat_base_url_from_suite_status(Json) -> String?
+pub fn moongate_base_url_from_suite_status(Json) -> String?
 
-pub fn moonstat_framework_apps_json() -> Json
+pub fn moongate_framework_apps_json() -> Json
 
-pub fn moonstat_lepusa_manifest(port? : Int) -> String
+pub fn moongate_lepusa_manifest(port? : Int) -> String
 
-pub fn moonstat_lepusa_manifest_json(port? : Int) -> Json
+pub fn moongate_lepusa_manifest_json(port? : Int) -> Json
 
-pub fn moonstat_models_from_json(Json) -> Result[Array[MoonstatModel], String]
+pub fn moongate_models_from_json(Json) -> Result[Array[MoonGateModel], String]
 
-pub fn moonstat_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
+pub fn moongate_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
 
-pub fn moonstat_product_home_for_workspace_root(String) -> String
+pub fn moongate_product_home_for_workspace_root(String) -> String
 
-pub fn moonstat_rabbita_document_html(api_base? : String) -> String
+pub fn moongate_rabbita_document_html(api_base? : String) -> String
 
-pub fn moonstat_rabbita_lepusa_manifest(api_base? : String) -> String
+pub fn moongate_rabbita_lepusa_manifest(api_base? : String) -> String
 
-pub fn moonstat_rabbita_lepusa_manifest_json(api_base? : String) -> Json
+pub fn moongate_rabbita_lepusa_manifest_json(api_base? : String) -> Json
 
-pub fn moonstat_rabbita_shell_dom_ids() -> Array[String]
+pub fn moongate_rabbita_shell_dom_ids() -> Array[String]
 
-pub fn moonstat_rabbita_shell_html(api_base? : String) -> String
+pub fn moongate_rabbita_shell_html(api_base? : String) -> String
 
-pub async fn moonstat_suite_drift_report_json(suite_root? : String, global_tmp_root? : String) -> Json
+pub async fn moongate_suite_drift_report_json(suite_root? : String, global_tmp_root? : String) -> Json
 
-pub fn moonstat_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
+pub fn moongate_suite_manifest_json(host? : String, port? : Int, model? : String) -> Json
 
-pub fn moonstat_suite_status_json(host? : String, port? : Int, model? : String, status? : String, ready? : Bool) -> Json
+pub fn moongate_suite_status_json(host? : String, port? : Int, model? : String, status? : String, ready? : Bool) -> Json
 
-pub fn moonstat_ui_endpoints_json() -> Json
+pub fn moongate_ui_endpoints_json() -> Json
 
-pub fn moonstat_ui_readiness_cards_json() -> Json
+pub fn moongate_ui_readiness_cards_json() -> Json
 
-pub fn moonstat_ui_sections_json() -> Json
+pub fn moongate_ui_sections_json() -> Json
 
 pub fn static_model_pricing_json() -> Json
 
-pub async fn write_moonstat_moonclaw_providers_file(path? : String, host? : String, port? : Int, model? : String) -> String
+pub async fn write_moongate_moonclaw_providers_file(path? : String, host? : String, port? : Int, model? : String) -> String
 
-pub async fn write_moonstat_suite_status(path? : String, host? : String, port? : Int, model? : String, status? : String, ready? : Bool) -> String
+pub async fn write_moongate_suite_status(path? : String, host? : String, port? : Int, model? : String, status? : String, ready? : Bool) -> String
 
 // Errors
 
@@ -180,6 +180,189 @@ pub struct ModelPricing {
   cache_creation_cost_per_million : String
 }
 
+pub struct MoonGateAgentClient {
+  id : String
+  app_type : String
+  protocol : String
+  base_url : String
+  primary_route : String
+  setup_command : String?
+  usage : String?
+}
+pub fn MoonGateAgentClient::from_json(Json) -> Result[Self, String]
+
+pub struct MoonGateClient {
+  base_url : String
+  api_key : String?
+  control_token : String?
+  user_agent : String?
+}
+pub async fn MoonGateClient::delete_json(Self, String) -> Result[Json, String]
+pub async fn MoonGateClient::discover(path? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
+pub fn MoonGateClient::endpoint(Self, String) -> String
+pub fn MoonGateClient::from_host(host? : String, port? : Int, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
+pub fn MoonGateClient::from_suite_status(Json, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self?
+pub async fn MoonGateClient::get_json(Self, String) -> Result[Json, String]
+pub async fn MoonGateClient::health(Self) -> Result[Json, String]
+pub fn MoonGateClient::health_url(Self) -> String
+pub async fn MoonGateClient::metrics(Self) -> Result[String, String]
+pub fn MoonGateClient::metrics_url(Self) -> String
+pub async fn MoonGateClient::model_catalog(Self) -> Result[Array[MoonGateModel], String]
+pub async fn MoonGateClient::models(Self) -> Result[Json, String]
+pub fn MoonGateClient::models_url(Self) -> String
+pub fn MoonGateClient::new(base_url? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
+pub async fn MoonGateClient::post_json(Self, String, Json) -> Result[Json, String]
+pub async fn MoonGateClient::proxy_add_failover_queue(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_add_failover_queue_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_app_config(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_app_config_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_auto_failover_enabled(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_auto_failover_enabled_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_available_failover_providers(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_available_failover_providers_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_circuit_breaker_config(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_circuit_breaker_config_url(Self) -> String
+pub async fn MoonGateClient::proxy_circuit_breaker_stats(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_circuit_breaker_stats_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_default_cost_multiplier(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_default_cost_multiplier_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_failover_queue(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_failover_queue_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_global_config(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_global_config_url(Self) -> String
+pub async fn MoonGateClient::proxy_global_url(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_global_url_url(Self) -> String
+pub async fn MoonGateClient::proxy_local_proxies(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_local_proxies_url(Self) -> String
+pub async fn MoonGateClient::proxy_pricing_model_source(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_pricing_model_source_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_provider_health(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_provider_health_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_remove_failover_queue(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_remove_failover_queue_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_reset_circuit_breaker(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_reset_circuit_breaker_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_running(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_running_url(Self) -> String
+pub async fn MoonGateClient::proxy_set_auto_failover_enabled(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_set_auto_failover_enabled_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_set_default_cost_multiplier(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_set_default_cost_multiplier_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_set_global_url(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_set_global_url_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_set_pricing_model_source(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_set_pricing_model_source_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_set_takeover_status(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_set_takeover_status_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_start(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_start_url(Self) -> String
+pub async fn MoonGateClient::proxy_status(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_status_url(Self) -> String
+pub async fn MoonGateClient::proxy_stop(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_stop_url(Self) -> String
+pub async fn MoonGateClient::proxy_stop_with_restore(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_stop_with_restore_url(Self) -> String
+pub async fn MoonGateClient::proxy_switch_provider(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_switch_provider_url(Self, String, String) -> String
+pub async fn MoonGateClient::proxy_takeover_status(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_takeover_status_url(Self) -> String
+pub async fn MoonGateClient::proxy_test_url(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_test_url_url(Self, String) -> String
+pub async fn MoonGateClient::proxy_update_app_config(Self, String, enabled? : String?, auto_failover_enabled? : String?, max_retries? : String?, streaming_first_byte_timeout? : String?, streaming_idle_timeout? : String?, non_streaming_timeout? : String?, failure_threshold? : String?, success_threshold? : String?, timeout_seconds? : String?, error_rate_threshold? : String?, min_requests? : String?) -> Result[Json, String]
+pub fn MoonGateClient::proxy_update_app_config_url(Self, String, enabled? : String?, auto_failover_enabled? : String?, max_retries? : String?, streaming_first_byte_timeout? : String?, streaming_idle_timeout? : String?, non_streaming_timeout? : String?, failure_threshold? : String?, success_threshold? : String?, timeout_seconds? : String?, error_rate_threshold? : String?, min_requests? : String?) -> String
+pub async fn MoonGateClient::proxy_update_circuit_breaker_config(Self, String, String, String, String, String) -> Result[Json, String]
+pub fn MoonGateClient::proxy_update_circuit_breaker_config_url(Self, String, String, String, String, String) -> String
+pub async fn MoonGateClient::proxy_update_global_config(Self, proxy_enabled? : String?, listen_address? : String?, listen_port? : String?, enable_logging? : String?) -> Result[Json, String]
+pub fn MoonGateClient::proxy_update_global_config_url(Self, proxy_enabled? : String?, listen_address? : String?, listen_port? : String?, enable_logging? : String?) -> String
+pub async fn MoonGateClient::proxy_upstream_status(Self) -> Result[Json, String]
+pub fn MoonGateClient::proxy_upstream_status_url(Self) -> String
+pub async fn MoonGateClient::route_chat(Self, Json) -> Result[Json, String]
+pub fn MoonGateClient::route_chat_url(Self) -> String
+pub async fn MoonGateClient::route_messages(Self, Json) -> Result[Json, String]
+pub fn MoonGateClient::route_messages_url(Self) -> String
+pub async fn MoonGateClient::route_openclaw_chat(Self, Json) -> Result[Json, String]
+pub fn MoonGateClient::route_openclaw_chat_url(Self) -> String
+pub async fn MoonGateClient::route_response(Self, Json) -> Result[Json, String]
+pub async fn MoonGateClient::route_response_compact(Self, Json) -> Result[Json, String]
+pub fn MoonGateClient::route_response_compact_url(Self) -> String
+pub fn MoonGateClient::route_response_url(Self) -> String
+pub async fn MoonGateClient::stats(Self) -> Result[Json, String]
+pub fn MoonGateClient::stats_url(Self) -> String
+pub async fn MoonGateClient::status(Self) -> Result[Json, String]
+pub fn MoonGateClient::status_url(Self) -> String
+pub async fn MoonGateClient::usage_data_sources(Self) -> Result[Json, String]
+pub fn MoonGateClient::usage_data_sources_url(Self) -> String
+pub async fn MoonGateClient::usage_delete_model_pricing(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::usage_delete_model_pricing_url(Self, String) -> String
+pub async fn MoonGateClient::usage_logs(Self, query? : MoonGateUsageQuery?) -> Result[Json, String]
+pub fn MoonGateClient::usage_logs_url(Self, query? : MoonGateUsageQuery?) -> String
+pub async fn MoonGateClient::usage_model_pricing(Self) -> Result[Json, String]
+pub fn MoonGateClient::usage_model_pricing_url(Self) -> String
+pub async fn MoonGateClient::usage_model_stats(Self, query? : MoonGateUsageQuery?) -> Result[Json, String]
+pub fn MoonGateClient::usage_model_stats_url(Self, query? : MoonGateUsageQuery?) -> String
+pub async fn MoonGateClient::usage_provider_limits(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::usage_provider_limits_url(Self, String, String) -> String
+pub async fn MoonGateClient::usage_provider_stats(Self, query? : MoonGateUsageQuery?) -> Result[Json, String]
+pub fn MoonGateClient::usage_provider_stats_url(Self, query? : MoonGateUsageQuery?) -> String
+pub async fn MoonGateClient::usage_provider_usage(Self, String, String) -> Result[Json, String]
+pub fn MoonGateClient::usage_provider_usage_url(Self, String, String) -> String
+pub async fn MoonGateClient::usage_request_detail(Self, String) -> Result[Json, String]
+pub fn MoonGateClient::usage_request_detail_url(Self, String) -> String
+pub async fn MoonGateClient::usage_summary(Self, query? : MoonGateUsageQuery?) -> Result[Json, String]
+pub async fn MoonGateClient::usage_summary_by_app(Self, query? : MoonGateUsageQuery?) -> Result[Json, String]
+pub fn MoonGateClient::usage_summary_by_app_url(Self, query? : MoonGateUsageQuery?) -> String
+pub async fn MoonGateClient::usage_summary_typed(Self, query? : MoonGateUsageQuery?) -> Result[MoonGateUsageSummary, String]
+pub fn MoonGateClient::usage_summary_url(Self, query? : MoonGateUsageQuery?) -> String
+pub async fn MoonGateClient::usage_sync_session(Self, query? : MoonGateSessionSyncQuery?) -> Result[Json, String]
+pub fn MoonGateClient::usage_sync_session_url(Self, query? : MoonGateSessionSyncQuery?) -> String
+pub async fn MoonGateClient::usage_trends(Self, query? : MoonGateUsageQuery?) -> Result[Json, String]
+pub fn MoonGateClient::usage_trends_url(Self, query? : MoonGateUsageQuery?) -> String
+pub async fn MoonGateClient::usage_update_model_pricing(Self, ModelPricing) -> Result[Json, String]
+
+pub struct MoonGateModel {
+  id : String
+  owner : String?
+  context_window : Int?
+}
+pub fn MoonGateModel::from_json(Json) -> Result[Self, String]
+
+pub struct MoonGateSessionSyncQuery {
+  projects_dir : String?
+  codex_dir : String?
+  gemini_dir : String?
+  opencode_export_path : String?
+  opencode_db_path : String?
+}
+pub fn MoonGateSessionSyncQuery::empty() -> Self
+pub fn MoonGateSessionSyncQuery::new(projects_dir~ : String?, codex_dir~ : String?, gemini_dir~ : String?, opencode_export_path~ : String?, opencode_db_path~ : String?) -> Self
+
+pub struct MoonGateUsageQuery {
+  start_date : String?
+  end_date : String?
+  app_type : String?
+  provider_id : String?
+  provider_name : String?
+  model : String?
+  status_code : String?
+  page : Int?
+  page_size : Int?
+}
+pub fn MoonGateUsageQuery::empty() -> Self
+pub fn MoonGateUsageQuery::new(start_date~ : String?, end_date~ : String?, app_type~ : String?, provider_id~ : String?, provider_name~ : String?, model~ : String?, status_code~ : String?, page~ : Int?, page_size~ : Int?) -> Self
+
+pub struct MoonGateUsageSummary {
+  total_requests : Int
+  total_cost : String
+  total_input_tokens : Int64
+  total_output_tokens : Int64
+  total_cache_creation_tokens : Int64
+  total_cache_read_tokens : Int64
+  real_total_tokens : Int64
+  success_rate : Double
+  cache_hit_rate : Double
+}
+pub fn MoonGateUsageSummary::from_json(Json) -> Result[Self, String]
+
 pub enum MoonProxyError {
   AlreadyRunning
   NotRunning
@@ -200,189 +383,6 @@ pub enum MoonProxyError {
   Unknown(String)
 }
 pub fn MoonProxyError::to_string(Self) -> String
-
-pub struct MoonstatAgentClient {
-  id : String
-  app_type : String
-  protocol : String
-  base_url : String
-  primary_route : String
-  setup_command : String?
-  usage : String?
-}
-pub fn MoonstatAgentClient::from_json(Json) -> Result[Self, String]
-
-pub struct MoonstatClient {
-  base_url : String
-  api_key : String?
-  control_token : String?
-  user_agent : String?
-}
-pub async fn MoonstatClient::delete_json(Self, String) -> Result[Json, String]
-pub async fn MoonstatClient::discover(path? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
-pub fn MoonstatClient::endpoint(Self, String) -> String
-pub fn MoonstatClient::from_host(host? : String, port? : Int, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
-pub fn MoonstatClient::from_suite_status(Json, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self?
-pub async fn MoonstatClient::get_json(Self, String) -> Result[Json, String]
-pub async fn MoonstatClient::health(Self) -> Result[Json, String]
-pub fn MoonstatClient::health_url(Self) -> String
-pub async fn MoonstatClient::metrics(Self) -> Result[String, String]
-pub fn MoonstatClient::metrics_url(Self) -> String
-pub async fn MoonstatClient::model_catalog(Self) -> Result[Array[MoonstatModel], String]
-pub async fn MoonstatClient::models(Self) -> Result[Json, String]
-pub fn MoonstatClient::models_url(Self) -> String
-pub fn MoonstatClient::new(base_url? : String, api_key? : String?, control_token? : String?, user_agent? : String?) -> Self
-pub async fn MoonstatClient::post_json(Self, String, Json) -> Result[Json, String]
-pub async fn MoonstatClient::proxy_add_failover_queue(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_add_failover_queue_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_app_config(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_app_config_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_auto_failover_enabled(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_auto_failover_enabled_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_available_failover_providers(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_available_failover_providers_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_circuit_breaker_config(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_circuit_breaker_config_url(Self) -> String
-pub async fn MoonstatClient::proxy_circuit_breaker_stats(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_circuit_breaker_stats_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_default_cost_multiplier(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_default_cost_multiplier_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_failover_queue(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_failover_queue_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_global_config(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_global_config_url(Self) -> String
-pub async fn MoonstatClient::proxy_global_url(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_global_url_url(Self) -> String
-pub async fn MoonstatClient::proxy_local_proxies(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_local_proxies_url(Self) -> String
-pub async fn MoonstatClient::proxy_pricing_model_source(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_pricing_model_source_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_provider_health(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_provider_health_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_remove_failover_queue(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_remove_failover_queue_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_reset_circuit_breaker(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_reset_circuit_breaker_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_running(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_running_url(Self) -> String
-pub async fn MoonstatClient::proxy_set_auto_failover_enabled(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_set_auto_failover_enabled_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_set_default_cost_multiplier(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_set_default_cost_multiplier_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_set_global_url(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_set_global_url_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_set_pricing_model_source(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_set_pricing_model_source_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_set_takeover_status(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_set_takeover_status_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_start(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_start_url(Self) -> String
-pub async fn MoonstatClient::proxy_status(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_status_url(Self) -> String
-pub async fn MoonstatClient::proxy_stop(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_stop_url(Self) -> String
-pub async fn MoonstatClient::proxy_stop_with_restore(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_stop_with_restore_url(Self) -> String
-pub async fn MoonstatClient::proxy_switch_provider(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_switch_provider_url(Self, String, String) -> String
-pub async fn MoonstatClient::proxy_takeover_status(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_takeover_status_url(Self) -> String
-pub async fn MoonstatClient::proxy_test_url(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_test_url_url(Self, String) -> String
-pub async fn MoonstatClient::proxy_update_app_config(Self, String, enabled? : String?, auto_failover_enabled? : String?, max_retries? : String?, streaming_first_byte_timeout? : String?, streaming_idle_timeout? : String?, non_streaming_timeout? : String?, failure_threshold? : String?, success_threshold? : String?, timeout_seconds? : String?, error_rate_threshold? : String?, min_requests? : String?) -> Result[Json, String]
-pub fn MoonstatClient::proxy_update_app_config_url(Self, String, enabled? : String?, auto_failover_enabled? : String?, max_retries? : String?, streaming_first_byte_timeout? : String?, streaming_idle_timeout? : String?, non_streaming_timeout? : String?, failure_threshold? : String?, success_threshold? : String?, timeout_seconds? : String?, error_rate_threshold? : String?, min_requests? : String?) -> String
-pub async fn MoonstatClient::proxy_update_circuit_breaker_config(Self, String, String, String, String, String) -> Result[Json, String]
-pub fn MoonstatClient::proxy_update_circuit_breaker_config_url(Self, String, String, String, String, String) -> String
-pub async fn MoonstatClient::proxy_update_global_config(Self, proxy_enabled? : String?, listen_address? : String?, listen_port? : String?, enable_logging? : String?) -> Result[Json, String]
-pub fn MoonstatClient::proxy_update_global_config_url(Self, proxy_enabled? : String?, listen_address? : String?, listen_port? : String?, enable_logging? : String?) -> String
-pub async fn MoonstatClient::proxy_upstream_status(Self) -> Result[Json, String]
-pub fn MoonstatClient::proxy_upstream_status_url(Self) -> String
-pub async fn MoonstatClient::route_chat(Self, Json) -> Result[Json, String]
-pub fn MoonstatClient::route_chat_url(Self) -> String
-pub async fn MoonstatClient::route_messages(Self, Json) -> Result[Json, String]
-pub fn MoonstatClient::route_messages_url(Self) -> String
-pub async fn MoonstatClient::route_openclaw_chat(Self, Json) -> Result[Json, String]
-pub fn MoonstatClient::route_openclaw_chat_url(Self) -> String
-pub async fn MoonstatClient::route_response(Self, Json) -> Result[Json, String]
-pub async fn MoonstatClient::route_response_compact(Self, Json) -> Result[Json, String]
-pub fn MoonstatClient::route_response_compact_url(Self) -> String
-pub fn MoonstatClient::route_response_url(Self) -> String
-pub async fn MoonstatClient::stats(Self) -> Result[Json, String]
-pub fn MoonstatClient::stats_url(Self) -> String
-pub async fn MoonstatClient::status(Self) -> Result[Json, String]
-pub fn MoonstatClient::status_url(Self) -> String
-pub async fn MoonstatClient::usage_data_sources(Self) -> Result[Json, String]
-pub fn MoonstatClient::usage_data_sources_url(Self) -> String
-pub async fn MoonstatClient::usage_delete_model_pricing(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::usage_delete_model_pricing_url(Self, String) -> String
-pub async fn MoonstatClient::usage_logs(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
-pub fn MoonstatClient::usage_logs_url(Self, query? : MoonstatUsageQuery?) -> String
-pub async fn MoonstatClient::usage_model_pricing(Self) -> Result[Json, String]
-pub fn MoonstatClient::usage_model_pricing_url(Self) -> String
-pub async fn MoonstatClient::usage_model_stats(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
-pub fn MoonstatClient::usage_model_stats_url(Self, query? : MoonstatUsageQuery?) -> String
-pub async fn MoonstatClient::usage_provider_limits(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::usage_provider_limits_url(Self, String, String) -> String
-pub async fn MoonstatClient::usage_provider_stats(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
-pub fn MoonstatClient::usage_provider_stats_url(Self, query? : MoonstatUsageQuery?) -> String
-pub async fn MoonstatClient::usage_provider_usage(Self, String, String) -> Result[Json, String]
-pub fn MoonstatClient::usage_provider_usage_url(Self, String, String) -> String
-pub async fn MoonstatClient::usage_request_detail(Self, String) -> Result[Json, String]
-pub fn MoonstatClient::usage_request_detail_url(Self, String) -> String
-pub async fn MoonstatClient::usage_summary(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
-pub async fn MoonstatClient::usage_summary_by_app(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
-pub fn MoonstatClient::usage_summary_by_app_url(Self, query? : MoonstatUsageQuery?) -> String
-pub async fn MoonstatClient::usage_summary_typed(Self, query? : MoonstatUsageQuery?) -> Result[MoonstatUsageSummary, String]
-pub fn MoonstatClient::usage_summary_url(Self, query? : MoonstatUsageQuery?) -> String
-pub async fn MoonstatClient::usage_sync_session(Self, query? : MoonstatSessionSyncQuery?) -> Result[Json, String]
-pub fn MoonstatClient::usage_sync_session_url(Self, query? : MoonstatSessionSyncQuery?) -> String
-pub async fn MoonstatClient::usage_trends(Self, query? : MoonstatUsageQuery?) -> Result[Json, String]
-pub fn MoonstatClient::usage_trends_url(Self, query? : MoonstatUsageQuery?) -> String
-pub async fn MoonstatClient::usage_update_model_pricing(Self, ModelPricing) -> Result[Json, String]
-
-pub struct MoonstatModel {
-  id : String
-  owner : String?
-  context_window : Int?
-}
-pub fn MoonstatModel::from_json(Json) -> Result[Self, String]
-
-pub struct MoonstatSessionSyncQuery {
-  projects_dir : String?
-  codex_dir : String?
-  gemini_dir : String?
-  opencode_export_path : String?
-  opencode_db_path : String?
-}
-pub fn MoonstatSessionSyncQuery::empty() -> Self
-pub fn MoonstatSessionSyncQuery::new(projects_dir~ : String?, codex_dir~ : String?, gemini_dir~ : String?, opencode_export_path~ : String?, opencode_db_path~ : String?) -> Self
-
-pub struct MoonstatUsageQuery {
-  start_date : String?
-  end_date : String?
-  app_type : String?
-  provider_id : String?
-  provider_name : String?
-  model : String?
-  status_code : String?
-  page : Int?
-  page_size : Int?
-}
-pub fn MoonstatUsageQuery::empty() -> Self
-pub fn MoonstatUsageQuery::new(start_date~ : String?, end_date~ : String?, app_type~ : String?, provider_id~ : String?, provider_name~ : String?, model~ : String?, status_code~ : String?, page~ : Int?, page_size~ : Int?) -> Self
-
-pub struct MoonstatUsageSummary {
-  total_requests : Int
-  total_cost : String
-  total_input_tokens : Int64
-  total_output_tokens : Int64
-  total_cache_creation_tokens : Int64
-  total_cache_read_tokens : Int64
-  real_total_tokens : Int64
-  success_rate : Double
-  cache_hit_rate : Double
-}
-pub fn MoonstatUsageSummary::from_json(Json) -> Result[Self, String]
 
 pub struct TokenUsage {
   input_tokens : Int

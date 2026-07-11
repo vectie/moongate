@@ -231,7 +231,7 @@ test "model url target rejects invalid url" {
 }
 
 ///|
-test "model fetch error body truncates like moonstat" {
+test "model fetch error body truncates like moongate" {
   let body = "a".repeat(513)
   let truncated = truncate_model_fetch_error_body(body)
   assert_eq(truncated, "\{"a".repeat(512)}…")
@@ -257,7 +257,7 @@ test "parse provider models response sorts openai data" {
 }
 
 ///|
-test "provider models JSON uses moonstat frontend field names" {
+test "provider models JSON uses moongate frontend field names" {
   let models : Array[FetchedModel] = [
     { id: "gpt-test", owned_by: Some("openai") },
     { id: "local-test", owned_by: None },
@@ -269,7 +269,7 @@ test "provider models JSON uses moonstat frontend field names" {
 }
 
 ///|
-test "parse codex oauth models accepts moonstat response shapes" {
+test "parse codex oauth models accepts moongate response shapes" {
   assert_fetched_model_ids(
     parse_codex_oauth_models_response({
       "data": [
@@ -375,7 +375,7 @@ test "provider model fetch error body truncates long text" {
 }
 
 ///|
-test "model fetch headers reuse moonstat custom user agent validation" {
+test "model fetch headers reuse moongate custom user agent validation" {
   let valid = model_fetch_headers(
     "sk-test",
     Some("  claude-cli/2.1.161 \t Kimi  "),

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/httpx/status"
+package "vectie/moongate/internal/httpx/status"
 
 // Values
 pub const Accepted : Int = 202

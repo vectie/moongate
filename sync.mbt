@@ -1,6 +1,6 @@
 ///|
 fn moon_sync_default_remote_root() -> String {
-  "moonstat-sync"
+  "moongate-sync"
 }
 
 ///|
@@ -15,7 +15,7 @@ fn moon_sync_default_status_json() -> Json {
 
 ///|
 fn moon_sync_protocol_format() -> String {
-  "moonstat-webdav-sync"
+  "moongate-webdav-sync"
 }
 
 ///|
@@ -482,7 +482,7 @@ fn moon_sync_snapshot_id(
 
 ///|
 fn moon_sync_device_name() -> String {
-  let configured = @os.getenv("MOONSTAT_DEVICE_NAME") catch { _ => None }
+  let configured = @os.getenv("MOONGATE_DEVICE_NAME") catch { _ => None }
   match configured {
     Some(value) if !value.trim().is_empty() => value.trim().to_owned()
     _ => {
@@ -1418,7 +1418,7 @@ async fn ConfigService::moon_webdav_sync_upload_json(
   }
   let snapshot = self.moon_sync_build_local_snapshot(proxy, host~, port~)
   match
-    @fsx.with_temporary_directory("moonstat-webdav-upload-XXXXXX", async fn(
+    @fsx.with_temporary_directory("moongate-webdav-upload-XXXXXX", async fn(
       tmp_dir,
     ) {
       let db_path = @pathx.join(tmp_dir, moon_sync_remote_db_sql())
@@ -1514,7 +1514,7 @@ async fn ConfigService::moon_s3_sync_upload_json(
   }
   let mut etag : String? = None
   match
-    @fsx.with_temporary_directory("moonstat-s3-upload-XXXXXX", async fn(
+    @fsx.with_temporary_directory("moongate-s3-upload-XXXXXX", async fn(
       tmp_dir,
     ) {
       let db_path = @pathx.join(tmp_dir, moon_sync_remote_db_sql())
@@ -1659,7 +1659,7 @@ async fn moon_s3_fetch_manifest_snapshot(
     Err(error) => return Some(Err(error))
   }
   match
-    @fsx.with_temporary_directory("moonstat-s3-remote-info-XXXXXX", async fn(
+    @fsx.with_temporary_directory("moongate-s3-remote-info-XXXXXX", async fn(
       tmp_dir,
     ) {
       let manifest_path = @pathx.join(tmp_dir, moon_sync_remote_manifest())
@@ -1895,7 +1895,7 @@ async fn ConfigService::moon_webdav_sync_download_json(
   }
   let manifest_hash = moon_sync_sha256_hex(remote.manifest_bytes)
   match
-    @fsx.with_temporary_directory("moonstat-webdav-download-XXXXXX", async fn(
+    @fsx.with_temporary_directory("moongate-webdav-download-XXXXXX", async fn(
       tmp_dir,
     ) {
       let db_path = @pathx.join(tmp_dir, moon_sync_remote_db_sql())
@@ -1979,7 +1979,7 @@ async fn ConfigService::moon_s3_sync_download_json(
   }
   let manifest_hash = moon_sync_sha256_hex(remote.manifest_bytes)
   match
-    @fsx.with_temporary_directory("moonstat-s3-download-XXXXXX", async fn(
+    @fsx.with_temporary_directory("moongate-s3-download-XXXXXX", async fn(
       tmp_dir,
     ) {
       let db_path = @pathx.join(tmp_dir, moon_sync_remote_db_sql())

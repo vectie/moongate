@@ -7,11 +7,11 @@ import {
   "moonbitlang/core/encoding/utf8" @encoding/utf8,
   "moonbitlang/core/json",
   "moonbitlang/core/test",
-  "vectie/moonstat/clock",
+  "vectie/moongate/clock",
 }
 
 import {
-  "vectie/moonstat/internal/mock",
+  "vectie/moongate/internal/mock",
 } for "test"
 
 options(

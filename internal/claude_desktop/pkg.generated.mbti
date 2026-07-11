@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/claude_desktop"
+package "vectie/moongate/internal/claude_desktop"
 
 // Values
 pub async fn gateway_token() -> String?

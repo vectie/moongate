@@ -1,5 +1,5 @@
 ///|
-test "moonstat openai chat streaming injects include usage" {
+test "moongate openai chat streaming injects include usage" {
   let body = Json::object({
     "model": Json::string("moonshotai/kimi-k2"),
     "messages": Json::array([
@@ -21,7 +21,7 @@ test "moonstat openai chat streaming injects include usage" {
 }
 
 ///|
-test "moonstat openai chat non streaming omits stream options" {
+test "moongate openai chat non streaming omits stream options" {
   let body = Json::object({
     "model": Json::string("moonshotai/kimi-k2"),
     "messages": Json::array([
@@ -38,7 +38,7 @@ test "moonstat openai chat non streaming omits stream options" {
 }
 
 ///|
-test "moonstat responses transform uses session cache key" {
+test "moongate responses transform uses session cache key" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -61,7 +61,7 @@ test "moonstat responses transform uses session cache key" {
 }
 
 ///|
-test "moonstat transform strips leading anthropic billing header like moonstat" {
+test "moongate transform strips leading anthropic billing header like moongate" {
   assert_eq(
     strip_leading_anthropic_billing_header(
       "x-anthropic-billing-header: cc_version=2.1; cch=a;\r\n\r\n  You are terse.  ",
@@ -89,7 +89,7 @@ test "moonstat transform strips leading anthropic billing header like moonstat" 
 }
 
 ///|
-test "moonstat responses output config max maps to reasoning xhigh" {
+test "moongate responses output config max maps to reasoning xhigh" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -112,7 +112,7 @@ test "moonstat responses output config max maps to reasoning xhigh" {
 }
 
 ///|
-test "moonstat responses output config takes priority over thinking" {
+test "moongate responses output config takes priority over thinking" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -135,7 +135,7 @@ test "moonstat responses output config takes priority over thinking" {
 }
 
 ///|
-test "moonstat responses thinking budget maps to reasoning effort" {
+test "moongate responses thinking budget maps to reasoning effort" {
   let low = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([]),
@@ -187,7 +187,7 @@ test "moonstat responses thinking budget maps to reasoning effort" {
 }
 
 ///|
-test "moonstat responses thinking adaptive skips non reasoning models" {
+test "moongate responses thinking adaptive skips non reasoning models" {
   let reasoning_body = Json::object({
     "model": Json::string("o3-mini"),
     "messages": Json::array([]),
@@ -216,7 +216,7 @@ test "moonstat responses thinking adaptive skips non reasoning models" {
 }
 
 ///|
-test "moonstat codex oauth responses constraints match moonstat" {
+test "moongate codex oauth responses constraints match moongate" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -253,7 +253,7 @@ test "moonstat codex oauth responses constraints match moonstat" {
 }
 
 ///|
-test "moonstat codex oauth responses defaults fast mode off" {
+test "moongate codex oauth responses defaults fast mode off" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -275,7 +275,7 @@ test "moonstat codex oauth responses defaults fast mode off" {
 }
 
 ///|
-test "moonstat transform maps anthropic tool choice" {
+test "moongate transform maps anthropic tool choice" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([]),
@@ -296,7 +296,7 @@ test "moonstat transform maps anthropic tool choice" {
 }
 
 ///|
-test "moonstat openai chat transform canonicalizes tool arguments" {
+test "moongate openai chat transform canonicalizes tool arguments" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -329,7 +329,7 @@ test "moonstat openai chat transform canonicalizes tool arguments" {
 }
 
 ///|
-test "moonstat responses transform canonicalizes tool arguments" {
+test "moongate responses transform canonicalizes tool arguments" {
   let body = Json::object({
     "model": Json::string("gpt-5.4"),
     "messages": Json::array([
@@ -359,7 +359,7 @@ test "moonstat responses transform canonicalizes tool arguments" {
 }
 
 ///|
-test "moonstat gemini native transform maps anthropic request" {
+test "moongate gemini native transform maps anthropic request" {
   let body = Json::object({
     "model": Json::string("claude-sonnet-4-6"),
     "system": Json::string("You are terse."),
@@ -485,7 +485,7 @@ test "moonstat gemini native transform maps anthropic request" {
 }
 
 ///|
-test "moonstat gemini native transform resolves tool result names" {
+test "moongate gemini native transform resolves tool result names" {
   let body = Json::object({
     "model": Json::string("claude-sonnet-4-6"),
     "messages": Json::array([
@@ -534,7 +534,7 @@ test "moonstat gemini native transform resolves tool result names" {
 }
 
 ///|
-test "moonstat gemini native transform strips synthesized tool ids" {
+test "moongate gemini native transform strips synthesized tool ids" {
   let synth = "gemini_synth_0"
   let body = Json::object({
     "messages": Json::array([
@@ -595,7 +595,7 @@ test "moonstat gemini native transform strips synthesized tool ids" {
 }
 
 ///|
-test "moonstat gemini native shadow replay preserves thought signature by id" {
+test "moongate gemini native shadow replay preserves thought signature by id" {
   let shadow_turns = [
     {
       assistant_content: Json::object({
@@ -680,7 +680,7 @@ test "moonstat gemini native shadow replay preserves thought signature by id" {
 }
 
 ///|
-test "moonstat gemini native shadow replay prefers exact id over name collision" {
+test "moongate gemini native shadow replay prefers exact id over name collision" {
   let shadow_turns = [
     {
       assistant_content: Json::object({
@@ -789,7 +789,7 @@ test "moonstat gemini native shadow replay prefers exact id over name collision"
 }
 
 ///|
-test "moonstat gemini native shadow store records synthetic ids and replays without leaking them" {
+test "moongate gemini native shadow store records synthetic ids and replays without leaking them" {
   let store = GeminiShadowStore::with_limits(8, 4)
   store.record_gemini_response(
     "provider-a",

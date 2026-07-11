@@ -11,7 +11,7 @@
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_net_tcp_localhost_port_open(int32_t port, int32_t timeout_ms) {
+moonbit_moongate_net_tcp_localhost_port_open(int32_t port, int32_t timeout_ms) {
   if (port <= 0 || port > 65535) {
     return 0;
   }

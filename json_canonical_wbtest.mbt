@@ -1,5 +1,5 @@
 ///|
-test "moonstat short value hash uses canonical json sha256 prefix" {
+test "moongate short value hash uses canonical json sha256 prefix" {
   let left = @json.parse(
     (
       #|{
@@ -15,7 +15,7 @@ test "moonstat short value hash uses canonical json sha256 prefix" {
 }
 
 ///|
-test "moonstat prompt cache trace message mirrors forwarder diagnostic" {
+test "moongate prompt cache trace message mirrors forwarder diagnostic" {
   let body = @json.parse(
     (
       #|{

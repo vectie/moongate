@@ -1,5 +1,5 @@
 ///|
-fn moonstat_default_provider_router() -> ProviderRouter {
+fn moongate_default_provider_router() -> ProviderRouter {
   let router = ProviderRouter::new()
   let claude_model_mapping = moon_model_mapping_from_env()
   let mut claude_current_provider = "codex-oauth"
@@ -199,8 +199,8 @@ fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
 ///|
 fn provider_selection_error_code(error : ProviderSelectionError) -> String {
   match error {
-    NoProvidersConfigured => "moonstat_no_providers_configured"
-    AllProvidersCircuitOpen => "moonstat_all_providers_circuit_open"
+    NoProvidersConfigured => "moongate_no_providers_configured"
+    AllProvidersCircuitOpen => "moongate_all_providers_circuit_open"
   }
 }
 
@@ -701,30 +701,30 @@ fn provider_base_is_full_endpoint(base_url : String) -> Bool {
 
 ///|
 fn codex_provider_from_env() -> ProviderRouteTarget? {
-  guard env_first_non_empty(["MOONSTAT_CODEX_BASE_URL"]) is Some(base_url) else {
+  guard env_first_non_empty(["MOONGATE_CODEX_BASE_URL"]) is Some(base_url) else {
     return None
   }
-  guard env_first_non_empty(["MOONSTAT_CODEX_API_KEY"]) is Some(api_key) else {
+  guard env_first_non_empty(["MOONGATE_CODEX_API_KEY"]) is Some(api_key) else {
     return None
   }
   Some(
     ProviderRouteTarget::new(
       app_type="codex",
-      provider_id=env_first_non_empty(["MOONSTAT_CODEX_PROVIDER_ID"]).unwrap_or(
+      provider_id=env_first_non_empty(["MOONGATE_CODEX_PROVIDER_ID"]).unwrap_or(
         "codex-compatible",
       ),
-      provider_name=env_first_non_empty(["MOONSTAT_CODEX_PROVIDER_NAME"]).unwrap_or(
+      provider_name=env_first_non_empty(["MOONGATE_CODEX_PROVIDER_NAME"]).unwrap_or(
         "Codex Compatible",
       ),
       provider_type=Some(
-        env_first_non_empty(["MOONSTAT_CODEX_PROVIDER_TYPE"]).unwrap_or("codex"),
+        env_first_non_empty(["MOONGATE_CODEX_PROVIDER_TYPE"]).unwrap_or("codex"),
       ),
       base_url=Some(base_url),
       api_key=Some(api_key),
-      api_format=env_first_non_empty(["MOONSTAT_CODEX_API_FORMAT"]),
+      api_format=env_first_non_empty(["MOONGATE_CODEX_API_FORMAT"]),
       is_full_url=codex_base_is_full_url(),
       settings_config=provider_settings_config_from_env(
-        "MOONSTAT_CODEX_SETTINGS_CONFIG",
+        "MOONGATE_CODEX_SETTINGS_CONFIG",
       ),
     ),
   )
@@ -732,10 +732,10 @@ fn codex_provider_from_env() -> ProviderRouteTarget? {
 
 ///|
 fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
-  guard env_first_non_empty(["MOONSTAT_CLAUDE_BASE_URL"]) is Some(base_url) else {
+  guard env_first_non_empty(["MOONGATE_CLAUDE_BASE_URL"]) is Some(base_url) else {
     return None
   }
-  guard env_first_non_empty(["MOONSTAT_CLAUDE_API_KEY"]) is Some(api_key) else {
+  guard env_first_non_empty(["MOONGATE_CLAUDE_API_KEY"]) is Some(api_key) else {
     return None
   }
   let provider_id_prefix = if app_type == "claude-desktop" {
@@ -746,30 +746,30 @@ fn claude_provider_from_env(app_type : String) -> ProviderRouteTarget? {
   Some(
     ProviderRouteTarget::new(
       app_type~,
-      provider_id=env_first_non_empty(["MOONSTAT_CLAUDE_PROVIDER_ID"]).unwrap_or(
+      provider_id=env_first_non_empty(["MOONGATE_CLAUDE_PROVIDER_ID"]).unwrap_or(
         "\{provider_id_prefix}-compatible",
       ),
-      provider_name=env_first_non_empty(["MOONSTAT_CLAUDE_PROVIDER_NAME"]).unwrap_or(
+      provider_name=env_first_non_empty(["MOONGATE_CLAUDE_PROVIDER_NAME"]).unwrap_or(
         "Claude Compatible",
       ),
       provider_type=Some(
-        env_first_non_empty(["MOONSTAT_CLAUDE_PROVIDER_TYPE"]).unwrap_or(
+        env_first_non_empty(["MOONGATE_CLAUDE_PROVIDER_TYPE"]).unwrap_or(
           "anthropic",
         ),
       ),
       api_format=Some(
-        env_first_non_empty(["MOONSTAT_CLAUDE_API_FORMAT"]).unwrap_or(
+        env_first_non_empty(["MOONGATE_CLAUDE_API_FORMAT"]).unwrap_or(
           "anthropic",
         ),
       ),
-      prompt_cache_key=env_first_non_empty(["MOONSTAT_CLAUDE_PROMPT_CACHE_KEY"]),
-      codex_fast_mode=env_bool("MOONSTAT_CODEX_FAST_MODE"),
+      prompt_cache_key=env_first_non_empty(["MOONGATE_CLAUDE_PROMPT_CACHE_KEY"]),
+      codex_fast_mode=env_bool("MOONGATE_CODEX_FAST_MODE"),
       base_url=Some(base_url),
       api_key=Some(api_key),
       is_full_url=claude_base_is_full_url(),
       model_mapping=moon_model_mapping_from_env(),
       settings_config=provider_settings_config_from_env(
-        "MOONSTAT_CLAUDE_SETTINGS_CONFIG",
+        "MOONGATE_CLAUDE_SETTINGS_CONFIG",
       ),
     ),
   )

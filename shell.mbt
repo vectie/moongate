@@ -1,14 +1,14 @@
 ///|
-const MOONSTAT_UPDATE_URL = "https://github.com/vectie/moonstat/releases/latest"
+const MOONGATE_UPDATE_URL = "https://github.com/vectie/moongate/releases/latest"
 
 ///|
-const MOONSTAT_TOOL_VERSION_TIMEOUT_MS = 3000
+const MOONGATE_TOOL_VERSION_TIMEOUT_MS = 3000
 
 ///|
-const MOONSTAT_TOOL_LIFECYCLE_TIMEOUT_MS = 600000
+const MOONGATE_TOOL_LIFECYCLE_TIMEOUT_MS = 600000
 
 ///|
-const MOONSTAT_TOOL_PROBE_TIMEOUT_MS = 5000
+const MOONGATE_TOOL_PROBE_TIMEOUT_MS = 5000
 
 ///|
 priv enum MoonToolLifecycleAction {
@@ -100,7 +100,7 @@ fn moon_tool_lifecycle_action(value : String) -> MoonToolLifecycleAction? {
 
 ///|
 fn moon_update_url() -> String {
-  MOONSTAT_UPDATE_URL
+  MOONGATE_UPDATE_URL
 }
 
 ///|
@@ -131,7 +131,7 @@ async fn moon_single_tool_version_json(tool : String) -> Json {
   let result = @spawn.spawn(
     tool,
     ["--version"],
-    timeout=MOONSTAT_TOOL_VERSION_TIMEOUT_MS,
+    timeout=MOONGATE_TOOL_VERSION_TIMEOUT_MS,
   ) catch {
     err =>
       return moon_tool_version_json(
@@ -181,7 +181,7 @@ async fn moon_run_tool_lifecycle_action_json(
   let result = @spawn.spawn(
     "bash",
     ["-lc", command],
-    timeout=MOONSTAT_TOOL_LIFECYCLE_TIMEOUT_MS,
+    timeout=MOONGATE_TOOL_LIFECYCLE_TIMEOUT_MS,
   ) catch {
     err => return Err("启动安装进程失败: \{err}")
   }
@@ -308,7 +308,7 @@ async fn moon_command_path(tool : String) -> String? {
   let result = @spawn.spawn(
     "bash",
     ["-lc", "command -v \{moon_shell_single_quote(tool)}"],
-    timeout=MOONSTAT_TOOL_PROBE_TIMEOUT_MS,
+    timeout=MOONGATE_TOOL_PROBE_TIMEOUT_MS,
   ) catch {
     _ => return None
   }
@@ -323,7 +323,7 @@ async fn moon_probe_tool_version_at(path : String) -> String? {
   let result = @spawn.spawn(
     path,
     ["--version"],
-    timeout=MOONSTAT_TOOL_PROBE_TIMEOUT_MS,
+    timeout=MOONGATE_TOOL_PROBE_TIMEOUT_MS,
   ) catch {
     _ => return None
   }

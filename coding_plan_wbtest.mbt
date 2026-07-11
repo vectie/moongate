@@ -1,5 +1,5 @@
 ///|
-test "moonstat coding plan detects supported providers" {
+test "moongate coding plan detects supported providers" {
   assert_true(
     moon_detect_coding_plan_provider("https://api.kimi.com/coding/v1")
     is Some(Kimi),
@@ -28,7 +28,7 @@ test "moonstat coding plan detects supported providers" {
 }
 
 ///|
-test "moonstat coding plan parses kimi five hour and weekly tiers" {
+test "moongate coding plan parses kimi five hour and weekly tiers" {
   guard moon_parse_kimi_coding_plan(
       {
         "limits": Json::array([
@@ -61,7 +61,7 @@ test "moonstat coding plan parses kimi five hour and weekly tiers" {
 }
 
 ///|
-test "moonstat coding plan parses zhipu token windows by unit" {
+test "moongate coding plan parses zhipu token windows by unit" {
   let tiers = moon_parse_zhipu_token_tiers(
     {
       "limits": Json::array([
@@ -91,7 +91,7 @@ test "moonstat coding plan parses zhipu token windows by unit" {
 }
 
 ///|
-test "moonstat zhipu team quota request matches CCS contract" {
+test "moongate zhipu team quota request matches CCS contract" {
   let request = moon_zhipu_team_quota_request(
     "team-key", "org-123", "project-456",
   )
@@ -106,7 +106,7 @@ test "moonstat zhipu team quota request matches CCS contract" {
 }
 
 ///|
-async test "moonstat zhipu team quota rejects incomplete credentials before network" {
+async test "moongate zhipu team quota rejects incomplete credentials before network" {
   for
     credentials in [
       ("team-key", Some("org-123"), None),
@@ -131,7 +131,7 @@ async test "moonstat zhipu team quota rejects incomplete credentials before netw
 }
 
 ///|
-test "moonstat coding plan parses minimax general model only" {
+test "moongate coding plan parses minimax general model only" {
   let tiers = moon_parse_minimax_tiers(
     {
       "model_remains": Json::array([
@@ -158,7 +158,7 @@ test "moonstat coding plan parses minimax general model only" {
 }
 
 ///|
-test "moonstat coding plan parses zenmux value tiers and plan message" {
+test "moongate coding plan parses zenmux value tiers and plan message" {
   guard moon_parse_zenmux_coding_plan(
       {
         "success": Json::boolean(true),

@@ -1,8 +1,8 @@
 ///|
-const MOONSTAT_SKILLS_STATE_FILE = "skills_state.json"
+const MOONGATE_SKILLS_STATE_FILE = "skills_state.json"
 
 ///|
-const MOONSTAT_SKILLS_BACKUP_RETAIN_COUNT = 20
+const MOONGATE_SKILLS_BACKUP_RETAIN_COUNT = 20
 
 ///|
 fn moon_skill_supported_apps() -> Array[String] {
@@ -11,7 +11,7 @@ fn moon_skill_supported_apps() -> Array[String] {
 
 ///|
 fn moon_skill_state_path() -> String {
-  @pathx.join(moon_app_config_dir(), MOONSTAT_SKILLS_STATE_FILE)
+  @pathx.join(moon_app_config_dir(), MOONGATE_SKILLS_STATE_FILE)
 }
 
 ///|
@@ -582,7 +582,7 @@ fn moon_skill_prepend_backup(existing : Json?, entry : Json) -> Json {
   match existing {
     Some(Array(items)) =>
       for item in items {
-        if backups.length() < MOONSTAT_SKILLS_BACKUP_RETAIN_COUNT {
+        if backups.length() < MOONGATE_SKILLS_BACKUP_RETAIN_COUNT {
           backups.push(item)
         }
       }
@@ -673,7 +673,7 @@ async fn moon_update_skill_json(
 async fn moon_migrate_skill_storage_json(
   target : String,
   state_path? : String = moon_skill_state_path(),
-  moonstat_dir? : String = moon_moonstat_skills_dir(),
+  moongate_dir? : String = moon_moongate_skills_dir(),
   unified_dir? : String = moon_unified_skills_dir(),
 ) -> Json {
   guard moon_normalize_skill_storage_location(target) is Some(target_location) else {
@@ -694,10 +694,10 @@ async fn moon_migrate_skill_storage_json(
     return moon_skill_migration_result_json(0, 0, [])
   }
   let source_dir = moon_skill_storage_dir(
-    current_location, moonstat_dir, unified_dir,
+    current_location, moongate_dir, unified_dir,
   )
   let dest_dir = moon_skill_storage_dir(
-    target_location, moonstat_dir, unified_dir,
+    target_location, moongate_dir, unified_dir,
   )
   moon_skill_make_directory(dest_dir) catch {
     err =>
@@ -757,14 +757,14 @@ async fn moon_migrate_skill_storage_json(
 ///|
 fn moon_normalize_skill_storage_location(value : String) -> String? {
   match value.trim().to_owned().to_lower() {
-    "moonstat" | "suite" | "local" => Some("moonstat")
+    "moongate" | "suite" | "local" => Some("moongate")
     "unified" => Some("unified")
     _ => None
   }
 }
 
 ///|
-fn moon_moonstat_skills_dir() -> String {
+fn moon_moongate_skills_dir() -> String {
   @pathx.join(moon_app_config_dir(), "skills")
 }
 
@@ -776,13 +776,13 @@ fn moon_unified_skills_dir() -> String {
 ///|
 fn moon_skill_storage_dir(
   location : String,
-  moonstat_dir : String,
+  moongate_dir : String,
   unified_dir : String,
 ) -> String {
   if location == "unified" {
     unified_dir
   } else {
-    moonstat_dir
+    moongate_dir
   }
 }
 
@@ -1042,7 +1042,7 @@ async fn moon_install_skills_from_zip_json(
   file_path : String,
   current_app : String,
   state_path? : String = moon_skill_state_path(),
-  moonstat_dir? : String = moon_moonstat_skills_dir(),
+  moongate_dir? : String = moon_moongate_skills_dir(),
   unified_dir? : String = moon_unified_skills_dir(),
   app_dir? : String = moon_app_skills_dir(current_app),
 ) -> Json {
@@ -1054,14 +1054,14 @@ async fn moon_install_skills_from_zip_json(
       file_path,
       current_app,
       state_path~,
-      moonstat_dir~,
+      moongate_dir~,
       unified_dir~,
       app_dir~,
       source_name=@pathx.basename(file_path).to_owned(),
     )
   }
 
-  @fsx.with_temporary_directory("moonstat-skills-zip-XXXXXX", async fn(tmpdir) {
+  @fsx.with_temporary_directory("moongate-skills-zip-XXXXXX", async fn(tmpdir) {
     if !moon_extract_local_zip(file_path, tmpdir) {
       return Json::array([])
     }
@@ -1069,7 +1069,7 @@ async fn moon_install_skills_from_zip_json(
       tmpdir,
       current_app,
       state_path~,
-      moonstat_dir~,
+      moongate_dir~,
       unified_dir~,
       app_dir~,
       source_name=@pathx.basename(file_path).to_owned(),
@@ -1082,7 +1082,7 @@ async fn moon_install_skills_from_extracted_dir_json(
   root_dir : String,
   current_app : String,
   state_path? : String = moon_skill_state_path(),
-  moonstat_dir? : String = moon_moonstat_skills_dir(),
+  moongate_dir? : String = moon_moongate_skills_dir(),
   unified_dir? : String = moon_unified_skills_dir(),
   app_dir? : String = moon_app_skills_dir(current_app),
   source_name? : String = @pathx.basename(root_dir).to_owned(),
@@ -1095,7 +1095,7 @@ async fn moon_install_skills_from_extracted_dir_json(
   guard state is Object(state_obj) else { return Json::array([]) }
   let storage_dir = moon_skill_storage_dir_for_state(
     Json::object(state_obj),
-    moonstat_dir,
+    moongate_dir,
     unified_dir,
   )
   let existing : Array[Json] = match state_obj.get("installed") {
@@ -1249,14 +1249,14 @@ fn moon_installed_skill_directory_exists(
 ///|
 fn moon_skill_storage_dir_for_state(
   state : Json,
-  moonstat_dir : String,
+  moongate_dir : String,
   unified_dir : String,
 ) -> String {
   guard state is Object(obj) else { return unified_dir }
   let location = moon_normalize_skill_storage_location(
     store_json_string_or_default(obj, "skillStorageLocation", "unified"),
   ).unwrap_or("unified")
-  moon_skill_storage_dir(location, moonstat_dir, unified_dir)
+  moon_skill_storage_dir(location, moongate_dir, unified_dir)
 }
 
 ///|

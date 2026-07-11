@@ -1,28 +1,28 @@
 ///|
-async fn MoonstatClient::get_json_path(
-  self : MoonstatClient,
+async fn MoonGateClient::get_json_path(
+  self : MoonGateClient,
   path : String,
 ) -> Result[Json, String] {
   match self.get_text_path(path) {
     Ok(body) =>
       Ok(@json.parse(body)) catch {
-        err => Err("Invalid JSON from moonstat: \{err}")
+        err => Err("Invalid JSON from moongate: \{err}")
       }
     Err(err) => Err(err)
   }
 }
 
 ///|
-pub async fn MoonstatClient::get_json(
-  self : MoonstatClient,
+pub async fn MoonGateClient::get_json(
+  self : MoonGateClient,
   path : String,
 ) -> Result[Json, String] {
   self.get_json_path(path)
 }
 
 ///|
-async fn MoonstatClient::post_json_path(
-  self : MoonstatClient,
+async fn MoonGateClient::post_json_path(
+  self : MoonGateClient,
   path : String,
   request : Json,
 ) -> Result[Json, String] {
@@ -30,15 +30,15 @@ async fn MoonstatClient::post_json_path(
   match self.request_text_path("POST", path, Some(body)) {
     Ok(body) =>
       Ok(@json.parse(body)) catch {
-        err => Err("Invalid JSON from moonstat: \{err}")
+        err => Err("Invalid JSON from moongate: \{err}")
       }
     Err(err) => Err(err)
   }
 }
 
 ///|
-pub async fn MoonstatClient::post_json(
-  self : MoonstatClient,
+pub async fn MoonGateClient::post_json(
+  self : MoonGateClient,
   path : String,
   request : Json,
 ) -> Result[Json, String] {
@@ -46,38 +46,38 @@ pub async fn MoonstatClient::post_json(
 }
 
 ///|
-async fn MoonstatClient::delete_json_path(
-  self : MoonstatClient,
+async fn MoonGateClient::delete_json_path(
+  self : MoonGateClient,
   path : String,
 ) -> Result[Json, String] {
   match self.request_text_path("DELETE", path, None) {
     Ok(body) =>
       Ok(@json.parse(body)) catch {
-        err => Err("Invalid JSON from moonstat: \{err}")
+        err => Err("Invalid JSON from moongate: \{err}")
       }
     Err(err) => Err(err)
   }
 }
 
 ///|
-pub async fn MoonstatClient::delete_json(
-  self : MoonstatClient,
+pub async fn MoonGateClient::delete_json(
+  self : MoonGateClient,
   path : String,
 ) -> Result[Json, String] {
   self.delete_json_path(path)
 }
 
 ///|
-async fn MoonstatClient::get_text_path(
-  self : MoonstatClient,
+async fn MoonGateClient::get_text_path(
+  self : MoonGateClient,
   path : String,
 ) -> Result[String, String] {
   self.request_text_path("GET", path, None)
 }
 
 ///|
-async fn MoonstatClient::request_text_path(
-  self : MoonstatClient,
+async fn MoonGateClient::request_text_path(
+  self : MoonGateClient,
   http_method : String,
   path : String,
   body : String?,
@@ -105,7 +105,7 @@ async fn MoonstatClient::request_text_path(
       client..request(Delete, target.path).end_request() catch {
         err => return Err("Network error: \{err}")
       }
-    _ => return Err("Unsupported moonstat client method: \{http_method}")
+    _ => return Err("Unsupported moongate client method: \{http_method}")
   }
   let response_body = client.read_all().text()
   if response.code is (200..=299) {
@@ -118,8 +118,8 @@ async fn MoonstatClient::request_text_path(
 }
 
 ///|
-fn MoonstatClient::headers(
-  self : MoonstatClient,
+fn MoonGateClient::headers(
+  self : MoonGateClient,
   http_method : String,
   resolved_control_token? : String? = None,
 ) -> Map[String, String] {
@@ -136,7 +136,7 @@ fn MoonstatClient::headers(
   }
   match resolved_control_token {
     Some(token) if !token.trim().is_empty() =>
-      headers[MOONSTAT_CONTROL_TOKEN_HEADER] = token.trim().to_owned()
+      headers[MOONGATE_CONTROL_TOKEN_HEADER] = token.trim().to_owned()
     _ => ()
   }
   if http_method == "POST" {
@@ -146,21 +146,21 @@ fn MoonstatClient::headers(
 }
 
 ///|
-async fn MoonstatClient::resolved_control_token(
-  self : MoonstatClient,
+async fn MoonGateClient::resolved_control_token(
+  self : MoonGateClient,
 ) -> String? {
   match self.control_token {
     Some(token) if !token.trim().is_empty() => return Some(token)
     _ => ()
   }
-  let configured_token = @os.getenv("MOONSTAT_CONTROL_TOKEN") catch {
+  let configured_token = @os.getenv("MOONGATE_CONTROL_TOKEN") catch {
     _ => None
   }
   match configured_token {
     Some(token) if !token.trim().is_empty() => return Some(token)
     _ => ()
   }
-  let content = @fsx.read_file(default_moonstat_control_token_path()) catch {
+  let content = @fsx.read_file(default_moongate_control_token_path()) catch {
     _ => return None
   }
   let token = content.trim().to_owned()

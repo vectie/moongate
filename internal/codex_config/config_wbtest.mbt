@@ -1,6 +1,6 @@
 ///|
-async test "codex config install writes moonstat-style local provider block" {
-  @fsx.with_temporary_directory("moonstat-codex-config-XXXXXX", tmpdir => {
+async test "codex config install writes moongate-style local provider block" {
+  @fsx.with_temporary_directory("moongate-codex-config-XXXXXX", tmpdir => {
     let result = install_proxy_config_at(tmpdir, "0.0.0.0", 15721, "gpt-5")
     guard result is Ok(installed) else {
       fail("expected codex config install to succeed")
@@ -9,23 +9,23 @@ async test "codex config install writes moonstat-style local provider block" {
     assert_eq(installed.model, "gpt-5")
     assert_eq(
       installed.model_catalog_path,
-      @pathx.join(@pathx.join(tmpdir, ".codex"), "moonstat-model-catalog.json"),
+      @pathx.join(@pathx.join(tmpdir, ".codex"), "moongate-model-catalog.json"),
     )
     let content = @fsx.read_file(installed.config_path)
     inspect(
       content,
       content=(
-        #|# >>> moonstat managed codex proxy
+        #|# >>> moongate managed codex proxy
         #|model = "gpt-5"
-        #|model_provider = "moonstat"
-        #|model_catalog_json = "moonstat-model-catalog.json"
+        #|model_provider = "moongate"
+        #|model_catalog_json = "moongate-model-catalog.json"
         #|
-        #|[model_providers.moonstat]
+        #|[model_providers.moongate]
         #|name = "MoonGate"
         #|base_url = "http://127.0.0.1:15721/v1"
         #|wire_api = "responses"
-        #|experimental_bearer_token = "moonstat-local-proxy"
-        #|# <<< moonstat managed codex proxy
+        #|experimental_bearer_token = "moongate-local-proxy"
+        #|# <<< moongate managed codex proxy
         #|
       ),
     )
@@ -42,7 +42,7 @@ async test "codex config install writes moonstat-style local provider block" {
 
 ///|
 async test "codex config reinstall replaces only managed block" {
-  @fsx.with_temporary_directory("moonstat-codex-reinstall-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-codex-reinstall-XXXXXX", tmpdir => {
     let config_dir = @pathx.join(tmpdir, ".codex")
     @fsx.make_directory(config_dir, recursive=true, exists_ok=true)
     let path = @pathx.join(config_dir, "config.toml")
@@ -51,10 +51,10 @@ async test "codex config reinstall replaces only managed block" {
       (
         #|approval_policy = "on-request"
         #|
-        #|# >>> moonstat managed codex proxy
+        #|# >>> moongate managed codex proxy
         #|model = "old"
-        #|model_provider = "moonstat"
-        #|# <<< moonstat managed codex proxy
+        #|model_provider = "moongate"
+        #|# <<< moongate managed codex proxy
         #|
         #|[mcp_servers.fetch]
         #|command = "uvx"
@@ -76,17 +76,17 @@ async test "codex config reinstall replaces only managed block" {
         #|[mcp_servers.fetch]
         #|command = "uvx"
         #|
-        #|# >>> moonstat managed codex proxy
+        #|# >>> moongate managed codex proxy
         #|model = "gpt-5"
-        #|model_provider = "moonstat"
-        #|model_catalog_json = "moonstat-model-catalog.json"
+        #|model_provider = "moongate"
+        #|model_catalog_json = "moongate-model-catalog.json"
         #|
-        #|[model_providers.moonstat]
+        #|[model_providers.moongate]
         #|name = "MoonGate"
         #|base_url = "http://127.0.0.1:17890/v1"
         #|wire_api = "responses"
-        #|experimental_bearer_token = "moonstat-local-proxy"
-        #|# <<< moonstat managed codex proxy
+        #|experimental_bearer_token = "moongate-local-proxy"
+        #|# <<< moongate managed codex proxy
         #|
       ),
     )
@@ -95,7 +95,7 @@ async test "codex config reinstall replaces only managed block" {
 
 ///|
 async test "codex config uninstall preserves user config" {
-  @fsx.with_temporary_directory("moonstat-codex-uninstall-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-codex-uninstall-XXXXXX", tmpdir => {
     let result = install_proxy_config_at(tmpdir, "127.0.0.1", 15721, "gpt-5")
     guard result is Ok(installed) else {
       fail("expected codex config install to succeed")
@@ -126,7 +126,7 @@ async test "codex config uninstall preserves user config" {
 
 ///|
 async test "codex config status reports managed values" {
-  @fsx.with_temporary_directory("moonstat-codex-status-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-codex-status-XXXXXX", tmpdir => {
     ignore(install_proxy_config_at(tmpdir, "127.0.0.1", 15721, "gpt-5"))
     let status = status_at(tmpdir)
     assert_true(status.configured)
@@ -134,14 +134,14 @@ async test "codex config status reports managed values" {
     assert_true(status.model is Some("gpt-5"))
     assert_eq(
       status.model_catalog_path,
-      @pathx.join(@pathx.join(tmpdir, ".codex"), "moonstat-model-catalog.json"),
+      @pathx.join(@pathx.join(tmpdir, ".codex"), "moongate-model-catalog.json"),
     )
   })
 }
 
 ///|
-async test "codex config active catalog follows moonstat stale guard" {
-  @fsx.with_temporary_directory("moonstat-codex-catalog-XXXXXX", tmpdir => {
+async test "codex config active catalog follows moongate stale guard" {
+  @fsx.with_temporary_directory("moongate-codex-catalog-XXXXXX", tmpdir => {
     assert_true(active_model_catalog_json_at(tmpdir) is None)
     let result = install_proxy_config_at(tmpdir, "127.0.0.1", 15721, "gpt-5.1")
     guard result is Ok(installed) else {
@@ -156,7 +156,7 @@ async test "codex config active catalog follows moonstat stale guard" {
     @fsx.write_to_file(
       installed.config_path,
       @fsx.read_file(installed.config_path).replace(
-        old="model_catalog_json = \"moonstat-model-catalog.json\"",
+        old="model_catalog_json = \"moongate-model-catalog.json\"",
         new="model_catalog_json = \"custom-model-catalog.json\"",
       ),
     )
@@ -165,7 +165,7 @@ async test "codex config active catalog follows moonstat stale guard" {
 }
 
 ///|
-test "codex model catalog uses moonstat modelCatalog models and context" {
+test "codex model catalog uses moongate modelCatalog models and context" {
   let catalog = codex_model_catalog_json_from_settings(
     {
       "modelCatalog": {
@@ -205,7 +205,7 @@ test "codex model catalog uses moonstat modelCatalog models and context" {
 }
 
 ///|
-test "codex model catalog falls back to standalone model without moonstat catalog" {
+test "codex model catalog falls back to standalone model without moongate catalog" {
   let catalog = codex_model_catalog_json_from_settings(
     { "modelCatalog": { "models": [] } },
     "model_context_window = 64000\n",

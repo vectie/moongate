@@ -72,7 +72,7 @@ test "openai usage maps prompt and completion tokens" {
 }
 
 ///|
-test "usage parser rejects negative required token counts like moonstat" {
+test "usage parser rejects negative required token counts like moongate" {
   let claude =
     #|{
     #|  "usage": {
@@ -106,7 +106,7 @@ test "usage parser rejects negative required token counts like moonstat" {
 }
 
 ///|
-test "usage parser rejects fractional required token counts like moonstat" {
+test "usage parser rejects fractional required token counts like moongate" {
   let codex =
     #|{
     #|  "usage": {
@@ -130,7 +130,7 @@ test "usage parser rejects fractional required token counts like moonstat" {
 }
 
 ///|
-test "usage parser treats invalid optional cache fields as absent like moonstat" {
+test "usage parser treats invalid optional cache fields as absent like moongate" {
   let body =
     #|{
     #|  "usage": {
@@ -177,7 +177,7 @@ test "gemini usage derives output from total minus prompt" {
 }
 
 ///|
-test "claude stream usage uses smaller positive delta input like moonstat" {
+test "claude stream usage uses smaller positive delta input like moongate" {
   let events = [
     parse_json_for_test(
       (
@@ -293,7 +293,7 @@ test "codex stream auto parses response completed usage" {
 }
 
 ///|
-test "codex auto parser returns synthetic all-zero usage like moonstat" {
+test "codex auto parser returns synthetic all-zero usage like moongate" {
   let body =
     #|{
     #|  "usage": {
@@ -373,7 +373,7 @@ test "gemini stream usage derives output from latest usage chunk" {
 }
 
 ///|
-test "gemini stream usage skips cache-only chunks like moonstat" {
+test "gemini stream usage skips cache-only chunks like moongate" {
   let chunks = [
     parse_json_for_test(
       (

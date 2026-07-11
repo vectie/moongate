@@ -20,7 +20,7 @@ const MOON_QUOTA_TIER_GEMINI_FLASH = "gemini_flash"
 const MOON_QUOTA_TIER_GEMINI_FLASH_LITE = "gemini_flash_lite"
 
 ///|
-const MOONSTAT_CODEX_OAUTH_RELOGIN_MESSAGE = "Codex OAuth access token expired or rejected. Please re-login via moonstat."
+const MOONGATE_CODEX_OAUTH_RELOGIN_MESSAGE = "Codex OAuth access token expired or rejected. Please re-login via moongate."
 
 ///|
 priv struct MoonTokenCredentials {
@@ -43,8 +43,8 @@ fn moon_quota_now_millis() -> Int64 {
 }
 
 ///|
-fn moonstat_codex_oauth_relogin_message() -> String {
-  MOONSTAT_CODEX_OAUTH_RELOGIN_MESSAGE
+fn moongate_codex_oauth_relogin_message() -> String {
+  MOONGATE_CODEX_OAUTH_RELOGIN_MESSAGE
 }
 
 ///|
@@ -182,7 +182,7 @@ async fn moon_get_codex_oauth_quota(account_id : String?) -> SubscriptionQuota {
             token,
             moon_resolve_codex_oauth_account(account_id, creds.account_id),
             "codex_oauth",
-            moonstat_codex_oauth_relogin_message(),
+            moongate_codex_oauth_relogin_message(),
           )
           if result.success {
             return result
@@ -203,7 +203,7 @@ async fn moon_get_codex_oauth_quota(account_id : String?) -> SubscriptionQuota {
             token,
             moon_resolve_codex_oauth_account(account_id, creds.account_id),
             "codex_oauth",
-            moonstat_codex_oauth_relogin_message(),
+            moongate_codex_oauth_relogin_message(),
           )
         None =>
           moon_quota_error(
@@ -730,9 +730,9 @@ async fn moon_refresh_gemini_token(refresh_token : String) -> String? {
 
 ///|
 fn moon_gemini_oauth_client() -> MoonGeminiOAuthClient? {
-  guard moon_env_first_non_empty(["MOONSTAT_GEMINI_OAUTH_CLIENT_ID"])
+  guard moon_env_first_non_empty(["MOONGATE_GEMINI_OAUTH_CLIENT_ID"])
     is Some(client_id) &&
-    moon_env_first_non_empty(["MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET"])
+    moon_env_first_non_empty(["MOONGATE_GEMINI_OAUTH_CLIENT_SECRET"])
     is Some(client_secret) else {
     return None
   }

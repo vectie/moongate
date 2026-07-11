@@ -1,5 +1,5 @@
 ///|
-test "managed auth status json matches moonstat unauthenticated shape" {
+test "managed auth status json matches moongate unauthenticated shape" {
   let status = managed_auth_status_json("codex_oauth", None)
   guard status is Object(obj) else { fail("expected auth status object") }
   assert_eq(obj["provider"], Json::string("codex_oauth"))

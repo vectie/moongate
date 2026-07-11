@@ -4,7 +4,7 @@
 const ANTHROPIC_HOST = "api.anthropic.com"
 
 ///|
-const REROUTE_COMMENT = "# moonstat-auto-reroute"
+const REROUTE_COMMENT = "# moongate-auto-reroute"
 
 ///|
 /// 获取系统的 hosts 文件路径
@@ -19,7 +19,7 @@ pub async fn check_permission() -> Bool {
   try {
     let _ = @fsx.read_file(hosts_path)
     // 如果能读取，尝试写入测试
-    let test_line = "# moonstat-permission-test\n"
+    let test_line = "# moongate-permission-test\n"
     let content = @fsx.read_file(hosts_path)
     let new_content = content + test_line
     @fsx.write_to_file(hosts_path, new_content, create=0o644)

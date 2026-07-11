@@ -1,5 +1,5 @@
 ///|
-test "moonstat model mapping maps claude roles and default" {
+test "moongate model mapping maps claude roles and default" {
   let mapping = ModelMapping::new(
     haiku_model=Some("haiku-mapped"),
     sonnet_model=Some("sonnet-mapped"),
@@ -13,7 +13,7 @@ test "moonstat model mapping maps claude roles and default" {
 }
 
 ///|
-test "moonstat model mapping ignores empty values" {
+test "moongate model mapping ignores empty values" {
   let mapping = ModelMapping::new(
     haiku_model=Some(" "),
     sonnet_model=None,
@@ -25,7 +25,7 @@ test "moonstat model mapping ignores empty values" {
 }
 
 ///|
-test "moonstat upstream model strips one million context marker" {
+test "moongate upstream model strips one million context marker" {
   assert_eq(
     strip_one_m_suffix_for_upstream("deepseek-v4-pro[1M]"),
     "deepseek-v4-pro",
@@ -41,7 +41,7 @@ test "moonstat upstream model strips one million context marker" {
 }
 
 ///|
-test "provider route applies moonstat mapping before upstream strip" {
+test "provider route applies moongate mapping before upstream strip" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="mapped",
@@ -57,7 +57,7 @@ test "provider route applies moonstat mapping before upstream strip" {
 }
 
 ///|
-test "moonstat copilot model normalizer rewrites claude dash versions" {
+test "moongate copilot model normalizer rewrites claude dash versions" {
   assert_eq(
     copilot_normalize_to_upstream_id("claude-sonnet-4-6"),
     Some("claude-sonnet-4.6"),
@@ -73,7 +73,7 @@ test "moonstat copilot model normalizer rewrites claude dash versions" {
 }
 
 ///|
-test "moonstat copilot model normalizer preserves one million marker as dash suffix" {
+test "moongate copilot model normalizer preserves one million marker as dash suffix" {
   assert_eq(
     copilot_normalize_to_upstream_id("claude-sonnet-4-6[1m]"),
     Some("claude-sonnet-4.6-1m"),
@@ -89,7 +89,7 @@ test "moonstat copilot model normalizer preserves one million marker as dash suf
 }
 
 ///|
-test "moonstat copilot model normalizer strips trailing date suffix" {
+test "moongate copilot model normalizer strips trailing date suffix" {
   assert_eq(
     copilot_normalize_to_upstream_id("claude-haiku-4-5-20251001"),
     Some("claude-haiku-4.5"),
@@ -101,7 +101,7 @@ test "moonstat copilot model normalizer strips trailing date suffix" {
 }
 
 ///|
-test "moonstat copilot model normalizer leaves already valid and non claude ids" {
+test "moongate copilot model normalizer leaves already valid and non claude ids" {
   assert_eq(copilot_normalize_to_upstream_id("claude-sonnet-4.6"), None)
   assert_eq(copilot_normalize_to_upstream_id("claude-opus-4.6-1m"), None)
   assert_eq(copilot_normalize_to_upstream_id("gpt-5"), None)
@@ -114,7 +114,7 @@ test "moonstat copilot model normalizer leaves already valid and non claude ids"
 }
 
 ///|
-test "moonstat copilot live model resolver exact matches after normalization" {
+test "moongate copilot live model resolver exact matches after normalization" {
   assert_eq(
     copilot_resolve_against_model_ids("claude-sonnet-4-6", [
       "claude-sonnet-4.6", "claude-opus-4.6", "claude-haiku-4.5",
@@ -128,7 +128,7 @@ test "moonstat copilot live model resolver exact matches after normalization" {
 }
 
 ///|
-test "moonstat copilot live model resolver falls back by family and version" {
+test "moongate copilot live model resolver falls back by family and version" {
   assert_eq(
     copilot_resolve_against_model_ids("claude-opus-4.8", [
       "claude-opus-4.5", "claude-opus-4.6", "claude-sonnet-4.6",
@@ -156,7 +156,7 @@ test "moonstat copilot live model resolver falls back by family and version" {
 }
 
 ///|
-test "moonstat copilot live model resolver accepts raw models json" {
+test "moongate copilot live model resolver accepts raw models json" {
   let raw = Json::object({
     "data": Json::array([
       Json::object({
@@ -181,7 +181,7 @@ test "moonstat copilot live model resolver accepts raw models json" {
 }
 
 ///|
-test "moonstat copilot live model resolver accepts moonstat models array" {
+test "moongate copilot live model resolver accepts moongate models array" {
   let models = [
     Json::object({
       "id": Json::string("claude-opus-4.5"),
@@ -203,7 +203,7 @@ test "moonstat copilot live model resolver accepts moonstat models array" {
 }
 
 ///|
-test "moonstat copilot model vendor lookup accepts arrays data and model maps" {
+test "moongate copilot model vendor lookup accepts arrays data and model maps" {
   let raw = Json::object({
     "data": Json::array([
       Json::object({
@@ -231,7 +231,7 @@ test "moonstat copilot model vendor lookup accepts arrays data and model maps" {
 }
 
 ///|
-test "github copilot provider applies moonstat upstream model normalization" {
+test "github copilot provider applies moongate upstream model normalization" {
   let provider = ProviderRouteTarget::new(
     app_type="claude",
     provider_id="copilot",
