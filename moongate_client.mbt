@@ -1,8 +1,8 @@
 ///|
-const MOONSTAT_DEFAULT_CLIENT_BASE_URL = "http://127.0.0.1:15721"
+const MOONGATE_DEFAULT_CLIENT_BASE_URL = "http://127.0.0.1:15721"
 
 ///|
-pub struct MoonstatUsageQuery {
+pub struct MoonGateUsageQuery {
   start_date : String?
   end_date : String?
   app_type : String?
@@ -15,8 +15,8 @@ pub struct MoonstatUsageQuery {
 }
 
 ///|
-pub fn MoonstatUsageQuery::empty() -> MoonstatUsageQuery {
-  MoonstatUsageQuery::new(
+pub fn MoonGateUsageQuery::empty() -> MoonGateUsageQuery {
+  MoonGateUsageQuery::new(
     start_date=None,
     end_date=None,
     app_type=None,
@@ -30,7 +30,7 @@ pub fn MoonstatUsageQuery::empty() -> MoonstatUsageQuery {
 }
 
 ///|
-pub fn MoonstatUsageQuery::new(
+pub fn MoonGateUsageQuery::new(
   start_date~ : String?,
   end_date~ : String?,
   app_type~ : String?,
@@ -40,7 +40,7 @@ pub fn MoonstatUsageQuery::new(
   status_code~ : String?,
   page~ : Int?,
   page_size~ : Int?,
-) -> MoonstatUsageQuery {
+) -> MoonGateUsageQuery {
   {
     start_date,
     end_date,
@@ -55,7 +55,7 @@ pub fn MoonstatUsageQuery::new(
 }
 
 ///|
-pub struct MoonstatSessionSyncQuery {
+pub struct MoonGateSessionSyncQuery {
   projects_dir : String?
   codex_dir : String?
   gemini_dir : String?
@@ -64,8 +64,8 @@ pub struct MoonstatSessionSyncQuery {
 }
 
 ///|
-pub fn MoonstatSessionSyncQuery::empty() -> MoonstatSessionSyncQuery {
-  MoonstatSessionSyncQuery::new(
+pub fn MoonGateSessionSyncQuery::empty() -> MoonGateSessionSyncQuery {
+  MoonGateSessionSyncQuery::new(
     projects_dir=None,
     codex_dir=None,
     gemini_dir=None,
@@ -75,13 +75,13 @@ pub fn MoonstatSessionSyncQuery::empty() -> MoonstatSessionSyncQuery {
 }
 
 ///|
-pub fn MoonstatSessionSyncQuery::new(
+pub fn MoonGateSessionSyncQuery::new(
   projects_dir~ : String?,
   codex_dir~ : String?,
   gemini_dir~ : String?,
   opencode_export_path~ : String?,
   opencode_db_path~ : String?,
-) -> MoonstatSessionSyncQuery {
+) -> MoonGateSessionSyncQuery {
   {
     projects_dir,
     codex_dir,
@@ -92,14 +92,14 @@ pub fn MoonstatSessionSyncQuery::new(
 }
 
 ///|
-pub struct MoonstatModel {
+pub struct MoonGateModel {
   id : String
   owner : String?
   context_window : Int?
 }
 
 ///|
-pub struct MoonstatUsageSummary {
+pub struct MoonGateUsageSummary {
   total_requests : Int
   total_cost : String
   total_input_tokens : Int64
@@ -112,7 +112,7 @@ pub struct MoonstatUsageSummary {
 }
 
 ///|
-pub struct MoonstatAgentClient {
+pub struct MoonGateAgentClient {
   id : String
   app_type : String
   protocol : String
@@ -123,7 +123,7 @@ pub struct MoonstatAgentClient {
 }
 
 ///|
-pub struct MoonstatClient {
+pub struct MoonGateClient {
   base_url : String
   api_key : String?
   control_token : String?
@@ -131,14 +131,14 @@ pub struct MoonstatClient {
 }
 
 ///|
-pub fn MoonstatClient::new(
-  base_url? : String = MOONSTAT_DEFAULT_CLIENT_BASE_URL,
+pub fn MoonGateClient::new(
+  base_url? : String = MOONGATE_DEFAULT_CLIENT_BASE_URL,
   api_key? : String? = None,
   control_token? : String? = None,
   user_agent? : String? = None,
-) -> MoonstatClient {
+) -> MoonGateClient {
   {
-    base_url: moonstat_client_normalize_base_url(base_url),
+    base_url: moongate_client_normalize_base_url(base_url),
     api_key,
     control_token,
     user_agent,
@@ -146,14 +146,14 @@ pub fn MoonstatClient::new(
 }
 
 ///|
-pub fn MoonstatClient::from_host(
+pub fn MoonGateClient::from_host(
   host? : String = @suite.default_host(),
   port? : Int = @suite.default_port(),
   api_key? : String? = None,
   control_token? : String? = None,
   user_agent? : String? = None,
-) -> MoonstatClient {
-  MoonstatClient::new(
+) -> MoonGateClient {
+  MoonGateClient::new(
     base_url=@suite.base_url(host, port),
     api_key~,
     control_token~,

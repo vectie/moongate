@@ -30,8 +30,8 @@ fn usage_cli_commands() -> Array[CliCommandSpec] {
 
 ///|
 async fn check_health(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  match cli_moonstat_client(args).health() {
+  let logger = @pino.logger("moongate", @pino.Transport::console())
+  match cli_moongate_client(args).health() {
     Ok(body) => println("Gateway health: \{body.stringify()}")
     Err(err) => logger.error("Health check failed: \{err}")
   }
@@ -39,8 +39,8 @@ async fn check_health(args : Array[String]) -> Unit {
 
 ///|
 async fn check_stats(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  match cli_moonstat_client(args).stats() {
+  let logger = @pino.logger("moongate", @pino.Transport::console())
+  match cli_moongate_client(args).stats() {
     Ok(body) => println(body.stringify())
     Err(err) => logger.error("Stats check failed: \{err}")
   }
@@ -48,17 +48,17 @@ async fn check_stats(args : Array[String]) -> Unit {
 
 ///|
 async fn check_metrics(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
-  match cli_moonstat_client(args).metrics() {
+  let logger = @pino.logger("moongate", @pino.Transport::console())
+  match cli_moongate_client(args).metrics() {
     Ok(body) => println(body)
     Err(err) => logger.error("Metrics check failed: \{err}")
   }
 }
 
 ///|
-fn cli_moonstat_client(args : Array[String]) -> @moonstat.MoonstatClient {
+fn cli_moongate_client(args : Array[String]) -> @moongate.MoonGateClient {
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
-  @moonstat.MoonstatClient::new(base_url=url)
+  @moongate.MoonGateClient::new(base_url=url)
 }
 
 ///|
@@ -99,7 +99,7 @@ async fn run_usage_cli_command(
 async fn check_usage_logs(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage logs",
-    cli_moonstat_client(args).usage_logs(query=Some(usage_logs_query(args))),
+    cli_moongate_client(args).usage_logs(query=Some(usage_logs_query(args))),
   )
 }
 
@@ -107,7 +107,7 @@ async fn check_usage_logs(args : Array[String]) -> Unit {
 async fn check_usage_summary(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage summary",
-    cli_moonstat_client(args).usage_summary(
+    cli_moongate_client(args).usage_summary(
       query=Some(usage_query(args, app_filter=true)),
     ),
   )
@@ -117,7 +117,7 @@ async fn check_usage_summary(args : Array[String]) -> Unit {
 async fn check_usage_apps(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage apps",
-    cli_moonstat_client(args).usage_summary_by_app(
+    cli_moongate_client(args).usage_summary_by_app(
       query=Some(usage_query(args, app_filter=false)),
     ),
   )
@@ -127,7 +127,7 @@ async fn check_usage_apps(args : Array[String]) -> Unit {
 async fn check_usage_trends(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage trends",
-    cli_moonstat_client(args).usage_trends(
+    cli_moongate_client(args).usage_trends(
       query=Some(usage_query(args, app_filter=true)),
     ),
   )
@@ -142,7 +142,7 @@ async fn check_usage_limits(args : Array[String]) -> Unit {
 async fn check_usage_models(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage models",
-    cli_moonstat_client(args).usage_model_stats(
+    cli_moongate_client(args).usage_model_stats(
       query=Some(usage_query(args, app_filter=true)),
     ),
   )
@@ -152,11 +152,11 @@ async fn check_usage_models(args : Array[String]) -> Unit {
 async fn test_usage_script(args : Array[String]) -> Unit {
   guard usage_provider_script_path(args, "/usage/test-script", true)
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required usage script args: --provider-id --app-type")
     return
   }
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let url = parse_string_arg(args, "--url").unwrap_or("http://localhost:15721")
   try {
     let client = @http.Client::Client(url, headers={})
@@ -177,7 +177,7 @@ async fn test_usage_script(args : Array[String]) -> Unit {
 async fn sync_session_usage(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage sync",
-    cli_moonstat_client(args).usage_sync_session(
+    cli_moongate_client(args).usage_sync_session(
       query=Some(usage_sync_query(args)),
     ),
   )
@@ -187,8 +187,8 @@ async fn sync_session_usage(args : Array[String]) -> Unit {
 fn usage_query(
   args : Array[String],
   app_filter~ : Bool,
-) -> @moonstat.MoonstatUsageQuery {
-  @moonstat.MoonstatUsageQuery::new(
+) -> @moongate.MoonGateUsageQuery {
+  @moongate.MoonGateUsageQuery::new(
     start_date=parse_string_arg(args, "--start-date"),
     end_date=parse_string_arg(args, "--end-date"),
     app_type=if app_filter {
@@ -206,8 +206,8 @@ fn usage_query(
 }
 
 ///|
-fn usage_logs_query(args : Array[String]) -> @moonstat.MoonstatUsageQuery {
-  @moonstat.MoonstatUsageQuery::new(
+fn usage_logs_query(args : Array[String]) -> @moongate.MoonGateUsageQuery {
+  @moongate.MoonGateUsageQuery::new(
     start_date=parse_string_arg(args, "--start-date"),
     end_date=parse_string_arg(args, "--end-date"),
     app_type=parse_string_arg(args, "--app-type"),
@@ -221,8 +221,8 @@ fn usage_logs_query(args : Array[String]) -> @moonstat.MoonstatUsageQuery {
 }
 
 ///|
-fn usage_sync_query(args : Array[String]) -> @moonstat.MoonstatSessionSyncQuery {
-  @moonstat.MoonstatSessionSyncQuery::new(
+fn usage_sync_query(args : Array[String]) -> @moongate.MoonGateSessionSyncQuery {
+  @moongate.MoonGateSessionSyncQuery::new(
     projects_dir=parse_string_arg(args, "--projects-dir"),
     codex_dir=parse_string_arg(args, "--codex-dir"),
     gemini_dir=parse_string_arg(args, "--gemini-dir"),
@@ -274,7 +274,7 @@ async fn check_usage_endpoint(args : Array[String], path : String) -> Unit {
 async fn check_usage_model_pricing(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage pricing",
-    cli_moonstat_client(args).usage_model_pricing(),
+    cli_moongate_client(args).usage_model_pricing(),
   )
 }
 
@@ -282,20 +282,20 @@ async fn check_usage_model_pricing(args : Array[String]) -> Unit {
 async fn check_usage_data_sources(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage data sources",
-    cli_moonstat_client(args).usage_data_sources(),
+    cli_moongate_client(args).usage_data_sources(),
   )
 }
 
 ///|
 async fn check_usage_detail(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   guard parse_string_arg(args, "--request-id") is Some(request_id) else {
     logger.error("Missing required --request-id")
     return
   }
   print_cli_json_result(
     "Usage detail",
-    cli_moonstat_client(args).usage_request_detail(request_id),
+    cli_moongate_client(args).usage_request_detail(request_id),
   )
 }
 
@@ -304,7 +304,7 @@ async fn print_cli_json_result(
   label : String,
   result : Result[Json, String],
 ) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   match result {
     Ok(body) => println(body.stringify())
     Err(err) => {
@@ -316,7 +316,7 @@ async fn print_cli_json_result(
 
 ///|
 async fn check_status(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
 
   // 检查 hosts reroute 状态
   let hosts_installed = @hosts.is_reroute_installed()
@@ -327,7 +327,7 @@ async fn check_status(args : Array[String]) -> Unit {
   }
 
   // 检查网关是否在运行
-  match cli_moonstat_client(args).status() {
+  match cli_moongate_client(args).status() {
     Ok(body) => logger.info("Gateway is running: \{body.stringify()}")
     Err(_) => logger.warn("Gateway is NOT running")
   }
@@ -396,7 +396,7 @@ fn print_suite_status(args : Array[String]) -> Unit {
     @suite.default_model(),
   )
   println(
-    @moonstat.moonstat_suite_status_json(host~, port~, model~).stringify(
+    @moongate.moongate_suite_status_json(host~, port~, model~).stringify(
       indent=2,
     ),
   )
@@ -404,16 +404,16 @@ fn print_suite_status(args : Array[String]) -> Unit {
 
 ///|
 async fn write_suite_status(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let model = parse_string_arg(args, "--model").unwrap_or(
     @suite.default_model(),
   )
   let path = parse_string_arg(args, "--path").unwrap_or(
-    @moonstat.default_moonstat_suite_status_path(),
+    @moongate.default_moongate_suite_status_path(),
   )
-  let written = @moonstat.write_moonstat_suite_status(
+  let written = @moongate.write_moongate_suite_status(
     path~,
     host~,
     port~,

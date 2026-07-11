@@ -65,7 +65,7 @@ async fn copilot_start_device_flow(args : Array[String]) -> Unit {
 ///|
 async fn copilot_poll_for_account(args : Array[String]) -> Unit {
   guard copilot_device_path(args, "/copilot/poll-account") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required Copilot arg: --device-code")
     return
   }
@@ -75,7 +75,7 @@ async fn copilot_poll_for_account(args : Array[String]) -> Unit {
 ///|
 async fn copilot_account_post(args : Array[String], path : String) -> Unit {
   guard copilot_account_path(args, path) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required Copilot arg: --account-id")
     return
   }
@@ -85,7 +85,7 @@ async fn copilot_account_post(args : Array[String], path : String) -> Unit {
 ///|
 async fn copilot_account_delete(args : Array[String], path : String) -> Unit {
   guard copilot_account_path(args, path) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required Copilot arg: --account-id")
     return
   }

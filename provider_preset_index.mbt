@@ -15,18 +15,18 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "patewayai", "pateway",
     ),
     moon_provider_preset_summary_json(
-      "claude", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "claude", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "volcengine_agentplan", "huoshan",
     ),
     moon_provider_preset_summary_json(
-      "claude", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "claude", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "byteplus", "byteplus",
     ),
     moon_provider_preset_summary_json(
-      "claude", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "claude", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "doubaoseed", "doubao",
     ),
     moon_provider_preset_summary_json(
@@ -67,11 +67,11 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "cn_official", false, false, "", "bailian",
     ),
     moon_provider_preset_summary_json(
-      "claude", "Kimi", "", "https://platform.moonshot.cn/console?aff=moonstat",
+      "claude", "Kimi", "", "https://platform.moonshot.cn/console?aff=moongate",
       "", "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
-      "claude", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moonstat",
+      "claude", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moongate",
       "", "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
@@ -127,7 +127,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "dmxapi", "",
     ),
     moon_provider_preset_summary_json(
-      "claude", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "claude", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -152,7 +152,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "aggregator", false, true, "claudeapi", "claudeapi",
     ),
     moon_provider_preset_summary_json(
-      "claude", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moonstat",
+      "claude", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moongate",
       "third_party", false, true, "claudecn", "claudecn",
     ),
     moon_provider_preset_summary_json(
@@ -164,7 +164,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, false, "", "relaxcode",
     ),
     moon_provider_preset_summary_json(
-      "claude", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "claude", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
@@ -172,7 +172,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "aigocode", "aigocode",
     ),
     moon_provider_preset_summary_json(
-      "claude", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONSTAT",
+      "claude", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONGATE",
       "third_party", false, true, "rightcode", "rc",
     ),
     moon_provider_preset_summary_json(
@@ -180,7 +180,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "claude", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "claude", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "third_party", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -189,12 +189,12 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
     ),
     moon_provider_preset_summary_json(
       "claude", "Compshare", "providerForm.presets.ucloud", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
       "claude", "Compshare Coding Plan", "providerForm.presets.ucloudCoding", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
@@ -272,18 +272,18 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "patewayai", "pateway",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "claude-desktop", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "volcengine_agentplan", "huoshan",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "claude-desktop", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "byteplus", "byteplus",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "claude-desktop", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "doubaoseed", "doubao",
     ),
     moon_provider_preset_summary_json(
@@ -333,11 +333,11 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "", "cn_official", false, false, "", "bailian",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "Kimi", "", "https://platform.moonshot.cn/console?aff=moonstat",
+      "claude-desktop", "Kimi", "", "https://platform.moonshot.cn/console?aff=moongate",
       "", "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moonstat",
+      "claude-desktop", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moongate",
       "", "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
@@ -391,7 +391,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "aggregator", false, true, "dmxapi", "",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "claude-desktop", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -416,7 +416,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "aggregator", false, true, "claudeapi", "claudeapi",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moonstat",
+      "claude-desktop", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moongate",
       "third_party", false, true, "claudecn", "claudecn",
     ),
     moon_provider_preset_summary_json(
@@ -428,7 +428,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, false, "", "relaxcode",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "claude-desktop", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
@@ -436,7 +436,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aigocode", "aigocode",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONSTAT",
+      "claude-desktop", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONGATE",
       "third_party", false, true, "rightcode", "rc",
     ),
     moon_provider_preset_summary_json(
@@ -444,7 +444,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "claude-desktop", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "claude-desktop", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "third_party", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -453,12 +453,12 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
     ),
     moon_provider_preset_summary_json(
       "claude-desktop", "Compshare", "providerForm.presets.ucloud", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
       "claude-desktop", "Compshare Coding Plan", "providerForm.presets.ucloudCoding",
-      "https://www.compshare.cn", "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat",
+      "https://www.compshare.cn", "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate",
       "aggregator", false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
@@ -520,18 +520,18 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "patewayai", "pateway",
     ),
     moon_provider_preset_summary_json(
-      "codex", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "codex", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "volcengine_agentplan", "huoshan",
     ),
     moon_provider_preset_summary_json(
-      "codex", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "codex", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "byteplus", "byteplus",
     ),
     moon_provider_preset_summary_json(
-      "codex", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "codex", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "doubaoseed", "doubao",
     ),
     moon_provider_preset_summary_json(
@@ -564,7 +564,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "cn_official", false, false, "", "bailian",
     ),
     moon_provider_preset_summary_json(
-      "codex", "Kimi", "", "https://platform.moonshot.cn/console?aff=moonstat", "https://platform.moonshot.cn/console/api-keys?aff=moonstat",
+      "codex", "Kimi", "", "https://platform.moonshot.cn/console?aff=moongate", "https://platform.moonshot.cn/console/api-keys?aff=moongate",
       "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
@@ -633,7 +633,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "dmxapi", "",
     ),
     moon_provider_preset_summary_json(
-      "codex", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "codex", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -654,7 +654,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "sudocode", "sudocode",
     ),
     moon_provider_preset_summary_json(
-      "codex", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moonstat",
+      "codex", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moongate",
       "third_party", false, true, "claudecn", "claudecn",
     ),
     moon_provider_preset_summary_json(
@@ -666,7 +666,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, false, "", "relaxcode",
     ),
     moon_provider_preset_summary_json(
-      "codex", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "codex", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
@@ -674,7 +674,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "aigocode", "aigocode",
     ),
     moon_provider_preset_summary_json(
-      "codex", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONSTAT",
+      "codex", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONGATE",
       "third_party", false, true, "rightcode", "rc",
     ),
     moon_provider_preset_summary_json(
@@ -682,7 +682,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "codex", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "codex", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -691,12 +691,12 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
     ),
     moon_provider_preset_summary_json(
       "codex", "Compshare", "providerForm.presets.ucloud", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
       "codex", "Compshare Coding Plan", "providerForm.presets.ucloudCoding", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
@@ -737,7 +737,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "shengsuanyun", "shengsuanyun",
     ),
     moon_provider_preset_summary_json(
-      "gemini", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "gemini", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -753,7 +753,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "sudocode", "sudocode",
     ),
     moon_provider_preset_summary_json(
-      "gemini", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "gemini", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
@@ -765,7 +765,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "gemini", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "gemini", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "third_party", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -805,18 +805,18 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "shengsuanyun", "shengsuanyun",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "opencode", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "volcengine_agentplan", "huoshan",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "opencode", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "byteplus", "byteplus",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "opencode", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "doubaoseed", "doubao",
     ),
     moon_provider_preset_summary_json(
@@ -840,13 +840,13 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "cn_official", false, false, "", "bailian",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "Kimi k2.6", "", "https://platform.moonshot.cn/console?aff=moonstat",
-      "https://platform.moonshot.cn/console/api-keys?aff=moonstat", "cn_official",
+      "opencode", "Kimi k2.6", "", "https://platform.moonshot.cn/console?aff=moongate",
+      "https://platform.moonshot.cn/console/api-keys?aff=moongate", "cn_official",
       false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moonstat",
-      "https://platform.moonshot.cn/console/api-keys?aff=moonstat", "cn_official",
+      "opencode", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moongate",
+      "https://platform.moonshot.cn/console/api-keys?aff=moongate", "cn_official",
       false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
@@ -928,7 +928,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "aggregator", false, false, "", "pipellm",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "opencode", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -949,7 +949,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "sudocode", "sudocode",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "opencode", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
@@ -957,7 +957,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aigocode", "aigocode",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONSTAT",
+      "opencode", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONGATE",
       "third_party", false, true, "rightcode", "rc",
     ),
     moon_provider_preset_summary_json(
@@ -965,7 +965,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moonstat",
+      "opencode", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moongate",
       "third_party", false, true, "claudecn", "claudecn",
     ),
     moon_provider_preset_summary_json(
@@ -973,7 +973,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "runapi", "runapi",
     ),
     moon_provider_preset_summary_json(
-      "opencode", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "opencode", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "third_party", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -1017,18 +1017,18 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "shengsuanyun", "shengsuanyun",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "openclaw", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "volcengine_agentplan", "huoshan",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "openclaw", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "byteplus", "byteplus",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "openclaw", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "doubaoseed", "doubao",
     ),
     moon_provider_preset_summary_json(
@@ -1052,12 +1052,12 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "cn_official", false, false, "", "qwen",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "Kimi k2.6", "", "https://platform.moonshot.cn/console?aff=moonstat",
+      "openclaw", "Kimi k2.6", "", "https://platform.moonshot.cn/console?aff=moongate",
       "https://platform.moonshot.cn/console/api-keys", "cn_official", false, false,
       "", "kimi",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moonstat",
+      "openclaw", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moongate",
       "https://platform.moonshot.cn/console/api-keys", "cn_official", false, false,
       "", "kimi",
     ),
@@ -1111,7 +1111,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "aggregator", false, true, "dmxapi", "",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moonstat",
+      "openclaw", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moongate",
       "third_party", false, true, "claudecn", "claudecn",
     ),
     moon_provider_preset_summary_json(
@@ -1151,7 +1151,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "aggregator", false, false, "", "pipellm",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "openclaw", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -1172,7 +1172,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "sudocode", "sudocode",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "openclaw", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
@@ -1180,7 +1180,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aigocode", "aigocode",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONSTAT",
+      "openclaw", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONGATE",
       "third_party", false, true, "rightcode", "rc",
     ),
     moon_provider_preset_summary_json(
@@ -1188,7 +1188,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "openclaw", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "openclaw", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "third_party", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -1197,12 +1197,12 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
     ),
     moon_provider_preset_summary_json(
       "openclaw", "Compshare", "providerForm.presets.ucloud", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
       "openclaw", "Compshare Coding Plan", "providerForm.presets.ucloudCoding", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
@@ -1234,18 +1234,18 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "shengsuanyun", "shengsuanyun",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "hermes", "火山Agentplan", "", "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.volcengine.com/activity/agentplan?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "volcengine_agentplan", "huoshan",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "hermes", "BytePlus", "", "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "byteplus", "byteplus",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
-      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moonstat&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moonstat",
+      "hermes", "DouBaoSeed", "", "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
+      "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D&utm_campaign=hw&utm_content=moongate&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=moongate",
       "cn_official", false, true, "doubaoseed", "doubao",
     ),
     moon_provider_preset_summary_json(
@@ -1287,11 +1287,11 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "cn_official", false, false, "", "bailian",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "Kimi", "", "https://platform.moonshot.cn/console?aff=moonstat",
+      "hermes", "Kimi", "", "https://platform.moonshot.cn/console?aff=moongate",
       "", "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moonstat",
+      "hermes", "Kimi For Coding", "", "https://www.kimi.com/code/docs/?aff=moongate",
       "", "cn_official", false, false, "", "kimi",
     ),
     moon_provider_preset_summary_json(
@@ -1343,7 +1343,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "dmxapi", "",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moonstat",
+      "hermes", "PackyCode", "", "https://www.packyapi.com", "https://www.packyapi.com/register?aff=moongate",
       "third_party", false, true, "packycode", "packycode",
     ),
     moon_provider_preset_summary_json(
@@ -1364,11 +1364,11 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "sudocode", "sudocode",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONSTAT&source=moonstat",
+      "hermes", "Cubence", "", "https://cubence.com", "https://cubence.com/signup?code=MOONGATE&source=moongate",
       "third_party", false, true, "cubence", "cubence",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moonstat",
+      "hermes", "ClaudeCN", "", "https://claudecn.top", "https://claudecn.top/register?aff=moongate",
       "third_party", false, true, "claudecn", "claudecn",
     ),
     moon_provider_preset_summary_json(
@@ -1380,7 +1380,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       false, true, "aigocode", "aigocode",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONSTAT",
+      "hermes", "RightCode", "", "https://www.right.codes", "https://www.right.codes/register?aff=MOONGATE",
       "third_party", false, true, "rightcode", "rc",
     ),
     moon_provider_preset_summary_json(
@@ -1388,7 +1388,7 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
       "third_party", false, true, "aicodemirror", "aicodemirror",
     ),
     moon_provider_preset_summary_json(
-      "hermes", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moonstat",
+      "hermes", "CrazyRouter", "", "https://www.crazyrouter.com", "https://www.crazyrouter.com/register?aff=OZcm&ref=moongate",
       "third_party", false, true, "crazyrouter", "crazyrouter",
     ),
     moon_provider_preset_summary_json(
@@ -1397,12 +1397,12 @@ fn moon_provider_preset_summary_catalog() -> Array[Json] {
     ),
     moon_provider_preset_summary_json(
       "hermes", "Compshare", "providerForm.presets.ucloud", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(
       "hermes", "Compshare Coding Plan", "providerForm.presets.ucloudCoding", "https://www.compshare.cn",
-      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moonstat", "aggregator",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_moongate", "aggregator",
       false, true, "ucloud", "ucloud",
     ),
     moon_provider_preset_summary_json(

@@ -9,10 +9,10 @@ function readShellJson(name, fallback) {
   }
 }
 
-const endpoints = readShellJson("moonstat-endpoints", {});
+const endpoints = readShellJson("moongate-endpoints", {});
 
 function readReadinessCards() {
-  const parsed = readShellJson("moonstat-readiness-cards", []);
+  const parsed = readShellJson("moongate-readiness-cards", []);
   if (!Array.isArray(parsed)) return [];
   return parsed
     .filter((card) => card && typeof card.id === "string" && typeof card.label === "string")
@@ -26,7 +26,7 @@ function readReadinessCards() {
 }
 
 function readFrameworkApps() {
-  const parsed = readShellJson("moonstat-framework-apps", []);
+  const parsed = readShellJson("moongate-framework-apps", []);
   if (!Array.isArray(parsed)) return [];
   return parsed
     .filter((app) => app && typeof app.id === "string" && typeof app.label === "string")
@@ -56,7 +56,7 @@ async function requestHeaders(extra) {
   const token = await controlTokenPromise;
   return {
     Accept: "application/json",
-    ...(token ? { "X-Moonstat-Control-Token": token } : {}),
+    ...(token ? { "X-MoonGate-Control-Token": token } : {}),
     ...(extra || {}),
   };
 }

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/os"
+package "vectie/moongate/internal/os"
 
 // Values
 pub fn args() -> Array[String]

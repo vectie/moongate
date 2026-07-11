@@ -108,7 +108,7 @@ fn convert_codex_to_anthropic(
 
 ///|
 fn generate_message_id() -> String {
-  "msg_\{moonstat_random_id()}"
+  "msg_\{moongate_random_id()}"
 }
 
 ///|

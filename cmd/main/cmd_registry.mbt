@@ -155,7 +155,7 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
       true
     }
     Some(("core", "version")) => {
-      println("moonstat v0.1.0")
+      println("moongate v0.1.0")
       true
     }
     _ => false

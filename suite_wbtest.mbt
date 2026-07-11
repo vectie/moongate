@@ -1,30 +1,30 @@
 ///|
-test "suite manifest publishes moonstat service contract" {
-  let manifest = moonstat_suite_manifest_json(
+test "suite manifest publishes moongate service contract" {
+  let manifest = moongate_suite_manifest_json(
     host="0.0.0.0",
     port=15721,
     model="gpt-5",
   )
   guard manifest is Object(obj) else { fail("expected manifest object") }
   assert_eq(obj["contract"], Json::string("moon.suite.service.v1"))
-  assert_eq(obj["service"], Json::string("moonstat"))
+  assert_eq(obj["service"], Json::string("moongate"))
   assert_eq(obj["defaultHost"], Json::string("127.0.0.1"))
   assert_eq(obj["defaultPort"], Json::number(15721.0))
   assert_eq(obj["baseUrl"], Json::string("http://127.0.0.1:15721"))
   assert_eq(obj["dashboardUrl"], Json::string("http://127.0.0.1:15721/"))
   assert_eq(
     obj["statusFile"],
-    Json::string(default_moonstat_suite_status_path()),
+    Json::string(default_moongate_suite_status_path()),
   )
   assert_eq(
-    default_moonstat_suite_status_path(),
-    default_moonstat_suite_status_path_for_workspace_root(
-      moonstat_active_workspace_root(),
+    default_moongate_suite_status_path(),
+    default_moongate_suite_status_path_for_workspace_root(
+      moongate_active_workspace_root(),
     ),
   )
   assert_eq(
-    default_moonstat_stats_dir(),
-    moonstat_product_home_for_workspace_root(moonstat_active_workspace_root()),
+    default_moongate_stats_dir(),
+    moongate_product_home_for_workspace_root(moongate_active_workspace_root()),
   )
   assert_eq(obj["openaiBaseUrl"], Json::string("http://127.0.0.1:15721/v1"))
   assert_eq(
@@ -68,23 +68,23 @@ test "suite manifest publishes moonstat service contract" {
     obj["configStatusUrl"],
     Json::string("http://127.0.0.1:15721/config/status"),
   )
-  assert_eq(obj["usageStoreDir"], Json::string(default_moonstat_stats_dir()))
+  assert_eq(obj["usageStoreDir"], Json::string(default_moongate_stats_dir()))
   assert_eq(
     obj["usageRequestLogsFile"],
     Json::string(
-      @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
+      @pathx.join(default_moongate_stats_dir(), MOONGATE_REQUEST_LOGS_FILE),
     ),
   )
   assert_eq(
     obj["usageSessionSyncFile"],
     Json::string(
-      @pathx.join(default_moonstat_stats_dir(), MOONSTAT_SESSION_SYNC_FILE),
+      @pathx.join(default_moongate_stats_dir(), MOONGATE_SESSION_SYNC_FILE),
     ),
   )
   assert_eq(
     obj["usageModelPricingFile"],
     Json::string(
-      @pathx.join(default_moonstat_stats_dir(), MOONSTAT_MODEL_PRICING_FILE),
+      @pathx.join(default_moongate_stats_dir(), MOONGATE_MODEL_PRICING_FILE),
     ),
   )
   assert_eq(
@@ -99,30 +99,30 @@ test "suite manifest publishes moonstat service contract" {
   guard obj["capabilities"] is Array(capabilities) else {
     fail("expected capabilities")
   }
-  assert_eq(obj["frameworkApps"], moonstat_framework_apps_json())
-  assert_eq(obj["uiSections"], moonstat_ui_sections_json())
-  assert_eq(obj["uiEndpoints"], moonstat_ui_endpoints_json())
-  assert_eq(obj["uiReadinessCards"], moonstat_ui_readiness_cards_json())
+  assert_eq(obj["frameworkApps"], moongate_framework_apps_json())
+  assert_eq(obj["uiSections"], moongate_ui_sections_json())
+  assert_eq(obj["uiEndpoints"], moongate_ui_endpoints_json())
+  assert_eq(obj["uiReadinessCards"], moongate_ui_readiness_cards_json())
   assert_true(capabilities.contains(Json::string("openai-compatible-proxy")))
-  assert_true(capabilities.contains(Json::string("moonstat-usage-statistics")))
-  assert_true(capabilities.contains(Json::string("moonstat-stream-check")))
-  assert_true(capabilities.contains(Json::string("moonstat-skills-management")))
+  assert_true(capabilities.contains(Json::string("moongate-usage-statistics")))
+  assert_true(capabilities.contains(Json::string("moongate-stream-check")))
+  assert_true(capabilities.contains(Json::string("moongate-skills-management")))
   assert_true(capabilities.contains(Json::string("provider-presets")))
   assert_true(capabilities.contains(Json::string("suite-discovery")))
   assert_true(routes.contains(Json::string("GET /")))
   assert_true(routes.contains(Json::string("GET /ui/rabbita")))
-  assert_true(routes.contains(Json::string("GET /assets/moonstat.css")))
-  assert_true(routes.contains(Json::string("GET /assets/moonstat-core.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moongate.css")))
+  assert_true(routes.contains(Json::string("GET /assets/moongate-core.js")))
   assert_true(
-    routes.contains(Json::string("GET /assets/moonstat-frameworks.js")),
+    routes.contains(Json::string("GET /assets/moongate-frameworks.js")),
   )
-  assert_true(routes.contains(Json::string("GET /assets/moonstat-usage.js")))
-  assert_true(routes.contains(Json::string("GET /assets/moonstat-setup.js")))
-  assert_true(routes.contains(Json::string("GET /assets/moonstat-suite.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moongate-usage.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moongate-setup.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moongate-suite.js")))
   assert_true(
-    routes.contains(Json::string("GET /assets/moonstat-resilience.js")),
+    routes.contains(Json::string("GET /assets/moongate-resilience.js")),
   )
-  assert_true(routes.contains(Json::string("GET /assets/moonstat.js")))
+  assert_true(routes.contains(Json::string("GET /assets/moongate.js")))
   assert_true(routes.contains(Json::string("GET /participant/register")))
   assert_true(routes.contains(Json::string("GET /suite/manifest")))
   assert_true(routes.contains(Json::string("GET /suite/status")))
@@ -340,14 +340,14 @@ test "suite manifest publishes moonstat service contract" {
     moonclaw_env["OPENAI_BASE_URL"],
     Json::string("http://127.0.0.1:15721/v1"),
   )
-  assert_eq(moonclaw_env["OPENAI_API_KEY"], Json::string("moonstat-local"))
+  assert_eq(moonclaw_env["OPENAI_API_KEY"], Json::string("moongate-local"))
   guard moonclaw["moonclawModelConfig"] is Object(model_config) else {
     fail("expected moonclaw model config")
   }
-  assert_eq(model_config["name"], Json::string("moonstat/gpt-5"))
+  assert_eq(model_config["name"], Json::string("moongate/gpt-5"))
   assert_eq(model_config["model_name"], Json::string("gpt-5"))
   assert_eq(model_config["model_type"], Json::string("saas/openai"))
-  assert_eq(model_config["api_key"], Json::string("moonstat-local"))
+  assert_eq(model_config["api_key"], Json::string("moongate-local"))
   assert_eq(model_config["base_url"], Json::string("http://127.0.0.1:15721/v1"))
   assert_eq(model_config["safe_zone_tokens"], Json::number(200000.0))
   guard moonclaw["moonclawModelsJson"] is Array(models_json) else {
@@ -359,20 +359,20 @@ test "suite manifest publishes moonstat service contract" {
     fail("expected moonclaw models path candidates")
   }
   assert_eq(paths.length(), 1)
-  assert_true(paths.contains(Json::string(moonstat_moonclaw_models_file())))
+  assert_true(paths.contains(Json::string(moongate_moonclaw_models_file())))
   assert_false(
     paths.contains(
       Json::string("~/.moonsuite/products/moonclaw/models/models.json"),
     ),
   )
-  assert_eq(moonclaw["moonclawProviderName"], Json::string("moonstat"))
+  assert_eq(moonclaw["moonclawProviderName"], Json::string("moongate"))
   assert_eq(moonclaw["moonclawProviderModelId"], Json::string("gpt-5"))
   guard moonclaw["moonclawProviderConfigPaths"] is Array(config_paths) else {
     fail("expected moonclaw provider config paths")
   }
   assert_eq(config_paths.length(), 2)
   assert_true(
-    config_paths.contains(Json::string(moonstat_moonclaw_config_file())),
+    config_paths.contains(Json::string(moongate_moonclaw_config_file())),
   )
   assert_false(
     config_paths.contains(
@@ -385,31 +385,31 @@ test "suite manifest publishes moonstat service contract" {
   guard providers_file["providers"] is Object(moonclaw_providers) else {
     fail("expected moonclaw providers map")
   }
-  guard moonclaw_providers["moonstat"] is Object(moonstat_provider) else {
-    fail("expected moonstat provider")
+  guard moonclaw_providers["moongate"] is Object(moongate_provider) else {
+    fail("expected moongate provider")
   }
   assert_eq(
-    moonstat_provider["baseUrl"],
+    moongate_provider["baseUrl"],
     Json::string("http://127.0.0.1:15721/v1"),
   )
-  assert_eq(moonstat_provider["api"], Json::string("openai"))
-  assert_eq(moonstat_provider["apiKey"], Json::string("moonstat-local"))
-  guard moonstat_provider["models"] is Array(provider_models) else {
-    fail("expected moonstat provider models")
+  assert_eq(moongate_provider["api"], Json::string("openai"))
+  assert_eq(moongate_provider["apiKey"], Json::string("moongate-local"))
+  guard moongate_provider["models"] is Array(provider_models) else {
+    fail("expected moongate provider models")
   }
   guard provider_models[0] is Object(provider_model) else {
-    fail("expected moonstat provider model")
+    fail("expected moongate provider model")
   }
   assert_eq(provider_model["id"], Json::string("gpt-5"))
-  assert_eq(provider_model["name"], Json::string("moonstat/gpt-5"))
+  assert_eq(provider_model["name"], Json::string("moongate/gpt-5"))
   assert_eq(
     moonclaw["moonclawProvidersFileCommand"],
-    Json::string("moonstat suite moonclaw-providers"),
+    Json::string("moongate suite moonclaw-providers"),
   )
   assert_eq(
     moonclaw["moonclawProvidersFileWriteCommand"],
     Json::string(
-      "moonstat suite write-moonclaw-providers --path \{moonstat_moonclaw_providers_file()}",
+      "moongate suite write-moonclaw-providers --path \{moongate_moonclaw_providers_file()}",
     ),
   )
   assert_eq(
@@ -422,10 +422,10 @@ test "suite manifest publishes moonstat service contract" {
   assert_eq(
     moonbook["usageRequestLogsFile"],
     Json::string(
-      @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
+      @pathx.join(default_moongate_stats_dir(), MOONGATE_REQUEST_LOGS_FILE),
     ),
   )
-  assert_eq(moonbook["cli"], Json::string("moonstat"))
+  assert_eq(moonbook["cli"], Json::string("moongate"))
   assert_eq(
     moonbook["moondeskAdapterPackage"],
     Json::string("vectie/moondesk/adapters/moonbook"),
@@ -447,16 +447,16 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_eq(
     moontown["moonclawProviderManifestPath"],
-    Json::string(moonstat_moonclaw_providers_file()),
+    Json::string(moongate_moonclaw_providers_file()),
   )
   assert_eq(
     moontown["moonclawProviderManifestCommand"],
-    Json::string("moonstat"),
+    Json::string("moongate"),
   )
   assert_eq(
     moontown["moonclawProviderManifestFullCommand"],
     Json::string(
-      "moonstat suite write-moonclaw-providers --path \{moonstat_moonclaw_providers_file()}",
+      "moongate suite write-moonclaw-providers --path \{moongate_moonclaw_providers_file()}",
     ),
   )
   guard moontown["moonclawProviderManifestArgs"] is Array(moonclaw_args) else {
@@ -468,7 +468,7 @@ test "suite manifest publishes moonstat service contract" {
       Json::string("suite"),
       Json::string("write-moonclaw-providers"),
       Json::string("--path"),
-      Json::string(moonstat_moonclaw_providers_file()),
+      Json::string(moongate_moonclaw_providers_file()),
     ],
   )
   assert_eq(
@@ -477,16 +477,16 @@ test "suite manifest publishes moonstat service contract" {
   )
   assert_eq(
     moontown["moonbookProviderManifestPath"],
-    Json::string(moonstat_moonclaw_providers_file()),
+    Json::string(moongate_moonclaw_providers_file()),
   )
   assert_eq(
     moontown["moonbookProviderManifestCommand"],
-    Json::string("moonstat"),
+    Json::string("moongate"),
   )
   assert_eq(
     moontown["moonbookProviderManifestFullCommand"],
     Json::string(
-      "moonstat suite write-moonclaw-providers --path \{moonstat_moonclaw_providers_file()}",
+      "moongate suite write-moonclaw-providers --path \{moongate_moonclaw_providers_file()}",
     ),
   )
   guard moontown["moonbookProviderManifestArgs"] is Array(moonbook_args) else {
@@ -498,7 +498,7 @@ test "suite manifest publishes moonstat service contract" {
       Json::string("suite"),
       Json::string("write-moonclaw-providers"),
       Json::string("--path"),
-      Json::string(moonstat_moonclaw_providers_file()),
+      Json::string(moongate_moonclaw_providers_file()),
     ],
   )
   guard moontown["adapterPackages"] is Array(moontown_adapters) else {
@@ -552,42 +552,42 @@ test "suite manifest publishes moonstat service contract" {
     ),
   )
   guard obj["commands"] is Object(commands) else { fail("expected commands") }
-  assert_eq(commands["start"], Json::string("moonstat start --port 15721"))
-  assert_eq(commands["skillsList"], Json::string("moonstat skills installed"))
-  assert_eq(commands["skillsRepos"], Json::string("moonstat skills repos"))
+  assert_eq(commands["start"], Json::string("moongate start --port 15721"))
+  assert_eq(commands["skillsList"], Json::string("moongate skills installed"))
+  assert_eq(commands["skillsRepos"], Json::string("moongate skills repos"))
   assert_eq(
     commands["updateTrayMenu"],
-    Json::string("moonstat runtime tray-menu update"),
+    Json::string("moongate runtime tray-menu update"),
   )
   assert_eq(
     commands["suiteWriteStatus"],
-    Json::string("moonstat suite write-status"),
+    Json::string("moongate suite write-status"),
   )
   assert_eq(
     commands["moonclawProviders"],
-    Json::string("moonstat suite moonclaw-providers"),
+    Json::string("moongate suite moonclaw-providers"),
   )
   assert_eq(
     commands["moonclawProvidersWrite"],
     Json::string(
-      "moonstat suite write-moonclaw-providers --path \{moonstat_moonclaw_providers_file()}",
+      "moongate suite write-moonclaw-providers --path \{moongate_moonclaw_providers_file()}",
     ),
   )
   assert_eq(
     commands["streamCheckAll"],
-    Json::string("moonstat stream-check all --app-type <app_type>"),
+    Json::string("moongate stream-check all --app-type <app_type>"),
   )
   assert_eq(
     commands["providerPresets"],
-    Json::string("moonstat provider presets list --app-type <app_type>"),
+    Json::string("moongate provider presets list --app-type <app_type>"),
   )
   assert_eq(obj["cli"], obj["commands"])
 }
 
 ///|
 async test "suite manifest advertises standalone ui assets used by generated dashboard" {
-  let html = moonstat_rabbita_document_html()
-  let manifest = moonstat_suite_manifest_json(
+  let html = moongate_rabbita_document_html()
+  let manifest = moongate_suite_manifest_json(
     host="127.0.0.1",
     port=15721,
     model="gpt-5",
@@ -596,9 +596,9 @@ async test "suite manifest advertises standalone ui assets used by generated das
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   for
     asset in [
-      "/assets/moonstat.css", "/assets/moonstat-core.js", "/assets/moonstat-frameworks.js",
-      "/assets/moonstat-usage.js", "/assets/moonstat-setup.js", "/assets/moonstat-suite.js",
-      "/assets/moonstat-resilience.js", "/assets/moonstat.js",
+      "/assets/moongate.css", "/assets/moongate-core.js", "/assets/moongate-frameworks.js",
+      "/assets/moongate-usage.js", "/assets/moongate-setup.js", "/assets/moongate-suite.js",
+      "/assets/moongate-resilience.js", "/assets/moongate.js",
     ] {
     assert_true(html.contains(asset))
     assert_true(routes.contains(Json::string("GET \{asset}")))
@@ -607,11 +607,11 @@ async test "suite manifest advertises standalone ui assets used by generated das
 
 ///|
 async test "moonclaw providers file writer materializes suite provider config" {
-  @fsx.with_temporary_directory("moonstat-moonclaw-providers-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-moonclaw-providers-XXXXXX", tmpdir => {
     let path = @pathx.join(
       tmpdir, ".moonsuite/products/moonclaw/providers.json",
     )
-    let written = write_moonstat_moonclaw_providers_file(
+    let written = write_moongate_moonclaw_providers_file(
       path~,
       host="0.0.0.0",
       port=18081,
@@ -621,7 +621,7 @@ async test "moonclaw providers file writer materializes suite provider config" {
     let json = @json.parse(@fsx.read_file(path))
     assert_eq(
       json,
-      moonstat_moonclaw_providers_file_json(
+      moongate_moonclaw_providers_file_json(
         host="0.0.0.0",
         port=18081,
         model="gpt-5",
@@ -631,12 +631,12 @@ async test "moonclaw providers file writer materializes suite provider config" {
     guard obj["providers"] is Object(providers) else {
       fail("expected providers map")
     }
-    guard providers["moonstat"] is Object(provider) else {
-      fail("expected moonstat provider")
+    guard providers["moongate"] is Object(provider) else {
+      fail("expected moongate provider")
     }
     assert_eq(provider["baseUrl"], Json::string("http://127.0.0.1:18081/v1"))
     assert_eq(provider["api"], Json::string("openai"))
-    assert_eq(provider["apiKey"], Json::string("moonstat-local"))
+    assert_eq(provider["apiKey"], Json::string("moongate-local"))
   })
 }
 
@@ -664,14 +664,14 @@ fn suite_finding_by_legacy_path(findings : Array[Json], path : String) -> Json? 
 
 ///|
 async test "suite drift report derives canonical paths from moonsuite contract" {
-  @fsx.with_temporary_directory("moonstat-suite-drift-clean-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-suite-drift-clean-XXXXXX", tmpdir => {
     let global_tmp = @pathx.join(tmpdir, "global-tmp")
-    let report = moonstat_suite_drift_report_json(
+    let report = moongate_suite_drift_report_json(
       suite_root=tmpdir,
       global_tmp_root=global_tmp,
     )
     guard report is Object(obj) else { fail("expected drift report") }
-    assert_eq(obj["contract"], Json::string("moonstat.suite.drift.v1"))
+    assert_eq(obj["contract"], Json::string("moongate.suite.drift.v1"))
     assert_eq(obj["contractSource"], Json::string("vectie/moonlib/moonsuite"))
     assert_eq(obj["globalTmpRoot"], Json::string(global_tmp))
     guard obj["canonical"] is Object(canonical) else {
@@ -694,8 +694,8 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       Json::string(@pathx.join(tmpdir, ".moonsuite/products/mooncode")),
     )
     assert_eq(
-      canonical["moonstatHome"],
-      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonstat")),
+      canonical["moongateHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moongate")),
     )
     assert_eq(
       canonical["moonfishHome"],
@@ -750,7 +750,7 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       ),
     )
     let book_root = @pathx.join(tmpdir, "books/research-demo")
-    let suite_status_path = default_moonstat_suite_status_path_for_workspace_root(
+    let suite_status_path = default_moongate_suite_status_path_for_workspace_root(
       book_root,
     )
     assert_eq(
@@ -758,7 +758,7 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       @pathx.join(tmpdir, ".moonsuite/suite-status.json"),
     )
     assert_false(suite_status_path.contains("books/research-demo/.moonsuite"))
-    let moonclaw_providers_path = default_moonstat_moonclaw_providers_file_path_for_workspace_root(
+    let moonclaw_providers_path = default_moongate_moonclaw_providers_file_path_for_workspace_root(
       book_root,
     )
     assert_eq(
@@ -768,7 +768,7 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
     assert_false(
       moonclaw_providers_path.contains("books/research-demo/.moonsuite"),
     )
-    let book_report = moonstat_suite_drift_report_json(
+    let book_report = moongate_suite_drift_report_json(
       suite_root=book_root,
       global_tmp_root=global_tmp,
     )
@@ -780,8 +780,8 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       fail("expected book-root canonical paths")
     }
     assert_eq(
-      book_canonical["moonstatHome"],
-      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moonstat")),
+      book_canonical["moongateHome"],
+      Json::string(@pathx.join(tmpdir, ".moonsuite/products/moongate")),
     )
     assert_eq(
       book_canonical["moonclawProviders"],
@@ -838,7 +838,7 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
 
 ///|
 async test "suite drift report flags legacy product homes when present" {
-  @fsx.with_temporary_directory("moonstat-suite-drift-legacy-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-suite-drift-legacy-XXXXXX", tmpdir => {
     let global_tmp = @pathx.join(tmpdir, "global-tmp")
     @fsx.make_directory(@pathx.join(tmpdir, ".moontown"))
     @fsx.make_directory(@pathx.join(tmpdir, ".moondesk"))
@@ -853,7 +853,7 @@ async test "suite drift report flags legacy product homes when present" {
     @fsx.make_directory(@pathx.join(tmpdir, ".bookkeeper"))
     @fsx.make_directory(@pathx.join(tmpdir, ".lepusa"))
     @fsx.make_directory(@pathx.join(tmpdir, ".rabbita"))
-    let report = moonstat_suite_drift_report_json(
+    let report = moongate_suite_drift_report_json(
       suite_root=tmpdir,
       global_tmp_root=global_tmp,
     )
@@ -999,7 +999,7 @@ async test "suite drift report flags legacy product homes when present" {
 
 ///|
 async test "suite drift report flags book-local moonclaw and mooncode state" {
-  @fsx.with_temporary_directory("moonstat-suite-drift-books-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-suite-drift-books-XXXXXX", tmpdir => {
     let global_tmp = @pathx.join(tmpdir, "global-tmp")
     let book_root = @pathx.join(tmpdir, "books/research-demo")
     @fsx.make_directory(
@@ -1010,7 +1010,7 @@ async test "suite drift report flags book-local moonclaw and mooncode state" {
       @pathx.join(book_root, ".moonclaw/providers.json"),
       "{\"providers\":[]}",
     )
-    let report = moonstat_suite_drift_report_json(
+    let report = moongate_suite_drift_report_json(
       suite_root=tmpdir,
       global_tmp_root=global_tmp,
     )
@@ -1067,7 +1067,7 @@ async test "suite drift report flags book-local moonclaw and mooncode state" {
 
 ///|
 async test "suite drift report flags repo-local runtime and global temp drift" {
-  @fsx.with_temporary_directory("moonstat-suite-drift-runtime-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-suite-drift-runtime-XXXXXX", tmpdir => {
     let global_tmp = @pathx.join(tmpdir, "global-tmp")
     @fsx.make_directory(
       @pathx.join(tmpdir, "runs/gateway-commands"),
@@ -1079,7 +1079,7 @@ async test "suite drift report flags repo-local runtime and global temp drift" {
       recursive=true,
     )
     @fsx.make_directory(@pathx.join(tmpdir, "moonclaw-jobs"))
-    @fsx.make_directory(@pathx.join(tmpdir, "moonstat"))
+    @fsx.make_directory(@pathx.join(tmpdir, "moongate"))
     @fsx.make_directory(global_tmp, recursive=true)
     @fsx.write_to_file(
       @pathx.join(global_tmp, "moonrobo-sdk-e1-bridge-snapshot-test.json"),
@@ -1089,7 +1089,7 @@ async test "suite drift report flags repo-local runtime and global temp drift" {
       @pathx.join(global_tmp, "moonrobo-sdk-e1-bridge-command-test.json"),
       "{}",
     )
-    let report = moonstat_suite_drift_report_json(
+    let report = moongate_suite_drift_report_json(
       suite_root=tmpdir,
       global_tmp_root=global_tmp,
     )
@@ -1104,7 +1104,7 @@ async test "suite drift report flags repo-local runtime and global temp drift" {
     for
       path in [
         "runs/gateway-commands", "runs/robo-loops", "runs/proof-sessions", "moonclaw-jobs",
-        "moonstat",
+        "moongate",
       ] {
       guard suite_finding_by_legacy_path(findings, path) is Some(finding) else {
         fail("expected \{path} finding")
@@ -1151,7 +1151,7 @@ async test "suite drift report flags repo-local runtime and global temp drift" {
 
 ///|
 test "suite manifest publishes agent client framework contracts" {
-  let manifest = moonstat_suite_manifest_json(
+  let manifest = moongate_suite_manifest_json(
     host="127.0.0.1",
     port=18081,
     model="gpt-5",
@@ -1176,7 +1176,7 @@ test "suite manifest publishes agent client framework contracts" {
   assert_eq(codex["primaryRoute"], Json::string("POST /v1/responses"))
   assert_eq(
     codex["setupCommand"],
-    Json::string("moonstat codex install --port 18081 --model gpt-5"),
+    Json::string("moongate codex install --port 18081 --model gpt-5"),
   )
   guard suite_agent_client_by_id(clients, "claude-desktop")
     is Some(claude_desktop) else {
@@ -1208,7 +1208,7 @@ test "suite manifest publishes agent client framework contracts" {
   }
   assert_eq(
     opencode["setupCommand"],
-    Json::string("moonstat provider opencode import-live"),
+    Json::string("moongate provider opencode import-live"),
   )
   guard suite_agent_client_by_id(clients, "github-copilot") is Some(copilot) else {
     fail("expected copilot client")
@@ -1294,7 +1294,7 @@ fn suite_manifest_covers_registered_route(
 
 ///|
 async test "suite manifest covers registered standalone gateway routes" {
-  let manifest = moonstat_suite_manifest_json(
+  let manifest = moongate_suite_manifest_json(
     host="127.0.0.1",
     port=15721,
     model="gpt-5",
@@ -1344,8 +1344,8 @@ fn moon_legacy_command_surface() -> Array[String] {
 }
 
 ///|
-test "suite manifest omits legacy Moonstat command route surface" {
-  let manifest = moonstat_suite_manifest_json(
+test "suite manifest omits legacy MoonGate command route surface" {
+  let manifest = moongate_suite_manifest_json(
     host="127.0.0.1",
     port=15721,
     model="gpt-5",
@@ -1371,7 +1371,7 @@ fn gateway_source_registers_path(source : String, path : String) -> Bool {
 }
 
 ///|
-async test "gateway omits legacy Moonstat command route handlers" {
+async test "gateway omits legacy MoonGate command route handlers" {
   let source = @fsx.read_file("gateway_core.mbt")
   let legacy_commands = moon_legacy_command_surface()
   assert_eq(legacy_commands.length(), 59)
@@ -1400,9 +1400,9 @@ async test "gateway omits legacy Moonstat command route handlers" {
 
 ///|
 async test "suite status writes discovery file" {
-  @fsx.with_temporary_directory("moonstat-suite-status-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-suite-status-XXXXXX", tmpdir => {
     let path = @pathx.join(tmpdir, "nested/suite-status.json")
-    let written = write_moonstat_suite_status(path~, port=17000, model="gpt-5")
+    let written = write_moongate_suite_status(path~, port=17000, model="gpt-5")
     assert_eq(written, path)
     let content = @fsx.read_file(path)
     guard @json.parse(content) is Object(obj) else {
@@ -1457,19 +1457,19 @@ async test "suite status writes discovery file" {
     assert_eq(
       manifest["usageRequestLogsFile"],
       Json::string(
-        @pathx.join(default_moonstat_stats_dir(), MOONSTAT_REQUEST_LOGS_FILE),
+        @pathx.join(default_moongate_stats_dir(), MOONGATE_REQUEST_LOGS_FILE),
       ),
     )
     assert_eq(
       manifest["usageSessionSyncFile"],
       Json::string(
-        @pathx.join(default_moonstat_stats_dir(), MOONSTAT_SESSION_SYNC_FILE),
+        @pathx.join(default_moongate_stats_dir(), MOONGATE_SESSION_SYNC_FILE),
       ),
     )
     assert_eq(
       manifest["usageModelPricingFile"],
       Json::string(
-        @pathx.join(default_moonstat_stats_dir(), MOONSTAT_MODEL_PRICING_FILE),
+        @pathx.join(default_moongate_stats_dir(), MOONGATE_MODEL_PRICING_FILE),
       ),
     )
     assert_eq(
@@ -1484,7 +1484,7 @@ async test "suite status writes discovery file" {
       fail("expected capabilities")
     }
     assert_true(capabilities.contains(Json::string("session-usage-sync")))
-    assert_true(capabilities.contains(Json::string("moonstat-stream-check")))
+    assert_true(capabilities.contains(Json::string("moongate-stream-check")))
     assert_true(capabilities.contains(Json::string("provider-presets")))
     guard manifest["suiteIntegrations"] is Object(integrations) else {
       fail("expected suite integrations")
@@ -1507,18 +1507,18 @@ async test "suite status writes discovery file" {
     guard manifest["commands"] is Object(commands) else {
       fail("expected commands")
     }
-    assert_eq(commands["start"], Json::string("moonstat start --port 17000"))
+    assert_eq(commands["start"], Json::string("moongate start --port 17000"))
     assert_eq(
       commands["codexInstall"],
-      Json::string("moonstat codex install --port 17000 --model gpt-5"),
+      Json::string("moongate codex install --port 17000 --model gpt-5"),
     )
     assert_eq(
       commands["copilotAuthStatus"],
-      Json::string("moonstat copilot status"),
+      Json::string("moongate copilot status"),
     )
     assert_eq(
       commands["providerPresets"],
-      Json::string("moonstat provider presets list --app-type <app_type>"),
+      Json::string("moongate provider presets list --app-type <app_type>"),
     )
     assert_eq(manifest["defaultPort"], Json::number(17000.0))
   })
@@ -1526,9 +1526,9 @@ async test "suite status writes discovery file" {
 
 ///|
 async test "suite status can publish running startup state" {
-  @fsx.with_temporary_directory("moonstat-suite-status-running-XXXXXX", tmpdir => {
+  @fsx.with_temporary_directory("moongate-suite-status-running-XXXXXX", tmpdir => {
     let path = @pathx.join(tmpdir, "suite-status.json")
-    let written = write_moonstat_suite_status(
+    let written = write_moongate_suite_status(
       path~,
       host="0.0.0.0",
       port=17001,
@@ -1556,6 +1556,6 @@ async test "suite status can publish running startup state" {
 ///|
 async test "gateway start writes running suite status" {
   let source = @fsx.read_file("gateway_core.mbt")
-  assert_true(source.contains("write_moonstat_suite_status("))
+  assert_true(source.contains("write_moongate_suite_status("))
   assert_true(source.contains("status=\"running\""))
 }

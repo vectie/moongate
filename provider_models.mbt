@@ -46,7 +46,7 @@ pub async fn fetch_codex_oauth_models_with_token(
   let headers : Map[String, String] = {
     "Authorization": "Bearer \{token}",
     "Accept": "application/json",
-    "originator": "moonstat",
+    "originator": "moongate",
     "chatgpt-account-id": account_id,
   }
   let client = @http.Client::Client(target.origin, headers~)

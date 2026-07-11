@@ -1,6 +1,6 @@
 {
-  "identifier": "dev.vectie.moonstat",
-  "productName": "Moonstat",
+  "identifier": "dev.vectie.moongate",
+  "productName": "MoonGate",
   "version": "0.1.0",
   "runtime": {
     "backend": "system-webview",
@@ -9,7 +9,7 @@
   },
   "window": {
     "label": "main",
-    "title": "Moonstat",
+    "title": "MoonGate",
     "width": 1180,
     "height": 780,
     "resizable": true,
@@ -53,6 +53,6 @@
     }
   ],
   "startup": {
-    "effect": "connect-moonstat"
+    "effect": "connect-moongate"
   }
 }

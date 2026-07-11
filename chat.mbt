@@ -1339,7 +1339,7 @@ fn ChatToCodexResponsesStreamState::new_with_context(
   {
     response_started: false,
     completed: false,
-    response_id: "resp_moonstat",
+    response_id: "resp_moongate",
     model,
     created_at: @os.unix_seconds(),
     next_output_index: 0,
@@ -1913,5 +1913,5 @@ fn json_string_from_map(obj : Map[String, Json], key : String) -> String? {
 
 ///|
 fn generate_chat_completion_id() -> String {
-  "chatcmpl_\{moonstat_random_id()}"
+  "chatcmpl_\{moongate_random_id()}"
 }

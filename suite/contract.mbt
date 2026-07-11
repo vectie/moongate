@@ -10,12 +10,17 @@ pub fn status_contract() -> String {
 
 ///|
 pub fn service_name() -> String {
-  "moonstat"
+  "moongate"
+}
+
+///|
+pub fn product_name() -> String {
+  "MoonGate"
 }
 
 ///|
 pub fn project_name() -> String {
-  "moonstat"
+  "moongate"
 }
 
 ///|
@@ -36,6 +41,30 @@ pub fn default_port() -> Int {
 ///|
 pub fn default_model() -> String {
   "gpt-5"
+}
+
+///|
+pub fn ai_session_receipt(
+  session_id : String,
+  model : String,
+  host : String,
+  port : Int,
+) -> Json {
+  {
+    "contract_id": "moonsuite.ai-session.v1",
+    "session_id": session_id,
+    "product_id": "moongate",
+    "product_name": product_name(),
+    "technical_service_id": service_name(),
+    "model": model,
+    "openai_base_url": openai_base_url(host, port),
+    "authority": "digital-workspace",
+    "capabilities": [
+      "model-routing", "usage-observation", "provider-health", "bounded-ai-execution",
+    ],
+    "external_side_effects_authorized": false,
+    "physical_actions_authorized": false,
+  }
 }
 
 ///|

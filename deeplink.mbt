@@ -7,7 +7,7 @@ fn moon_deeplink_supported_app(app : String) -> Bool {
 
 ///|
 fn moon_parse_deeplink_url_json(url : String) -> Json? {
-  let scheme = "moonstat://"
+  let scheme = "moongate://"
   guard url.has_prefix(scheme) else { return None }
   let rest = url[scheme.length():]
   guard rest.find("/") is Some(slash_index) else { return None }
@@ -515,7 +515,7 @@ fn moon_deeplink_generated_id(name : String) -> String {
   }
   let sanitized = builder.to_string()
   let prefix = if sanitized.is_empty() { "provider" } else { sanitized }
-  "\{prefix}-\{moonstat_random_id()}"
+  "\{prefix}-\{moongate_random_id()}"
 }
 
 ///|

@@ -54,8 +54,8 @@ priv struct CopilotDeviceCodeResponse {
 ///|
 fn copilot_credentials_path() -> String {
   @moonsuite.product_artifact_for_workspace_root(
-    moonstat_active_workspace_root(),
-    "moonstat",
+    moongate_active_workspace_root(),
+    "moongate",
     COPILOT_CREDENTIALS_ARTIFACT,
   )
 }

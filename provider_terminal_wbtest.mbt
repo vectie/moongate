@@ -1,5 +1,5 @@
 ///|
-test "moonstat provider terminal env uses canonical provider fields" {
+test "moongate provider terminal env uses canonical provider fields" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",
     provider_id="p1",
@@ -22,7 +22,7 @@ test "moonstat provider terminal env uses canonical provider fields" {
 }
 
 ///|
-test "moonstat provider terminal command quotes cwd and env values" {
+test "moongate provider terminal command quotes cwd and env values" {
   let env : Map[String, String] = {
     "GOOD_KEY": "value with space",
     "BAD-KEY": "skip",
@@ -40,7 +40,7 @@ test "moonstat provider terminal command quotes cwd and env values" {
 }
 
 ///|
-test "moonstat import default config accepts clean live provider settings" {
+test "moongate import default config accepts clean live provider settings" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -64,7 +64,7 @@ test "moonstat import default config accepts clean live provider settings" {
 }
 
 ///|
-test "moonstat import default config rejects takeover placeholder residue" {
+test "moongate import default config rejects takeover placeholder residue" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(

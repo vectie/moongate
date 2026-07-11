@@ -201,8 +201,8 @@ fn UsageService::delete_model_pricing(
 ///|
 async fn UsageService::load_model_pricing_store(self : UsageService) -> Unit {
   let path = @pathx.join(
-    default_moonstat_stats_dir(),
-    MOONSTAT_MODEL_PRICING_FILE,
+    default_moongate_stats_dir(),
+    MOONGATE_MODEL_PRICING_FILE,
   )
   if !@fsx.exists_as_file(path) {
     return
@@ -232,7 +232,7 @@ async fn UsageService::load_model_pricing_store(self : UsageService) -> Unit {
 
 ///|
 async fn UsageService::save_model_pricing_store(self : UsageService) -> Unit {
-  let storage_dir = default_moonstat_stats_dir()
+  let storage_dir = default_moongate_stats_dir()
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
     _ => return
   }
@@ -257,7 +257,7 @@ async fn UsageService::save_model_pricing_store(self : UsageService) -> Unit {
     )
   }
   @fsx.write_to_file(
-    @pathx.join(storage_dir, MOONSTAT_MODEL_PRICING_FILE),
+    @pathx.join(storage_dir, MOONGATE_MODEL_PRICING_FILE),
     lines.join("\n"),
   ) catch {
     _ => ()
@@ -568,7 +568,7 @@ async fn UsageRequest::record_internal_error_with_provider(
 async fn UsageService::load_and_reconcile_persistent_store(
   self : UsageService,
   pricing_overrides : Array[ModelPricing],
-  storage_dir? : String = default_moonstat_stats_dir(),
+  storage_dir? : String = default_moongate_stats_dir(),
 ) -> (Int, Int) {
   self.stats.load_persistent_store(storage_dir~)
   let backfilled = self.stats.backfill_missing_usage_costs(
@@ -1130,7 +1130,7 @@ async fn UsageService::handle_test_usage_script(
           UsageResult::new(
             false,
             error=Some(
-              "Usage script execution is unavailable in standalone Moonstat; provide a Moonstat UsageResult JSON object as result or scriptCode.",
+              "Usage script execution is unavailable in standalone MoonGate; provide a MoonGate UsageResult JSON object as result or scriptCode.",
             ),
           )
       }

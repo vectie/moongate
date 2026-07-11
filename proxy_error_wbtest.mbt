@@ -1,5 +1,5 @@
 ///|
-test "moonstat proxy error status mapping is stable" {
+test "moongate proxy error status mapping is stable" {
   assert_eq(
     moon_map_proxy_error_to_status(
       UpstreamError(status=401, body=Some("Unauthorized")),
@@ -23,7 +23,7 @@ test "moonstat proxy error status mapping is stable" {
 }
 
 ///|
-test "moonstat proxy error message is user friendly" {
+test "moongate proxy error message is user friendly" {
   let message = moon_proxy_error_message(
     UpstreamError(status=500, body=Some("Internal Server Error")),
   )
@@ -37,7 +37,7 @@ test "moonstat proxy error message is user friendly" {
 }
 
 ///|
-test "moonstat single provider retryable log uses single provider code" {
+test "moongate single provider retryable log uses single provider code" {
   let (code, message) = moon_build_retryable_failure_log(
     "PackyCode-response",
     1,
@@ -55,7 +55,7 @@ test "moonstat single provider retryable log uses single provider code" {
 }
 
 ///|
-test "moonstat multi provider retryable log keeps failover wording" {
+test "moongate multi provider retryable log keeps failover wording" {
   let (code, message) = moon_build_retryable_failure_log(
     "primary",
     1,
@@ -68,12 +68,12 @@ test "moonstat multi provider retryable log keeps failover wording" {
 }
 
 ///|
-test "moonstat single provider has no terminal all failed log" {
+test "moongate single provider has no terminal all failed log" {
   assert_true(moon_build_terminal_failure_log(1, 1, None) is None)
 }
 
 ///|
-test "moonstat multi provider terminal log contains last error summary" {
+test "moongate multi provider terminal log contains last error summary" {
   guard moon_build_terminal_failure_log(
       2,
       2,
@@ -88,7 +88,7 @@ test "moonstat multi provider terminal log contains last error summary" {
 }
 
 ///|
-test "moonstat summarize upstream body prefers json message" {
+test "moongate summarize upstream body prefers json message" {
   let summary = moon_summarize_upstream_body(
     "{\"error\":{\"message\":\"invalid_request_error: unsupported field\"},\"request_id\":\"req_123\"}",
   )
@@ -96,7 +96,7 @@ test "moonstat summarize upstream body prefers json message" {
 }
 
 ///|
-test "moonstat summarize text for log collapses whitespace and truncates" {
+test "moongate summarize text for log collapses whitespace and truncates" {
   assert_eq(
     moon_summarize_text_for_log("line1\n\n line2   line3", 12),
     "line1 line2...",

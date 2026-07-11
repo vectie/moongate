@@ -2,7 +2,7 @@
 test "config service owns settings and config blob mutations" {
   let config = ConfigService::new()
   let expected_app_config_dir = moon_app_config_dir_for_workspace_root(
-    moonstat_active_workspace_root(),
+    moongate_active_workspace_root(),
   )
   assert_eq(moon_app_config_dir(), expected_app_config_dir)
   assert_eq(
@@ -24,12 +24,12 @@ test "config service owns settings and config blob mutations" {
   assert_true(config.claude_onboarding_skipped)
 
   config.set_app_config_dir_override_from_request(
-    "/settings/app-config-dir?path=/tmp/moonstat-config",
+    "/settings/app-config-dir?path=/tmp/moongate-config",
     None,
   )
   assert_eq(
     config.app_config_dir_override_json(),
-    Json::string("/tmp/moonstat-config"),
+    Json::string("/tmp/moongate-config"),
   )
   config.set_app_config_dir_override_from_request(
     "/settings/app-config-dir?path=",

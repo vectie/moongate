@@ -10,7 +10,7 @@ elif command -v moon >/dev/null 2>&1; then
 elif [ "${HOME:-}" != "" ] && [ -x "$HOME/.moon/bin/moon" ]; then
   moon_bin=$HOME/.moon/bin/moon
 else
-  echo "moonstat: moon executable not found; set MOON_BIN or install MoonBit" >&2
+  echo "moongate: moon executable not found; set MOON_BIN or install MoonBit" >&2
   exit 127
 fi
 

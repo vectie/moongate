@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/uuid"
+package "vectie/moongate/internal/uuid"
 
 import {
   "moonbitlang/core/debug",

@@ -1,5 +1,5 @@
 ///|
-test "moonstat usage records proxy counters" {
+test "moongate usage records proxy counters" {
   let stats = TrafficStats::new()
   let unauthorized = stats.begin_request(120)
   stats.record_stream_mode(unauthorized, false)
@@ -36,7 +36,7 @@ test "moonstat usage records proxy counters" {
 }
 
 ///|
-test "traffic status json matches moonstat proxy status shape" {
+test "traffic status json matches moongate proxy status shape" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(10)
   stats.record_bad_request(request)
@@ -76,7 +76,7 @@ test "traffic status json matches moonstat proxy status shape" {
 }
 
 ///|
-test "traffic status tracks moonstat active targets by app type" {
+test "traffic status tracks moongate active targets by app type" {
   let stats = TrafficStats::new()
   stats.set_active_target("claude", "codex-oauth", "Codex OAuth")
   stats.set_active_target("gemini", "gemini-api-key", "Gemini API Key")
@@ -101,7 +101,7 @@ test "traffic status tracks moonstat active targets by app type" {
 }
 
 ///|
-test "request log json matches moonstat proxy_request_logs shape" {
+test "request log json matches moongate proxy_request_logs shape" {
   let usage = TokenUsage::new(
     input_tokens=13,
     output_tokens=21,
@@ -165,7 +165,7 @@ test "request log json matches moonstat proxy_request_logs shape" {
 }
 
 ///|
-test "moonstat usage writes request logs from request context" {
+test "moongate usage writes request logs from request context" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
@@ -208,7 +208,7 @@ test "moonstat usage writes request logs from request context" {
 }
 
 ///|
-test "moonstat usage uses moonstat session request id for message usage" {
+test "moongate usage uses moongate session request id for message usage" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(64)
   stats.set_active_target("claude", "anthropic", "Anthropic")
@@ -237,7 +237,7 @@ test "moonstat usage uses moonstat session request id for message usage" {
 }
 
 ///|
-test "moonstat usage keeps interleaved request accounting isolated" {
+test "moongate usage keeps interleaved request accounting isolated" {
   let stats = TrafficStats::new()
   let codex = stats.begin_request(31)
   codex.set_active_target("codex", "openai", "OpenAI")
@@ -294,7 +294,7 @@ test "moonstat usage keeps interleaved request accounting isolated" {
 }
 
 ///|
-test "moonstat usage request pricing uses moonstat outbound model context" {
+test "moongate usage request pricing uses moongate outbound model context" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(64)
   stats.set_active_target("claude", "router", "Router")
@@ -327,7 +327,7 @@ test "moonstat usage request pricing uses moonstat outbound model context" {
 }
 
 ///|
-test "moonstat usage empty usage falls back to moonstat outbound model context" {
+test "moongate usage empty usage falls back to moongate outbound model context" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(64)
   stats.set_active_target("claude", "router", "Router")
@@ -349,7 +349,7 @@ test "moonstat usage empty usage falls back to moonstat outbound model context" 
 }
 
 ///|
-test "moonstat usage leaves moonstat error pricing model empty" {
+test "moongate usage leaves moongate error pricing model empty" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(64)
   stats.set_active_target("claude", "router", "Router")
@@ -386,7 +386,7 @@ test "moonstat usage leaves moonstat error pricing model empty" {
 }
 
 ///|
-test "moonstat usage can price gateway requests with moonstat model pricing overrides" {
+test "moongate usage can price gateway requests with moongate model pricing overrides" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(64)
   stats.set_active_target("codex", "codex-oauth", "Codex OAuth")
@@ -412,7 +412,7 @@ test "moonstat usage can price gateway requests with moonstat model pricing over
 }
 
 ///|
-test "moonstat usage honors moonstat model pricing delete tombstones" {
+test "moongate usage honors moongate model pricing delete tombstones" {
   let stats = TrafficStats::new()
   let deleted : Map[String, Bool] = Map([], capacity=0)
   deleted.set("gpt-5", true)
@@ -433,7 +433,7 @@ test "moonstat usage honors moonstat model pricing delete tombstones" {
 }
 
 ///|
-test "moonstat usage keeps request log retention bounded" {
+test "moongate usage keeps request log retention bounded" {
   let stats = TrafficStats::new()
   for i in 0..<505 {
     stats.record_request_log(
@@ -460,7 +460,7 @@ test "moonstat usage keeps request log retention bounded" {
 }
 
 ///|
-test "moonstat usage preserves aggregates beyond detail retention" {
+test "moongate usage preserves aggregates beyond detail retention" {
   let stats = TrafficStats::new()
   for i in 0..<10_000 {
     stats.record_request_log(
@@ -507,7 +507,7 @@ test "moonstat usage preserves aggregates beyond detail retention" {
 }
 
 ///|
-test "request log default created_at uses moonstat unix seconds" {
+test "request log default created_at uses moongate unix seconds" {
   let before = @os.unix_seconds()
   let log = RequestLog::new(
     request_id="req-time",
@@ -528,7 +528,7 @@ test "request log default created_at uses moonstat unix seconds" {
 }
 
 ///|
-test "usage logs paginated json matches moonstat filters and ordering" {
+test "usage logs paginated json matches moongate filters and ordering" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -649,7 +649,7 @@ test "usage logs paginated json matches moonstat filters and ordering" {
 }
 
 ///|
-test "usage logs paginated json defaults to moonstat page size" {
+test "usage logs paginated json defaults to moongate page size" {
   let stats = TrafficStats::new()
   for i in 0..<25 {
     stats.record_request_log(
@@ -678,7 +678,7 @@ test "usage logs paginated json defaults to moonstat page size" {
 }
 
 ///|
-test "usage logs provider name filter matches moonstat joined provider name semantics" {
+test "usage logs provider name filter matches moongate joined provider name semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -784,7 +784,7 @@ test "request detail lookup returns retained proxy request log" {
 }
 
 ///|
-test "usage summary aggregates moonstat token and cost semantics" {
+test "usage summary aggregates moongate token and cost semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -854,7 +854,7 @@ test "usage summary aggregates moonstat token and cost semantics" {
 }
 
 ///|
-test "usage aggregate keeps malformed cache-inclusive input like moonstat sql helper" {
+test "usage aggregate keeps malformed cache-inclusive input like moongate sql helper" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -900,7 +900,7 @@ test "usage aggregate keeps malformed cache-inclusive input like moonstat sql he
 }
 
 ///|
-test "usage summary excludes partial rollup boundary days like moonstat" {
+test "usage summary excludes partial rollup boundary days like moongate" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -952,7 +952,7 @@ test "usage summary excludes partial rollup boundary days like moonstat" {
 }
 
 ///|
-test "usage summary includes end day rollup for minute precision end time like moonstat" {
+test "usage summary includes end day rollup for minute precision end time like moongate" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -989,7 +989,7 @@ test "usage summary includes end day rollup for minute precision end time like m
 }
 
 ///|
-test "provider stats exclude partial rollup boundary days like moonstat" {
+test "provider stats exclude partial rollup boundary days like moongate" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -1046,7 +1046,7 @@ test "provider stats exclude partial rollup boundary days like moonstat" {
 }
 
 ///|
-test "usage trends combine boundary details with full-day rollups like moonstat" {
+test "usage trends combine boundary details with full-day rollups like moongate" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.record_request_log(
@@ -1109,7 +1109,7 @@ test "usage trends combine boundary details with full-day rollups like moonstat"
 }
 
 ///|
-test "model stats exclude partial rollup boundary days like moonstat" {
+test "model stats exclude partial rollup boundary days like moongate" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     stats.daily_rollups.push(
@@ -1163,7 +1163,7 @@ test "model stats exclude partial rollup boundary days like moonstat" {
 }
 
 ///|
-test "usage aggregate lists match moonstat route payloads" {
+test "usage aggregate lists match moongate route payloads" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1277,7 +1277,7 @@ test "usage aggregate lists match moonstat route payloads" {
 }
 
 ///|
-test "provider stats average latency truncates like moonstat" {
+test "provider stats average latency truncates like moongate" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1315,7 +1315,7 @@ test "provider stats average latency truncates like moonstat" {
 }
 
 ///|
-test "usage aggregate filters match moonstat date and app semantics" {
+test "usage aggregate filters match moongate date and app semantics" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1473,7 +1473,7 @@ test "usage aggregate filters match moonstat date and app semantics" {
 }
 
 ///|
-test "usage aggregates deduplicate moonstat session imports against proxy logs" {
+test "usage aggregates deduplicate moongate session imports against proxy logs" {
   let stats = TrafficStats::new()
   let session_log = RequestLog::new(
     request_id="codex_session:session-1:0",
@@ -1605,7 +1605,7 @@ test "usage aggregates deduplicate moonstat session imports against proxy logs" 
 }
 
 ///|
-test "moonstat session proxy dedup only relaxes cache creation for supported sources" {
+test "moongate session proxy dedup only relaxes cache creation for supported sources" {
   let stats = TrafficStats::new()
   let claude_session = RequestLog::new(
     request_id="session:claude-cache-missing",
@@ -1689,7 +1689,7 @@ test "moonstat session proxy dedup only relaxes cache creation for supported sou
 }
 
 ///|
-test "provider stats use moonstat session provider fallback names" {
+test "provider stats use moongate session provider fallback names" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1785,7 +1785,7 @@ fn restore_test_timezone(old_tz : String?) -> Unit {
 }
 
 ///|
-test "usage trends use moonstat hourly buckets for short ranges" {
+test "usage trends use moongate hourly buckets for short ranges" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -1844,7 +1844,7 @@ test "usage trends use moonstat hourly buckets for short ranges" {
 }
 
 ///|
-test "usage rollups aggregate old effective rows like moonstat daily rollups" {
+test "usage rollups aggregate old effective rows like moongate daily rollups" {
   with_test_timezone("UTC", fn() raise {
     let stats = TrafficStats::new()
     let session_log = RequestLog::new(
@@ -1993,7 +1993,7 @@ test "usage rollup cutoff aligns to local midnight after retained target day" {
 }
 
 ///|
-test "usage trends follow process local timezone like moonstat" {
+test "usage trends follow process local timezone like moongate" {
   with_test_timezone("UTC", fn() raise {
     assert_eq(trend_timestamp_rfc3339(0), "1970-01-01T00:00:00+00:00")
     assert_eq(trend_local_day_key(-1), "1969-12-31")
@@ -2072,7 +2072,7 @@ test "usage trends use local daily buckets for long ranges" {
 }
 
 ///|
-test "provider limit status matches moonstat daily and monthly semantics" {
+test "provider limit status matches moongate daily and monthly semantics" {
   let stats = TrafficStats::new()
   let now = TREND_DAY_SECONDS * 10
   stats.set_provider_limits(
@@ -2167,7 +2167,7 @@ test "provider limit status allows standalone query limits" {
 }
 
 ///|
-test "moonstat usage backfills missing costs after moonstat pricing update" {
+test "moongate usage backfills missing costs after moongate pricing update" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2206,7 +2206,7 @@ test "moonstat usage backfills missing costs after moonstat pricing update" {
 }
 
 ///|
-test "moonstat usage backfill keeps moonstat claude fresh input with cache read" {
+test "moongate usage backfill keeps moongate claude fresh input with cache read" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2233,7 +2233,7 @@ test "moonstat usage backfill keeps moonstat claude fresh input with cache read"
 }
 
 ///|
-test "moonstat usage backfill uses persisted moonstat pricing model" {
+test "moongate usage backfill uses persisted moongate pricing model" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2261,7 +2261,7 @@ test "moonstat usage backfill uses persisted moonstat pricing model" {
 }
 
 ///|
-test "usage logs lazily backfill missing costs like moonstat reads" {
+test "usage logs lazily backfill missing costs like moongate reads" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2298,7 +2298,7 @@ test "usage logs lazily backfill missing costs like moonstat reads" {
 }
 
 ///|
-test "request detail lazily backfills missing costs like moonstat reads" {
+test "request detail lazily backfills missing costs like moongate reads" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2328,7 +2328,7 @@ test "request detail lazily backfills missing costs like moonstat reads" {
 }
 
 ///|
-test "moonstat usage backfill does not use request model for real unpriced model" {
+test "moongate usage backfill does not use request model for real unpriced model" {
   let stats = TrafficStats::new()
   stats.record_request_log(
     RequestLog::new(
@@ -2353,7 +2353,7 @@ test "moonstat usage backfill does not use request model for real unpriced model
 }
 
 ///|
-test "moonstat usage exports prometheus metrics" {
+test "moongate usage exports prometheus metrics" {
   let stats = TrafficStats::new()
   let request = stats.begin_request(128)
   stats.record_stream_mode(request, true)
@@ -2363,16 +2363,16 @@ test "moonstat usage exports prometheus metrics" {
     256,
   )
   let metrics = stats.prometheus_metrics()
-  assert_true(metrics.contains("# TYPE moonstat_requests_total counter\n"))
-  assert_true(metrics.contains("moonstat_requests_total 1"))
-  assert_true(metrics.contains("moonstat_streaming_requests_total 1"))
-  assert_true(metrics.contains("moonstat_successful_responses_total 1"))
-  assert_true(metrics.contains("moonstat_input_tokens_total 11"))
-  assert_true(metrics.contains("moonstat_output_tokens_total 7"))
-  assert_true(metrics.contains("moonstat_request_bytes_total 128"))
-  assert_true(metrics.contains("moonstat_response_bytes_total 256"))
-  assert_true(metrics.contains("# TYPE moonstat_active_connections gauge\n"))
-  assert_true(metrics.contains("moonstat_active_connections 0"))
-  assert_true(metrics.contains("moonstat_recent_avg_latency_ms"))
-  assert_true(metrics.contains("moonstat_success_rate_percent 100"))
+  assert_true(metrics.contains("# TYPE moongate_requests_total counter\n"))
+  assert_true(metrics.contains("moongate_requests_total 1"))
+  assert_true(metrics.contains("moongate_streaming_requests_total 1"))
+  assert_true(metrics.contains("moongate_successful_responses_total 1"))
+  assert_true(metrics.contains("moongate_input_tokens_total 11"))
+  assert_true(metrics.contains("moongate_output_tokens_total 7"))
+  assert_true(metrics.contains("moongate_request_bytes_total 128"))
+  assert_true(metrics.contains("moongate_response_bytes_total 256"))
+  assert_true(metrics.contains("# TYPE moongate_active_connections gauge\n"))
+  assert_true(metrics.contains("moongate_active_connections 0"))
+  assert_true(metrics.contains("moongate_recent_avg_latency_ms"))
+  assert_true(metrics.contains("moongate_success_rate_percent 100"))
 }

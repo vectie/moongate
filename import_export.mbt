@@ -1,5 +1,5 @@
 ///|
-const MOONSTAT_DB_BACKUP_DIR = "backups"
+const MOONGATE_DB_BACKUP_DIR = "backups"
 
 ///|
 fn moon_suite_app_types() -> Array[String] {
@@ -10,7 +10,7 @@ fn moon_suite_app_types() -> Array[String] {
 
 ///|
 fn moon_db_backup_dir() -> String {
-  @pathx.join(moon_app_config_dir(), MOONSTAT_DB_BACKUP_DIR)
+  @pathx.join(moon_app_config_dir(), MOONGATE_DB_BACKUP_DIR)
 }
 
 ///|
@@ -86,13 +86,13 @@ async fn ConfigService::moon_export_snapshot_json(
   port~ : Int,
 ) -> Json {
   {
-    "format": Json::string("moonstat.config.v1"),
+    "format": Json::string("moongate.config.v1"),
     "exportedAt": Json::number(@os.unix_seconds().to_double()),
     "settings": self.app_settings,
     "skills": moon_skill_state_load(),
     "proxy": proxy.moon_export_proxy_json(),
     "providers": proxy.moon_export_providers_json(),
-    "suite": moonstat_suite_manifest_json(host~, port~),
+    "suite": moongate_suite_manifest_json(host~, port~),
   }.to_json()
 }
 
@@ -289,7 +289,7 @@ async fn ConfigService::moon_create_db_backup_json(
 
 ///|
 fn moon_new_backup_filename() -> String {
-  "moonstat-\{@os.unix_seconds()}-\{moonstat_random_id()}.db"
+  "moongate-\{@os.unix_seconds()}-\{moongate_random_id()}.db"
 }
 
 ///|

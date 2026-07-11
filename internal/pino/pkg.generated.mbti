@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/pino"
+package "vectie/moongate/internal/pino"
 
 import {
   "moonbitlang/async/aqueue",

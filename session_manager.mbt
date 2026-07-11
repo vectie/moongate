@@ -318,7 +318,7 @@ async fn moon_session_warp_launch(
     )
   }
   let script_dir = @pathx.join(
-    @moonsuite.product_home_for_workspace_root(dir, "moonstat").tmp_path,
+    @moonsuite.product_home_for_workspace_root(dir, "moongate").tmp_path,
     "warp",
   )
   @fsx.make_directory(script_dir, recursive=true, exists_ok=true) catch {
@@ -327,7 +327,7 @@ async fn moon_session_warp_launch(
         "Failed to create temporary script directory for Warp: \{error}",
       )
   }
-  let script_path = @pathx.join(script_dir, "warp-\{moonstat_random_id()}.sh")
+  let script_path = @pathx.join(script_dir, "warp-\{moongate_random_id()}.sh")
   let script = [
     "#!/usr/bin/env sh",
     "",

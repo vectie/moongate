@@ -1,10 +1,10 @@
-name = "vectie/moonstat"
+name = "vectie/moongate"
 
 version = "0.1.0"
 
 readme = "README.mbt.md"
 
-repository = "https://github.com/vectie/moonstat"
+repository = "https://github.com/vectie/moongate"
 
 license = "Apache-2.0"
 
@@ -16,7 +16,7 @@ import {
   "moonbitlang/async@0.16.6",
   "moonbitlang/x@0.4.40",
   "moonbitlang/regexp@0.3.5",
-  "vectie/moonlib@0.1.9",
+  "vectie/moonlib@0.1.10",
   "vectie/lepusa@0.1.0",
   "moonbit-community/rabbita@0.12.4",
 }
@@ -24,5 +24,5 @@ import {
 preferred_target = "native"
 
 options(
-  bin: "moonstat",
+  bin: "moongate",
 )

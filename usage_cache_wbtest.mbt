@@ -20,7 +20,7 @@ fn fake_usage_result() -> UsageResult {
 }
 
 ///|
-test "usage result parses moonstat usage script json" {
+test "usage result parses moongate usage script json" {
   let json = @json.parse(
     (
       #|{
@@ -51,7 +51,7 @@ test "usage result parses moonstat usage script json" {
 }
 
 ///|
-test "usage script output wraps raw moonstat usage rows" {
+test "usage script output wraps raw moongate usage rows" {
   let json = @json.parse(
     (
       #|[
@@ -116,7 +116,7 @@ test "usage script output rejects snake case compatibility rows" {
 }
 
 ///|
-test "usage script output preserves moonstat empty usage arrays" {
+test "usage script output preserves moongate empty usage arrays" {
   guard usage_script_output_result_from_json(@json.parse("[]")) is Some(result) else {
     fail("expected wrapped empty usage result")
   }
@@ -128,7 +128,7 @@ test "usage script output preserves moonstat empty usage arrays" {
 }
 
 ///|
-test "usage cache subscription round trip matches moonstat" {
+test "usage cache subscription round trip matches moongate" {
   let cache = UsageCache::new()
   assert_true(
     cache.with_subscription("claude", fn(quota) { quota.success }) is None,
@@ -144,7 +144,7 @@ test "usage cache subscription round trip matches moonstat" {
 }
 
 ///|
-test "usage cache script round trip and invalidate match moonstat" {
+test "usage cache script round trip and invalidate match moongate" {
   let cache = UsageCache::new()
   assert_true(
     cache.with_script("codex", "pid", fn(result) { result.success }) is None,
@@ -161,7 +161,7 @@ test "usage cache script round trip and invalidate match moonstat" {
 }
 
 ///|
-test "usage cache script keys are isolated by app type like moonstat" {
+test "usage cache script keys are isolated by app type like moongate" {
   let cache = UsageCache::new()
   cache.put_script("claude", "same", fake_usage_result())
   assert_true(cache.get_script("claude", "same") is Some(_))
@@ -169,7 +169,7 @@ test "usage cache script keys are isolated by app type like moonstat" {
 }
 
 ///|
-test "usage cache subscription invalidation matches moonstat" {
+test "usage cache subscription invalidation matches moongate" {
   let cache = UsageCache::new()
   cache.put_subscription("claude", fake_quota())
   assert_true(cache.get_subscription("claude") is Some(_))
@@ -227,13 +227,13 @@ test "usage cache exposes deterministic and expired transient failures" {
   let expired = cache.resolve_subscription(
     "codex",
     transient,
-    now_ms=3_000L + MOONSTAT_USAGE_KEEP_LAST_GOOD_MS,
+    now_ms=3_000L + MOONGATE_USAGE_KEEP_LAST_GOOD_MS,
   )
   assert_false(expired.success)
 }
 
 ///|
-test "usage cache result json matches moonstat usage result shape" {
+test "usage cache result json matches moongate usage result shape" {
   guard fake_usage_result().to_json() is Object(result) else {
     fail("expected usage result object")
   }

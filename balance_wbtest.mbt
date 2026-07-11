@@ -1,5 +1,5 @@
 ///|
-test "moonstat balance provider detection mirrors native command" {
+test "moongate balance provider detection mirrors native command" {
   assert_true(
     moon_detect_balance_provider("https://api.deepseek.com/v1")
     is Some(DeepSeek),
@@ -26,7 +26,7 @@ test "moonstat balance provider detection mirrors native command" {
 }
 
 ///|
-test "moonstat balance deterministic errors match UsageResult shape" {
+test "moongate balance deterministic errors match UsageResult shape" {
   assert_eq(
     moon_balance_error("Unknown balance provider").to_json(),
     {
@@ -50,7 +50,7 @@ test "moonstat balance deterministic errors match UsageResult shape" {
 }
 
 ///|
-test "moonstat balance parsers keep provider-specific fields" {
+test "moongate balance parsers keep provider-specific fields" {
   assert_eq(
     moon_parse_openrouter_balance(
       {

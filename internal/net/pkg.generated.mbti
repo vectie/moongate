@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/net"
+package "vectie/moongate/internal/net"
 
 // Values
 pub fn localhost_port_open(Int, timeout_ms? : Int) -> Bool

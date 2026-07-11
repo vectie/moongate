@@ -34,12 +34,12 @@ priv struct CopilotOptimizationResult {
 }
 
 ///|
-fn moonstat_optimizer_config_from_env() -> OptimizerConfig {
+fn moongate_optimizer_config_from_env() -> OptimizerConfig {
   {
-    enabled: env_bool_default(["MOONSTAT_OPTIMIZER_ENABLED"], false),
-    thinking_optimizer: env_bool_default(["MOONSTAT_THINKING_OPTIMIZER"], true),
-    cache_injection: env_bool_default(["MOONSTAT_CACHE_INJECTION"], true),
-    cache_ttl: env_cache_ttl_default(["MOONSTAT_CACHE_TTL"], "1h"),
+    enabled: env_bool_default(["MOONGATE_OPTIMIZER_ENABLED"], false),
+    thinking_optimizer: env_bool_default(["MOONGATE_THINKING_OPTIMIZER"], true),
+    cache_injection: env_bool_default(["MOONGATE_CACHE_INJECTION"], true),
+    cache_ttl: env_cache_ttl_default(["MOONGATE_CACHE_TTL"], "1h"),
   }
 }
 
@@ -129,7 +129,7 @@ fn apply_moon_optimizer_for_provider(
   body : Json,
   provider : ProviderRouteTarget?,
 ) -> Json {
-  let config = moonstat_optimizer_config_from_env()
+  let config = moongate_optimizer_config_from_env()
   if !config.enabled || !provider_is_bedrock(provider) {
     return body
   }
@@ -716,7 +716,7 @@ fn moon_copilot_uuid_from_sha256(input : String) -> String {
 
 ///|
 fn moon_copilot_random_uuid() -> String {
-  moonstat_random_id()
+  moongate_random_id()
 }
 
 ///|

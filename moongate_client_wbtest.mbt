@@ -1,6 +1,6 @@
 ///|
-test "moonstat client builds core endpoint URLs" {
-  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199/")
+test "moongate client builds core endpoint URLs" {
+  let client = MoonGateClient::new(base_url="http://127.0.0.1:4199/")
   assert_eq(client.base_url, "http://127.0.0.1:4199")
   assert_eq(client.health_url(), "http://127.0.0.1:4199/health")
   assert_eq(client.status_url(), "http://127.0.0.1:4199/status")
@@ -32,14 +32,14 @@ test "moonstat client builds core endpoint URLs" {
 }
 
 ///|
-test "moonstat host client maps wildcard host to loopback" {
-  let client = MoonstatClient::from_host(host="0.0.0.0", port=15722)
+test "moongate host client maps wildcard host to loopback" {
+  let client = MoonGateClient::from_host(host="0.0.0.0", port=15722)
   assert_eq(client.base_url, "http://127.0.0.1:15722")
 }
 
 ///|
-test "moonstat client keeps inference and control credentials separate" {
-  let client = MoonstatClient::new(
+test "moongate client keeps inference and control credentials separate" {
+  let client = MoonGateClient::new(
     api_key=Some("provider-key"),
     control_token=Some("control-key"),
   )
@@ -48,12 +48,12 @@ test "moonstat client keeps inference and control credentials separate" {
     resolved_control_token=client.control_token,
   )
   assert_eq(headers["Authorization"], "Bearer provider-key")
-  assert_eq(headers["x-moonstat-control-token"], "control-key")
+  assert_eq(headers["x-moongate-control-token"], "control-key")
 }
 
 ///|
-test "moonstat client builds usage query URLs" {
-  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
+test "moongate client builds usage query URLs" {
+  let client = MoonGateClient::new(base_url="http://127.0.0.1:4199")
   let query = {
     start_date: Some("10"),
     end_date: Some("20"),
@@ -92,8 +92,8 @@ test "moonstat client builds usage query URLs" {
 }
 
 ///|
-test "moonstat client builds required endpoint parameters" {
-  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
+test "moongate client builds required endpoint parameters" {
+  let client = MoonGateClient::new(base_url="http://127.0.0.1:4199")
   assert_eq(
     client.usage_provider_limits_url("claude", "provider/a b"),
     "http://127.0.0.1:4199/usage/provider-limits?appType=claude&providerId=provider%2Fa%20b",
@@ -145,8 +145,8 @@ test "moonstat client builds required endpoint parameters" {
 }
 
 ///|
-test "moonstat client builds proxy mutation URLs" {
-  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
+test "moongate client builds proxy mutation URLs" {
+  let client = MoonGateClient::new(base_url="http://127.0.0.1:4199")
   assert_eq(client.proxy_start_url(), "http://127.0.0.1:4199/proxy/start")
   assert_eq(
     client.proxy_stop_with_restore_url(),
@@ -229,8 +229,8 @@ test "moonstat client builds proxy mutation URLs" {
 }
 
 ///|
-test "moonstat client omits empty usage query values" {
-  let client = MoonstatClient::new(base_url="   ")
+test "moongate client omits empty usage query values" {
+  let client = MoonGateClient::new(base_url="   ")
   assert_eq(client.base_url, "http://127.0.0.1:15721")
   let query = {
     start_date: Some(""),
@@ -248,14 +248,14 @@ test "moonstat client omits empty usage query values" {
     "http://127.0.0.1:15721/usage/logs?providerName=Codex%20OAuth&model=anthropic%2Fclaude-sonnet&statusCode=200&pageSize=50",
   )
   assert_eq(
-    client.usage_logs_url(query=Some(MoonstatUsageQuery::empty())),
+    client.usage_logs_url(query=Some(MoonGateUsageQuery::empty())),
     "http://127.0.0.1:15721/usage/logs",
   )
 }
 
 ///|
-test "moonstat client builds session sync URLs" {
-  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
+test "moongate client builds session sync URLs" {
+  let client = MoonGateClient::new(base_url="http://127.0.0.1:4199")
   let query = {
     projects_dir: Some("/tmp/Claude Projects"),
     codex_dir: Some(""),
@@ -268,13 +268,13 @@ test "moonstat client builds session sync URLs" {
     "http://127.0.0.1:4199/usage/sync-session?projectsDir=%2Ftmp%2FClaude%20Projects&opencodeExportPath=%2Ftmp%2Fopen%20code.jsonl&opencodeDbPath=%2Ftmp%2Fopencode.db",
   )
   assert_eq(
-    client.usage_sync_session_url(query=Some(MoonstatSessionSyncQuery::empty())),
+    client.usage_sync_session_url(query=Some(MoonGateSessionSyncQuery::empty())),
     "http://127.0.0.1:4199/usage/sync-session",
   )
 }
 
 ///|
-fn moonstat_client_contract_path(url : String) -> String {
+fn moongate_client_contract_path(url : String) -> String {
   let without_origin = match url.find("://") {
     Some(scheme_index) => {
       let after_scheme = url[scheme_index + 3:]
@@ -292,7 +292,7 @@ fn moonstat_client_contract_path(url : String) -> String {
 }
 
 ///|
-fn moonstat_manifest_advertises_client_path(
+fn moongate_manifest_advertises_client_path(
   routes : Array[Json],
   path : String,
 ) -> Bool {
@@ -304,9 +304,9 @@ fn moonstat_manifest_advertises_client_path(
 }
 
 ///|
-test "moonstat client helper paths are advertised by suite manifest" {
-  let client = MoonstatClient::new(base_url="http://127.0.0.1:4199")
-  let manifest = moonstat_suite_manifest_json(port=4199)
+test "moongate client helper paths are advertised by suite manifest" {
+  let client = MoonGateClient::new(base_url="http://127.0.0.1:4199")
+  let manifest = moongate_suite_manifest_json(port=4199)
   guard manifest is Object(obj) else { fail("expected manifest object") }
   guard obj["routes"] is Array(routes) else { fail("expected routes") }
   let urls = [
@@ -368,76 +368,76 @@ test "moonstat client helper paths are advertised by suite manifest" {
   ]
   assert_true(urls.length() > 50)
   for url in urls {
-    let path = moonstat_client_contract_path(url)
-    assert_true(moonstat_manifest_advertises_client_path(routes, path))
+    let path = moongate_client_contract_path(url)
+    assert_true(moongate_manifest_advertises_client_path(routes, path))
   }
 }
 
 ///|
-test "moonstat client discovers from suite status manifest" {
-  let status = moonstat_suite_status_json(host="0.0.0.0", port=15722)
-  let client = MoonstatClient::from_suite_status(status).unwrap()
+test "moongate client discovers from suite status manifest" {
+  let status = moongate_suite_status_json(host="0.0.0.0", port=15722)
+  let client = MoonGateClient::from_suite_status(status).unwrap()
   assert_eq(client.base_url, "http://127.0.0.1:15722")
   assert_eq(
-    moonstat_base_url_from_suite_status(status),
+    moongate_base_url_from_suite_status(status),
     Some("http://127.0.0.1:15722"),
   )
 }
 
 ///|
-test "moonstat client requires suite status and manifest contracts" {
+test "moongate client requires suite status and manifest contracts" {
   let root_base = { "base_url": Json::string("http://127.0.0.1:4199/") }.to_json()
-  assert_true(MoonstatClient::from_suite_status(root_base) is None)
+  assert_true(MoonGateClient::from_suite_status(root_base) is None)
   let health_only = {
     "health_url": Json::string("http://127.0.0.1:4299/health"),
   }.to_json()
-  assert_true(MoonstatClient::from_suite_status(health_only) is None)
+  assert_true(MoonGateClient::from_suite_status(health_only) is None)
   let manifest_only = {
     "manifest": { "base_url": Json::string("http://127.0.0.1:4199") }.to_json(),
   }.to_json()
-  assert_true(MoonstatClient::from_suite_status(manifest_only) is None)
+  assert_true(MoonGateClient::from_suite_status(manifest_only) is None)
   let snake_case_manifest = {
     "contract": Json::string(@suite.status_contract()),
-    "service": Json::string("moonstat"),
+    "service": Json::string("moongate"),
     "manifest": {
       "contract": Json::string(@suite.manifest_contract()),
-      "service": Json::string("moonstat"),
+      "service": Json::string("moongate"),
       "base_url": Json::string("http://127.0.0.1:4199"),
     }.to_json(),
   }.to_json()
-  assert_true(MoonstatClient::from_suite_status(snake_case_manifest) is None)
+  assert_true(MoonGateClient::from_suite_status(snake_case_manifest) is None)
   let wrong_status_contract = {
     "contract": Json::string("moon.suite.status.v1"),
-    "service": Json::string("moonstat"),
-    "manifest": moonstat_suite_manifest_json(port=4199),
+    "service": Json::string("moongate"),
+    "manifest": moongate_suite_manifest_json(port=4199),
   }.to_json()
-  assert_true(MoonstatClient::from_suite_status(wrong_status_contract) is None)
+  assert_true(MoonGateClient::from_suite_status(wrong_status_contract) is None)
   let wrong_manifest_contract = {
     "contract": Json::string(@suite.status_contract()),
-    "service": Json::string("moonstat"),
+    "service": Json::string("moongate"),
     "manifest": {
       "contract": Json::string("moon.suite.service.v0"),
-      "service": Json::string("moonstat"),
+      "service": Json::string("moongate"),
       "baseUrl": Json::string("http://127.0.0.1:4199"),
     }.to_json(),
   }.to_json()
   assert_true(
-    MoonstatClient::from_suite_status(wrong_manifest_contract) is None,
+    MoonGateClient::from_suite_status(wrong_manifest_contract) is None,
   )
 }
 
 ///|
-test "moonstat client parses typed agent clients from suite status" {
-  let status = moonstat_suite_status_json(
+test "moongate client parses typed agent clients from suite status" {
+  let status = moongate_suite_status_json(
     host="127.0.0.1",
     port=18081,
     model="gpt-5",
   )
-  guard moonstat_agent_clients_from_suite_status(status) is Ok(clients) else {
+  guard moongate_agent_clients_from_suite_status(status) is Ok(clients) else {
     fail("expected parsed agent clients")
   }
   assert_eq(clients.length(), 8)
-  guard moonstat_client_agent_client_by_id(clients, "codex") is Some(codex) else {
+  guard moongate_client_agent_client_by_id(clients, "codex") is Some(codex) else {
     fail("expected codex agent client")
   }
   assert_eq(codex.app_type, "codex")
@@ -446,16 +446,16 @@ test "moonstat client parses typed agent clients from suite status" {
   assert_eq(codex.primary_route, "POST /v1/responses")
   assert_eq(
     codex.setup_command,
-    Some("moonstat codex install --port 18081 --model gpt-5"),
+    Some("moongate codex install --port 18081 --model gpt-5"),
   )
-  guard moonstat_client_agent_client_by_id(clients, "openclaw")
+  guard moongate_client_agent_client_by_id(clients, "openclaw")
     is Some(openclaw) else {
     fail("expected openclaw agent client")
   }
   assert_eq(openclaw.app_type, "openclaw")
   assert_eq(openclaw.base_url, "http://127.0.0.1:18081/openclaw/v1")
   assert_eq(openclaw.primary_route, "POST /openclaw/v1/chat/completions")
-  guard moonstat_client_agent_client_by_id(clients, "gemini") is Some(gemini) else {
+  guard moongate_client_agent_client_by_id(clients, "gemini") is Some(gemini) else {
     fail("expected gemini agent client")
   }
   assert_eq(gemini.protocol, "gemini-compatible")
@@ -463,22 +463,22 @@ test "moonstat client parses typed agent clients from suite status" {
 }
 
 ///|
-test "moonstat client rejects malformed agent client contracts" {
+test "moongate client rejects malformed agent client contracts" {
   assert_true(
-    moonstat_agent_clients_from_manifest(
+    moongate_agent_clients_from_manifest(
       { "agentClients": Json::array([]) }.to_json(),
     )
     is Err(_),
   )
   let wrong_status_contract = {
     "contract": Json::string("moon.suite.status.v1"),
-    "service": Json::string("moonstat"),
-    "manifest": moonstat_suite_manifest_json(port=18081),
+    "service": Json::string("moongate"),
+    "manifest": moongate_suite_manifest_json(port=18081),
   }.to_json()
   assert_true(
-    moonstat_agent_clients_from_suite_status(wrong_status_contract) is Err(_),
+    moongate_agent_clients_from_suite_status(wrong_status_contract) is Err(_),
   )
-  let missing_id_manifest = moonstat_suite_manifest_json(port=18081)
+  let missing_id_manifest = moongate_suite_manifest_json(port=18081)
   guard missing_id_manifest is Object(manifest_obj) else {
     fail("expected manifest object")
   }
@@ -491,15 +491,15 @@ test "moonstat client rejects malformed agent client contracts" {
     }.to_json(),
   ])
   assert_true(
-    moonstat_agent_clients_from_manifest(Json::object(manifest_obj)) is Err(_),
+    moongate_agent_clients_from_manifest(Json::object(manifest_obj)) is Err(_),
   )
 }
 
 ///|
-fn moonstat_client_agent_client_by_id(
-  clients : Array[MoonstatAgentClient],
+fn moongate_client_agent_client_by_id(
+  clients : Array[MoonGateAgentClient],
   id : String,
-) -> MoonstatAgentClient? {
+) -> MoonGateAgentClient? {
   for client in clients {
     if client.id == id {
       return Some(client)
@@ -509,7 +509,7 @@ fn moonstat_client_agent_client_by_id(
 }
 
 ///|
-test "moonstat client parses typed models from suite response shapes" {
+test "moongate client parses typed models from suite response shapes" {
   let catalog = {
     "models": [
       {
@@ -520,7 +520,7 @@ test "moonstat client parses typed models from suite response shapes" {
       { "id": Json::string("moon/local") },
     ],
   }.to_json()
-  guard moonstat_models_from_json(catalog) is Ok(models) else {
+  guard moongate_models_from_json(catalog) is Ok(models) else {
     fail("expected parsed models")
   }
   assert_eq(models.length(), 2)
@@ -532,15 +532,15 @@ test "moonstat client parses typed models from suite response shapes" {
 }
 
 ///|
-test "moonstat client rejects malformed typed model entries" {
+test "moongate client rejects malformed typed model entries" {
   assert_true(
-    moonstat_models_from_json(Json::array([Json::object({})])) is Err(_),
+    moongate_models_from_json(Json::array([Json::object({})])) is Err(_),
   )
-  assert_true(moonstat_models_from_json(Json::object({})) is Err(_))
+  assert_true(moongate_models_from_json(Json::object({})) is Err(_))
 }
 
 ///|
-test "moonstat client parses typed usage summary" {
+test "moongate client parses typed usage summary" {
   let summary = {
     "totalRequests": Json::number(3.0),
     "totalCost": Json::string("0.000300"),
@@ -552,7 +552,7 @@ test "moonstat client parses typed usage summary" {
     "realTotalTokens": Json::number(127.0),
     "cacheHitRate": Json::number(12.5),
   }.to_json()
-  guard MoonstatUsageSummary::from_json(summary) is Ok(parsed) else {
+  guard MoonGateUsageSummary::from_json(summary) is Ok(parsed) else {
     fail("expected parsed usage summary")
   }
   assert_eq(parsed.total_requests, 3)
@@ -567,16 +567,16 @@ test "moonstat client parses typed usage summary" {
 }
 
 ///|
-async test "moonstat client discover reads status file and falls back" {
-  @fsx.with_temporary_directory("moonstat-client-discover-XXXXXX", tmpdir => {
+async test "moongate client discover reads status file and falls back" {
+  @fsx.with_temporary_directory("moongate-client-discover-XXXXXX", tmpdir => {
     let path = @pathx.join(tmpdir, "suite-status.json")
     @fsx.write_to_file(
       path,
-      moonstat_suite_status_json(host="127.0.0.1", port=4307).stringify(),
+      moongate_suite_status_json(host="127.0.0.1", port=4307).stringify(),
     )
-    assert_eq(MoonstatClient::discover(path~).base_url, "http://127.0.0.1:4307")
+    assert_eq(MoonGateClient::discover(path~).base_url, "http://127.0.0.1:4307")
     assert_eq(
-      MoonstatClient::discover(path=@pathx.join(tmpdir, "missing.json")).base_url,
+      MoonGateClient::discover(path=@pathx.join(tmpdir, "missing.json")).base_url,
       "http://127.0.0.1:15721",
     )
   })

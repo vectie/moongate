@@ -2,7 +2,7 @@
 const PROFILE_ID = "00000000-0000-4000-8000-000000157210"
 
 ///|
-const PROFILE_NAME = "Moonstat"
+const PROFILE_NAME = "MoonGate"
 
 ///|
 const CONFIG_FILE = "claude_desktop_config.json"
@@ -207,7 +207,7 @@ pub fn local_gateway_base_url(host : String, port : Int) -> String {
 
 ///|
 fn gateway_token_from_env() -> String? {
-  match getenv_or_none("MOONSTAT_CLAUDE_DESKTOP_TOKEN") {
+  match getenv_or_none("MOONGATE_CLAUDE_DESKTOP_TOKEN") {
     Some(token) if !token.trim().is_empty() => Some(token.trim().to_owned())
     _ =>
       match getenv_or_none("CLAUDE_DESKTOP_GATEWAY_TOKEN") {
@@ -241,7 +241,7 @@ async fn write_gateway_token(token : String) -> Unit {
 ///|
 fn generate_gateway_token() -> String {
   let randomer = @rand.chacha8() catch { _ => @random.Rand::new() }
-  "moonstat-\{@uuid.generator(randomer).v4()}"
+  "moongate-\{@uuid.generator(randomer).v4()}"
 }
 
 ///|
@@ -560,7 +560,7 @@ fn claude_desktop_active_workspace_root() -> String {
 fn gateway_token_path() -> String {
   @moonsuite.product_artifact_for_workspace_root(
     claude_desktop_active_workspace_root(),
-    "moonstat",
+    "moongate",
     TOKEN_ARTIFACT,
   )
 }

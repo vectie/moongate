@@ -12,7 +12,7 @@ fn extract_client_session_context(
 
 ///|
 fn generate_moon_session_id() -> String {
-  moonstat_random_id()
+  moongate_random_id()
 }
 
 ///|

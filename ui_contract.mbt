@@ -1,23 +1,23 @@
 ///|
-pub fn moonstat_framework_apps_json() -> Json {
+pub fn moongate_framework_apps_json() -> Json {
   Json::array([
-    moonstat_framework_app_json("claude", "Claude Code", "single"),
-    moonstat_framework_app_json(
+    moongate_framework_app_json("claude", "Claude Code", "single"),
+    moongate_framework_app_json(
       "claude-desktop",
       "Claude Desktop",
       "single",
       desktop=true,
     ),
-    moonstat_framework_app_json("codex", "Codex", "single"),
-    moonstat_framework_app_json("gemini", "Gemini", "single"),
-    moonstat_framework_app_json("opencode", "OpenCode", "additive"),
-    moonstat_framework_app_json("openclaw", "OpenClaw", "additive"),
-    moonstat_framework_app_json("hermes", "Hermes", "additive"),
+    moongate_framework_app_json("codex", "Codex", "single"),
+    moongate_framework_app_json("gemini", "Gemini", "single"),
+    moongate_framework_app_json("opencode", "OpenCode", "additive"),
+    moongate_framework_app_json("openclaw", "OpenClaw", "additive"),
+    moongate_framework_app_json("hermes", "Hermes", "additive"),
   ])
 }
 
 ///|
-fn moonstat_framework_app_json(
+fn moongate_framework_app_json(
   id : String,
   label : String,
   mode : String,
@@ -35,7 +35,7 @@ fn moonstat_framework_app_json(
 }
 
 ///|
-fn moonstat_ui_sections() -> Array[(String, String)] {
+fn moongate_ui_sections() -> Array[(String, String)] {
   [
     ("overview", "Overview"),
     ("providers", "Providers"),
@@ -50,9 +50,9 @@ fn moonstat_ui_sections() -> Array[(String, String)] {
 }
 
 ///|
-pub fn moonstat_ui_sections_json() -> Json {
+pub fn moongate_ui_sections_json() -> Json {
   Json::array(
-    moonstat_ui_sections().map(fn(section) {
+    moongate_ui_sections().map(fn(section) {
       let (id, label) = section
       Json::object({
         "id": Json::string(id),
@@ -64,7 +64,7 @@ pub fn moonstat_ui_sections_json() -> Json {
 }
 
 ///|
-pub fn moonstat_ui_endpoints_json() -> Json {
+pub fn moongate_ui_endpoints_json() -> Json {
   Json::object({
     "health": Json::string("/health"),
     "status": Json::string("/status"),
@@ -122,28 +122,28 @@ pub fn moonstat_ui_endpoints_json() -> Json {
 }
 
 ///|
-pub fn moonstat_ui_readiness_cards_json() -> Json {
+pub fn moongate_ui_readiness_cards_json() -> Json {
   Json::array([
-    moonstat_readiness_card_json(
+    moongate_readiness_card_json(
       "gateway", "Gateway", "Ready", "Unavailable", "#overview",
     ),
-    moonstat_readiness_card_json(
+    moongate_readiness_card_json(
       "proxy", "Proxy", "Running", "Needs start", "#overview",
     ),
-    moonstat_readiness_card_json(
+    moongate_readiness_card_json(
       "providers", "Providers", "Configured", "Add provider", "#frameworks",
     ),
-    moonstat_readiness_card_json(
+    moongate_readiness_card_json(
       "usage", "Usage", "Tracking", "No traffic yet", "#usage-explorer",
     ),
-    moonstat_readiness_card_json(
+    moongate_readiness_card_json(
       "requests", "Requests", "Recent activity", "No requests yet", "#requests",
     ),
   ])
 }
 
 ///|
-fn moonstat_readiness_card_json(
+fn moongate_readiness_card_json(
   id : String,
   label : String,
   ready : String,

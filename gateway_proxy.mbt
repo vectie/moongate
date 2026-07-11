@@ -42,7 +42,7 @@ fn moon_headers_contain_proxy_managed_placeholder(
   headers : Map[String, String],
 ) -> Bool {
   for _, value in headers {
-    if value.contains(MOONSTAT_PROXY_MANAGED_PLACEHOLDER) {
+    if value.contains(MOONGATE_PROXY_MANAGED_PLACEHOLDER) {
       return true
     }
   }
@@ -113,12 +113,12 @@ fn provider_cost_multiplier_from_default(
 
 ///|
 fn default_cost_multiplier_for_app(app_type : String) -> String {
-  let global_keys = ["MOONSTAT_DEFAULT_COST_MULTIPLIER"]
+  let global_keys = ["MOONGATE_DEFAULT_COST_MULTIPLIER"]
   let app_keys = match app_type {
-    "claude" | "claude-desktop" => ["MOONSTAT_CLAUDE_DEFAULT_COST_MULTIPLIER"]
-    "codex" => ["MOONSTAT_CODEX_DEFAULT_COST_MULTIPLIER"]
-    "gemini" => ["MOONSTAT_GEMINI_DEFAULT_COST_MULTIPLIER"]
-    "opencode" => ["MOONSTAT_OPENCODE_DEFAULT_COST_MULTIPLIER"]
+    "claude" | "claude-desktop" => ["MOONGATE_CLAUDE_DEFAULT_COST_MULTIPLIER"]
+    "codex" => ["MOONGATE_CODEX_DEFAULT_COST_MULTIPLIER"]
+    "gemini" => ["MOONGATE_GEMINI_DEFAULT_COST_MULTIPLIER"]
+    "opencode" => ["MOONGATE_OPENCODE_DEFAULT_COST_MULTIPLIER"]
     _ => []
   }
   match env_first_non_negative_decimal(app_keys) {
@@ -173,12 +173,12 @@ fn provider_pricing_model_source_from_default(
 
 ///|
 fn default_pricing_model_source_for_app(app_type : String) -> String {
-  let global_keys = ["MOONSTAT_PRICING_MODEL_SOURCE"]
+  let global_keys = ["MOONGATE_PRICING_MODEL_SOURCE"]
   let app_keys = match app_type {
-    "claude" | "claude-desktop" => ["MOONSTAT_CLAUDE_PRICING_MODEL_SOURCE"]
-    "codex" => ["MOONSTAT_CODEX_PRICING_MODEL_SOURCE"]
-    "gemini" => ["MOONSTAT_GEMINI_PRICING_MODEL_SOURCE"]
-    "opencode" => ["MOONSTAT_OPENCODE_PRICING_MODEL_SOURCE"]
+    "claude" | "claude-desktop" => ["MOONGATE_CLAUDE_PRICING_MODEL_SOURCE"]
+    "codex" => ["MOONGATE_CODEX_PRICING_MODEL_SOURCE"]
+    "gemini" => ["MOONGATE_GEMINI_PRICING_MODEL_SOURCE"]
+    "opencode" => ["MOONGATE_OPENCODE_PRICING_MODEL_SOURCE"]
     _ => []
   }
   match env_first_pricing_model_source(app_keys) {
@@ -1183,11 +1183,11 @@ async fn proxy_json_body(r : @httpx.RequestReader) -> Json? {
 
 ///|
 fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int?) -> Int {
-  let secs = timeout_secs.unwrap_or(MOONSTAT_ENDPOINT_DEFAULT_TIMEOUT_SECS)
-  if secs < MOONSTAT_ENDPOINT_MIN_TIMEOUT_SECS {
-    MOONSTAT_ENDPOINT_MIN_TIMEOUT_SECS
-  } else if secs > MOONSTAT_ENDPOINT_MAX_TIMEOUT_SECS {
-    MOONSTAT_ENDPOINT_MAX_TIMEOUT_SECS
+  let secs = timeout_secs.unwrap_or(MOONGATE_ENDPOINT_DEFAULT_TIMEOUT_SECS)
+  if secs < MOONGATE_ENDPOINT_MIN_TIMEOUT_SECS {
+    MOONGATE_ENDPOINT_MIN_TIMEOUT_SECS
+  } else if secs > MOONGATE_ENDPOINT_MAX_TIMEOUT_SECS {
+    MOONGATE_ENDPOINT_MAX_TIMEOUT_SECS
   } else {
     secs
   }
@@ -1506,7 +1506,7 @@ fn moon_media_retry_should_trigger(
     status_code,
     response_body,
     request_body,
-    moonstat_rectifier_config_from_env(),
+    moongate_rectifier_config_from_env(),
   )
 }
 

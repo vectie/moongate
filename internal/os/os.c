@@ -15,13 +15,13 @@
 
 MOONBIT_FFI_EXPORT
 const char *
-moonbit_moonstat_os_getenv(moonbit_bytes_t key) {
+moonbit_moongate_os_getenv(moonbit_bytes_t key) {
   return getenv((const char *)key);
 }
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_os_setenv(
+moonbit_moongate_os_setenv(
   moonbit_bytes_t key,
   moonbit_bytes_t value,
   int overwrite
@@ -35,19 +35,19 @@ moonbit_moonstat_os_setenv(
 
 MOONBIT_FFI_EXPORT
 int
-moonbit_moonstat_os_unsetenv(moonbit_bytes_t key) {
+moonbit_moongate_os_unsetenv(moonbit_bytes_t key) {
   return unsetenv((const char *)key);
 }
 
 MOONBIT_FFI_EXPORT
 uint32_t
-moonbit_moonstat_os_getuid() {
+moonbit_moongate_os_getuid() {
   return (uint32_t)getuid();
 }
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_os_getpwuid_r(
+moonbit_moongate_os_getpwuid_r(
   uint32_t uid,
   moonbit_bytes_t pwd,
   char *buf,
@@ -61,32 +61,32 @@ moonbit_moonstat_os_getpwuid_r(
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_os_passwd_sizeof() {
+moonbit_moongate_os_passwd_sizeof() {
   return sizeof(struct passwd);
 }
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_sysconf_SC_GETPW_R_SIZE_MAX() {
+moonbit_moongate_sysconf_SC_GETPW_R_SIZE_MAX() {
   return (int32_t)sysconf(_SC_GETPW_R_SIZE_MAX);
 }
 
 MOONBIT_FFI_EXPORT
 char *
-moonbit_moonstat_os_passwd_get_dir(moonbit_bytes_t pwd) {
+moonbit_moongate_os_passwd_get_dir(moonbit_bytes_t pwd) {
   struct passwd *p = (struct passwd *)pwd;
   return p->pw_dir;
 }
 
 MOONBIT_FFI_EXPORT
 int64_t
-moonbit_moonstat_sysconf_SC_HOST_NAME_MAX(void) {
+moonbit_moongate_sysconf_SC_HOST_NAME_MAX(void) {
   return (int64_t)sysconf(_SC_HOST_NAME_MAX);
 }
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_os_gethostname(moonbit_bytes_t name) {
+moonbit_moongate_os_gethostname(moonbit_bytes_t name) {
   errno = 0;
   if (gethostname((char *)name, Moonbit_array_length(name)) == -1) {
     return errno;
@@ -96,7 +96,7 @@ moonbit_moonstat_os_gethostname(moonbit_bytes_t name) {
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_os_chdir(moonbit_bytes_t path) {
+moonbit_moongate_os_chdir(moonbit_bytes_t path) {
   int result = chdir((const char *)path);
   if (result != 0) {
     return errno;
@@ -107,13 +107,13 @@ moonbit_moonstat_os_chdir(moonbit_bytes_t path) {
 
 MOONBIT_FFI_EXPORT
 void
-moonbit_moonstat_os_exit(int32_t code) {
+moonbit_moongate_os_exit(int32_t code) {
   exit(code);
 }
 
 MOONBIT_FFI_EXPORT
 int64_t
-moonbit_moonstat_os_unix_seconds(void) {
+moonbit_moongate_os_unix_seconds(void) {
   struct timeval tv;
   if (gettimeofday(&tv, NULL) != 0) {
     return 0;
@@ -122,7 +122,7 @@ moonbit_moonstat_os_unix_seconds(void) {
 }
 
 static moonbit_bytes_t
-moonbit_moonstat_os_bytes_from_cstr(const char *str) {
+moonbit_moongate_os_bytes_from_cstr(const char *str) {
   int32_t len = (int32_t)strlen(str);
   moonbit_bytes_t bytes = moonbit_make_bytes(len, 0);
   memcpy(bytes, str, len);
@@ -130,7 +130,7 @@ moonbit_moonstat_os_bytes_from_cstr(const char *str) {
 }
 
 static int
-moonbit_moonstat_os_local_tm(int64_t timestamp, struct tm *tm) {
+moonbit_moongate_os_local_tm(int64_t timestamp, struct tm *tm) {
   time_t raw = (time_t)timestamp;
   tzset();
   return localtime_r(&raw, tm) != NULL;
@@ -138,14 +138,14 @@ moonbit_moonstat_os_local_tm(int64_t timestamp, struct tm *tm) {
 
 MOONBIT_FFI_EXPORT
 moonbit_bytes_t
-moonbit_moonstat_os_local_rfc3339(int64_t timestamp) {
+moonbit_moongate_os_local_rfc3339(int64_t timestamp) {
   struct tm tm;
   char compact[40];
   char formatted[48];
-  if (!moonbit_moonstat_os_local_tm(timestamp, &tm) ||
+  if (!moonbit_moongate_os_local_tm(timestamp, &tm) ||
       strftime(compact, sizeof(compact), "%Y-%m-%dT%H:%M:%S%z", &tm) == 0) {
     snprintf(formatted, sizeof(formatted), "%lld", (long long)timestamp);
-    return moonbit_moonstat_os_bytes_from_cstr(formatted);
+    return moonbit_moongate_os_bytes_from_cstr(formatted);
   }
   size_t len = strlen(compact);
   if (len >= 5 &&
@@ -163,40 +163,40 @@ moonbit_moonstat_os_local_rfc3339(int64_t timestamp) {
       compact[prefix + 3],
       compact[prefix + 4]
     );
-    return moonbit_moonstat_os_bytes_from_cstr(formatted);
+    return moonbit_moongate_os_bytes_from_cstr(formatted);
   }
-  return moonbit_moonstat_os_bytes_from_cstr(compact);
+  return moonbit_moongate_os_bytes_from_cstr(compact);
 }
 
 MOONBIT_FFI_EXPORT
 moonbit_bytes_t
-moonbit_moonstat_os_local_date_key(int64_t timestamp) {
+moonbit_moongate_os_local_date_key(int64_t timestamp) {
   struct tm tm;
   char formatted[16];
-  if (!moonbit_moonstat_os_local_tm(timestamp, &tm) ||
+  if (!moonbit_moongate_os_local_tm(timestamp, &tm) ||
       strftime(formatted, sizeof(formatted), "%Y-%m-%d", &tm) == 0) {
     snprintf(formatted, sizeof(formatted), "1970-01-01");
   }
-  return moonbit_moonstat_os_bytes_from_cstr(formatted);
+  return moonbit_moongate_os_bytes_from_cstr(formatted);
 }
 
 MOONBIT_FFI_EXPORT
 moonbit_bytes_t
-moonbit_moonstat_os_local_month_key(int64_t timestamp) {
+moonbit_moongate_os_local_month_key(int64_t timestamp) {
   struct tm tm;
   char formatted[16];
-  if (!moonbit_moonstat_os_local_tm(timestamp, &tm) ||
+  if (!moonbit_moongate_os_local_tm(timestamp, &tm) ||
       strftime(formatted, sizeof(formatted), "%Y-%m", &tm) == 0) {
     snprintf(formatted, sizeof(formatted), "1970-01");
   }
-  return moonbit_moonstat_os_bytes_from_cstr(formatted);
+  return moonbit_moongate_os_bytes_from_cstr(formatted);
 }
 
 MOONBIT_FFI_EXPORT
 int64_t
-moonbit_moonstat_os_local_day_start_seconds(int64_t timestamp) {
+moonbit_moongate_os_local_day_start_seconds(int64_t timestamp) {
   struct tm tm;
-  if (!moonbit_moonstat_os_local_tm(timestamp, &tm)) {
+  if (!moonbit_moongate_os_local_tm(timestamp, &tm)) {
     return timestamp;
   }
   tm.tm_hour = 0;
@@ -208,9 +208,9 @@ moonbit_moonstat_os_local_day_start_seconds(int64_t timestamp) {
 
 MOONBIT_FFI_EXPORT
 int64_t
-moonbit_moonstat_os_local_next_day_start_seconds(int64_t timestamp) {
+moonbit_moongate_os_local_next_day_start_seconds(int64_t timestamp) {
   struct tm tm;
-  if (!moonbit_moonstat_os_local_tm(timestamp, &tm)) {
+  if (!moonbit_moongate_os_local_tm(timestamp, &tm)) {
     return timestamp + 86400;
   }
   tm.tm_mday += 1;
@@ -223,7 +223,7 @@ moonbit_moonstat_os_local_next_day_start_seconds(int64_t timestamp) {
 
 MOONBIT_FFI_EXPORT
 int32_t
-moonbit_moonstat_os_executable(moonbit_bytes_t buf) {
+moonbit_moongate_os_executable(moonbit_bytes_t buf) {
 #if defined(__APPLE__)
   uint32_t bufsize = Moonbit_array_length(buf);
   int rc = _NSGetExecutablePath((char *)buf, &bufsize);

@@ -6,7 +6,7 @@ fn codex_forward_failed_error_message(
   cause : String,
 ) -> String {
   body_snippet(
-    "Moonstat local proxy failed while handling Codex endpoint \{endpoint}. Provider: \{provider_name}; model: \{request_model}; cause: Codex upstream request failed: \{cause}",
+    "MoonGate local proxy failed while handling Codex endpoint \{endpoint}. Provider: \{provider_name}; model: \{request_model}; cause: Codex upstream request failed: \{cause}",
     1800,
   )
 }
@@ -29,7 +29,7 @@ fn codex_forward_failed_error_json(
         ),
       ),
       "type": Json::string("proxy_error"),
-      "code": Json::string("moonstat_forward_failed"),
+      "code": Json::string("moongate_forward_failed"),
       "param": Json::null(),
       "provider": Json::string(provider.provider_name),
       "model": Json::string(request_model),

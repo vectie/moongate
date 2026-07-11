@@ -33,7 +33,7 @@ pub fn Gateway::new(
   host? : String = @suite.default_host(),
   model? : String = @suite.default_model(),
 ) -> Gateway {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   {
     host,
     port,
@@ -163,7 +163,7 @@ fn claude_api_format_needs_transform(api_format : String) -> Bool {
 }
 
 ///|
-const MOONSTAT_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
+const MOONGATE_PROXY_MANAGED_PLACEHOLDER = "PROXY_MANAGED"
 
 ///|
 const HERMES_WEB_OFFLINE_ERROR = "hermes_web_offline"
@@ -524,17 +524,17 @@ fn gemini_base_url() -> String {
 
 ///|
 fn gemini_base_is_full_url() -> Bool {
-  env_bool("MOONSTAT_GEMINI_FULL_URL")
+  env_bool("MOONGATE_GEMINI_FULL_URL")
 }
 
 ///|
 fn codex_base_is_full_url() -> Bool {
-  env_bool("MOONSTAT_CODEX_FULL_URL")
+  env_bool("MOONGATE_CODEX_FULL_URL")
 }
 
 ///|
 fn claude_base_is_full_url() -> Bool {
-  env_bool("MOONSTAT_CLAUDE_FULL_URL")
+  env_bool("MOONGATE_CLAUDE_FULL_URL")
 }
 
 ///|
@@ -1077,7 +1077,7 @@ fn split_csv_json(value : String) -> Json {
 const HERMES_DASHBOARD_COMMAND = "hermes dashboard"
 
 ///|
-const HERMES_DASHBOARD_LOG_PATH = "/tmp/moonstat_hermes_dashboard.log"
+const HERMES_DASHBOARD_LOG_PATH = "/tmp/moongate_hermes_dashboard.log"
 
 ///|
 fn normalize_claude_desktop_mode(mode : String) -> String? {
@@ -1098,13 +1098,13 @@ fn split_endpoint_urls(value : String) -> Array[String] {
 }
 
 ///|
-const MOONSTAT_ENDPOINT_DEFAULT_TIMEOUT_SECS = 8
+const MOONGATE_ENDPOINT_DEFAULT_TIMEOUT_SECS = 8
 
 ///|
-const MOONSTAT_ENDPOINT_MIN_TIMEOUT_SECS = 2
+const MOONGATE_ENDPOINT_MIN_TIMEOUT_SECS = 2
 
 ///|
-const MOONSTAT_ENDPOINT_MAX_TIMEOUT_SECS = 30
+const MOONGATE_ENDPOINT_MAX_TIMEOUT_SECS = 30
 
 ///|
 fn moon_endpoint_invalid_url_error(url : String) -> String {

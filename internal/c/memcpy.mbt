@@ -7,4 +7,4 @@ pub extern "c" fn memcpy(
   dest : Pointer[Byte],
   src : Pointer[Byte],
   len : UInt64,
-) -> Unit = "moonbit_moonstat_c_memcpy"
+) -> Unit = "moonbit_moongate_c_memcpy"

@@ -1,6 +1,6 @@
 ///|
 #warnings("-alert_unstable")
-pub fn moonstat_rabbita_document_html(
+pub fn moongate_rabbita_document_html(
   api_base? : String = "http://127.0.0.1:15721",
 ) -> String {
   @rabbita.render_to_string(
@@ -12,16 +12,16 @@ pub fn moonstat_rabbita_document_html(
             name="viewport",
             content="width=device-width, initial-scale=1",
           ),
-          @html.title("Moonstat"),
+          @html.title("MoonGate"),
         ]),
-        @html.body([moonstat_rabbita_shell_view(api_base~)]),
+        @html.body([moongate_rabbita_shell_view(api_base~)]),
       ]),
     ),
   )
 }
 
 ///|
-pub fn moonstat_rabbita_shell_dom_ids() -> Array[String] {
+pub fn moongate_rabbita_shell_dom_ids() -> Array[String] {
   [
     "ui-updated", "overview", "refresh", "proxy-start", "proxy-stop", "gateway-state",
     "gateway-detail", "proxy-state", "proxy-detail", "request-total", "request-total-detail",
@@ -56,23 +56,23 @@ pub fn moonstat_rabbita_shell_dom_ids() -> Array[String] {
 
 ///|
 #warnings("-alert_unstable")
-pub fn moonstat_rabbita_shell_html(
+pub fn moongate_rabbita_shell_html(
   api_base? : String = "http://127.0.0.1:15721",
 ) -> String {
   @rabbita.render_to_string(
-    @rabbita.static_cell(moonstat_rabbita_shell_view(api_base~)),
+    @rabbita.static_cell(moongate_rabbita_shell_view(api_base~)),
   )
 }
 
 ///|
-pub fn moonstat_rabbita_lepusa_manifest_json(
+pub fn moongate_rabbita_lepusa_manifest_json(
   api_base? : String = "http://127.0.0.1:15721",
 ) -> Json {
   Json::object({
-    "identifier": Json::string("dev.vectie.moonstat.rabbita"),
-    "productName": Json::string("Moonstat Rabbita Preview"),
+    "identifier": Json::string("dev.vectie.moongate.rabbita"),
+    "productName": Json::string("MoonGate Rabbita Preview"),
     "version": Json::string("0.1.0"),
-    "rootHtml": Json::string(moonstat_rabbita_shell_html(api_base~)),
+    "rootHtml": Json::string(moongate_rabbita_shell_html(api_base~)),
     "runtime": Json::object({
       "backend": Json::string("system-webview"),
       "assetProtocol": Json::string("lepusa"),
@@ -80,7 +80,7 @@ pub fn moonstat_rabbita_lepusa_manifest_json(
     }),
     "window": Json::object({
       "label": Json::string("main"),
-      "title": Json::string("Moonstat"),
+      "title": Json::string("MoonGate"),
       "width": Json::number(1180.0),
       "height": Json::number(780.0),
       "resizable": Json::boolean(true),
@@ -102,23 +102,23 @@ pub fn moonstat_rabbita_lepusa_manifest_json(
       }),
     ]),
     "startup": Json::object({
-      "effect": Json::string("connect-moonstat-rabbita-preview"),
+      "effect": Json::string("connect-moongate-rabbita-preview"),
     }),
   })
 }
 
 ///|
-pub fn moonstat_rabbita_lepusa_manifest(
+pub fn moongate_rabbita_lepusa_manifest(
   api_base? : String = "http://127.0.0.1:15721",
 ) -> String {
-  moonstat_rabbita_lepusa_manifest_json(api_base~).stringify(indent=2)
+  moongate_rabbita_lepusa_manifest_json(api_base~).stringify(indent=2)
 }
 
 ///|
-pub fn moonstat_lepusa_manifest_json(port? : Int = 15721) -> Json {
+pub fn moongate_lepusa_manifest_json(port? : Int = 15721) -> Json {
   Json::object({
-    "identifier": Json::string("dev.vectie.moonstat"),
-    "productName": Json::string("Moonstat"),
+    "identifier": Json::string("dev.vectie.moongate"),
+    "productName": Json::string("MoonGate"),
     "version": Json::string("0.1.0"),
     "runtime": Json::object({
       "backend": Json::string("system-webview"),
@@ -127,7 +127,7 @@ pub fn moonstat_lepusa_manifest_json(port? : Int = 15721) -> Json {
     }),
     "window": Json::object({
       "label": Json::string("main"),
-      "title": Json::string("Moonstat"),
+      "title": Json::string("MoonGate"),
       "width": Json::number(1180.0),
       "height": Json::number(780.0),
       "resizable": Json::boolean(true),
@@ -162,11 +162,11 @@ pub fn moonstat_lepusa_manifest_json(port? : Int = 15721) -> Json {
         ]),
       }),
     ]),
-    "startup": Json::object({ "effect": Json::string("connect-moonstat") }),
+    "startup": Json::object({ "effect": Json::string("connect-moongate") }),
   })
 }
 
 ///|
-pub fn moonstat_lepusa_manifest(port? : Int = 15721) -> String {
-  moonstat_lepusa_manifest_json(port~).stringify(indent=2)
+pub fn moongate_lepusa_manifest(port? : Int = 15721) -> String {
+  moongate_lepusa_manifest_json(port~).stringify(indent=2)
 }

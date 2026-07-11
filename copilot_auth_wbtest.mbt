@@ -1,5 +1,5 @@
 ///|
-test "copilot auth status json exposes moonstat-compatible unauthenticated shape" {
+test "copilot auth status json exposes moongate-compatible unauthenticated shape" {
   let status = copilot_auth_status_json(None)
   guard status is Object(obj) else { fail("expected status object") }
   assert_eq(obj["provider"], Json::string("github_copilot"))

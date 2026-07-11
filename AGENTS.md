@@ -26,26 +26,26 @@ You can browse and install extra skills here:
 
 ## Current Product Direction
 
-- Moonstat is in a feature-testing phase. Prefer testing real proxy, usage,
+- MoonGate is in a feature-testing phase. Prefer testing real proxy, usage,
   suite discovery, install/config, and failure workflows before broad structural
   cleanup.
 
 - Preserve active framework integrations. Codex/OpenAI-compatible clients,
   Claude/Anthropic-compatible clients, Claude Desktop, OpenClaw, Hermes, Gemini,
-  OpenCode-style logs, GitHub Copilot, and MoonClaw/MoonBook/Moontown/Moondesk
+  OpenCode-style logs, GitHub Copilot, and MoonClaw/MoonBook/MoonTown/MoonDesk
   adapters are supported features, not stale compatibility.
 
 - Cleanup should target stale old-version aliases, deprecated command shims,
   dead local probes, and unnecessary compatibility paths. Do not remove active
   framework support unless explicitly requested.
 
-- Lepusa is the frontend/desktop framework for Moonstat. The checked-in
-  `lepusa.json` is the standalone app boundary and should wrap Moonstat's
+- Lepusa is the frontend/desktop framework for MoonGate. The checked-in
+  `lepusa.json` is the standalone app boundary and should wrap MoonGate's
   localhost gateway until a deeper Lepusa/Rabbita UI rewrite is worth doing.
   Backend, suite, proxy, usage, and test coverage work can continue without
   replacing the current gateway-served dashboard payload.
 
-- Use published Rabbita and Lepusa packages in `moon.mod`. Do not wire Moonstat
+- Use published Rabbita and Lepusa packages in `moon.mod`. Do not wire MoonGate
   to local `../rba` or `../lepusa` workspaces except for temporary inspection
   or upstream validation.
 
@@ -87,10 +87,10 @@ You can browse and install extra skills here:
   `moon test --target native --deny-warn`.
 
 - Suite adapter validation when touching discovery/contracts:
-  `../moonclaw` `moon test plugin/moonstat --target native --deny-warn`,
-  `../moondesk` `moon test plugin/moonstat --target native --deny-warn`,
-  `../moontown` `moon test src/plugin/moonstat --target native --deny-warn`,
-  and `../moonbook` `moon test plugins/moonstat --target native --deny-warn`.
+  `../moonclaw` `moon test plugin/moongate --target native --deny-warn`,
+  `../moondesk` `moon test plugin/moongate --target native --deny-warn`,
+  `../moontown` `moon test src/plugin/moongate --target native --deny-warn`,
+  and `../moonbook` `moon test plugins/moongate --target native --deny-warn`.
 
 - Feature areas to exercise: proxy routing, streaming, usage accounting,
   provider management, suite status discovery, install/config flows, and

@@ -1,5 +1,5 @@
 ///|
-test "moonstat subscription claude parser preserves known and unknown tiers" {
+test "moongate subscription claude parser preserves known and unknown tiers" {
   guard moon_parse_claude_quota(
       {
         "five_hour": {
@@ -50,7 +50,7 @@ test "moonstat subscription claude parser preserves known and unknown tiers" {
 }
 
 ///|
-test "moonstat subscription codex parser maps wham windows to tier names" {
+test "moongate subscription codex parser maps wham windows to tier names" {
   guard moon_parse_codex_quota(
       {
         "rate_limit": {
@@ -82,7 +82,7 @@ test "moonstat subscription codex parser maps wham windows to tier names" {
 }
 
 ///|
-test "moonstat subscription gemini parser groups buckets by model family" {
+test "moongate subscription gemini parser groups buckets by model family" {
   guard moon_parse_gemini_quota(
       {
         "buckets": Json::array([
@@ -124,7 +124,7 @@ test "moonstat subscription gemini parser groups buckets by model family" {
 }
 
 ///|
-test "moonstat subscription credential parsers report deterministic status" {
+test "moongate subscription credential parsers report deterministic status" {
   let missing_claude = moon_parse_claude_credentials_json("{}")
   assert_true(missing_claude.status == ParseError)
   assert_eq(missing_claude.message, Some("No OAuth entry found in credentials"))
@@ -142,7 +142,7 @@ test "moonstat subscription credential parsers report deterministic status" {
 }
 
 ///|
-test "moonstat codex oauth account resolver uses managed account fallback" {
+test "moongate codex oauth account resolver uses managed account fallback" {
   assert_eq(
     moon_resolve_codex_oauth_account(
       Some(" acct-explicit "),
@@ -162,26 +162,26 @@ test "moonstat codex oauth account resolver uses managed account fallback" {
 }
 
 ///|
-test "moonstat codex oauth relogin message is branded" {
+test "moongate codex oauth relogin message is branded" {
   assert_eq(
-    moonstat_codex_oauth_relogin_message(),
-    "Codex OAuth access token expired or rejected. Please re-login via moonstat.",
+    moongate_codex_oauth_relogin_message(),
+    "Codex OAuth access token expired or rejected. Please re-login via moongate.",
   )
 }
 
 ///|
-test "moonstat subscription gemini oauth client comes from env" {
-  let old_id = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
-  let old_secret = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {
+test "moongate subscription gemini oauth client comes from env" {
+  let old_id = @os.getenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
+  let old_secret = @os.getenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET") catch {
     _ => None
   }
   @os.setenv(
-    "MOONSTAT_GEMINI_OAUTH_CLIENT_ID",
+    "MOONGATE_GEMINI_OAUTH_CLIENT_ID",
     "test-client-id",
     overwrite=true,
   )
   @os.setenv(
-    "MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET",
+    "MOONGATE_GEMINI_OAUTH_CLIENT_SECRET",
     "test-client-secret",
     overwrite=true,
   )
@@ -192,23 +192,23 @@ test "moonstat subscription gemini oauth client comes from env" {
   assert_eq(client.client_secret, "test-client-secret")
   match old_id {
     Some(value) =>
-      @os.setenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID", value, overwrite=true)
-    None => @os.unsetenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch { _ => () }
+      @os.setenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID", value, overwrite=true)
+    None => @os.unsetenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID") catch { _ => () }
   }
   match old_secret {
     Some(value) =>
-      @os.setenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET", value, overwrite=true)
+      @os.setenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET", value, overwrite=true)
     None =>
-      @os.unsetenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {
+      @os.unsetenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET") catch {
         _ => ()
       }
   }
 }
 
 ///|
-test "moonstat subscription gemini oauth ignores non moonstat env aliases" {
-  let old_id = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
-  let old_secret = @os.getenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {
+test "moongate subscription gemini oauth ignores non moongate env aliases" {
+  let old_id = @os.getenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
+  let old_secret = @os.getenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET") catch {
     _ => None
   }
   let old_gemini_id = @os.getenv("GEMINI_OAUTH_CLIENT_ID") catch { _ => None }
@@ -219,10 +219,10 @@ test "moonstat subscription gemini oauth ignores non moonstat env aliases" {
   let old_cli_secret = @os.getenv("GEMINI_CLI_OAUTH_CLIENT_SECRET") catch {
     _ => None
   }
-  @os.unsetenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch {
+  @os.unsetenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID") catch {
     _ => ()
   }
-  @os.unsetenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {
+  @os.unsetenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET") catch {
     _ => ()
   }
   @os.setenv("GEMINI_OAUTH_CLIENT_ID", "gemini-id", overwrite=true)
@@ -232,14 +232,14 @@ test "moonstat subscription gemini oauth ignores non moonstat env aliases" {
   assert_true(moon_gemini_oauth_client() is None)
   match old_id {
     Some(value) =>
-      @os.setenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID", value, overwrite=true)
-    None => @os.unsetenv("MOONSTAT_GEMINI_OAUTH_CLIENT_ID") catch { _ => () }
+      @os.setenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID", value, overwrite=true)
+    None => @os.unsetenv("MOONGATE_GEMINI_OAUTH_CLIENT_ID") catch { _ => () }
   }
   match old_secret {
     Some(value) =>
-      @os.setenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET", value, overwrite=true)
+      @os.setenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET", value, overwrite=true)
     None =>
-      @os.unsetenv("MOONSTAT_GEMINI_OAUTH_CLIENT_SECRET") catch {
+      @os.unsetenv("MOONGATE_GEMINI_OAUTH_CLIENT_SECRET") catch {
         _ => ()
       }
   }

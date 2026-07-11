@@ -1,8 +1,8 @@
 ///|
 fn moon_openclaw_workspace_dir() -> String {
   @moonsuite.product_artifact_for_workspace_root(
-    moonstat_active_workspace_root(),
-    "moonstat",
+    moongate_active_workspace_root(),
+    "moongate",
     "openclaw/workspace",
   )
 }

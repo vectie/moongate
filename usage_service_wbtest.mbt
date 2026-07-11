@@ -30,15 +30,15 @@ test "usage service exposes stats and metrics without gateway" {
     "recent_request_log_count": 1,
   })
   let metrics = usage.metrics_text()
-  assert_true(metrics.contains("moonstat_requests_total 1"))
-  assert_true(metrics.contains("moonstat_successful_responses_total 1"))
+  assert_true(metrics.contains("moongate_requests_total 1"))
+  assert_true(metrics.contains("moongate_successful_responses_total 1"))
   let combined = usage.metrics_text(
-    provider_metrics="moonstat_provider_configured{app_type=\"codex\",provider_id=\"codex-oauth\"} 1\n",
+    provider_metrics="moongate_provider_configured{app_type=\"codex\",provider_id=\"codex-oauth\"} 1\n",
   )
-  assert_true(combined.contains("moonstat_requests_total 1"))
+  assert_true(combined.contains("moongate_requests_total 1"))
   assert_true(
     combined.contains(
-      "moonstat_provider_configured{app_type=\"codex\",provider_id=\"codex-oauth\"} 1",
+      "moongate_provider_configured{app_type=\"codex\",provider_id=\"codex-oauth\"} 1",
     ),
   )
 }
@@ -78,14 +78,14 @@ async test "usage service owns proxy status target and pricing state" {
   assert_true(status["current_provider_id"] is String("codex-oauth"))
   assert_true(status.get("provider_routes") is Some(Object(_)))
 
-  usage.delete_model_pricing("moonstat-test-model")
+  usage.delete_model_pricing("moongate-test-model")
   assert_true(
-    !usage.model_pricing_json().stringify().contains("moonstat-test-model"),
+    !usage.model_pricing_json().stringify().contains("moongate-test-model"),
   )
-  let pricing = mp("moonstat-test-model", "Moonstat Test", "2", "4", "0", "0")
+  let pricing = mp("moongate-test-model", "MoonGate Test", "2", "4", "0", "0")
   let _backfilled = usage.upsert_model_pricing(pricing)
   assert_eq(usage.pricing_override_rows().length(), 1)
-  assert_true(usage.model_pricing_json().stringify().contains("Moonstat Test"))
+  assert_true(usage.model_pricing_json().stringify().contains("MoonGate Test"))
 }
 
 ///|
@@ -254,7 +254,7 @@ async test "usage service owns completion and error accounting without gateway" 
 async test "usage service owns startup persistent store reconciliation" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-usage-service-startup-\{@async.now().to_int()}",
+    "moongate-usage-service-startup-\{@async.now().to_int()}",
   )
   let seed = TrafficStats::new()
   seed.enable_persistent_store(storage_dir=dir)
@@ -301,7 +301,7 @@ async test "usage service owns startup persistent store reconciliation" {
 async test "usage service owns session sync persistence" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-usage-service-sync-\{@async.now().to_int()}",
+    "moongate-usage-service-sync-\{@async.now().to_int()}",
   )
   let claude_dir = @pathx.join(dir, "claude-projects")
   let codex_dir = @pathx.join(dir, "codex")
@@ -313,7 +313,7 @@ async test "usage service owns session sync persistence" {
   let usage = UsageService::new()
   usage.stats.enable_persistent_store(storage_dir=dir)
   usage.stats.session_sync_state.set(
-    "/tmp/moonstat-sync-service/source.jsonl",
+    "/tmp/moongate-sync-service/source.jsonl",
     SessionFileSyncState::new(last_modified=7L, last_line_offset=9),
   )
   let result = usage.sync_session_logs(
@@ -327,7 +327,7 @@ async test "usage service owns session sync persistence" {
 
   let loaded = TrafficStats::new()
   loaded.load_persistent_store(storage_dir=dir)
-  guard loaded.session_sync_state.get("/tmp/moonstat-sync-service/source.jsonl")
+  guard loaded.session_sync_state.get("/tmp/moongate-sync-service/source.jsonl")
     is Some(state) else {
     fail("expected sync state to be persisted")
   }
@@ -339,7 +339,7 @@ async test "usage service owns session sync persistence" {
 async test "usage service owns model pricing backfill persistence" {
   let dir = @pathx.join(
     "/tmp",
-    "moonstat-usage-service-pricing-\{@async.now().to_int()}",
+    "moongate-usage-service-pricing-\{@async.now().to_int()}",
   )
   let usage = UsageService::new()
   usage.stats.enable_persistent_store(storage_dir=dir)
@@ -348,7 +348,7 @@ async test "usage service owns model pricing backfill persistence" {
       request_id="req-service-pricing",
       provider_id="codex-oauth",
       app_type="codex",
-      model="moonstat-service-priced",
+      model="moongate-service-priced",
       usage=TokenUsage::new(input_tokens=10, output_tokens=5),
       total_cost_usd="0",
       status_code=200,
@@ -356,7 +356,7 @@ async test "usage service owns model pricing backfill persistence" {
     ),
   )
   let backfilled = usage.upsert_model_pricing(
-    mp("moonstat-service-priced", "Moonstat Service Priced", "2", "4", "0", "0"),
+    mp("moongate-service-priced", "MoonGate Service Priced", "2", "4", "0", "0"),
   )
   assert_eq(backfilled, 1)
   assert_eq(usage.stats.request_logs[0].total_cost_usd, "0.00004")

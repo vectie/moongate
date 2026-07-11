@@ -1,30 +1,30 @@
 ///|
-const MOONSTAT_REQUEST_LOGS_FILE : String = "proxy_request_logs.jsonl"
+const MOONGATE_REQUEST_LOGS_FILE : String = "proxy_request_logs.jsonl"
 
 ///|
-const MOONSTAT_DAILY_ROLLUPS_FILE : String = "usage_daily_rollups.jsonl"
+const MOONGATE_DAILY_ROLLUPS_FILE : String = "usage_daily_rollups.jsonl"
 
 ///|
-const MOONSTAT_SESSION_SYNC_FILE : String = "session_log_sync.jsonl"
+const MOONGATE_SESSION_SYNC_FILE : String = "session_log_sync.jsonl"
 
 ///|
-const MOONSTAT_MODEL_PRICING_FILE : String = "model_pricing.jsonl"
+const MOONGATE_MODEL_PRICING_FILE : String = "model_pricing.jsonl"
 
 ///|
-const MOONSTAT_USAGE_STORE_FILE : String = "usage_store_v1.json"
+const MOONGATE_USAGE_STORE_FILE : String = "usage_store_v1.json"
 
 ///|
-const MOONSTAT_USAGE_STORE_SCHEMA_VERSION : Int = 1
+const MOONGATE_USAGE_STORE_SCHEMA_VERSION : Int = 1
 
 ///|
-pub fn default_moonstat_stats_dir() -> String {
-  default_moonstat_dir()
+pub fn default_moongate_stats_dir() -> String {
+  default_moongate_dir()
 }
 
 ///|
 async fn TrafficStats::enable_persistent_store(
   self : TrafficStats,
-  storage_dir? : String = default_moonstat_stats_dir(),
+  storage_dir? : String = default_moongate_stats_dir(),
 ) -> Unit {
   self.storage_dir = Some(storage_dir)
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
@@ -35,7 +35,7 @@ async fn TrafficStats::enable_persistent_store(
 ///|
 async fn TrafficStats::load_persistent_store(
   self : TrafficStats,
-  storage_dir? : String = default_moonstat_stats_dir(),
+  storage_dir? : String = default_moongate_stats_dir(),
 ) -> Unit {
   self.enable_persistent_store(storage_dir~)
   if self.load_usage_snapshot_from_store() {
@@ -56,7 +56,7 @@ async fn TrafficStats::save_persistent_store(self : TrafficStats) -> Unit {
       return
     }
   }
-  let path = @pathx.join(storage_dir, MOONSTAT_USAGE_STORE_FILE)
+  let path = @pathx.join(storage_dir, MOONGATE_USAGE_STORE_FILE)
   atomic_write_store_file(path, self.usage_store_json().stringify()) catch {
     error => {
       self.mark_storage_failure("write_snapshot", "\{error}")
@@ -136,7 +136,7 @@ fn TrafficStats::usage_store_json(self : TrafficStats) -> Json {
   }
   {
     "schemaVersion": Json::number(
-      MOONSTAT_USAGE_STORE_SCHEMA_VERSION.to_double(),
+      MOONGATE_USAGE_STORE_SCHEMA_VERSION.to_double(),
     ),
     "requestLogs": Json::array(request_logs),
     "dailyRollups": Json::array(daily_rollups),
@@ -149,7 +149,7 @@ async fn TrafficStats::load_usage_snapshot_from_store(
   self : TrafficStats,
 ) -> Bool {
   guard self.storage_dir is Some(storage_dir) else { return false }
-  let path = @pathx.join(storage_dir, MOONSTAT_USAGE_STORE_FILE)
+  let path = @pathx.join(storage_dir, MOONGATE_USAGE_STORE_FILE)
   if !@fsx.exists_as_file(path) {
     return false
   }
@@ -170,7 +170,7 @@ async fn TrafficStats::load_usage_snapshot_from_store(
     return true
   }
   if store_json_int_or_zero(obj, "schemaVersion") !=
-    MOONSTAT_USAGE_STORE_SCHEMA_VERSION {
+    MOONGATE_USAGE_STORE_SCHEMA_VERSION {
     self.mark_storage_failure("parse_snapshot", "unsupported schema version")
     return true
   }
@@ -241,7 +241,7 @@ async fn TrafficStats::load_request_logs_from_store(
   self : TrafficStats,
 ) -> Unit {
   guard self.storage_dir is Some(storage_dir) else { return }
-  let path = @pathx.join(storage_dir, MOONSTAT_REQUEST_LOGS_FILE)
+  let path = @pathx.join(storage_dir, MOONGATE_REQUEST_LOGS_FILE)
   if !@fsx.exists_as_file(path) {
     return
   }
@@ -265,7 +265,7 @@ async fn TrafficStats::load_daily_rollups_from_store(
   self : TrafficStats,
 ) -> Unit {
   guard self.storage_dir is Some(storage_dir) else { return }
-  let path = @pathx.join(storage_dir, MOONSTAT_DAILY_ROLLUPS_FILE)
+  let path = @pathx.join(storage_dir, MOONGATE_DAILY_ROLLUPS_FILE)
   if !@fsx.exists_as_file(path) {
     return
   }
@@ -289,7 +289,7 @@ async fn TrafficStats::load_session_sync_state_from_store(
   self : TrafficStats,
 ) -> Unit {
   guard self.storage_dir is Some(storage_dir) else { return }
-  let path = @pathx.join(storage_dir, MOONSTAT_SESSION_SYNC_FILE)
+  let path = @pathx.join(storage_dir, MOONGATE_SESSION_SYNC_FILE)
   if !@fsx.exists_as_file(path) {
     return
   }

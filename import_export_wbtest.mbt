@@ -1,12 +1,12 @@
 ///|
-test "moonstat backup filenames are filesystem safe" {
+test "moongate backup filenames are filesystem safe" {
   assert_eq(moon_backup_filename("nested/name:one"), "nested-name-one.db")
   assert_eq(moon_backup_filename("ready.db"), "ready.db")
   assert_eq(moon_backup_filename("snapshot.json"), "snapshot.json")
 }
 
 ///|
-test "moonstat database backup filenames reject invalid restore targets" {
+test "moongate database backup filenames reject invalid restore targets" {
   assert_true(moon_valid_db_backup_filename("db_backup_20260614_010203.db"))
   assert_false(moon_valid_db_backup_filename("nested/name.db"))
   assert_false(moon_valid_db_backup_filename("nested\\name.db"))
@@ -20,7 +20,7 @@ test "moonstat database backup filenames reject invalid restore targets" {
 }
 
 ///|
-test "moonstat database backup rename normalizes new name like desktop" {
+test "moongate database backup rename normalizes new name like desktop" {
   assert_eq(moon_db_backup_new_filename("renamed"), Ok("renamed.db"))
   assert_eq(moon_db_backup_new_filename("renamed.db"), Ok("renamed.db"))
   assert_eq(moon_db_backup_new_filename("  "), Err("New name cannot be empty"))
@@ -35,7 +35,7 @@ test "moonstat database backup rename normalizes new name like desktop" {
 }
 
 ///|
-test "moonstat database backup entries sort newest first" {
+test "moongate database backup entries sort newest first" {
   let rows = [
     MoonDbBackupEntry::{ filename: "old.db", size_bytes: 1, created_at: 1L },
     { filename: "new.db", size_bytes: 2, created_at: 3L },

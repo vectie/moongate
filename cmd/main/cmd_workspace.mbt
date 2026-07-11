@@ -176,7 +176,7 @@ async fn run_workspace_cli_command(
 ///|
 async fn set_openclaw_default_model(args : Array[String]) -> Unit {
   guard openclaw_default_model_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --primary")
     return
   }
@@ -198,7 +198,7 @@ async fn set_openclaw_agents_defaults(args : Array[String]) -> Unit {
     args, "/openclaw/agents-defaults",
   )
   guard path is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --defaults or --primary")
     return
   }
@@ -216,7 +216,7 @@ async fn set_openclaw_env(args : Array[String]) -> Unit {
   }
   let path = openclaw_key_value_path(args, "/openclaw/env")
   guard path is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --env or --key")
     return
   }
@@ -240,7 +240,7 @@ async fn write_workspace_content(
   label : String,
 ) -> Unit {
   guard workspace_content_path(args, base_path) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --filename and --content")
     return
   }
@@ -254,7 +254,7 @@ async fn delete_workspace_resource(
   label : String,
 ) -> Unit {
   guard workspace_filename_path_optional(args, base_path) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --filename")
     return
   }
@@ -264,7 +264,7 @@ async fn delete_workspace_resource(
 ///|
 async fn check_hermes_memory(args : Array[String]) -> Unit {
   guard hermes_kind_path(args, "/hermes/memory") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --kind memory|user")
     return
   }
@@ -274,7 +274,7 @@ async fn check_hermes_memory(args : Array[String]) -> Unit {
 ///|
 async fn set_hermes_memory(args : Array[String]) -> Unit {
   guard hermes_memory_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --kind and --content")
     return
   }
@@ -284,7 +284,7 @@ async fn set_hermes_memory(args : Array[String]) -> Unit {
 ///|
 async fn set_hermes_memory_enabled(args : Array[String]) -> Unit {
   guard hermes_memory_enabled_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --kind and --enabled")
     return
   }

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "vectie/moonstat/internal/codex_config"
+package "vectie/moongate/internal/codex_config"
 
 // Values
 pub async fn active_model_catalog_json() -> Json?

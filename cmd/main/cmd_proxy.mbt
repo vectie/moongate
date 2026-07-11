@@ -2,25 +2,25 @@
 async fn check_proxy_status(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy status",
-    cli_moonstat_client(args).proxy_status(),
+    cli_moongate_client(args).proxy_status(),
   )
 }
 
 ///|
 async fn start_proxy_server(args : Array[String]) -> Unit {
-  print_cli_json_result("Proxy start", cli_moonstat_client(args).proxy_start())
+  print_cli_json_result("Proxy start", cli_moongate_client(args).proxy_start())
 }
 
 ///|
 async fn stop_proxy_server(args : Array[String]) -> Unit {
-  print_cli_json_result("Proxy stop", cli_moonstat_client(args).proxy_stop())
+  print_cli_json_result("Proxy stop", cli_moongate_client(args).proxy_stop())
 }
 
 ///|
 async fn stop_proxy_with_restore(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy stop with restore",
-    cli_moonstat_client(args).proxy_stop_with_restore(),
+    cli_moongate_client(args).proxy_stop_with_restore(),
   )
 }
 
@@ -28,7 +28,7 @@ async fn stop_proxy_with_restore(args : Array[String]) -> Unit {
 async fn check_proxy_global_config(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy global config",
-    cli_moonstat_client(args).proxy_global_config(),
+    cli_moongate_client(args).proxy_global_config(),
   )
 }
 
@@ -36,7 +36,7 @@ async fn check_proxy_global_config(args : Array[String]) -> Unit {
 async fn update_proxy_global_config(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy global config update",
-    cli_moonstat_client(args).proxy_update_global_config(
+    cli_moongate_client(args).proxy_update_global_config(
       proxy_enabled=parse_string_arg(args, "--proxy-enabled"),
       listen_address=parse_string_arg(args, "--listen-address"),
       listen_port=parse_string_arg(args, "--listen-port"),
@@ -48,26 +48,26 @@ async fn update_proxy_global_config(args : Array[String]) -> Unit {
 ///|
 async fn set_global_proxy_url(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--url") is Some(url) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --url")
     return
   }
   print_cli_json_result(
     "Proxy global URL update",
-    cli_moonstat_client(args).proxy_set_global_url(url),
+    cli_moongate_client(args).proxy_set_global_url(url),
   )
 }
 
 ///|
 async fn test_global_proxy_url(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--url") is Some(url) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --url")
     return
   }
   print_cli_json_result(
     "Proxy URL test",
-    cli_moonstat_client(args).proxy_test_url(url),
+    cli_moongate_client(args).proxy_test_url(url),
   )
 }
 
@@ -75,7 +75,7 @@ async fn test_global_proxy_url(args : Array[String]) -> Unit {
 async fn check_proxy_app_config(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy app config",
-    cli_moonstat_client(args).proxy_app_config(proxy_app_arg(args)),
+    cli_moongate_client(args).proxy_app_config(proxy_app_arg(args)),
   )
 }
 
@@ -83,7 +83,7 @@ async fn check_proxy_app_config(args : Array[String]) -> Unit {
 async fn update_proxy_app_config(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy app config update",
-    cli_moonstat_client(args).proxy_update_app_config(
+    cli_moongate_client(args).proxy_update_app_config(
       proxy_app_arg(args),
       enabled=parse_string_arg(args, "--enabled"),
       auto_failover_enabled=parse_string_arg(args, "--auto-failover-enabled"),
@@ -106,20 +106,20 @@ async fn update_proxy_app_config(args : Array[String]) -> Unit {
 async fn check_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy default cost multiplier",
-    cli_moonstat_client(args).proxy_default_cost_multiplier(proxy_app_arg(args)),
+    cli_moongate_client(args).proxy_default_cost_multiplier(proxy_app_arg(args)),
   )
 }
 
 ///|
 async fn set_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--value") is Some(value) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --value")
     return
   }
   print_cli_json_result(
     "Proxy default cost multiplier update",
-    cli_moonstat_client(args).proxy_set_default_cost_multiplier(
+    cli_moongate_client(args).proxy_set_default_cost_multiplier(
       proxy_app_arg(args),
       value,
     ),
@@ -130,20 +130,20 @@ async fn set_proxy_default_cost_multiplier(args : Array[String]) -> Unit {
 async fn check_proxy_pricing_model_source(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy pricing model source",
-    cli_moonstat_client(args).proxy_pricing_model_source(proxy_app_arg(args)),
+    cli_moongate_client(args).proxy_pricing_model_source(proxy_app_arg(args)),
   )
 }
 
 ///|
 async fn set_proxy_pricing_model_source(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--value") is Some(value) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --value")
     return
   }
   print_cli_json_result(
     "Proxy pricing model source update",
-    cli_moonstat_client(args).proxy_set_pricing_model_source(
+    cli_moongate_client(args).proxy_set_pricing_model_source(
       proxy_app_arg(args),
       value,
     ),
@@ -156,7 +156,7 @@ async fn check_proxy_provider_health(args : Array[String]) -> Unit {
     Some((app_type, provider_id)) =>
       print_cli_json_result(
         "Proxy provider health",
-        cli_moonstat_client(args).proxy_provider_health(app_type, provider_id),
+        cli_moongate_client(args).proxy_provider_health(app_type, provider_id),
       )
     None => proxy_missing_provider_id()
   }
@@ -166,28 +166,28 @@ async fn check_proxy_provider_health(args : Array[String]) -> Unit {
 async fn check_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy circuit breaker config",
-    cli_moonstat_client(args).proxy_circuit_breaker_config(),
+    cli_moongate_client(args).proxy_circuit_breaker_config(),
   )
 }
 
 ///|
 async fn update_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--failure-threshold") is Some(failure_threshold) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required circuit config args: --failure-threshold --success-threshold --timeout-seconds --error-rate-threshold --min-requests",
     )
     return
   }
   guard parse_string_arg(args, "--success-threshold") is Some(success_threshold) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required circuit config args: --failure-threshold --success-threshold --timeout-seconds --error-rate-threshold --min-requests",
     )
     return
   }
   guard parse_string_arg(args, "--timeout-seconds") is Some(timeout_seconds) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required circuit config args: --failure-threshold --success-threshold --timeout-seconds --error-rate-threshold --min-requests",
     )
@@ -195,14 +195,14 @@ async fn update_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   }
   guard parse_string_arg(args, "--error-rate-threshold")
     is Some(error_rate_threshold) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required circuit config args: --failure-threshold --success-threshold --timeout-seconds --error-rate-threshold --min-requests",
     )
     return
   }
   guard parse_string_arg(args, "--min-requests") is Some(min_requests) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required circuit config args: --failure-threshold --success-threshold --timeout-seconds --error-rate-threshold --min-requests",
     )
@@ -210,7 +210,7 @@ async fn update_proxy_circuit_breaker_config(args : Array[String]) -> Unit {
   }
   print_cli_json_result(
     "Proxy circuit breaker config update",
-    cli_moonstat_client(args).proxy_update_circuit_breaker_config(
+    cli_moongate_client(args).proxy_update_circuit_breaker_config(
       failure_threshold, success_threshold, timeout_seconds, error_rate_threshold,
       min_requests,
     ),
@@ -223,7 +223,7 @@ async fn check_proxy_circuit_breaker_stats(args : Array[String]) -> Unit {
     Some((app_type, provider_id)) =>
       print_cli_json_result(
         "Proxy circuit breaker stats",
-        cli_moonstat_client(args).proxy_circuit_breaker_stats(
+        cli_moongate_client(args).proxy_circuit_breaker_stats(
           app_type, provider_id,
         ),
       )
@@ -237,7 +237,7 @@ async fn reset_proxy_circuit_breaker(args : Array[String]) -> Unit {
     Some((app_type, provider_id)) =>
       print_cli_json_result(
         "Proxy circuit breaker reset",
-        cli_moonstat_client(args).proxy_reset_circuit_breaker(
+        cli_moongate_client(args).proxy_reset_circuit_breaker(
           app_type, provider_id,
         ),
       )
@@ -249,7 +249,7 @@ async fn reset_proxy_circuit_breaker(args : Array[String]) -> Unit {
 async fn check_proxy_failover_queue(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy failover queue",
-    cli_moonstat_client(args).proxy_failover_queue(proxy_app_arg(args)),
+    cli_moongate_client(args).proxy_failover_queue(proxy_app_arg(args)),
   )
 }
 
@@ -257,7 +257,7 @@ async fn check_proxy_failover_queue(args : Array[String]) -> Unit {
 async fn check_proxy_available_failover_providers(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy available failover providers",
-    cli_moonstat_client(args).proxy_available_failover_providers(
+    cli_moongate_client(args).proxy_available_failover_providers(
       proxy_app_arg(args),
     ),
   )
@@ -269,7 +269,7 @@ async fn add_proxy_failover_queue(args : Array[String]) -> Unit {
     Some((app_type, provider_id)) =>
       print_cli_json_result(
         "Proxy failover queue add",
-        cli_moonstat_client(args).proxy_add_failover_queue(
+        cli_moongate_client(args).proxy_add_failover_queue(
           app_type, provider_id,
         ),
       )
@@ -283,7 +283,7 @@ async fn remove_proxy_failover_queue(args : Array[String]) -> Unit {
     Some((app_type, provider_id)) =>
       print_cli_json_result(
         "Proxy failover queue remove",
-        cli_moonstat_client(args).proxy_remove_failover_queue(
+        cli_moongate_client(args).proxy_remove_failover_queue(
           app_type, provider_id,
         ),
       )
@@ -295,20 +295,20 @@ async fn remove_proxy_failover_queue(args : Array[String]) -> Unit {
 async fn check_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy auto failover enabled",
-    cli_moonstat_client(args).proxy_auto_failover_enabled(proxy_app_arg(args)),
+    cli_moongate_client(args).proxy_auto_failover_enabled(proxy_app_arg(args)),
   )
 }
 
 ///|
 async fn set_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--enabled") is Some(enabled) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --enabled")
     return
   }
   print_cli_json_result(
     "Proxy auto failover update",
-    cli_moonstat_client(args).proxy_set_auto_failover_enabled(
+    cli_moongate_client(args).proxy_set_auto_failover_enabled(
       proxy_app_arg(args),
       enabled,
     ),
@@ -319,20 +319,20 @@ async fn set_proxy_auto_failover_enabled(args : Array[String]) -> Unit {
 async fn check_proxy_takeover_status(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy takeover status",
-    cli_moonstat_client(args).proxy_takeover_status(),
+    cli_moongate_client(args).proxy_takeover_status(),
   )
 }
 
 ///|
 async fn set_proxy_takeover_status(args : Array[String]) -> Unit {
   guard parse_string_arg(args, "--enabled") is Some(enabled) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --enabled")
     return
   }
   print_cli_json_result(
     "Proxy takeover update",
-    cli_moonstat_client(args).proxy_set_takeover_status(
+    cli_moongate_client(args).proxy_set_takeover_status(
       proxy_app_arg(args),
       enabled,
     ),
@@ -345,7 +345,7 @@ async fn switch_proxy_provider(args : Array[String]) -> Unit {
     Some((app_type, provider_id)) =>
       print_cli_json_result(
         "Proxy provider switch",
-        cli_moonstat_client(args).proxy_switch_provider(app_type, provider_id),
+        cli_moongate_client(args).proxy_switch_provider(app_type, provider_id),
       )
     None => proxy_missing_provider_id()
   }
@@ -355,7 +355,7 @@ async fn switch_proxy_provider(args : Array[String]) -> Unit {
 async fn check_proxy_running(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Proxy running",
-    cli_moonstat_client(args).proxy_running(),
+    cli_moongate_client(args).proxy_running(),
   )
 }
 
@@ -443,7 +443,7 @@ async fn run_proxy_cli_command(
     "get_global_proxy_url" =>
       print_cli_json_result(
         "Proxy global URL",
-        cli_moonstat_client(args).proxy_global_url(),
+        cli_moongate_client(args).proxy_global_url(),
       )
     "update_proxy_config_for_app" => update_proxy_app_config(args)
     "get_proxy_config_for_app" => check_proxy_app_config(args)
@@ -468,12 +468,12 @@ async fn run_proxy_cli_command(
     "get_upstream_proxy_status" =>
       print_cli_json_result(
         "Proxy upstream status",
-        cli_moonstat_client(args).proxy_upstream_status(),
+        cli_moongate_client(args).proxy_upstream_status(),
       )
     "scan_local_proxies" =>
       print_cli_json_result(
         "Proxy local proxies",
-        cli_moonstat_client(args).proxy_local_proxies(),
+        cli_moongate_client(args).proxy_local_proxies(),
       )
     "get_provider_health" => check_proxy_provider_health(args)
     "get_circuit_breaker_stats" => check_proxy_circuit_breaker_stats(args)
@@ -483,7 +483,7 @@ async fn run_proxy_cli_command(
     "is_live_takeover_active" =>
       print_cli_json_result(
         "Proxy takeover status",
-        cli_moonstat_client(args).proxy_takeover_status(),
+        cli_moongate_client(args).proxy_takeover_status(),
       )
     "switch_proxy_provider" => switch_proxy_provider(args)
     "get_proxy_running" => check_proxy_running(args)
@@ -509,7 +509,7 @@ async fn check_current_provider(args : Array[String]) -> Unit {
 async fn add_provider(args : Array[String]) -> Unit {
   guard provider_upsert_path(args, "/providers", require_original=false)
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required provider args: --provider-id")
     return
   }
@@ -520,7 +520,7 @@ async fn add_provider(args : Array[String]) -> Unit {
 async fn update_provider(args : Array[String]) -> Unit {
   guard provider_upsert_path(args, "/providers/update", require_original=false)
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required provider args: --provider-id")
     return
   }
@@ -530,7 +530,7 @@ async fn update_provider(args : Array[String]) -> Unit {
 ///|
 async fn delete_provider(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/providers") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -540,7 +540,7 @@ async fn delete_provider(args : Array[String]) -> Unit {
 ///|
 async fn remove_provider_from_live_config(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/providers/live") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -550,7 +550,7 @@ async fn remove_provider_from_live_config(args : Array[String]) -> Unit {
 ///|
 async fn switch_provider(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/providers/switch") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -567,7 +567,7 @@ async fn sync_current_providers_live(args : Array[String]) -> Unit {
 ///|
 async fn open_provider_terminal(args : Array[String]) -> Unit {
   guard open_provider_terminal_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -597,7 +597,7 @@ async fn check_named_live_provider(
   app_type : String,
 ) -> Unit {
   guard provider_live_provider_path(args, app_type) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -628,7 +628,7 @@ async fn check_provider_live_ids(args : Array[String]) -> Unit {
 ///|
 async fn check_provider_live_provider(args : Array[String]) -> Unit {
   guard provider_live_provider_path(args, provider_app_arg(args)) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -653,7 +653,7 @@ async fn check_universal_providers(args : Array[String]) -> Unit {
 async fn check_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_id_path(args, "/providers/universal/item")
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -663,7 +663,7 @@ async fn check_universal_provider(args : Array[String]) -> Unit {
 ///|
 async fn upsert_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_upsert_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required universal provider args: --provider-id")
     return
   }
@@ -673,7 +673,7 @@ async fn upsert_universal_provider(args : Array[String]) -> Unit {
 ///|
 async fn delete_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_id_path(args, "/providers/universal") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -684,7 +684,7 @@ async fn delete_universal_provider(args : Array[String]) -> Unit {
 async fn sync_universal_provider(args : Array[String]) -> Unit {
   guard universal_provider_id_path(args, "/providers/universal/sync")
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -699,7 +699,7 @@ async fn check_provider_presets(args : Array[String]) -> Unit {
 ///|
 async fn update_providers_sort_order(args : Array[String]) -> Unit {
   guard provider_sort_order_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required provider sort args: --provider-id --sort-index",
     )
@@ -711,7 +711,7 @@ async fn update_providers_sort_order(args : Array[String]) -> Unit {
 ///|
 async fn check_provider_custom_endpoints(args : Array[String]) -> Unit {
   guard provider_id_path(args, "/providers/endpoints/list") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required --provider-id")
     return
   }
@@ -721,7 +721,7 @@ async fn check_provider_custom_endpoints(args : Array[String]) -> Unit {
 ///|
 async fn add_provider_custom_endpoint(args : Array[String]) -> Unit {
   guard provider_endpoint_url_path(args, "/providers/endpoints") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required provider endpoint args: --provider-id --endpoint-url",
     )
@@ -733,7 +733,7 @@ async fn add_provider_custom_endpoint(args : Array[String]) -> Unit {
 ///|
 async fn remove_provider_custom_endpoint(args : Array[String]) -> Unit {
   guard provider_endpoint_url_path(args, "/providers/endpoints") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required provider endpoint args: --provider-id --endpoint-url",
     )
@@ -746,7 +746,7 @@ async fn remove_provider_custom_endpoint(args : Array[String]) -> Unit {
 async fn update_provider_endpoint_last_used(args : Array[String]) -> Unit {
   guard provider_endpoint_url_path(args, "/providers/endpoints/touch")
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error(
       "Missing required provider endpoint args: --provider-id --endpoint-url",
     )
@@ -765,7 +765,7 @@ fn proxy_provider_args(args : Array[String]) -> (String, String)? {
 
 ///|
 async fn proxy_missing_provider_id() -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   logger.error("Missing required --provider-id")
 }
 
@@ -1001,7 +1001,7 @@ fn stream_check_provider_path(args : Array[String]) -> String? {
 async fn check_usage_providers(args : Array[String]) -> Unit {
   print_cli_json_result(
     "Usage providers",
-    cli_moonstat_client(args).usage_provider_stats(
+    cli_moongate_client(args).usage_provider_stats(
       query=Some(usage_query(args, app_filter=true)),
     ),
   )
@@ -1010,7 +1010,7 @@ async fn check_usage_providers(args : Array[String]) -> Unit {
 ///|
 async fn stream_check_provider(args : Array[String]) -> Unit {
   guard stream_check_provider_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required stream check args: --provider-id --app-type")
     return
   }
@@ -1026,7 +1026,7 @@ async fn stream_check_all_providers(args : Array[String]) -> Unit {
 async fn check_usage_provider_script(args : Array[String]) -> Unit {
   guard usage_provider_script_path(args, "/usage/provider-usage", false)
     is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required usage script args: --provider-id --app-type")
     return
   }
@@ -1099,7 +1099,7 @@ fn usage_pricing_delete_path(args : Array[String]) -> String? {
 
 ///|
 async fn update_usage_pricing(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   guard usage_pricing_update_path(args) is Some(path) else {
     logger.error(
       "Missing required pricing args: --model-id --display-name --input-cost --output-cost --cache-read-cost --cache-creation-cost",
@@ -1124,7 +1124,7 @@ async fn update_usage_pricing(args : Array[String]) -> Unit {
 
 ///|
 async fn delete_usage_pricing(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   guard usage_pricing_delete_path(args) is Some(path) else {
     logger.error("Missing required --model-id")
     return
@@ -1149,7 +1149,7 @@ async fn delete_usage_pricing(args : Array[String]) -> Unit {
 
 ///|
 async fn fetch_provider_models(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   guard parse_string_arg(args, "--base-url") is Some(base_url) else {
     logger.error("Missing required --base-url")
     return
@@ -1161,7 +1161,7 @@ async fn fetch_provider_models(args : Array[String]) -> Unit {
   let is_full_url = has_flag(args, "--full-url")
   let models_url = parse_string_arg(args, "--models-url")
   let user_agent = parse_string_arg(args, "--user-agent")
-  let result = @moonstat.fetch_models(
+  let result = @moongate.fetch_models(
     base_url, api_key, is_full_url, models_url, user_agent,
   )
   match result {
@@ -1171,8 +1171,8 @@ async fn fetch_provider_models(args : Array[String]) -> Unit {
 }
 
 ///|
-fn provider_models_to_json(models : Array[@moonstat.FetchedModel]) -> Json {
-  @moonstat.fetched_models_to_json(models)
+fn provider_models_to_json(models : Array[@moongate.FetchedModel]) -> Json {
+  @moongate.fetched_models_to_json(models)
 }
 
 ///|
@@ -1183,7 +1183,7 @@ fn print_moonclaw_providers_file(args : Array[String]) -> Unit {
     @suite.default_model(),
   )
   println(
-    @moonstat.moonstat_moonclaw_providers_file_json(host~, port~, model~).stringify(
+    @moongate.moongate_moonclaw_providers_file_json(host~, port~, model~).stringify(
       indent=2,
     ),
   )
@@ -1191,16 +1191,16 @@ fn print_moonclaw_providers_file(args : Array[String]) -> Unit {
 
 ///|
 async fn write_moonclaw_providers_file(args : Array[String]) -> Unit {
-  let logger = @pino.logger("moonstat", @pino.Transport::console())
+  let logger = @pino.logger("moongate", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let model = parse_string_arg(args, "--model").unwrap_or(
     @suite.default_model(),
   )
   let path = parse_string_arg(args, "--path").unwrap_or(
-    @moonstat.default_moonstat_moonclaw_providers_file_path(),
+    @moongate.default_moongate_moonclaw_providers_file_path(),
   )
-  let written = @moonstat.write_moonstat_moonclaw_providers_file(
+  let written = @moongate.write_moongate_moonclaw_providers_file(
     path~,
     host~,
     port~,

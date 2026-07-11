@@ -40,7 +40,7 @@ async fn auth_start_login(args : Array[String]) -> Unit {
 ///|
 async fn auth_poll_for_account(args : Array[String]) -> Unit {
   guard auth_poll_path(args) is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required auth poll arg: --device-code")
     return
   }
@@ -60,7 +60,7 @@ async fn auth_get_status(args : Array[String]) -> Unit {
 ///|
 async fn auth_remove_account(args : Array[String]) -> Unit {
   guard auth_account_path(args, "/auth/account") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required auth account arg: --account-id")
     return
   }
@@ -70,7 +70,7 @@ async fn auth_remove_account(args : Array[String]) -> Unit {
 ///|
 async fn auth_set_default_account(args : Array[String]) -> Unit {
   guard auth_account_path(args, "/auth/default-account") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required auth account arg: --account-id")
     return
   }
@@ -89,7 +89,7 @@ async fn auth_logout(args : Array[String]) -> Unit {
 ///|
 async fn copilot_poll_for_auth(args : Array[String]) -> Unit {
   guard copilot_device_path(args, "/copilot/poll-auth") is Some(path) else {
-    let logger = @pino.logger("moonstat", @pino.Transport::console())
+    let logger = @pino.logger("moongate", @pino.Transport::console())
     logger.error("Missing required Copilot arg: --device-code")
     return
   }
