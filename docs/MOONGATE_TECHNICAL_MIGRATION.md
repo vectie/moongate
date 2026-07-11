@@ -96,6 +96,28 @@ git@github.com:vectie/moongate.git.
 
 Quality gate: local and remote commit IDs match and all worktrees are clean.
 
+## Completion evidence
+
+The coordinated migration completed on 2026-07-11.
+
+- MoonLib 0.1.10 was published to the MoonBit registry. Publication validated
+  the source tree and extracted package archive, then returned 200 OK.
+- All consumer modules resolved the published version and passed moon check.
+- Full suites passed: MoonLib 50/50, MoonGate 807/807, MoonBook 223/223,
+  MoonClaw 1054/1054, MoonTown 978/978, MoonRobo 546/546, MoonDesk 533/533,
+  and MoonFish 145/145.
+- The public suite website production build passed.
+- The canonical manifest reports service and project as moongate and exposes
+  only canonical assets, commands, capabilities, paths, and provider IDs.
+- The absent-source migration smoke produced an accepted no-op receipt.
+- The real ~/moonsuite migration copied two files, recognized one identical
+  file, reported no conflicts or errors, preserved the source, and attached its
+  accepted receipt to MoonFlow event sequence 77.
+- All ten migration worktrees were clean, their local heads matched GitHub, and
+  ordinary tracked source contained no former technical identity.
+
+Published branch: upgrade/moongate-technical-migration.
+
 ## Compatibility boundary
 
 There is deliberately no normal executable, module, environment-variable,
