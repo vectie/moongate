@@ -116,6 +116,8 @@ pub fn moongate_models_from_json(Json) -> Result[Array[MoonGateModel], String]
 
 pub fn moongate_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
 
+pub fn moongate_moonflow_adapter_capability_json() -> Json
+
 pub fn moongate_product_home_for_workspace_root(String) -> String
 
 pub fn moongate_rabbita_document_html(api_base? : String) -> String
