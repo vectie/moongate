@@ -667,8 +667,29 @@ fn default_moongate_dir() -> String {
 
 ///|
 fn moongate_active_workspace_root() -> String {
-  @os.cwd() catch {
-    _ => "."
+  let cwd = @os.cwd() catch { _ => "." }
+  let configured = @os.getenv("MOONSUITE_WORKSPACE_ROOT") catch { _ => None }
+  let home = @os.home() catch { _ => "" }
+  moongate_workspace_root_from_env_home_and_cwd(
+    configured.unwrap_or(""),
+    home,
+    cwd,
+  )
+}
+
+///|
+fn moongate_workspace_root_from_env_home_and_cwd(
+  configured : String,
+  home : String,
+  cwd : String,
+) -> String {
+  let root = configured.trim().to_owned()
+  if !root.is_empty() {
+    root
+  } else if home.trim().is_empty() {
+    cwd
+  } else {
+    @pathx.join(home, "moonsuite")
   }
 }
 

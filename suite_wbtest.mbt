@@ -1,4 +1,24 @@
 ///|
+test "MoonGate workspace root honors canonical suite override" {
+  assert_eq(
+    moongate_workspace_root_from_env_home_and_cwd(
+      "/Users/alice/moonsuite", "/Users/alice", "/repo/moongate",
+    ),
+    "/Users/alice/moonsuite",
+  )
+  assert_eq(
+    moongate_workspace_root_from_env_home_and_cwd(
+      "  ", "/Users/alice", "/repo/moongate",
+    ),
+    "/Users/alice/moonsuite",
+  )
+  assert_eq(
+    moongate_workspace_root_from_env_home_and_cwd("", "", "/repo/moongate"),
+    "/repo/moongate",
+  )
+}
+
+///|
 test "suite manifest publishes moongate service contract" {
   let manifest = moongate_suite_manifest_json(
     host="0.0.0.0",
