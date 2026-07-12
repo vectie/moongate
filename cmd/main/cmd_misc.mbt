@@ -47,6 +47,9 @@ fn print_help() -> Unit {
   println("  suite drift               Report MoonSuite legacy path drift")
   println("  suite write-status        Write .moonsuite/suite-status.json")
   println(
+    "  suite autonomy-check     Authorize and persist one unattended action decision",
+  )
+  println(
     "  suite migrate-legacy-state  Copy legacy MoonGate state without overwrites",
   )
   println("  suite moonclaw-providers  Print MoonClaw providers.json")
@@ -173,6 +176,12 @@ fn print_help() -> Unit {
   println("")
   println("Suite options:")
   println("  --path <path>     Status file path for suite write-status")
+  println("  --root <path>     Absolute MoonSuite workspace root")
+  println("  --envelope <path> Autonomy envelope JSON")
+  println("  --event <path>    Autonomy event request JSON")
+  println("  --usage <path>    Current autonomy budget usage JSON")
+  println("  --decision <id>   Safe decision receipt id")
+  println("  --checked-at <utc> Canonical UTC decision time")
   println("")
   println("Proxy config options:")
   println("  --app-type <app>  App type for app-level proxy config")

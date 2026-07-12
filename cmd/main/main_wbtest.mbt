@@ -150,6 +150,10 @@ test "registered cli commands match suite command aliases and status commands" {
     Some("suite_constitution_negative"),
   )
   assert_true(
+    registered_cli_command_id(["moongate", "suite", "autonomy-check"]) ==
+    Some("suite_autonomy_check"),
+  )
+  assert_true(
     registered_cli_command_id(["moongate", "suite", "moonclaw-providers"]) ==
     Some("suite_moonclaw_providers"),
   )

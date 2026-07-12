@@ -9,6 +9,7 @@ import {
   "vectie/moonlib/fsx",
   "vectie/moonlib/pathx",
   "vectie/moonlib/moonsuite",
+  "vectie/moonlib/pipeline",
   "vectie/moongate/internal/pino",
   "vectie/moongate/internal/hosts",
   "moonbitlang/core/encoding/utf8" @encoding/utf8,
