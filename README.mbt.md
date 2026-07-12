@@ -67,6 +67,15 @@ each product's owned operations, permitted authority, input/output contracts,
 claim ceiling, and prohibited claims. It does not transfer acceptance or
 physical authority to the gateway.
 
+The embodied-workspace registry adds MoonMold as the owner of digital spatial
+modeling, representation transforms, geometry validation, and manufacturing-
+candidate preparation. Its initial authority ceiling excludes external and
+physical effects, and its claim ceiling is `digital-artifact`. A printable or
+otherwise manufacturable candidate therefore cannot authorize a printer,
+machine, or robot. MoonDesk and MoonClaw may present or execute scoped browser
+actions, but each consequential browser effect is still evaluated through its
+MoonGate authority envelope.
+
 ## Implementation Guidance
 
 Keep framework support additive. Cleanup should remove stale aliases and dead
@@ -251,11 +260,11 @@ refreshes that file when the gateway boots. `GET /suite/moonclaw-providers`
 and `POST /suite/moonclaw-providers/write` expose the MoonClaw providers file
 contract over HTTP.
 
-`suite constitution` returns the 11-product registry together with a shared
+`suite constitution` returns the 12-product registry together with a shared
 validator report for every boundary. `suite constitution-negative` is a
 diagnostic fixture: it must fail closed and retain typed findings for physical
-overclaim, simulation-to-physical escalation, hidden acceptance, ownership
-violations, and workspace escape.
+overclaim, simulation-to-physical escalation, MoonMold fabrication escalation,
+hidden acceptance, ownership violations, and workspace escape.
 
 The suite discovery contract also includes a machine-readable
 `suiteIntegrations` object:
