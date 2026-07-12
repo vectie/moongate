@@ -229,12 +229,17 @@ moon run cmd/main -- models candidates --base-url https://api.deepseek.com/anthr
 Moon suite discovery:
 
 ```sh
+export MOONSUITE_WORKSPACE_ROOT="$HOME/moonsuite"
 moon run cmd/main -- suite manifest
 moon run cmd/main -- suite status
 moon run cmd/main -- suite constitution --checked-at 2026-07-12T09:00:00+08:00
 moon run cmd/main -- suite constitution-negative --checked-at 2026-07-12T09:00:00+08:00
 moon run cmd/main -- suite write-status
 ```
+
+`MOONSUITE_WORKSPACE_ROOT` is authoritative for suite state. Set it whenever
+MoonGate is launched from a product checkout; otherwise the current directory
+is used only as a local development fallback.
 
 `suite manifest`, `suite status`, `GET /suite/manifest`, and `GET /suite/status`
 print JSON contracts for MoonClaw,

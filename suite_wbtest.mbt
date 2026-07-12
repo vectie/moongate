@@ -1559,3 +1559,10 @@ async test "gateway start writes running suite status" {
   assert_true(source.contains("write_moongate_suite_status("))
   assert_true(source.contains("status=\"running\""))
 }
+
+///|
+async test "suite workspace root supports an explicit launch override" {
+  let source = @fsx.read_file("suite.mbt")
+  assert_true(source.contains("MOONSUITE_WORKSPACE_ROOT"))
+  assert_true(source.contains("root.trim().is_empty()"))
+}
