@@ -55,12 +55,17 @@ MoonGate owns observability and local model/proxy integration:
 - provider CRUD, failover, circuit breakers, stream checks, and resilience
   reports
 - suite discovery/status projection and contract-drift reporting
+- the authoritative product-boundary registry for constitutional conformance
 - Rabbita/Lepusa dashboard shell for local operator control
 
 MoonGate does not own shared filesystem path construction, durable MoonBook
 truth, MoonClaw execution, MoonTown scheduling, or MoonDesk desktop browsing.
 MoonLib owns layout contracts; MoonGate validates and reports their observed
-state.
+state. MoonLib also owns the policy-free conformance DTOs and deterministic
+validator; MoonGate supplies the live policy registry. The registry declares
+each product's owned operations, permitted authority, input/output contracts,
+claim ceiling, and prohibited claims. It does not transfer acceptance or
+physical authority to the gateway.
 
 ## Implementation Guidance
 
@@ -226,6 +231,8 @@ Moon suite discovery:
 ```sh
 moon run cmd/main -- suite manifest
 moon run cmd/main -- suite status
+moon run cmd/main -- suite constitution --checked-at 2026-07-12T09:00:00+08:00
+moon run cmd/main -- suite constitution-negative --checked-at 2026-07-12T09:00:00+08:00
 moon run cmd/main -- suite write-status
 ```
 
@@ -237,7 +244,15 @@ launchers. `suite write-status` and `POST /suite/status/write` write the same
 status contract to `.moonsuite/suite-status.json` by default, and `start`
 refreshes that file when the gateway boots. `GET /suite/moonclaw-providers`
 and `POST /suite/moonclaw-providers/write` expose the MoonClaw providers file
-contract over HTTP. The contract also includes a machine-readable
+contract over HTTP.
+
+`suite constitution` returns the 11-product registry together with a shared
+validator report for every boundary. `suite constitution-negative` is a
+diagnostic fixture: it must fail closed and retain typed findings for physical
+overclaim, simulation-to-physical escalation, hidden acceptance, ownership
+violations, and workspace escape.
+
+The suite discovery contract also includes a machine-readable
 `suiteIntegrations` object:
 
 - MoonClaw gets local OpenAI/Anthropic base URLs, env names, a

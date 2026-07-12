@@ -142,6 +142,14 @@ test "registered cli commands match suite command aliases and status commands" {
   )
   assert_false(cli_args_match_pattern(["moongate", "suite"], "suite status"))
   assert_true(
+    registered_cli_command_id(["moongate", "suite", "constitution"]) ==
+    Some("suite_constitution"),
+  )
+  assert_true(
+    registered_cli_command_id(["moongate", "suite", "constitution-negative"]) ==
+    Some("suite_constitution_negative"),
+  )
+  assert_true(
     registered_cli_command_id(["moongate", "suite", "moonclaw-providers"]) ==
     Some("suite_moonclaw_providers"),
   )

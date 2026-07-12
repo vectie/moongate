@@ -1,10 +1,24 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate"
 
+import {
+  "vectie/moonlib/pipeline",
+}
+
 // Values
 pub fn build_models_url_candidates(String, Bool, String?) -> Result[Array[String], String]
 
 pub fn calculate_cost_for_app(String, TokenUsage, ModelPricing, cost_multiplier? : String) -> CostBreakdown
+
+pub fn constitutional_negative_probe(String) -> @pipeline.ConstitutionConformanceReport
+
+pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary]
+
+pub fn constitutional_registry_json() -> Json
+
+pub fn constitutional_registry_self_check(String) -> Json
+
+pub fn constitutional_simulation_authority_probe(String) -> @pipeline.ConstitutionConformanceReport
 
 pub async fn copilot_get_auth_status() -> Json
 

@@ -38,9 +38,17 @@ fn print_help() -> Unit {
   println("  suite lepusa              Print Lepusa desktop manifest")
   println("  suite lepusa-rabbita      Print Lepusa Rabbita preview manifest")
   println("  suite status              Print Moon suite status contract")
+  println(
+    "  suite constitution        Audit product boundaries and authority ceilings",
+  )
+  println(
+    "  suite constitution-negative  Print fail-closed constitutional probes",
+  )
   println("  suite drift               Report MoonSuite legacy path drift")
   println("  suite write-status        Write .moonsuite/suite-status.json")
-  println("  suite migrate-legacy-state  Copy legacy MoonGate state without overwrites")
+  println(
+    "  suite migrate-legacy-state  Copy legacy MoonGate state without overwrites",
+  )
   println("  suite moonclaw-providers  Print MoonClaw providers.json")
   println(
     "  suite write-moonclaw-providers  Write \{@moonsuite.product_display_artifact("moonclaw", "providers.json")}",

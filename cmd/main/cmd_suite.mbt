@@ -5,10 +5,18 @@ fn suite_cli_commands() -> Array[CliCommandSpec] {
     { id: "suite_lepusa", patterns: ["suite lepusa"] },
     { id: "suite_lepusa_rabbita", patterns: ["suite lepusa-rabbita"] },
     { id: "suite_status", patterns: ["suite status"] },
+    { id: "suite_constitution", patterns: ["suite constitution"] },
+    {
+      id: "suite_constitution_negative",
+      patterns: ["suite constitution-negative"],
+    },
     { id: "suite_drift", patterns: ["suite drift"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
     { id: "suite_session", patterns: ["suite session"] },
-    { id: "suite_migrate_legacy_state", patterns: ["suite migrate-legacy-state"] },
+    {
+      id: "suite_migrate_legacy_state",
+      patterns: ["suite migrate-legacy-state"],
+    },
     { id: "suite_moonclaw_providers", patterns: ["suite moonclaw-providers"] },
     {
       id: "suite_write_moonclaw_providers",
@@ -27,6 +35,8 @@ async fn run_suite_cli_command(
     "suite_lepusa" => print_lepusa_manifest(args)
     "suite_lepusa_rabbita" => print_lepusa_rabbita_manifest(args)
     "suite_status" => print_suite_status(args)
+    "suite_constitution" => print_suite_constitution(args)
+    "suite_constitution_negative" => print_suite_constitution_negative(args)
     "suite_drift" => print_suite_drift(args)
     "suite_write_status" => write_suite_status(args)
     "suite_session" => write_ai_session_receipt(args)
@@ -35,6 +45,35 @@ async fn run_suite_cli_command(
     "suite_write_moonclaw_providers" => write_moonclaw_providers_file(args)
     _ => ()
   }
+}
+
+///|
+fn print_suite_constitution(args : Array[String]) -> Unit {
+  let checked_at = parse_string_arg(args, "--checked-at").unwrap_or("cli")
+  println(
+    {
+      "contractId": Json::string("moonsuite.constitution-suite-report.v1"),
+      "registry": @moongate.constitutional_registry_json(),
+      "selfCheck": @moongate.constitutional_registry_self_check(checked_at),
+    }
+    .to_json()
+    .stringify(indent=2),
+  )
+}
+
+///|
+fn print_suite_constitution_negative(args : Array[String]) -> Unit {
+  let checked_at = parse_string_arg(args, "--checked-at").unwrap_or("cli")
+  println(
+    {
+      "physicalOverclaim": @moongate.constitutional_negative_probe(checked_at).to_json(),
+      "simulationPhysicalAuthority": @moongate.constitutional_simulation_authority_probe(
+        checked_at,
+      ).to_json(),
+    }
+    .to_json()
+    .stringify(indent=2),
+  )
 }
 
 ///|
