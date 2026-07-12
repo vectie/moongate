@@ -34,7 +34,10 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
     {
       product_id: "moondesk",
       owner: "executable-document-operator-interface",
-      operations: ["edit-document", "dispatch-declaration", "review-evidence"],
+      operations: [
+        "edit-document", "dispatch-declaration", "review-evidence", "present-browser-session",
+        "review-browser-evidence",
+      ],
       allowed_authorities: [
         Observe,
         CognitiveMaintenance,
@@ -43,7 +46,8 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
       ],
       input_contracts: [
         "moonsuite.executable-document.v1", "moonsuite.work-model.v1", "moonsuite.evidence-envelope.v1",
-        "moonsuite.constitution-conformance.v1",
+        "moonsuite.constitution-conformance.v1", "moonsuite.browser-session.v1",
+        "moonsuite.browser-action-receipt.v1",
       ],
       output_contracts: [
         "moonsuite.executable-document.v1", "moonsuite.change-receipt.v1",
@@ -131,7 +135,9 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
     {
       product_id: "moonclaw",
       owner: "bounded-agent-execution-and-tool-use",
-      operations: ["execute-task", "run-tool", "repair-attempt"],
+      operations: [
+        "execute-task", "run-tool", "repair-attempt", "execute-browser-action",
+      ],
       allowed_authorities: [
         Observe,
         CognitiveMaintenance,
@@ -141,11 +147,11 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
       ],
       input_contracts: [
         "moonsuite.work-model.v1", "moonsuite.authority.v1", "moonsuite.model-route.v1",
-        "moonsuite.learned-procedure.v1",
+        "moonsuite.learned-procedure.v1", "moonsuite.browser-session.v1",
       ],
       output_contracts: [
         "moonsuite.run-receipt.v1", "moonsuite.artifact-ref.v1", "moonsuite.evidence-envelope.v1",
-        "moonsuite.change-receipt.v1",
+        "moonsuite.change-receipt.v1", "moonsuite.browser-action-receipt.v1",
       ],
       claim_ceiling: ExecutionResult,
       prohibited_claims: [
@@ -183,7 +189,7 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
       allowed_authorities: [Observe, CognitiveMaintenance, WorkspaceMutation],
       input_contracts: [
         "moonsuite.book-readiness.v1", "moonsuite.book-message.v1", "moonsuite.town-commission.v1",
-        "moonsuite.evidence-envelope.v1",
+        "moonsuite.evidence-envelope.v1", "moonmold.spatial-artifact.v1",
       ],
       output_contracts: [
         "moonsuite.town-commission.v1", "moonsuite.town-promotion.v1", "moonsuite.book-message.v1",
@@ -192,6 +198,39 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
       claim_ceiling: AcceptedKnowledge,
       prohibited_claims: [
         ScenarioQualified,
+        PhysicalReadiness,
+        PhysicalEffectClaim,
+      ],
+    },
+    {
+      product_id: "moonmold",
+      owner: "spatial-modeling-transformation-and-validation",
+      operations: [
+        "create-spatial-model", "edit-parametric-model", "transform-representation",
+        "validate-geometry", "export-representation", "prepare-manufacturing-candidate",
+      ],
+      allowed_authorities: [
+        Observe,
+        CognitiveMaintenance,
+        SandboxExecution,
+        WorkspaceMutation,
+      ],
+      input_contracts: [
+        "moonsuite.work-model.v1", "moonsuite.authority.v1", "moonbook.learned-procedure.v1",
+        "moonmold.spatial-artifact.v1",
+      ],
+      output_contracts: [
+        "moonmold.spatial-artifact.v1", "moonmold.representation-transform.v1", "moonsuite.artifact-ref.v1",
+        "moonsuite.evidence-envelope.v1", "moonsuite.run-receipt.v1",
+      ],
+      claim_ceiling: DigitalArtifact,
+      prohibited_claims: [
+        AcceptedKnowledge,
+        SimulationEvidence,
+        ScenarioQualified,
+        CalibratedDigitalTwin,
+        HardwareInLoopQualified,
+        EngineeringUnitQualified,
         PhysicalReadiness,
         PhysicalEffectClaim,
       ],
@@ -211,7 +250,7 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
       ],
       input_contracts: [
         "moonsuite.robot-design.v1", "moonsuite.work-model.v1", "moonsuite.authority.v1",
-        "moonsuite.town-promotion.v1",
+        "moonsuite.town-promotion.v1", "moonmold.spatial-artifact.v1",
       ],
       output_contracts: [
         "moonsuite.robot-design.v1", "moonsuite.artifact-ref.v1", "moonsuite.evidence-envelope.v1",
@@ -229,6 +268,7 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
       allowed_authorities: [Observe, SandboxExecution, WorkspaceMutation],
       input_contracts: [
         "moonsuite.robot-design.v1", "moonsuite.work-model.v1", "moonsuite.evidence-envelope.v1",
+        "moonmold.spatial-artifact.v1", "moonmold.representation-transform.v1",
       ],
       output_contracts: [
         "moonsuite.run-receipt.v1", "moonsuite.evidence-envelope.v1", "moonsuite.artifact-ref.v1",
@@ -377,6 +417,36 @@ pub fn constitutional_simulation_authority_probe(
       artifact_paths: [".moonsuite/products/moonmoon/simulation.json"],
     },
     "negative-simulation-authority-report",
+    checked_at,
+  )
+}
+
+///|
+/// Preparing digital manufacturing geometry cannot authorize fabrication.
+pub fn constitutional_moonmold_physical_probe(
+  checked_at : String,
+) -> @pipeline.ConstitutionConformanceReport {
+  @pipeline.validate_constitutional_conformance(
+    constitutional_product_boundaries(),
+    {
+      subject_id: "negative-probe-moonmold-physical-fabrication",
+      product_id: "moonmold",
+      operation: "prepare-manufacturing-candidate",
+      requested_authority: PhysicalEffect,
+      input_contracts: ["moonmold.spatial-artifact.v1"],
+      output_contracts: ["moonmold.spatial-artifact.v1"],
+      claim: PhysicalEffectClaim,
+      criteria: [],
+      negative_path_count: 1,
+      execution_succeeded: true,
+      accepted: false,
+      acceptance_review_ref: "",
+      workspace_root: "/Users/kq/moonsuite",
+      artifact_paths: [
+        ".moonsuite/products/moonmold/manufacturing/candidate.json",
+      ],
+    },
+    "negative-moonmold-physical-report",
     checked_at,
   )
 }

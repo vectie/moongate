@@ -1,11 +1,11 @@
 ///|
 test "constitutional registry covers the complete product matrix" {
   let registry = constitutional_product_boundaries()
-  assert_eq(registry.length(), 11)
+  assert_eq(registry.length(), 12)
   for
     product in [
       "moongate", "moondesk", "moonbook", "moonwiki", "moonflow", "moonclaw", "mooncode",
-      "moontown", "moonrobo", "moonmoon", "moonlib",
+      "moontown", "moonmold", "moonrobo", "moonmoon", "moonlib",
     ] {
     assert_true(registry.any(boundary => boundary.product_id == product))
   }
@@ -16,7 +16,7 @@ test "every declared product boundary passes the shared validator" {
   let report = constitutional_registry_self_check("2026-07-12T09:00:00+08:00")
   guard report is Object(fields) else { fail("expected registry report") }
   assert_eq(fields["accepted"], Json::boolean(true))
-  assert_eq(fields["productCount"], Json::number(11.0))
+  assert_eq(fields["productCount"], Json::number(12.0))
 }
 
 ///|
@@ -47,6 +47,18 @@ test "simulation evidence cannot authorize a physical effect" {
   let codes = report.findings.map(finding => finding.code)
   assert_true(codes.contains("authority-not-allowed"))
   assert_true(codes.contains("simulation-cannot-authorize-physical-effect"))
+}
+
+///|
+test "MoonMold manufacturing preparation cannot authorize fabrication" {
+  let report = constitutional_moonmold_physical_probe(
+    "2026-07-13T09:00:00+08:00",
+  )
+  assert_false(report.accepted)
+  let codes = report.findings.map(finding => finding.code)
+  assert_true(codes.contains("authority-not-allowed"))
+  assert_true(codes.contains("claim-ceiling-exceeded"))
+  assert_true(codes.contains("prohibited-claim"))
 }
 
 ///|
