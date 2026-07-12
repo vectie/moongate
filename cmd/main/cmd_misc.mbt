@@ -50,6 +50,9 @@ fn print_help() -> Unit {
     "  suite autonomy-check     Authorize and persist one unattended action decision",
   )
   println(
+    "  suite autonomy-envelope  Issue a validated unattended envelope from an approved request",
+  )
+  println(
     "  suite migrate-legacy-state  Copy legacy MoonGate state without overwrites",
   )
   println("  suite moonclaw-providers  Print MoonClaw providers.json")
@@ -182,6 +185,11 @@ fn print_help() -> Unit {
   println("  --usage <path>    Current autonomy budget usage JSON")
   println("  --decision <id>   Safe decision receipt id")
   println("  --checked-at <utc> Canonical UTC decision time")
+  println("  --request <path>  MoonBook autonomy request JSON")
+  println("  --envelope-id <id> Safe autonomy envelope id")
+  println("  --granted-by <id> Human authority identity")
+  println("  --recorded-at <utc> Envelope issue time")
+  println("  --expires-at <utc> Envelope expiry time")
   println("")
   println("Proxy config options:")
   println("  --app-type <app>  App type for app-level proxy config")

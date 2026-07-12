@@ -14,6 +14,7 @@ fn suite_cli_commands() -> Array[CliCommandSpec] {
     { id: "suite_write_status", patterns: ["suite write-status"] },
     { id: "suite_session", patterns: ["suite session"] },
     { id: "suite_autonomy_check", patterns: ["suite autonomy-check"] },
+    { id: "suite_autonomy_envelope", patterns: ["suite autonomy-envelope"] },
     {
       id: "suite_migrate_legacy_state",
       patterns: ["suite migrate-legacy-state"],
@@ -42,6 +43,7 @@ async fn run_suite_cli_command(
     "suite_write_status" => write_suite_status(args)
     "suite_session" => write_ai_session_receipt(args)
     "suite_autonomy_check" => check_autonomy_event(args)
+    "suite_autonomy_envelope" => issue_autonomy_envelope(args)
     "suite_migrate_legacy_state" => migrate_legacy_moongate_state(args)
     "suite_moonclaw_providers" => print_moonclaw_providers_file(args)
     "suite_write_moonclaw_providers" => write_moonclaw_providers_file(args)

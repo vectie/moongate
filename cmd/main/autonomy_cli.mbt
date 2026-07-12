@@ -107,3 +107,139 @@ async fn check_autonomy_event(args : Array[String]) -> Unit {
     )
   }
 }
+
+///|
+fn autonomy_request_object(value : Json) -> Map[String, Json] raise {
+  match value {
+    Object(fields) => fields
+    _ => fail("MoonGate autonomy request must be an object")
+  }
+}
+
+///|
+fn autonomy_request_string(
+  fields : Map[String, Json],
+  key : String,
+) -> String raise {
+  match fields.get(key) {
+    Some(String(value)) if !value.trim().is_empty() => value
+    _ => fail("MoonGate autonomy request requires \{key}")
+  }
+}
+
+///|
+fn autonomy_request_bool(
+  fields : Map[String, Json],
+  key : String,
+) -> Bool raise {
+  match fields.get(key) {
+    Some(True) => true
+    Some(False) => false
+    _ => fail("MoonGate autonomy request requires boolean \{key}")
+  }
+}
+
+///|
+fn autonomy_request_strings(
+  fields : Map[String, Json],
+  key : String,
+) -> Array[String] raise {
+  match fields.get(key) {
+    Some(Array(values)) =>
+      values.map(value => {
+        match value {
+          String(text) if !text.trim().is_empty() => text
+          _ => fail("MoonGate autonomy request \{key} requires strings")
+        }
+      })
+    _ => fail("MoonGate autonomy request requires array \{key}")
+  }
+}
+
+///|
+fn decode_autonomy_request_grant(value : Json) -> @pipeline.AutonomyGrant raise {
+  let fields = autonomy_request_object(value)
+  {
+    product_id: autonomy_request_string(fields, "product_id"),
+    operations: autonomy_request_strings(fields, "operations"),
+    authority_ceiling: @pipeline.authority_class_from_id(
+      autonomy_request_string(fields, "authority_ceiling"),
+    ),
+    claim_ceiling: @pipeline.claim_class_from_id(
+      autonomy_request_string(fields, "claim_ceiling"),
+    ),
+    artifact_prefixes: autonomy_request_strings(fields, "artifact_prefixes"),
+  }
+}
+
+///|
+async fn issue_autonomy_envelope(args : Array[String]) -> Unit {
+  let root = autonomy_required_arg(args, "--root")
+  let request_path = autonomy_required_arg(args, "--request")
+  let envelope_id = autonomy_required_arg(args, "--envelope-id")
+  let granted_by = autonomy_required_arg(args, "--granted-by")
+  let recorded_at = autonomy_required_arg(args, "--recorded-at")
+  let expires_at = autonomy_required_arg(args, "--expires-at")
+  if !root.has_prefix("/") {
+    fail("MoonGate autonomy-envelope --root must be absolute")
+  }
+  if !autonomy_safe_id(envelope_id) {
+    fail("MoonGate autonomy envelope id must be a safe slug")
+  }
+  let request = read_autonomy_json(request_path, "autonomy request")
+  let fields = autonomy_request_object(request)
+  if autonomy_request_string(fields, "contract_id") !=
+    "moonbook.autonomy-request.v1" {
+    fail("MoonGate does not support this autonomy request contract")
+  }
+  guard fields.get("grants") is Some(Array(grants)) else {
+    fail("MoonGate autonomy request requires grants")
+  }
+  guard fields.get("budget") is Some(budget) else {
+    fail("MoonGate autonomy request requires budget")
+  }
+  let envelope : @pipeline.AutonomyEnvelope = {
+    contract_id: "moongate.autonomy-envelope.v1",
+    envelope_id,
+    mode: autonomy_request_string(fields, "mode"),
+    goal_ref: autonomy_request_string(fields, "goal_ref"),
+    workspace_root: root,
+    grants: grants.map(decode_autonomy_request_grant),
+    budget: @pipeline.decode_autonomy_budget(budget),
+    external_effects_allowed: autonomy_request_bool(
+      fields, "external_effects_allowed",
+    ),
+    physical_effects_allowed: autonomy_request_bool(
+      fields, "physical_effects_allowed",
+    ),
+    granted_by,
+    source_digest: autonomy_request_string(fields, "source_digest"),
+    recorded_at,
+    expires_at,
+    revoked: false,
+  }
+  let issues = envelope.quality_issues()
+  if !issues.is_empty() {
+    fail("MoonGate refused autonomy envelope: \{issues.join("; ")}")
+  }
+  let envelope_root = root +
+    "/.moonsuite/products/moongate/autonomy/" +
+    envelope_id
+  @fsx.make_directory(envelope_root, recursive=true, exists_ok=true)
+  let output_path = envelope_root + "/envelope.json"
+  let output = @pipeline.autonomy_envelope_json(envelope)
+  @fs.write_file(
+    output_path,
+    @encoding/utf8.encode(output.stringify(indent=2) + "\n"),
+    create_mode=CreateOrTruncate,
+    permission=0o600,
+  )
+  println(
+    (
+      {
+        "contract_id": "moongate.autonomy-envelope-receipt.v1",
+        "envelope_path": output_path,
+        "envelope": output,
+      } : Json).stringify(indent=2),
+  )
+}
