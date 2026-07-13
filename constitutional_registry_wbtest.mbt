@@ -74,6 +74,37 @@ test "browser page content cannot grant a physical effect" {
 }
 
 ///|
+test "MoonMold simulation input is not MoonMoon simulation evidence" {
+  let report = @pipeline.validate_constitutional_conformance(
+    constitutional_product_boundaries(),
+    {
+      subject_id: "negative-probe-moonmold-simulation-evidence",
+      product_id: "moonmold",
+      operation: "export-representation",
+      requested_authority: WorkspaceMutation,
+      input_contracts: ["moonmold.spatial-artifact.v1"],
+      output_contracts: ["moonmold.spatial-artifact.v1"],
+      claim: SimulationEvidence,
+      criteria: [],
+      negative_path_count: 1,
+      execution_succeeded: true,
+      accepted: false,
+      acceptance_review_ref: "",
+      workspace_root: "/Users/kq/moonsuite",
+      artifact_paths: [
+        ".moonsuite/products/moonmold/simulation/input-model.json",
+      ],
+    },
+    "negative-moonmold-simulation-evidence-report",
+    "2026-07-13T09:02:00+08:00",
+  )
+  assert_false(report.accepted)
+  let codes = report.findings.map(finding => finding.code)
+  assert_true(codes.contains("claim-ceiling-exceeded"))
+  assert_true(codes.contains("prohibited-claim"))
+}
+
+///|
 test "registry JSON declares MoonGate as policy owner" {
   guard constitutional_registry_json() is Object(fields) else {
     fail("expected registry object")
