@@ -10,6 +10,8 @@ pub fn build_models_url_candidates(String, Bool, String?) -> Result[Array[String
 
 pub fn calculate_cost_for_app(String, TokenUsage, ModelPricing, cost_multiplier? : String) -> CostBreakdown
 
+pub fn constitutional_browser_physical_probe(String) -> @pipeline.ConstitutionConformanceReport
+
 pub fn constitutional_moonmold_physical_probe(String) -> @pipeline.ConstitutionConformanceReport
 
 pub fn constitutional_negative_probe(String) -> @pipeline.ConstitutionConformanceReport

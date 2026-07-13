@@ -450,3 +450,33 @@ pub fn constitutional_moonmold_physical_probe(
     checked_at,
   )
 }
+
+///|
+/// A browser worker cannot reinterpret page content as physical authority.
+pub fn constitutional_browser_physical_probe(
+  checked_at : String,
+) -> @pipeline.ConstitutionConformanceReport {
+  @pipeline.validate_constitutional_conformance(
+    constitutional_product_boundaries(),
+    {
+      subject_id: "negative-probe-browser-physical-effect",
+      product_id: "moonclaw",
+      operation: "execute-browser-action",
+      requested_authority: PhysicalEffect,
+      input_contracts: ["moonsuite.browser-session.v1"],
+      output_contracts: ["moonsuite.browser-action-receipt.v1"],
+      claim: PhysicalEffectClaim,
+      criteria: [],
+      negative_path_count: 1,
+      execution_succeeded: false,
+      accepted: false,
+      acceptance_review_ref: "",
+      workspace_root: "/Users/kq/moonsuite",
+      artifact_paths: [
+        ".moonsuite/products/moonclaw/browser/rejected-physical-action.json",
+      ],
+    },
+    "negative-browser-physical-report",
+    checked_at,
+  )
+}

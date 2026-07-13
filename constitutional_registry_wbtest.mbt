@@ -62,6 +62,18 @@ test "MoonMold manufacturing preparation cannot authorize fabrication" {
 }
 
 ///|
+test "browser page content cannot grant a physical effect" {
+  let report = constitutional_browser_physical_probe(
+    "2026-07-13T09:01:00+08:00",
+  )
+  assert_false(report.accepted)
+  let codes = report.findings.map(finding => finding.code)
+  assert_true(codes.contains("authority-not-allowed"))
+  assert_true(codes.contains("claim-ceiling-exceeded"))
+  assert_true(codes.contains("prohibited-claim"))
+}
+
+///|
 test "registry JSON declares MoonGate as policy owner" {
   guard constitutional_registry_json() is Object(fields) else {
     fail("expected registry object")
