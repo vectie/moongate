@@ -26,6 +26,26 @@ pub(all) struct UsageAttribution {
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
+pub(all) struct PackBudget {
+  pack_id : String
+  limit_micros : Int
+  spent_micros : Int
+} derive(Debug, Eq, ToJson, FromJson)
+
+///|
+pub fn budget(pack_id : String, limit_micros : Int) -> PackBudget raise {
+  if limit_micros < 0 {
+    fail("pack budget must be non-negative")
+  }
+  { pack_id, limit_micros, spent_micros: 0 }
+}
+
+///|
+pub fn remaining(value : PackBudget) -> Int {
+  value.limit_micros - value.spent_micros
+}
+
+///|
 pub fn metering_scope(
   projection : @host.HostActivationProjection,
 ) -> PackMeteringScope raise {
@@ -47,6 +67,21 @@ pub fn metering_scope(
     product_id: projection.product_id,
     capabilities,
   }
+}
+
+///|
+/// Apply an attributed charge or stop before the hard pack budget is crossed.
+pub fn charge(
+  value : PackBudget,
+  usage : UsageAttribution,
+) -> PackBudget raise {
+  if usage.pack_id != value.pack_id {
+    fail("usage attribution does not match pack budget")
+  }
+  if usage.amount_micros > remaining(value) {
+    fail("pack cost budget exceeded")
+  }
+  { ..value, spent_micros: value.spent_micros + usage.amount_micros }
 }
 
 ///|

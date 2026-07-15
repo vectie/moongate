@@ -21,4 +21,34 @@ test "usage attribution stays product neutral" {
   )
   assert_eq(usage.pack_id, "fixture")
   assert_eq(usage.amount_micros, 250000)
+  let charged = charge(budget("fixture", 300000), usage)
+  assert_eq(charged.spent_micros, 250000)
+  assert_eq(remaining(charged), 50000)
+}
+
+///|
+test "hard budget stops excess attributed cost" {
+  let value : PackBudget = {
+    pack_id: "fixture",
+    limit_micros: 100,
+    spent_micros: 90,
+  }
+  let usage : UsageAttribution = {
+    pack_id: "fixture",
+    product_id: "fixture",
+    capability_kind: "tool",
+    capability_id: "fixture.generate",
+    quantity: 1,
+    unit: "request",
+    amount_micros: 11,
+    currency: "CNY",
+    evidence_ref: "evidence/run.json",
+  }
+  let mut stopped = false
+  try {
+    charge(value, usage) |> ignore
+  } catch {
+    _ => stopped = true
+  }
+  assert_true(stopped)
 }

@@ -10,7 +10,13 @@ import {
 // Values
 pub fn attribute(PackMeteringScope, String, String, Int, String, Int, String, String) -> UsageAttribution raise
 
+pub fn budget(String, Int) -> PackBudget raise
+
+pub fn charge(PackBudget, UsageAttribution) -> PackBudget raise
+
 pub fn metering_scope(@host.HostActivationProjection) -> PackMeteringScope raise
+
+pub fn remaining(PackBudget) -> Int
 
 // Errors
 
@@ -18,6 +24,12 @@ pub fn metering_scope(@host.HostActivationProjection) -> PackMeteringScope raise
 pub(all) struct MeteredCapability {
   kind : String
   id : String
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct PackBudget {
+  pack_id : String
+  limit_micros : Int
+  spent_micros : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 pub(all) struct PackMeteringScope {
