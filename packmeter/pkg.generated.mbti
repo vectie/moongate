@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/packmeter"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+  "vectie/moonlib/pack/host",
+}
+
+// Values
+pub fn attribute(PackMeteringScope, String, String, Int, String, Int, String, String) -> UsageAttribution raise
+
+pub fn metering_scope(@host.HostActivationProjection) -> PackMeteringScope raise
+
+// Errors
+
+// Types and methods
+pub(all) struct MeteredCapability {
+  kind : String
+  id : String
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct PackMeteringScope {
+  pack_id : String
+  product_id : String
+  capabilities : Array[MeteredCapability]
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct UsageAttribution {
+  pack_id : String
+  product_id : String
+  capability_kind : String
+  capability_id : String
+  quantity : Int
+  unit : String
+  amount_micros : Int
+  currency : String
+  evidence_ref : String
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+// Type aliases
+
+// Traits
+
