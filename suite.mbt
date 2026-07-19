@@ -75,6 +75,29 @@ fn moongate_moonclaw_config_file_for_workspace_root(root : String) -> String {
 }
 
 ///|
+pub fn moongate_moonflow_adapter_capability_json() -> Json {
+  {
+    "adapter_id": "moongate-v1",
+    "product_id": "moongate",
+    "protocol": "moonflow.adapter.v1",
+    "operations": [
+      "capability-probe", "route-ai-request", "record-ai-session", "reconcile-usage",
+    ],
+    "authority_classes": [
+      "observe", "cognitive-maintenance", "sandbox-execution", "workspace-mutation",
+    ],
+    "supports_cancel": false,
+    "supports_reconcile": true,
+    "receipt_contracts": [
+      "moongate.ai-session.v1", "moongate.route-receipt.v1", "moongate.usage-receipt.v1",
+    ],
+    "fallback_visible": true,
+    "usage_visible": true,
+    "redaction_required": true,
+  }
+}
+
+///|
 pub fn moongate_suite_manifest_json(
   host? : String = @suite.default_host(),
   port? : Int = @suite.default_port(),
@@ -97,6 +120,7 @@ pub fn moongate_suite_manifest_json(
     "defaultModel": Json::string(model),
     "statusFile": Json::string(default_moongate_suite_status_path()),
     "capabilities": moongate_suite_capabilities_json(),
+    "moonflowAdapter": moongate_moonflow_adapter_capability_json(),
     "modelsUrl": Json::string("\{moongate_openai_base_url(host, port)}/models"),
     "routes": Json::array(
       moongate_suite_routes().map(fn(route) { Json::string(route) }),

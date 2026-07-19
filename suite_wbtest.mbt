@@ -109,6 +109,24 @@ test "suite manifest publishes moongate service contract" {
   assert_true(capabilities.contains(Json::string("moongate-skills-management")))
   assert_true(capabilities.contains(Json::string("provider-presets")))
   assert_true(capabilities.contains(Json::string("suite-discovery")))
+  guard obj["moonflowAdapter"] is Object(flow_adapter) else {
+    fail("expected MoonFlow adapter capability")
+  }
+  assert_eq(flow_adapter["adapter_id"], Json::string("moongate-v1"))
+  assert_eq(flow_adapter["product_id"], Json::string("moongate"))
+  assert_eq(flow_adapter["protocol"], Json::string("moonflow.adapter.v1"))
+  assert_eq(flow_adapter["supports_reconcile"], Json::boolean(true))
+  assert_eq(flow_adapter["redaction_required"], Json::boolean(true))
+  guard flow_adapter["authority_classes"] is Array(authorities) else {
+    fail("expected adapter authorities")
+  }
+  assert_true(authorities.contains(Json::string("observe")))
+  assert_false(authorities.contains(Json::string("external-effect")))
+  guard flow_adapter["operations"] is Array(operations) else {
+    fail("expected adapter operations")
+  }
+  assert_true(operations.contains(Json::string("capability-probe")))
+  assert_true(operations.contains(Json::string("reconcile-usage")))
   assert_true(routes.contains(Json::string("GET /")))
   assert_true(routes.contains(Json::string("GET /ui/rabbita")))
   assert_true(routes.contains(Json::string("GET /assets/moongate.css")))
