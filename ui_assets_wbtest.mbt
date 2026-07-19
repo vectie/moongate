@@ -10,6 +10,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moongate-suite.js"))
   assert_true(html.contains("/assets/moongate-resilience.js"))
   assert_true(html.contains("/assets/moongate.js"))
+  assert_true(html.contains("/assets/moonsuite-i18n.js"))
   assert_true(html.contains("data-moongate-framework-apps="))
   assert_true(html.contains("data-moongate-sections="))
   assert_true(html.contains("data-moongate-endpoints="))

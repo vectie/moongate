@@ -68,6 +68,7 @@ fn moongate_rabbita_shell_view(
         ]),
       ],
     ),
+    @html.script(src="/assets/moonsuite-i18n.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-core.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-frameworks.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-usage.js", moongate_rabbita_empty()),
@@ -120,22 +121,41 @@ fn moongate_rabbita_nav_link(href : String, label : String) -> @html.Html {
 fn moongate_rabbita_topbar() -> @html.Html {
   @html.section(id="overview", class="topbar", [
     @html.div([
-      @html.p(class="eyebrow", "Operator Console"),
-      @html.h1("Proxy, providers, and spend in one place."),
+      @html.p(
+        class="eyebrow",
+        attrs=@html.Attrs::build().data_set("i18n", "stat.operator_console"),
+        "Operator Console",
+      ),
+      @html.h1(
+        attrs=@html.Attrs::build().data_set("i18n", "stat.headline"),
+        "Proxy, providers, and spend in one place.",
+      ),
     ]),
     @html.div(class="actions", [
-      @html.button(id="refresh", type_="button", "Refresh"),
-      @html.button(id="proxy-start", type_="button", "Start Proxy"),
+      @html.button(
+        id="refresh",
+        type_="button",
+        attrs=@html.Attrs::build().data_set("i18n", "common.refresh"),
+        "Refresh",
+      ),
+      @html.button(
+        id="proxy-start",
+        type_="button",
+        attrs=@html.Attrs::build().data_set("i18n", "stat.start_proxy"),
+        "Start Proxy",
+      ),
       @html.button(
         id="proxy-stop",
         class="danger",
         type_="button",
+        attrs=@html.Attrs::build().data_set("i18n", "stat.stop_proxy"),
         "Stop Proxy",
       ),
       @html.a(
         class="button-secondary",
         href="/metrics",
         rel="noreferrer",
+        attrs=@html.Attrs::build().data_set("i18n", "stat.metrics"),
         "Metrics",
       ),
     ]),
@@ -150,8 +170,15 @@ fn moongate_rabbita_readiness_strip() -> @html.Html {
     attrs=@html.Attrs::build().aria_label("MoonGate readiness"),
     [
       @html.div(class="readiness-head", [
-        @html.p(class="eyebrow", "Readiness"),
-        @html.strong("Standalone gateway checklist"),
+        @html.p(
+          class="eyebrow",
+          attrs=@html.Attrs::build().data_set("i18n", "stat.readiness"),
+          "Readiness",
+        ),
+        @html.strong(
+          attrs=@html.Attrs::build().data_set("i18n", "stat.gateway_checklist"),
+          "Standalone gateway checklist",
+        ),
       ]),
       @html.div(
         id="readiness-cards",

@@ -1134,7 +1134,8 @@ fn moongate_suite_commands_json(port : Int, model : String) -> Json {
 fn moongate_suite_routes() -> Array[String] {
   [
     "GET /", "GET /ui/rabbita", "GET /assets/moongate.css", "GET /assets/moongate-core.js",
-    "GET /assets/moongate-frameworks.js", "GET /assets/moongate-usage.js", "GET /assets/moongate-setup.js",
+    "GET /assets/moonsuite-i18n.js", "GET /assets/moongate-frameworks.js", "GET /assets/moongate-usage.js",
+    "GET /assets/moongate-setup.js",
     "GET /assets/moongate-suite.js", "GET /assets/moongate-resilience.js", "GET /assets/moongate.js",
     "GET /participant/register", "GET /control/bootstrap", "GET /suite/manifest",
     "GET /suite/status", "GET /suite/drift", "POST /suite/status/write", "GET /suite/moonclaw-providers",

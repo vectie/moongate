@@ -464,7 +464,12 @@ fn moongate_rabbita_request_log_panel() -> @html.Html {
     moongate_rabbita_panel_head("Recent", "Request Log", [
       @html.a(class="text-link", href="/usage/logs", rel="noreferrer", "JSON"),
     ]),
-    @html.div(id="request-log", class="log-list", moongate_rabbita_empty()),
+    @html.div(
+      id="request-log",
+      class="log-list",
+      attrs=@html.Attrs::build().data_set("i18n-scope", "technical"),
+      moongate_rabbita_empty(),
+    ),
   ])
 }
 
@@ -477,6 +482,7 @@ fn moongate_rabbita_request_detail_panel() -> @html.Html {
     @html.div(
       id="request-detail",
       class="detail-grid",
+      attrs=@html.Attrs::build().data_set("i18n-scope", "technical"),
       moongate_rabbita_empty(),
     ),
   ])
