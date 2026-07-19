@@ -11,11 +11,8 @@ test "legacy migration receipt exposes its narrow compatibility boundary" {
   state.copied = 2
   state.identical = 1
   let receipt = legacy_state_migration_receipt(
-    "trial",
-    "/workspace/.moonsuite/products/moonstat",
-    "/workspace/.moonsuite/products/moongate",
-    true,
-    state,
+    "trial", "/workspace/.moonsuite/products/moonstat", "/workspace/.moonsuite/products/moongate",
+    true, state,
   )
   let encoded = receipt.stringify()
   assert_true(encoded.contains("\"accepted\":true"))
