@@ -10,6 +10,7 @@ async test "moonstat generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moonstat-suite.js"))
   assert_true(html.contains("/assets/moonstat-resilience.js"))
   assert_true(html.contains("/assets/moonstat.js"))
+  assert_true(html.contains("/assets/moonsuite-i18n.js"))
   assert_true(html.contains("data-moonstat-framework-apps="))
   assert_true(html.contains("data-moonstat-sections="))
   assert_true(html.contains("data-moonstat-endpoints="))

@@ -27,7 +27,9 @@ function readinessCardState(card, state) {
     return {
       ok: count > 0,
       value: count > 0 ? `${compact(count)} provider${count === 1 ? "" : "s"}` : card.waiting,
-      detail: state.frameworkErrorCount > 0 ? `${state.frameworkErrorCount} framework warnings` : "Provider routes",
+      detail: state.frameworkErrorCount > 0
+        ? window.MoonSuiteI18n?.message("stat.framework_warnings", { count: state.frameworkErrorCount }) ?? `${state.frameworkErrorCount} framework warnings`
+        : "Provider routes",
     };
   }
   if (card.id === "usage") {
@@ -123,7 +125,11 @@ async function refresh() {
   ]);
   const failedPanels = panelResults.filter((result) => result.status === "rejected").length;
   const suffix = failedPanels > 0 ? ` with ${failedPanels} panel warning${failedPanels === 1 ? "" : "s"}` : "";
-  text("ui-updated", `Updated${suffix} ${new Date().toLocaleTimeString()}`);
+  const time = new Date().toLocaleTimeString();
+  text(
+    "ui-updated",
+    window.MoonSuiteI18n?.message("stat.updated", { suffix, time }) ?? `Updated${suffix} ${time}`,
+  );
 }
 
 function showError(error) {
