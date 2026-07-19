@@ -49,7 +49,9 @@ async fn migrate_legacy_state_entry(
     Directory => {
       @fsx.make_directory(destination, recursive=true, exists_ok=true) catch {
         _ => {
-          state.errors.push("\{relative}: unable to create destination directory")
+          state.errors.push(
+            "\{relative}: unable to create destination directory",
+          )
           return
         }
       }
@@ -169,11 +171,7 @@ async fn migrate_legacy_moongate_state(args : Array[String]) -> Unit {
     }
   }
   let receipt = legacy_state_migration_receipt(
-    migration_id,
-    source,
-    destination,
-    source_present,
-    state,
+    migration_id, source, destination, source_present, state,
   )
   let receipt_dir = destination + "/migrations"
   @fsx.make_directory(receipt_dir, recursive=true, exists_ok=true)
