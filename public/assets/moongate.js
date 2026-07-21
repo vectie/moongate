@@ -75,9 +75,27 @@ function probeData(probe, fallback) {
   return probe && probe.ok ? probe.data : fallback;
 }
 
-async function refresh() {
+let refreshInFlight = null;
+let refreshQueued = false;
+
+function refresh() {
+  if (refreshInFlight) {
+    refreshQueued = true;
+    return refreshInFlight;
+  }
+  refreshInFlight = refreshDashboard().finally(() => {
+    refreshInFlight = null;
+    if (refreshQueued) {
+      refreshQueued = false;
+      Promise.resolve().then(refresh).catch(showError);
+    }
+  });
+  return refreshInFlight;
+}
+
+async function refreshDashboard() {
   $("error-box").hidden = true;
-  const [healthProbe, statusProbe, proxyProbe, summaryProbe, byAppProbe, modelStatsProbe, logsProbe] =
+  const [healthProbe, statusProbe, proxyProbe, summaryProbe, byAppProbe, modelStatsProbe] =
     await Promise.all([
       safeGetJson(endpoints.health),
       safeGetJson(endpoints.status),
@@ -85,7 +103,6 @@ async function refresh() {
       safeGetJson(endpoints.usageSummary),
       safeGetJson(endpoints.usageByApp),
       safeGetJson(endpoints.modelStats),
-      safeGetJson(endpoints.logs),
     ]);
   const health = probeData(healthProbe, {});
   const status = probeData(statusProbe, {});
@@ -93,33 +110,50 @@ async function refresh() {
   const summary = probeData(summaryProbe, {});
   const byApp = probeData(byAppProbe, {});
   const modelStats = probeData(modelStatsProbe, {});
-  const logs = probeData(logsProbe, {});
 
   const gatewayState = healthProbe.ok ? firstString(health, ["status", "state", "ok"]) : "Unavailable";
   text("gateway-state", gatewayState);
   if ($("gateway-state")) $("gateway-state").className = stateClass(gatewayState);
+  const gatewayGood = healthProbe.ok && stateClass(gatewayState).includes("good");
+  if ($("gateway-dot")) $("gateway-dot").className = `dot ${gatewayGood ? "good" : "bad"}`;
+  if ($("gateway-hero-dot")) $("gateway-hero-dot").className = `dot ${gatewayGood ? "good" : "bad"}`;
+  if ($("sidebar-gateway-dot")) $("sidebar-gateway-dot").className = `dot ${gatewayGood ? "good pulse" : "bad"}`;
+  text("sidebar-gateway-state", gatewayGood ? "Gateway connected" : "Gateway unavailable");
   text("gateway-detail", statusProbe.ok ? firstString(status, ["address", "baseUrl", "url"], "Local API ready") : statusProbe.error);
 
-  const proxyState = proxyProbe.ok ? firstString(proxy, ["status", "state", "running", "enabled"]) : "Unavailable";
+  const proxyValue = proxy?.status ?? proxy?.state ?? proxy?.running ?? proxy?.enabled;
+  const proxyState = !proxyProbe.ok
+    ? "Unavailable"
+    : typeof proxyValue === "boolean"
+      ? proxyValue ? "Running" : "Stopped"
+      : stateText(proxyValue);
   text("proxy-state", proxyState);
   if ($("proxy-state")) $("proxy-state").className = stateClass(proxyState);
   text("proxy-detail", proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "Proxy route status") : proxyProbe.error);
 
-  updateTotals(summary, status);
-  const providerHealthRows = arrayFrom(status.provider_routes || status.active_targets || [], ["providers", "items", "data", "health"]);
-  renderProviderRows(providerHealthRows);
-  renderStack("app-usage", arrayFrom(byApp, ["apps", "items", "data"]), ["appType", "app", "name"]);
-  renderStack("model-usage", arrayFrom(modelStats, ["models", "items", "data"]), ["model", "modelId", "name"]);
-  renderLogs(logs);
+  if (summaryProbe.ok || statusProbe.ok) {
+    updateTotals(summary, status);
+  } else {
+    text("request-total", "Unavailable");
+    text("cost-total", "Unavailable");
+  }
+  if (byAppProbe.ok) {
+    renderStack("app-usage", arrayFrom(byApp, ["apps", "items", "data"]), ["appType", "app", "name"]);
+  } else {
+    renderStackError("app-usage", byAppProbe.error);
+  }
+  if (modelStatsProbe.ok) {
+    renderStack("model-usage", arrayFrom(modelStats, ["models", "items", "data"]), ["model", "modelId", "name"]);
+  } else {
+    renderStackError("model-usage", modelStatsProbe.error);
+  }
   mergeReadinessState({
-    healthOk: healthProbe.ok && stateClass(gatewayState).includes("good"),
+    healthOk: gatewayGood,
     gatewayDetail: statusProbe.ok ? firstString(status, ["address", "baseUrl", "url"], "Local API ready") : statusProbe.error,
     proxyRunning: proxyProbe.ok && stateClass(proxyState).includes("good"),
     proxyDetail: proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "Proxy route status") : proxyProbe.error,
-    providerCount: readinessState.providerCount ?? providerHealthRows.length,
     totalRequests: summary.totalRequests ?? summary.requests ?? summary.requestCount ?? status.total_requests ?? status.totalRequests ?? 0,
     totalCost: summary.totalCostUsd ?? summary.costUsd ?? summary.totalCost ?? status.totalCostUsd ?? status.costUsd ?? 0,
-    recentRequestCount: arrayFrom(logs, ["logs", "items", "requests", "data"]).length,
   });
   const panelResults = await Promise.allSettled([
     loadFrameworks(),
@@ -128,8 +162,17 @@ async function refresh() {
     loadSuite(),
     loadResilience(),
   ]);
-  const failedPanels = panelResults.filter((result) => result.status === "rejected").length;
-  const suffix = failedPanels > 0 ? ` with ${failedPanels} panel warning${failedPanels === 1 ? "" : "s"}` : "";
+  const coreWarningCount = [healthProbe, statusProbe, proxyProbe, summaryProbe, byAppProbe, modelStatsProbe]
+    .some((probe) => !probe.ok) ? 1 : 0;
+  const warningCount = panelResults.reduce((total, result) => {
+    if (result.status === "rejected") return total + 1;
+    return total + number(result.value?.warningCount);
+  }, coreWarningCount);
+  const usageResult = panelResults[1];
+  if (usageResult.status === "fulfilled" && usageResult.value?.stale !== true) {
+    mergeReadinessState({ recentRequestCount: usageResult.value?.recentRequestCount || 0 });
+  }
+  const suffix = warningCount > 0 ? ` with ${warningCount} section warning${warningCount === 1 ? "" : "s"}` : "";
   const time = new Date().toLocaleTimeString();
   text(
     "ui-updated",
@@ -174,6 +217,13 @@ function clientSnippet(kind) {
 }
 
 function renderConnectionValues() {
+  const base = new URL(shellApiBase());
+  const port = base.port || (base.protocol === "https:" ? "443" : "80");
+  text("gateway-endpoint", base.host);
+  text("gateway-port", port);
+  text("gateway-port-detail", `${base.protocol.replace(":", "")} on ${base.hostname}`);
+  text("framework-total", compact(frameworkApps.length));
+  text("framework-detail", "Supported client contracts");
   document.querySelectorAll("[data-url-path]").forEach((node) => {
     node.textContent = connectionUrl(node.dataset.urlPath);
   });
@@ -307,8 +357,7 @@ $("stream-form")?.addEventListener("submit", (event) => {
 
 $("resilience-toggle-auto")?.addEventListener("click", () => {
   const appType = selectedResilienceApp();
-  const current = $("resilience-auto-state")?.textContent === "Enabled";
-  postJson(endpoint(endpoints.autoFailover, { appType, enabled: !current })).then(loadResilience).catch(showError);
+  postJson(endpoint(endpoints.autoFailover, { appType, enabled: !resilienceAutoFailoverEnabled })).then(loadResilience).catch(showError);
 });
 
 $("resilience-reset-circuit")?.addEventListener("click", () => {
@@ -425,6 +474,7 @@ window.addEventListener("hashchange", () => {
 initProviderAppSelect();
 initUsageAppSelect();
 initResilienceAppSelect();
+loadCachedProviderTemplates();
 clearProviderForm("claude");
 renderReadiness({});
 renderRequestDetail(null);

@@ -1875,6 +1875,15 @@ async fn ConfigService::moon_apply_webdav_snapshot(
   }
   ignore(moon_skill_state_save(skills))
   self.moon_apply_import_snapshot(proxy, snapshot)
+  self.save_settings_store(self.app_settings) catch {
+    error => return Err("Failed to persist downloaded settings: \{error}")
+  }
+  proxy.save_provider_store() catch {
+    error => return Err("Failed to persist downloaded providers: \{error}")
+  }
+  proxy.save_proxy_store() catch {
+    error => return Err("Failed to persist downloaded proxy settings: \{error}")
+  }
   Ok(())
 }
 

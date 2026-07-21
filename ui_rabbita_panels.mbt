@@ -29,6 +29,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
     ]),
     @html.form(id="provider-form", class="form-grid", [
       @html.input(input_type=Hidden, id="provider-original-id"),
+      @html.input(input_type=Hidden, id="provider-original-app"),
       @html.div(class="provider-template-picker span-2", [
         @html.label([
           @html.span("Start from a template"),
@@ -53,7 +54,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
             id="provider-template-reload",
             class="button-secondary",
             type_="button",
-            "Reload",
+            "Refresh Built-ins",
           ),
         ]),
         @html.input(
@@ -88,6 +89,11 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         ("gemini_native", "Gemini Native"),
       ]),
       moongate_rabbita_password_label("API Key", "provider-api-key"),
+      @html.small(
+        id="provider-credential-status",
+        class="field-hint",
+        "No stored credential",
+      ),
       moongate_rabbita_input_label(
         "Default Model", "provider-default-model", "", false,
       ),
@@ -109,6 +115,12 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         moongate_rabbita_check_label("provider-full-url", "Full URL", false),
         moongate_rabbita_check_label(
           "provider-fast-mode", "Codex Fast Mode", false,
+        ),
+        moongate_rabbita_check_label(
+          "provider-clear-api-key", "Remove stored API key", false,
+        ),
+        moongate_rabbita_check_label(
+          "provider-clear-models", "Clear all model mappings", false,
         ),
       ]),
       @html.div(class="form-actions span-2", [
@@ -231,6 +243,9 @@ fn moongate_rabbita_suite_panel() -> @html.Html {
       moongate_rabbita_status_value("Status", "suite-status-state"),
       moongate_rabbita_status_value("Apps", "suite-app-count"),
       moongate_rabbita_status_value("Capabilities", "suite-capability-count"),
+      moongate_rabbita_status_value(
+        "MoonClaw Providers", "suite-provider-count",
+      ),
       moongate_rabbita_status_value("Status File", "suite-status-path"),
     ]),
     moongate_rabbita_table(

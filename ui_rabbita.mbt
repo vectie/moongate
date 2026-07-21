@@ -97,9 +97,9 @@ fn moongate_rabbita_sidebar() -> @html.Html {
       ]),
       @html.div(class="sidebar-footer", [
         @html.div(class="sidebar-status", [
-          @html.span(class="dot good pulse", ""),
+          @html.span(id="sidebar-gateway-dot", class="dot warn", ""),
           @html.div([
-            @html.strong("Gateway connected"),
+            @html.strong(id="sidebar-gateway-state", "Gateway connecting"),
             @html.span(id="ui-updated", "Waiting for data"),
           ]),
         ]),
@@ -148,8 +148,8 @@ fn moongate_rabbita_topbar() -> @html.Html {
     @html.div(class="topbar-actions", [
       @html.span(id="topbar-updated", class="updated-chip", "Updating…"),
       @html.span(class="env-chip", [
-        @html.span(class="dot good", ""),
-        @html.code("127.0.0.1:15721"),
+        @html.span(id="gateway-dot", class="dot warn", ""),
+        @html.code(id="gateway-endpoint", "Connecting…"),
       ]),
       @html.button(
         id="refresh",
@@ -190,7 +190,7 @@ fn moongate_rabbita_overview_page() -> @html.Html {
     [
       @html.section(id="overview", class="hero", [
         @html.div(class="hero-state", [
-          @html.span(class="dot good pulse", ""),
+          @html.span(id="gateway-hero-dot", class="dot warn", ""),
           @html.div(class="hero-text", [
             @html.strong([
               @html.text("Gateway "),
@@ -234,11 +234,11 @@ fn moongate_rabbita_overview_page() -> @html.Html {
         moongate_rabbita_metric_card(
           "Spend", "cost-total", "cost-detail", "Estimated total",
         ),
-        moongate_rabbita_static_metric_card(
-          "Frameworks", "7", "Active integrations",
+        moongate_rabbita_metric_card(
+          "Frameworks", "framework-total", "framework-detail", "Supported clients",
         ),
-        moongate_rabbita_static_metric_card(
-          "Gateway", "15721", "Local bind port",
+        moongate_rabbita_metric_card(
+          "Gateway", "gateway-port", "gateway-port-detail", "Local bind port",
         ),
       ]),
       @html.div(class="overview-grid", [
@@ -522,19 +522,6 @@ fn moongate_rabbita_metric_card(
     @html.span(label),
     @html.strong(id=value_id, "-"),
     @html.small(id=detail_id, detail),
-  ])
-}
-
-///|
-fn moongate_rabbita_static_metric_card(
-  label : String,
-  value : String,
-  detail : String,
-) -> @html.Html {
-  @html.article(class="metric-card", [
-    @html.span(label),
-    @html.strong(value),
-    @html.small(detail),
   ])
 }
 

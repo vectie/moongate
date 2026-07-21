@@ -256,6 +256,9 @@ async fn ProxyService::handle_proxy_start_server(
   started_at_ms : Int,
 ) -> Unit {
   self.proxy_enabled = true
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, self.server_info_json(started_at_ms))
 }
 
@@ -269,6 +272,9 @@ async fn ProxyService::handle_proxy_stop_server(
     return
   }
   self.proxy_enabled = false
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -280,6 +286,9 @@ async fn ProxyService::handle_proxy_stop_with_restore(
   self.proxy_enabled = false
   self.clear_takeover()
   self.clear_enabled_apps_for_manual_stop()
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -319,7 +328,12 @@ async fn ProxyService::handle_proxy_update_global_config(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match self.apply_global_config_request(r) {
-    true => write_usage_json(w, moon_unit_success_json())
+    true => {
+      if !self.persist_proxy_store_or_error(w) {
+        return
+      }
+      write_usage_json(w, moon_unit_success_json())
+    }
     false => write_usage_bad_request(w, "invalid_global_proxy_config")
   }
 }
@@ -347,6 +361,9 @@ async fn ProxyService::handle_set_global_proxy_url(
   let trimmed = url.trim().to_owned()
   if trimmed.is_empty() {
     self.upstream_proxy_url = None
+    if !self.persist_proxy_store_or_error(w) {
+      return
+    }
     write_usage_json(w, Json::null())
     return
   }
@@ -355,6 +372,9 @@ async fn ProxyService::handle_set_global_proxy_url(
     return
   }
   self.upstream_proxy_url = Some(trimmed)
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, Json::null())
 }
 
@@ -578,7 +598,15 @@ async fn ProxyService::handle_proxy_update_app_config(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   match self.apply_app_config_request(r) {
-    Some(_) => write_usage_json(w, moon_unit_success_json())
+    Some(_) => {
+      if !self.persist_proxy_store_or_error(w) {
+        return
+      }
+      if !self.persist_provider_store_or_error(w) {
+        return
+      }
+      write_usage_json(w, moon_unit_success_json())
+    }
     None => write_usage_bad_request(w, "invalid_app_proxy_config")
   }
 }
@@ -622,6 +650,9 @@ async fn ProxyService::handle_proxy_set_default_cost_multiplier(
   }
   let trimmed = value.trim().to_owned()
   self.proxy_default_cost_multipliers.set(app_type, trimmed)
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -661,6 +692,9 @@ async fn ProxyService::handle_proxy_set_pricing_model_source(
   }
   let trimmed = value.trim().to_owned()
   self.proxy_pricing_model_sources.set(app_type, trimmed)
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -840,6 +874,9 @@ async fn ProxyService::handle_proxy_update_circuit_breaker_config(
     return
   }
   self.provider_router.update_all_configs(config)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -929,6 +966,9 @@ async fn ProxyService::handle_proxy_add_failover_queue(
     return
   }
   self.provider_router.add_to_failover_queue(query.app_type, query.provider_id)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -947,6 +987,9 @@ async fn ProxyService::handle_proxy_remove_failover_queue(
     query.app_type,
     query.provider_id,
   )
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -990,6 +1033,9 @@ async fn ProxyService::handle_proxy_set_auto_failover_enabled(
     write_usage_bad_request(w, "auto_failover_unavailable")
     return
   }
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 
@@ -1021,6 +1067,9 @@ async fn ProxyService::handle_proxy_set_takeover_for_app(
     return
   }
   self.proxy_takeover_enabled.set(app_type, enabled)
+  if !self.persist_proxy_store_or_error(w) {
+    return
+  }
   write_usage_json(w, moon_unit_success_json())
 }
 

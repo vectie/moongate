@@ -1,3 +1,5 @@
+let usageLoadGeneration = 0;
+
 function renderStack(id, rows, labelKeys) {
   const target = $(id);
   if (!target) return;
@@ -21,6 +23,12 @@ function renderStack(id, rows, labelKeys) {
     `;
     target.appendChild(div);
   }
+}
+
+function renderStackError(id, message) {
+  const target = $(id);
+  if (!target) return;
+  target.innerHTML = `<div class="row-card"><strong>Unavailable</strong><small>${escapeHtml(message)}</small></div>`;
 }
 
 function usageQueryParams(extra) {
@@ -140,6 +148,7 @@ function updateUsageMetrics(summary) {
 }
 
 async function loadUsageExplorer() {
+  const generation = ++usageLoadGeneration;
   const params = usageQueryParams();
   const [summaryProbe, trendsProbe, providerStatsProbe, modelStatsProbe, logsProbe] = await Promise.all([
     safeGetJson(endpoint(endpoints.usageSummary, params)),
@@ -148,14 +157,46 @@ async function loadUsageExplorer() {
     safeGetJson(endpoint(endpoints.modelStats, params)),
     safeGetJson(endpoint(endpoints.usageLogs, { ...params, pageSize: 12 })),
   ]);
+  if (generation !== usageLoadGeneration) {
+    return { warningCount: 0, recentRequestCount: 0, stale: true };
+  }
   const summary = probeData(summaryProbe, {});
   const trends = probeData(trendsProbe, {});
   const providerStats = probeData(providerStatsProbe, {});
   const modelStats = probeData(modelStatsProbe, {});
   const logs = probeData(logsProbe, {});
-  updateUsageMetrics(summary);
-  renderTrends(arrayFrom(trends, ["data", "items", "trends"]));
-  renderStack("provider-usage", arrayFrom(providerStats, ["providers", "items", "data"]), ["providerName", "providerId", "name"]);
-  renderStack("filtered-model-usage", arrayFrom(modelStats, ["models", "items", "data"]), ["model", "modelId", "name"]);
-  renderLogs(logs);
+  if (summaryProbe.ok) {
+    updateUsageMetrics(summary);
+  } else {
+    for (const id of ["usage-filter-requests", "usage-filter-cost", "usage-filter-tokens", "usage-filter-cache"]) {
+      text(id, "Unavailable");
+    }
+  }
+  if (trendsProbe.ok) {
+    renderTrends(arrayFrom(trends, ["data", "items", "trends"]));
+  } else {
+    renderStackError("usage-trends", trendsProbe.error);
+  }
+  if (providerStatsProbe.ok) {
+    renderStack("provider-usage", arrayFrom(providerStats, ["providers", "items", "data"]), ["providerName", "providerId", "name"]);
+  } else {
+    renderStackError("provider-usage", providerStatsProbe.error);
+  }
+  if (modelStatsProbe.ok) {
+    renderStack("filtered-model-usage", arrayFrom(modelStats, ["models", "items", "data"]), ["model", "modelId", "name"]);
+  } else {
+    renderStackError("filtered-model-usage", modelStatsProbe.error);
+  }
+  const logRows = arrayFrom(logs, ["logs", "items", "requests", "data"]);
+  if (logsProbe.ok) {
+    renderLogs(logs);
+  } else {
+    renderStackError("request-log", logsProbe.error);
+  }
+  mergeReadinessState({ recentRequestCount: logsProbe.ok ? logRows.length : 0 });
+  return {
+    warningCount: [summaryProbe, trendsProbe, providerStatsProbe, modelStatsProbe, logsProbe]
+      .some((probe) => !probe.ok) ? 1 : 0,
+    recentRequestCount: logsProbe.ok ? logRows.length : 0,
+  };
 }

@@ -62,6 +62,9 @@ async fn ProxyService::handle_add_custom_endpoint(
     write_usage_bad_request(w, "invalid_url")
     return
   }
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, Json::null())
 }
 
@@ -86,6 +89,9 @@ async fn ProxyService::handle_remove_custom_endpoint(
     return
   }
   self.provider_router.remove_custom_endpoint(app_type, provider_id, url)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, Json::null())
 }
 
@@ -110,5 +116,8 @@ async fn ProxyService::handle_update_endpoint_last_used(
     return
   }
   self.provider_router.update_endpoint_last_used(app_type, provider_id, url)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, Json::null())
 }

@@ -148,24 +148,42 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(core.contains("deleteJson"))
   assert_true(frameworks.contains("providerPayloadFromForm"))
   assert_true(frameworks.contains("loadProviderTemplates"))
+  assert_true(frameworks.contains("providerTemplateLoadGeneration"))
   assert_true(frameworks.contains("loadProviderTemplateFile"))
+  assert_true(frameworks.contains("loadCachedProviderTemplates"))
+  assert_true(frameworks.contains("moongate.providerTemplates.v1"))
+  assert_true(frameworks.contains("provider-original-app"))
+  assert_true(frameworks.contains("clearApiKey"))
+  assert_true(frameworks.contains("clearModelMapping"))
+  assert_true(frameworks.contains("draft: true"))
   assert_true(frameworks.contains("API keys stay separate"))
   assert_true(frameworks.contains("loadFrameworks"))
+  assert_true(frameworks.contains("frameworkLoadGeneration"))
   assert_true(frameworks.contains("renderProviderRows"))
+  assert_true(frameworks.contains("Provider routes unavailable"))
+  assert_true(frameworks.contains("Current route"))
   assert_false(js.contains("function providerPayloadFromForm"))
   assert_true(usage.contains("loadUsageExplorer"))
+  assert_true(usage.contains("usageLoadGeneration"))
   assert_false(js.contains("function loadUsageExplorer"))
   assert_true(setup.contains("loadSetupStatus"))
+  assert_true(setup.contains("setupLoadGeneration"))
   assert_true(suite.contains("loadSuite"))
+  assert_true(suite.contains("suiteLoadGeneration"))
   assert_true(suite.contains("moondesk"))
   assert_true(suite.contains("Primary"))
   assert_true(resilience.contains("loadResilience"))
+  assert_true(resilience.contains("resilienceLoadGeneration"))
   assert_false(js.contains("function loadSetupStatus"))
   assert_false(js.contains("function loadSuite"))
   assert_false(js.contains("function loadResilience"))
   assert_true(js.contains("safeGetJson(endpoints.health)"))
   assert_true(js.contains("Promise.allSettled"))
-  assert_true(js.contains("panel warning"))
+  assert_true(js.contains("refreshInFlight"))
+  assert_true(js.contains("refreshQueued"))
+  assert_true(js.contains("gateway-endpoint"))
+  assert_false(js.contains("renderProviderRows(providerHealthRows)"))
+  assert_true(js.contains("section warning"))
   assert_false(js.contains("runOperatorAction"))
   assert_false(js.contains("operator-action-status"))
   assert_false(js.contains("data-operator-action"))
@@ -191,6 +209,8 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(js.contains("renderReadiness"))
   assert_true(js.contains("mergeReadinessState"))
   assert_true(core.contains("safeGetJson"))
+  assert_true(core.contains("responseError"))
+  assert_true(core.contains("unhealthy"))
   assert_true(core.contains("recordCount"))
   assert_true(assets.contains("defaultModel"))
   assert_true(js.contains("usageDashboardRefreshIntervalMs"))
@@ -451,6 +471,17 @@ async test "moongate rabbita shell renders lepusa preview structure" {
       msg="missing Rabbita shell id \{id}",
     )
   }
+}
+
+///|
+test "moongate rabbita alternate base is runtime data not a hardcoded status" {
+  let html = moongate_rabbita_shell_html(api_base="http://127.0.0.1:18888")
+  assert_true(
+    html.contains("data-moongate-api-base=\"http://127.0.0.1:18888\""),
+  )
+  assert_true(html.contains("id=\"gateway-endpoint\">Connecting"))
+  assert_true(html.contains("id=\"gateway-port\">-"))
+  assert_false(html.contains("<code>127.0.0.1:15721</code>"))
 }
 
 ///|

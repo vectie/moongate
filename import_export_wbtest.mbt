@@ -46,3 +46,126 @@ test "moongate database backup entries sort newest first" {
   assert_eq(rows[1].filename, "mid.db")
   assert_eq(rows[2].filename, "old.db")
 }
+
+///|
+async test "provider store round trips credentials identity and routing state" {
+  @fsx.with_temporary_directory("moongate-provider-store-XXXXXX", async fn(
+    tmpdir,
+  ) {
+    let path = @pathx.join(tmpdir, "providers.json")
+    let saved = ProxyService::new("127.0.0.1", 15721)
+    saved.provider_router.upsert_provider(
+      ProviderRouteTarget::new(
+        app_type="codex",
+        provider_id="ark-plan",
+        provider_name="Ark Agent Plan",
+        provider_type=Some("openai"),
+        api_format=Some("openai"),
+        base_url=Some("https://ark.example.com/api/plan/v3"),
+        api_key=Some("secret-test-key"),
+        origin="user",
+        model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
+      ),
+    )
+    saved.provider_router.set_current_provider("codex", "ark-plan")
+    saved.provider_router.add_to_failover_queue("codex", "ark-plan")
+    saved.provider_router.set_auto_failover("codex", true)
+    assert_true(
+      saved.provider_router.add_custom_endpoint(
+        "codex",
+        "ark-plan",
+        "https://ark.example.com/api/plan/v3",
+        now_ms=1234,
+      ),
+    )
+    saved.provider_router.update_endpoint_last_used(
+      "codex",
+      "ark-plan",
+      "https://ark.example.com/api/plan/v3",
+      now_ms=5678,
+    )
+    saved.save_provider_store(path~)
+
+    let loaded = ProxyService::new("127.0.0.1", 15721)
+    loaded.load_provider_store(path~)
+    guard loaded.provider_router.provider_by_id("codex", "ark-plan")
+      is Some(provider) else {
+      fail("expected persisted provider")
+    }
+    assert_eq(provider.api_key, Some("secret-test-key"))
+    assert_eq(provider.origin, "user")
+    guard provider.model_mapping is Some(mapping) else {
+      fail("expected persisted model mapping")
+    }
+    assert_eq(mapping.default_model, Some("kimi-k3"))
+    assert_eq(
+      loaded.provider_router.current_provider_id("codex"),
+      Some("ark-plan"),
+    )
+    assert_true(
+      loaded.provider_router.failover_queues
+      .get("codex")
+      .unwrap_or([])
+      .contains("ark-plan"),
+    )
+    assert_true(loaded.provider_router.auto_failover_enabled_for_app("codex"))
+    json_inspect(
+      loaded.provider_router.custom_endpoints_json("codex", "ark-plan"),
+      content=[
+        {
+          "url": "https://ark.example.com/api/plan/v3",
+          "addedAt": 1234,
+          "lastUsed": 5678,
+        },
+      ],
+    )
+    let public_json = loaded.provider_router
+      .providers_moon_json("codex")
+      .stringify()
+    assert_true(public_json.contains("\"credentialState\":\"stored\""))
+    assert_false(public_json.contains("secret-test-key"))
+  })
+}
+
+///|
+async test "proxy store round trips global and app configuration" {
+  @fsx.with_temporary_directory("moongate-proxy-store-XXXXXX", async fn(
+    tmpdir,
+  ) {
+    let path = @pathx.join(tmpdir, "proxy.json")
+    let saved = ProxyService::new("127.0.0.1", 15721)
+    saved.proxy_enabled = false
+    saved.proxy_listen_address = "127.0.0.9"
+    saved.proxy_listen_port = 18888
+    saved.proxy_app_enabled.set("codex", false)
+    saved.proxy_default_cost_multipliers.set("codex", "1.25")
+    saved.proxy_pricing_model_sources.set("codex", "request")
+    saved.upstream_proxy_url = Some("http://127.0.0.1:9000")
+    saved.save_proxy_store(path~)
+
+    let loaded = ProxyService::new("127.0.0.1", 15721)
+    loaded.load_proxy_store(path~)
+    assert_false(loaded.proxy_enabled)
+    assert_eq(loaded.proxy_listen_address, "127.0.0.9")
+    assert_eq(loaded.proxy_listen_port, 18888)
+    assert_eq(loaded.proxy_app_enabled.get("codex"), Some(false))
+    assert_eq(loaded.proxy_default_cost_multipliers.get("codex"), Some("1.25"))
+    assert_eq(loaded.proxy_pricing_model_sources.get("codex"), Some("request"))
+    assert_eq(loaded.upstream_proxy_url, Some("http://127.0.0.1:9000"))
+  })
+}
+
+///|
+test "invalid provider import does not clear live provider state" {
+  let proxy = ProxyService::new("127.0.0.1", 15721)
+  assert_true(
+    proxy.provider_router.provider_by_id("codex", "codex-oauth") is Some(_),
+  )
+  let invalid = {
+    "codex": { "broken": Json::string("not-an-object") }.to_json(),
+  }.to_json()
+  assert_true(proxy.moon_apply_import_providers(invalid) is Err(_))
+  assert_true(
+    proxy.provider_router.provider_by_id("codex", "codex-oauth") is Some(_),
+  )
+}

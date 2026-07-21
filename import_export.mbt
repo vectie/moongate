@@ -127,14 +127,25 @@ fn ProxyService::moon_export_proxy_app_configs_json(
 }
 
 ///|
-fn ProxyService::moon_export_providers_json(self : ProxyService) -> Json {
+fn ProxyService::moon_export_providers_json(
+  self : ProxyService,
+  include_secrets? : Bool = true,
+) -> Json {
   let obj : Map[String, Json] = Map([], capacity=0)
   for app in moon_suite_app_types() {
-    obj[app] = self.provider_router.providers_moon_json(app)
+    obj[app] = self.provider_router.providers_moon_json(app, include_secrets~)
   }
   obj["universalProviders"] = self.provider_router.universal_providers_json()
   obj["routeStats"] = self.provider_router.route_stats_json()
   obj["circuitBreakerConfig"] = self.provider_router.circuit_config.to_json()
+  obj["customEndpoints"] = self.provider_router.all_custom_endpoints_json()
+  let auto_failover : Map[String, Json] = {}
+  for app in moon_suite_app_types() {
+    auto_failover[app] = Json::boolean(
+      self.provider_router.auto_failover_enabled_for_app(app),
+    )
+  }
+  obj["autoFailover"] = Json::object(auto_failover)
   Json::object(obj)
 }
 
@@ -167,7 +178,7 @@ async fn ConfigService::moon_export_config_to_file_json(
   }
   {
     "success": Json::boolean(true),
-    "message": Json::string("SQL exported successfully"),
+    "message": Json::string("Configuration exported successfully"),
     "filePath": Json::string(file_path),
   }.to_json()
 }
@@ -196,11 +207,47 @@ async fn ConfigService::moon_import_config_from_file_json(
         "filePath": Json::string(file_path),
       }.to_json()
   }
+  guard parsed is Object(snapshot) else {
+    return {
+      "success": Json::boolean(false),
+      "message": Json::string(
+        "Import failed: configuration root must be an object",
+      ),
+      "filePath": Json::string(file_path),
+    }.to_json()
+  }
+  match snapshot.get("format") {
+    Some(String("moongate.config.v1")) | None => ()
+    _ =>
+      return {
+        "success": Json::boolean(false),
+        "message": Json::string(
+          "Import failed: unsupported configuration format",
+        ),
+        "filePath": Json::string(file_path),
+      }.to_json()
+  }
+  match snapshot.get("providers") {
+    Some(providers) =>
+      match proxy.moon_apply_import_providers(providers, validate_only=true) {
+        Ok(_) => ()
+        Err(message) =>
+          return {
+            "success": Json::boolean(false),
+            "message": Json::string("Import failed: \{message}"),
+            "filePath": Json::string(file_path),
+          }.to_json()
+      }
+    None => ()
+  }
   let backup_id = self.moon_create_db_backup_json(proxy, host~, port~)
   self.moon_apply_import_snapshot(proxy, parsed)
+  self.save_settings_store(self.app_settings)
+  proxy.save_provider_store()
+  proxy.save_proxy_store()
   {
     "success": Json::boolean(true),
-    "message": Json::string("SQL imported successfully"),
+    "message": Json::string("Configuration imported successfully"),
     "filePath": Json::string(file_path),
     "backupId": backup_id,
     "warning": Json::null(),
@@ -229,6 +276,10 @@ async fn ConfigService::moon_apply_import_snapshot(
   match obj.get("proxy") {
     Some(Object(proxy_json)) => proxy.moon_apply_import_proxy(proxy_json)
     _ => ()
+  }
+  match obj.get("providers") {
+    Some(providers) => ignore(proxy.moon_apply_import_providers(providers))
+    None => ()
   }
 }
 
@@ -266,6 +317,72 @@ fn ProxyService::moon_apply_import_proxy(
           None => ()
         }
       }
+    _ => ()
+  }
+  match proxy.get("appConfigs") {
+    Some(Object(app_configs)) =>
+      for app in moon_suite_app_types() {
+        guard app_configs.get(app) is Some(Object(config)) else { continue }
+        match json_bool_from_map(config, "enabled") {
+          Some(enabled) => self.proxy_app_enabled.set(app, enabled)
+          None => ()
+        }
+        match json_bool_from_map(config, "autoFailoverEnabled") {
+          Some(enabled) => self.provider_router.set_auto_failover(app, enabled)
+          None => ()
+        }
+        match proxy_json_int(config, "maxRetries") {
+          Some(value) => self.provider_router.set_max_retries(app, value)
+          None => ()
+        }
+        match proxy_json_int(config, "streamingFirstByteTimeout") {
+          Some(value) => self.proxy_streaming_first_byte_timeout.set(app, value)
+          None => ()
+        }
+        match proxy_json_int(config, "streamingIdleTimeout") {
+          Some(value) => self.proxy_streaming_idle_timeout.set(app, value)
+          None => ()
+        }
+        match proxy_json_int(config, "nonStreamingTimeout") {
+          Some(value) => self.proxy_non_streaming_timeout.set(app, value)
+          None => ()
+        }
+        match
+          proxy_circuit_config_from_request(
+            "",
+            Some(Json::object(config)),
+            self.provider_router.circuit_config_for_app(app),
+          ) {
+          Some(parsed) => self.provider_router.update_app_configs(app, parsed)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  self.proxy_default_cost_multipliers.clear()
+  match proxy.get("defaultCostMultipliers") {
+    Some(Object(values)) =>
+      for app, value in values {
+        if value is String(text) {
+          self.proxy_default_cost_multipliers.set(app, text)
+        }
+      }
+    _ => ()
+  }
+  self.proxy_pricing_model_sources.clear()
+  match proxy.get("pricingModelSources") {
+    Some(Object(values)) =>
+      for app, value in values {
+        if value is String(text) {
+          self.proxy_pricing_model_sources.set(app, text)
+        }
+      }
+    _ => ()
+  }
+  match proxy.get("upstreamProxyUrl") {
+    Some(String(url)) if upstream_proxy_url_is_valid(url) =>
+      self.upstream_proxy_url = Some(url)
+    Some(Null) => self.upstream_proxy_url = None
     _ => ()
   }
 }
@@ -331,6 +448,15 @@ async fn ConfigService::moon_restore_db_backup_json(
   let content = @fsx.read_file(path) catch { error => return Err("\{error}") }
   let parsed = @json.parse(content) catch { error => return Err("\{error}") }
   self.moon_apply_import_snapshot(proxy, parsed)
+  self.save_settings_store(self.app_settings) catch {
+    error => return Err("Failed to persist restored settings: \{error}")
+  }
+  proxy.save_provider_store() catch {
+    error => return Err("Failed to persist restored providers: \{error}")
+  }
+  proxy.save_proxy_store() catch {
+    error => return Err("Failed to persist restored proxy settings: \{error}")
+  }
   Ok(Json::string(filename))
 }
 

@@ -68,8 +68,22 @@ function text(id, value) {
 
 async function getJson(path) {
   const response = await fetch(path, { headers: await requestHeaders() });
-  if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+  if (!response.ok) throw await responseError(response, path);
   return response.json();
+}
+
+async function responseError(response, path) {
+  const raw = await response.text();
+  let detail = "";
+  if (raw) {
+    try {
+      const payload = JSON.parse(raw);
+      detail = firstString(payload, ["message", "error", "detail", "reason"], "");
+    } catch (_error) {
+      detail = raw.trim().slice(0, 240);
+    }
+  }
+  return new Error(detail || `${path} returned ${response.status}`);
 }
 
 async function postJson(path, body) {
@@ -78,7 +92,7 @@ async function postJson(path, body) {
     headers: await requestHeaders({ "Content-Type": "application/json" }),
     body: body == null ? undefined : JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+  if (!response.ok) throw await responseError(response, path);
   const textBody = await response.text();
   return textBody ? JSON.parse(textBody) : null;
 }
@@ -89,7 +103,7 @@ async function deleteJson(path, body) {
     headers: await requestHeaders({ "Content-Type": "application/json" }),
     body: body == null ? undefined : JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+  if (!response.ok) throw await responseError(response, path);
   const textBody = await response.text();
   return textBody ? JSON.parse(textBody) : null;
 }
@@ -172,11 +186,20 @@ function firstString(object, keys, fallback = "-") {
 }
 
 function stateClass(value) {
-  const lower = String(value || "").toLowerCase();
-  if (lower.includes("healthy") || lower.includes("running") || lower === "ok" || lower === "true") {
+  const lower = String(value || "").trim().toLowerCase();
+  const badTokens = ["unhealthy", "failed", "failure", "error", "invalid", "denied"];
+  if (badTokens.some((token) => lower === token || lower.startsWith(`${token}:`) || lower.startsWith(`${token} `))) {
+    return "state bad";
+  }
+  const warnTokens = ["unknown", "unavailable", "disabled", "false", "off", "not configured", "no account", "missing"];
+  if (!lower || warnTokens.some((token) => lower === token || lower.startsWith(`${token}:`) || lower.startsWith(`${token} `))) {
+    return "state warn";
+  }
+  const goodTokens = ["healthy", "running", "ready", "configured", "authenticated", "enabled", "available", "ok", "true", "closed"];
+  if (goodTokens.some((token) => lower === token || lower.startsWith(`${token}:`) || lower.startsWith(`${token} `))) {
     return "state good";
   }
-  if (lower.includes("open") || lower.includes("error") || lower.includes("failed") || lower === "false") {
+  if (lower === "open" || lower.startsWith("open:") || lower.startsWith("open ")) {
     return "state bad";
   }
   return "state warn";

@@ -387,6 +387,9 @@ priv struct ProviderRouteTarget {
   claude_desktop_model_routes : Map[String, ClaudeDesktopModelRoute]
   settings_config : Json?
   notes : String?
+  origin : String
+  clear_api_key : Bool
+  clear_model_mapping : Bool
 }
 
 ///|
@@ -440,6 +443,9 @@ fn ProviderRouteTarget::new(
   ),
   settings_config? : Json? = None,
   notes? : String? = None,
+  origin? : String = "user",
+  clear_api_key? : Bool = false,
+  clear_model_mapping? : Bool = false,
 ) -> ProviderRouteTarget {
   {
     app_type,
@@ -458,6 +464,9 @@ fn ProviderRouteTarget::new(
     claude_desktop_model_routes,
     settings_config,
     notes,
+    origin,
+    clear_api_key,
+    clear_model_mapping,
   }
 }
 
@@ -472,6 +481,8 @@ fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
     "baseUrl": provider_route_optional_string_json(self.base_url),
     "isFullUrl": Json::boolean(self.is_full_url),
     "modelMapping": provider_route_model_mapping_json(self.model_mapping),
+    "origin": Json::string(self.origin),
+    "hasApiKey": Json::boolean(self.has_stored_api_key()),
   }
   if self.api_format is Some(api_format) {
     obj["apiFormat"] = Json::string(api_format)
@@ -498,17 +509,30 @@ fn ProviderRouteTarget::to_moon_provider_json(
   self : ProviderRouteTarget,
   in_failover_queue : Bool,
   sort_index? : Int? = None,
+  is_current? : Bool = false,
+  health_status? : String = "unknown",
+  include_secrets? : Bool = false,
 ) -> Json {
   let empty_settings : Map[String, Json] = {}
+  let settings = self.settings_config.unwrap_or(empty_settings.to_json())
   let obj : Map[String, Json] = {
     "id": Json::string(self.provider_id),
     "name": Json::string(self.provider_name),
     "appType": Json::string(self.app_type),
     "enabled": Json::boolean(self.enabled),
     "builtIn": Json::boolean(self.is_builtin_route()),
+    "origin": Json::string(self.origin),
+    "hasApiKey": Json::boolean(self.has_stored_api_key()),
+    "credentialState": Json::string(self.credential_state()),
+    "healthStatus": Json::string(health_status),
+    "isCurrent": Json::boolean(is_current),
     "isFullUrl": Json::boolean(self.is_full_url),
     "codexFastMode": Json::boolean(self.codex_fast_mode),
-    "settingsConfig": self.settings_config.unwrap_or(empty_settings.to_json()),
+    "settingsConfig": if include_secrets {
+      settings
+    } else {
+      provider_route_redact_secrets(settings)
+    },
     "inFailoverQueue": Json::boolean(in_failover_queue),
   }
   if self.base_url is Some(base_url) {
@@ -527,6 +551,9 @@ fn ProviderRouteTarget::to_moon_provider_json(
   }
   if self.notes is Some(notes) {
     obj["notes"] = Json::string(notes)
+  }
+  if include_secrets && self.api_key is Some(api_key) {
+    obj["apiKey"] = Json::string(api_key)
   }
   if sort_index is Some(sort_index) {
     obj["sortIndex"] = Json::number(sort_index.to_double())
@@ -550,15 +577,54 @@ fn ProviderRouteTarget::to_moon_provider_json(
 
 ///|
 fn ProviderRouteTarget::is_builtin_route(self : ProviderRouteTarget) -> Bool {
-  (
-    self.provider_id == "codex-oauth" &&
-    (
-      self.app_type == "claude" ||
-      self.app_type == "claude-desktop" ||
-      self.app_type == "codex"
-    )
-  ) ||
-  (self.app_type == "gemini" && self.provider_id == "gemini-api-key")
+  self.origin == "builtin"
+}
+
+///|
+fn ProviderRouteTarget::credential_state(self : ProviderRouteTarget) -> String {
+  if self.has_stored_api_key() {
+    "stored"
+  } else if self.provider_type == Some("codex_oauth") {
+    "oauth"
+  } else {
+    "missing"
+  }
+}
+
+///|
+fn ProviderRouteTarget::has_stored_api_key(self : ProviderRouteTarget) -> Bool {
+  if self.api_key is Some(_) {
+    return true
+  }
+  guard self.settings_config is Some(Object(settings)) else { return false }
+  json_string_from_map(settings, "apiKey") is Some(_) ||
+  json_string_from_map(settings, "api_key") is Some(_)
+}
+
+///|
+fn provider_route_redact_secrets(value : Json) -> Json {
+  match value {
+    Object(obj) => {
+      let redacted : Map[String, Json] = {}
+      for key, child in obj {
+        let normalized = key.to_lower()
+        if normalized == "apikey" ||
+          normalized == "api_key" ||
+          normalized == "token" ||
+          normalized == "accesstoken" ||
+          normalized == "refreshtoken" ||
+          normalized == "secret" ||
+          normalized == "password" ||
+          normalized == "authorization" {
+          continue
+        }
+        redacted[key] = provider_route_redact_secrets(child)
+      }
+      Json::object(redacted)
+    }
+    Array(items) => Json::array(items.map(provider_route_redact_secrets))
+    _ => value
+  }
 }
 
 ///|
@@ -654,7 +720,7 @@ priv struct ProviderHealthState {
 ///|
 fn ProviderHealthState::new_default(updated_at : String) -> ProviderHealthState {
   {
-    is_healthy: true,
+    is_healthy: false,
     consecutive_failures: 0,
     last_success_at: None,
     last_failure_at: None,
@@ -892,6 +958,7 @@ fn ProviderRouter::current_provider_for_moon_command(
 fn ProviderRouter::providers_moon_json(
   self : ProviderRouter,
   app_type : String,
+  include_secrets? : Bool = false,
 ) -> Json {
   let queue = self.failover_queues.get(app_type).unwrap_or([])
   let obj : Map[String, Json] = {}
@@ -916,12 +983,33 @@ fn ProviderRouter::providers_moon_json(
         obj[provider_id] = provider.to_moon_provider_json(
           queue.contains(provider.provider_id),
           sort_index=self.provider_sort_index(app_type, provider_id),
+          is_current=self.current_provider_ids.get(app_type) ==
+            Some(provider_id),
+          health_status=self.provider_health_status(provider_id, app_type),
+          include_secrets~,
         )
       }
     }
     None => ()
   }
   Json::object(obj)
+}
+
+///|
+fn ProviderRouter::provider_health_status(
+  self : ProviderRouter,
+  provider_id : String,
+  app_type : String,
+) -> String {
+  match self.get_circuit_breaker_stats(provider_id, app_type) {
+    Some(stats) if stats.state == Open => return "unhealthy"
+    _ => ()
+  }
+  let key = provider_health_key(app_type, provider_id)
+  match self.provider_health.get(key) {
+    Some(state) => if state.is_healthy { "healthy" } else { "unhealthy" }
+    None => "unknown"
+  }
 }
 
 ///|
@@ -1197,6 +1285,7 @@ fn universal_provider_route_target(
     base_url~,
     api_key~,
     settings_config=Some(settings_config),
+    origin="universal",
   )
 }
 
@@ -1639,6 +1728,7 @@ fn ProviderRouter::record_result(
       app_type,
       "request_failed",
       now_ms.to_string(),
+      is_healthy=breaker.get_stats().state != Open,
     )
   }
 }
@@ -1773,6 +1863,7 @@ fn ProviderRouter::provider_health_json(
   {
     "provider_id": Json::string(provider_id),
     "app_type": Json::string(app_type),
+    "status": Json::string(self.provider_health_status(provider_id, app_type)),
     "is_healthy": Json::boolean(is_healthy),
     "consecutive_failures": Json::number(
       health.consecutive_failures.to_double(),
@@ -1813,6 +1904,7 @@ fn ProviderRouter::record_provider_health_failure(
   app_type : String,
   error : String,
   updated_at : String,
+  is_healthy~ : Bool,
 ) -> Unit {
   let key = provider_health_key(app_type, provider_id)
   let previous = self.provider_health.get(key)
@@ -1825,7 +1917,7 @@ fn ProviderRouter::record_provider_health_failure(
     None => None
   }
   self.provider_health.set(key, {
-    is_healthy: consecutive_failures < self.failure_threshold_for_app(app_type),
+    is_healthy,
     consecutive_failures,
     last_success_at,
     last_failure_at: Some(updated_at),
@@ -1858,14 +1950,6 @@ fn ProviderRouter::provider_health_state(
         _ => ProviderHealthState::new_default(updated_at)
       }
   }
-}
-
-///|
-fn ProviderRouter::failure_threshold_for_app(
-  self : ProviderRouter,
-  app_type : String,
-) -> Int {
-  self.circuit_config_for_app(app_type).failure_threshold
 }
 
 ///|

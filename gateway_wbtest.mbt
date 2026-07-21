@@ -1274,8 +1274,10 @@ test "gateway update provider preserves fields hidden by provider editor" {
       api_key=Some("secret-key"),
       prompt_cache_key=Some("prompt-cache"),
       model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
+      origin="builtin",
       settings_config=Some(
         {
+          "apiKey": Json::string("nested-secret-key"),
           "apiFormat": Json::string("anthropic"),
           "meta": { "testConfig": { "enabled": Json::boolean(true) }.to_json() }.to_json(),
         }.to_json(),
@@ -1322,6 +1324,58 @@ test "gateway update provider preserves fields hidden by provider editor" {
   assert_eq(settings["apiFormat"], Json::string("anthropic"))
   assert_eq(settings["codexFastMode"], Json::boolean(false))
   assert_true(settings.get("meta") is Some(_))
+  assert_eq(
+    gateway.proxy.update_provider_target(
+      gateway.usage,
+      "claude",
+      ProviderRouteTarget::new(
+        app_type="claude",
+        provider_id="hidden-fields",
+        provider_name="Hidden Fields Updated",
+        clear_api_key=true,
+        clear_model_mapping=true,
+      ),
+      Some("hidden-fields"),
+    ),
+    Ok(()),
+  )
+  guard gateway.proxy.provider_router.provider_by_id("claude", "hidden-fields")
+    is Some(cleared) else {
+    fail("expected cleared provider")
+  }
+  assert_eq(cleared.api_key, None)
+  assert_true(cleared.model_mapping is None)
+  assert_eq(cleared.origin, "builtin")
+  assert_false(cleared.clear_api_key)
+  assert_false(cleared.clear_model_mapping)
+  assert_false(
+    cleared.settings_config
+    .unwrap_or(Json::null())
+    .stringify()
+    .contains("nested-secret-key"),
+  )
+}
+
+///|
+test "codex compatible responses apply provider model mapping" {
+  let session = SessionService::new()
+  let provider = ProviderRouteTarget::new(
+    app_type="codex",
+    provider_id="ark-plan",
+    provider_name="Ark Agent Plan",
+    provider_type=Some("openai"),
+    base_url=Some("https://ark.example.com/api/plan/v3"),
+    api_key=Some("test-key"),
+    model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
+  )
+  guard session.codex_provider_outbound_request(
+      Some(provider),
+      { "model": Json::string("gpt-5.6-sol"), "input": Json::string("ok") }.to_json(),
+    )
+    is Object(outbound) else {
+    fail("expected codex provider request")
+  }
+  assert_eq(outbound["model"], Json::string("kimi-k3"))
 }
 
 ///|
@@ -3720,7 +3774,8 @@ test "proxy provider health alias mirrors circuit breaker state" {
   }
   assert_eq(healthy["provider_id"], Json::string("codex-oauth"))
   assert_eq(healthy["app_type"], Json::string("claude"))
-  assert_eq(healthy["is_healthy"], Json::boolean(true))
+  assert_eq(healthy["status"], Json::string("unknown"))
+  assert_eq(healthy["is_healthy"], Json::boolean(false))
   assert_eq(healthy["consecutive_failures"], Json::number(0.0))
   assert_eq(healthy["last_error"], Json::null())
   assert_eq(healthy["updated_at"], Json::string("test-time"))
@@ -3741,6 +3796,7 @@ test "proxy provider health alias mirrors circuit breaker state" {
     fail("expected open provider health object")
   }
   assert_eq(open["is_healthy"], Json::boolean(false))
+  assert_eq(open["status"], Json::string("unhealthy"))
   assert_eq(open["consecutive_failures"], Json::number(4.0))
   assert_eq(open["last_success_at"], Json::null())
   assert_eq(open["last_failure_at"], Json::string("1000"))
@@ -3751,7 +3807,7 @@ test "proxy provider health alias mirrors circuit breaker state" {
     is Some(stats) else {
     fail("expected circuit stats")
   }
-  assert_true(stats.state == Open)
+  assert_true(stats.state == Open, msg="expected circuit to be open")
   assert_eq(stats.total_requests, 4)
   assert_eq(stats.failed_requests, 4)
   gateway.proxy.provider_router.reset_provider_breaker("codex-oauth", "claude")
@@ -3761,7 +3817,10 @@ test "proxy provider health alias mirrors circuit breaker state" {
     is Some(reset_stats) else {
     fail("expected reset circuit stats")
   }
-  assert_true(reset_stats.state == Closed)
+  assert_true(
+    reset_stats.state == Closed,
+    msg="expected reset circuit to be closed",
+  )
   assert_eq(reset_stats.total_requests, 0)
   assert_eq(reset_stats.failed_requests, 0)
   guard gateway.proxy.provider_router.provider_health_json(
@@ -3771,8 +3830,12 @@ test "proxy provider health alias mirrors circuit breaker state" {
     fail("expected reset provider health object")
   }
   assert_eq(reset_health["is_healthy"], Json::boolean(true))
+  assert_eq(reset_health["status"], Json::string("healthy"))
   assert_eq(reset_health["consecutive_failures"], Json::number(0.0))
-  assert_true(reset_health["last_success_at"] is String(_))
+  assert_true(
+    reset_health["last_success_at"] is String(_),
+    msg="expected reset to record a health success timestamp",
+  )
   assert_eq(reset_health["last_failure_at"], Json::string("1000"))
   assert_eq(reset_health["last_error"], Json::null())
 }

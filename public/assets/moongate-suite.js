@@ -1,3 +1,5 @@
+let suiteLoadGeneration = 0;
+
 function renderSuiteApps(apps, integrations) {
   const target = $("suite-app-rows");
   if (!target) return;
@@ -66,11 +68,13 @@ function renderSuiteIntegrations(integrations) {
 }
 
 async function loadSuite() {
+  const generation = ++suiteLoadGeneration;
   const [manifestProbe, statusProbe, providersProbe] = await Promise.all([
     safeGetJson(endpoints.suiteManifest),
     safeGetJson(endpoints.suiteStatus),
     safeGetJson(endpoints.suiteMoonclawProviders),
   ]);
+  if (generation !== suiteLoadGeneration) return { warningCount: 0, stale: true };
   const manifest = manifestProbe.ok ? manifestProbe.data : {};
   const status = statusProbe.ok ? statusProbe.data : {};
   const apps = arrayFrom(manifest.apps, []);
@@ -80,8 +84,11 @@ async function loadSuite() {
   text("suite-status-state", firstString(status, ["status"], manifestProbe.ok ? "available" : "unavailable"));
   text("suite-app-count", compact(apps.length));
   text("suite-capability-count", compact(capabilities.length));
+  text("suite-provider-count", providersProbe.ok ? compact(providerRows) : "Unavailable");
   text("suite-status-path", firstString(status, ["statusPath"], firstString(manifest, ["statusFile"])));
   renderSuiteApps(apps, integrations);
   renderSuiteIntegrations(integrations);
-  if (providerRows > 0) text("suite-capability-count", `${compact(capabilities.length)} / ${providerRows} providers`);
+  return {
+    warningCount: [manifestProbe, statusProbe, providersProbe].some((probe) => !probe.ok) ? 1 : 0,
+  };
 }

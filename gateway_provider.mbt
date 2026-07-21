@@ -11,6 +11,7 @@ fn moongate_default_provider_router() -> ProviderRouter {
       provider_name="Codex OAuth",
       provider_type=Some("codex_oauth"),
       model_mapping=claude_model_mapping,
+      origin="builtin",
     ),
   )
   router.upsert_provider(
@@ -20,6 +21,7 @@ fn moongate_default_provider_router() -> ProviderRouter {
       provider_name="Codex OAuth",
       provider_type=Some("codex_oauth"),
       model_mapping=claude_model_mapping,
+      origin="builtin",
     ),
   )
   router.upsert_provider(
@@ -28,6 +30,7 @@ fn moongate_default_provider_router() -> ProviderRouter {
       provider_id="codex-oauth",
       provider_name="Codex OAuth",
       provider_type=Some("codex_oauth"),
+      origin="builtin",
     ),
   )
   match codex_provider_from_env() {
@@ -66,6 +69,7 @@ fn moongate_default_provider_router() -> ProviderRouter {
       app_type="gemini",
       provider_id="gemini-api-key",
       provider_name="Gemini API Key",
+      origin="builtin",
     ),
   )
   router.set_current_provider("claude", claude_current_provider)
@@ -241,8 +245,16 @@ fn SessionService::codex_provider_outbound_request(
   request : Json,
 ) -> Json {
   match provider {
-    Some(provider) if provider.can_use_codex_compatible_upstream() =>
-      self.codex_chat_history.enriched_request(request)
+    Some(provider) if provider.can_use_codex_compatible_upstream() => {
+      let enriched = self.codex_chat_history.enriched_request(request)
+      guard enriched is Object(obj) else { return enriched }
+      match json_string_from_map(obj, "model") {
+        Some(model) =>
+          obj["model"] = Json::string(provider.map_model_for_upstream(model))
+        None => ()
+      }
+      Json::object(obj)
+    }
     _ => request
   }
 }
@@ -841,10 +853,18 @@ async fn ProxyService::handle_add_provider(
     write_usage_bad_request(w, "invalid_provider")
     return
   }
+  if self.provider_router.provider_by_id(app_type, target.provider_id)
+    is Some(_) {
+    write_usage_bad_request(w, "provider_already_exists")
+    return
+  }
   let add_to_live = provider_bool_from_request(r.path, body, "addToLive").unwrap_or(
     true,
   )
   self.add_provider_target(usage, app_type, target, add_to_live)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, Json::boolean(true))
 }
 
@@ -885,7 +905,12 @@ async fn ProxyService::handle_update_provider(
   }
   let original_id = provider_string_from_request(r.path, body, "originalId")
   match self.update_provider_target(usage, app_type, target, original_id) {
-    Ok(_) => write_usage_json(w, Json::boolean(true))
+    Ok(_) => {
+      if !self.persist_provider_store_or_error(w) {
+        return
+      }
+      write_usage_json(w, Json::boolean(true))
+    }
     Err(error) => write_usage_bad_request(w, error)
   }
 }
@@ -905,6 +930,11 @@ fn ProxyService::update_provider_target(
   let existing_provider = self.provider_router.provider_by_id(
     app_type, original_provider_id,
   )
+  guard existing_provider is Some(_) else {
+    return Err(
+      "Original provider '\{original_provider_id}' does not exist in app '\{app_type}'",
+    )
+  }
   if original_provider_id != provider_id {
     if !provider_app_is_additive(app_type) {
       return Err("Only additive-mode providers support changing provider key")
@@ -943,11 +973,16 @@ fn provider_preserve_hidden_update_fields(
     ..incoming,
     api_key: match incoming.api_key {
       Some(_) => incoming.api_key
-      None => existing.api_key
+      None => if incoming.clear_api_key { None } else { existing.api_key }
     },
     model_mapping: match incoming.model_mapping {
       Some(_) => incoming.model_mapping
-      None => existing.model_mapping
+      None =>
+        if incoming.clear_model_mapping {
+          None
+        } else {
+          existing.model_mapping
+        }
     },
     prompt_cache_key: match incoming.prompt_cache_key {
       Some(_) => incoming.prompt_cache_key
@@ -962,10 +997,30 @@ fn provider_preserve_hidden_update_fields(
     } else {
       incoming.claude_desktop_model_routes
     },
-    settings_config: provider_merge_update_settings(
-      existing.settings_config,
-      incoming.settings_config,
+    settings_config: provider_update_settings_with_credential_clear(
+      provider_merge_update_settings(
+        existing.settings_config,
+        incoming.settings_config,
+      ),
+      incoming.clear_api_key,
     ),
+    origin: existing.origin,
+    clear_api_key: false,
+    clear_model_mapping: false,
+  }
+}
+
+///|
+fn provider_update_settings_with_credential_clear(
+  settings : Json?,
+  clear_api_key : Bool,
+) -> Json? {
+  if !clear_api_key {
+    return settings
+  }
+  match settings {
+    Some(value) => Some(provider_route_redact_secrets(value))
+    None => None
   }
 }
 
@@ -1018,6 +1073,9 @@ async fn ProxyService::handle_delete_provider(
     write_usage_bad_request(w, "provider_not_found")
     return
   }
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, Json::boolean(true))
 }
 
@@ -1040,6 +1098,9 @@ async fn ProxyService::handle_remove_provider_from_live_config(
       app_type, provider_id,
     ) {
     write_usage_bad_request(w, "provider_not_found")
+    return
+  }
+  if !self.persist_provider_store_or_error(w) {
     return
   }
   write_usage_json(w, Json::boolean(true))
@@ -1072,6 +1133,9 @@ async fn ProxyService::handle_switch_provider(
     provider.provider_id,
     provider.provider_name,
   )
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, { "warnings": Json::array([]) }.to_json())
 }
 
@@ -1119,10 +1183,11 @@ async fn ProxyService::handle_claude_desktop_provider_import(
   self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(
-    w,
-    Json::number(self.import_claude_desktop_providers().to_double()),
-  )
+  let imported = self.import_claude_desktop_providers()
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::number(imported.to_double()))
 }
 
 ///|
@@ -1130,10 +1195,11 @@ async fn ProxyService::handle_claude_desktop_provider_official(
   self : ProxyService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  write_usage_json(
-    w,
-    Json::boolean(self.ensure_official_claude_desktop_provider()),
-  )
+  let created = self.ensure_official_claude_desktop_provider()
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::boolean(created))
 }
 
 ///|
@@ -1151,6 +1217,7 @@ fn ProxyService::ensure_official_claude_desktop_provider(
       provider_name="Codex OAuth",
       provider_type=Some("codex_oauth"),
       model_mapping=moon_model_mapping_from_env(),
+      origin="builtin",
     ),
   )
   if self.provider_router.current_provider_id("claude-desktop") is None {
@@ -1203,6 +1270,7 @@ fn ProxyService::import_claude_desktop_providers(self : ProxyService) -> Int {
         model_mapping=provider.model_mapping,
         claude_desktop_model_routes~,
         settings_config=provider.settings_config,
+        origin=provider.origin,
       ),
     )
     imported += 1
@@ -1262,6 +1330,7 @@ async fn ProxyService::handle_sync_current_providers_live(
       target.provider_name,
     )
   }
+  guard self.persist_provider_store_or_error(w) else { return }
   write_usage_json(
     w,
     {
@@ -1322,12 +1391,11 @@ async fn ProxyService::handle_import_live_providers(
   w : @httpx.ResponseWriter,
   app_type : String,
 ) -> Unit {
-  write_usage_json(
-    w,
-    Json::number(
-      self.provider_router.import_live_providers(app_type).to_double(),
-    ),
-  )
+  let imported = self.provider_router.import_live_providers(app_type)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::number(imported.to_double()))
 }
 
 ///|
@@ -1363,10 +1431,11 @@ async fn ProxyService::handle_upsert_universal_provider(
     write_usage_bad_request(w, "invalid_universal_provider")
     return
   }
-  write_usage_json(
-    w,
-    Json::boolean(self.provider_router.upsert_universal_provider(provider)),
-  )
+  let changed = self.provider_router.upsert_universal_provider(provider)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::boolean(changed))
 }
 
 ///|
@@ -1380,10 +1449,11 @@ async fn ProxyService::handle_delete_universal_provider(
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  write_usage_json(
-    w,
-    Json::boolean(self.provider_router.delete_universal_provider(id)),
-  )
+  let changed = self.provider_router.delete_universal_provider(id)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::boolean(changed))
 }
 
 ///|
@@ -1397,10 +1467,11 @@ async fn ProxyService::handle_sync_universal_provider(
     write_usage_bad_request(w, "missing_provider_id")
     return
   }
-  write_usage_json(
-    w,
-    Json::boolean(self.provider_router.sync_universal_provider(id)),
-  )
+  let changed = self.provider_router.sync_universal_provider(id)
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::boolean(changed))
 }
 
 ///|
@@ -1425,12 +1496,13 @@ async fn ProxyService::handle_update_providers_sort_order(
     return
   }
   let updates = provider_sort_updates_from_request(r.path, body)
-  write_usage_json(
-    w,
-    Json::boolean(
-      self.provider_router.update_providers_sort_order(app_type, updates),
-    ),
+  let changed = self.provider_router.update_providers_sort_order(
+    app_type, updates,
   )
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::boolean(changed))
 }
 
 ///|
@@ -1446,12 +1518,22 @@ async fn ProxyService::handle_stream_check_provider(
     write_usage_bad_request(w, "missing_provider_id_or_app_type")
     return
   }
-  guard self.stream_check_provider_result_json(
-      stream_check_config, app_type, provider_id,
-    )
-    is Some(result) else {
-    write_usage_bad_request(w, "provider_not_found")
-    return
+  let draft = proxy_bool_request(r.path, body, "draft").unwrap_or(false)
+  let result = if draft {
+    guard provider_target_from_request(r.path, body, app_type) is Some(target) else {
+      write_usage_bad_request(w, "invalid_provider_draft")
+      return
+    }
+    self.stream_check_provider_target_result_json(stream_check_config, target)
+  } else {
+    guard self.stream_check_provider_result_json(
+        stream_check_config, app_type, provider_id,
+      )
+      is Some(result) else {
+      write_usage_bad_request(w, "provider_not_found")
+      return
+    }
+    result
   }
   write_usage_json(w, result)
 }
@@ -1498,9 +1580,22 @@ fn ProxyService::stream_check_provider_result_json(
     is Some(provider) else {
     return None
   }
+  Some(
+    self.stream_check_provider_target_result_json(stream_check_config, provider),
+  )
+}
+
+///|
+fn ProxyService::stream_check_provider_target_result_json(
+  self : ProxyService,
+  stream_check_config : StreamCheckConfig,
+  provider : ProviderRouteTarget,
+) -> Json {
+  ignore(self)
   let config = stream_check_effective_config_for_provider(
     stream_check_config, provider,
   )
+  let app_type = provider.app_type
   let model = stream_check_reported_model_for_app(config, app_type)
   let configured = true
   let status = if configured { "operational" } else { "failed" }
@@ -1521,7 +1616,7 @@ fn ProxyService::stream_check_provider_result_json(
     obj["responseTimeMs"] = Json::number(0.0)
     obj["httpStatus"] = Json::number(200.0)
   }
-  Some(Json::object(obj))
+  Json::object(obj)
 }
 
 ///|
@@ -1944,6 +2039,12 @@ fn provider_target_from_request(
     false,
   )
   let model_mapping = provider_model_mapping_from_request(path, body)
+  let clear_api_key = provider_bool_from_request(path, body, "clearApiKey").unwrap_or(
+    false,
+  )
+  let clear_model_mapping = provider_bool_from_request(
+    path, body, "clearModelMapping",
+  ).unwrap_or(false)
   let claude_desktop_model_routes = provider_claude_desktop_model_routes_from_body(
     body,
   )
@@ -1966,6 +2067,8 @@ fn provider_target_from_request(
       claude_desktop_model_routes~,
       settings_config~,
       notes~,
+      clear_api_key~,
+      clear_model_mapping~,
     ),
   )
 }

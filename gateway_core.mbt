@@ -7,6 +7,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   self.config.load_settings_store() catch {
     err => self.logger.warn("Failed to load MoonGate settings: \{err}")
   }
+  self.proxy.load_provider_store() catch {
+    err => self.logger.warn("Failed to load MoonGate providers: \{err}")
+  }
+  self.proxy.load_proxy_store() catch {
+    err => self.logger.warn("Failed to load MoonGate proxy settings: \{err}")
+  }
   self.usage.load_model_pricing_store()
   ignore(
     self.usage.load_and_reconcile_persistent_store(

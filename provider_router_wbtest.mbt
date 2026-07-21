@@ -424,10 +424,43 @@ test "provider route target carries upstream config without serializing key" {
     "baseUrl": "https://api.openai.com/v1",
     "isFullUrl": false,
     "modelMapping": null,
+    "origin": "user",
+    "hasApiKey": true,
   })
   let serialized = target.to_json().stringify()
   assert_false(serialized.contains("apiKey"))
   assert_false(serialized.contains("sk-test"))
+}
+
+///|
+test "public provider json redacts nested settings credentials" {
+  let target = ProviderRouteTarget::new(
+    app_type="codex",
+    provider_id="settings-key",
+    provider_name="Settings Key",
+    settings_config=Some(
+      {
+        "apiKey": Json::string("nested-secret"),
+        "baseUrl": Json::string("https://example.com/v1"),
+        "meta": { "token": Json::string("nested-token") }.to_json(),
+      }.to_json(),
+    ),
+  )
+  guard target.to_moon_provider_json(false) is Object(public) else {
+    fail("expected public provider json")
+  }
+  assert_eq(public["hasApiKey"], Json::boolean(true))
+  assert_eq(public["credentialState"], Json::string("stored"))
+  let serialized = Json::object(public).stringify()
+  assert_false(serialized.contains("nested-secret"))
+  assert_false(serialized.contains("nested-token"))
+  assert_true(serialized.contains("https://example.com/v1"))
+  assert_true(
+    target
+    .to_moon_provider_json(false, include_secrets=true)
+    .stringify()
+    .contains("nested-secret"),
+  )
 }
 
 ///|
@@ -1101,11 +1134,17 @@ test "provider router syncs universal providers into app providers" {
   guard codex_provider["settingsConfig"] is Object(settings) else {
     fail("expected settings config")
   }
-  assert_eq(settings["apiKey"], Json::string("sk-u1"))
-  guard settings["models"] is Object(codex_models) else {
+  assert_true(settings.get("apiKey") is None)
+  guard settings.get("models") is Some(Object(codex_models)) else {
     fail("expected codex models")
   }
   assert_eq(codex_models["model"], Json::string("gpt-5"))
+  assert_true(
+    router
+    .providers_moon_json("codex", include_secrets=true)
+    .stringify()
+    .contains("sk-u1"),
+  )
   assert_eq(router.import_live_providers("codex"), 1)
   assert_true(router.delete_universal_provider("u1"))
   json_inspect(router.universal_providers_json(), content={})

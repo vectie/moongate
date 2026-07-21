@@ -1,3 +1,5 @@
+let resilienceLoadGeneration = 0;
+
 function selectedResilienceApp() {
   return $("resilience-app")?.value || "codex";
 }
@@ -5,6 +7,8 @@ function selectedResilienceApp() {
 function selectedResilienceProvider() {
   return $("resilience-provider")?.value || "";
 }
+
+let resilienceAutoFailoverEnabled = false;
 
 function setInputValue(id, value) {
   const node = $(id);
@@ -124,8 +128,10 @@ function streamConfigPayload() {
 }
 
 async function loadResilience() {
+  const generation = ++resilienceLoadGeneration;
   const appType = selectedResilienceApp();
   const providersProbe = await safeGetJson(endpoint(endpoints.providerCreate, { appType }));
+  if (generation !== resilienceLoadGeneration) return { warningCount: 0, stale: true };
   const providers = providersProbe.ok ? objectRows(providersProbe.data) : [];
   const providerId = renderResilienceProviders(providers);
   const providerParams = providerId ? { appType, providerId } : null;
@@ -146,12 +152,14 @@ async function loadResilience() {
     providerParams ? safeGetJson(endpoint(endpoints.circuitStats, providerParams)) : { ok: false, error: "No provider selected" },
     providerParams ? safeGetJson(endpoint(endpoints.providerLimits, providerParams)) : { ok: false, error: "No provider selected" },
   ]);
+  if (generation !== resilienceLoadGeneration) return { warningCount: 0, stale: true };
 
   if (circuitConfig.ok) fillCircuitForm(circuitConfig.data);
   if (streamConfig.ok) fillStreamForm(streamConfig.data);
   const queueRows = queue.ok ? arrayFrom(queue.data, []) : [];
   const availableRows = available.ok ? arrayFrom(available.data, []) : [];
   const autoState = autoFailover.ok ? stateText(autoFailover.data) : autoFailover.error;
+  resilienceAutoFailoverEnabled = autoFailover.ok && autoFailover.data === true;
   const circuitState = circuitStats.ok && circuitStats.data ? firstString(circuitStats.data, ["state"], "closed") : "Unknown";
   const limitText = limits.ok ? firstString(limits.data, ["status", "state"], "Loaded") : "Unknown";
 
@@ -163,4 +171,8 @@ async function loadResilience() {
   setSetupState("resilience-stream-status", streamConfig.ok ? "Configured" : "Unavailable", streamConfig.ok);
   renderProviderActionStack("failover-queue", queueRows, "Failover queue is empty", "remove-failover");
   renderProviderActionStack("available-failover", availableRows, "No available providers", "add-failover");
+  return {
+    warningCount: [providersProbe, circuitConfig, streamConfig, autoFailover, queue, available, circuitStats, limits]
+      .some((probe) => !probe.ok && probe.error !== "No provider selected") ? 1 : 0,
+  };
 }

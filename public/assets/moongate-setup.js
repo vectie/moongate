@@ -1,3 +1,5 @@
+let setupLoadGeneration = 0;
+
 function firstValue(object, keys) {
   if (!object || typeof object !== "object") return null;
   for (const key of keys) {
@@ -20,8 +22,7 @@ function setupProbeGood(probe, keys) {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value > 0;
   if (typeof value === "string") {
-    const lower = value.toLowerCase();
-    return lower.includes("ok") || lower.includes("ready") || lower.includes("true") || lower.includes("authenticated");
+    return stateClass(value).includes("good");
   }
   return true;
 }
@@ -73,6 +74,7 @@ function renderSetupConfigRows(configRows, takeoverProbe) {
 }
 
 async function loadSetupStatus() {
+  const generation = ++setupLoadGeneration;
   const authProviders = [
     ["Codex OAuth", "codex_oauth"],
     ["GitHub Copilot", "github_copilot"],
@@ -112,9 +114,10 @@ async function loadSetupStatus() {
       })),
     ),
   ]);
+  if (generation !== setupLoadGeneration) return { warningCount: 0, stale: true };
 
   const authenticated = authRows.filter((row) => setupProbeGood(row.probe, ["authenticated", "hasAccount", "loggedIn"])).length;
-  setSetupState("setup-auth-state", authenticated > 0 ? `${authenticated} active` : "Ready", authRows.some((row) => row.probe.ok));
+  setSetupState("setup-auth-state", authenticated > 0 ? `${authenticated} active` : "No accounts", authenticated > 0);
   renderSetupList(
     "setup-auth-rows",
     authRows.map((row) => [
@@ -125,7 +128,7 @@ async function loadSetupStatus() {
   );
 
   const proxyRunning = proxyRunningProbe.ok ? proxyRunningProbe.data === true : false;
-  setSetupState("setup-runtime-state", proxyRunning ? "Proxy on" : "Available", runtimeProbe.ok || proxyRunningProbe.ok);
+  setSetupState("setup-runtime-state", proxyRunning ? "Proxy on" : "Proxy off", proxyRunning);
   renderSetupList("setup-runtime-rows", [
     ["Portable Mode", setupProbeText(runtimeProbe, [], runtimeProbe.ok ? stateText(runtimeProbe.data) : "Unavailable"), runtimeProbe.ok],
     ["Proxy Running", proxyRunningProbe.ok ? stateText(proxyRunningProbe.data) : proxyRunningProbe.error, proxyRunning],
@@ -134,7 +137,7 @@ async function loadSetupStatus() {
   ]);
 
   const desktopConfigured = setupProbeGood(desktopProbe, ["configured", "gatewayTokenConfigured"]);
-  setSetupState("setup-desktop-state", desktopConfigured ? "Configured" : "Available", desktopProbe.ok);
+  setSetupState("setup-desktop-state", desktopConfigured ? "Configured" : "Not configured", desktopConfigured);
   renderSetupList("setup-desktop-rows", [
     ["Configured", setupProbeText(desktopProbe, ["configured"], "Unknown"), desktopConfigured],
     ["Mode", setupProbeText(desktopProbe, ["mode"], "Not selected"), desktopProbe.ok],
@@ -144,12 +147,31 @@ async function loadSetupStatus() {
 
   const mcpCount = mcpProbe.ok ? recordCount(mcpProbe.data, ["servers", "items"]) : 0;
   const pluginReady = setupProbeGood(pluginProbe, ["exists"]) || (pluginAppliedProbe.ok && pluginAppliedProbe.data === true);
-  setSetupState("setup-mcp-state", mcpCount > 0 || pluginReady ? "Configured" : "Ready", mcpProbe.ok || pluginProbe.ok);
+  setSetupState("setup-mcp-state", mcpCount > 0 || pluginReady ? "Configured" : "Not configured", mcpCount > 0 || pluginReady);
   renderSetupList("setup-mcp-rows", [
-    ["MCP Servers", mcpProbe.ok ? `${mcpCount} configured` : mcpProbe.error, mcpProbe.ok],
+    ["MCP Servers", mcpProbe.ok ? `${mcpCount} configured` : mcpProbe.error, mcpCount > 0],
     ["Claude Plugin", setupProbeText(pluginProbe, ["exists"], "Unavailable"), setupProbeGood(pluginProbe, ["exists"])],
     ["Plugin Applied", pluginAppliedProbe.ok ? stateText(pluginAppliedProbe.data) : pluginAppliedProbe.error, pluginAppliedProbe.data === true],
   ]);
 
   renderSetupConfigRows(configRows, takeoverProbe);
+  const directProbes = [
+    runtimeProbe,
+    toolsProbe,
+    proxyRunningProbe,
+    takeoverProbe,
+    desktopProbe,
+    mcpProbe,
+    pluginProbe,
+    pluginAppliedProbe,
+    settingsProbe,
+  ];
+  return {
+    warningCount:
+      directProbes.some((probe) => !probe.ok) ||
+      authRows.some((row) => !row.probe.ok) ||
+      configRows.some((row) => !row.probe.ok)
+        ? 1
+        : 0,
+  };
 }
