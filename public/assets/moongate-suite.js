@@ -1,5 +1,29 @@
 let suiteLoadGeneration = 0;
 
+function suitePurpose(id, fallback) {
+  const purposes = {
+    moondesk: "Primary desktop control app",
+    moonclaw: "AI agent app",
+    moonbook: "Reports and saved output",
+    moontown: "Schedules and automation",
+  };
+  return purposes[id] || fallback || "Connected Moon app";
+}
+
+function suiteUsage(id, fallback) {
+  const usage = {
+    moondesk: "Controls health, providers, models, and usage",
+    moonclaw: "Sends AI requests through MoonGate",
+    moonbook: "Reads usage summaries for reports",
+    moontown: "Checks MoonGate health for scheduled work",
+  };
+  return usage[id] || fallback || "Uses MoonGate services";
+}
+
+function suiteConnectionLabel(keyRoute) {
+  return keyRoute && keyRoute !== "-" ? "Ready" : "Not published";
+}
+
 function renderSuiteApps(apps, integrations) {
   const target = $("suite-app-rows");
   if (!target) return;
@@ -24,9 +48,9 @@ function renderSuiteApps(apps, integrations) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><strong>${escapeHtml(id)}</strong>${id === "moondesk" ? `<small>Primary</small>` : ""}</td>
-      <td>${escapeHtml(firstString(app, ["role", "kind"]))}</td>
-      <td>${escapeHtml(firstString(app, ["usage", "description"]))}</td>
-      <td>${escapeHtml(keyRoute)}</td>
+      <td>${escapeHtml(suitePurpose(id, firstString(app, ["role", "kind"])))}</td>
+      <td>${escapeHtml(suiteUsage(id, firstString(app, ["usage", "description"])))}</td>
+      <td><span class="state ${keyRoute && keyRoute !== "-" ? "good" : "warn"}">${suiteConnectionLabel(keyRoute)}</span></td>
     `;
     target.appendChild(tr);
   }
@@ -46,22 +70,15 @@ function renderSuiteIntegrations(integrations) {
     return;
   }
   for (const row of rows) {
-    const urls = [
-      firstString(row, ["healthUrl"], ""),
-      firstString(row, ["usageSummaryUrl"], ""),
-      firstString(row, ["providerPresetsUrl"], ""),
-      firstString(row, ["streamCheckConfigUrl"], ""),
-      firstString(row, ["configStatusUrl"], ""),
-    ].filter(Boolean);
     const adapters = arrayFrom(row.adapterPackages, []).map((item) => String(item));
     const div = document.createElement("div");
     div.className = "row-card";
     div.innerHTML = `
       <div>
         <strong>${escapeHtml(row.id)}${row.id === "moondesk" ? " · Primary" : ""}</strong>
-        <small>${escapeHtml(urls.slice(0, 2).join(" | ") || adapters.slice(0, 3).join(" | ") || "Integration metadata ready")}</small>
+        <small>${escapeHtml(suiteUsage(row.id, "Connection details are available"))}</small>
       </div>
-      <strong>${escapeHtml(adapters.length ? `${adapters.length} adapters` : "Ready")}</strong>
+      <strong>${escapeHtml(adapters.length ? `${adapters.length} connection${adapters.length === 1 ? "" : "s"}` : "Ready")}</strong>
     `;
     target.appendChild(div);
   }
@@ -81,7 +98,8 @@ async function loadSuite() {
   const capabilities = arrayFrom(manifest.capabilities, []);
   const integrations = manifest.suiteIntegrations || {};
   const providerRows = providersProbe.ok ? recordCount(providersProbe.data, ["providers"]) : 0;
-  text("suite-status-state", firstString(status, ["status"], manifestProbe.ok ? "available" : "unavailable"));
+  const rawStatus = firstString(status, ["status"], manifestProbe.ok ? "available" : "unavailable");
+  text("suite-status-state", stateClass(rawStatus).includes("good") ? "Connected" : rawStatus);
   text("suite-app-count", compact(apps.length));
   text("suite-capability-count", compact(capabilities.length));
   text("suite-provider-count", providersProbe.ok ? compact(providerRows) : "Unavailable");

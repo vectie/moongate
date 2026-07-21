@@ -555,6 +555,24 @@ code,
   font-size: 10.5px;
 }
 
+.panel-description {
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+div.panel-description strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-2);
+}
+
+div.panel-description p {
+  margin: 0;
+}
+
 .readiness-cards {
   display: grid;
 }
@@ -890,6 +908,21 @@ code,
   font-size: 10.5px;
 }
 
+.provider-advanced {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.provider-advanced-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 13px;
+  background: rgba(10, 12, 18, 0.2);
+}
+
 input,
 select,
 textarea {
@@ -1124,6 +1157,12 @@ td select,
   font-size: 11.5px;
 }
 
+.card-help {
+  margin: -3px 0 2px;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
 .setup-list {
   display: grid;
   gap: 7px;
@@ -1146,6 +1185,124 @@ td select,
 
 .setup-table-wrap {
   border-top: 1px solid var(--line);
+}
+
+.advanced-disclosure {
+  border-top: 1px solid var(--line);
+}
+
+.advanced-disclosure > summary {
+  min-height: 44px;
+  padding: 13px 16px;
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.advanced-disclosure > summary:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.advanced-disclosure > p {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.suite-advanced {
+  border-bottom: 1px solid var(--line);
+}
+
+.advanced-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding: 12px 16px;
+}
+
+.advanced-actions code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+.guide-section + .guide-section {
+  margin-top: 22px;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.guide-card {
+  display: grid;
+  align-content: start;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 15px;
+  background: var(--panel);
+}
+
+.guide-card h3,
+.guide-card p {
+  margin: 0;
+}
+
+.guide-card h3 {
+  font-size: 13px;
+}
+
+.guide-card p {
+  margin-top: 5px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.guide-card button {
+  width: fit-content;
+  margin-top: 13px;
+}
+
+.glossary-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.glossary-item {
+  border-bottom: 1px solid var(--line);
+  padding: 13px 15px;
+}
+
+.glossary-item:nth-child(odd) {
+  border-right: 1px solid var(--line);
+}
+
+.glossary-item strong,
+.glossary-item p {
+  margin: 0;
+}
+
+.glossary-item strong {
+  font-size: 11.5px;
+}
+
+.glossary-item p {
+  margin-top: 4px;
+  color: var(--text-3);
+  font-size: 10.5px;
 }
 
 .usage-metrics {
@@ -1509,9 +1666,15 @@ td select,
 
   .overview-grid,
   .connection-grid,
+  .guide-grid,
+  .glossary-list,
   .usage-breakdown-grid,
   .resilience-grid {
     grid-template-columns: 1fr;
+  }
+
+  .glossary-item:nth-child(odd) {
+    border-right: 0;
   }
 
   .copy-row {
@@ -1554,7 +1717,8 @@ td select,
   }
 
   .form-grid,
-  .compact-form {
+  .compact-form,
+  .provider-advanced-fields {
     grid-template-columns: 1fr;
   }
 

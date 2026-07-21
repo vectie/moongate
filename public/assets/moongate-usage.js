@@ -5,7 +5,7 @@ function renderStack(id, rows, labelKeys) {
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
-    target.innerHTML = `<div class="row-card"><strong>No data yet</strong><small>Use moongate through the proxy to populate this panel.</small></div>`;
+    target.innerHTML = `<div class="row-card"><strong>No data yet</strong><small>Send an AI request through MoonGate to populate this panel.</small></div>`;
     return;
   }
   for (const row of rows.slice(0, 8)) {
@@ -106,7 +106,7 @@ function renderLogs(data) {
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
-    target.innerHTML = `<div class="log-item"><strong>No recent requests</strong><small>Requests will appear here after proxy traffic.</small></div>`;
+    target.innerHTML = `<div class="log-item"><strong>No recent requests</strong><small>Requests will appear after an AI app sends traffic through MoonGate.</small></div>`;
     return;
   }
   for (const row of rows.slice(0, 12)) {

@@ -26,10 +26,10 @@ async test "moongate generated dashboard exposes operator ui surface" {
   }
   assert_true(html.contains("Provider Health"))
   assert_true(html.contains("Readiness"))
-  assert_true(html.contains("Gateway Checklist"))
+  assert_true(html.contains("Ready to use"))
   assert_false(html.contains("Operator Actions"))
   assert_false(html.contains("data-operator-action="))
-  assert_true(html.contains("Point your clients here"))
+  assert_true(html.contains("Connect an AI app"))
   assert_true(html.contains("OpenAI Chat"))
   assert_true(html.contains("/v1/chat/completions"))
   assert_true(html.contains("Anthropic Messages"))
@@ -44,23 +44,23 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("OpenClaw env"))
   assert_true(html.contains("data-snippet="))
   assert_true(html.contains("data-copy-snippet="))
-  assert_true(html.contains("Provider Control"))
+  assert_true(html.contains("Provider choice"))
   assert_true(html.contains("Provider Editor"))
   assert_true(html.contains("OpenAI Chat Completions"))
   assert_true(html.contains("value=\"openai_chat\""))
-  assert_true(html.contains("Integration Status"))
-  assert_true(html.contains("Refresh Setup"))
-  assert_true(html.contains("Import MCP Apps"))
-  assert_true(html.contains("Import Claude Desktop"))
-  assert_true(html.contains("MoonDesk &amp; Moon Suite"))
-  assert_true(html.contains("MoonDesk First"))
+  assert_true(html.contains("App readiness"))
+  assert_true(html.contains("Check Again"))
+  assert_true(html.contains("Detect App Extensions"))
+  assert_true(html.contains("Use Claude Desktop Setup"))
+  assert_true(html.contains("Connected Moon apps"))
+  assert_true(html.contains("MoonDesk first"))
   assert_true(html.contains("Refresh Suite"))
-  assert_true(html.contains("Write Status"))
-  assert_true(html.contains("Write MoonClaw"))
-  assert_true(html.contains("Resilience Control"))
-  assert_true(html.contains("Save Circuit"))
-  assert_true(html.contains("Save Stream"))
-  assert_true(html.contains("Check App"))
+  assert_true(html.contains("Rewrite Status File"))
+  assert_true(html.contains("Rewrite MoonClaw Providers"))
+  assert_true(html.contains("Backup &amp; failure handling"))
+  assert_true(html.contains("Save Failure Rules"))
+  assert_true(html.contains("Save Test Settings"))
+  assert_true(html.contains("Run Connection Test"))
   assert_true(html.contains("Save Provider"))
   assert_true(html.contains("Use This Provider"))
   assert_true(html.contains("Active route"))
@@ -69,10 +69,17 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Usage Explorer"))
   assert_true(html.contains("By Provider"))
   assert_true(html.contains("Request Detail"))
-  assert_true(html.contains("Start Proxy"))
-  assert_true(html.contains("Stop Proxy"))
-  assert_true(html.contains("Sync Live"))
-  assert_true(html.contains("Request Log"))
+  assert_true(html.contains("Start Routing"))
+  assert_true(html.contains("Stop Routing"))
+  assert_true(html.contains("Save Current Routes"))
+  assert_true(html.contains("AI requests"))
+  assert_true(html.contains("MoonGate in plain language"))
+  assert_true(html.contains("What each page is for"))
+  assert_true(html.contains("Command-line apps (previously called tools)"))
+  assert_false(html.contains("href=\"/metrics\""))
+  assert_false(html.contains("href=\"/usage/logs\""))
+  assert_true(html.contains("data-copy-path=\"/metrics\""))
+  assert_true(html.contains("data-copy-path=\"/usage/logs\""))
 }
 
 ///|
@@ -80,12 +87,12 @@ test "moongate ui section metadata drives primary navigation" {
   guard moongate_ui_sections_json() is Array(sections) else {
     fail("expected section array")
   }
-  assert_eq(sections.length(), 8)
+  assert_eq(sections.length(), 9)
   let html = moongate_rabbita_shell_html()
   for
     id in [
       "overview", "connect", "setup", "routing", "providers", "requests", "usage",
-      "suite",
+      "suite", "guide",
     ] {
     assert_true(html.contains("href=\"#\{id}\""))
     assert_true(
@@ -160,9 +167,7 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(frameworks.contains("draft: true"))
   assert_true(frameworks.contains("API keys stay separate"))
   assert_true(frameworks.contains("providerTemplateApiFormatLabel"))
-  assert_true(
-    frameworks.contains("selecting one changes Framework automatically"),
-  )
+  assert_true(frameworks.contains("selecting one changes AI app automatically"))
   assert_false(
     frameworks.contains(".filter((row) => row.provider.appType === appType)"),
   )
@@ -201,6 +206,8 @@ async test "moongate ui fetches current backend route surface" {
   assert_false(js.contains("operator-action-status"))
   assert_false(js.contains("data-operator-action"))
   assert_true(js.contains("goToPage"))
+  assert_true(js.contains("navigateToPage"))
+  assert_true(js.contains("history.pushState"))
   assert_true(js.contains("data-page-view"))
   assert_true(js.contains("showToast"))
   assert_true(js.contains("shellApiBase"))
@@ -468,13 +475,20 @@ async test "moongate rabbita shell renders lepusa preview structure" {
   assert_true(html.contains("/assets/moongate-suite.js"))
   assert_true(html.contains("/assets/moongate-resilience.js"))
   assert_true(html.contains("/assets/moongate.js"))
-  assert_true(html.contains("Gateway state, spend, and readiness at a glance."))
+  assert_true(
+    html.contains(
+      "See whether MoonGate is ready, which provider is in use, and what it has handled.",
+    ),
+  )
   assert_false(html.contains("Operator Actions"))
   assert_true(html.contains("data-page-view=\"overview\""))
-  assert_true(html.contains("Point your clients here"))
+  assert_true(html.contains("Connect an AI app"))
   assert_true(html.contains("data-copy-path=\"/v1/responses\""))
   assert_true(html.contains("data-snippet=\"openai-env\""))
   assert_true(html.contains("data-copy-snippet=\"metrics-url\""))
+  assert_true(html.contains("data-page-view=\"guide\""))
+  assert_false(html.contains("href=\"/metrics\""))
+  assert_false(html.contains("href=\"/usage/logs\""))
   assert_true(document.contains("<html"))
   assert_true(document.contains("<head"))
   assert_true(document.contains("<body"))
@@ -551,7 +565,7 @@ async test "moongate rabbita lepusa preview manifest parses" {
   assert_eq(parsed["rootHtml"], expected["rootHtml"])
   assert_eq(parsed["startup"], expected["startup"])
   assert_true(manifest.contains("\"rootHtml\""))
-  assert_true(manifest.contains("Local Gateway"))
+  assert_true(manifest.contains("Local AI router"))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))
   assert_true(manifest.contains("\"localhost\""))
   assert_false(manifest.contains("../lepusa"))

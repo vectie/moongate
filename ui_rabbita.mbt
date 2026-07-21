@@ -33,6 +33,7 @@ fn moongate_rabbita_shell_view(
           moongate_rabbita_requests_page(),
           moongate_rabbita_usage_page(),
           moongate_rabbita_suite_page(),
+          moongate_rabbita_guide_page(),
           @html.section(id="error-box", class="error-box", hidden=true, [
             @html.strong("Data refresh failed"),
             @html.p(id="error-message", ""),
@@ -79,21 +80,22 @@ fn moongate_rabbita_sidebar() -> @html.Html {
         ),
         @html.div(class="brand-copy", [
           @html.strong("MoonGate"),
-          @html.span("Local Gateway"),
+          @html.span("Local AI router"),
         ]),
       ]),
       @html.nav(id="nav", class="nav", [
-        moongate_rabbita_nav_group("Operate"),
+        moongate_rabbita_nav_group("Start"),
         moongate_rabbita_nav_link("overview", "OV", "Overview", active=true),
         moongate_rabbita_nav_link("connect", "CN", "Connect"),
         moongate_rabbita_nav_link("setup", "ST", "Setup"),
-        moongate_rabbita_nav_group("Traffic"),
+        moongate_rabbita_nav_group("Configure"),
         moongate_rabbita_nav_link("routing", "RT", "Routing"),
         moongate_rabbita_nav_link("providers", "PR", "Providers"),
         moongate_rabbita_nav_link("requests", "RQ", "Requests"),
-        moongate_rabbita_nav_group("Insight"),
+        moongate_rabbita_nav_group("Review"),
         moongate_rabbita_nav_link("usage", "US", "Usage"),
         moongate_rabbita_nav_link("suite", "SU", "Suite"),
+        moongate_rabbita_nav_link("guide", "?", "Guide"),
       ]),
       @html.div(class="sidebar-footer", [
         @html.div(class="sidebar-status", [
@@ -142,7 +144,7 @@ fn moongate_rabbita_topbar() -> @html.Html {
       @html.h1(id="page-title", "Overview"),
       @html.p(
         id="page-subtitle",
-        "Gateway state, spend, and readiness at a glance.",
+        "See whether MoonGate is ready, which provider is in use, and what it has handled.",
       ),
     ]),
     @html.div(class="topbar-actions", [
@@ -185,7 +187,7 @@ fn moongate_rabbita_overview_page() -> @html.Html {
   moongate_rabbita_page(
     "overview",
     "Overview",
-    "Gateway state, spend, and readiness at a glance.",
+    "See whether MoonGate is ready, which provider is in use, and what it has handled.",
     true,
     [
       @html.section(id="overview", class="hero", [
@@ -193,7 +195,7 @@ fn moongate_rabbita_overview_page() -> @html.Html {
           @html.span(id="gateway-hero-dot", class="dot warn", ""),
           @html.div(class="hero-text", [
             @html.strong([
-              @html.text("Gateway "),
+              @html.text("MoonGate "),
               @html.span(id="gateway-state", "Loading"),
             ]),
             @html.small(id="gateway-detail", "Connecting to the local API"),
@@ -201,14 +203,14 @@ fn moongate_rabbita_overview_page() -> @html.Html {
         ]),
         @html.div(class="hero-stats", [
           @html.div(class="hero-stat", [
-            @html.span("Proxy"),
+            @html.span("AI routing"),
             @html.strong(id="proxy-state", "Loading"),
             @html.small(id="proxy-detail", "Checking route state"),
           ]),
           @html.div(class="hero-stat", [
-            @html.span("Control plane"),
-            @html.strong("Local only"),
-            @html.small("Token-protected actions"),
+            @html.span("Settings access"),
+            @html.strong("This Mac only"),
+            @html.small("Other devices cannot change settings"),
           ]),
         ]),
         @html.div(class="hero-actions", [
@@ -216,14 +218,14 @@ fn moongate_rabbita_overview_page() -> @html.Html {
             id="proxy-stop",
             class="danger-ghost",
             type_="button",
-            "Stop Proxy",
+            "Stop Routing",
           ),
-          @html.button(id="proxy-start", type_="button", "Start Proxy"),
-          @html.a(
+          @html.button(id="proxy-start", type_="button", "Start Routing"),
+          @html.button(
             class="button-secondary",
-            href="/metrics",
-            rel="noreferrer",
-            "Metrics",
+            type_="button",
+            attrs=@html.Attrs::build().data_set("goto", "usage"),
+            "View Usage",
           ),
         ]),
       ]),
@@ -235,10 +237,10 @@ fn moongate_rabbita_overview_page() -> @html.Html {
           "Spend", "cost-total", "cost-detail", "Estimated total",
         ),
         moongate_rabbita_metric_card(
-          "Frameworks", "framework-total", "framework-detail", "Supported clients",
+          "Supported apps", "framework-total", "framework-detail", "AI app types",
         ),
         moongate_rabbita_metric_card(
-          "Gateway", "gateway-port", "gateway-port-detail", "Local bind port",
+          "Local port", "gateway-port", "gateway-port-detail", "Used by apps on this Mac",
         ),
       ]),
       @html.div(class="overview-grid", [
@@ -258,7 +260,7 @@ fn moongate_rabbita_connect_page() -> @html.Html {
   moongate_rabbita_page(
     "connect",
     "Connect",
-    "Point any supported client at MoonGate—copy a URL and go.",
+    "Copy the API address or command-line settings requested by another AI app.",
     false,
     [moongate_rabbita_connection_board()],
   )
@@ -269,7 +271,7 @@ fn moongate_rabbita_setup_page() -> @html.Html {
   moongate_rabbita_page(
     "setup",
     "Setup",
-    "Integrations, authentication, runtime tools, and proxy takeover.",
+    "Check sign-ins and whether installed AI apps are configured to use MoonGate.",
     false,
     [moongate_rabbita_setup_panel()],
   )
@@ -280,7 +282,7 @@ fn moongate_rabbita_routing_page() -> @html.Html {
   moongate_rabbita_page(
     "routing",
     "Routing",
-    "Choose upstreams and control how traffic recovers from failures.",
+    "Choose which provider each AI app uses; backups are available under Advanced.",
     false,
     [moongate_rabbita_frameworks_panel(), moongate_rabbita_resilience_panel()],
   )
@@ -291,7 +293,7 @@ fn moongate_rabbita_providers_page() -> @html.Html {
   moongate_rabbita_page(
     "providers",
     "Providers",
-    "Inspect upstream health, then edit the selected account in context.",
+    "Add provider accounts, test their real connection, and choose the one in use.",
     false,
     [
       @html.div(class="master-detail provider-master-detail", [
@@ -307,7 +309,7 @@ fn moongate_rabbita_requests_page() -> @html.Html {
   moongate_rabbita_page(
     "requests",
     "Requests",
-    "Trace every gateway call with its route, model, cost, and outcome.",
+    "See each AI request, which provider handled it, its cost, and whether it succeeded.",
     false,
     [
       @html.div(class="master-detail request-master-detail", [
@@ -323,7 +325,7 @@ fn moongate_rabbita_usage_page() -> @html.Html {
   moongate_rabbita_page(
     "usage",
     "Usage",
-    "Filter once to understand requests, tokens, cache efficiency, and spend.",
+    "Review requests, tokens, reused input, and estimated spend over time.",
     false,
     [
       moongate_rabbita_usage_explorer_panel(),
@@ -345,7 +347,7 @@ fn moongate_rabbita_suite_page() -> @html.Html {
   moongate_rabbita_page(
     "suite",
     "Moon Suite",
-    "MoonDesk is the primary operator surface, with MoonClaw, MoonBook, and MoonTown connected beneath it.",
+    "See how MoonDesk and the other Moon apps connect to MoonGate. MoonDesk comes first.",
     false,
     [moongate_rabbita_suite_panel()],
   )
@@ -361,7 +363,7 @@ fn moongate_rabbita_readiness_strip() -> @html.Html {
       @html.div(class="panel-head", [
         @html.div([
           @html.p(class="eyebrow", "Readiness"),
-          @html.h2("Gateway Checklist"),
+          @html.h2("Ready to use"),
         ]),
         @html.span(class="panel-hint", "Live checks"),
       ]),
@@ -379,7 +381,7 @@ fn moongate_rabbita_quick_connect() -> @html.Html {
   @html.section(class="quick-connect", [
     @html.div(class="section-title", [
       @html.h2("Connect quickly"),
-      @html.span("Most-used endpoints"),
+      @html.span("Addresses most apps ask for"),
       @html.a(
         href="#connect",
         attrs=@html.Attrs::build().data_set("goto", "connect"),
@@ -390,7 +392,10 @@ fn moongate_rabbita_quick_connect() -> @html.Html {
       "OpenAI", "Chat completions", "/v1/chat/completions",
     ),
     moongate_rabbita_connection_row("Anthropic", "Messages", "/v1/messages"),
-    moongate_rabbita_connection_row("Metrics", "Prometheus", "/metrics"),
+    moongate_rabbita_connection_row(
+      "Monitoring data (advanced)", "For Prometheus dashboards; this is not an app screen",
+      "/metrics",
+    ),
   ])
 }
 
@@ -399,9 +404,9 @@ fn moongate_rabbita_connection_board() -> @html.Html {
   @html.section(id="connection-board", class="connection-board", [
     @html.div(class="page-intro", [
       @html.div([
-        @html.h2("Point your clients here"),
+        @html.h2("Connect an AI app"),
         @html.p(
-          "MoonGate speaks each framework's native protocol on one local port. Copy an endpoint or an environment snippet; no secondary frontend is required.",
+          "Use this page when an app asks for a Base URL, API address, or environment variables. MoonGate supports several API formats on one local address.",
         ),
       ]),
       @html.span(
@@ -411,8 +416,8 @@ fn moongate_rabbita_connection_board() -> @html.Html {
       ),
     ]),
     @html.div(class="section-title", [
-      @html.h3("Endpoints"),
-      @html.span("One per protocol"),
+      @html.h3("API addresses"),
+      @html.span("Choose the format named by your app"),
     ]),
     @html.div(class="connection-grid", [
       moongate_rabbita_connection_card(
@@ -431,12 +436,12 @@ fn moongate_rabbita_connection_board() -> @html.Html {
         "OpenClaw", "/openclaw/v1/chat/completions", "OpenClaw chat route",
       ),
       moongate_rabbita_connection_card(
-        "Metrics", "/metrics", "Prometheus scrape",
+        "Monitoring data (advanced)", "/metrics", "For Prometheus dashboards; copy only",
       ),
     ]),
     @html.div(class="section-title", [
-      @html.h3("Environment snippets"),
-      @html.span("Paste into your shell"),
+      @html.h3("Command-line setup"),
+      @html.span("Copy only when a terminal app asks for environment variables"),
     ]),
     @html.div(class="snippet-list", [
       moongate_rabbita_connection_snippet(
@@ -449,7 +454,7 @@ fn moongate_rabbita_connection_board() -> @html.Html {
         "OpenClaw env", "openclaw-env", "OpenClaw clients",
       ),
       moongate_rabbita_connection_snippet(
-        "Metrics URL", "metrics-url", "Prometheus",
+        "Monitoring URL (advanced)", "metrics-url", "For Prometheus dashboards",
       ),
     ]),
   ])

@@ -1,16 +1,20 @@
 ///|
 fn moongate_rabbita_frameworks_panel() -> @html.Html {
   @html.article(id="frameworks", class="panel wide", [
-    moongate_rabbita_panel_head("Frameworks", "Provider Control", [
+    moongate_rabbita_panel_head("AI apps", "Provider choice", [
       @html.button(
         id="sync-live",
         class="button-secondary",
         type_="button",
-        "Sync Live",
+        "Save Current Routes",
       ),
     ]),
+    @html.p(
+      class="panel-description",
+      "Choose the provider each AI app should use. “One active” means the app uses one provider at a time; “Multiple active” means it can keep several provider entries.",
+    ),
     moongate_rabbita_table(
-      ["Framework", "Mode", "Current", "Providers", "Action"],
+      ["AI app", "Provider mode", "In use", "Available", "Actions"],
       "framework-rows",
     ),
   ])
@@ -81,12 +85,11 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
           "Templates fill the form; API keys are always entered separately.",
         ),
       ]),
-      moongate_rabbita_select_label("Framework", "provider-app", []),
-      moongate_rabbita_input_label("Provider ID", "provider-id", "", true),
-      moongate_rabbita_input_label("Name", "provider-name", "", true),
+      moongate_rabbita_select_label("AI app", "provider-app", []),
       moongate_rabbita_input_label(
-        "Provider Type", "provider-type", "openrouter, codex_oauth, gemini", false,
+        "Provider ID (internal name)", "provider-id", "", true,
       ),
+      moongate_rabbita_input_label("Name", "provider-name", "", true),
       moongate_rabbita_input_label(
         "Base URL",
         "provider-base-url",
@@ -94,7 +97,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         false,
         class="span-2",
       ),
-      moongate_rabbita_select_label("API Format", "provider-api-format", [
+      moongate_rabbita_select_label("API protocol", "provider-api-format", [
         ("", "Default"),
         ("openai", "OpenAI Responses"),
         ("openai_chat", "OpenAI Chat Completions"),
@@ -110,30 +113,43 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
       moongate_rabbita_input_label(
         "Default Model", "provider-default-model", "", false,
       ),
-      moongate_rabbita_input_label(
-        "Sonnet Model", "provider-sonnet-model", "", false,
-      ),
-      moongate_rabbita_input_label(
-        "Haiku Model", "provider-haiku-model", "", false,
-      ),
-      moongate_rabbita_input_label(
-        "Opus Model", "provider-opus-model", "", false,
-      ),
       @html.label(class="span-2", [
         @html.span("Notes"),
         @html.textarea(id="provider-notes", rows=3, moongate_rabbita_empty()),
       ]),
+      @html.details(class="advanced-disclosure provider-advanced span-2", [
+        @html.summary("Advanced provider options"),
+        @html.div(class="provider-advanced-fields", [
+          moongate_rabbita_input_label(
+            "Provider type", "provider-type", "openrouter, codex_oauth, gemini",
+            false,
+          ),
+          moongate_rabbita_input_label(
+            "Sonnet model override", "provider-sonnet-model", "", false,
+          ),
+          moongate_rabbita_input_label(
+            "Haiku model override", "provider-haiku-model", "", false,
+          ),
+          moongate_rabbita_input_label(
+            "Opus model override", "provider-opus-model", "", false,
+          ),
+          @html.div(class="check-row span-2", [
+            moongate_rabbita_check_label(
+              "provider-full-url", "Base URL is the complete request URL", false,
+            ),
+            moongate_rabbita_check_label(
+              "provider-fast-mode", "Faster Codex requests", false,
+            ),
+            moongate_rabbita_check_label(
+              "provider-clear-models", "Clear all model mappings", false,
+            ),
+          ]),
+        ]),
+      ]),
       @html.div(class="check-row span-2", [
         moongate_rabbita_check_label("provider-enabled", "Enabled", true),
-        moongate_rabbita_check_label("provider-full-url", "Full URL", false),
-        moongate_rabbita_check_label(
-          "provider-fast-mode", "Codex Fast Mode", false,
-        ),
         moongate_rabbita_check_label(
           "provider-clear-api-key", "Remove stored API key", false,
-        ),
-        moongate_rabbita_check_label(
-          "provider-clear-models", "Clear all model mappings", false,
         ),
       ]),
       @html.div(class="form-actions span-2", [
@@ -160,26 +176,34 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
 ///|
 fn moongate_rabbita_setup_panel() -> @html.Html {
   @html.article(id="setup", class="panel wide", [
-    moongate_rabbita_panel_head("Setup", "Integration Status", [
+    moongate_rabbita_panel_head("Setup", "App readiness", [
       @html.div(class="inline-actions", [
         @html.button(
           id="setup-refresh",
           class="button-secondary",
           type_="button",
-          "Refresh Setup",
+          "Check Again",
         ),
         @html.button(
           id="setup-import-mcp",
           class="button-secondary",
           type_="button",
-          "Import MCP Apps",
+          "Detect App Extensions",
         ),
       ]),
     ]),
+    @html.div(class="panel-description", [
+      @html.strong("What are command-line apps and extensions?"),
+      @html.p(
+        "MoonGate detects installed apps such as Codex, Claude, Gemini, and OpenCode so it knows which apps it can configure. Extensions (including MCP) let an AI app use capabilities such as files or services; you only need them when an app asks for one.",
+      ),
+    ]),
     @html.div(class="setup-grid", [
-      moongate_rabbita_setup_card("Auth", "setup-auth-state", "setup-auth-rows"),
       moongate_rabbita_setup_card(
-        "Runtime", "setup-runtime-state", "setup-runtime-rows",
+        "Signed-in accounts", "setup-auth-state", "setup-auth-rows",
+      ),
+      moongate_rabbita_setup_card(
+        "MoonGate & installed apps", "setup-runtime-state", "setup-runtime-rows",
       ),
       @html.div(class="setup-card", [
         @html.div(class="setup-card-head", [
@@ -195,21 +219,24 @@ fn moongate_rabbita_setup_panel() -> @html.Html {
           @html.button(
             id="setup-import-claude-desktop",
             type_="button",
-            "Import Claude Desktop",
+            "Use Claude Desktop Setup",
           ),
         ]),
       ]),
       moongate_rabbita_setup_card(
-        "MCP and Plugin", "setup-mcp-state", "setup-mcp-rows",
+        "AI app extensions", "setup-mcp-state", "setup-mcp-rows",
       ),
     ]),
     @html.div(class="table-wrap setup-table-wrap", [
       @html.table([
         @html.thead([
           @html.tr(
-            ["Framework", "Config", "Proxy Takeover", "Action"].map(fn(header) {
-              @html.th(header)
-            }),
+            ["AI app", "Settings found", "Routed through MoonGate", "Action"].map(fn(
+                header,
+              ) {
+                @html.th(header)
+              },
+            ),
           ),
         ]),
         @html.tbody(id="setup-config-rows", moongate_rabbita_empty()),
@@ -236,7 +263,7 @@ fn moongate_rabbita_setup_card(
 ///|
 fn moongate_rabbita_suite_panel() -> @html.Html {
   @html.article(id="suite", class="panel wide", [
-    moongate_rabbita_panel_head("MoonDesk First", "MoonDesk & Moon Suite", [
+    moongate_rabbita_panel_head("MoonDesk first", "Connected Moon apps", [
       @html.div(class="inline-actions", [
         @html.button(
           id="suite-refresh",
@@ -244,28 +271,44 @@ fn moongate_rabbita_suite_panel() -> @html.Html {
           type_="button",
           "Refresh Suite",
         ),
-        @html.button(id="suite-write-status", type_="button", "Write Status"),
+      ]),
+    ]),
+    @html.p(
+      class="panel-description",
+      "MoonDesk is the primary desktop control surface. The other Moon apps use MoonGate for AI routing, usage data, or health checks.",
+    ),
+    @html.div(class="usage-metrics", [
+      moongate_rabbita_status_value("Connection", "suite-status-state"),
+      moongate_rabbita_status_value("Connected apps", "suite-app-count"),
+      moongate_rabbita_status_value("Shared features", "suite-capability-count"),
+      moongate_rabbita_status_value(
+        "MoonClaw Providers", "suite-provider-count",
+      ),
+    ]),
+    moongate_rabbita_table(
+      ["App", "Purpose", "What it uses MoonGate for", "Connection check"],
+      "suite-app-rows",
+    ),
+    @html.details(class="advanced-disclosure suite-advanced", [
+      @html.summary("Advanced suite files"),
+      @html.p(
+        "These actions refresh machine-readable files used by other Moon apps. Most users do not need them.",
+      ),
+      @html.div(class="advanced-actions", [
+        @html.button(
+          id="suite-write-status",
+          type_="button",
+          "Rewrite Status File",
+        ),
         @html.button(
           id="suite-write-moonclaw",
           class="button-secondary",
           type_="button",
-          "Write MoonClaw",
+          "Rewrite MoonClaw Providers",
         ),
+        @html.code(id="suite-status-path", "Loading status file…"),
       ]),
     ]),
-    @html.div(class="usage-metrics", [
-      moongate_rabbita_status_value("Status", "suite-status-state"),
-      moongate_rabbita_status_value("Apps", "suite-app-count"),
-      moongate_rabbita_status_value("Capabilities", "suite-capability-count"),
-      moongate_rabbita_status_value(
-        "MoonClaw Providers", "suite-provider-count",
-      ),
-      moongate_rabbita_status_value("Status File", "suite-status-path"),
-    ]),
-    moongate_rabbita_table(
-      ["App", "Role", "Usage", "Key Route"],
-      "suite-app-rows",
-    ),
     @html.div(id="suite-integrations", class="stack", moongate_rabbita_empty()),
   ])
 }
@@ -273,7 +316,7 @@ fn moongate_rabbita_suite_panel() -> @html.Html {
 ///|
 fn moongate_rabbita_resilience_panel() -> @html.Html {
   @html.article(id="resilience", class="panel wide", [
-    moongate_rabbita_panel_head("Routing", "Resilience Control", [
+    moongate_rabbita_panel_head("Advanced", "Backup & failure handling", [
       @html.div(class="filter-row", [
         @html.select(
           id="resilience-app",
@@ -293,51 +336,68 @@ fn moongate_rabbita_resilience_panel() -> @html.Html {
         ),
       ]),
     ]),
-    @html.div(class="usage-metrics", [
-      moongate_rabbita_status_value("Auto Failover", "resilience-auto-state"),
-      moongate_rabbita_status_value("Circuit", "resilience-circuit-state"),
-      moongate_rabbita_status_value("Queue", "resilience-queue-count"),
-      moongate_rabbita_status_value("Limits", "resilience-limit-state"),
-    ]),
-    @html.div(class="resilience-grid", [
-      moongate_rabbita_circuit_card(),
-      moongate_rabbita_stream_card(),
-    ]),
-    @html.div(class="resilience-grid", [
-      @html.div(class="setup-card", [
-        @html.div(class="setup-card-head", [
-          @html.strong("Failover Queue"),
-          @html.button(
-            id="resilience-toggle-auto",
-            class="button-secondary",
-            type_="button",
-            "Toggle Auto",
-          ),
-        ]),
-        @html.div(id="failover-queue", class="stack", moongate_rabbita_empty()),
-      ]),
-      @html.div(class="setup-card", [
-        @html.div(class="setup-card-head", [
-          @html.strong("Available Providers"),
-          @html.button(
-            id="resilience-add-selected",
-            class="button-secondary",
-            type_="button",
-            "Add Selected",
-          ),
-        ]),
-        @html.div(
-          id="available-failover",
-          class="stack",
-          moongate_rabbita_empty(),
+    @html.p(
+      class="panel-description",
+      "Optional controls for using a backup provider and pausing a provider that repeatedly fails. Leave these at their defaults unless you need automatic recovery.",
+    ),
+    @html.details(class="advanced-disclosure", [
+      @html.summary("Show advanced failure controls"),
+      @html.div(class="usage-metrics", [
+        moongate_rabbita_status_value(
+          "Automatic backup", "resilience-auto-state",
+        ),
+        moongate_rabbita_status_value(
+          "Selected provider", "resilience-circuit-state",
+        ),
+        moongate_rabbita_status_value("Backup count", "resilience-queue-count"),
+        moongate_rabbita_status_value(
+          "Provider limits", "resilience-limit-state",
         ),
       ]),
+      @html.div(class="resilience-grid", [
+        moongate_rabbita_circuit_card(),
+        moongate_rabbita_stream_card(),
+      ]),
+      @html.div(class="resilience-grid", [
+        @html.div(class="setup-card", [
+          @html.div(class="setup-card-head", [
+            @html.strong("Backup order"),
+            @html.button(
+              id="resilience-toggle-auto",
+              class="button-secondary",
+              type_="button",
+              "Turn Automatic Backup On",
+            ),
+          ]),
+          @html.div(
+            id="failover-queue",
+            class="stack",
+            moongate_rabbita_empty(),
+          ),
+        ]),
+        @html.div(class="setup-card", [
+          @html.div(class="setup-card-head", [
+            @html.strong("Available backups"),
+            @html.button(
+              id="resilience-add-selected",
+              class="button-secondary",
+              type_="button",
+              "Add Selected",
+            ),
+          ]),
+          @html.div(
+            id="available-failover",
+            class="stack",
+            moongate_rabbita_empty(),
+          ),
+        ]),
+      ]),
+      @html.div(
+        id="stream-check-results",
+        class="log-list",
+        moongate_rabbita_empty(),
+      ),
     ]),
-    @html.div(
-      id="stream-check-results",
-      class="log-list",
-      moongate_rabbita_empty(),
-    ),
   ])
 }
 
@@ -345,47 +405,51 @@ fn moongate_rabbita_resilience_panel() -> @html.Html {
 fn moongate_rabbita_circuit_card() -> @html.Html {
   @html.div(class="setup-card", [
     @html.div(class="setup-card-head", [
-      @html.strong("Circuit Breaker"),
+      @html.strong("Pause a failing provider"),
       @html.span(id="resilience-circuit-status", class="state warn", "Loading"),
     ]),
+    @html.p(
+      class="card-help",
+      "Pause after repeated failures, then resume after enough successful checks. Failure rate uses a value from 0 to 1.",
+    ),
     @html.form(id="circuit-form", class="compact-form", [
       moongate_rabbita_input_label(
-        "Failure Threshold",
+        "Failures before pause",
         "circuit-failure-threshold",
         "",
         false,
         inputmode="numeric",
       ),
       moongate_rabbita_input_label(
-        "Success Threshold",
+        "Successes before recovery",
         "circuit-success-threshold",
         "",
         false,
         inputmode="numeric",
       ),
       moongate_rabbita_input_label(
-        "Timeout Seconds",
+        "Pause duration (seconds)",
         "circuit-timeout-seconds",
         "",
         false,
         inputmode="numeric",
       ),
       moongate_rabbita_input_label(
-        "Error Rate",
+        "Failure rate (0 to 1)",
         "circuit-error-rate-threshold",
         "",
         false,
         inputmode="decimal",
       ),
       moongate_rabbita_input_label(
-        "Min Requests",
+        "Minimum requests",
         "circuit-min-requests",
         "",
         false,
         inputmode="numeric",
       ),
       @html.div(class="inline-actions", [
-        @html.button(type_="submit", "Save Circuit"),
+        @html.button(type_="submit", "Save Failure Rules"),
         @html.button(
           id="resilience-reset-circuit",
           class="button-secondary",
@@ -401,12 +465,16 @@ fn moongate_rabbita_circuit_card() -> @html.Html {
 fn moongate_rabbita_stream_card() -> @html.Html {
   @html.div(class="setup-card", [
     @html.div(class="setup-card-head", [
-      @html.strong("Stream Check"),
+      @html.strong("Streaming connection test"),
       @html.span(id="resilience-stream-status", class="state warn", "Loading"),
     ]),
+    @html.p(
+      class="card-help",
+      "Checks that a provider can return an answer piece by piece. These settings affect only the test.",
+    ),
     @html.form(id="stream-form", class="compact-form", [
       moongate_rabbita_input_label(
-        "Timeout Seconds",
+        "Test timeout (seconds)",
         "stream-timeout-secs",
         "",
         false,
@@ -420,7 +488,7 @@ fn moongate_rabbita_stream_card() -> @html.Html {
         inputmode="numeric",
       ),
       moongate_rabbita_input_label(
-        "Degraded MS",
+        "Slow after (milliseconds)",
         "stream-degraded-threshold-ms",
         "",
         false,
@@ -436,19 +504,19 @@ fn moongate_rabbita_stream_card() -> @html.Html {
         "Gemini Model", "stream-gemini-model", "", false,
       ),
       moongate_rabbita_input_label(
-        "Prompt",
+        "Test prompt",
         "stream-test-prompt",
         "",
         false,
         class="span-2",
       ),
       @html.div(class="inline-actions span-2", [
-        @html.button(type_="submit", "Save Stream"),
+        @html.button(type_="submit", "Save Test Settings"),
         @html.button(
           id="resilience-stream-check",
           class="button-secondary",
           type_="button",
-          "Check App",
+          "Run Connection Test",
         ),
       ]),
     ]),
@@ -462,7 +530,7 @@ fn moongate_rabbita_provider_health_panel() -> @html.Html {
       @html.span(id="provider-count", class="pill", "0 providers"),
     ]),
     moongate_rabbita_table(
-      ["Provider", "Framework", "State", "Action"],
+      ["Provider", "AI app", "State", "Action"],
       "provider-rows",
     ),
   ])
@@ -520,7 +588,7 @@ fn moongate_rabbita_usage_explorer_panel() -> @html.Html {
       moongate_rabbita_status_value("Requests", "usage-filter-requests"),
       moongate_rabbita_status_value("Cost", "usage-filter-cost"),
       moongate_rabbita_status_value("Tokens", "usage-filter-tokens"),
-      moongate_rabbita_status_value("Cache Hit", "usage-filter-cache"),
+      moongate_rabbita_status_value("Reused input", "usage-filter-cache"),
     ]),
     @html.div(id="usage-trends", class="trend-bars", moongate_rabbita_empty()),
   ])
@@ -529,8 +597,13 @@ fn moongate_rabbita_usage_explorer_panel() -> @html.Html {
 ///|
 fn moongate_rabbita_request_log_panel() -> @html.Html {
   @html.article(id="requests", class="panel wide", [
-    moongate_rabbita_panel_head("Recent", "Request Log", [
-      @html.a(class="text-link", href="/usage/logs", rel="noreferrer", "JSON"),
+    moongate_rabbita_panel_head("Recent", "AI requests", [
+      @html.button(
+        class="button-secondary",
+        type_="button",
+        attrs=@html.Attrs::build().data_set("copy-path", "/usage/logs"),
+        "Copy Developer JSON URL",
+      ),
     ]),
     @html.div(
       id="request-log",

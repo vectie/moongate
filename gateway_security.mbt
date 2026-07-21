@@ -25,6 +25,9 @@ fn moongate_security_handler(
       moongate_write_control_auth_error(w)
       return
     }
+    if moongate_static_route(r.method_, path) {
+      w.header().set("Cache-Control", "no-store")
+    }
     next(r, w)
   }
 }

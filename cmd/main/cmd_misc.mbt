@@ -260,7 +260,7 @@ fn print_help() -> Unit {
     "  moongate stream-check all --app-type codex --proxy-targets-only true",
   )
   println(
-    "  moongate stream-check config set --codex-model gpt-5.5@low --timeout-secs 45",
+    "  moongate stream-check config set --codex-model gpt-5.6-sol --timeout-secs 45",
   )
   println(
     "  moongate mcp upsert --id filesystem --command npx --name Filesystem",

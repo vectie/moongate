@@ -67,7 +67,7 @@ function renderSetupConfigRows(configRows, takeoverProbe) {
       <td><strong>${escapeHtml(row.app.label)}</strong><small>${escapeHtml(row.app.id)}</small></td>
       <td><span class="${stateClass(row.probe.ok ? configText : "error")}">${escapeHtml(configText)}</span></td>
       <td><span class="${stateClass(takeoverText)}">${escapeHtml(takeoverText)}</span></td>
-      <td><button type="button" data-setup-action="open-config" data-app="${escapeHtml(row.app.id)}">Open Config</button></td>
+      <td><button type="button" data-setup-action="open-config" data-app="${escapeHtml(row.app.id)}">Open Settings Folder</button></td>
     `;
     target.appendChild(tr);
   }
@@ -128,30 +128,30 @@ async function loadSetupStatus() {
   );
 
   const proxyRunning = proxyRunningProbe.ok ? proxyRunningProbe.data === true : false;
-  setSetupState("setup-runtime-state", proxyRunning ? "Proxy on" : "Proxy off", proxyRunning);
+  setSetupState("setup-runtime-state", proxyRunning ? "Routing on" : "Routing off", proxyRunning);
   renderSetupList("setup-runtime-rows", [
-    ["Portable Mode", setupProbeText(runtimeProbe, [], runtimeProbe.ok ? stateText(runtimeProbe.data) : "Unavailable"), runtimeProbe.ok],
-    ["Proxy Running", proxyRunningProbe.ok ? stateText(proxyRunningProbe.data) : proxyRunningProbe.error, proxyRunning],
-    ["Tool Versions", toolsProbe.ok ? `${recordCount(toolsProbe.data, ["tools", "versions"])} tools` : toolsProbe.error, toolsProbe.ok],
-    ["Settings", settingsProbe.ok ? "Loaded" : settingsProbe.error, settingsProbe.ok],
+    ["Portable storage (advanced)", setupProbeText(runtimeProbe, [], runtimeProbe.ok ? stateText(runtimeProbe.data) : "Unavailable"), runtimeProbe.ok],
+    ["AI routing", proxyRunningProbe.ok ? stateText(proxyRunningProbe.data) : proxyRunningProbe.error, proxyRunning],
+    ["Detected command-line apps", toolsProbe.ok ? `${recordCount(toolsProbe.data, ["tools", "versions"])} detected` : toolsProbe.error, toolsProbe.ok],
+    ["MoonGate settings", settingsProbe.ok ? "Loaded" : settingsProbe.error, settingsProbe.ok],
   ]);
 
   const desktopConfigured = setupProbeGood(desktopProbe, ["configured", "gatewayTokenConfigured"]);
   setSetupState("setup-desktop-state", desktopConfigured ? "Configured" : "Not configured", desktopConfigured);
   renderSetupList("setup-desktop-rows", [
-    ["Configured", setupProbeText(desktopProbe, ["configured"], "Unknown"), desktopConfigured],
-    ["Mode", setupProbeText(desktopProbe, ["mode"], "Not selected"), desktopProbe.ok],
-    ["Gateway Token", setupProbeText(desktopProbe, ["gatewayTokenConfigured"], "Unknown"), setupProbeGood(desktopProbe, ["gatewayTokenConfigured"])],
-    ["Base URL", setupProbeText(desktopProbe, ["actualBaseUrl", "expectedBaseUrl"], "Not applied"), desktopProbe.ok],
+    ["Ready to use MoonGate", setupProbeText(desktopProbe, ["configured"], "Unknown"), desktopConfigured],
+    ["Connection mode", setupProbeText(desktopProbe, ["mode"], "Not selected"), desktopProbe.ok],
+    ["Local access key", setupProbeText(desktopProbe, ["gatewayTokenConfigured"], "Unknown"), setupProbeGood(desktopProbe, ["gatewayTokenConfigured"])],
+    ["MoonGate address", setupProbeText(desktopProbe, ["actualBaseUrl", "expectedBaseUrl"], "Not applied"), desktopProbe.ok],
   ]);
 
   const mcpCount = mcpProbe.ok ? recordCount(mcpProbe.data, ["servers", "items"]) : 0;
   const pluginReady = setupProbeGood(pluginProbe, ["exists"]) || (pluginAppliedProbe.ok && pluginAppliedProbe.data === true);
   setSetupState("setup-mcp-state", mcpCount > 0 || pluginReady ? "Configured" : "Not configured", mcpCount > 0 || pluginReady);
   renderSetupList("setup-mcp-rows", [
-    ["MCP Servers", mcpProbe.ok ? `${mcpCount} configured` : mcpProbe.error, mcpCount > 0],
-    ["Claude Plugin", setupProbeText(pluginProbe, ["exists"], "Unavailable"), setupProbeGood(pluginProbe, ["exists"])],
-    ["Plugin Applied", pluginAppliedProbe.ok ? stateText(pluginAppliedProbe.data) : pluginAppliedProbe.error, pluginAppliedProbe.data === true],
+    ["MCP connections", mcpProbe.ok ? `${mcpCount} configured` : mcpProbe.error, mcpCount > 0],
+    ["Claude extension", setupProbeText(pluginProbe, ["exists"], "Unavailable"), setupProbeGood(pluginProbe, ["exists"])],
+    ["Extension active", pluginAppliedProbe.ok ? stateText(pluginAppliedProbe.data) : pluginAppliedProbe.error, pluginAppliedProbe.data === true],
   ]);
 
   renderSetupConfigRows(configRows, takeoverProbe);

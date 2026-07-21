@@ -544,7 +544,7 @@ MoonGate currently exposes the standalone local routes below:
 - `POST /proxy/stream-check/provider?appType=codex&providerId=codex-oauth`
 - `POST /proxy/stream-check/all?appType=codex&proxyTargetsOnly=true`
 - `GET /proxy/stream-check/config`
-- `POST /proxy/stream-check/config?codexModel=gpt-5.5@low&timeoutSecs=45`
+- `POST /proxy/stream-check/config?codexModel=gpt-5.6-sol&timeoutSecs=45`
 - `GET /v1/models`
 - `POST /config/models?baseUrl=https://api.example.com&apiKey=sk-...`
 - `GET /claude-desktop/v1/models`

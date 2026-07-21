@@ -48,6 +48,7 @@ function renderProviderRows(data, error = "") {
     const provider = firstString(row, ["providerName", "name"], providerId);
     const app = firstString(row, ["appType", "app", "type"]);
     const status = firstString(row, ["healthStatus", "status", "state", "health", "isHealthy", "is_healthy"], "unknown");
+    const statusLabel = String(status).toLowerCase() === "unknown" ? "Not tested" : status;
     const model = firstString(
       row,
       ["model", "modelId", "activeModel", "routeModel"],
@@ -74,8 +75,8 @@ function renderProviderRows(data, error = "") {
     if (row.isCurrent === true) tr.dataset.currentProvider = "true";
     tr.innerHTML = `
       <td><strong>${escapeHtml(provider)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}<small>Model: ${escapeHtml(model)}</small>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
-      <td>${escapeHtml(app)}</td>
-      <td><div class="provider-state-stack"><span class="state ${credentialClass}">${escapeHtml(credentialLabel)}</span><span class="${stateClass(status)}">${escapeHtml(status)}</span></div></td>
+      <td>${escapeHtml(providerTemplateFrameworkLabel(app))}</td>
+      <td><div class="provider-state-stack"><span class="state ${credentialClass}">${escapeHtml(credentialLabel)}</span><span class="${stateClass(statusLabel)}">${escapeHtml(statusLabel)}</span></div></td>
       <td><div class="inline-actions">${routeAction}<button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></div></td>
     `;
     target.appendChild(tr);
@@ -91,7 +92,7 @@ function renderFrameworkRows(rows) {
     const providers = row.providers || [];
     const providerCount = providers.length;
     const current = row.current || "";
-    const mode = row.mode === "additive" ? "Additive" : "Single";
+    const mode = row.mode === "additive" ? "Multiple active" : "One active";
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.id)}</small></td>
@@ -150,10 +151,10 @@ function renderFrameworkActions(row, providerCount) {
   const actions = [
     `<button type="button" data-action="edit-provider" data-app="${escapeHtml(row.id)}">Edit</button>`,
     `<button type="button" data-action="test-provider" data-app="${escapeHtml(row.id)}">Test</button>`,
-    `<button type="button" data-action="import-live" data-app="${escapeHtml(row.id)}">Import Live</button>`,
+    `<button type="button" data-action="import-live" data-app="${escapeHtml(row.id)}">Import Existing Setup</button>`,
   ];
   if (row.mode !== "additive" && providerCount > 0) {
-    actions.unshift(`<button type="button" data-action="switch-provider" data-app="${escapeHtml(row.id)}">Switch</button>`);
+    actions.unshift(`<button type="button" data-action="switch-provider" data-app="${escapeHtml(row.id)}">Use Selected</button>`);
   }
   if (row.desktop) {
     actions.push(`<button type="button" data-action="claude-desktop-import">Import Claude</button>`);
@@ -362,7 +363,7 @@ function renderProviderTemplates() {
   text(
     "provider-template-status",
     rows.length > 0
-      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"} across ${frameworkCount} framework${frameworkCount === 1 ? "" : "s"}; selecting one changes Framework automatically. API keys stay separate.`
+      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"} across ${frameworkCount} AI app${frameworkCount === 1 ? "" : "s"}; selecting one changes AI app automatically. API keys stay separate.`
       : "No ready templates. Load a JSON file to add one.",
   );
 }

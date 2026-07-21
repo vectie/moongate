@@ -61,7 +61,7 @@ function renderProviderActionStack(id, rows, emptyText, action) {
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
-    target.innerHTML = `<div class="row-card"><strong>${escapeHtml(emptyText)}</strong><small>No provider action available.</small></div>`;
+    target.innerHTML = `<div class="row-card"><strong>${escapeHtml(emptyText)}</strong><small>Nothing to change here.</small></div>`;
     return;
   }
   for (const row of rows.slice(0, 10)) {
@@ -86,7 +86,7 @@ function renderStreamCheckResults(rows) {
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
-    target.innerHTML = `<div class="log-item"><strong>No stream-check results</strong><small>Run Check App to probe configured providers.</small></div>`;
+    target.innerHTML = `<div class="log-item"><strong>No connection-test results</strong><small>Run Connection Test to check configured providers.</small></div>`;
     return;
   }
   for (const row of rows) {
@@ -160,6 +160,12 @@ async function loadResilience() {
   const availableRows = available.ok ? arrayFrom(available.data, []) : [];
   const autoState = autoFailover.ok ? stateText(autoFailover.data) : autoFailover.error;
   resilienceAutoFailoverEnabled = autoFailover.ok && autoFailover.data === true;
+  const autoButton = $("resilience-toggle-auto");
+  if (autoButton) {
+    autoButton.textContent = resilienceAutoFailoverEnabled
+      ? "Turn Automatic Backup Off"
+      : "Turn Automatic Backup On";
+  }
   const circuitState = circuitStats.ok && circuitStats.data ? firstString(circuitStats.data, ["state"], "closed") : "Unknown";
   const limitText = limits.ok ? firstString(limits.data, ["status", "state"], "Loaded") : "Unknown";
 
@@ -169,8 +175,8 @@ async function loadResilience() {
   text("resilience-limit-state", limitText);
   setSetupState("resilience-circuit-status", circuitConfig.ok ? "Configured" : "Unavailable", circuitConfig.ok);
   setSetupState("resilience-stream-status", streamConfig.ok ? "Configured" : "Unavailable", streamConfig.ok);
-  renderProviderActionStack("failover-queue", queueRows, "Failover queue is empty", "remove-failover");
-  renderProviderActionStack("available-failover", availableRows, "No available providers", "add-failover");
+  renderProviderActionStack("failover-queue", queueRows, "No backup providers yet", "remove-failover");
+  renderProviderActionStack("available-failover", availableRows, "No other providers available", "add-failover");
   return {
     warningCount: [providersProbe, circuitConfig, streamConfig, autoFailover, queue, available, circuitStats, limits]
       .some((probe) => !probe.ok && probe.error !== "No provider selected") ? 1 : 0,

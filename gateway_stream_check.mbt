@@ -16,7 +16,7 @@ fn StreamCheckConfig::default() -> StreamCheckConfig {
     max_retries: 2,
     degraded_threshold_ms: 6000,
     claude_model: "claude-haiku-4-5-20251001",
-    codex_model: "gpt-5.5@low",
+    codex_model: "gpt-5.6-sol",
     gemini_model: "gemini-3.5-flash",
     test_prompt: "Who are you?",
   }

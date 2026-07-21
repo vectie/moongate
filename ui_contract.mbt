@@ -45,6 +45,7 @@ fn moongate_ui_sections() -> Array[(String, String)] {
     ("requests", "Requests"),
     ("usage", "Usage"),
     ("suite", "Suite"),
+    ("guide", "Guide"),
   ]
 }
 
@@ -125,10 +126,10 @@ pub fn moongate_ui_endpoints_json() -> Json {
 pub fn moongate_ui_readiness_cards_json() -> Json {
   Json::array([
     moongate_readiness_card_json(
-      "gateway", "Gateway", "Ready", "Unavailable", "#overview",
+      "gateway", "MoonGate", "Ready", "Unavailable", "#overview",
     ),
     moongate_readiness_card_json(
-      "proxy", "Proxy", "Running", "Needs start", "#overview",
+      "proxy", "AI routing", "Running", "Needs start", "#overview",
     ),
     moongate_readiness_card_json(
       "providers", "Providers", "Configured", "Add provider", "#providers",

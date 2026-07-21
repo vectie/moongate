@@ -19,7 +19,7 @@ function readinessCardState(card, state) {
     return {
       ok,
       value: ok ? card.ready : card.waiting,
-      detail: state.proxyDetail || "Proxy route status",
+      detail: state.proxyDetail || "AI routing status",
     };
   }
   if (card.id === "providers") {
@@ -118,7 +118,7 @@ async function refreshDashboard() {
   if ($("gateway-dot")) $("gateway-dot").className = `dot ${gatewayGood ? "good" : "bad"}`;
   if ($("gateway-hero-dot")) $("gateway-hero-dot").className = `dot ${gatewayGood ? "good" : "bad"}`;
   if ($("sidebar-gateway-dot")) $("sidebar-gateway-dot").className = `dot ${gatewayGood ? "good pulse" : "bad"}`;
-  text("sidebar-gateway-state", gatewayGood ? "Gateway connected" : "Gateway unavailable");
+  text("sidebar-gateway-state", gatewayGood ? "MoonGate connected" : "MoonGate unavailable");
   text("gateway-detail", statusProbe.ok ? firstString(status, ["address", "baseUrl", "url"], "Local API ready") : statusProbe.error);
 
   const proxyValue = proxy?.status ?? proxy?.state ?? proxy?.running ?? proxy?.enabled;
@@ -129,7 +129,7 @@ async function refreshDashboard() {
       : stateText(proxyValue);
   text("proxy-state", proxyState);
   if ($("proxy-state")) $("proxy-state").className = stateClass(proxyState);
-  text("proxy-detail", proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "Proxy route status") : proxyProbe.error);
+  text("proxy-detail", proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "AI routing status") : proxyProbe.error);
 
   if (summaryProbe.ok || statusProbe.ok) {
     updateTotals(summary, status);
@@ -151,7 +151,7 @@ async function refreshDashboard() {
     healthOk: gatewayGood,
     gatewayDetail: statusProbe.ok ? firstString(status, ["address", "baseUrl", "url"], "Local API ready") : statusProbe.error,
     proxyRunning: proxyProbe.ok && stateClass(proxyState).includes("good"),
-    proxyDetail: proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "Proxy route status") : proxyProbe.error,
+    proxyDetail: proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "AI routing status") : proxyProbe.error,
     totalRequests: summary.totalRequests ?? summary.requests ?? summary.requestCount ?? status.total_requests ?? status.totalRequests ?? 0,
     totalCost: summary.totalCostUsd ?? summary.costUsd ?? summary.totalCost ?? status.totalCostUsd ?? status.costUsd ?? 0,
   });
@@ -223,7 +223,7 @@ function renderConnectionValues() {
   text("gateway-port", port);
   text("gateway-port-detail", `${base.protocol.replace(":", "")} on ${base.hostname}`);
   text("framework-total", compact(frameworkApps.length));
-  text("framework-detail", "Supported client contracts");
+  text("framework-detail", "AI app types");
   document.querySelectorAll("[data-url-path]").forEach((node) => {
     node.textContent = connectionUrl(node.dataset.urlPath);
   });
@@ -460,18 +460,24 @@ function goToPage(page) {
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 
+function navigateToPage(page) {
+  if (!document.querySelector(`[data-page-view="${page}"]`)) return;
+  if (window.location.hash !== `#${page}`) history.pushState(null, "", `#${page}`);
+  goToPage(page);
+}
+
 document.querySelector(".nav")?.addEventListener("click", (event) => {
   const link = event.target.closest("[data-page]");
   if (!link) return;
   event.preventDefault();
-  goToPage(link.dataset.page);
+  navigateToPage(link.dataset.page);
 });
 
 document.addEventListener("click", (event) => {
   const link = event.target.closest("[data-goto]");
   if (!link) return;
   event.preventDefault();
-  goToPage(link.dataset.goto);
+  navigateToPage(link.dataset.goto);
 });
 
 window.addEventListener("hashchange", () => {
