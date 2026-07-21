@@ -27,6 +27,19 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         "New Provider",
       ),
     ]),
+    @html.div(class="provider-route-banner", [
+      @html.div([
+        @html.small("Active route"),
+        @html.strong(id="provider-active-route", "Loading provider route…"),
+      ]),
+      @html.button(
+        id="provider-use",
+        class="button-secondary",
+        type_="button",
+        disabled=true,
+        "Use This Provider",
+      ),
+    ]),
     @html.form(id="provider-form", class="form-grid", [
       @html.input(input_type=Hidden, id="provider-original-id"),
       @html.input(input_type=Hidden, id="provider-original-app"),
@@ -137,6 +150,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
           type_="button",
           "Test Provider",
         ),
+        @html.span(id="provider-test-result", class="state", "Not tested"),
         @html.span(id="provider-form-status", ""),
       ]),
     ]),
@@ -443,12 +457,12 @@ fn moongate_rabbita_stream_card() -> @html.Html {
 
 ///|
 fn moongate_rabbita_provider_health_panel() -> @html.Html {
-  @html.article(id="providers", class="panel wide", [
+  @html.article(id="provider-health", class="panel wide", [
     moongate_rabbita_panel_head("Routing", "Provider Health", [
       @html.span(id="provider-count", class="pill", "0 providers"),
     ]),
     moongate_rabbita_table(
-      ["Provider", "App", "Status", "Model", "Action"],
+      ["Provider", "Framework", "State", "Action"],
       "provider-rows",
     ),
   ])

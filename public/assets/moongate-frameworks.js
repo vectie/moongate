@@ -3,20 +3,47 @@ let builtinProviderTemplates = [];
 let importedProviderTemplates = [];
 let frameworkLoadGeneration = 0;
 let providerTemplateLoadGeneration = 0;
+let pendingProviderDeleteKey = "";
+
+function providerFrameworkOrder(appType) {
+  const index = frameworkApps.findIndex((app) => app.id === appType);
+  return index < 0 ? frameworkApps.length : index;
+}
+
+function sortedProviderRows(rows) {
+  return rows.slice().sort((left, right) => {
+    const leftApp = firstString(left, ["appType", "app", "type"], "");
+    const rightApp = firstString(right, ["appType", "app", "type"], "");
+    const byFramework = providerFrameworkOrder(leftApp) - providerFrameworkOrder(rightApp);
+    if (byFramework !== 0) return byFramework;
+    if ((left.isCurrent === true) !== (right.isCurrent === true)) return left.isCurrent === true ? -1 : 1;
+    const leftConfigured = left.origin === "user";
+    const rightConfigured = right.origin === "user";
+    if (leftConfigured !== rightConfigured) return leftConfigured ? -1 : 1;
+    const leftIndex = Number.isFinite(left.sortIndex) ? left.sortIndex : Number.MAX_SAFE_INTEGER;
+    const rightIndex = Number.isFinite(right.sortIndex) ? right.sortIndex : Number.MAX_SAFE_INTEGER;
+    if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+    const leftName = firstString(left, ["providerName", "name", "providerId", "id"], "");
+    const rightName = firstString(right, ["providerName", "name", "providerId", "id"], "");
+    const byName = leftName.localeCompare(rightName, undefined, { sensitivity: "base" });
+    if (byName !== 0) return byName;
+    return firstString(left, ["providerId", "id"], "").localeCompare(firstString(right, ["providerId", "id"], ""));
+  });
+}
 
 function renderProviderRows(data, error = "") {
-  const rows = arrayFrom(data, ["providers", "items", "data", "health"]);
+  const rows = sortedProviderRows(arrayFrom(data, ["providers", "items", "data", "health"]));
   text("provider-count", `${rows.length} route${rows.length === 1 ? "" : "s"}`);
   const target = $("provider-rows");
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
     target.innerHTML = error
-      ? `<tr><td colspan="5"><strong>Provider routes unavailable</strong><small>${escapeHtml(error)}</small></td></tr>`
-      : `<tr><td colspan="5">No provider routes configured.</td></tr>`;
+      ? `<tr><td colspan="4"><strong>Provider routes unavailable</strong><small>${escapeHtml(error)}</small></td></tr>`
+      : `<tr><td colspan="4">No provider routes configured.</td></tr>`;
     return;
   }
-  for (const row of rows.slice(0, 12)) {
+  for (const row of rows) {
     const providerId = firstString(row, ["providerId", "id", "providerName", "name"]);
     const provider = firstString(row, ["providerName", "name"], providerId);
     const app = firstString(row, ["appType", "app", "type"]);
@@ -31,13 +58,25 @@ function renderProviderRows(data, error = "") {
       row.isCurrent === true ? "Current route" : "",
       row.builtIn === true ? "Built-in" : row.origin === "user" ? "Configured" : firstString(row, ["origin"], ""),
     ].filter(Boolean).join(" · ");
+    const credentialState = firstString(row, ["credentialState"], row.hasApiKey === true ? "stored" : "missing");
+    const credentialLabel = credentialState === "stored"
+      ? "Stored securely"
+      : credentialState === "oauth"
+        ? "OAuth"
+        : "Not configured";
+    const credentialClass = credentialState === "stored" || credentialState === "oauth" ? "good" : "warn";
+    const routeAction = row.isCurrent === true
+      ? `<span class="state good">In use</span>`
+      : providerRow(app)?.mode === "additive"
+        ? ""
+        : `<button type="button" class="button-secondary" data-provider-use="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Use</button>`;
     const tr = document.createElement("tr");
+    if (row.isCurrent === true) tr.dataset.currentProvider = "true";
     tr.innerHTML = `
-      <td><strong>${escapeHtml(provider)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
+      <td><strong>${escapeHtml(provider)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}<small>Model: ${escapeHtml(model)}</small>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
       <td>${escapeHtml(app)}</td>
-      <td><span class="${stateClass(status)}">${escapeHtml(status)}</span></td>
-      <td>${escapeHtml(model)}</td>
-      <td><button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></td>
+      <td><div class="provider-state-stack"><span class="state ${credentialClass}">${escapeHtml(credentialLabel)}</span><span class="${stateClass(status)}">${escapeHtml(status)}</span></div></td>
+      <td><div class="inline-actions">${routeAction}<button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></div></td>
     `;
     target.appendChild(tr);
   }
@@ -172,7 +211,72 @@ function setProviderStatus(value) {
   text("provider-form-status", value);
 }
 
+function resetProviderDeleteConfirmation() {
+  pendingProviderDeleteKey = "";
+  const button = $("provider-delete");
+  if (!button) return;
+  button.textContent = "Delete Provider";
+  button.classList.remove("delete-confirm");
+}
+
+function setProviderTestResult(result = null) {
+  const target = $("provider-test-result");
+  if (!target) return;
+  target.classList.remove("good", "bad", "warn");
+  if (!result) {
+    target.classList.add("warn");
+    target.textContent = "Not tested";
+    return;
+  }
+  const live = result.networkRequestPerformed === true;
+  const success = live && result.success === true;
+  const status = Number.isFinite(result.httpStatus) ? `HTTP ${result.httpStatus}` : "no HTTP response";
+  const model = firstString(result, ["modelUsed"], "unknown model");
+  const latency = Number.isFinite(result.responseTimeMs) ? `${Math.round(result.responseTimeMs)} ms` : "latency unavailable";
+  target.classList.add(success ? "good" : "bad");
+  target.textContent = `${success ? "Live test passed" : "Live test failed"} · ${status} · ${model} · ${latency}`;
+}
+
+function setProviderCredentialState(provider = null) {
+  const input = $("provider-api-key");
+  if (!input) return;
+  if (provider?.credentialState === "stored") {
+    input.placeholder = "Stored securely — leave blank to keep";
+    text("provider-credential-status", "Stored securely. Leave this box blank to retain it; MoonGate never reads the key back into the UI.");
+  } else if (provider?.credentialState === "oauth") {
+    input.placeholder = "OAuth provider — no API key needed";
+    text("provider-credential-status", "Uses Codex OAuth. The token remains in the private local credential store.");
+  } else {
+    input.placeholder = "Paste API key";
+    text("provider-credential-status", "No stored credential. A pasted key is saved privately and never returned to the UI.");
+  }
+}
+
+function renderProviderRouteState(appType, providerId = "") {
+  const row = providerRow(appType);
+  const useButton = $("provider-use");
+  if (!row) {
+    text("provider-active-route", `${providerTemplateFrameworkLabel(appType)} · route state unavailable`);
+    if (useButton) useButton.disabled = true;
+    return;
+  }
+  if (row.mode === "additive") {
+    text("provider-active-route", `${row.label} uses all enabled providers (additive routing)`);
+    if (useButton) useButton.disabled = true;
+    return;
+  }
+  const current = providerById(appType, row.current);
+  const currentName = current ? firstString(current, ["name", "providerName"], row.current) : row.current || "None";
+  text("provider-active-route", `${row.label}: ${currentName}${row.current ? ` (${row.current})` : ""}`);
+  if (useButton) {
+    const savedProvider = providerId ? providerById(appType, providerId) : null;
+    useButton.disabled = !savedProvider || providerId === row.current;
+    useButton.textContent = providerId === row.current ? "Currently In Use" : "Use This Provider";
+  }
+}
+
 function clearProviderForm(appType) {
+  resetProviderDeleteConfirmation();
   text("provider-original-id", "");
   $("provider-original-id").value = "";
   $("provider-original-app").value = "";
@@ -195,7 +299,10 @@ function clearProviderForm(appType) {
   $("provider-fast-mode").checked = false;
   $("provider-clear-api-key").checked = false;
   $("provider-clear-models").checked = false;
-  text("provider-credential-status", "No stored credential");
+  setProviderCredentialState();
+  setProviderTestResult();
+  $("provider-delete").disabled = true;
+  renderProviderRouteState($("provider-app").value);
   setProviderStatus("New provider");
 }
 
@@ -301,14 +408,9 @@ function applyProviderTemplate() {
   $("provider-full-url").checked = provider.isFullUrl === true;
   $("provider-fast-mode").checked = provider.codexFastMode === true;
   if (existing) {
-    text(
-      "provider-credential-status",
-      existing.credentialState === "stored"
-        ? "Stored API key will be retained unless explicitly removed."
-        : existing.credentialState === "oauth"
-          ? "Uses OAuth authentication; account status is shown in Setup."
-          : "No stored API key.",
-    );
+    setProviderCredentialState(existing);
+    $("provider-delete").disabled = existing.builtIn === true;
+    renderProviderRouteState(provider.appType, provider.id);
   }
   const mapping = provider.modelMapping || {};
   for (const [key, id] of [
@@ -380,14 +482,7 @@ function editProvider(appType, providerId) {
   $("provider-base-url").value = firstString(provider, ["baseUrl", "websiteUrl"], "");
   $("provider-api-format").value = firstString(provider, ["apiFormat"], firstString(provider.settingsConfig, ["apiFormat"], ""));
   $("provider-api-key").value = "";
-  text(
-    "provider-credential-status",
-    provider.credentialState === "stored"
-      ? "Stored API key will be retained unless explicitly removed."
-      : provider.credentialState === "oauth"
-        ? "Uses OAuth authentication; account status is shown in Setup."
-        : "No stored API key.",
-  );
+  setProviderCredentialState(provider);
   const mapping = provider.modelMapping || {};
   $("provider-default-model").value = firstString(mapping, ["defaultModel"], "");
   $("provider-sonnet-model").value = firstString(mapping, ["sonnetModel"], "");
@@ -400,6 +495,13 @@ function editProvider(appType, providerId) {
   $("provider-clear-api-key").checked = false;
   $("provider-clear-models").checked = false;
   $("provider-id").readOnly = providerRow(appType)?.mode !== "additive";
+  resetProviderDeleteConfirmation();
+  $("provider-delete").disabled = provider.builtIn === true;
+  $("provider-delete").title = provider.builtIn === true
+    ? "Built-in routes cannot be deleted"
+    : "Delete this configured provider";
+  setProviderTestResult();
+  renderProviderRouteState(appType, providerId);
   setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in route)" : ""}`);
 }
 
@@ -459,13 +561,18 @@ async function saveProvider() {
     payload.originalId = originalId;
     payload.originalAppType = originalAppType || payload.appType;
     await postJson(endpoints.providerUpdate, payload);
-    setProviderStatus(`Updated ${payload.id}`);
   } else {
     await postJson(endpoints.providerCreate, payload);
-    setProviderStatus(`Created ${payload.id}`);
   }
   await refresh();
   editProvider(payload.appType, payload.id);
+  const saved = providerById(payload.appType, payload.id);
+  const credential = saved?.credentialState === "stored"
+    ? "stored credential retained"
+    : saved?.credentialState === "oauth"
+      ? "OAuth retained"
+      : "no credential stored";
+  setProviderStatus(`${originalId ? "Updated" : "Created"} ${payload.id} · ${credential}`);
 }
 
 async function deleteProviderFromForm() {
@@ -475,11 +582,23 @@ async function deleteProviderFromForm() {
     setProviderStatus("Select a provider before deleting");
     return;
   }
-  if (!window.confirm(`Delete provider ${providerId} from ${appType}?`)) return;
+  const provider = providerById(appType, providerId);
+  if (provider?.builtIn === true) {
+    setProviderStatus("Built-in routes cannot be deleted");
+    return;
+  }
+  const deleteKey = `${appType}:${providerId}`;
+  if (pendingProviderDeleteKey !== deleteKey) {
+    pendingProviderDeleteKey = deleteKey;
+    $("provider-delete").textContent = "Confirm Delete";
+    $("provider-delete").classList.add("delete-confirm");
+    setProviderStatus(`Click Confirm Delete to permanently remove ${providerId}. If it is active, MoonGate will switch to the next route.`);
+    return;
+  }
   await deleteJson(endpoints.providerDelete, { appType, id: providerId });
   clearProviderForm(appType);
-  setProviderStatus(`Deleted ${providerId}`);
   await refresh();
+  setProviderStatus(`Deleted ${providerId} · active route is now ${providerRow(appType)?.current || "none"}`);
 }
 
 async function testProviderFromForm() {
@@ -495,7 +614,30 @@ async function testProviderFromForm() {
     providerId,
     draft: true,
   });
-  setProviderStatus(firstString(result, ["message", "status"], "Provider test completed"));
+  setProviderTestResult(result);
+  if (result.networkRequestPerformed !== true) {
+    setProviderStatus("Test rejected: the backend did not perform a network request");
+    return;
+  }
+  const status = Number.isFinite(result.httpStatus) ? `HTTP ${result.httpStatus}` : "no HTTP response";
+  setProviderStatus(`${firstString(result, ["message", "status"], "Provider test completed")} · ${status}`);
+}
+
+async function useProviderFromForm() {
+  const appType = $("provider-original-app").value.trim() || $("provider-app").value;
+  const providerId = $("provider-original-id").value.trim();
+  if (!providerId || !providerById(appType, providerId)) {
+    setProviderStatus("Save the provider before selecting it for routing");
+    return;
+  }
+  if (providerRow(appType)?.mode === "additive") {
+    setProviderStatus("This framework uses additive routing; every enabled provider is active");
+    return;
+  }
+  await postJson(endpoints.providerSwitch, { appType, id: providerId });
+  await refresh();
+  editProvider(appType, providerId);
+  setProviderStatus(`Now using ${providerId} for ${providerTemplateFrameworkLabel(appType)}`);
 }
 
 async function loadFrameworkRow(app) {
@@ -522,6 +664,9 @@ async function loadFrameworks() {
   const allProviders = rows.flatMap((row) => row.providers || []);
   const errors = rows.filter((row) => row.error);
   renderProviderRows(allProviders, allProviders.length === 0 && errors.length > 0 ? errors[0].error : "");
+  const editingApp = $("provider-original-app")?.value || $("provider-app")?.value;
+  const editingId = $("provider-original-id")?.value || "";
+  if (editingApp) renderProviderRouteState(editingApp, editingId);
   const builtInProviderCount = allProviders.filter((provider) => provider.builtIn === true).length;
   mergeReadinessState({
     providerCount: allProviders.length - builtInProviderCount,

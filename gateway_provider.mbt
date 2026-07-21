@@ -1508,6 +1508,7 @@ async fn ProxyService::handle_update_providers_sort_order(
 ///|
 async fn ProxyService::handle_stream_check_provider(
   self : ProxyService,
+  auth : AuthService,
   stream_check_config : StreamCheckConfig,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
@@ -1524,10 +1525,17 @@ async fn ProxyService::handle_stream_check_provider(
       write_usage_bad_request(w, "invalid_provider_draft")
       return
     }
-    self.stream_check_provider_target_result_json(stream_check_config, target)
+    let target = match
+      self.provider_router.provider_by_id(app_type, provider_id) {
+      Some(existing) => provider_preserve_hidden_update_fields(target, existing)
+      None => target
+    }
+    self.stream_check_provider_target_result_json(
+      auth, stream_check_config, target,
+    )
   } else {
     guard self.stream_check_provider_result_json(
-        stream_check_config, app_type, provider_id,
+        auth, stream_check_config, app_type, provider_id,
       )
       is Some(result) else {
       write_usage_bad_request(w, "provider_not_found")
@@ -1541,6 +1549,7 @@ async fn ProxyService::handle_stream_check_provider(
 ///|
 async fn ProxyService::handle_stream_check_all_providers(
   self : ProxyService,
+  auth : AuthService,
   stream_check_config : StreamCheckConfig,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
@@ -1559,7 +1568,7 @@ async fn ProxyService::handle_stream_check_all_providers(
       app_type, proxy_targets_only,
     ) {
     guard self.stream_check_provider_result_json(
-        stream_check_config, app_type, provider_id,
+        auth, stream_check_config, app_type, provider_id,
       )
       is Some(result) else {
       continue
@@ -1570,8 +1579,9 @@ async fn ProxyService::handle_stream_check_all_providers(
 }
 
 ///|
-fn ProxyService::stream_check_provider_result_json(
+async fn ProxyService::stream_check_provider_result_json(
   self : ProxyService,
+  auth : AuthService,
   stream_check_config : StreamCheckConfig,
   app_type : String,
   provider_id : String,
@@ -1581,42 +1591,249 @@ fn ProxyService::stream_check_provider_result_json(
     return None
   }
   Some(
-    self.stream_check_provider_target_result_json(stream_check_config, provider),
+    self.stream_check_provider_target_result_json(
+      auth, stream_check_config, provider,
+    ),
   )
 }
 
 ///|
-fn ProxyService::stream_check_provider_target_result_json(
+async fn ProxyService::stream_check_provider_target_result_json(
   self : ProxyService,
+  auth : AuthService,
   stream_check_config : StreamCheckConfig,
   provider : ProviderRouteTarget,
 ) -> Json {
-  ignore(self)
   let config = stream_check_effective_config_for_provider(
     stream_check_config, provider,
   )
-  let app_type = provider.app_type
-  let model = stream_check_reported_model_for_app(config, app_type)
-  let configured = true
-  let status = if configured { "operational" } else { "failed" }
-  let message = if configured {
-    "Check succeeded"
+  let model = stream_check_model_for_provider(config, provider)
+  let endpoint = stream_check_endpoint_for_provider(provider, model)
+  let network_request_performed = if provider.provider_type ==
+    Some("codex_oauth") {
+    auth.credentials is Some(_)
   } else {
-    "Provider has no standalone endpoint configuration"
+    provider.base_url is Some(_) && provider.api_key is Some(_)
+  }
+  let started_at = @async.now().to_int()
+  let live_result = self.stream_check_live_request(
+    auth,
+    provider,
+    model,
+    config.test_prompt,
+  )
+  let response_time_ms = max_int(@async.now().to_int() - started_at, 0)
+  let (success, http_status, message) = match live_result {
+    Ok((status_code, response_body)) => {
+      let success = status_code >= 200 && status_code < 300
+      let message = if success {
+        "Live request succeeded"
+      } else {
+        "Live request returned HTTP \{status_code}: \{body_snippet(response_body, 360)}"
+      }
+      (success, Some(status_code), message)
+    }
+    Err(error) =>
+      (false, None, "Live request failed: \{body_snippet(error, 360)}")
   }
   let obj : Map[String, Json] = {
-    "status": Json::string(status),
-    "success": Json::boolean(configured),
+    "status": Json::string(if success { "operational" } else { "failed" }),
+    "success": Json::boolean(success),
     "message": Json::string(message),
     "modelUsed": Json::string(model),
     "testedAt": Json::number((@async.now().to_int() / 1000).to_double()),
     "retryCount": Json::number(0.0),
+    "responseTimeMs": Json::number(response_time_ms.to_double()),
+    "networkRequestPerformed": Json::boolean(network_request_performed),
+    "endpoint": Json::string(endpoint),
   }
-  if configured {
-    obj["responseTimeMs"] = Json::number(0.0)
-    obj["httpStatus"] = Json::number(200.0)
+  match http_status {
+    Some(code) => obj["httpStatus"] = Json::number(code.to_double())
+    None => ()
   }
   Json::object(obj)
+}
+
+///|
+fn stream_check_model_for_provider(
+  config : StreamCheckConfig,
+  provider : ProviderRouteTarget,
+) -> String {
+  let fallback = stream_check_reported_model_for_app(config, provider.app_type)
+  match provider.model_mapping {
+    Some(mapping) => mapping.default_model.unwrap_or(fallback)
+    None => fallback
+  }
+}
+
+///|
+fn stream_check_api_format(provider : ProviderRouteTarget) -> String {
+  match provider.api_format {
+    Some("openai") | Some("openai_responses") => "openai_responses"
+    Some("openai_chat") => "openai_chat"
+    Some("gemini_native") => "gemini_native"
+    Some("anthropic") => "anthropic"
+    _ =>
+      if provider.app_type == "claude" || provider.app_type == "claude-desktop" {
+        "anthropic"
+      } else {
+        "openai_responses"
+      }
+  }
+}
+
+///|
+fn stream_check_endpoint_for_provider(
+  provider : ProviderRouteTarget,
+  model : String,
+) -> String {
+  if provider.provider_type == Some("codex_oauth") {
+    return "https://chatgpt.com/backend-api/codex/responses"
+  }
+  let endpoint = match stream_check_api_format(provider) {
+    "openai_chat" => "/chat/completions"
+    "anthropic" => "/messages"
+    "gemini_native" => "/v1beta/models/\{model}:generateContent"
+    _ => "/responses"
+  }
+  match provider.base_url {
+    Some(base_url) =>
+      if stream_check_api_format(provider) == "gemini_native" {
+        claude_compatible_provider_url(
+          base_url,
+          endpoint,
+          "gemini_native",
+          provider.is_full_url,
+        )
+      } else {
+        codex_compatible_provider_url(base_url, endpoint)
+      }
+    None => endpoint
+  }
+}
+
+///|
+fn stream_check_request_body(
+  api_format : String,
+  model : String,
+  prompt : String,
+) -> Json {
+  match api_format {
+    "openai_chat" =>
+      {
+        "model": Json::string(model),
+        "messages": [{ "role": "user", "content": prompt }],
+        "max_tokens": Json::number(8.0),
+        "stream": Json::boolean(false),
+      }.to_json()
+    "anthropic" =>
+      {
+        "model": Json::string(model),
+        "max_tokens": Json::number(8.0),
+        "messages": [{ "role": "user", "content": prompt }],
+        "stream": Json::boolean(false),
+      }.to_json()
+    "gemini_native" =>
+      {
+        "contents": Json::array([
+          Json::object({
+            "role": Json::string("user"),
+            "parts": Json::array([
+              Json::object({ "text": Json::string(prompt) }),
+            ]),
+          }),
+        ]),
+        "generationConfig": Json::object({
+          "maxOutputTokens": Json::number(8.0),
+        }),
+      }
+      |> Json::object
+    _ =>
+      {
+        "model": Json::string(model),
+        "instructions": Json::string(
+          "Reply briefly to this connectivity check.",
+        ),
+        "input": [
+          {
+            "role": "user",
+            "content": [{ "type": "input_text", "text": prompt }],
+          },
+        ],
+        "store": Json::boolean(false),
+        "stream": Json::boolean(false),
+        "max_output_tokens": Json::number(8.0),
+      }.to_json()
+  }
+}
+
+///|
+async fn ProxyService::stream_check_live_request(
+  self : ProxyService,
+  auth : AuthService,
+  provider : ProviderRouteTarget,
+  model : String,
+  prompt : String,
+) -> Result[(Int, String), String] {
+  let api_format = stream_check_api_format(provider)
+  let request = stream_check_request_body(api_format, model, prompt)
+  if provider.provider_type == Some("codex_oauth") {
+    guard auth.credentials is Some(creds) else {
+      return Err("Codex OAuth is not authenticated")
+    }
+    let oauth_request = match request {
+      Object(obj) => {
+        obj["stream"] = Json::boolean(true)
+        obj.remove("max_output_tokens")
+        Json::object(obj)
+      }
+      _ => request
+    }
+    let client = auth.codex_client(creds, accept="text/event-stream")
+    let response = client.post("/backend-api/codex/responses", oauth_request) catch {
+      error => {
+        client.close()
+        return Err("\{error}")
+      }
+    }
+    let response_body = client.read_all().text()
+    client.close()
+    return Ok((response.code, response_body))
+  }
+  guard provider.base_url is Some(_) && provider.api_key is Some(_) else {
+    return Err("Provider needs both a base URL and a stored API key")
+  }
+  match api_format {
+    "anthropic" | "gemini_native" =>
+      match
+        self.post_claude_compatible_provider_json(
+          provider,
+          match api_format {
+            "gemini_native" => "/v1beta/models/\{model}:generateContent"
+            _ => "/messages"
+          },
+          request,
+          api_format,
+          None,
+        ) {
+        Ok((response, body)) => Ok((response.code, body))
+        Err(error) => Err(error)
+      }
+    _ =>
+      match
+        self.post_codex_compatible_provider_json(
+          provider,
+          if api_format == "openai_chat" {
+            "/chat/completions"
+          } else {
+            "/responses"
+          },
+          request,
+        ) {
+        Ok((response, body)) => Ok((response.code, body))
+        Err(error) => Err(error)
+      }
+  }
 }
 
 ///|

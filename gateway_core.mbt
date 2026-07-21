@@ -65,6 +65,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   self.skills.register_routes(router)
   self.proxy.register_management_routes(
     router,
+    self.auth,
     self.usage,
     self.host,
     bound_port,

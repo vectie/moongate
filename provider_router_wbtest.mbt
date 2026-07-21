@@ -838,7 +838,7 @@ test "provider router exposes moongate provider map and current id" {
 }
 
 ///|
-test "provider router delete provider mirrors moongate current guard" {
+test "provider router delete active provider selects deterministic fallback" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -856,19 +856,29 @@ test "provider router delete provider mirrors moongate current guard" {
   )
   router.set_current_provider("claude", "a")
   router.set_failover_queue("claude", ["a", "b"])
-  assert_false(router.delete_provider("claude", "a"))
-  assert_eq(router.current_provider_id("claude"), Some("a"))
-  json_inspect(router.failover_queue_json("claude"), content=[
-    { "providerId": "a", "providerName": "Provider A", "sortIndex": null },
-    { "providerId": "b", "providerName": "Provider B", "sortIndex": null },
-  ])
-  router.set_current_provider("claude", "b")
   assert_true(router.delete_provider("claude", "a"))
   assert_eq(router.current_provider_id("claude"), Some("b"))
   json_inspect(router.failover_queue_json("claude"), content=[
     { "providerId": "b", "providerName": "Provider B", "sortIndex": null },
   ])
   assert_false(router.delete_provider("claude", "missing"))
+}
+
+///|
+test "provider router refuses to delete built-in routes" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="codex-oauth",
+      provider_name="Codex OAuth",
+      provider_type=Some("codex_oauth"),
+      origin="builtin",
+    ),
+  )
+  router.set_current_provider("codex", "codex-oauth")
+  assert_false(router.delete_provider("codex", "codex-oauth"))
+  assert_eq(router.current_provider_id("codex"), Some("codex-oauth"))
 }
 
 ///|

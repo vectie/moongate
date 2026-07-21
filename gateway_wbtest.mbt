@@ -3247,13 +3247,14 @@ test "stream check config accepts moongate canonical body and query fields" {
 }
 
 ///|
-test "stream check result uses moongate camelCase shape" {
+async test "stream check result reports a real unauthenticated request" {
   let gateway = Gateway::new(port=17017, host="127.0.0.17", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
     codex_model: "codex-check-model",
   }
   guard gateway.proxy.stream_check_provider_result_json(
+      gateway.auth,
       gateway.config.stream_check_config,
       "codex",
       "codex-oauth",
@@ -3261,19 +3262,22 @@ test "stream check result uses moongate camelCase shape" {
     is Some(Object(result)) else {
     fail("expected stream check result")
   }
-  assert_eq(result["status"], Json::string("operational"))
-  assert_eq(result["success"], Json::boolean(true))
-  assert_eq(result["message"], Json::string("Check succeeded"))
+  assert_eq(result["status"], Json::string("failed"))
+  assert_eq(result["success"], Json::boolean(false))
+  assert_true(
+    result["message"].stringify().contains("Codex OAuth is not authenticated"),
+  )
   assert_eq(result["modelUsed"], Json::string("codex-check-model"))
   assert_eq(result["retryCount"], Json::number(0.0))
-  assert_eq(result["httpStatus"], Json::number(200.0))
+  assert_eq(result["networkRequestPerformed"], Json::boolean(false))
+  assert_true(result.get("httpStatus") is None)
   guard result.get("testedAt") is Some(Number(_)) else {
     fail("expected testedAt")
   }
 }
 
 ///|
-test "stream check strips moongate codex effort suffix from result model" {
+async test "stream check strips moongate codex effort suffix from result model" {
   let gateway = Gateway::new(port=17018, host="127.0.0.18", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3281,6 +3285,7 @@ test "stream check strips moongate codex effort suffix from result model" {
     claude_model: "claude-sonnet-4-5#high",
   }
   guard gateway.proxy.stream_check_provider_result_json(
+      gateway.auth,
       gateway.config.stream_check_config,
       "codex",
       "codex-oauth",
@@ -3299,7 +3304,7 @@ test "stream check strips moongate codex effort suffix from result model" {
 }
 
 ///|
-test "stream check provider test config overrides global config like moongate" {
+async test "stream check provider test config overrides global config like moongate" {
   let gateway = Gateway::new(port=17019, host="127.0.0.19", model="gpt-5")
   gateway.config.stream_check_config = {
     ..gateway.config.stream_check_config,
@@ -3345,6 +3350,7 @@ test "stream check provider test config overrides global config like moongate" {
   assert_eq(config.degraded_threshold_ms, 1234)
   assert_eq(config.test_prompt, "provider prompt")
   guard gateway.proxy.stream_check_provider_result_json(
+      gateway.auth,
       gateway.config.stream_check_config,
       "codex",
       "codex-provider-test",

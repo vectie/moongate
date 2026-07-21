@@ -839,7 +839,7 @@ code,
   min-width: 0;
 }
 
-.provider-master-detail #providers,
+.provider-master-detail #provider-health,
 .request-master-detail #requests {
   position: sticky;
   top: 105px;
@@ -950,6 +950,35 @@ input[type="checkbox"] {
   padding-top: 14px;
 }
 
+.provider-route-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: rgba(139, 157, 255, 0.06);
+}
+
+.provider-route-banner > div {
+  display: grid;
+  gap: 3px;
+}
+
+.provider-route-banner small {
+  color: var(--text-3);
+}
+
+.provider-route-banner strong {
+  color: var(--text);
+}
+
+#provider-test-result {
+  min-height: 30px;
+}
+
 #provider-form-status {
   margin-left: auto;
   color: var(--text-3);
@@ -1031,6 +1060,12 @@ td select,
 .provider-picker {
   display: grid;
   gap: 3px;
+}
+
+.provider-state-stack {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
 }
 
 .state.good,
@@ -1400,7 +1435,7 @@ td select,
     grid-template-columns: 1fr;
   }
 
-  .provider-master-detail #providers,
+  .provider-master-detail #provider-health,
   .request-master-detail #requests {
     position: static;
     max-height: none;

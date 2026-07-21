@@ -1385,11 +1385,11 @@ fn ProviderRouter::delete_provider(
   guard self.providers.get(app_type) is Some(app_providers) else {
     return false
   }
-  guard app_providers.get(provider_id) is Some(_) else { return false }
-  if !provider_app_is_additive(app_type) &&
-    self.current_provider_ids.get(app_type) == Some(provider_id) {
+  guard app_providers.get(provider_id) is Some(provider) else { return false }
+  if provider.is_builtin_route() {
     return false
   }
+  let was_current = self.current_provider_ids.get(app_type) == Some(provider_id)
   app_providers.remove(provider_id)
   self.providers.set(app_type, app_providers)
   self.remove_from_failover_queue(app_type, provider_id)
@@ -1398,13 +1398,8 @@ fn ProviderRouter::delete_provider(
     app_sort_indices.remove(provider_id)
     self.provider_sort_indices.set(app_type, app_sort_indices)
   }
-  if self.current_provider_ids.get(app_type) == Some(provider_id) {
-    let mut next_provider_id : String? = None
-    for candidate_id in app_providers.keys() {
-      next_provider_id = Some(candidate_id)
-      break
-    }
-    match next_provider_id {
+  if was_current {
+    match self.default_current_provider_id(app_type, app_providers) {
       Some(next_provider_id) =>
         self.current_provider_ids.set(app_type, next_provider_id)
       None => self.current_provider_ids.remove(app_type)

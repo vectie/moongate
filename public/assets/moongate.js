@@ -430,8 +430,15 @@ $("framework-rows")?.addEventListener("click", (event) => {
 });
 
 $("provider-rows")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-provider-edit]");
+  const button = event.target.closest("button[data-provider-edit], button[data-provider-use]");
   if (!button) return;
+  if (button.dataset.providerUse) {
+    postJson(endpoints.providerSwitch, {
+      appType: button.dataset.providerApp,
+      id: button.dataset.providerUse,
+    }).then(refresh).catch(showError);
+    return;
+  }
   editProvider(button.dataset.providerApp, button.dataset.providerEdit);
 });
 
@@ -518,6 +525,10 @@ $("provider-form")?.addEventListener("submit", (event) => {
 
 $("provider-delete")?.addEventListener("click", () => {
   deleteProviderFromForm().catch(showError);
+});
+
+$("provider-use")?.addEventListener("click", () => {
+  useProviderFromForm().catch(showError);
 });
 
 $("provider-test")?.addEventListener("click", () => {

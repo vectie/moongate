@@ -53,6 +53,7 @@ fn ProxyService::register_inference_routes(
 fn ProxyService::register_management_routes(
   self : ProxyService,
   router : @httpx.Router,
+  auth : AuthService,
   usage : UsageService,
   host : String,
   port : Int,
@@ -175,10 +176,10 @@ fn ProxyService::register_management_routes(
     self.handle_proxy_running(w)
   })
   router.add_handler(Post, "/proxy/stream-check/provider", (r, w) => {
-    self.handle_stream_check_provider(stream_check_config, r, w)
+    self.handle_stream_check_provider(auth, stream_check_config, r, w)
   })
   router.add_handler(Post, "/proxy/stream-check/all", (r, w) => {
-    self.handle_stream_check_all_providers(stream_check_config, r, w)
+    self.handle_stream_check_all_providers(auth, stream_check_config, r, w)
   })
   router.add_handler(Get, "/providers", (r, w) => {
     self.handle_get_providers(r, w)
