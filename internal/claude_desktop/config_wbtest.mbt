@@ -267,3 +267,20 @@ test "claude desktop gateway token is moongate product-owned state" {
   assert_eq(path, expected)
   assert_false(path.contains("/.moonsuite/claude_desktop_gateway_token"))
 }
+
+///|
+test "claude desktop storage prefers workspace then Lepusa app data" {
+  assert_eq(
+    claude_desktop_workspace_root_for(
+      Some("/workspace"),
+      Some("/app-data"),
+      "/cwd",
+    ),
+    "/workspace",
+  )
+  assert_eq(
+    claude_desktop_workspace_root_for(None, Some("/app-data"), "/cwd"),
+    "/app-data",
+  )
+  assert_eq(claude_desktop_workspace_root_for(None, None, "/cwd"), "/cwd")
+}

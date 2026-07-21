@@ -84,8 +84,25 @@ fn get_home() -> String raise Error {
 
 ///|
 fn codex_active_workspace_root() -> String {
-  @os.cwd() catch {
-    _ => "."
+  let configured = @os.getenv("MOONSUITE_WORKSPACE_ROOT") catch { _ => None }
+  let app_data = @os.getenv("LEPUSA_APP_DATA_DIR") catch { _ => None }
+  let fallback = @os.cwd() catch { _ => "." }
+  codex_workspace_root_for(configured, app_data, fallback)
+}
+
+///|
+fn codex_workspace_root_for(
+  configured : String?,
+  app_data : String?,
+  fallback : String,
+) -> String {
+  match configured {
+    Some(root) if !root.trim().is_empty() => root
+    _ =>
+      match app_data {
+        Some(root) if !root.trim().is_empty() => root
+        _ => fallback
+      }
   }
 }
 
