@@ -373,7 +373,7 @@ async test "moongate lepusa manifest uses published package boundary shape" {
         "published Lepusa ProjectConfig failed to load moongate lepusa.json: \{problems.join("; ")}",
       )
   }
-  assert_true(moon_mod.contains("\"vectie/lepusa@0.1.2\""))
+  assert_true(moon_mod.contains("\"vectie/lepusa@0.1.3\""))
   assert_true(moon_mod.contains("\"moonbit-community/rabbita@0.12.4\""))
   let generated = moongate_lepusa_manifest_json()
   let parsed = @json.parse(manifest) catch {
@@ -393,6 +393,8 @@ async test "moongate lepusa manifest uses published package boundary shape" {
   assert_true(manifest.contains("\"identifier\": \"dev.vectie.moongate\""))
   assert_true(manifest.contains("\"icon\": \"assets/moongate.icns\""))
   assert_true(@fsx.exists_as_file("assets/moongate.icns"))
+  assert_true(@fsx.exists_as_file("assets/moongate-macos.svg"))
+  assert_true(manifest.contains("\"identity\": \"-\""))
   assert_true(@fsx.exists_as_file("public/assets/moongate.svg"))
   assert_true(manifest.contains("\"backend\": \"system-webview\""))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))

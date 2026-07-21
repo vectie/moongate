@@ -3,6 +3,9 @@
   "productName": "MoonGate",
   "version": "0.1.0",
   "icon": "assets/moongate.icns",
+  "signing": {
+    "identity": "-"
+  },
   "runtime": {
     "backend": "system-webview",
     "assetProtocol": "lepusa",
