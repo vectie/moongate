@@ -52,7 +52,8 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Refresh Setup"))
   assert_true(html.contains("Import MCP Apps"))
   assert_true(html.contains("Import Claude Desktop"))
-  assert_true(html.contains("Moon Suite Integration"))
+  assert_true(html.contains("MoonDesk &amp; Moon Suite"))
+  assert_true(html.contains("MoonDesk First"))
   assert_true(html.contains("Refresh Suite"))
   assert_true(html.contains("Write Status"))
   assert_true(html.contains("Write MoonClaw"))
@@ -122,7 +123,7 @@ async test "moongate ui fetches current backend route surface" {
     "/usage/trends", "/usage/provider-stats", "/usage/model-stats", "/usage/logs?limit=8",
     "/usage/request-detail", "/proxy/start", "/proxy/stop", "/proxy/sync-current-providers-live",
     "/providers", "/providers/current", "/providers/switch", "/providers/import-live",
-    "/providers/update", "/proxy/stream-check/provider", "/providers/claude-desktop/import",
+    "/providers/update", "/providers/presets", "/proxy/stream-check/provider", "/providers/claude-desktop/import",
     "/auth/status", "/config/status", "/config/folder/open", "/providers/claude-desktop/status",
     "/mcp/servers", "/mcp/import-apps", "/settings", "/runtime/portable-mode", "/tools/versions",
     "/proxy/running", "/proxy/takeover-status", "/plugin/claude/status", "/plugin/claude/applied",
@@ -146,6 +147,9 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(core.contains("postJson"))
   assert_true(core.contains("deleteJson"))
   assert_true(frameworks.contains("providerPayloadFromForm"))
+  assert_true(frameworks.contains("loadProviderTemplates"))
+  assert_true(frameworks.contains("loadProviderTemplateFile"))
+  assert_true(frameworks.contains("API keys stay separate"))
   assert_true(frameworks.contains("loadFrameworks"))
   assert_true(frameworks.contains("renderProviderRows"))
   assert_false(js.contains("function providerPayloadFromForm"))
@@ -153,6 +157,8 @@ async test "moongate ui fetches current backend route surface" {
   assert_false(js.contains("function loadUsageExplorer"))
   assert_true(setup.contains("loadSetupStatus"))
   assert_true(suite.contains("loadSuite"))
+  assert_true(suite.contains("moondesk"))
+  assert_true(suite.contains("Primary"))
   assert_true(resilience.contains("loadResilience"))
   assert_false(js.contains("function loadSetupStatus"))
   assert_false(js.contains("function loadSuite"))
@@ -238,6 +244,7 @@ test "moongate ui endpoint metadata preserves dashboard route support" {
   }
   assert_eq(endpoints["health"], Json::string("/health"))
   assert_eq(endpoints["providerCreate"], Json::string("/providers"))
+  assert_eq(endpoints["providerPresets"], Json::string("/providers/presets"))
   assert_eq(
     endpoints["claudeDesktopImport"],
     Json::string("/providers/claude-desktop/import"),

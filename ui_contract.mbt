@@ -77,6 +77,7 @@ pub fn moongate_ui_endpoints_json() -> Json {
     "providerDelete": Json::string("/providers"),
     "providerSwitch": Json::string("/providers/switch"),
     "providerImportLive": Json::string("/providers/import-live"),
+    "providerPresets": Json::string("/providers/presets"),
     "providerStreamCheck": Json::string("/proxy/stream-check/provider"),
     "usageSummary": Json::string("/usage/summary"),
     "usageByApp": Json::string("/usage/summary/by-app"),

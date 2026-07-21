@@ -131,16 +131,28 @@ pub fn moongate_suite_manifest_json(
     "uiReadinessCards": moongate_ui_readiness_cards_json(),
     "apps": Json::array([
       suite_app_json(
-        "moonclaw", "agent-runtime", "Use moongate as the OpenAI-compatible or Anthropic-compatible local edge for agent provider calls.",
+        "moondesk",
+        "primary-operator-shell",
+        "Use MoonDesk as the preferred desktop control surface for gateway health, provider setup, model catalog, and traffic counters.",
+        priority=0,
       ),
       suite_app_json(
-        "moonbook", "durable-output", "Store generated reports and proxy usage summaries outside moongate.",
+        "moonclaw",
+        "agent-runtime",
+        "Use moongate as the OpenAI-compatible or Anthropic-compatible local edge for agent provider calls.",
+        priority=10,
       ),
       suite_app_json(
-        "moontown", "scheduler-control-plane", "Watch moongate health/status/stats as the network edge for standing goals.",
+        "moonbook",
+        "durable-output",
+        "Store generated reports and proxy usage summaries outside moongate.",
+        priority=20,
       ),
       suite_app_json(
-        "moondesk", "operator-shell", "Read the suite status file and display gateway health, model catalog, and traffic counters.",
+        "moontown",
+        "scheduler-control-plane",
+        "Watch moongate health/status/stats as the network edge for standing goals.",
+        priority=30,
       ),
     ]),
     "agentClients": moongate_suite_agent_clients_json(host, port, model),
@@ -771,11 +783,17 @@ fn moongate_claude_desktop_base_url(host : String, port : Int) -> String {
 }
 
 ///|
-fn suite_app_json(id : String, role : String, usage : String) -> Json {
+fn suite_app_json(
+  id : String,
+  role : String,
+  usage : String,
+  priority? : Int = 100,
+) -> Json {
   Json::object({
     "id": Json::string(id),
     "role": Json::string(role),
     "usage": Json::string(usage),
+    "priority": Json::number(priority.to_double()),
   })
 }
 
@@ -881,6 +899,7 @@ fn moongate_suite_integrations_json(
   let moonclaw_providers_write_command = "moongate suite write-moonclaw-providers --path \{moonclaw_providers_file}"
   Json::object({
     "moonclaw": Json::object({
+      "priority": Json::number(10.0),
       "role": Json::string("agent-provider-edge"),
       "openaiBaseUrl": Json::string(openai_base_url),
       "anthropicBaseUrl": Json::string(anthropic_base_url),
@@ -923,6 +942,7 @@ fn moongate_suite_integrations_json(
       }),
     }),
     "moonbook": Json::object({
+      "priority": Json::number(20.0),
       "role": Json::string("durable-usage-output"),
       "usageSummaryUrl": Json::string("\{base_url}/usage/summary"),
       "usageLogsUrl": Json::string("\{base_url}/usage/logs"),
@@ -943,6 +963,7 @@ fn moongate_suite_integrations_json(
       ),
     }),
     "moontown": Json::object({
+      "priority": Json::number(30.0),
       "role": Json::string("scheduler-network-watch"),
       "healthUrl": Json::string("\{base_url}/health"),
       "dashboardUrl": Json::string("\{base_url}/"),
@@ -985,7 +1006,8 @@ fn moongate_suite_integrations_json(
       ]),
     }),
     "moondesk": Json::object({
-      "role": Json::string("operator-dashboard"),
+      "priority": Json::number(0.0),
+      "role": Json::string("primary-operator-dashboard"),
       "suiteStatusFile": Json::string(default_moongate_suite_status_path()),
       "dashboardUrl": Json::string("\{base_url}/"),
       "healthUrl": Json::string("\{base_url}/health"),

@@ -29,6 +29,44 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
     ]),
     @html.form(id="provider-form", class="form-grid", [
       @html.input(input_type=Hidden, id="provider-original-id"),
+      @html.div(class="provider-template-picker span-2", [
+        @html.label([
+          @html.span("Start from a template"),
+          @html.select(id="provider-template", [
+            @html.option(value="", "Choose a template"),
+          ]),
+        ]),
+        @html.div(class="inline-actions", [
+          @html.button(
+            id="provider-template-apply",
+            class="button-secondary",
+            type_="button",
+            "Use Template",
+          ),
+          @html.button(
+            id="provider-template-load",
+            class="button-secondary",
+            type_="button",
+            "Load JSON",
+          ),
+          @html.button(
+            id="provider-template-reload",
+            class="button-secondary",
+            type_="button",
+            "Reload",
+          ),
+        ]),
+        @html.input(
+          input_type=File,
+          id="provider-template-file",
+          accept="application/json,.json",
+          hidden=true,
+        ),
+        @html.small(
+          id="provider-template-status",
+          "Templates fill the form; API keys are always entered separately.",
+        ),
+      ]),
       moongate_rabbita_select_label("Framework", "provider-app", []),
       moongate_rabbita_input_label("Provider ID", "provider-id", "", true),
       moongate_rabbita_input_label("Name", "provider-name", "", true),
@@ -172,7 +210,7 @@ fn moongate_rabbita_setup_card(
 ///|
 fn moongate_rabbita_suite_panel() -> @html.Html {
   @html.article(id="suite", class="panel wide", [
-    moongate_rabbita_panel_head("Suite", "Moon Suite Integration", [
+    moongate_rabbita_panel_head("MoonDesk First", "MoonDesk & Moon Suite", [
       @html.div(class="inline-actions", [
         @html.button(
           id="suite-refresh",

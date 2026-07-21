@@ -461,6 +461,11 @@ test "provider route target serializes moongate claude desktop model routes" {
   assert_eq(sonnet["labelOverride"], Json::string("DeepSeek V4 Flash"))
   assert_eq(sonnet["supports1m"], Json::boolean(true))
   let moon_provider = target.to_moon_provider_json(false)
+  guard moon_provider is Object(moon_provider_obj) else {
+    fail("expected moon provider object")
+  }
+  assert_eq(moon_provider_obj["builtIn"], Json::boolean(false))
+  assert_eq(moon_provider_obj["enabled"], Json::boolean(true))
   guard moon_provider is Object(provider) else {
     fail("expected moongate provider object")
   }

@@ -115,7 +115,76 @@ fn moon_provider_preset_summary_json(
   if !icon.is_empty() {
     obj["icon"] = Json::string(icon)
   }
+  match moon_provider_preset_form_json(app_type, name) {
+    Some(form) => obj["form"] = form
+    None => ()
+  }
   Json::object(obj)
+}
+
+///|
+fn moon_provider_preset_form_json(app_type : String, name : String) -> Json? {
+  match (app_type, name) {
+    ("codex", "OpenAI Official") =>
+      Some(
+        {
+          "appType": Json::string("codex"),
+          "id": Json::string("codex-oauth"),
+          "name": Json::string("Codex OAuth"),
+          "providerType": Json::string("codex_oauth"),
+          "apiFormat": Json::string("openai"),
+          "enabled": Json::boolean(true),
+          "modelMapping": { "defaultModel": Json::string("gpt-5.6-sol") }.to_json(),
+        }.to_json(),
+      )
+    ("codex", "火山Agentplan") =>
+      Some(moon_ark_agent_plan_provider_form_json("codex", "openai"))
+    ("claude", "火山Agentplan") =>
+      Some(moon_ark_agent_plan_provider_form_json("claude", "anthropic"))
+    _ => None
+  }
+}
+
+///|
+fn moon_ark_agent_plan_provider_form_json(
+  app_type : String,
+  api_format : String,
+) -> Json {
+  let anthropic = api_format == "anthropic"
+  let mapping : Map[String, Json] = { "defaultModel": Json::string("kimi-k3") }
+  if anthropic {
+    mapping["sonnetModel"] = Json::string("kimi-k3")
+    mapping["haikuModel"] = Json::string("kimi-k3")
+    mapping["opusModel"] = Json::string("kimi-k3")
+  }
+  {
+    "appType": Json::string(app_type),
+    "id": Json::string(
+      if anthropic {
+        "ark-kimi-anthropic"
+      } else {
+        "ark-kimi-openai"
+      },
+    ),
+    "name": Json::string(
+      if anthropic {
+        "Ark Kimi Anthropic"
+      } else {
+        "Ark Kimi OpenAI"
+      },
+    ),
+    "providerType": Json::string(
+      if anthropic {
+        "anthropic-compatible"
+      } else {
+        "openai-compatible"
+      },
+    ),
+    "baseUrl": Json::string("https://ark.cn-beijing.volces.com/api/plan/v3"),
+    "apiFormat": Json::string(api_format),
+    "enabled": Json::boolean(true),
+    "modelMapping": Json::object(mapping),
+  }.to_json()
 }
 
 ///|

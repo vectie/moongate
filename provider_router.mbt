@@ -503,14 +503,27 @@ fn ProviderRouteTarget::to_moon_provider_json(
   let obj : Map[String, Json] = {
     "id": Json::string(self.provider_id),
     "name": Json::string(self.provider_name),
+    "appType": Json::string(self.app_type),
+    "enabled": Json::boolean(self.enabled),
+    "builtIn": Json::boolean(self.is_builtin_route()),
+    "isFullUrl": Json::boolean(self.is_full_url),
+    "codexFastMode": Json::boolean(self.codex_fast_mode),
     "settingsConfig": self.settings_config.unwrap_or(empty_settings.to_json()),
     "inFailoverQueue": Json::boolean(in_failover_queue),
   }
   if self.base_url is Some(base_url) {
+    obj["baseUrl"] = Json::string(base_url)
     obj["websiteUrl"] = Json::string(base_url)
   }
   if self.provider_type is Some(provider_type) {
+    obj["providerType"] = Json::string(provider_type)
     obj["category"] = Json::string(provider_type)
+  }
+  if self.api_format is Some(api_format) {
+    obj["apiFormat"] = Json::string(api_format)
+  }
+  if self.model_mapping is Some(model_mapping) {
+    obj["modelMapping"] = model_mapping.to_json()
   }
   if self.notes is Some(notes) {
     obj["notes"] = Json::string(notes)
@@ -533,6 +546,19 @@ fn ProviderRouteTarget::to_moon_provider_json(
     obj["meta"] = Json::object(meta)
   }
   Json::object(obj)
+}
+
+///|
+fn ProviderRouteTarget::is_builtin_route(self : ProviderRouteTarget) -> Bool {
+  (
+    self.provider_id == "codex-oauth" &&
+    (
+      self.app_type == "claude" ||
+      self.app_type == "claude-desktop" ||
+      self.app_type == "codex"
+    )
+  ) ||
+  (self.app_type == "gemini" && self.provider_id == "gemini-api-key")
 }
 
 ///|

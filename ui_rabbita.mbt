@@ -345,7 +345,7 @@ fn moongate_rabbita_suite_page() -> @html.Html {
   moongate_rabbita_page(
     "suite",
     "Moon Suite",
-    "Publish discovery state for MoonClaw, MoonBook, MoonTown, and MoonDesk.",
+    "MoonDesk is the primary operator surface, with MoonClaw, MoonBook, and MoonTown connected beneath it.",
     false,
     [moongate_rabbita_suite_panel()],
   )

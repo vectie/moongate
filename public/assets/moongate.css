@@ -873,6 +873,23 @@ code,
   grid-column: span 2;
 }
 
+.provider-template-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(25, 31, 45, 0.34);
+}
+
+.provider-template-picker > small {
+  grid-column: 1 / -1;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
 input,
 select,
 textarea {
@@ -937,6 +954,11 @@ input[type="checkbox"] {
   margin-left: auto;
   color: var(--text-3);
   font-size: 10.5px;
+}
+
+#suite-status-path {
+  overflow-wrap: anywhere;
+  font-size: 11px;
 }
 
 .table-wrap {

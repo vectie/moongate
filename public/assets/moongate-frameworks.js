@@ -1,4 +1,6 @@
 let frameworkRows = [];
+let builtinProviderTemplates = [];
+let importedProviderTemplates = [];
 
 function renderProviderRows(data) {
   const rows = arrayFrom(data, ["providers", "items", "data", "health"]);
@@ -76,10 +78,15 @@ function renderProviderPicker(row, providers) {
       return `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`;
     })
     .join("");
+  const builtInCount = providers.filter((provider) => provider.builtIn === true).length;
+  const configuredCount = providers.length - builtInCount;
+  const countParts = [];
+  if (configuredCount > 0) countParts.push(`${configuredCount} configured`);
+  if (builtInCount > 0) countParts.push(`${builtInCount} built-in`);
   return `
     <div class="provider-picker">
       <select data-provider-picker="${escapeHtml(row.id)}" aria-label="${escapeHtml(row.label)} configured providers">${options}</select>
-      <small>${providers.length} configured</small>
+      <small>${escapeHtml(countParts.join(" · ") || "No providers")}</small>
     </div>
   `;
 }
@@ -171,6 +178,113 @@ function clearProviderForm(appType) {
   setProviderStatus("New provider");
 }
 
+function providerTemplateRows(data, source) {
+  const rows = Array.isArray(data)
+    ? data
+    : data && Array.isArray(data.templates)
+      ? data.templates
+      : [];
+  return rows.flatMap((row, index) => {
+    if (!row || typeof row !== "object") return [];
+    const provider = row.form || row.provider || (source === "JSON" ? row : null);
+    if (!provider || typeof provider !== "object") return [];
+    const appType = firstString(provider, ["appType"], firstString(row, ["appType"], ""));
+    const providerId = firstString(provider, ["id", "providerId"], "");
+    const providerName = firstString(provider, ["name", "providerName"], "");
+    if (!appType || !providerId || !providerName) return [];
+    const templateId = firstString(row, ["templateId", "id"], `${appType}:${providerId}:${index}`);
+    return [{
+      key: `${source}:${templateId}:${index}`,
+      label: firstString(row, ["label", "name"], providerName),
+      provider: { ...provider, appType, id: providerId, name: providerName },
+      source,
+    }];
+  });
+}
+
+function renderProviderTemplates() {
+  const select = $("provider-template");
+  if (!select) return;
+  const appType = $("provider-app")?.value || "codex";
+  const previous = select.value;
+  const rows = [...builtinProviderTemplates, ...importedProviderTemplates]
+    .filter((row) => row.provider.appType === appType);
+  select.innerHTML = [
+    `<option value="">Choose a template</option>`,
+    ...rows.map((row) => `<option value="${escapeHtml(row.key)}">${escapeHtml(`${row.source} — ${row.label}`)}</option>`),
+  ].join("");
+  if (rows.some((row) => row.key === previous)) select.value = previous;
+  text(
+    "provider-template-status",
+    rows.length > 0
+      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"}; API keys stay separate.`
+      : "No ready templates for this framework. Load a JSON file to add one.",
+  );
+}
+
+async function loadProviderTemplates() {
+  const appType = $("provider-app")?.value || "codex";
+  const data = await getJson(endpoint(endpoints.providerPresets, { appType, sortMode: "nameAsc" }));
+  builtinProviderTemplates = providerTemplateRows(data, "Built-in");
+  renderProviderTemplates();
+}
+
+function selectedProviderTemplate() {
+  const key = $("provider-template")?.value || "";
+  return [...builtinProviderTemplates, ...importedProviderTemplates]
+    .find((row) => row.key === key) || null;
+}
+
+function applyProviderTemplate() {
+  const template = selectedProviderTemplate();
+  if (!template) {
+    text("provider-template-status", "Choose a template first.");
+    return;
+  }
+  const provider = template.provider;
+  const selectedKey = $("provider-template").value;
+  const existing = providerById(provider.appType, provider.id);
+  clearProviderForm(provider.appType);
+  $("provider-template").value = selectedKey;
+  $("provider-original-id").value = existing ? provider.id : "";
+  $("provider-app").value = provider.appType;
+  $("provider-id").value = provider.id;
+  $("provider-name").value = provider.name;
+  $("provider-type").value = firstString(provider, ["providerType", "category"], "");
+  $("provider-base-url").value = firstString(provider, ["baseUrl"], "");
+  $("provider-api-format").value = firstString(provider, ["apiFormat"], "");
+  $("provider-api-key").value = "";
+  $("provider-notes").value = firstString(provider, ["notes"], "");
+  $("provider-enabled").checked = provider.enabled !== false;
+  $("provider-full-url").checked = provider.isFullUrl === true;
+  $("provider-fast-mode").checked = provider.codexFastMode === true;
+  const mapping = provider.modelMapping || {};
+  for (const [key, id] of [
+    ["defaultModel", "provider-default-model"],
+    ["sonnetModel", "provider-sonnet-model"],
+    ["haikuModel", "provider-haiku-model"],
+    ["opusModel", "provider-opus-model"],
+  ]) {
+    $(id).value = typeof mapping[key] === "string" ? mapping[key] : "";
+  }
+  setProviderStatus(existing ? `Template applied to existing ${provider.id}` : `Template ready for ${provider.id}`);
+  text("provider-template-status", "Template applied. Enter the API key, review, then save.");
+}
+
+async function loadProviderTemplateFile(file) {
+  const parsed = JSON.parse(await file.text());
+  const rows = providerTemplateRows(parsed, "JSON");
+  if (rows.length === 0) throw new Error("JSON contains no valid provider templates");
+  importedProviderTemplates = rows;
+  const first = rows[0];
+  if (frameworkApps.some((app) => app.id === first.provider.appType)) {
+    $("provider-app").value = first.provider.appType;
+  }
+  renderProviderTemplates();
+  $("provider-template").value = first.key;
+  text("provider-template-status", `${rows.length} JSON template${rows.length === 1 ? "" : "s"} hot-loaded.`);
+}
+
 function editProvider(appType, providerId) {
   const provider = providerById(appType, providerId);
   if (!provider) {
@@ -182,19 +296,20 @@ function editProvider(appType, providerId) {
   $("provider-app").value = appType;
   $("provider-id").value = providerId;
   $("provider-name").value = firstString(provider, ["name", "providerName"], providerId);
-  $("provider-type").value = firstString(provider, ["category", "providerType"], "");
-  $("provider-base-url").value = firstString(provider, ["websiteUrl", "baseUrl"], "");
-  $("provider-api-format").value = firstString(provider.settingsConfig, ["apiFormat"], "");
+  $("provider-type").value = firstString(provider, ["providerType", "category"], "");
+  $("provider-base-url").value = firstString(provider, ["baseUrl", "websiteUrl"], "");
+  $("provider-api-format").value = firstString(provider, ["apiFormat"], firstString(provider.settingsConfig, ["apiFormat"], ""));
   $("provider-api-key").value = "";
-  $("provider-default-model").value = "";
-  $("provider-sonnet-model").value = "";
-  $("provider-haiku-model").value = "";
-  $("provider-opus-model").value = "";
+  const mapping = provider.modelMapping || {};
+  $("provider-default-model").value = firstString(mapping, ["defaultModel"], "");
+  $("provider-sonnet-model").value = firstString(mapping, ["sonnetModel"], "");
+  $("provider-haiku-model").value = firstString(mapping, ["haikuModel"], "");
+  $("provider-opus-model").value = firstString(mapping, ["opusModel"], "");
   $("provider-notes").value = firstString(provider, ["notes"], "");
   $("provider-enabled").checked = provider.enabled !== false;
   $("provider-full-url").checked = provider.isFullUrl === true;
-  $("provider-fast-mode").checked = provider.settingsConfig?.codexFastMode === true;
-  setProviderStatus(`Editing ${providerId}`);
+  $("provider-fast-mode").checked = provider.codexFastMode === true || provider.settingsConfig?.codexFastMode === true;
+  setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in route)" : ""}`);
 }
 
 function modelMappingFromForm() {
@@ -299,8 +414,11 @@ async function loadFrameworkRow(app) {
 async function loadFrameworks() {
   const rows = await Promise.all(frameworkApps.map(loadFrameworkRow));
   renderFrameworkRows(rows);
+  const allProviders = rows.flatMap((row) => row.providers || []);
+  const builtInProviderCount = allProviders.filter((provider) => provider.builtIn === true).length;
   mergeReadinessState({
-    providerCount: rows.reduce((total, row) => total + (row.providers || []).length, 0),
+    providerCount: allProviders.length - builtInProviderCount,
+    builtInProviderCount,
     frameworkErrorCount: rows.filter((row) => row.error).length,
   });
   return rows;

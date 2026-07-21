@@ -84,6 +84,42 @@ test "moongate provider presets filter by app and search text" {
 }
 
 ///|
+test "moongate provider presets include ready forms without secrets" {
+  let codex_ark = moon_visible_provider_presets(
+    Some("codex"),
+    "agentplan",
+    "original",
+  )
+  assert_eq(codex_ark.length(), 1)
+  guard codex_ark[0] is Object(preset) else { fail("expected preset") }
+  guard preset["form"] is Object(form) else { fail("expected ready form") }
+  assert_eq(form["id"], Json::string("ark-kimi-openai"))
+  assert_eq(form["apiFormat"], Json::string("openai"))
+  assert_eq(
+    form["baseUrl"],
+    Json::string("https://ark.cn-beijing.volces.com/api/plan/v3"),
+  )
+  assert_false(form.contains("apiKey"))
+  guard form["modelMapping"] is Object(mapping) else {
+    fail("expected model mapping")
+  }
+  assert_eq(mapping["defaultModel"], Json::string("kimi-k3"))
+
+  let oauth = moon_visible_provider_presets(
+    Some("codex"),
+    "openai official",
+    "original",
+  )
+  assert_eq(oauth.length(), 1)
+  guard oauth[0] is Object(oauth_preset) else { fail("expected preset") }
+  guard oauth_preset["form"] is Object(oauth_form) else {
+    fail("expected OAuth form")
+  }
+  assert_eq(oauth_form["id"], Json::string("codex-oauth"))
+  assert_false(oauth_form.contains("apiKey"))
+}
+
+///|
 test "moongate provider presets name sort keeps full visible set" {
   let entries = moon_visible_provider_presets(None, "", "nameAsc")
   assert_eq(entries.length(), 354)

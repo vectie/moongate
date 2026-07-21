@@ -24,12 +24,15 @@ function readinessCardState(card, state) {
   }
   if (card.id === "providers") {
     const count = number(state.providerCount);
+    const builtInCount = number(state.builtInProviderCount);
     return {
       ok: count > 0,
-      value: count > 0 ? `${compact(count)} provider${count === 1 ? "" : "s"}` : card.waiting,
+      value: `${compact(count)} configured`,
       detail: state.frameworkErrorCount > 0
         ? window.MoonSuiteI18n?.message("stat.framework_warnings", { count: state.frameworkErrorCount }) ?? `${state.frameworkErrorCount} framework warnings`
-        : "Provider routes",
+        : builtInCount > 0
+          ? `${compact(builtInCount)} built-in route${builtInCount === 1 ? "" : "s"}`
+          : "No built-in routes",
     };
   }
   if (card.id === "usage") {
@@ -433,6 +436,31 @@ $("provider-clear")?.addEventListener("click", () => {
   clearProviderForm($("provider-app").value);
 });
 
+$("provider-app")?.addEventListener("change", () => {
+  clearProviderForm($("provider-app").value);
+  loadProviderTemplates().catch(showError);
+});
+
+$("provider-template-apply")?.addEventListener("click", () => {
+  applyProviderTemplate();
+});
+
+$("provider-template-load")?.addEventListener("click", () => {
+  $("provider-template-file")?.click();
+});
+
+$("provider-template-reload")?.addEventListener("click", () => {
+  loadProviderTemplates().catch(showError);
+});
+
+$("provider-template-file")?.addEventListener("change", (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  loadProviderTemplateFile(file).catch(showError).finally(() => {
+    event.target.value = "";
+  });
+});
+
 $("provider-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveProvider().catch(showError);
@@ -446,7 +474,7 @@ $("provider-test")?.addEventListener("click", () => {
   testProviderFromForm().catch(showError);
 });
 
-refresh().catch(showError);
+Promise.all([refresh(), loadProviderTemplates()]).catch(showError);
 
 const supportedRefreshIntervals = new Set([0, 5000, 10000, 30000, 60000]);
 

@@ -1,0 +1,42 @@
+{
+  "format": "moongate.provider-templates.v1",
+  "templates": [
+    {
+      "templateId": "my-openai-provider",
+      "label": "My OpenAI-compatible provider",
+      "provider": {
+        "appType": "codex",
+        "id": "my-openai",
+        "name": "My OpenAI",
+        "providerType": "openai-compatible",
+        "baseUrl": "https://api.example.com/v1",
+        "apiFormat": "openai",
+        "enabled": true,
+        "isFullUrl": false,
+        "codexFastMode": false,
+        "modelMapping": {
+          "defaultModel": "model-id"
+        }
+      }
+    },
+    {
+      "templateId": "my-anthropic-provider",
+      "label": "My Anthropic-compatible provider",
+      "provider": {
+        "appType": "claude",
+        "id": "my-anthropic",
+        "name": "My Anthropic",
+        "providerType": "anthropic-compatible",
+        "baseUrl": "https://api.example.com",
+        "apiFormat": "anthropic",
+        "enabled": true,
+        "modelMapping": {
+          "defaultModel": "model-id",
+          "sonnetModel": "model-id",
+          "haikuModel": "model-id",
+          "opusModel": "model-id"
+        }
+      }
+    }
+  ]
+}

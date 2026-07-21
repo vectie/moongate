@@ -337,6 +337,10 @@ test "suite manifest publishes moongate service contract" {
   assert_true(routes.contains(Json::string("ANY /gemini/v1/*path")))
   guard obj["apps"] is Array(apps) else { fail("expected apps") }
   assert_eq(apps.length(), 4)
+  guard apps[0] is Object(primary_app) else { fail("expected primary app") }
+  assert_eq(primary_app["id"], Json::string("moondesk"))
+  assert_eq(primary_app["priority"], Json::number(0.0))
+  assert_eq(primary_app["role"], Json::string("primary-operator-shell"))
   guard obj["suiteIntegrations"] is Object(integrations) else {
     fail("expected suite integrations")
   }
@@ -535,6 +539,8 @@ test "suite manifest publishes moongate service contract" {
   guard integrations["moondesk"] is Object(moondesk) else {
     fail("expected moondesk integration")
   }
+  assert_eq(moondesk["priority"], Json::number(0.0))
+  assert_eq(moondesk["role"], Json::string("primary-operator-dashboard"))
   assert_eq(
     moondesk["claudeDesktopBaseUrl"],
     Json::string("http://127.0.0.1:15721/claude-desktop/v1"),

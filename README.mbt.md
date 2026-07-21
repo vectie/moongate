@@ -153,6 +153,19 @@ exposed in the suite manifest and embedded into the Rabbita shell. The frontend
 reads those contracts from the generated shell instead of maintaining separate
 hardcoded navigation, support, route, or readiness lists.
 
+The Providers page separates built-in routes from providers configured by the
+operator. Choose **Start from a template** to prefill a provider, then enter the
+API key separately and save. **Load JSON** hot-loads a local template bundle at
+runtime without rebuilding MoonGate; use
+[`docs/provider-templates.example.json`](docs/provider-templates.example.json)
+as the `moongate.provider-templates.v1` schema example. API keys are ignored in
+template files and must be entered in the password field.
+
+MoonDesk is the primary Moon Suite operator surface. Suite manifests assign it
+priority `0` and list it before MoonClaw, MoonBook, and MoonTown, while provider
+routing continues to model Codex, Claude, Gemini, and other upstream clients
+independently.
+
 For a desktop shell, use published Lepusa against the checked-in `lepusa.json`
 manifest. The manifest follows Lepusa's gateway-source shape, wraps the
 existing MoonGate gateway as a localhost app, opens `/ui/rabbita`, and does not

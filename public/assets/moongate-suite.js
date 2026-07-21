@@ -6,7 +6,12 @@ function renderSuiteApps(apps, integrations) {
     target.innerHTML = `<tr><td colspan="4">No suite app contract data.</td></tr>`;
     return;
   }
-  for (const app of apps) {
+  const sortedApps = [...apps].sort((left, right) => {
+    const leftPriority = number(left?.priority ?? (firstString(left, ["id"]) === "moondesk" ? 0 : 100));
+    const rightPriority = number(right?.priority ?? (firstString(right, ["id"]) === "moondesk" ? 0 : 100));
+    return leftPriority - rightPriority;
+  });
+  for (const app of sortedApps) {
     const id = firstString(app, ["id", "app", "name"]);
     const integration = integrations && typeof integrations === "object" ? integrations[id] : null;
     const keyRoute = firstString(
@@ -16,7 +21,7 @@ function renderSuiteApps(apps, integrations) {
     );
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><strong>${escapeHtml(id)}</strong></td>
+      <td><strong>${escapeHtml(id)}</strong>${id === "moondesk" ? `<small>Primary</small>` : ""}</td>
       <td>${escapeHtml(firstString(app, ["role", "kind"]))}</td>
       <td>${escapeHtml(firstString(app, ["usage", "description"]))}</td>
       <td>${escapeHtml(keyRoute)}</td>
@@ -29,7 +34,11 @@ function renderSuiteIntegrations(integrations) {
   const target = $("suite-integrations");
   if (!target) return;
   target.innerHTML = "";
-  const rows = objectRows(integrations);
+  const rows = objectRows(integrations).sort((left, right) => {
+    const leftPriority = number(left.priority ?? (left.id === "moondesk" ? 0 : 100));
+    const rightPriority = number(right.priority ?? (right.id === "moondesk" ? 0 : 100));
+    return leftPriority - rightPriority;
+  });
   if (rows.length === 0) {
     target.innerHTML = `<div class="row-card"><strong>No suite integrations</strong><small>Manifest did not publish integration metadata.</small></div>`;
     return;
@@ -47,7 +56,7 @@ function renderSuiteIntegrations(integrations) {
     div.className = "row-card";
     div.innerHTML = `
       <div>
-        <strong>${escapeHtml(row.id)}</strong>
+        <strong>${escapeHtml(row.id)}${row.id === "moondesk" ? " · Primary" : ""}</strong>
         <small>${escapeHtml(urls.slice(0, 2).join(" | ") || adapters.slice(0, 3).join(" | ") || "Integration metadata ready")}</small>
       </div>
       <strong>${escapeHtml(adapters.length ? `${adapters.length} adapters` : "Ready")}</strong>
