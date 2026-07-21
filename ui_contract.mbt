@@ -38,14 +38,13 @@ fn moongate_framework_app_json(
 fn moongate_ui_sections() -> Array[(String, String)] {
   [
     ("overview", "Overview"),
-    ("providers", "Providers"),
-    ("frameworks", "Frameworks"),
+    ("connect", "Connect"),
     ("setup", "Setup"),
-    ("suite", "Suite"),
-    ("resilience", "Resilience"),
-    ("usage", "Usage"),
-    ("usage-explorer", "Explorer"),
+    ("routing", "Routing"),
+    ("providers", "Providers"),
     ("requests", "Requests"),
+    ("usage", "Usage"),
+    ("suite", "Suite"),
   ]
 }
 
@@ -131,10 +130,10 @@ pub fn moongate_ui_readiness_cards_json() -> Json {
       "proxy", "Proxy", "Running", "Needs start", "#overview",
     ),
     moongate_readiness_card_json(
-      "providers", "Providers", "Configured", "Add provider", "#frameworks",
+      "providers", "Providers", "Configured", "Add provider", "#providers",
     ),
     moongate_readiness_card_json(
-      "usage", "Usage", "Tracking", "No traffic yet", "#usage-explorer",
+      "usage", "Usage", "Tracking", "No traffic yet", "#usage",
     ),
     moongate_readiness_card_json(
       "requests", "Requests", "Recent activity", "No requests yet", "#requests",

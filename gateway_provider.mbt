@@ -902,6 +902,9 @@ fn ProxyService::update_provider_target(
   let original_provider_id = original_id.unwrap_or(provider_id)
   let was_current = self.provider_router.current_provider_id(app_type) ==
     Some(original_provider_id)
+  let existing_provider = self.provider_router.provider_by_id(
+    app_type, original_provider_id,
+  )
   if original_provider_id != provider_id {
     if !provider_app_is_additive(app_type) {
       return Err("Only additive-mode providers support changing provider key")
@@ -919,12 +922,81 @@ fn ProxyService::update_provider_target(
     }
     ignore(self.provider_router.delete_provider(app_type, original_provider_id))
   }
-  usage.sync_provider_limits_from_target(target)
-  self.provider_router.upsert_provider(target)
+  let updated_target = match existing_provider {
+    Some(existing) => provider_preserve_hidden_update_fields(target, existing)
+    None => target
+  }
+  usage.sync_provider_limits_from_target(updated_target)
+  self.provider_router.upsert_provider(updated_target)
   if was_current {
     self.provider_router.set_current_provider(app_type, provider_id)
   }
   Ok(())
+}
+
+///|
+fn provider_preserve_hidden_update_fields(
+  incoming : ProviderRouteTarget,
+  existing : ProviderRouteTarget,
+) -> ProviderRouteTarget {
+  {
+    ..incoming,
+    api_key: match incoming.api_key {
+      Some(_) => incoming.api_key
+      None => existing.api_key
+    },
+    model_mapping: match incoming.model_mapping {
+      Some(_) => incoming.model_mapping
+      None => existing.model_mapping
+    },
+    prompt_cache_key: match incoming.prompt_cache_key {
+      Some(_) => incoming.prompt_cache_key
+      None => existing.prompt_cache_key
+    },
+    claude_desktop_mode: match incoming.claude_desktop_mode {
+      Some(_) => incoming.claude_desktop_mode
+      None => existing.claude_desktop_mode
+    },
+    claude_desktop_model_routes: if incoming.claude_desktop_model_routes.is_empty() {
+      existing.claude_desktop_model_routes
+    } else {
+      incoming.claude_desktop_model_routes
+    },
+    settings_config: provider_merge_update_settings(
+      existing.settings_config,
+      incoming.settings_config,
+    ),
+  }
+}
+
+///|
+fn provider_merge_update_settings(existing : Json?, incoming : Json?) -> Json? {
+  match (existing, incoming) {
+    (Some(Object(existing_obj)), Some(Object(incoming_obj))) => {
+      let merged : Map[String, Json] = {}
+      for key in existing_obj.keys() {
+        match existing_obj.get(key) {
+          Some(value) => merged[key] = value
+          None => ()
+        }
+      }
+      for key in incoming_obj.keys() {
+        match incoming_obj.get(key) {
+          Some(value) =>
+            if key == "meta" {
+              merged[key] = provider_merge_inline_meta(merged.get(key), value)
+            } else {
+              merged[key] = value
+            }
+          None => ()
+        }
+      }
+      Some(Json::object(merged))
+    }
+    (_, Some(value)) => Some(value)
+    (Some(value), None) => Some(value)
+    (None, None) => None
+  }
 }
 
 ///|

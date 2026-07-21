@@ -1261,6 +1261,70 @@ test "gateway update provider follows moongate rename guards" {
 }
 
 ///|
+test "gateway update provider preserves fields hidden by provider editor" {
+  let gateway = Gateway::new(port=0)
+  gateway.proxy.provider_router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="claude",
+      provider_id="hidden-fields",
+      provider_name="Hidden Fields",
+      provider_type=Some("anthropic"),
+      api_format=Some("anthropic"),
+      base_url=Some("https://api.example.com"),
+      api_key=Some("secret-key"),
+      prompt_cache_key=Some("prompt-cache"),
+      model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
+      settings_config=Some(
+        {
+          "apiFormat": Json::string("anthropic"),
+          "meta": { "testConfig": { "enabled": Json::boolean(true) }.to_json() }.to_json(),
+        }.to_json(),
+      ),
+    ),
+  )
+  assert_eq(
+    gateway.proxy.update_provider_target(
+      gateway.usage,
+      "claude",
+      ProviderRouteTarget::new(
+        app_type="claude",
+        provider_id="hidden-fields",
+        provider_name="Hidden Fields Updated",
+        provider_type=Some("claude_auth"),
+        api_format=Some("anthropic"),
+        base_url=Some("https://api.example.com"),
+        settings_config=Some(
+          {
+            "apiFormat": Json::string("anthropic"),
+            "codexFastMode": Json::boolean(false),
+          }.to_json(),
+        ),
+      ),
+      Some("hidden-fields"),
+    ),
+    Ok(()),
+  )
+  guard gateway.proxy.provider_router.provider_by_id("claude", "hidden-fields")
+    is Some(updated) else {
+    fail("expected updated provider")
+  }
+  assert_eq(updated.provider_name, "Hidden Fields Updated")
+  assert_eq(updated.provider_type, Some("claude_auth"))
+  assert_eq(updated.api_key, Some("secret-key"))
+  assert_eq(updated.prompt_cache_key, Some("prompt-cache"))
+  guard updated.model_mapping is Some(mapping) else {
+    fail("expected preserved model mapping")
+  }
+  assert_eq(mapping.default_model, Some("kimi-k3"))
+  guard updated.settings_config is Some(Object(settings)) else {
+    fail("expected merged settings")
+  }
+  assert_eq(settings["apiFormat"], Json::string("anthropic"))
+  assert_eq(settings["codexFastMode"], Json::boolean(false))
+  assert_true(settings.get("meta") is Some(_))
+}
+
+///|
 test "provider target does not derive runtime fields from stored settings" {
   guard provider_target_from_request(
       "/providers",
@@ -2694,6 +2758,12 @@ async test "provider config endpoints are owned by proxy service" {
     assert_true(endpoint_source.contains("async fn ProxyService::\{handler}("))
     assert_false(misc_source.contains("async fn ProxyService::\{handler}("))
   }
+  assert_true(
+    codex_openai_source
+    .split("let use_chat_bridge = provider.codex_uses_chat_completions()")
+    .length() >=
+    5,
+  )
   for
     handler in [
       "handle_codex_responses", "handle_chat_completions", "forward_non_streaming_chat_completion",
@@ -6300,6 +6370,30 @@ test "codex compatible provider detects chat completions bridge" {
     ),
     "https://api.example.com/v1/chat/completions?fixed=1&foo=bar",
   )
+}
+
+///|
+test "codex chat bridge applies the provider model mapping" {
+  let provider = ProviderRouteTarget::new(
+    app_type="codex",
+    provider_id="chat-format",
+    provider_name="Chat Format",
+    api_format=Some("openai_chat"),
+    base_url=Some("https://api.example.com/v1"),
+    api_key=Some("sk-test"),
+    model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
+  )
+  let request = @json.parse(
+    (
+      #|{"model":"gateway-default","input":[{"role":"user","content":[{"type":"input_text","text":"hello"}]}],"stream":false}
+    ),
+  )
+  guard codex_chat_bridge_request(provider, request, "client-alias")
+    is Object(bridged) else {
+    fail("expected bridged chat request")
+  }
+  assert_eq(bridged["model"], Json::string("kimi-k3"))
+  assert_true(bridged["messages"] is Array(_))
 }
 
 ///|

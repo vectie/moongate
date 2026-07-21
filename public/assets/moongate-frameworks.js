@@ -11,18 +11,19 @@ function renderProviderRows(data) {
     return;
   }
   for (const row of rows.slice(0, 12)) {
-    const provider = firstString(row, ["providerName", "name", "providerId", "id"]);
+    const providerId = firstString(row, ["providerId", "id", "providerName", "name"]);
+    const provider = firstString(row, ["providerName", "name"], providerId);
     const app = firstString(row, ["appType", "app", "type"]);
     const status = firstString(row, ["status", "state", "health", "isHealthy"]);
     const model = firstString(row, ["model", "modelId", "activeModel", "routeModel"]);
     const error = firstString(row, ["lastError", "error", "message"], "");
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><strong>${escapeHtml(provider)}</strong></td>
+      <td><strong>${escapeHtml(provider)}</strong>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
       <td>${escapeHtml(app)}</td>
       <td><span class="${stateClass(status)}">${escapeHtml(status)}</span></td>
       <td>${escapeHtml(model)}</td>
-      <td>${escapeHtml(error || "-")}</td>
+      <td><button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></td>
     `;
     target.appendChild(tr);
   }
