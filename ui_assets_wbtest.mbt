@@ -372,7 +372,7 @@ async test "moongate lepusa manifest uses published package boundary shape" {
         "published Lepusa ProjectConfig failed to load moongate lepusa.json: \{problems.join("; ")}",
       )
   }
-  assert_true(moon_mod.contains("\"vectie/lepusa@0.1.1\""))
+  assert_true(moon_mod.contains("\"vectie/lepusa@0.1.2\""))
   assert_true(moon_mod.contains("\"moonbit-community/rabbita@0.12.4\""))
   let generated = moongate_lepusa_manifest_json()
   let parsed = @json.parse(manifest) catch {
