@@ -17,7 +17,7 @@ import {
   "moonbitlang/x@0.4.40",
   "moonbitlang/regexp@0.3.5",
   "vectie/moonlib@0.1.17",
-  "vectie/lepusa@0.1.3",
+  "vectie/lepusa@0.1.4",
   "moonbit-community/rabbita@0.12.4",
 }
 

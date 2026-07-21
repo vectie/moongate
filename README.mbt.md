@@ -158,6 +158,8 @@ manifest. The manifest follows Lepusa's gateway-source shape, wraps the
 existing MoonGate gateway as a localhost app, opens `/ui/rabbita`, and does not
 depend on local `../lepusa` or `../rba` workspaces. Regenerate the primary
 desktop manifest with `moon run cmd/main -- suite lepusa`.
+The published Apple Silicon desktop build targets macOS 11 Big Sur or newer;
+Intel Macs require a separate x86_64 artifact.
 
 `lepusa.rabbita.json` is the migration preview for the Rabbita-first desktop
 UI path. It uses Lepusa `rootHtml` and is paired with
