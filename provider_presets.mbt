@@ -128,6 +128,7 @@ fn moon_provider_preset_form_json(app_type : String, name : String) -> Json? {
     ("codex", "OpenAI Official") =>
       Some(
         {
+          "templateLabel": Json::string("Codex OAuth"),
           "appType": Json::string("codex"),
           "id": Json::string("codex-oauth"),
           "name": Json::string("Codex OAuth"),
@@ -158,6 +159,13 @@ fn moon_ark_agent_plan_provider_form_json(
     mapping["opusModel"] = Json::string("kimi-k3")
   }
   {
+    "templateLabel": Json::string(
+      if anthropic {
+        "Ark Agent Plan / Kimi K3 / Anthropic Messages"
+      } else {
+        "Ark Agent Plan / Kimi K3 / OpenAI Responses"
+      },
+    ),
     "appType": Json::string(app_type),
     "id": Json::string(
       if anthropic {

@@ -157,6 +157,13 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(frameworks.contains("clearModelMapping"))
   assert_true(frameworks.contains("draft: true"))
   assert_true(frameworks.contains("API keys stay separate"))
+  assert_true(frameworks.contains("providerTemplateApiFormatLabel"))
+  assert_true(
+    frameworks.contains("selecting one changes Framework automatically"),
+  )
+  assert_false(
+    frameworks.contains(".filter((row) => row.provider.appType === appType)"),
+  )
   assert_true(frameworks.contains("loadFrameworks"))
   assert_true(frameworks.contains("frameworkLoadGeneration"))
   assert_true(frameworks.contains("renderProviderRows"))

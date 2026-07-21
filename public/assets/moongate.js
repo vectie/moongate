@@ -488,7 +488,7 @@ $("provider-clear")?.addEventListener("click", () => {
 
 $("provider-app")?.addEventListener("change", () => {
   clearProviderForm($("provider-app").value);
-  loadProviderTemplates().catch(showError);
+  renderProviderTemplates();
 });
 
 $("provider-template-apply")?.addEventListener("click", () => {

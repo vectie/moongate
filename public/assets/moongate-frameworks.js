@@ -216,38 +216,54 @@ function providerTemplateRows(data, source) {
     const templateId = firstString(row, ["templateId", "id"], `${appType}:${providerId}:${index}`);
     return [{
       key: `${source}:${templateId}:${index}`,
-      label: firstString(row, ["label", "name"], providerName),
+      label: firstString(provider, ["templateLabel"], firstString(row, ["label"], providerName)),
       provider: { ...provider, appType, id: providerId, name: providerName },
       source,
     }];
   });
 }
 
+function providerTemplateFrameworkLabel(appType) {
+  return frameworkApps.find((app) => app.id === appType)?.label || appType;
+}
+
+function providerTemplateApiFormatLabel(provider) {
+  const format = firstString(provider, ["apiFormat"], "");
+  if (format === "openai") return "OpenAI Responses";
+  if (format === "openai_chat") return "OpenAI Chat Completions";
+  if (format === "anthropic") return "Anthropic Messages";
+  if (format === "gemini_native") return "Gemini Native";
+  return "Default protocol";
+}
+
+function providerTemplateOptionLabel(row) {
+  const provider = row.provider;
+  return `${row.source} — ${row.label} · ${providerTemplateFrameworkLabel(provider.appType)} · ${providerTemplateApiFormatLabel(provider)}`;
+}
+
 function renderProviderTemplates() {
   const select = $("provider-template");
   if (!select) return;
-  const appType = $("provider-app")?.value || "codex";
   const previous = select.value;
-  const rows = [...builtinProviderTemplates, ...importedProviderTemplates]
-    .filter((row) => row.provider.appType === appType);
+  const rows = [...builtinProviderTemplates, ...importedProviderTemplates];
   select.innerHTML = [
     `<option value="">Choose a template</option>`,
-    ...rows.map((row) => `<option value="${escapeHtml(row.key)}">${escapeHtml(`${row.source} — ${row.label}`)}</option>`),
+    ...rows.map((row) => `<option value="${escapeHtml(row.key)}">${escapeHtml(providerTemplateOptionLabel(row))}</option>`),
   ].join("");
   if (rows.some((row) => row.key === previous)) select.value = previous;
+  const frameworkCount = new Set(rows.map((row) => row.provider.appType)).size;
   text(
     "provider-template-status",
     rows.length > 0
-      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"}; API keys stay separate.`
-      : "No ready templates for this framework. Load a JSON file to add one.",
+      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"} across ${frameworkCount} framework${frameworkCount === 1 ? "" : "s"}; selecting one changes Framework automatically. API keys stay separate.`
+      : "No ready templates. Load a JSON file to add one.",
   );
 }
 
 async function loadProviderTemplates() {
   const generation = ++providerTemplateLoadGeneration;
-  const appType = $("provider-app")?.value || "codex";
-  const data = await getJson(endpoint(endpoints.providerPresets, { appType, sortMode: "nameAsc" }));
-  if (generation !== providerTemplateLoadGeneration || $("provider-app")?.value !== appType) return;
+  const data = await getJson(endpoint(endpoints.providerPresets, { sortMode: "nameAsc" }));
+  if (generation !== providerTemplateLoadGeneration) return;
   builtinProviderTemplates = providerTemplateRows(data, "Built-in");
   renderProviderTemplates();
 }

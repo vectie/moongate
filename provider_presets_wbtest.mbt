@@ -85,6 +85,38 @@ test "moongate provider presets filter by app and search text" {
 
 ///|
 test "moongate provider presets include ready forms without secrets" {
+  let all_ark = moon_visible_provider_presets(None, "agentplan", "original")
+  let mut ready_ark = 0
+  let mut saw_openai = false
+  let mut saw_anthropic = false
+  for ark in all_ark {
+    guard ark is Object(ark_preset) else { fail("expected Ark preset") }
+    guard ark_preset.get("form") is Some(Object(ark_form)) else { continue }
+    ready_ark += 1
+    match json_string_from_map(ark_form, "apiFormat") {
+      Some("openai") => {
+        saw_openai = true
+        assert_eq(ark_form["appType"], Json::string("codex"))
+        assert_eq(
+          ark_form["templateLabel"],
+          Json::string("Ark Agent Plan / Kimi K3 / OpenAI Responses"),
+        )
+      }
+      Some("anthropic") => {
+        saw_anthropic = true
+        assert_eq(ark_form["appType"], Json::string("claude"))
+        assert_eq(
+          ark_form["templateLabel"],
+          Json::string("Ark Agent Plan / Kimi K3 / Anthropic Messages"),
+        )
+      }
+      _ => fail("expected explicit Ark protocol")
+    }
+  }
+  assert_eq(ready_ark, 2)
+  assert_true(saw_openai)
+  assert_true(saw_anthropic)
+
   let codex_ark = moon_visible_provider_presets(
     Some("codex"),
     "agentplan",
@@ -116,6 +148,7 @@ test "moongate provider presets include ready forms without secrets" {
     fail("expected OAuth form")
   }
   assert_eq(oauth_form["id"], Json::string("codex-oauth"))
+  assert_eq(oauth_form["templateLabel"], Json::string("Codex OAuth"))
   assert_false(oauth_form.contains("apiKey"))
 }
 
