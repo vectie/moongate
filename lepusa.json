@@ -2,6 +2,7 @@
   "identifier": "dev.vectie.moongate",
   "productName": "MoonGate",
   "version": "0.1.0",
+  "icon": "assets/moongate.icns",
   "runtime": {
     "backend": "system-webview",
     "assetProtocol": "lepusa",

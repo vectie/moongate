@@ -122,6 +122,7 @@ pub fn moongate_lepusa_manifest_json(port? : Int = 15721) -> Json {
     "identifier": Json::string("dev.vectie.moongate"),
     "productName": Json::string("MoonGate"),
     "version": Json::string("0.1.0"),
+    "icon": Json::string("assets/moongate.icns"),
     "runtime": Json::object({
       "backend": Json::string("system-webview"),
       "assetProtocol": Json::string("lepusa"),

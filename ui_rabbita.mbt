@@ -69,10 +69,13 @@ fn moongate_rabbita_sidebar() -> @html.Html {
     attrs=@html.Attrs::build().aria_label("MoonGate navigation"),
     [
       @html.div(class="brand", [
-        @html.span(
+        @html.img(
           class="brand-mark",
+          src="/assets/moongate.svg",
+          alt="",
+          width=32,
+          height=32,
           attrs=@html.Attrs::build().aria_hidden("true"),
-          "",
         ),
         @html.div(class="brand-copy", [
           @html.strong("MoonGate"),

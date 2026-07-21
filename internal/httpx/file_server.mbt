@@ -66,21 +66,27 @@ pub fn FileServer::new(path : StringView) -> FileServer {
           return
         }
       }
-      let content_type = match @pathx.ext(path) {
-        ".js" => "application/javascript"
-        ".css" => "text/css"
-        ".html" => "text/html"
-        ".png" => "image/png"
-        ".jpg" | ".jpeg" => "image/jpeg"
-        ".gif" => "image/gif"
-        _ => "application/octet-stream"
-      }
+      let content_type = static_content_type(path)
       w.header().set("Content-Type", content_type)
       w.write_header(@status.Ok)
       w.write(content)
     }
   }
   { path: path.to_owned(), middleware, handler: middleware(not_found) }
+}
+
+///|
+fn static_content_type(path : String) -> String {
+  match @pathx.ext(path) {
+    ".js" => "application/javascript"
+    ".css" => "text/css"
+    ".html" => "text/html"
+    ".svg" => "image/svg+xml"
+    ".png" => "image/png"
+    ".jpg" | ".jpeg" => "image/jpeg"
+    ".gif" => "image/gif"
+    _ => "application/octet-stream"
+  }
 }
 
 ///|

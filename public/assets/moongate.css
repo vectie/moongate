@@ -151,25 +151,12 @@ code,
 }
 
 .brand-mark {
-  position: relative;
-  width: 29px;
-  height: 29px;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 24px rgba(139, 157, 255, 0.18);
-}
-
-.brand-mark::after {
-  position: absolute;
-  top: -3px;
-  left: 8px;
-  width: 27px;
-  height: 27px;
-  border-radius: 50%;
-  background: var(--sidebar);
-  content: "";
+  border-radius: 9px;
+  box-shadow: 0 0 24px rgba(216, 181, 106, 0.18);
+  object-fit: cover;
 }
 
 .brand-copy strong,

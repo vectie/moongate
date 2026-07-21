@@ -10,6 +10,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moongate-suite.js"))
   assert_true(html.contains("/assets/moongate-resilience.js"))
   assert_true(html.contains("/assets/moongate.js"))
+  assert_true(html.contains("/assets/moongate.svg"))
   assert_true(html.contains("/assets/moonsuite-i18n.js"))
   assert_true(html.contains("data-moongate-framework-apps="))
   assert_true(html.contains("data-moongate-sections="))
@@ -384,12 +385,15 @@ async test "moongate lepusa manifest uses published package boundary shape" {
   }
   for
     key in [
-      "identifier", "productName", "version", "runtime", "bundleResources", "window",
-      "plugins", "capabilities", "startup",
+      "identifier", "productName", "version", "icon", "runtime", "bundleResources",
+      "window", "plugins", "capabilities", "startup",
     ] {
     assert_eq(parsed_obj[key], generated_obj[key])
   }
   assert_true(manifest.contains("\"identifier\": \"dev.vectie.moongate\""))
+  assert_true(manifest.contains("\"icon\": \"assets/moongate.icns\""))
+  assert_true(@fsx.exists_as_file("assets/moongate.icns"))
+  assert_true(@fsx.exists_as_file("public/assets/moongate.svg"))
   assert_true(manifest.contains("\"backend\": \"system-webview\""))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))
   assert_true(manifest.contains("\"source\":"))
