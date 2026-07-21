@@ -49,6 +49,20 @@ fn codex_forward_failed_error_body(
 }
 
 ///|
+fn codex_chat_bridge_request(
+  provider : ProviderRouteTarget,
+  request : Json,
+  client_model : String,
+) -> Json {
+  let chat_request = codex_responses_request_to_openai_chat_completion(
+    request, client_model,
+  ).unwrap_or(request)
+  guard chat_request is Object(obj) else { return chat_request }
+  obj["model"] = Json::string(provider.map_model_for_upstream(client_model))
+  Json::object(obj)
+}
+
+///|
 async fn ProxyService::handle_codex_responses(
   self : ProxyService,
   auth : AuthService,
@@ -218,14 +232,38 @@ async fn ProxyService::forward_non_streaming_chat_completion(
   for ;; {
     let active_provider = self.active_provider_target(usage, providers)
     let (response, response_body) = match active_provider {
-      Some(provider) if provider.can_use_codex_compatible_upstream() =>
+      Some(provider) if provider.can_use_codex_compatible_upstream() => {
+        let use_chat_bridge = provider.codex_uses_chat_completions()
+        let endpoint = if use_chat_bridge {
+          codex_compatible_chat_completions_endpoint(
+            "/backend-api/codex/responses",
+          )
+        } else {
+          codex_compatible_responses_endpoint("/backend-api/codex/responses")
+        }
+        let provider_request = if use_chat_bridge {
+          codex_chat_bridge_request(provider, request, response_model)
+        } else {
+          request
+        }
         match
           self.post_codex_compatible_provider_json(
-            provider,
-            codex_compatible_responses_endpoint("/backend-api/codex/responses"),
-            request,
+            provider, endpoint, provider_request,
           ) {
-          Ok(result) => result
+          Ok((response, body)) =>
+            if use_chat_bridge && response.code == 200 {
+              let converted = try @json.parse(body) catch {
+                _ => body
+              } noraise {
+                chat_response =>
+                  openai_chat_completion_to_codex_response_with_request(
+                    chat_response, response_model, request,
+                  ).stringify()
+              }
+              (response, converted)
+            } else {
+              (response, body)
+            }
           Err(error) => {
             let error_body = codex_forward_failed_error_body(
               provider,
@@ -262,6 +300,7 @@ async fn ProxyService::forward_non_streaming_chat_completion(
             return
           }
         }
+      }
       _ => {
         guard auth.credentials is Some(creds) else {
           usage.record_unauthorized_with_provider(self)
@@ -385,9 +424,7 @@ async fn ProxyService::forward_streaming_chat_completion(
           codex_compatible_responses_endpoint("/backend-api/codex/responses")
         }
         let provider_request = if use_chat_bridge {
-          codex_responses_request_to_openai_chat_completion(
-            request, response_model,
-          ).unwrap_or(request)
+          codex_chat_bridge_request(provider, request, response_model)
         } else {
           request
         }
@@ -648,10 +685,11 @@ async fn ProxyService::forward_non_streaming_codex_response(
           codex_compatible_responses_endpoint(endpoint)
         }
         let provider_request = if use_chat_bridge {
-          codex_responses_request_to_openai_chat_completion(
+          codex_chat_bridge_request(
+            provider,
             outbound_request,
             codex_request_model(request, model),
-          ).unwrap_or(outbound_request)
+          )
         } else {
           outbound_request
         }
@@ -832,10 +870,11 @@ async fn ProxyService::forward_streaming_codex_response(
           codex_compatible_responses_endpoint(endpoint)
         }
         let provider_request = if use_chat_bridge {
-          codex_responses_request_to_openai_chat_completion(
+          codex_chat_bridge_request(
+            provider,
             outbound_request,
             codex_request_model(request, model),
-          ).unwrap_or(outbound_request)
+          )
         } else {
           outbound_request
         }

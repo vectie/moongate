@@ -670,7 +670,13 @@ fn moongate_active_workspace_root() -> String {
   let configured = @os.getenv("MOONSUITE_WORKSPACE_ROOT") catch { _ => None }
   match configured {
     Some(root) if !root.trim().is_empty() => root
-    _ => @os.cwd() catch { _ => "." }
+    _ => {
+      let app_data = @os.getenv("LEPUSA_APP_DATA_DIR") catch { _ => None }
+      match app_data {
+        Some(root) if !root.trim().is_empty() => root
+        _ => @os.cwd() catch { _ => "." }
+      }
+    }
   }
 }
 
@@ -1159,35 +1165,34 @@ fn moongate_suite_routes() -> Array[String] {
   [
     "GET /", "GET /ui/rabbita", "GET /assets/moongate.css", "GET /assets/moongate-core.js",
     "GET /assets/moonsuite-i18n.js", "GET /assets/moongate-frameworks.js", "GET /assets/moongate-usage.js",
-    "GET /assets/moongate-setup.js",
-    "GET /assets/moongate-suite.js", "GET /assets/moongate-resilience.js", "GET /assets/moongate.js",
-    "GET /participant/register", "GET /control/bootstrap", "GET /suite/manifest",
-    "GET /suite/status", "GET /suite/drift", "POST /suite/status/write", "GET /suite/moonclaw-providers",
-    "POST /suite/moonclaw-providers/write", "GET /health", "GET /status", "GET /stats",
-    "GET /metrics", "GET /usage/logs", "GET /usage/summary", "GET /usage/summary/by-app",
-    "GET /usage/provider-stats", "GET /usage/trends", "GET /usage/provider-limits",
-    "GET /usage/model-stats", "GET /usage/data-sources", "POST /usage/sync-session",
-    "GET /usage/model-pricing", "POST /usage/model-pricing", "DELETE /usage/model-pricing",
-    "GET /usage/request-detail/*path", "GET /usage/provider-usage", "GET /usage/balance",
-    "GET /usage/subscription-quota", "GET /usage/codex-oauth-quota", "GET /usage/codex-oauth-models",
-    "GET /usage/coding-plan-quota", "POST /usage/test-script", "POST /proxy/stream-check/provider",
-    "POST /proxy/stream-check/all", "GET /proxy/stream-check/config", "POST /proxy/stream-check/config",
-    "GET /providers/presets", "GET /v1/models", "GET /claude-desktop/v1/models",
-    "POST /v1/messages", "POST /claude-desktop/v1/messages", "POST /v1/responses",
-    "POST /v1/responses/compact", "POST /v1/chat/completions", "POST /openclaw/v1/chat/completions",
-    "GET /auth/status", "GET /auth/accounts", "POST /auth/login", "POST /auth/poll",
-    "DELETE /auth/account", "POST /auth/default-account", "POST /auth/logout", "GET /copilot/status",
-    "GET /copilot/accounts", "GET /copilot/authenticated", "POST /copilot/device-flow",
-    "POST /copilot/poll-auth", "POST /copilot/poll-account", "POST /copilot/logout",
-    "DELETE /copilot/account", "POST /copilot/default-account", "GET /copilot/token",
-    "GET /copilot/models", "GET /copilot/usage", "POST /runtime/open-external", "POST /runtime/clipboard/text",
-    "POST /runtime/updates/check", "POST /runtime/tray-menu/update", "GET /runtime/portable-mode",
-    "GET /tools/versions", "POST /tools/lifecycle-action", "GET /tools/probe", "POST /runtime/window-theme",
-    "POST /runtime/lightweight-mode/enter", "POST /runtime/lightweight-mode/exit",
-    "GET /runtime/lightweight-mode", "POST /files/dialogs/save", "POST /config/files/export",
-    "POST /config/files/import", "POST /backups/db", "GET /backups/db", "POST /backups/db/restore",
-    "POST /backups/db/rename", "DELETE /backups/db/delete", "GET /deeplinks/parse",
-    "POST /deeplinks/merge", "POST /deeplinks/import", "POST /sync/webdav/test",
+    "GET /assets/moongate-setup.js", "GET /assets/moongate-suite.js", "GET /assets/moongate-resilience.js",
+    "GET /assets/moongate.js", "GET /participant/register", "GET /control/bootstrap",
+    "GET /suite/manifest", "GET /suite/status", "GET /suite/drift", "POST /suite/status/write",
+    "GET /suite/moonclaw-providers", "POST /suite/moonclaw-providers/write", "GET /health",
+    "GET /status", "GET /stats", "GET /metrics", "GET /usage/logs", "GET /usage/summary",
+    "GET /usage/summary/by-app", "GET /usage/provider-stats", "GET /usage/trends",
+    "GET /usage/provider-limits", "GET /usage/model-stats", "GET /usage/data-sources",
+    "POST /usage/sync-session", "GET /usage/model-pricing", "POST /usage/model-pricing",
+    "DELETE /usage/model-pricing", "GET /usage/request-detail/*path", "GET /usage/provider-usage",
+    "GET /usage/balance", "GET /usage/subscription-quota", "GET /usage/codex-oauth-quota",
+    "GET /usage/codex-oauth-models", "GET /usage/coding-plan-quota", "POST /usage/test-script",
+    "POST /proxy/stream-check/provider", "POST /proxy/stream-check/all", "GET /proxy/stream-check/config",
+    "POST /proxy/stream-check/config", "GET /providers/presets", "GET /v1/models",
+    "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude-desktop/v1/messages",
+    "POST /v1/responses", "POST /v1/responses/compact", "POST /v1/chat/completions",
+    "POST /openclaw/v1/chat/completions", "GET /auth/status", "GET /auth/accounts",
+    "POST /auth/login", "POST /auth/poll", "DELETE /auth/account", "POST /auth/default-account",
+    "POST /auth/logout", "GET /copilot/status", "GET /copilot/accounts", "GET /copilot/authenticated",
+    "POST /copilot/device-flow", "POST /copilot/poll-auth", "POST /copilot/poll-account",
+    "POST /copilot/logout", "DELETE /copilot/account", "POST /copilot/default-account",
+    "GET /copilot/token", "GET /copilot/models", "GET /copilot/usage", "POST /runtime/open-external",
+    "POST /runtime/clipboard/text", "POST /runtime/updates/check", "POST /runtime/tray-menu/update",
+    "GET /runtime/portable-mode", "GET /tools/versions", "POST /tools/lifecycle-action",
+    "GET /tools/probe", "POST /runtime/window-theme", "POST /runtime/lightweight-mode/enter",
+    "POST /runtime/lightweight-mode/exit", "GET /runtime/lightweight-mode", "POST /files/dialogs/save",
+    "POST /config/files/export", "POST /config/files/import", "POST /backups/db",
+    "GET /backups/db", "POST /backups/db/restore", "POST /backups/db/rename", "DELETE /backups/db/delete",
+    "GET /deeplinks/parse", "POST /deeplinks/merge", "POST /deeplinks/import", "POST /sync/webdav/test",
     "POST /sync/webdav/upload", "POST /sync/webdav/download", "POST /sync/webdav/settings",
     "GET /sync/webdav/remote-info", "POST /sync/s3/test", "POST /sync/s3/upload",
     "POST /sync/s3/download", "POST /sync/s3/settings", "GET /sync/s3/remote-info",

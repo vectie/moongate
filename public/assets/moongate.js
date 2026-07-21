@@ -94,10 +94,12 @@ async function refresh() {
 
   const gatewayState = healthProbe.ok ? firstString(health, ["status", "state", "ok"]) : "Unavailable";
   text("gateway-state", gatewayState);
+  if ($("gateway-state")) $("gateway-state").className = stateClass(gatewayState);
   text("gateway-detail", statusProbe.ok ? firstString(status, ["address", "baseUrl", "url"], "Local API ready") : statusProbe.error);
 
   const proxyState = proxyProbe.ok ? firstString(proxy, ["status", "state", "running", "enabled"]) : "Unavailable";
   text("proxy-state", proxyState);
+  if ($("proxy-state")) $("proxy-state").className = stateClass(proxyState);
   text("proxy-detail", proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "Proxy route status") : proxyProbe.error);
 
   updateTotals(summary, status);
@@ -130,6 +132,7 @@ async function refresh() {
     "ui-updated",
     window.MoonSuiteI18n?.message("stat.updated", { suffix, time }) ?? `Updated${suffix} ${time}`,
   );
+  text("topbar-updated", `Updated${suffix} ${time}`);
 }
 
 function showError(error) {
@@ -138,11 +141,7 @@ function showError(error) {
   if (message) message.textContent = error && error.message ? error.message : String(error);
   if (box) box.hidden = false;
   text("ui-updated", "Refresh failed");
-  text("operator-action-status", "Action failed");
-}
-
-function setOperatorStatus(value) {
-  text("operator-action-status", value);
+  text("topbar-updated", "Refresh failed");
 }
 
 function shellApiBase() {
@@ -196,51 +195,35 @@ async function copyText(value) {
   input.remove();
 }
 
-async function runOperatorAction(action) {
-  const labels = {
-    "start-proxy": "Starting proxy",
-    "sync-live": "Syncing providers",
-    "refresh-setup": "Checking setup",
-    "stream-check": "Checking streams",
-    "write-suite": "Writing suite status",
-  };
-  setOperatorStatus(labels[action] || "Running action");
-  if (action === "start-proxy") {
-    await postJson(endpoints.proxyStart);
-    await refresh();
-  } else if (action === "sync-live") {
-    await postJson(endpoints.syncLive);
-    await refresh();
-  } else if (action === "refresh-setup") {
-    await loadSetupStatus();
-  } else if (action === "stream-check") {
-    const rows = await postJson(endpoints.streamCheckAll, { appType: selectedResilienceApp(), proxyTargetsOnly: true });
-    renderStreamCheckResults(Array.isArray(rows) ? rows : []);
-  } else if (action === "write-suite") {
-    await postJson(endpoints.suiteWriteStatus);
-    await loadSuite();
-  }
-  setOperatorStatus("Ready");
+let toastTimer;
+
+function showToast(value) {
+  const toast = $("toast");
+  text("toast-text", value);
+  if (!toast) return;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
-$("operator-actions")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-operator-action]");
-  if (!button) return;
-  runOperatorAction(button.dataset.operatorAction).catch(showError);
-});
-
-$("connection-board")?.addEventListener("click", (event) => {
+document.querySelector(".shell")?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-copy-path]");
   const snippetButton = event.target.closest("button[data-copy-snippet]");
   if (button) {
     const url = connectionUrl(button.dataset.copyPath);
     copyText(url)
-      .then(() => text("connection-copy-status", `Copied ${button.dataset.copyPath}`))
+      .then(() => {
+        text("connection-copy-status", `Copied ${button.dataset.copyPath}`);
+        showToast("Endpoint copied");
+      })
       .catch(showError);
   } else if (snippetButton) {
     const value = clientSnippet(snippetButton.dataset.copySnippet);
     copyText(value)
-      .then(() => text("connection-copy-status", "Snippet copied"))
+      .then(() => {
+        text("connection-copy-status", "Snippet copied");
+        showToast("Snippet copied");
+      })
       .catch(showError);
   }
 });
@@ -372,7 +355,10 @@ $("framework-rows")?.addEventListener("click", (event) => {
     refresh().catch(showError);
   } else if (action === "edit-provider") {
     const providerId = selectedProviderId(appType);
-    if (providerId) editProvider(appType, providerId);
+    if (providerId) {
+      editProvider(appType, providerId);
+      goToPage("providers");
+    }
   } else if (action === "test-provider") {
     const providerId = selectedProviderId(appType);
     if (providerId) {
@@ -391,6 +377,48 @@ $("framework-rows")?.addEventListener("click", (event) => {
   }
 });
 
+$("provider-rows")?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-provider-edit]");
+  if (!button) return;
+  editProvider(button.dataset.providerApp, button.dataset.providerEdit);
+});
+
+function goToPage(page) {
+  const target = document.querySelector(`[data-page-view="${page}"]`);
+  if (!target) return;
+  document.querySelectorAll("[data-page-view]").forEach((node) => {
+    node.classList.toggle("active", node === target);
+  });
+  document.querySelectorAll("[data-page]").forEach((node) => {
+    const active = node.dataset.page === page;
+    node.classList.toggle("active", active);
+    if (active) node.setAttribute("aria-current", "page");
+    else node.removeAttribute("aria-current");
+  });
+  text("page-title", target.dataset.pageTitle || page);
+  text("page-subtitle", target.dataset.pageSubtitle || "");
+  if (window.location.hash !== `#${page}`) history.replaceState(null, "", `#${page}`);
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+document.querySelector(".nav")?.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-page]");
+  if (!link) return;
+  event.preventDefault();
+  goToPage(link.dataset.page);
+});
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-goto]");
+  if (!link) return;
+  event.preventDefault();
+  goToPage(link.dataset.goto);
+});
+
+window.addEventListener("hashchange", () => {
+  goToPage(window.location.hash.slice(1) || "overview");
+});
+
 initProviderAppSelect();
 initUsageAppSelect();
 initResilienceAppSelect();
@@ -399,6 +427,7 @@ renderReadiness({});
 renderRequestDetail(null);
 renderStreamCheckResults([]);
 renderConnectionValues();
+goToPage(window.location.hash.slice(1) || "overview");
 
 $("provider-clear")?.addEventListener("click", () => {
   clearProviderForm($("provider-app").value);

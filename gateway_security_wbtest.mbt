@@ -14,6 +14,20 @@ test "gateway security accepts local SDK requests without origin" {
       15721,
     ),
   )
+  assert_true(
+    moongate_request_authority_allowed(
+      { "host": "127.0.0.1" },
+      "127.0.0.1",
+      15721,
+    ),
+  )
+  assert_true(
+    moongate_request_authority_allowed(
+      { "host": "localhost" },
+      "127.0.0.1",
+      15721,
+    ),
+  )
 }
 
 ///|
@@ -68,6 +82,13 @@ test "gateway security supports explicit non-loopback bind authority" {
       15721,
     ),
   )
+  assert_false(
+    moongate_request_authority_allowed(
+      { "host": "192.168.1.20" },
+      "192.168.1.20",
+      15721,
+    ),
+  )
 }
 
 ///|
@@ -93,6 +114,13 @@ test "gateway control bootstrap requires a same-origin browser" {
   assert_true(
     moongate_control_bootstrap_allowed(
       { "origin": "http://127.0.0.1:15721", "sec-fetch-site": "same-origin" },
+      "127.0.0.1",
+      15721,
+    ),
+  )
+  assert_true(
+    moongate_control_bootstrap_allowed(
+      { "sec-fetch-site": "same-origin" },
       "127.0.0.1",
       15721,
     ),

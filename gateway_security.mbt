@@ -35,13 +35,17 @@ fn moongate_control_bootstrap_allowed(
   configured_host : String,
   port : Int,
 ) -> Bool {
-  guard headers.get("origin") is Some(origin) else { return false }
-  if !moongate_origin_allowed(origin, configured_host, port) {
-    return false
-  }
-  match headers.get("sec-fetch-site") {
-    Some(site) => site == "same-origin"
-    None => true
+  match headers.get("origin") {
+    Some(origin) => {
+      if !moongate_origin_allowed(origin, configured_host, port) {
+        return false
+      }
+      match headers.get("sec-fetch-site") {
+        Some(site) => site == "same-origin"
+        None => true
+      }
+    }
+    None => headers.get("sec-fetch-site") == Some("same-origin")
   }
 }
 
@@ -116,13 +120,29 @@ fn moongate_request_authority_allowed(
     return false
   }
   if !moongate_host_allowed(authority.host, configured_host) ||
-    !moongate_port_allowed(authority.port, port) {
+    !moongate_request_port_allowed(authority.host, authority.port, port) {
     return false
   }
   match headers.get("origin") {
     None => true
     Some(origin) => moongate_origin_allowed(origin, configured_host, port)
   }
+}
+
+///|
+fn moongate_request_port_allowed(
+  host : String,
+  actual : Int?,
+  expected : Int,
+) -> Bool {
+  moongate_port_allowed(actual, expected) ||
+  (actual is None && moongate_loopback_host(host))
+}
+
+///|
+fn moongate_loopback_host(host : String) -> Bool {
+  let normalized = host.trim().to_lower()
+  normalized == "localhost" || normalized == "127.0.0.1" || normalized == "::1"
 }
 
 ///|

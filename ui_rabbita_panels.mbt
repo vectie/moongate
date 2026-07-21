@@ -44,7 +44,8 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
       ),
       moongate_rabbita_select_label("API Format", "provider-api-format", [
         ("", "Default"),
-        ("openai", "OpenAI"),
+        ("openai", "OpenAI Responses"),
+        ("openai_chat", "OpenAI Chat Completions"),
         ("anthropic", "Anthropic"),
         ("gemini_native", "Gemini Native"),
       ]),
@@ -394,7 +395,7 @@ fn moongate_rabbita_provider_health_panel() -> @html.Html {
       @html.span(id="provider-count", class="pill", "0 providers"),
     ]),
     moongate_rabbita_table(
-      ["Provider", "App", "Status", "Model", "Last Error"],
+      ["Provider", "App", "Status", "Model", "Action"],
       "provider-rows",
     ),
   ])

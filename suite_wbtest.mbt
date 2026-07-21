@@ -1579,8 +1579,9 @@ async test "gateway start writes running suite status" {
 }
 
 ///|
-async test "suite workspace root supports an explicit launch override" {
+async test "suite workspace root supports explicit and Lepusa launch overrides" {
   let source = @fsx.read_file("suite.mbt")
   assert_true(source.contains("MOONSUITE_WORKSPACE_ROOT"))
+  assert_true(source.contains("LEPUSA_APP_DATA_DIR"))
   assert_true(source.contains("root.trim().is_empty()"))
 }
