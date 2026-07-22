@@ -4,6 +4,21 @@ let importedProviderTemplates = [];
 let frameworkLoadGeneration = 0;
 let providerTemplateLoadGeneration = 0;
 let pendingProviderDeleteKey = "";
+let selectedProviderKey = "";
+const providerTestResults = new Map();
+
+function providerRouteKey(appType, providerId) {
+  return `${appType}:${providerId}`;
+}
+
+function selectProviderRow(appType, providerId) {
+  selectedProviderKey = appType && providerId ? providerRouteKey(appType, providerId) : "";
+  document.querySelectorAll("tr[data-provider-row]").forEach((row) => {
+    const selected = row.dataset.providerRow === selectedProviderKey;
+    row.classList.toggle("selected", selected);
+    row.setAttribute("aria-selected", selected ? "true" : "false");
+  });
+}
 
 function providerFrameworkOrder(appType) {
   const index = frameworkApps.findIndex((app) => app.id === appType);
@@ -47,8 +62,18 @@ function renderProviderRows(data, error = "") {
     const providerId = firstString(row, ["providerId", "id", "providerName", "name"]);
     const provider = firstString(row, ["providerName", "name"], providerId);
     const app = firstString(row, ["appType", "app", "type"]);
+    const routeKey = providerRouteKey(app, providerId);
+    const latestTest = providerTestResults.get(routeKey);
     const status = firstString(row, ["healthStatus", "status", "state", "health", "isHealthy", "is_healthy"], "unknown");
-    const statusLabel = String(status).toLowerCase() === "unknown" ? "Not tested" : status;
+    const statusLabel = latestTest
+      ? latestTest.success === true && latestTest.networkRequestPerformed === true
+        ? "Test passed"
+        : "Test failed"
+      : String(status).toLowerCase() === "unknown"
+        ? "Not tested"
+        : status;
+    const testPassed = latestTest?.success === true && latestTest?.networkRequestPerformed === true;
+    const statusClassName = latestTest ? `state ${testPassed ? "good" : "bad"}` : stateClass(statusLabel);
     const model = firstString(
       row,
       ["model", "modelId", "activeModel", "routeModel"],
@@ -60,23 +85,34 @@ function renderProviderRows(data, error = "") {
       row.builtIn === true ? "Built-in" : row.origin === "user" ? "Configured" : firstString(row, ["origin"], ""),
     ].filter(Boolean).join(" · ");
     const credentialState = firstString(row, ["credentialState"], row.hasApiKey === true ? "stored" : "missing");
-    const credentialLabel = credentialState === "stored"
-      ? "Stored securely"
-      : credentialState === "oauth"
+    const credentialLabel = credentialState === "oauth"
         ? "OAuth"
-        : "Not configured";
-    const credentialClass = credentialState === "stored" || credentialState === "oauth" ? "good" : "warn";
+        : credentialState === "stored"
+          ? ""
+          : "API key needed";
+    const credentialClass = credentialState === "oauth" ? "good" : "warn";
+    const credentialStateHtml = credentialLabel
+      ? `<span class="state ${credentialClass}">${escapeHtml(credentialLabel)}</span>`
+      : "";
     const routeAction = row.isCurrent === true
-      ? `<span class="state good">In use</span>`
-      : providerRow(app)?.mode === "additive"
+      ? `<button type="button" class="button-secondary" data-provider-stop="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Stop Using</button>`
+      : row.enabled === false
+        ? `<span class="state warn">Disabled</span>`
+        : providerRow(app)?.mode === "additive"
         ? ""
         : `<button type="button" class="button-secondary" data-provider-use="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Use</button>`;
     const tr = document.createElement("tr");
+    tr.dataset.providerRow = routeKey;
+    tr.dataset.providerApp = app;
+    tr.dataset.providerId = providerId;
+    tr.tabIndex = 0;
+    tr.setAttribute("aria-selected", routeKey === selectedProviderKey ? "true" : "false");
+    tr.classList.toggle("selected", routeKey === selectedProviderKey);
     if (row.isCurrent === true) tr.dataset.currentProvider = "true";
     tr.innerHTML = `
       <td><strong>${escapeHtml(provider)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}<small>Model: ${escapeHtml(model)}</small>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
       <td>${escapeHtml(providerTemplateFrameworkLabel(app))}</td>
-      <td><div class="provider-state-stack"><span class="state ${credentialClass}">${escapeHtml(credentialLabel)}</span><span class="${stateClass(statusLabel)}">${escapeHtml(statusLabel)}</span></div></td>
+      <td><div class="provider-state-stack">${credentialStateHtml}<span class="${statusClassName}">${escapeHtml(statusLabel)}</span></div></td>
       <td><div class="inline-actions">${routeAction}<button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></div></td>
     `;
     target.appendChild(tr);
@@ -240,16 +276,19 @@ function setProviderTestResult(result = null) {
 
 function setProviderCredentialState(provider = null) {
   const input = $("provider-api-key");
-  if (!input) return;
+  const status = $("provider-credential-status");
+  if (!input || !status) return;
+  status.hidden = false;
   if (provider?.credentialState === "stored") {
-    input.placeholder = "Stored securely — leave blank to keep";
-    text("provider-credential-status", "Stored securely. Leave this box blank to retain it; MoonGate never reads the key back into the UI.");
+    input.placeholder = "********";
+    status.textContent = "";
+    status.hidden = true;
   } else if (provider?.credentialState === "oauth") {
     input.placeholder = "OAuth provider — no API key needed";
-    text("provider-credential-status", "Uses Codex OAuth. The token remains in the private local credential store.");
+    status.textContent = "Uses account sign-in; no API key is needed.";
   } else {
     input.placeholder = "Paste API key";
-    text("provider-credential-status", "No stored credential. A pasted key is saved privately and never returned to the UI.");
+    status.textContent = "Enter the API key required by this provider.";
   }
 }
 
@@ -266,13 +305,20 @@ function renderProviderRouteState(appType, providerId = "") {
     if (useButton) useButton.disabled = true;
     return;
   }
+  const savedProvider = providerId ? providerById(appType, providerId) : null;
   const current = providerById(appType, row.current);
   const currentName = current ? firstString(current, ["name", "providerName"], row.current) : row.current || "None";
-  text("provider-active-route", `${row.label}: ${currentName}${row.current ? ` (${row.current})` : ""}`);
+  const routeSummary = row.current ? `${currentName} (${row.current})` : "None";
+  text("provider-active-route", `Request type: ${row.label} · selected route: ${routeSummary}`);
   if (useButton) {
-    const savedProvider = providerId ? providerById(appType, providerId) : null;
-    useButton.disabled = !savedProvider || providerId === row.current;
-    useButton.textContent = providerId === row.current ? "Currently In Use" : "Use This Provider";
+    const isCurrent = Boolean(savedProvider && providerId === row.current);
+    useButton.disabled = !savedProvider || savedProvider.enabled === false;
+    useButton.dataset.routeAction = isCurrent ? "stop" : "use";
+    useButton.textContent = savedProvider?.enabled === false
+      ? "Enable Before Use"
+      : isCurrent
+        ? "Stop Using Provider"
+        : "Use This Provider";
   }
 }
 
@@ -302,6 +348,8 @@ function clearProviderForm(appType) {
   $("provider-clear-models").checked = false;
   setProviderCredentialState();
   setProviderTestResult();
+  selectedProviderKey = "";
+  selectProviderRow("", "");
   $("provider-delete").disabled = true;
   renderProviderRouteState($("provider-app").value);
   setProviderStatus("New provider");
@@ -473,6 +521,7 @@ function editProvider(appType, providerId) {
     setProviderStatus("Provider not found in current view");
     return;
   }
+  selectProviderRow(appType, providerId);
   $("provider-original-id").value = providerId;
   $("provider-original-app").value = appType;
   $("provider-app").value = appType;
@@ -501,7 +550,7 @@ function editProvider(appType, providerId) {
   $("provider-delete").title = provider.builtIn === true
     ? "Built-in routes cannot be deleted"
     : "Delete this configured provider";
-  setProviderTestResult();
+  setProviderTestResult(providerTestResults.get(providerRouteKey(appType, providerId)) || null);
   renderProviderRouteState(appType, providerId);
   setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in route)" : ""}`);
 }
@@ -567,13 +616,7 @@ async function saveProvider() {
   }
   await refresh();
   editProvider(payload.appType, payload.id);
-  const saved = providerById(payload.appType, payload.id);
-  const credential = saved?.credentialState === "stored"
-    ? "stored credential retained"
-    : saved?.credentialState === "oauth"
-      ? "OAuth retained"
-      : "no credential stored";
-  setProviderStatus(`${originalId ? "Updated" : "Created"} ${payload.id} · ${credential}`);
+  setProviderStatus(`${originalId ? "Updated" : "Created"} ${payload.id}`);
 }
 
 async function deleteProviderFromForm() {
@@ -615,7 +658,13 @@ async function testProviderFromForm() {
     providerId,
     draft: true,
   });
+  providerTestResults.set(providerRouteKey(appType, providerId), result);
   setProviderTestResult(result);
+  if (providerById(appType, providerId)) {
+    await loadFrameworks();
+    editProvider(appType, providerId);
+    setProviderTestResult(result);
+  }
   if (result.networkRequestPerformed !== true) {
     setProviderStatus("Test rejected: the backend did not perform a network request");
     return;
@@ -635,10 +684,17 @@ async function useProviderFromForm() {
     setProviderStatus("This framework uses additive routing; every enabled provider is active");
     return;
   }
-  await postJson(endpoints.providerSwitch, { appType, id: providerId });
+  const stopping = providerRow(appType)?.current === providerId;
+  if (stopping) {
+    await deleteJson(endpoints.providerCurrent, { appType, id: providerId });
+  } else {
+    await postJson(endpoints.providerSwitch, { appType, id: providerId });
+  }
   await refresh();
   editProvider(appType, providerId);
-  setProviderStatus(`Now using ${providerId} for ${providerTemplateFrameworkLabel(appType)}`);
+  setProviderStatus(stopping
+    ? `Stopped using ${providerId} · ${providerTemplateFrameworkLabel(appType)} has no selected route`
+    : `Now using ${providerId} for ${providerTemplateFrameworkLabel(appType)}`);
 }
 
 async function loadFrameworkRow(app) {

@@ -265,6 +265,7 @@ test "suite manifest publishes moongate service contract" {
   )
   assert_true(routes.contains(Json::string("GET /providers")))
   assert_true(routes.contains(Json::string("GET /providers/current")))
+  assert_true(routes.contains(Json::string("DELETE /providers/current")))
   assert_true(routes.contains(Json::string("POST /providers")))
   assert_true(routes.contains(Json::string("POST /providers/update")))
   assert_true(routes.contains(Json::string("DELETE /providers")))
@@ -308,12 +309,13 @@ test "suite manifest publishes moongate service contract" {
     "GET|POST /proxy/global-url", "POST /proxy/test-url", "GET /proxy/upstream-status",
     "GET /proxy/local-proxies", "POST /proxy/switch-provider", "POST /proxy/sync-current-providers-live",
     "POST /proxy/import-default-config", "GET /providers", "GET /providers/current",
-    "POST /providers", "POST /providers/update", "POST /providers/switch", "GET /providers/live-settings",
-    "GET /providers/live-ids", "GET /providers/live-provider", "POST /providers/import-live",
-    "POST /proxy/reset-circuit-breaker", "GET /mcp/servers", "POST /mcp/servers",
-    "DELETE /mcp/servers", "GET /prompts", "POST /prompts", "DELETE /prompts", "GET /openclaw/config-health",
-    "GET /openclaw/default-model", "POST /openclaw/default-model", "GET /hermes/model-config",
-    "GET /hermes/memory", "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
+    "DELETE /providers/current", "POST /providers", "POST /providers/update", "POST /providers/switch",
+    "GET /providers/live-settings", "GET /providers/live-ids", "GET /providers/live-provider",
+    "POST /providers/import-live", "POST /proxy/reset-circuit-breaker", "GET /mcp/servers",
+    "POST /mcp/servers", "DELETE /mcp/servers", "GET /prompts", "POST /prompts",
+    "DELETE /prompts", "GET /openclaw/config-health", "GET /openclaw/default-model",
+    "POST /openclaw/default-model", "GET /hermes/model-config", "GET /hermes/memory",
+    "POST /hermes/memory", "GET /providers/universal", "GET /providers/universal/item",
     "POST /providers/universal", "DELETE /providers/universal", "POST /providers/test-endpoints",
     "POST /config/models",
   ]

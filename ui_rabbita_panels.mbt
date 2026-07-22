@@ -33,7 +33,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
     ]),
     @html.div(class="provider-route-banner", [
       @html.div([
-        @html.small("Active route"),
+        @html.small("Selected routing profile"),
         @html.strong(id="provider-active-route", "Loading provider route…"),
       ]),
       @html.button(
@@ -85,7 +85,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
           "Templates fill the form; API keys are always entered separately.",
         ),
       ]),
-      moongate_rabbita_select_label("AI app", "provider-app", []),
+      moongate_rabbita_select_label("Request type", "provider-app", []),
       moongate_rabbita_input_label(
         "Provider ID (internal name)", "provider-id", "", true,
       ),
@@ -108,7 +108,7 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
       @html.small(
         id="provider-credential-status",
         class="field-hint",
-        "No stored credential",
+        "Enter the API key required by this provider.",
       ),
       moongate_rabbita_input_label(
         "Default Model", "provider-default-model", "", false,
@@ -526,11 +526,15 @@ fn moongate_rabbita_stream_card() -> @html.Html {
 ///|
 fn moongate_rabbita_provider_health_panel() -> @html.Html {
   @html.article(id="provider-health", class="panel wide", [
-    moongate_rabbita_panel_head("Routing", "Provider Health", [
+    moongate_rabbita_panel_head("Routing", "Provider Routes", [
       @html.span(id="provider-count", class="pill", "0 providers"),
     ]),
+    @html.p(
+      class="panel-description",
+      "Select a row to edit it. Request type describes MoonGate's routing profile; it does not mean that app is connected.",
+    ),
     moongate_rabbita_table(
-      ["Provider", "AI app", "State", "Action"],
+      ["Provider", "Request type", "State", "Action"],
       "provider-rows",
     ),
   ])

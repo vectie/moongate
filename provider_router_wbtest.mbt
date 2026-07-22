@@ -85,7 +85,7 @@ test "provider router failover disabled uses current provider" {
 }
 
 ///|
-test "provider router current selection ignores metadata enabled flag like moongate" {
+test "provider router current selection rejects a disabled provider" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -97,10 +97,25 @@ test "provider router current selection ignores metadata enabled flag like moong
   )
   router.set_current_provider("claude", "a")
   let selected = router.select_providers("claude", now_ms=1000)
-  assert_true(selected.is_ok())
-  assert_eq(selected.providers.length(), 1)
-  assert_eq(selected.providers[0].provider_id, "a")
-  assert_false(selected.providers[0].enabled)
+  assert_false(selected.is_ok())
+  assert_true(selected.error is Some(NoProvidersConfigured))
+}
+
+///|
+test "provider router can clear only the expected current provider" {
+  let router = ProviderRouter::new()
+  router.upsert_provider(
+    ProviderRouteTarget::new(
+      app_type="codex",
+      provider_id="ark",
+      provider_name="Ark",
+    ),
+  )
+  router.set_current_provider("codex", "ark")
+  assert_false(router.clear_current_provider("codex", provider_id="other"))
+  assert_eq(router.current_provider_id("codex"), Some("ark"))
+  assert_true(router.clear_current_provider("codex", provider_id="ark"))
+  assert_eq(router.current_provider_id("codex"), None)
 }
 
 ///|
@@ -197,7 +212,7 @@ test "provider router failover enabled uses moongate sorted queue ignoring curre
 }
 
 ///|
-test "provider router failover queue ignores metadata enabled flag like moongate" {
+test "provider router failover queue skips disabled providers" {
   let router = ProviderRouter::new()
   router.upsert_provider(
     ProviderRouteTarget::new(
@@ -210,10 +225,8 @@ test "provider router failover queue ignores metadata enabled flag like moongate
   router.set_failover_queue("claude", ["a"])
   router.set_auto_failover("claude", true)
   let selected = router.select_providers("claude", now_ms=1000)
-  assert_true(selected.is_ok())
-  assert_eq(selected.providers.length(), 1)
-  assert_eq(selected.providers[0].provider_id, "a")
-  assert_false(selected.providers[0].enabled)
+  assert_false(selected.is_ok())
+  assert_true(selected.error is Some(NoProvidersConfigured))
 }
 
 ///|

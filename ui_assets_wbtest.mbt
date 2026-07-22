@@ -24,7 +24,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
     ] {
     assert_true(html.contains(app))
   }
-  assert_true(html.contains("Provider Health"))
+  assert_true(html.contains("Provider Routes"))
   assert_true(html.contains("Readiness"))
   assert_true(html.contains("Ready to use"))
   assert_false(html.contains("Operator Actions"))
@@ -63,7 +63,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Run Connection Test"))
   assert_true(html.contains("Save Provider"))
   assert_true(html.contains("Use This Provider"))
-  assert_true(html.contains("Active route"))
+  assert_true(html.contains("Selected routing profile"))
   assert_true(html.contains("Delete Provider"))
   assert_true(html.contains("Test Provider"))
   assert_true(html.contains("Usage Explorer"))
@@ -235,6 +235,27 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(assets.contains("defaultModel"))
   assert_true(js.contains("usageDashboardRefreshIntervalMs"))
   assert_true(js.contains("setTimeout"))
+}
+
+///|
+async test "provider editor exposes truthful selectable tested and stoppable route states" {
+  let html = moongate_rabbita_shell_html()
+  let frameworks = @fsx.read_file("public/assets/moongate-frameworks.js")
+  let dashboard = @fsx.read_file("public/assets/moongate.js")
+  let css = @fsx.read_file("public/assets/moongate.css")
+  assert_true(html.contains("Provider Routes"))
+  assert_true(html.contains("Request type"))
+  assert_true(html.contains("does not mean that app is connected"))
+  assert_true(frameworks.contains("selectedProviderKey"))
+  assert_true(frameworks.contains("Test passed"))
+  assert_true(frameworks.contains("Stop Using Provider"))
+  assert_true(frameworks.contains("input.placeholder = \"********\""))
+  assert_false(frameworks.contains("Stored securely. Leave this box blank"))
+  assert_false(frameworks.contains("stored credential retained"))
+  assert_true(frameworks.contains("deleteJson(endpoints.providerCurrent"))
+  assert_true(dashboard.contains("tr[data-provider-row]"))
+  assert_true(dashboard.contains("button[data-provider-stop]"))
+  assert_true(css.contains("tr[data-provider-row].selected"))
 }
 
 ///|

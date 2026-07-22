@@ -293,7 +293,7 @@ fn moongate_rabbita_providers_page() -> @html.Html {
   moongate_rabbita_page(
     "providers",
     "Providers",
-    "Add provider accounts, test their real connection, and choose the one in use.",
+    "Add providers, test their real connection, and select or stop a routing profile.",
     false,
     [
       @html.div(class="master-detail provider-master-detail", [

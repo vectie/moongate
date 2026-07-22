@@ -430,16 +430,42 @@ $("framework-rows")?.addEventListener("click", (event) => {
 });
 
 $("provider-rows")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-provider-edit], button[data-provider-use]");
-  if (!button) return;
-  if (button.dataset.providerUse) {
+  const button = event.target.closest("button[data-provider-edit], button[data-provider-use], button[data-provider-stop]");
+  const row = event.target.closest("tr[data-provider-row]");
+  if (button?.dataset.providerUse) {
+    selectProviderRow(button.dataset.providerApp, button.dataset.providerUse);
     postJson(endpoints.providerSwitch, {
       appType: button.dataset.providerApp,
       id: button.dataset.providerUse,
-    }).then(refresh).catch(showError);
+    }).then(refresh)
+      .then(() => editProvider(button.dataset.providerApp, button.dataset.providerUse))
+      .catch(showError);
     return;
   }
-  editProvider(button.dataset.providerApp, button.dataset.providerEdit);
+  if (button?.dataset.providerStop) {
+    selectProviderRow(button.dataset.providerApp, button.dataset.providerStop);
+    deleteJson(endpoints.providerCurrent, {
+      appType: button.dataset.providerApp,
+      id: button.dataset.providerStop,
+    }).then(refresh)
+      .then(() => editProvider(button.dataset.providerApp, button.dataset.providerStop))
+      .catch(showError);
+    return;
+  }
+  if (button?.dataset.providerEdit) {
+    editProvider(button.dataset.providerApp, button.dataset.providerEdit);
+    return;
+  }
+  if (row) editProvider(row.dataset.providerApp, row.dataset.providerId);
+});
+
+$("provider-rows")?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  if (event.target.closest("button, select, input, a")) return;
+  const row = event.target.closest("tr[data-provider-row]");
+  if (!row) return;
+  event.preventDefault();
+  editProvider(row.dataset.providerApp, row.dataset.providerId);
 });
 
 function goToPage(page) {

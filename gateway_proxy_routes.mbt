@@ -187,6 +187,9 @@ fn ProxyService::register_management_routes(
   router.add_handler(Get, "/providers/current", (r, w) => {
     self.handle_get_current_provider(r, w)
   })
+  router.add_handler(Delete, "/providers/current", (r, w) => {
+    self.handle_clear_current_provider(r, w)
+  })
   router.add_handler(Post, "/providers", (r, w) => {
     self.handle_add_provider(r, w, usage)
   })

@@ -1059,6 +1059,25 @@ tbody tr:hover td {
   background: rgba(139, 157, 255, 0.025);
 }
 
+tr[data-provider-row] {
+  cursor: pointer;
+}
+
+tr[data-provider-row].selected td,
+tr[data-provider-row][aria-selected="true"] td {
+  background: rgba(139, 157, 255, 0.1);
+}
+
+tr[data-provider-row].selected td:first-child,
+tr[data-provider-row][aria-selected="true"] td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+tr[data-provider-row]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 td strong,
 td small {
   display: block;

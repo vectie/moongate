@@ -80,8 +80,8 @@ The in-app Guide contains a shorter copy of this page and is always reachable fr
 | --- | --- |
 | AI routing | MoonGate receiving a request from an AI app and sending it to the selected provider. |
 | Provider | An AI service or account that answers requests, such as Codex OAuth or Volcengine Ark. |
-| Framework / AI app | The program using MoonGate, such as Codex, Claude Code, Gemini, OpenCode, OpenClaw, or Hermes. |
-| Active route / In use | The provider MoonGate will use now for a particular AI app. |
+| Request type / routing profile | The request format and provider group MoonGate will use. It does not prove the named app is connected. |
+| Selected route | The provider MoonGate will use if a matching request arrives. A route can also be stopped so no provider is selected. |
 | Model | The specific AI model a provider should run, such as `gpt-5.6-sol` or `kimi-k3`. |
 | API key | A secret issued by a provider. MoonGate stores it locally and does not display the saved value again. |
 | OAuth | Signing in through an account instead of pasting an API key. |

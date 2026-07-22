@@ -881,7 +881,8 @@ fn ProxyService::add_provider_target(
   usage.sync_provider_limits_from_target(target)
   self.provider_router.upsert_provider(target)
   if !provider_app_is_additive(app_type) {
-    if self.provider_router.current_provider_id(app_type) is None {
+    if target.enabled &&
+      self.provider_router.current_provider_id(app_type) is None {
       self.provider_router.set_current_provider(app_type, provider_id)
     }
   }
@@ -959,7 +960,16 @@ fn ProxyService::update_provider_target(
   usage.sync_provider_limits_from_target(updated_target)
   self.provider_router.upsert_provider(updated_target)
   if was_current {
-    self.provider_router.set_current_provider(app_type, provider_id)
+    if updated_target.enabled {
+      self.provider_router.set_current_provider(app_type, provider_id)
+    } else {
+      ignore(
+        self.provider_router.clear_current_provider(
+          app_type,
+          provider_id=original_provider_id,
+        ),
+      )
+    }
   }
   Ok(())
 }
@@ -1080,6 +1090,28 @@ async fn ProxyService::handle_delete_provider(
 }
 
 ///|
+async fn ProxyService::handle_clear_current_provider(
+  self : ProxyService,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let body = proxy_json_body(r)
+  guard provider_app_from_request(r.path, body) is Some(app_type) else {
+    write_usage_bad_request(w, "missing_app")
+    return
+  }
+  let provider_id = provider_id_from_request(r.path, body)
+  if !self.provider_router.clear_current_provider(app_type, provider_id?) {
+    write_usage_bad_request(w, "provider_not_current")
+    return
+  }
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
+  write_usage_json(w, Json::boolean(true))
+}
+
+///|
 async fn ProxyService::handle_remove_provider_from_live_config(
   self : ProxyService,
   r : @httpx.RequestReader,
@@ -1125,6 +1157,10 @@ async fn ProxyService::handle_switch_provider(
   guard self.provider_router.provider_by_id(app_type, provider_id)
     is Some(provider) else {
     write_usage_bad_request(w, "provider_not_found")
+    return
+  }
+  if !provider.enabled {
+    write_usage_bad_request(w, "provider_disabled")
     return
   }
   self.provider_router.set_current_provider(app_type, provider_id)
@@ -1530,9 +1566,13 @@ async fn ProxyService::handle_stream_check_provider(
       Some(existing) => provider_preserve_hidden_update_fields(target, existing)
       None => target
     }
-    self.stream_check_provider_target_result_json(
+    let result = self.stream_check_provider_target_result_json(
       auth, stream_check_config, target,
     )
+    if self.provider_router.provider_by_id(app_type, provider_id) is Some(_) {
+      self.record_stream_check_provider_health(target, result)
+    }
+    result
   } else {
     guard self.stream_check_provider_result_json(
         auth, stream_check_config, app_type, provider_id,
@@ -1590,11 +1630,38 @@ async fn ProxyService::stream_check_provider_result_json(
     is Some(provider) else {
     return None
   }
-  Some(
-    self.stream_check_provider_target_result_json(
-      auth, stream_check_config, provider,
-    ),
+  let result = self.stream_check_provider_target_result_json(
+    auth, stream_check_config, provider,
   )
+  self.record_stream_check_provider_health(provider, result)
+  Some(result)
+}
+
+///|
+fn ProxyService::record_stream_check_provider_health(
+  self : ProxyService,
+  provider : ProviderRouteTarget,
+  result : Json,
+) -> Unit {
+  guard json_bool_field(result, "networkRequestPerformed").unwrap_or(false) else {
+    return
+  }
+  let updated_at = @async.now().to_int().to_string()
+  if json_bool_field(result, "success").unwrap_or(false) {
+    self.provider_router.record_provider_health_success(
+      provider.provider_id,
+      provider.app_type,
+      updated_at,
+    )
+  } else {
+    self.provider_router.record_provider_health_failure(
+      provider.provider_id,
+      provider.app_type,
+      json_string_field(result, "message").unwrap_or("Connection test failed"),
+      updated_at,
+      is_healthy=false,
+    )
+  }
 }
 
 ///|

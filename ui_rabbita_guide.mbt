@@ -67,10 +67,10 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "Provider", "An AI service or account that answers requests, such as Codex OAuth or Volcengine Ark.",
           ),
           moongate_rabbita_glossary_item(
-            "Framework / AI app", "The program using MoonGate, such as Codex, Claude Code, Gemini, OpenCode, OpenClaw, or Hermes.",
+            "Request type / routing profile", "The request format and provider group MoonGate will use, such as Codex Responses or Claude Messages. It does not prove that the named app is connected.",
           ),
           moongate_rabbita_glossary_item(
-            "Active route / In use", "The provider MoonGate will use now for that AI app.",
+            "Selected route", "The provider MoonGate will use if a matching request arrives. Stop Using leaves that request type without a selected provider.",
           ),
           moongate_rabbita_glossary_item(
             "Model", "The specific AI model a provider should run, such as gpt-5.6-sol or kimi-k3.",

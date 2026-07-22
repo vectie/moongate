@@ -824,6 +824,24 @@ fn ProviderRouter::set_current_provider(
 }
 
 ///|
+fn ProviderRouter::clear_current_provider(
+  self : ProviderRouter,
+  app_type : String,
+  provider_id? : String,
+) -> Bool {
+  guard self.current_provider_ids.get(app_type) is Some(current_id) else {
+    return false
+  }
+  match provider_id {
+    Some(expected_id) if expected_id != current_id => false
+    _ => {
+      self.current_provider_ids.remove(app_type)
+      true
+    }
+  }
+}
+
+///|
 fn ProviderRouter::set_auto_failover(
   self : ProviderRouter,
   app_type : String,
@@ -1101,7 +1119,8 @@ fn ProviderRouter::sync_current_provider_targets(
       continue
     }
     let provider_id = match self.current_provider_ids.get(app_type) {
-      Some(current) if app_providers.get(current) is Some(_) => current
+      Some(current) if app_providers.get(current) is Some(provider) &&
+        provider.enabled => current
       _ => {
         let fallback = self.default_current_provider_id(app_type, app_providers)
         match fallback {
@@ -1147,7 +1166,9 @@ fn ProviderRouter::default_current_provider_id(
 ) -> String? {
   let ids : Array[String] = []
   for id in app_providers.keys() {
-    ids.push(id)
+    if app_providers.get(id) is Some(provider) && provider.enabled {
+      ids.push(id)
+    }
   }
   if ids.is_empty() {
     return None
@@ -2127,7 +2148,7 @@ fn ProviderRouter::select_current_provider(
     return ProviderSelection::err(NoProvidersConfigured)
   }
   match self.provider_by_id(app_type, provider_id) {
-    Some(provider) => ProviderSelection::ok([provider])
+    Some(provider) if provider.enabled => ProviderSelection::ok([provider])
     _ => ProviderSelection::err(NoProvidersConfigured)
   }
 }
@@ -2143,6 +2164,9 @@ fn ProviderRouter::select_failover_queue(
   let mut circuit_open_count = 0
   for provider_id in queue {
     guard self.provider_by_id(app_type, provider_id) is Some(provider) else {
+      continue
+    }
+    if !provider.enabled {
       continue
     }
     let breaker = self.breaker_for(app_type, provider.provider_id)

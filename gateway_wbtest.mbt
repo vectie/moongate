@@ -3382,6 +3382,39 @@ test "stream check codex effort parser follows moongate separators" {
 }
 
 ///|
+test "provider stream check result updates visible provider health" {
+  let gateway = Gateway::new(port=17029, host="127.0.0.29", model="gpt-5")
+  guard gateway.proxy.provider_router.provider_by_id("codex", "codex-oauth")
+    is Some(provider) else {
+    fail("expected built-in provider")
+  }
+  gateway.proxy.record_stream_check_provider_health(
+    provider,
+    {
+      "networkRequestPerformed": Json::boolean(true),
+      "success": Json::boolean(true),
+      "message": Json::string("Live request succeeded"),
+    }.to_json(),
+  )
+  assert_eq(
+    gateway.proxy.provider_router.provider_health_status("codex-oauth", "codex"),
+    "healthy",
+  )
+  gateway.proxy.record_stream_check_provider_health(
+    provider,
+    {
+      "networkRequestPerformed": Json::boolean(true),
+      "success": Json::boolean(false),
+      "message": Json::string("HTTP 401"),
+    }.to_json(),
+  )
+  assert_eq(
+    gateway.proxy.provider_router.provider_health_status("codex-oauth", "codex"),
+    "unhealthy",
+  )
+}
+
+///|
 test "stream check all provider ids follow moongate proxy target filter" {
   let router = ProviderRouter::new()
   router.upsert_provider(
