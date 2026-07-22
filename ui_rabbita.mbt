@@ -26,10 +26,10 @@ fn moongate_rabbita_shell_view(
         @html.main_(class="main", [
           moongate_rabbita_topbar(),
           moongate_rabbita_overview_page(),
-          moongate_rabbita_connect_page(),
-          moongate_rabbita_setup_page(),
-          moongate_rabbita_routing_page(),
           moongate_rabbita_providers_page(),
+          moongate_rabbita_bindings_page(),
+          moongate_rabbita_connections_page(),
+          moongate_rabbita_connect_page(),
           moongate_rabbita_requests_page(),
           moongate_rabbita_usage_page(),
           moongate_rabbita_suite_page(),
@@ -48,10 +48,13 @@ fn moongate_rabbita_shell_view(
       [@html.span(class="dot good", ""), @html.span(id="toast-text", "Copied")],
     ),
     @html.script(src="/assets/moonsuite-i18n.js", moongate_rabbita_empty()),
-    @html.script(src="/assets/moongate-core.js", moongate_rabbita_empty()),
-    @html.script(src="/assets/moongate-frameworks.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-core.js?v=13", moongate_rabbita_empty()),
+    @html.script(
+      src="/assets/moongate-frameworks.js?v=14",
+      moongate_rabbita_empty(),
+    ),
     @html.script(src="/assets/moongate-usage.js", moongate_rabbita_empty()),
-    @html.script(src="/assets/moongate-setup.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-setup.js?v=15", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-suite.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-resilience.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate.js", moongate_rabbita_empty()),
@@ -86,11 +89,11 @@ fn moongate_rabbita_sidebar() -> @html.Html {
       @html.nav(id="nav", class="nav", [
         moongate_rabbita_nav_group("Start"),
         moongate_rabbita_nav_link("overview", "OV", "Overview", active=true),
-        moongate_rabbita_nav_link("connect", "CN", "Connect"),
-        moongate_rabbita_nav_link("setup", "ST", "Setup"),
         moongate_rabbita_nav_group("Configure"),
-        moongate_rabbita_nav_link("routing", "RT", "Routing"),
         moongate_rabbita_nav_link("providers", "PR", "Providers"),
+        moongate_rabbita_nav_link("bindings", "AB", "App Bindings"),
+        moongate_rabbita_nav_link("connections", "CG", "Connection Graph"),
+        moongate_rabbita_nav_link("connect", "CN", "Manual Connect"),
         moongate_rabbita_nav_link("requests", "RQ", "Requests"),
         moongate_rabbita_nav_group("Review"),
         moongate_rabbita_nav_link("usage", "US", "Usage"),
@@ -237,7 +240,7 @@ fn moongate_rabbita_overview_page() -> @html.Html {
           "Spend", "cost-total", "cost-detail", "Estimated total",
         ),
         moongate_rabbita_metric_card(
-          "Supported apps", "framework-total", "framework-detail", "AI app types",
+          "Connected apps", "framework-total", "framework-detail", "Verified app bindings",
         ),
         moongate_rabbita_metric_card(
           "Local port", "gateway-port", "gateway-port-detail", "Used by apps on this Mac",
@@ -259,32 +262,32 @@ fn moongate_rabbita_overview_page() -> @html.Html {
 fn moongate_rabbita_connect_page() -> @html.Html {
   moongate_rabbita_page(
     "connect",
-    "Connect",
-    "Copy the API address or command-line settings requested by another AI app.",
+    "Manual Connect",
+    "Use these addresses only for apps MoonGate cannot configure automatically.",
     false,
     [moongate_rabbita_connection_board()],
   )
 }
 
 ///|
-fn moongate_rabbita_setup_page() -> @html.Html {
+fn moongate_rabbita_bindings_page() -> @html.Html {
   moongate_rabbita_page(
-    "setup",
-    "Setup",
-    "Check sign-ins and whether installed AI apps are configured to use MoonGate.",
+    "bindings",
+    "App Bindings",
+    "Connect an installed AI app to MoonGate by changing and verifying that app's real configuration.",
     false,
-    [moongate_rabbita_setup_panel()],
+    [moongate_rabbita_bindings_panel(), moongate_rabbita_resilience_panel()],
   )
 }
 
 ///|
-fn moongate_rabbita_routing_page() -> @html.Html {
+fn moongate_rabbita_connections_page() -> @html.Html {
   moongate_rabbita_page(
-    "routing",
-    "Routing",
-    "Choose which provider each AI app uses; backups are available under Advanced.",
+    "connections",
+    "Connection Graph",
+    "See every saved provider route, what it can reach, and which app configurations MoonGate has actually verified.",
     false,
-    [moongate_rabbita_frameworks_panel(), moongate_rabbita_resilience_panel()],
+    [moongate_rabbita_connection_graph_panel()],
   )
 }
 
@@ -293,7 +296,7 @@ fn moongate_rabbita_providers_page() -> @html.Html {
   moongate_rabbita_page(
     "providers",
     "Providers",
-    "Add providers, test their real connection, and select or stop a routing profile.",
+    "Add and test upstream AI services. Saving a provider does not connect any app.",
     false,
     [
       @html.div(class="master-detail provider-master-detail", [

@@ -35,6 +35,8 @@ function readFrameworkApps() {
       label: app.label,
       mode: app.mode === "additive" ? "additive" : "single",
       desktop: app.desktop === true,
+      providerAppType: typeof app.providerAppType === "string" ? app.providerAppType : "",
+      priority: Number.isFinite(app.priority) ? app.priority : 100,
     }));
 }
 
@@ -207,7 +209,7 @@ function stateClass(value) {
 
 function stateText(value) {
   if (value == null || value === "") return "Unknown";
-  if (typeof value === "boolean") return value ? "Enabled" : "Disabled";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
   return String(value);
 }
 

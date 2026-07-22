@@ -187,6 +187,15 @@ fn ProxyService::register_management_routes(
   router.add_handler(Get, "/providers/current", (r, w) => {
     self.handle_get_current_provider(r, w)
   })
+  router.add_handler(Get, "/bindings", (r, w) => {
+    self.handle_get_app_binding(r, w, host, port)
+  })
+  router.add_handler(Post, "/bindings", (r, w) => {
+    self.handle_bind_app(r, w, usage, host, port)
+  })
+  router.add_handler(Delete, "/bindings", (r, w) => {
+    self.handle_unbind_app(r, w, host, port)
+  })
   router.add_handler(Delete, "/providers/current", (r, w) => {
     self.handle_clear_current_provider(r, w)
   })

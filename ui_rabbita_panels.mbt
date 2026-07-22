@@ -1,26 +1,4 @@
 ///|
-fn moongate_rabbita_frameworks_panel() -> @html.Html {
-  @html.article(id="frameworks", class="panel wide", [
-    moongate_rabbita_panel_head("AI apps", "Provider choice", [
-      @html.button(
-        id="sync-live",
-        class="button-secondary",
-        type_="button",
-        "Save Current Routes",
-      ),
-    ]),
-    @html.p(
-      class="panel-description",
-      "Choose the provider each AI app should use. “One active” means the app uses one provider at a time; “Multiple active” means it can keep several provider entries.",
-    ),
-    moongate_rabbita_table(
-      ["AI app", "Provider mode", "In use", "Available", "Actions"],
-      "framework-rows",
-    ),
-  ])
-}
-
-///|
 fn moongate_rabbita_provider_editor_panel() -> @html.Html {
   @html.article(id="provider-editor", class="panel wide", [
     moongate_rabbita_panel_head("Providers", "Provider Editor", [
@@ -31,19 +9,10 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         "New Provider",
       ),
     ]),
-    @html.div(class="provider-route-banner", [
-      @html.div([
-        @html.small("Selected routing profile"),
-        @html.strong(id="provider-active-route", "Loading provider route…"),
-      ]),
-      @html.button(
-        id="provider-use",
-        class="button-secondary",
-        type_="button",
-        disabled=true,
-        "Use This Provider",
-      ),
-    ]),
+    @html.p(
+      class="panel-description",
+      "This page only stores and tests upstream providers. Open App Bindings after saving to connect a provider to an installed app.",
+    ),
     @html.form(id="provider-form", class="form-grid", [
       @html.input(input_type=Hidden, id="provider-original-id"),
       @html.input(input_type=Hidden, id="provider-original-app"),
@@ -147,7 +116,9 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         ]),
       ]),
       @html.div(class="check-row span-2", [
-        moongate_rabbita_check_label("provider-enabled", "Enabled", true),
+        moongate_rabbita_check_label(
+          "provider-enabled", "Available to MoonGate routing", true,
+        ),
         moongate_rabbita_check_label(
           "provider-clear-api-key", "Remove stored API key", false,
         ),
@@ -174,75 +145,134 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
 }
 
 ///|
-fn moongate_rabbita_setup_panel() -> @html.Html {
-  @html.article(id="setup", class="panel wide", [
-    moongate_rabbita_panel_head("Setup", "App readiness", [
+fn moongate_rabbita_bindings_panel() -> @html.Html {
+  @html.article(id="bindings", class="panel wide", [
+    moongate_rabbita_panel_head("Connect apps", "App Bindings", [
       @html.div(class="inline-actions", [
         @html.button(
-          id="setup-refresh",
+          id="bindings-refresh",
           class="button-secondary",
           type_="button",
-          "Check Again",
-        ),
-        @html.button(
-          id="setup-import-mcp",
-          class="button-secondary",
-          type_="button",
-          "Detect App Extensions",
+          "Detect Again",
         ),
       ]),
     ]),
     @html.div(class="panel-description", [
-      @html.strong("What are command-line apps and extensions?"),
+      @html.strong("Configure → bind → verify"),
       @html.p(
-        "MoonGate detects installed apps such as Codex, Claude, Gemini, and OpenCode so it knows which apps it can configure. Extensions (including MCP) let an AI app use capabilities such as files or services; you only need them when an app asks for one.",
-      ),
-    ]),
-    @html.div(class="setup-grid", [
-      moongate_rabbita_setup_card(
-        "Signed-in accounts", "setup-auth-state", "setup-auth-rows",
-      ),
-      moongate_rabbita_setup_card(
-        "MoonGate & installed apps", "setup-runtime-state", "setup-runtime-rows",
-      ),
-      @html.div(class="setup-card", [
-        @html.div(class="setup-card-head", [
-          @html.strong("Claude Desktop"),
-          @html.span(id="setup-desktop-state", class="state warn", "Loading"),
-        ]),
-        @html.div(
-          id="setup-desktop-rows",
-          class="setup-list",
-          moongate_rabbita_empty(),
-        ),
-        @html.div(class="inline-actions", [
-          @html.button(
-            id="setup-import-claude-desktop",
-            type_="button",
-            "Use Claude Desktop Setup",
-          ),
-        ]),
-      ]),
-      moongate_rabbita_setup_card(
-        "AI app extensions", "setup-mcp-state", "setup-mcp-rows",
+        "First save and test a provider. Then connect an installed app here. MoonGate says Connected only after it writes that app's configuration and reads the expected MoonGate address back.",
       ),
     ]),
     @html.div(class="table-wrap setup-table-wrap", [
       @html.table([
         @html.thead([
           @html.tr(
-            ["AI app", "Settings found", "Routed through MoonGate", "Action"].map(fn(
-                header,
-              ) {
-                @html.th(header)
-              },
-            ),
+            ["AI app", "Installation", "Connection", "Provider", "Action"].map(fn(
+              header,
+            ) {
+              @html.th(header)
+            }),
           ),
         ]),
-        @html.tbody(id="setup-config-rows", moongate_rabbita_empty()),
+        @html.tbody(id="binding-rows", moongate_rabbita_empty()),
       ]),
     ]),
+    @html.p(id="binding-status", class="panel-description", "Detecting apps…"),
+    @html.details(class="advanced-disclosure setup-advanced", [
+      @html.summary("App diagnostics and extensions"),
+      @html.p(
+        "Diagnostics report sign-in and local extension files. Extensions let an AI app call capabilities such as files or services; they are separate from provider connections.",
+      ),
+      @html.div(class="setup-grid", [
+        moongate_rabbita_setup_card(
+          "Signed-in accounts", "setup-auth-state", "setup-auth-rows",
+        ),
+        moongate_rabbita_setup_card(
+          "MoonGate service", "setup-runtime-state", "setup-runtime-rows",
+        ),
+        moongate_rabbita_setup_card(
+          "AI app extensions", "setup-mcp-state", "setup-mcp-rows",
+        ),
+      ]),
+      @html.button(
+        id="setup-import-mcp",
+        class="button-secondary",
+        type_="button",
+        "Detect App Extensions",
+      ),
+    ]),
   ])
+}
+
+///|
+fn moongate_rabbita_connection_graph_panel() -> @html.Html {
+  @html.article(
+    id="connection-graph",
+    class="panel wide connection-graph-panel",
+    [
+      moongate_rabbita_panel_head(
+        "Final check",
+        "Provider → MoonGate → app",
+        [
+          @html.button(
+            id="connection-graph-refresh",
+            class="button-secondary",
+            type_="button",
+            "Refresh Graph",
+          ),
+        ],
+      ),
+      @html.div(class="panel-description connection-graph-intro", [
+        @html.strong(
+          "The graph only turns green after every required step is proven.",
+        ),
+        @html.p(
+          "Saved and enabled describe the provider. Tested means MoonGate completed a real upstream request. Bound and verified mean MoonGate read the expected address back from the installed app.",
+        ),
+      ]),
+      @html.div(class="connection-graph-summary", [
+        moongate_rabbita_status_value(
+          "Verified routes", "connection-graph-verified",
+        ),
+        moongate_rabbita_status_value(
+          "Configured routes", "connection-graph-configured",
+        ),
+        moongate_rabbita_status_value(
+          "Apps not wired", "connection-graph-unwired",
+        ),
+      ]),
+      @html.div(class="connection-graph-legend", [
+        @html.span(class="graph-check good", "Confirmed"),
+        @html.span(class="graph-check warn", "Needs a step"),
+        @html.span(class="graph-check bad", "Failed or disabled"),
+      ]),
+      @html.div(
+        id="connection-graph-routes",
+        class="connection-graph-routes",
+        attrs=@html.Attrs::build().aria_live("polite"),
+        [@html.p(class="panel-description", "Loading saved routes…")],
+      ),
+      @html.div(class="connection-graph-actions", [
+        @html.button(
+          type_="button",
+          class="button-secondary",
+          attrs=@html.Attrs::build().data_set("goto", "providers"),
+          "Fix Providers",
+        ),
+        @html.button(
+          type_="button",
+          class="button-secondary",
+          attrs=@html.Attrs::build().data_set("goto", "bindings"),
+          "Fix App Bindings",
+        ),
+        @html.p(
+          id="connection-graph-status",
+          class="panel-description",
+          "Waiting for route data…",
+        ),
+      ]),
+    ],
+  )
 }
 
 ///|
@@ -526,12 +556,12 @@ fn moongate_rabbita_stream_card() -> @html.Html {
 ///|
 fn moongate_rabbita_provider_health_panel() -> @html.Html {
   @html.article(id="provider-health", class="panel wide", [
-    moongate_rabbita_panel_head("Routing", "Provider Routes", [
+    moongate_rabbita_panel_head("Upstream services", "Saved Providers", [
       @html.span(id="provider-count", class="pill", "0 providers"),
     ]),
     @html.p(
       class="panel-description",
-      "Select a row to edit it. Request type describes MoonGate's routing profile; it does not mean that app is connected.",
+      "Select a row to edit it. Available means MoonGate may route matching requests to it; it does not mean an app is connected.",
     ),
     moongate_rabbita_table(
       ["Provider", "Request type", "State", "Action"],

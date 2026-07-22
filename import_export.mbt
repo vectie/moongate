@@ -137,6 +137,7 @@ fn ProxyService::moon_export_providers_json(
   }
   obj["universalProviders"] = self.provider_router.universal_providers_json()
   obj["routeStats"] = self.provider_router.route_stats_json()
+  obj["providerHealth"] = self.provider_router.provider_health_store_json()
   obj["circuitBreakerConfig"] = self.provider_router.circuit_config.to_json()
   obj["customEndpoints"] = self.provider_router.all_custom_endpoints_json()
   let auto_failover : Map[String, Json] = {}

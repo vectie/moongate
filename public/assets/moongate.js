@@ -24,15 +24,14 @@ function readinessCardState(card, state) {
   }
   if (card.id === "providers") {
     const count = number(state.providerCount);
-    const builtInCount = number(state.builtInProviderCount);
     return {
       ok: count > 0,
       value: `${compact(count)} configured`,
       detail: state.frameworkErrorCount > 0
         ? window.MoonSuiteI18n?.message("stat.framework_warnings", { count: state.frameworkErrorCount }) ?? `${state.frameworkErrorCount} framework warnings`
-        : builtInCount > 0
-          ? `${compact(builtInCount)} built-in route${builtInCount === 1 ? "" : "s"}`
-          : "No built-in routes",
+        : count > 0
+          ? "Ready for app binding"
+          : "Choose a template to add one",
     };
   }
   if (card.id === "usage") {
@@ -293,11 +292,11 @@ $("proxy-stop")?.addEventListener("click", () => {
   postJson(endpoints.proxyStop).then(refresh).catch(showError);
 });
 
-$("sync-live")?.addEventListener("click", () => {
-  postJson(endpoints.syncLive).then(refresh).catch(showError);
+$("bindings-refresh")?.addEventListener("click", () => {
+  loadSetupStatus().catch(showError);
 });
 
-$("setup-refresh")?.addEventListener("click", () => {
+$("connection-graph-refresh")?.addEventListener("click", () => {
   loadSetupStatus().catch(showError);
 });
 
@@ -305,15 +304,18 @@ $("setup-import-mcp")?.addEventListener("click", () => {
   postJson(endpoints.mcpImportApps).then(loadSetupStatus).catch(showError);
 });
 
-$("setup-import-claude-desktop")?.addEventListener("click", () => {
-  postJson(endpoints.claudeDesktopImport).then(refresh).catch(showError);
-});
-
-$("setup-config-rows")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-setup-action]");
+$("binding-rows")?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-binding-action]");
   if (!button) return;
-  if (button.dataset.setupAction === "open-config") {
-    postJson(endpoint(endpoints.configFolderOpen, { appType: button.dataset.app })).catch(showError);
+  const appType = button.dataset.app;
+  const action = button.dataset.bindingAction;
+  if (action === "bind") bindApp(appType).catch(showError);
+  else if (action === "unbind") unbindApp(appType).catch(showError);
+  else if (action === "verify") verifyBinding(appType).catch(showError);
+  else if (action === "manual") navigateToPage("connect");
+  else if (action === "add-provider") {
+    clearProviderForm(appType);
+    navigateToPage("providers");
   }
 });
 
@@ -398,60 +400,9 @@ $("request-log")?.addEventListener("click", (event) => {
     .catch(showError);
 });
 
-$("framework-rows")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action]");
-  if (!button) return;
-  const appType = button.dataset.app;
-  const action = button.dataset.action;
-  if (action === "reload-app") {
-    refresh().catch(showError);
-  } else if (action === "edit-provider") {
-    const providerId = selectedProviderId(appType);
-    if (providerId) {
-      editProvider(appType, providerId);
-      goToPage("providers");
-    }
-  } else if (action === "test-provider") {
-    const providerId = selectedProviderId(appType);
-    if (providerId) {
-      postJson(endpoints.providerStreamCheck, { appType, providerId })
-        .then((result) => setProviderStatus(firstString(result, ["message", "status"], "Provider test completed")))
-        .catch(showError);
-    }
-  } else if (action === "switch-provider") {
-    const select = Array.from(document.querySelectorAll("select[data-app]"))
-      .find((node) => node.dataset.app === appType);
-    if (select) postJson(endpoints.providerSwitch, { appType, id: select.value }).then(refresh).catch(showError);
-  } else if (action === "import-live") {
-    postJson(endpoint(endpoints.providerImportLive, { appType })).then(refresh).catch(showError);
-  } else if (action === "claude-desktop-import") {
-    postJson(endpoints.claudeDesktopImport).then(refresh).catch(showError);
-  }
-});
-
 $("provider-rows")?.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-provider-edit], button[data-provider-use], button[data-provider-stop]");
+  const button = event.target.closest("button[data-provider-edit]");
   const row = event.target.closest("tr[data-provider-row]");
-  if (button?.dataset.providerUse) {
-    selectProviderRow(button.dataset.providerApp, button.dataset.providerUse);
-    postJson(endpoints.providerSwitch, {
-      appType: button.dataset.providerApp,
-      id: button.dataset.providerUse,
-    }).then(refresh)
-      .then(() => editProvider(button.dataset.providerApp, button.dataset.providerUse))
-      .catch(showError);
-    return;
-  }
-  if (button?.dataset.providerStop) {
-    selectProviderRow(button.dataset.providerApp, button.dataset.providerStop);
-    deleteJson(endpoints.providerCurrent, {
-      appType: button.dataset.providerApp,
-      id: button.dataset.providerStop,
-    }).then(refresh)
-      .then(() => editProvider(button.dataset.providerApp, button.dataset.providerStop))
-      .catch(showError);
-    return;
-  }
   if (button?.dataset.providerEdit) {
     editProvider(button.dataset.providerApp, button.dataset.providerEdit);
     return;
@@ -557,10 +508,6 @@ $("provider-form")?.addEventListener("submit", (event) => {
 
 $("provider-delete")?.addEventListener("click", () => {
   deleteProviderFromForm().catch(showError);
-});
-
-$("provider-use")?.addEventListener("click", () => {
-  useProviderFromForm().catch(showError);
 });
 
 $("provider-test")?.addEventListener("click", () => {

@@ -25,20 +25,20 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "overview",
           ),
           moongate_rabbita_guide_page_card(
-            "Connect", "Copy the local API address or command-line settings that another AI app asks you to enter.",
-            "connect",
-          ),
-          moongate_rabbita_guide_page_card(
-            "Setup", "Check signed-in accounts and whether installed AI apps such as Codex or Claude are ready to use MoonGate.",
-            "setup",
-          ),
-          moongate_rabbita_guide_page_card(
-            "Routing", "Choose which provider each AI app uses. Backup and failure settings are optional and live under Advanced.",
-            "routing",
-          ),
-          moongate_rabbita_guide_page_card(
-            "Providers", "Add or edit provider accounts, run a real connection test, and choose which provider is active.",
+            "Providers", "Add or edit an upstream AI service and run a real network test. This does not connect an app.",
             "providers",
+          ),
+          moongate_rabbita_guide_page_card(
+            "App Bindings", "Connect MoonDesk first, or detect another installed app, choose a saved provider, and update its real configuration.",
+            "bindings",
+          ),
+          moongate_rabbita_guide_page_card(
+            "Connection Graph", "Run the final check: see every saved provider route and whether its provider, MoonGate route, and app binding are ready or still unwired.",
+            "connections",
+          ),
+          moongate_rabbita_guide_page_card(
+            "Manual Connect", "Copy the local API address for apps MoonGate cannot configure automatically.",
+            "connect",
           ),
           moongate_rabbita_guide_page_card(
             "Requests", "Inspect individual AI calls, including their provider, model, result, token count, latency, and cost.",
@@ -67,10 +67,16 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "Provider", "An AI service or account that answers requests, such as Codex OAuth or Volcengine Ark.",
           ),
           moongate_rabbita_glossary_item(
-            "Request type / routing profile", "The request format and provider group MoonGate will use, such as Codex Responses or Claude Messages. It does not prove that the named app is connected.",
+            "App binding", "A verified change to an installed app's configuration that points it at MoonGate. Only a verified binding is shown as Connected.",
           ),
           moongate_rabbita_glossary_item(
-            "Selected route", "The provider MoonGate will use if a matching request arrives. Stop Using leaves that request type without a selected provider.",
+            "Verified route", "A complete provider → MoonGate → app path where the provider is saved, enabled, and tested, and the app binding was read back successfully.",
+          ),
+          moongate_rabbita_glossary_item(
+            "Available to MoonGate routing", "The provider may receive matching requests after an app is connected. It does not connect or enable an app by itself.",
+          ),
+          moongate_rabbita_glossary_item(
+            "Request type", "The API format a provider accepts, such as Codex Responses or Claude Messages. The name does not prove that app is installed or connected.",
           ),
           moongate_rabbita_glossary_item(
             "Model", "The specific AI model a provider should run, such as gpt-5.6-sol or kimi-k3.",
@@ -94,7 +100,7 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "Command-line apps (previously called tools)", "Installed programs such as Codex, Claude, Gemini, and OpenCode. MoonGate detects them only so it knows which apps it can configure.",
           ),
           moongate_rabbita_glossary_item(
-            "AI tools", "Actions an AI model can call, such as reading a file or using a service. This is different from the installed command-line apps shown on Setup.",
+            "AI tools", "Actions an AI model can call, such as reading a file or using a service. This is different from the installed apps shown on App Bindings.",
           ),
           moongate_rabbita_glossary_item(
             "MCP", "Model Context Protocol. It lets an AI app connect to external capabilities such as files or services. You only need it when an app or plugin asks for MCP.",

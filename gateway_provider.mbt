@@ -1014,7 +1014,11 @@ fn provider_preserve_hidden_update_fields(
       ),
       incoming.clear_api_key,
     ),
-    origin: existing.origin,
+    origin: if existing.origin == "builtin" {
+      "user"
+    } else {
+      existing.origin
+    },
     clear_api_key: false,
     clear_model_mapping: false,
   }
@@ -1583,6 +1587,9 @@ async fn ProxyService::handle_stream_check_provider(
     }
     result
   }
+  if !self.persist_provider_store_or_error(w) {
+    return
+  }
   write_usage_json(w, result)
 }
 
@@ -1614,6 +1621,9 @@ async fn ProxyService::handle_stream_check_all_providers(
       continue
     }
     rows.push(Json::array([Json::string(provider_id), result]))
+  }
+  if !self.persist_provider_store_or_error(w) {
+    return
   }
   write_usage_json(w, Json::array(rows))
 }

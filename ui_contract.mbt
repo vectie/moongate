@@ -1,6 +1,14 @@
 ///|
 pub fn moongate_framework_apps_json() -> Json {
   Json::array([
+    moongate_framework_app_json(
+      "moondesk",
+      "MoonDesk",
+      "single",
+      desktop=true,
+      provider_app_type=Some("codex"),
+      priority=0,
+    ),
     moongate_framework_app_json("claude", "Claude Code", "single"),
     moongate_framework_app_json(
       "claude-desktop",
@@ -22,14 +30,21 @@ fn moongate_framework_app_json(
   label : String,
   mode : String,
   desktop? : Bool = false,
+  provider_app_type? : String? = None,
+  priority? : Int = 100,
 ) -> Json {
   let app = {
     "id": Json::string(id),
     "label": Json::string(label),
     "mode": Json::string(mode),
+    "priority": Json::number(priority.to_double()),
   }
   if desktop {
     app["desktop"] = Json::boolean(true)
+  }
+  match provider_app_type {
+    Some(value) => app["providerAppType"] = Json::string(value)
+    None => ()
   }
   Json::object(app)
 }
@@ -38,10 +53,10 @@ fn moongate_framework_app_json(
 fn moongate_ui_sections() -> Array[(String, String)] {
   [
     ("overview", "Overview"),
-    ("connect", "Connect"),
-    ("setup", "Setup"),
-    ("routing", "Routing"),
     ("providers", "Providers"),
+    ("bindings", "App Bindings"),
+    ("connections", "Connection Graph"),
+    ("connect", "Manual Connect"),
     ("requests", "Requests"),
     ("usage", "Usage"),
     ("suite", "Suite"),
@@ -77,6 +92,7 @@ pub fn moongate_ui_endpoints_json() -> Json {
     "providerUpdate": Json::string("/providers/update"),
     "providerDelete": Json::string("/providers"),
     "providerSwitch": Json::string("/providers/switch"),
+    "appBinding": Json::string("/bindings"),
     "providerImportLive": Json::string("/providers/import-live"),
     "providerPresets": Json::string("/providers/presets"),
     "providerStreamCheck": Json::string("/proxy/stream-check/provider"),

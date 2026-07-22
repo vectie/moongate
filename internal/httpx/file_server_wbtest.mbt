@@ -6,3 +6,11 @@ test "static file server sends SVG with an image MIME type" {
     "application/octet-stream",
   )
 }
+
+///|
+test "static file server ignores cache-busting query strings" {
+  assert_eq(
+    static_request_path("/assets/moongate.js?v=12"),
+    "/assets/moongate.js",
+  )
+}

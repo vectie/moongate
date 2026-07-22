@@ -24,7 +24,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
     ] {
     assert_true(html.contains(app))
   }
-  assert_true(html.contains("Provider Routes"))
+  assert_true(html.contains("Saved Providers"))
   assert_true(html.contains("Readiness"))
   assert_true(html.contains("Ready to use"))
   assert_false(html.contains("Operator Actions"))
@@ -44,14 +44,15 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("OpenClaw env"))
   assert_true(html.contains("data-snippet="))
   assert_true(html.contains("data-copy-snippet="))
-  assert_true(html.contains("Provider choice"))
   assert_true(html.contains("Provider Editor"))
   assert_true(html.contains("OpenAI Chat Completions"))
   assert_true(html.contains("value=\"openai_chat\""))
-  assert_true(html.contains("App readiness"))
-  assert_true(html.contains("Check Again"))
+  assert_true(html.contains("App Bindings"))
+  assert_true(html.contains("Connection Graph"))
+  assert_true(html.contains("Provider → MoonGate → app"))
+  assert_true(html.contains("Saved and enabled describe the provider"))
+  assert_true(html.contains("Detect Again"))
   assert_true(html.contains("Detect App Extensions"))
-  assert_true(html.contains("Use Claude Desktop Setup"))
   assert_true(html.contains("Connected Moon apps"))
   assert_true(html.contains("MoonDesk first"))
   assert_true(html.contains("Refresh Suite"))
@@ -62,8 +63,8 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Save Test Settings"))
   assert_true(html.contains("Run Connection Test"))
   assert_true(html.contains("Save Provider"))
-  assert_true(html.contains("Use This Provider"))
-  assert_true(html.contains("Selected routing profile"))
+  assert_true(html.contains("Available to MoonGate routing"))
+  assert_true(html.contains("Saving a provider does not connect any app"))
   assert_true(html.contains("Delete Provider"))
   assert_true(html.contains("Test Provider"))
   assert_true(html.contains("Usage Explorer"))
@@ -71,7 +72,6 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Request Detail"))
   assert_true(html.contains("Start Routing"))
   assert_true(html.contains("Stop Routing"))
-  assert_true(html.contains("Save Current Routes"))
   assert_true(html.contains("AI requests"))
   assert_true(html.contains("MoonGate in plain language"))
   assert_true(html.contains("What each page is for"))
@@ -91,8 +91,8 @@ test "moongate ui section metadata drives primary navigation" {
   let html = moongate_rabbita_shell_html()
   for
     id in [
-      "overview", "connect", "setup", "routing", "providers", "requests", "usage",
-      "suite", "guide",
+      "overview", "providers", "bindings", "connections", "connect", "requests",
+      "usage", "suite", "guide",
     ] {
     assert_true(html.contains("href=\"#\{id}\""))
     assert_true(
@@ -132,15 +132,15 @@ async test "moongate ui fetches current backend route surface" {
     "/usage/trends", "/usage/provider-stats", "/usage/model-stats", "/usage/logs?limit=8",
     "/usage/request-detail", "/proxy/start", "/proxy/stop", "/proxy/sync-current-providers-live",
     "/providers", "/providers/current", "/providers/switch", "/providers/import-live",
-    "/providers/update", "/providers/presets", "/proxy/stream-check/provider", "/providers/claude-desktop/import",
-    "/auth/status", "/config/status", "/config/folder/open", "/providers/claude-desktop/status",
-    "/mcp/servers", "/mcp/import-apps", "/settings", "/runtime/portable-mode", "/tools/versions",
-    "/proxy/running", "/proxy/takeover-status", "/plugin/claude/status", "/plugin/claude/applied",
-    "/proxy/circuit-breaker-config", "/proxy/circuit-breaker-stats", "/proxy/reset-circuit-breaker",
-    "/proxy/failover-queue", "/proxy/available-failover-providers", "/proxy/auto-failover-enabled",
-    "/usage/provider-limits", "/proxy/stream-check/all", "/proxy/stream-check/config",
-    "/suite/manifest", "/suite/status", "/suite/drift", "/suite/status/write", "/suite/moonclaw-providers",
-    "/suite/moonclaw-providers/write",
+    "/bindings", "/providers/update", "/providers/presets", "/proxy/stream-check/provider",
+    "/providers/claude-desktop/import", "/auth/status", "/config/status", "/config/folder/open",
+    "/providers/claude-desktop/status", "/mcp/servers", "/mcp/import-apps", "/settings",
+    "/runtime/portable-mode", "/tools/versions", "/proxy/running", "/proxy/takeover-status",
+    "/plugin/claude/status", "/plugin/claude/applied", "/proxy/circuit-breaker-config",
+    "/proxy/circuit-breaker-stats", "/proxy/reset-circuit-breaker", "/proxy/failover-queue",
+    "/proxy/available-failover-providers", "/proxy/auto-failover-enabled", "/usage/provider-limits",
+    "/proxy/stream-check/all", "/proxy/stream-check/config", "/suite/manifest", "/suite/status",
+    "/suite/drift", "/suite/status/write", "/suite/moonclaw-providers", "/suite/moonclaw-providers/write",
   ]
   for route in required {
     assert_true(endpoint_contract.contains(route))
@@ -174,8 +174,8 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(frameworks.contains("loadFrameworks"))
   assert_true(frameworks.contains("frameworkLoadGeneration"))
   assert_true(frameworks.contains("renderProviderRows"))
-  assert_true(frameworks.contains("Provider routes unavailable"))
-  assert_true(frameworks.contains("Current route"))
+  assert_true(frameworks.contains("Providers unavailable"))
+  assert_false(frameworks.contains("Current route"))
   assert_true(frameworks.contains("networkRequestPerformed"))
   assert_true(frameworks.contains("Confirm Delete"))
   assert_true(frameworks.contains("sortedProviderRows"))
@@ -186,6 +186,12 @@ async test "moongate ui fetches current backend route surface" {
   assert_false(js.contains("function loadUsageExplorer"))
   assert_true(setup.contains("loadSetupStatus"))
   assert_true(setup.contains("setupLoadGeneration"))
+  assert_true(setup.contains("renderConnectionGraph"))
+  assert_true(setup.contains("connectionGraphTestState"))
+  assert_true(setup.contains("Tested: passed"))
+  assert_true(setup.contains("Not tested"))
+  assert_true(setup.contains("Connected and verified"))
+  assert_true(setup.contains("Not selected or wired"))
   assert_true(suite.contains("loadSuite"))
   assert_true(suite.contains("suiteLoadGeneration"))
   assert_true(suite.contains("moondesk"))
@@ -222,7 +228,11 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(js.contains("data-copy-path"))
   assert_true(js.contains("data-copy-snippet"))
   assert_true(suite.contains("renderSuiteApps"))
-  assert_true(setup.contains("renderSetupConfigRows"))
+  assert_true(setup.contains("renderBindingRows"))
+  assert_true(setup.contains("binding.bound === true"))
+  assert_true(setup.contains("binding.bindingState === \"bound\""))
+  assert_true(setup.contains("Connect App"))
+  assert_true(setup.contains("Manual Steps"))
   assert_true(resilience.contains("renderStreamCheckResults"))
   assert_true(usage.contains("renderRequestDetail"))
   assert_true(usage.contains("renderLogs"))
@@ -238,23 +248,23 @@ async test "moongate ui fetches current backend route surface" {
 }
 
 ///|
-async test "provider editor exposes truthful selectable tested and stoppable route states" {
+async test "provider editor separates upstream availability from app binding" {
   let html = moongate_rabbita_shell_html()
   let frameworks = @fsx.read_file("public/assets/moongate-frameworks.js")
   let dashboard = @fsx.read_file("public/assets/moongate.js")
   let css = @fsx.read_file("public/assets/moongate.css")
-  assert_true(html.contains("Provider Routes"))
+  assert_true(html.contains("Saved Providers"))
   assert_true(html.contains("Request type"))
-  assert_true(html.contains("does not mean that app is connected"))
+  assert_true(html.contains("does not mean an app is connected"))
   assert_true(frameworks.contains("selectedProviderKey"))
   assert_true(frameworks.contains("Test passed"))
-  assert_true(frameworks.contains("Stop Using Provider"))
+  assert_false(frameworks.contains("Stop Using Provider"))
   assert_true(frameworks.contains("input.placeholder = \"********\""))
   assert_false(frameworks.contains("Stored securely. Leave this box blank"))
   assert_false(frameworks.contains("stored credential retained"))
-  assert_true(frameworks.contains("deleteJson(endpoints.providerCurrent"))
+  assert_false(frameworks.contains("deleteJson(endpoints.providerCurrent"))
   assert_true(dashboard.contains("tr[data-provider-row]"))
-  assert_true(dashboard.contains("button[data-provider-stop]"))
+  assert_false(dashboard.contains("button[data-provider-stop]"))
   assert_true(css.contains("tr[data-provider-row].selected"))
 }
 
@@ -277,13 +287,19 @@ test "moongate framework app metadata preserves active framework support" {
   guard moongate_framework_apps_json() is Array(apps) else {
     fail("expected framework app array")
   }
-  assert_eq(apps.length(), 7)
+  assert_eq(apps.length(), 8)
   for
     id in [
-      "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw", "hermes",
+      "moondesk", "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw",
+      "hermes",
     ] {
     assert_true(ui_framework_app_by_id(apps, id) is Some(_))
   }
+  guard ui_framework_app_by_id(apps, "moondesk") is Some(moondesk) else {
+    fail("expected MoonDesk framework")
+  }
+  assert_eq(moondesk["providerAppType"], Json::string("codex"))
+  assert_eq(moondesk["priority"], Json::number(0.0))
   guard ui_framework_app_by_id(apps, "claude-desktop") is Some(desktop) else {
     fail("expected claude desktop framework")
   }
@@ -546,13 +562,12 @@ async test "moongate rabbita document is routable standalone dashboard html" {
   assert_true(document.contains("/assets/moongate-resilience.js"))
   assert_true(document.contains("/assets/moongate.js"))
   assert_true(document.contains("id=\"page-overview\""))
-  assert_true(document.contains("id=\"page-routing\""))
+  assert_true(document.contains("id=\"page-bindings\""))
+  assert_true(document.contains("id=\"page-connections\""))
+  assert_true(document.contains("id=\"connection-graph-routes\""))
   assert_true(document.contains("id=\"connection-board\""))
   assert_true(document.contains("id=\"connection-copy-status\""))
-  for
-    id in [
-      "provider-form", "setup-config-rows", "suite-app-rows", "request-log",
-    ] {
+  for id in ["provider-form", "binding-rows", "suite-app-rows", "request-log"] {
     assert_true(document.contains("id=\"\{id}\""))
   }
   guard moongate_suite_manifest_json() is Object(obj) else {

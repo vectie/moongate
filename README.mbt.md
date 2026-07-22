@@ -182,7 +182,7 @@ the same generated dashboard through the localhost gateway. The preview shell
 carries the full dashboard DOM contract, including the existing CSS and
 JavaScript assets. It is also served by the standalone gateway at `/ui/rabbita`
 for runtime validation. Regenerate the preview contract with
-`moon run cmd/main -- suite lepusa-rabbita`.
+`moon run cmd/main -- suite lepusa-rabbita --write`.
 
 ## Feature Testing Focus
 

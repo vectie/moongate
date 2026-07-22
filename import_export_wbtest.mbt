@@ -68,6 +68,9 @@ async test "provider store round trips credentials identity and routing state" {
       ),
     )
     saved.provider_router.set_current_provider("codex", "ark-plan")
+    saved.provider_router.record_provider_health_success(
+      "ark-plan", "codex", "123456",
+    )
     saved.provider_router.add_to_failover_queue("codex", "ark-plan")
     saved.provider_router.set_auto_failover("codex", true)
     assert_true(
@@ -101,6 +104,10 @@ async test "provider store round trips credentials identity and routing state" {
     assert_eq(
       loaded.provider_router.current_provider_id("codex"),
       Some("ark-plan"),
+    )
+    assert_eq(
+      loaded.provider_router.provider_health_status("ark-plan", "codex"),
+      "healthy",
     )
     assert_true(
       loaded.provider_router.failover_queues

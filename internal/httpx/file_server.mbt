@@ -40,7 +40,8 @@ pub fn FileServer::new(path : StringView) -> FileServer {
         w.write_header(@status.MethodNotAllowed)
         return
       }
-      let path = match r.path {
+      let request_path = static_request_path(r.path)
+      let path = match request_path {
         "/" => @pathx.join(self_path, "index.html")
         ['/', .. path] => @pathx.join(self_path, path)
         _ => {
@@ -73,6 +74,11 @@ pub fn FileServer::new(path : StringView) -> FileServer {
     }
   }
   { path: path.to_owned(), middleware, handler: middleware(not_found) }
+}
+
+///|
+fn static_request_path(path : StringView) -> String {
+  path.split("?").next().unwrap_or(path).to_owned()
 }
 
 ///|

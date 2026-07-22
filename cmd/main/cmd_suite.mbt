@@ -180,12 +180,24 @@ fn print_lepusa_manifest(args : Array[String]) -> Unit {
 }
 
 ///|
-fn print_lepusa_rabbita_manifest(args : Array[String]) -> Unit {
+async fn print_lepusa_rabbita_manifest(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
-  println(
-    @moongate.moongate_rabbita_lepusa_manifest(
-      api_base=@suite.base_url(host, port),
-    ),
+  let manifest = @moongate.moongate_rabbita_lepusa_manifest(
+    api_base=@suite.base_url(host, port),
   )
+  if args.contains("--write") {
+    let output = parse_string_arg(args, "--output").unwrap_or(
+      "lepusa.rabbita.json",
+    )
+    @fs.write_file(
+      output,
+      @encoding/utf8.encode(manifest + "\n"),
+      create_mode=CreateOrTruncate,
+      permission=0o644,
+    )
+    println("Wrote \{output}")
+  } else {
+    println(manifest)
+  }
 }

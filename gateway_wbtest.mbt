@@ -1345,7 +1345,7 @@ test "gateway update provider preserves fields hidden by provider editor" {
   }
   assert_eq(cleared.api_key, None)
   assert_true(cleared.model_mapping is None)
-  assert_eq(cleared.origin, "builtin")
+  assert_eq(cleared.origin, "user")
   assert_false(cleared.clear_api_key)
   assert_false(cleared.clear_model_mapping)
   assert_false(

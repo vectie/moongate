@@ -21,8 +21,12 @@ function selectProviderRow(appType, providerId) {
 }
 
 function providerFrameworkOrder(appType) {
-  const index = frameworkApps.findIndex((app) => app.id === appType);
-  return index < 0 ? frameworkApps.length : index;
+  const index = providerRequestApps().findIndex((app) => app.id === appType);
+  return index < 0 ? providerRequestApps().length : index;
+}
+
+function providerRequestApps() {
+  return frameworkApps.filter((app) => !app.providerAppType);
 }
 
 function sortedProviderRows(rows) {
@@ -47,15 +51,18 @@ function sortedProviderRows(rows) {
 }
 
 function renderProviderRows(data, error = "") {
-  const rows = sortedProviderRows(arrayFrom(data, ["providers", "items", "data", "health"]));
-  text("provider-count", `${rows.length} route${rows.length === 1 ? "" : "s"}`);
+  const rows = sortedProviderRows(
+    arrayFrom(data, ["providers", "items", "data", "health"])
+      .filter((provider) => provider.builtIn !== true),
+  );
+  text("provider-count", `${rows.length} provider${rows.length === 1 ? "" : "s"}`);
   const target = $("provider-rows");
   if (!target) return;
   target.innerHTML = "";
   if (rows.length === 0) {
     target.innerHTML = error
-      ? `<tr><td colspan="4"><strong>Provider routes unavailable</strong><small>${escapeHtml(error)}</small></td></tr>`
-      : `<tr><td colspan="4">No provider routes configured.</td></tr>`;
+      ? `<tr><td colspan="4"><strong>Providers unavailable</strong><small>${escapeHtml(error)}</small></td></tr>`
+      : `<tr><td colspan="4">No providers configured.</td></tr>`;
     return;
   }
   for (const row of rows) {
@@ -65,7 +72,9 @@ function renderProviderRows(data, error = "") {
     const routeKey = providerRouteKey(app, providerId);
     const latestTest = providerTestResults.get(routeKey);
     const status = firstString(row, ["healthStatus", "status", "state", "health", "isHealthy", "is_healthy"], "unknown");
-    const statusLabel = latestTest
+    const statusLabel = row.enabled === false
+      ? "Paused"
+      : latestTest
       ? latestTest.success === true && latestTest.networkRequestPerformed === true
         ? "Test passed"
         : "Test failed"
@@ -80,10 +89,11 @@ function renderProviderRows(data, error = "") {
       firstString(row.modelMapping, ["defaultModel"], "-"),
     );
     const error = firstString(row, ["lastError", "error", "message"], "");
-    const metadata = [
-      row.isCurrent === true ? "Current route" : "",
-      row.builtIn === true ? "Built-in" : row.origin === "user" ? "Configured" : firstString(row, ["origin"], ""),
-    ].filter(Boolean).join(" · ");
+    const metadata = row.builtIn === true
+      ? "Built-in template"
+      : row.origin === "user"
+        ? "Configured"
+        : firstString(row, ["origin"], "");
     const credentialState = firstString(row, ["credentialState"], row.hasApiKey === true ? "stored" : "missing");
     const credentialLabel = credentialState === "oauth"
         ? "OAuth"
@@ -94,13 +104,6 @@ function renderProviderRows(data, error = "") {
     const credentialStateHtml = credentialLabel
       ? `<span class="state ${credentialClass}">${escapeHtml(credentialLabel)}</span>`
       : "";
-    const routeAction = row.isCurrent === true
-      ? `<button type="button" class="button-secondary" data-provider-stop="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Stop Using</button>`
-      : row.enabled === false
-        ? `<span class="state warn">Disabled</span>`
-        : providerRow(app)?.mode === "additive"
-        ? ""
-        : `<button type="button" class="button-secondary" data-provider-use="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Use</button>`;
     const tr = document.createElement("tr");
     tr.dataset.providerRow = routeKey;
     tr.dataset.providerApp = app;
@@ -113,7 +116,7 @@ function renderProviderRows(data, error = "") {
       <td><strong>${escapeHtml(provider)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}<small>Model: ${escapeHtml(model)}</small>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
       <td>${escapeHtml(providerTemplateFrameworkLabel(app))}</td>
       <td><div class="provider-state-stack">${credentialStateHtml}<span class="${statusClassName}">${escapeHtml(statusLabel)}</span></div></td>
-      <td><div class="inline-actions">${routeAction}<button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></div></td>
+      <td><button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></td>
     `;
     target.appendChild(tr);
   }
@@ -201,7 +204,7 @@ function renderFrameworkActions(row, providerCount) {
 function initProviderAppSelect() {
   const select = $("provider-app");
   if (!select) return;
-  select.innerHTML = frameworkApps
+  select.innerHTML = providerRequestApps()
     .map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`)
     .join("");
 }
@@ -211,14 +214,14 @@ function initUsageAppSelect() {
   if (!select) return;
   select.innerHTML = [
     `<option value="">All frameworks</option>`,
-    ...frameworkApps.map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`),
+    ...providerRequestApps().map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`),
   ].join("");
 }
 
 function initResilienceAppSelect() {
   const select = $("resilience-app");
   if (!select) return;
-  select.innerHTML = frameworkApps
+  select.innerHTML = providerRequestApps()
     .map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`)
     .join("");
   select.value = "codex";
@@ -293,33 +296,8 @@ function setProviderCredentialState(provider = null) {
 }
 
 function renderProviderRouteState(appType, providerId = "") {
-  const row = providerRow(appType);
-  const useButton = $("provider-use");
-  if (!row) {
-    text("provider-active-route", `${providerTemplateFrameworkLabel(appType)} · route state unavailable`);
-    if (useButton) useButton.disabled = true;
-    return;
-  }
-  if (row.mode === "additive") {
-    text("provider-active-route", `${row.label} uses all enabled providers (additive routing)`);
-    if (useButton) useButton.disabled = true;
-    return;
-  }
-  const savedProvider = providerId ? providerById(appType, providerId) : null;
-  const current = providerById(appType, row.current);
-  const currentName = current ? firstString(current, ["name", "providerName"], row.current) : row.current || "None";
-  const routeSummary = row.current ? `${currentName} (${row.current})` : "None";
-  text("provider-active-route", `Request type: ${row.label} · selected route: ${routeSummary}`);
-  if (useButton) {
-    const isCurrent = Boolean(savedProvider && providerId === row.current);
-    useButton.disabled = !savedProvider || savedProvider.enabled === false;
-    useButton.dataset.routeAction = isCurrent ? "stop" : "use";
-    useButton.textContent = savedProvider?.enabled === false
-      ? "Enable Before Use"
-      : isCurrent
-        ? "Stop Using Provider"
-        : "Use This Provider";
-  }
+  void appType;
+  void providerId;
 }
 
 function clearProviderForm(appType) {
@@ -548,11 +526,11 @@ function editProvider(appType, providerId) {
   resetProviderDeleteConfirmation();
   $("provider-delete").disabled = provider.builtIn === true;
   $("provider-delete").title = provider.builtIn === true
-    ? "Built-in routes cannot be deleted"
+    ? "Built-in providers cannot be deleted"
     : "Delete this configured provider";
   setProviderTestResult(providerTestResults.get(providerRouteKey(appType, providerId)) || null);
   renderProviderRouteState(appType, providerId);
-  setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in route)" : ""}`);
+  setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in provider)" : ""}`);
 }
 
 function modelMappingFromForm() {
@@ -628,7 +606,7 @@ async function deleteProviderFromForm() {
   }
   const provider = providerById(appType, providerId);
   if (provider?.builtIn === true) {
-    setProviderStatus("Built-in routes cannot be deleted");
+    setProviderStatus("Built-in providers cannot be deleted");
     return;
   }
   const deleteKey = `${appType}:${providerId}`;
@@ -636,13 +614,13 @@ async function deleteProviderFromForm() {
     pendingProviderDeleteKey = deleteKey;
     $("provider-delete").textContent = "Confirm Delete";
     $("provider-delete").classList.add("delete-confirm");
-    setProviderStatus(`Click Confirm Delete to permanently remove ${providerId}. If it is active, MoonGate will switch to the next route.`);
+    setProviderStatus(`Click Confirm Delete to permanently remove ${providerId}.`);
     return;
   }
   await deleteJson(endpoints.providerDelete, { appType, id: providerId });
   clearProviderForm(appType);
   await refresh();
-  setProviderStatus(`Deleted ${providerId} · active route is now ${providerRow(appType)?.current || "none"}`);
+  setProviderStatus(`Deleted ${providerId}`);
 }
 
 async function testProviderFromForm() {
@@ -662,6 +640,7 @@ async function testProviderFromForm() {
   setProviderTestResult(result);
   if (providerById(appType, providerId)) {
     await loadFrameworks();
+    await loadSetupStatus();
     editProvider(appType, providerId);
     setProviderTestResult(result);
   }
@@ -671,30 +650,6 @@ async function testProviderFromForm() {
   }
   const status = Number.isFinite(result.httpStatus) ? `HTTP ${result.httpStatus}` : "no HTTP response";
   setProviderStatus(`${firstString(result, ["message", "status"], "Provider test completed")} · ${status}`);
-}
-
-async function useProviderFromForm() {
-  const appType = $("provider-original-app").value.trim() || $("provider-app").value;
-  const providerId = $("provider-original-id").value.trim();
-  if (!providerId || !providerById(appType, providerId)) {
-    setProviderStatus("Save the provider before selecting it for routing");
-    return;
-  }
-  if (providerRow(appType)?.mode === "additive") {
-    setProviderStatus("This framework uses additive routing; every enabled provider is active");
-    return;
-  }
-  const stopping = providerRow(appType)?.current === providerId;
-  if (stopping) {
-    await deleteJson(endpoints.providerCurrent, { appType, id: providerId });
-  } else {
-    await postJson(endpoints.providerSwitch, { appType, id: providerId });
-  }
-  await refresh();
-  editProvider(appType, providerId);
-  setProviderStatus(stopping
-    ? `Stopped using ${providerId} · ${providerTemplateFrameworkLabel(appType)} has no selected route`
-    : `Now using ${providerId} for ${providerTemplateFrameworkLabel(appType)}`);
 }
 
 async function loadFrameworkRow(app) {
@@ -715,9 +670,9 @@ async function loadFrameworkRow(app) {
 
 async function loadFrameworks() {
   const generation = ++frameworkLoadGeneration;
-  const rows = await Promise.all(frameworkApps.map(loadFrameworkRow));
+  const rows = await Promise.all(providerRequestApps().map(loadFrameworkRow));
   if (generation !== frameworkLoadGeneration) return { rows: [], warningCount: 0, stale: true };
-  renderFrameworkRows(rows);
+  frameworkRows = rows;
   const allProviders = rows.flatMap((row) => row.providers || []);
   const errors = rows.filter((row) => row.error);
   renderProviderRows(allProviders, allProviders.length === 0 && errors.length > 0 ? errors[0].error : "");
