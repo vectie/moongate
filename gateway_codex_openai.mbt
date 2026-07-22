@@ -179,7 +179,7 @@ async fn ProxyService::handle_chat_completions(
         response_model,
         session_id=Some(session.session_id),
       )
-      let request = openai_chat_to_codex_response_request(json, model)
+      let request = openai_chat_to_codex_response_request(json, response_model)
       guard request is Some(codex_request) else {
         usage.record_bad_request_with_provider(self)
         w.header().set("Content-Type", "application/json")

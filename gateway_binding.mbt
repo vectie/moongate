@@ -57,6 +57,38 @@ async fn moon_binding_moondesk_service_configured(root : String) -> Bool {
 }
 
 ///|
+async fn moon_binding_existing_moondesk_runtime(
+  root : String,
+) -> (String, Array[String], String)? {
+  let text = @fsx.read_file(moon_binding_moondesk_service_path(root)) catch {
+    _ => return None
+  }
+  let json = @json.parse(text) catch { _ => return None }
+  guard json is Object(obj) else { return None }
+  guard obj.get("daemon") is Some(Object(daemon)) else { return None }
+  let command = json_string_from_map(daemon, "command")
+    .unwrap_or("")
+    .trim()
+    .to_owned()
+  if command == "" || !@fsx.exists_as_file(command) {
+    return None
+  }
+  let args : Array[String] = []
+  match daemon.get("args") {
+    Some(Array(items)) =>
+      for item in items {
+        match item {
+          String(value) => args.push(value)
+          _ => return None
+        }
+      }
+    _ => return None
+  }
+  let cwd = json_string_from_map(obj, "cwd").unwrap_or(root).trim().to_owned()
+  Some((command, args, if cwd == "" { root } else { cwd }))
+}
+
+///|
 async fn moon_binding_moondesk_manifest_matches(
   root : String,
   base_url : String,
@@ -122,28 +154,35 @@ async fn moon_binding_write_moondesk_provider(
 async fn moon_binding_write_moondesk_service(
   root : String,
 ) -> Result[String, String] {
+  let existing_runtime = moon_binding_existing_moondesk_runtime(root)
   let moonclaw_root = (@os.getenv("MOONCLAW_ROOT") catch { _ => None })
     .unwrap_or("")
     .trim()
     .to_owned()
-  let (command, args, cwd) = if moonclaw_root != "" &&
-    @fsx.exists(@pathx.join(moonclaw_root, "moon.mod")) {
-    let local_moon = @pathx.join(moon_home_dir(), ".moon/bin/moon")
-    (
-      if @fsx.exists(local_moon) {
-        local_moon
+  let (command, args, cwd) = match existing_runtime {
+    Some((command, args, cwd)) => (command, args, cwd)
+    None =>
+      if moonclaw_root != "" &&
+        @fsx.exists(@pathx.join(moonclaw_root, "moon.mod")) {
+        let local_moon = @pathx.join(moon_home_dir(), ".moon/bin/moon")
+        (
+          if @fsx.exists(local_moon) {
+            local_moon
+          } else {
+            "moon"
+          },
+          ["run", "cmd/main", "--", "daemon", "--port", "0", "--serve", root],
+          moonclaw_root,
+        )
       } else {
-        "moon"
-      },
-      ["run", "cmd/main", "--", "daemon", "--port", "0", "--serve", root],
-      moonclaw_root,
-    )
-  } else {
-    let probe = moon_single_tool_version_json("moonclaw")
-    if json_string_field(probe, "version") is None {
-      return Err("MoonClaw runtime is not installed")
-    }
-    ("moonclaw", ["daemon", "--port", "0", "--serve", root], root)
+        let probe = moon_single_tool_version_json("moonclaw")
+        if json_string_field(probe, "version") is None {
+          return Err(
+            "MoonClaw is not installed in MoonDesk and was not found on PATH",
+          )
+        }
+        ("moonclaw", ["daemon", "--port", "0", "--serve", root], root)
+      }
   }
   let path = moon_binding_moondesk_service_path(root)
   let existing = @fsx.read_file(path) catch { _ => "" }
@@ -522,6 +561,12 @@ async fn ProxyService::handle_bind_app(
     write_usage_bad_request(w, "provider_unavailable")
     return
   }
+  let provider_model = provider.binding_model(@suite.default_model())
+  if (app_type == "moondesk" || app_type == "codex") &&
+    provider_model.trim().is_empty() {
+    write_usage_bad_request(w, "provider_model_not_configured")
+    return
+  }
   let result = match app_type {
     "moondesk" => {
       let root = moon_binding_moondesk_workspace_root()
@@ -530,10 +575,7 @@ async fn ProxyService::handle_bind_app(
         Ok(_) =>
           match
             moon_binding_write_moondesk_provider(
-              root,
-              host,
-              port,
-              provider.binding_model(@suite.default_model()),
+              root, host, port, provider_model,
             ) {
             Ok(_) => Ok(())
             Err(error) => Err(error)
@@ -541,12 +583,7 @@ async fn ProxyService::handle_bind_app(
       }
     }
     "codex" =>
-      match
-        @codex_config.install_proxy_config(
-          host,
-          port,
-          provider.binding_model(@suite.default_model()),
-        ) {
+      match @codex_config.install_proxy_config(host, port, provider_model) {
         Ok(_) => Ok(())
         Err(error) => Err(error)
       }

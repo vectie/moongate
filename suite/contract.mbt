@@ -40,7 +40,7 @@ pub fn default_port() -> Int {
 
 ///|
 pub fn default_model() -> String {
-  "gpt-5"
+  ""
 }
 
 ///|

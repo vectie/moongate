@@ -5017,6 +5017,15 @@ test "moongate upstream status retryability matches client error bucket" {
 
 ///|
 test "proxy service uses moongate model mapping for upstream claude model" {
+  let no_default = Gateway::new(port=0)
+  assert_eq(
+    no_default.proxy.upstream_claude_model(
+      "provider-request-model",
+      None,
+      default_model=no_default.model,
+    ),
+    "provider-request-model",
+  )
   let gateway = Gateway::new(port=0, model="gpt-default")
   let provider = ProviderRouteTarget::new(
     app_type="claude",

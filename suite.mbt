@@ -117,7 +117,11 @@ pub fn moongate_suite_manifest_json(
     "claudeDesktopBaseUrl": Json::string(
       moongate_claude_desktop_base_url(host, port),
     ),
-    "defaultModel": Json::string(model),
+    "defaultModel": if model.trim().is_empty() {
+      Json::null()
+    } else {
+      Json::string(model)
+    },
     "statusFile": Json::string(default_moongate_suite_status_path()),
     "capabilities": moongate_suite_capabilities_json(),
     "moonflowAdapter": moongate_moonflow_adapter_capability_json(),
@@ -806,15 +810,15 @@ fn moongate_suite_agent_clients_json(
   let base_url = moongate_base_url(host, port)
   let openai_base_url = moongate_openai_base_url(host, port)
   let claude_desktop_base_url = moongate_claude_desktop_base_url(host, port)
+  let codex_install = if model.trim().is_empty() {
+    "moongate codex install --port \{port} --model <model>"
+  } else {
+    "moongate codex install --port \{port} --model \{model}"
+  }
   Json::array([
     suite_agent_client_json(
-      "codex",
-      "codex",
-      "openai-responses",
-      openai_base_url,
-      "POST /v1/responses",
-      "moongate codex install --port \{port} --model \{model}",
-      "Codex config.toml managed provider block using the Responses API.",
+      "codex", "codex", "openai-responses", openai_base_url, "POST /v1/responses",
+      codex_install, "Codex config.toml managed provider block using the Responses API.",
     ),
     suite_agent_client_json(
       "claude-code", "claude", "anthropic-compatible", base_url, "POST /v1/messages",
@@ -1041,20 +1045,25 @@ fn moonclaw_providers_file_json(
   openai_base_url : String,
   model : String,
 ) -> Json {
+  let models = if model.trim().is_empty() {
+    []
+  } else {
+    [
+      Json::object({
+        "id": Json::string(model),
+        "name": Json::string("moongate/\{model}"),
+        "reasoning": Json::boolean(true),
+        "input": Json::array([Json::string("text"), Json::string("image")]),
+      }),
+    ]
+  }
   Json::object({
     "providers": Json::object({
       "moongate": Json::object({
         "baseUrl": Json::string(openai_base_url),
         "api": Json::string("openai"),
         "apiKey": Json::string("moongate-local"),
-        "models": Json::array([
-          Json::object({
-            "id": Json::string(model),
-            "name": Json::string("moongate/\{model}"),
-            "reasoning": Json::boolean(true),
-            "input": Json::array([Json::string("text"), Json::string("image")]),
-          }),
-        ]),
+        "models": Json::array(models),
       }),
     }),
   })
@@ -1125,6 +1134,11 @@ fn moongate_suite_capabilities() -> Array[String] {
 ///|
 fn moongate_suite_commands_json(port : Int, model : String) -> Json {
   let moonclaw_providers_write_command = "moongate suite write-moonclaw-providers --path \{moongate_moonclaw_providers_file()}"
+  let codex_install_command = if model.trim().is_empty() {
+    "moongate codex install --port \{port} --model <model>"
+  } else {
+    "moongate codex install --port \{port} --model \{model}"
+  }
   Json::object({
     "start": Json::string("moongate start --port \{port}"),
     "health": Json::string("moongate health"),
@@ -1158,9 +1172,7 @@ fn moongate_suite_commands_json(port : Int, model : String) -> Json {
     "streamCheckConfigSet": Json::string(
       "moongate stream-check config set --timeout-secs <seconds>",
     ),
-    "codexInstall": Json::string(
-      "moongate codex install --port \{port} --model \{model}",
-    ),
+    "codexInstall": Json::string(codex_install_command),
     "copilotAuthStatus": Json::string("moongate copilot status"),
     "copilotLogin": Json::string("moongate copilot login"),
     "claudeDesktopInstall": Json::string(

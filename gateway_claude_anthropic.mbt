@@ -156,7 +156,12 @@ fn ProxyService::upstream_claude_model(
       } else {
         provider.map_model_for_upstream(request_model)
       }
-    None => default_model
+    None =>
+      if default_model.trim().is_empty() {
+        request_model
+      } else {
+        default_model
+      }
   }
 }
 

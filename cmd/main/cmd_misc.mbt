@@ -325,7 +325,13 @@ async fn start_gateway(args : Array[String]) -> Unit {
     @suite.default_model(),
   )
   logger.info("Starting MoonGate Gateway on \{host}:\{port}")
-  logger.info("Using Codex model: \{model}")
+  if model.trim().is_empty() {
+    logger.info(
+      "No default model configured; using the request or provider model",
+    )
+  } else {
+    logger.info("Using Codex model: \{model}")
+  }
   let gateway = @moongate.Gateway::new(port~, host~, model~)
   logger.info("Gateway started on \{gateway.host()}:\{gateway.port()}")
   gateway.start()
@@ -1450,9 +1456,15 @@ async fn install_codex(args : Array[String]) -> Unit {
   let logger = @pino.logger("moongate", @pino.Transport::console())
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
-  let model = parse_string_arg(args, "--model").unwrap_or(
-    @suite.default_model(),
-  )
+  let model = match parse_string_arg(args, "--model") {
+    Some(model) if !model.trim().is_empty() => model
+    _ => {
+      logger.error(
+        "Missing required --model; MoonGate does not choose a default",
+      )
+      return
+    }
+  }
   logger.info("Installing Codex config.toml MoonGate provider...")
   let result = @codex_config.install_proxy_config(host, port, model)
   match result {

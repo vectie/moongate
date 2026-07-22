@@ -670,6 +670,22 @@ async test "moonclaw providers file writer materializes suite provider config" {
 }
 
 ///|
+test "suite defaults do not invent a model" {
+  let manifest = moongate_suite_manifest_json()
+  guard manifest is Object(fields) else { fail("expected manifest object") }
+  assert_eq(fields["defaultModel"], Json::null())
+  let providers = moongate_moonclaw_providers_file_json()
+  guard providers is Object(root) else { fail("expected providers object") }
+  guard root["providers"] is Object(provider_map) else {
+    fail("expected providers map")
+  }
+  guard provider_map["moongate"] is Object(moongate) else {
+    fail("expected moongate provider")
+  }
+  assert_eq(moongate["models"], Json::array([]))
+}
+
+///|
 fn suite_finding_by_product(findings : Array[Json], product : String) -> Json? {
   for finding in findings {
     guard finding is Object(obj) else { continue }

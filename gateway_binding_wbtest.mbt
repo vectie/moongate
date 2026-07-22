@@ -50,6 +50,35 @@ async test "Codex filesystem evidence recognizes persistent state" {
 }
 
 ///|
+async test "MoonDesk binding reuses its managed MoonClaw runtime" {
+  @fsx.with_temporary_directory("moongate-moondesk-runtime-XXXXXX", tmpdir => {
+    let runtime_dir = @pathx.join(tmpdir, "runtime")
+    let command = @pathx.join(runtime_dir, "moonclaw")
+    @fsx.make_directory(runtime_dir, recursive=true, exists_ok=true)
+    @fsx.write_to_file(command, "managed runtime", create=0o755)
+    let service_path = moon_binding_moondesk_service_path(tmpdir)
+    @fsx.make_directory(
+      @pathx.dirname(service_path),
+      recursive=true,
+      exists_ok=true,
+    )
+    let service : Json = {
+      "kind": "moondesk-moonclaw-service.v1",
+      "cwd": runtime_dir,
+      "daemon": {
+        "command": command,
+        "args": ["daemon", "--port", "0", "--serve", tmpdir],
+      },
+    }
+    @fsx.write_to_file(service_path, service.stringify(), create=0o600)
+    assert_eq(
+      moon_binding_existing_moondesk_runtime(tmpdir),
+      Some((command, ["daemon", "--port", "0", "--serve", tmpdir], runtime_dir)),
+    )
+  })
+}
+
+///|
 test "app binding uses provider default model when configured" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",

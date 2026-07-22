@@ -7,7 +7,7 @@ test "suite contract owns moongate identity and urls" {
   assert_eq(version(), "0.1.0")
   assert_eq(default_host(), "127.0.0.1")
   assert_eq(default_port(), 15721)
-  assert_eq(default_model(), "gpt-5")
+  assert_eq(default_model(), "")
   assert_eq(normalize_host("0.0.0.0"), "127.0.0.1")
   assert_eq(normalize_host("::"), "127.0.0.1")
   assert_eq(normalize_host("192.168.1.9"), "192.168.1.9")

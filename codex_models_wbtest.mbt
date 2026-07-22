@@ -13,6 +13,13 @@ test "moongate models endpoint advertises configured fallback model" {
 }
 
 ///|
+test "moongate models endpoint does not invent a default model" {
+  let body = moon_models_endpoint_response_json(None)
+  guard body is Object(obj) else { fail("expected object") }
+  assert_eq(obj["models"], Json::array([]))
+}
+
+///|
 test "moongate models endpoint replaces an empty active catalog" {
   let body = moon_models_endpoint_response_json(
     Some({ "models": Json::array([]) }),
