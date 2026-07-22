@@ -197,6 +197,93 @@ async fn moon_binding_remove_moondesk_provider(
 }
 
 ///|
+fn moon_binding_codex_app_bundle_paths(
+  home : String,
+  system_applications : String,
+) -> Array[String] {
+  let user_applications = @pathx.join(home, "Applications")
+  [
+    @pathx.join(system_applications, "ChatGPT.app"),
+    @pathx.join(system_applications, "Codex.app"),
+    @pathx.join(user_applications, "ChatGPT.app"),
+    @pathx.join(user_applications, "Codex.app"),
+  ]
+}
+
+///|
+fn moon_binding_codex_bundled_executable_paths(
+  home : String,
+  system_applications : String,
+) -> Array[String] {
+  moon_binding_codex_app_bundle_paths(home, system_applications).map(app => {
+    @pathx.join(app, "Contents/Resources/codex")
+  })
+}
+
+///|
+fn moon_binding_codex_state_paths(home : String) -> Array[String] {
+  [
+    @pathx.join(home, ".codex"),
+    @pathx.join(home, "Library/Application Support/Codex"),
+    @pathx.join(home, "Library/Application Support/OpenAI/Codex"),
+  ]
+}
+
+///|
+async fn moon_binding_any_path_exists(paths : Array[String]) -> Bool {
+  for path in paths {
+    if @fsx.exists(path) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+async fn moon_binding_codex_installation_json() -> Json {
+  let command_probe = moon_single_tool_version_json("codex")
+  let command_version = json_string_field(command_probe, "version")
+  if command_version is Some(version) &&
+    !json_bool_field(command_probe, "installed_but_broken").unwrap_or(false) {
+    return {
+      "installed": Json::boolean(true),
+      "version": Json::string(version),
+      "error": Json::null(),
+    }.to_json()
+  }
+  let home = moon_home_dir()
+  for path in moon_binding_codex_bundled_executable_paths(home, "/Applications") {
+    if @fsx.exists_as_file(path) {
+      match moon_probe_tool_version_at(path) {
+        Some(version) =>
+          return {
+            "installed": Json::boolean(true),
+            "version": Json::string(version),
+            "error": Json::null(),
+          }.to_json()
+        None => ()
+      }
+    }
+  }
+  let installed = moon_binding_any_path_exists(
+      moon_binding_codex_app_bundle_paths(home, "/Applications"),
+    ) ||
+    moon_binding_any_path_exists(moon_binding_codex_state_paths(home))
+  {
+    "installed": Json::boolean(installed),
+    "version": Json::null(),
+    "error": if installed {
+      Json::null()
+    } else {
+      match json_string_field(command_probe, "error") {
+        Some(error) => Json::string(error)
+        None => Json::null()
+      }
+    },
+  }.to_json()
+}
+
+///|
 async fn moon_binding_app_installation_json(app_type : String) -> Json {
   if app_type == "moondesk" {
     let home_app = @pathx.join(
@@ -226,6 +313,9 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
       "version": Json::null(),
       "error": Json::null(),
     }.to_json()
+  }
+  if app_type == "codex" {
+    return moon_binding_codex_installation_json()
   }
   guard moon_binding_app_command(app_type) is Some(command) else {
     return {

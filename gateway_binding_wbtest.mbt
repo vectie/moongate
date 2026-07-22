@@ -17,6 +17,39 @@ test "MoonDesk binding reuses Codex-compatible providers" {
 }
 
 ///|
+test "Codex detection checks app bundles and persistent state without NVM scanning" {
+  let home = "/Users/example"
+  let apps = "/Applications"
+  let bundles = moon_binding_codex_app_bundle_paths(home, apps)
+  assert_true(bundles.contains("/Applications/ChatGPT.app"))
+  assert_true(bundles.contains("/Applications/Codex.app"))
+  assert_true(bundles.contains("/Users/example/Applications/ChatGPT.app"))
+  assert_true(bundles.contains("/Users/example/Applications/Codex.app"))
+  let executables = moon_binding_codex_bundled_executable_paths(home, apps)
+  assert_true(
+    executables.contains("/Applications/ChatGPT.app/Contents/Resources/codex"),
+  )
+  let state = moon_binding_codex_state_paths(home)
+  assert_true(state.contains("/Users/example/.codex"))
+  assert_true(
+    state.contains("/Users/example/Library/Application Support/OpenAI/Codex"),
+  )
+  assert_false(
+    (bundles + executables + state).any(path => path.contains("/.nvm/")),
+  )
+}
+
+///|
+async test "Codex filesystem evidence recognizes persistent state" {
+  @fsx.with_temporary_directory("moongate-codex-detection-XXXXXX", tmpdir => {
+    let state = moon_binding_codex_state_paths(tmpdir)
+    assert_false(moon_binding_any_path_exists(state))
+    @fsx.make_directory(@pathx.join(tmpdir, ".codex"))
+    assert_true(moon_binding_any_path_exists(state))
+  })
+}
+
+///|
 test "app binding uses provider default model when configured" {
   let provider = ProviderRouteTarget::new(
     app_type="codex",
