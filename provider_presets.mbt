@@ -18,7 +18,8 @@ fn moon_visible_provider_presets(
   for preset in moon_provider_preset_catalog() {
     guard preset is Object(obj) else { continue }
     match app_type {
-      Some(app) if json_string_from_map(obj, "appType") != Some(app) => continue
+      Some(app) if json_string_from_map(obj, "appType") != Some(app) &&
+        json_string_from_map(obj, "targetAppType") != Some(app) => continue
       _ => ()
     }
     if normalized_query.is_empty() ||
@@ -66,6 +67,9 @@ fn moon_provider_preset_catalog() -> Array[Json] {
     moon_unity2_openclaw_preset_json(),
     moon_unity2_hermes_preset_json(),
   ]
+  for preset in moon_ready_provider_template_catalog() {
+    presets.push(preset)
+  }
   for preset in moon_provider_preset_summary_catalog() {
     presets.push(preset)
   }
@@ -116,7 +120,15 @@ fn moon_provider_preset_summary_json(
     obj["icon"] = Json::string(icon)
   }
   match moon_provider_preset_form_json(app_type, name) {
-    Some(form) => obj["form"] = form
+    Some(form) => {
+      obj["form"] = form
+      obj["providerAppType"] = Json::string(app_type)
+      if app_type == "codex" {
+        obj["targetAppType"] = Json::string("moondesk")
+        obj["targetAppLabel"] = Json::string("MoonDesk")
+        obj["targetPriority"] = Json::number(0.0)
+      }
+    }
     None => ()
   }
   Json::object(obj)

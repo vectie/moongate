@@ -343,7 +343,16 @@ function providerTemplateRows(data, source) {
     if (!row || typeof row !== "object") return [];
     const provider = row.form || row.provider || (source === "JSON" ? row : null);
     if (!provider || typeof provider !== "object") return [];
-    const appType = firstString(provider, ["appType"], firstString(row, ["appType"], ""));
+    const appType = firstString(provider, ["appType"], firstString(row, ["providerAppType", "appType"], ""));
+    const targetAppType = firstString(row, ["targetAppType", "appType"], appType);
+    const targetAppLabel = firstString(
+      row,
+      ["targetAppLabel"],
+      providerTemplateFrameworkLabel(targetAppType),
+    );
+    const targetPriority = Number.isFinite(row.targetPriority)
+      ? row.targetPriority
+      : Number(frameworkApps.find((app) => app.id === targetAppType)?.priority ?? 100);
     const providerId = firstString(provider, ["id", "providerId"], "");
     const providerName = firstString(provider, ["name", "providerName"], "");
     if (!appType || !providerId || !providerName) return [];
@@ -352,6 +361,9 @@ function providerTemplateRows(data, source) {
       key: `${source}:${templateId}:${index}`,
       label: firstString(provider, ["templateLabel"], firstString(row, ["label"], providerName)),
       provider: { ...provider, appType, id: providerId, name: providerName },
+      targetAppType,
+      targetAppLabel,
+      targetPriority,
       source,
     }];
   });
@@ -372,24 +384,39 @@ function providerTemplateApiFormatLabel(provider) {
 
 function providerTemplateOptionLabel(row) {
   const provider = row.provider;
-  return `${row.source} — ${row.label} · ${providerTemplateFrameworkLabel(provider.appType)} · ${providerTemplateApiFormatLabel(provider)}`;
+  return `${row.source} — ${row.label} · ${row.targetAppLabel} · ${providerTemplateApiFormatLabel(provider)}`;
+}
+
+function sortedProviderTemplates(rows) {
+  return rows.slice().sort((left, right) => {
+    const byPriority = left.targetPriority - right.targetPriority;
+    if (byPriority !== 0) return byPriority;
+    const byTarget = left.targetAppLabel.localeCompare(right.targetAppLabel);
+    if (byTarget !== 0) return byTarget;
+    const byProvider = left.label.localeCompare(right.label);
+    if (byProvider !== 0) return byProvider;
+    return left.source.localeCompare(right.source);
+  });
 }
 
 function renderProviderTemplates() {
   const select = $("provider-template");
   if (!select) return;
   const previous = select.value;
-  const rows = [...builtinProviderTemplates, ...importedProviderTemplates];
+  const rows = sortedProviderTemplates([
+    ...builtinProviderTemplates,
+    ...importedProviderTemplates,
+  ]);
   select.innerHTML = [
     `<option value="">Choose a template</option>`,
     ...rows.map((row) => `<option value="${escapeHtml(row.key)}">${escapeHtml(providerTemplateOptionLabel(row))}</option>`),
   ].join("");
   if (rows.some((row) => row.key === previous)) select.value = previous;
-  const frameworkCount = new Set(rows.map((row) => row.provider.appType)).size;
+  const frameworkCount = new Set(rows.map((row) => row.targetAppType)).size;
   text(
     "provider-template-status",
     rows.length > 0
-      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"} across ${frameworkCount} AI app${frameworkCount === 1 ? "" : "s"}; selecting one changes AI app automatically. API keys stay separate.`
+      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"} across ${frameworkCount} app routes. MoonDesk comes first; shared Moon Suite routes reuse one provider configuration. API keys stay separate.`
       : "No ready templates. Load a JSON file to add one.",
   );
 }
@@ -449,7 +476,10 @@ function applyProviderTemplate() {
     $(id).value = typeof mapping[key] === "string" ? mapping[key] : "";
   }
   setProviderStatus(existing ? `Template applied to existing ${provider.id}` : `Template ready for ${provider.id}`);
-  text("provider-template-status", "Template applied. Enter the API key, review, then save.");
+  text(
+    "provider-template-status",
+    `Template applied for ${template.targetAppLabel}. Enter the API key, review, then save.`,
+  );
 }
 
 async function loadProviderTemplateFile(file) {

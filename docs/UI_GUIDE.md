@@ -61,6 +61,12 @@ Use Providers to add, edit, test, delete, or pause an upstream provider account.
 
 The table shows credential state, availability, and last known health. **Test Provider** performs a live network request and reports the HTTP status, model, and latency; a locally valid form is not reported as a successful provider test.
 
+The built-in template picker includes ready forms for DeepSeek, OpenRouter, Fireworks AI, SiliconFlow, Qwen Token Plan, Qwen Pay-As-You-Go, Google Gemini, Anthropic, OpenAI, Z.AI/GLM, and Moonshot/Kimi. OpenRouter includes the general `openrouter/free` router plus explicit free templates for Ling 3.0 Flash, Nemotron 3 Ultra, and Laguna M.1. MoonDesk is listed first, followed by MoonClaw, MoonBook, and MoonTown, then external clients. Each template selects the correct upstream protocol, endpoint, and default model for its route.
+
+OpenRouter still requires an OpenRouter API key for free models. “Free” means the selected model reports zero token prices; it does not mean anonymous requests are accepted. Free model availability can change, so use **Refresh Built-ins** after upgrading MoonGate and run **Test Provider** before saving.
+
+Moon Suite products deliberately share provider scopes instead of copying credentials: MoonDesk uses the Codex/OpenAI Responses scope, while MoonClaw, MoonBook, and MoonTown use the OpenClaw/OpenAI Chat scope. Saving one of these templates therefore creates or updates the shared provider configuration used by that product route. Templates never contain API keys: apply one, enter your own key, run the live test, then save it.
+
 Templates fill non-secret configuration fields. API keys stay separate and are stored locally. When editing a provider, MoonGate shows that a credential is stored but never returns the secret value to the UI.
 
 ### Requests

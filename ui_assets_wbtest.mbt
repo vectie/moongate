@@ -167,7 +167,14 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(frameworks.contains("draft: true"))
   assert_true(frameworks.contains("API keys stay separate"))
   assert_true(frameworks.contains("providerTemplateApiFormatLabel"))
-  assert_true(frameworks.contains("selecting one changes AI app automatically"))
+  assert_true(frameworks.contains("sortedProviderTemplates"))
+  assert_true(frameworks.contains("targetAppLabel"))
+  assert_true(frameworks.contains("MoonDesk comes first"))
+  assert_true(
+    frameworks.contains(
+      "shared Moon Suite routes reuse one provider configuration",
+    ),
+  )
   assert_false(
     frameworks.contains(".filter((row) => row.provider.appType === appType)"),
   )

@@ -3,7 +3,7 @@ test "moongate provider presets include Unity2 across suite apps" {
   guard moon_provider_presets_json("/providers/presets") is Array(presets) else {
     fail("expected presets")
   }
-  assert_eq(presets.length(), 354)
+  assert_eq(presets.length(), 519)
 
   let app_types : Array[String] = []
   for preset in presets {
@@ -31,32 +31,48 @@ test "moongate provider presets include Unity2 across suite apps" {
 ///|
 test "moongate provider presets mirror visible moongate app counts" {
   assert_eq(
+    moon_visible_provider_presets(Some("moondesk"), "", "original").length(),
+    17,
+  )
+  assert_eq(
+    moon_visible_provider_presets(Some("moonclaw"), "", "original").length(),
+    15,
+  )
+  assert_eq(
+    moon_visible_provider_presets(Some("moonbook"), "", "original").length(),
+    15,
+  )
+  assert_eq(
+    moon_visible_provider_presets(Some("moontown"), "", "original").length(),
+    15,
+  )
+  assert_eq(
     moon_visible_provider_presets(Some("claude"), "", "original").length(),
-    63,
+    78,
   )
   assert_eq(
     moon_visible_provider_presets(Some("claude-desktop"), "", "original").length(),
-    60,
+    75,
   )
   assert_eq(
     moon_visible_provider_presets(Some("codex"), "", "original").length(),
-    54,
+    69,
   )
   assert_eq(
     moon_visible_provider_presets(Some("gemini"), "", "original").length(),
-    19,
+    34,
   )
   assert_eq(
     moon_visible_provider_presets(Some("opencode"), "", "original").length(),
-    52,
+    67,
   )
   assert_eq(
     moon_visible_provider_presets(Some("openclaw"), "", "original").length(),
-    53,
+    68,
   )
   assert_eq(
     moon_visible_provider_presets(Some("hermes"), "", "original").length(),
-    53,
+    68,
   )
 }
 
@@ -147,19 +163,130 @@ test "moongate provider presets include ready forms without secrets" {
   guard oauth_preset["form"] is Object(oauth_form) else {
     fail("expected OAuth form")
   }
+  assert_eq(oauth_preset["targetAppType"], Json::string("moondesk"))
+  assert_eq(oauth_preset["targetAppLabel"], Json::string("MoonDesk"))
+  assert_eq(oauth_preset["providerAppType"], Json::string("codex"))
   assert_eq(oauth_form["id"], Json::string("codex-oauth"))
   assert_eq(oauth_form["templateLabel"], Json::string("Codex OAuth"))
   assert_false(oauth_form.contains("apiKey"))
+
+  let moondesk_oauth = moon_visible_provider_presets(
+    Some("moondesk"),
+    "openai official",
+    "original",
+  )
+  assert_eq(moondesk_oauth.length(), 1)
+}
+
+///|
+test "moongate provider presets expose provider groups for every consumer target" {
+  let provider_ids = [
+    "deepseek-official", "openrouter", "openrouter-free", "openrouter-ling-free",
+    "openrouter-nemotron-ultra-free", "openrouter-laguna-free", "fireworks", "siliconflow",
+    "qwen-token-plan", "qwen-pay-as-you-go", "google-gemini", "anthropic-official",
+    "openai-official", "zhipu-glm", "moonshot-kimi",
+  ]
+  let targets = moon_provider_template_targets()
+  assert_eq(targets.length(), 11)
+  assert_eq(targets[0].id, "moondesk")
+  assert_eq(targets[0].priority, 0)
+  for target in targets {
+    let presets : Array[Json] = []
+    for preset in moon_ready_provider_template_catalog() {
+      guard preset is Object(obj) else { fail("expected preset") }
+      if obj["appType"] == Json::string(target.id) {
+        presets.push(preset)
+      }
+    }
+    assert_eq(presets.length(), 15)
+    let seen : Array[String] = []
+    for preset in presets {
+      guard preset is Object(obj) else { fail("expected preset") }
+      guard obj["form"] is Object(form) else { fail("expected ready form") }
+      assert_eq(obj["targetAppLabel"], Json::string(target.label))
+      assert_eq(obj["providerAppType"], Json::string(target.provider_app_type))
+      assert_eq(form["appType"], Json::string(target.provider_app_type))
+      assert_false(form.contains("apiKey"))
+      guard json_string_from_map(form, "id") is Some(provider_id) else {
+        fail("expected provider id")
+      }
+      seen.push(provider_id)
+      guard form["modelMapping"] is Object(mapping) else {
+        fail("expected model mapping")
+      }
+      assert_true(mapping.contains("defaultModel"))
+    }
+    for provider_id in provider_ids {
+      assert_true(seen.contains(provider_id))
+    }
+  }
+}
+
+///|
+test "moongate Moon Suite templates share the correct provider scopes" {
+  let expected : Map[String, String] = {
+    "moondesk": "codex",
+    "moonclaw": "openclaw",
+    "moonbook": "openclaw",
+    "moontown": "openclaw",
+  }
+  for preset in moon_ready_provider_template_catalog() {
+    guard preset is Object(obj) else { fail("expected preset") }
+    guard json_string_from_map(obj, "appType") is Some(target) else {
+      fail("expected target app")
+    }
+    guard expected.get(target) is Some(provider_app_type) else { continue }
+    assert_eq(obj["providerAppType"], Json::string(provider_app_type))
+    guard obj["form"] is Object(form) else { fail("expected form") }
+    assert_eq(form["appType"], Json::string(provider_app_type))
+  }
+}
+
+///|
+test "moongate provider forms preserve endpoint and protocol distinctions" {
+  let forms = moon_provider_template_seeds()
+  assert_eq(forms.length(), 15)
+  let by_id : Map[String, ProviderTemplateSeed] = {}
+  for seed in forms {
+    by_id[seed.id] = seed
+  }
+  assert_eq(by_id["deepseek-official"].api_format, "openai_chat")
+  assert_eq(by_id["openrouter"].base_url, "https://openrouter.ai/api/v1")
+  for
+    entry in [
+      ("openrouter-free", "openrouter/free"),
+      ("openrouter-ling-free", "inclusionai/ling-3.0-flash:free"),
+      (
+        "openrouter-nemotron-ultra-free", "nvidia/nemotron-3-ultra-550b-a55b:free",
+      ),
+      ("openrouter-laguna-free", "poolside/laguna-m.1:free"),
+    ] {
+    let (id, model) = entry
+    assert_eq(by_id[id].base_url, "https://openrouter.ai/api/v1")
+    assert_eq(by_id[id].api_format, "openai_chat")
+    assert_eq(by_id[id].provider_type, "openrouter")
+    assert_eq(by_id[id].default_model, model)
+    assert_eq(by_id[id].category, "free")
+  }
+  assert_eq(
+    by_id["qwen-token-plan"].base_url,
+    "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+  )
+  assert_eq(by_id["google-gemini"].api_format, "gemini_native")
+  assert_eq(by_id["anthropic-official"].api_format, "anthropic")
+  assert_eq(by_id["openai-official"].api_format, "openai")
+  assert_eq(by_id["zhipu-glm"].base_url, "https://open.bigmodel.cn/api/paas/v4")
+  assert_eq(by_id["moonshot-kimi"].default_model, "kimi-k3")
 }
 
 ///|
 test "moongate provider presets name sort keeps full visible set" {
   let entries = moon_visible_provider_presets(None, "", "nameAsc")
-  assert_eq(entries.length(), 354)
+  assert_eq(entries.length(), 519)
   assert_eq(moon_provider_preset_name(entries[0]), "自定义")
   assert_eq(
     moon_provider_preset_name(entries[entries.length() - 1]),
-    "Xiaomi MiMo Token Plan (China)",
+    "OpenRouter Nemotron 3 Ultra (Free)",
   )
 }
 
