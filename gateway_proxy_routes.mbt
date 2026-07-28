@@ -44,6 +44,9 @@ fn ProxyService::register_inference_routes(
     self.handle_codex_responses(auth, usage, session, model, r, w, compact=true)
   })
   router.add_handler(Get, "/v1/models", (_, w) => self.handle_models(w, model))
+  router.add_handler(Get, "/openclaw/v1/models", (_, w) => {
+    self.handle_models_for_app(w, "openclaw", model)
+  })
   router.add_handler(Get, "/claude-desktop/v1/models", (r, w) => {
     self.handle_claude_desktop_models(auth, usage, r, w)
   })

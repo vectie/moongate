@@ -294,19 +294,24 @@ test "moongate framework app metadata preserves active framework support" {
   guard moongate_framework_apps_json() is Array(apps) else {
     fail("expected framework app array")
   }
-  assert_eq(apps.length(), 8)
+  assert_eq(apps.length(), 9)
   for
     id in [
-      "moondesk", "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw",
-      "hermes",
+      "moondesk", "moonclaw", "claude", "claude-desktop", "codex", "gemini", "opencode",
+      "openclaw", "hermes",
     ] {
     assert_true(ui_framework_app_by_id(apps, id) is Some(_))
   }
   guard ui_framework_app_by_id(apps, "moondesk") is Some(moondesk) else {
     fail("expected MoonDesk framework")
   }
-  assert_eq(moondesk["providerAppType"], Json::string("codex"))
+  assert_eq(moondesk["providerAppType"], Json::string("openclaw"))
   assert_eq(moondesk["priority"], Json::number(0.0))
+  guard ui_framework_app_by_id(apps, "moonclaw") is Some(moonclaw) else {
+    fail("expected MoonClaw framework")
+  }
+  assert_eq(moonclaw["providerAppType"], Json::string("openclaw"))
+  assert_eq(moonclaw["priority"], Json::number(1.0))
   guard ui_framework_app_by_id(apps, "claude-desktop") is Some(desktop) else {
     fail("expected claude desktop framework")
   }

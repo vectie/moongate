@@ -97,6 +97,7 @@ test "gateway security keeps inference public and protects control plane" {
   assert_false(
     moongate_route_requires_control(Post, "/openclaw/v1/chat/completions"),
   )
+  assert_false(moongate_route_requires_control(Get, "/openclaw/v1/models"))
   assert_false(
     moongate_route_requires_control(Post, "/claude-desktop/v1/messages"),
   )

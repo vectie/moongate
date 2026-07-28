@@ -163,9 +163,14 @@ template files and must be entered in the password field.
 
 MoonDesk is the primary Moon Suite operator surface. Suite manifests and the
 provider-template picker assign it priority `0` and list it before MoonClaw,
-MoonBook, and MoonTown. MoonDesk templates reuse the Codex provider scope;
-MoonClaw, MoonBook, and MoonTown templates reuse the OpenClaw provider scope,
-so Moon Suite support does not duplicate credentials or provider state.
+MoonBook, and MoonTown. MoonDesk, MoonClaw, MoonBook, and MoonTown templates
+reuse the OpenClaw provider scope, so Moon Suite support does not duplicate
+credentials or provider state.
+
+Initialize MoonClaw with `moonclaw onboard init` before using its automatic App
+Binding. MoonGate then atomically merges only `providers.moongate` into the
+canonical MoonClaw `providers.json`, points it at `/openclaw/v1`, and preserves
+all other providers. Unbinding removes only that MoonGate-owned entry.
 
 For a desktop shell, use published Lepusa against the checked-in `lepusa.json`
 manifest. The manifest follows Lepusa's gateway-source shape, wraps the

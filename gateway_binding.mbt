@@ -13,8 +13,8 @@ fn moon_binding_app_command(app_type : String) -> String? {
 
 ///|
 fn moon_binding_provider_app_type(app_type : String) -> String {
-  if app_type == "moondesk" {
-    "codex"
+  if app_type == "moondesk" || app_type == "moonclaw" {
+    "openclaw"
   } else {
     app_type
   }
@@ -22,10 +22,18 @@ fn moon_binding_provider_app_type(app_type : String) -> String {
 
 ///|
 fn moon_binding_moondesk_workspace_root() -> String {
-  let configured = (@os.getenv("MOONDESK_WORKSPACE_ROOT") catch { _ => None })
+  let suite_root = (@os.getenv("MOONSUITE_WORKSPACE_ROOT") catch { _ => None })
     .unwrap_or("")
     .trim()
     .to_owned()
+  let configured = if suite_root != "" {
+    suite_root
+  } else {
+    (@os.getenv("MOONDESK_WORKSPACE_ROOT") catch { _ => None })
+    .unwrap_or("")
+    .trim()
+    .to_owned()
+  }
   if configured != "" {
     return @pathx.normalize(configured)
   }
@@ -43,6 +51,23 @@ fn moon_binding_moondesk_service_path(root : String) -> String {
 ///|
 fn moon_binding_moondesk_provider_path(root : String) -> String {
   default_moongate_moonclaw_providers_file_path_for_workspace_root(root)
+}
+
+///|
+fn moon_binding_moonclaw_config_path(root : String) -> String {
+  @moonsuite.product_artifact_for_workspace_root(
+    root, "moonclaw", "moonclaw.json",
+  )
+}
+
+///|
+async fn moon_binding_moonclaw_initialized(root : String) -> Bool {
+  let text = @fsx.read_file(moon_binding_moonclaw_config_path(root)) catch {
+    _ => return false
+  }
+  let json = @json.parse(text) catch { _ => return false }
+  guard json is Object(obj) else { return false }
+  obj.get("agents") is Some(Object(_)) && obj.get("gateway") is Some(Object(_))
 }
 
 ///|
@@ -114,6 +139,17 @@ async fn moon_binding_moondesk_manifest_matches(
 }
 
 ///|
+async fn moon_binding_moongate_provider_exists(root : String) -> Bool {
+  let text = @fsx.read_file(moon_binding_moondesk_provider_path(root)) catch {
+    _ => return false
+  }
+  let json = @json.parse(text) catch { _ => return false }
+  guard json is Object(obj) else { return false }
+  guard obj.get("providers") is Some(Object(providers)) else { return false }
+  providers.get("moongate") is Some(Object(_))
+}
+
+///|
 async fn moon_binding_write_moondesk_provider(
   root : String,
   host : String,
@@ -140,11 +176,7 @@ async fn moon_binding_write_moondesk_provider(
   @fsx.make_directory(@pathx.dirname(path), recursive=true, exists_ok=true) catch {
     error => return Err("Could not prepare MoonDesk provider folder: \{error}")
   }
-  @fsx.write_to_file(
-    path,
-    Json::object(obj).stringify(indent=2) + "\n",
-    create=0o600,
-  ) catch {
+  atomic_write_store_file(path, Json::object(obj).stringify(indent=2) + "\n") catch {
     error => return Err("Could not write MoonDesk provider manifest: \{error}")
   }
   Ok(path)
@@ -200,11 +232,7 @@ async fn moon_binding_write_moondesk_service(
   @fsx.make_directory(@pathx.dirname(path), recursive=true, exists_ok=true) catch {
     error => return Err("Could not prepare MoonDesk service folder: \{error}")
   }
-  @fsx.write_to_file(
-    path,
-    Json::object(obj).stringify(indent=2) + "\n",
-    create=0o600,
-  ) catch {
+  atomic_write_store_file(path, Json::object(obj).stringify(indent=2) + "\n") catch {
     error => return Err("Could not write MoonDesk service config: \{error}")
   }
   Ok(path)
@@ -225,11 +253,7 @@ async fn moon_binding_remove_moondesk_provider(
   guard obj.get("providers") is Some(Object(providers)) else { return Ok(()) }
   providers.remove("moongate")
   obj["providers"] = Json::object(providers)
-  @fsx.write_to_file(
-    path,
-    Json::object(obj).stringify(indent=2) + "\n",
-    create=0o600,
-  ) catch {
+  atomic_write_store_file(path, Json::object(obj).stringify(indent=2) + "\n") catch {
     error => return Err("Could not update MoonDesk provider manifest: \{error}")
   }
   Ok(())
@@ -324,6 +348,19 @@ async fn moon_binding_codex_installation_json() -> Json {
 
 ///|
 async fn moon_binding_app_installation_json(app_type : String) -> Json {
+  if app_type == "moonclaw" {
+    let root = moon_binding_moondesk_workspace_root()
+    let initialized = moon_binding_moonclaw_initialized(root)
+    return {
+      "installed": Json::boolean(initialized),
+      "version": Json::null(),
+      "error": if initialized {
+        Json::null()
+      } else {
+        Json::string("Run `moonclaw onboard init` before binding MoonGate")
+      },
+    }.to_json()
+  }
   if app_type == "moondesk" {
     let home_app = @pathx.join(
       @pathx.join(moon_home_dir(), "Applications"),
@@ -383,7 +420,7 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
 ///|
 fn moon_binding_mode(app_type : String) -> String {
   match app_type {
-    "moondesk" | "codex" | "claude-desktop" => "automatic"
+    "moondesk" | "moonclaw" | "codex" | "claude-desktop" => "automatic"
     _ => "manual"
   }
 }
@@ -423,17 +460,21 @@ async fn ProxyService::app_binding_status_json(
   let mut configured_url : String? = None
   let mut expected_url : String? = None
   match app_type {
-    "moondesk" => {
+    "moondesk" | "moonclaw" => {
       let root = moon_binding_moondesk_workspace_root()
-      let expected = "http://\{host}:\{port}/v1"
+      let expected = "http://\{host}:\{port}/openclaw/v1"
       let model = match current_provider {
         Some(provider) => provider.binding_model(@suite.default_model())
         None => @suite.default_model()
       }
       let manifest_path = moon_binding_moondesk_provider_path(root)
-      managed = @fsx.exists(manifest_path)
-      bound = moon_binding_moondesk_manifest_matches(root, expected, model) &&
-        moon_binding_moondesk_service_configured(root)
+      managed = moon_binding_moongate_provider_exists(root)
+      bound = moon_binding_moonclaw_initialized(root) &&
+        moon_binding_moondesk_manifest_matches(root, expected, model) &&
+        (
+          app_type == "moonclaw" ||
+          moon_binding_moondesk_service_configured(root)
+        )
       stale = managed && !bound
       config_path = manifest_path
       configured_url = if managed { Some(expected) } else { None }
@@ -562,7 +603,7 @@ async fn ProxyService::handle_bind_app(
     return
   }
   let provider_model = provider.binding_model(@suite.default_model())
-  if (app_type == "moondesk" || app_type == "codex") &&
+  if (app_type == "moondesk" || app_type == "moonclaw" || app_type == "codex") &&
     provider_model.trim().is_empty() {
     write_usage_bad_request(w, "provider_model_not_configured")
     return
@@ -580,6 +621,18 @@ async fn ProxyService::handle_bind_app(
             Ok(_) => Ok(())
             Err(error) => Err(error)
           }
+      }
+    }
+    "moonclaw" => {
+      let root = moon_binding_moondesk_workspace_root()
+      if !moon_binding_moonclaw_initialized(root) {
+        Err("Run `moonclaw onboard init` before binding MoonGate")
+      } else {
+        match
+          moon_binding_write_moondesk_provider(root, host, port, provider_model) {
+          Ok(_) => Ok(())
+          Err(error) => Err(error)
+        }
       }
     }
     "codex" =>
@@ -602,7 +655,7 @@ async fn ProxyService::handle_bind_app(
     Ok(_) => ()
   }
   self.provider_router.set_current_provider(provider_app_type, provider_id)
-  self.proxy_takeover_enabled.set(app_type, true)
+  self.proxy_takeover_enabled.set(provider_app_type, true)
   self.proxy_enabled = true
   usage.set_active_target(
     provider_app_type,
@@ -632,7 +685,7 @@ async fn ProxyService::handle_unbind_app(
     return
   }
   let result = match app_type {
-    "moondesk" =>
+    "moondesk" | "moonclaw" =>
       moon_binding_remove_moondesk_provider(
         moon_binding_moondesk_workspace_root(),
       )
@@ -647,7 +700,10 @@ async fn ProxyService::handle_unbind_app(
     }
     Ok(_) => ()
   }
-  self.proxy_takeover_enabled.set(app_type, false)
+  self.proxy_takeover_enabled.set(
+    moon_binding_provider_app_type(app_type),
+    false,
+  )
   if !self.persist_proxy_store_or_error(w) {
     return
   }

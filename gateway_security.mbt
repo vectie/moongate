@@ -79,6 +79,7 @@ fn moongate_inference_route(method_ : @httpx.Method, path : String) -> Bool {
       path.has_prefix("/gemini/v1beta/")
     Get =>
       path == "/v1/models" ||
+      path == "/openclaw/v1/models" ||
       path == "/claude-desktop/v1/models" ||
       path.has_prefix("/gemini/v1/") ||
       path.has_prefix("/gemini/v1beta/")

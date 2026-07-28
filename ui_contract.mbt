@@ -6,8 +6,15 @@ pub fn moongate_framework_apps_json() -> Json {
       "MoonDesk",
       "single",
       desktop=true,
-      provider_app_type=Some("codex"),
+      provider_app_type=Some("openclaw"),
       priority=0,
+    ),
+    moongate_framework_app_json(
+      "moonclaw",
+      "MoonClaw",
+      "single",
+      provider_app_type=Some("openclaw"),
+      priority=1,
     ),
     moongate_framework_app_json("claude", "Claude Code", "single"),
     moongate_framework_app_json(

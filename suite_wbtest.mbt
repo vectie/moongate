@@ -333,6 +333,7 @@ test "suite manifest publishes moongate service contract" {
     assert_false(routes.contains(Json::string(route)))
   }
   assert_true(routes.contains(Json::string("GET /v1/models")))
+  assert_true(routes.contains(Json::string("GET /openclaw/v1/models")))
   assert_true(routes.contains(Json::string("POST /v1/messages")))
   assert_true(routes.contains(Json::string("POST /v1/responses")))
   assert_true(routes.contains(Json::string("POST /v1/responses/compact")))
@@ -354,7 +355,7 @@ test "suite manifest publishes moongate service contract" {
   }
   assert_eq(
     moonclaw["openaiBaseUrl"],
-    Json::string("http://127.0.0.1:15721/v1"),
+    Json::string("http://127.0.0.1:15721/openclaw/v1"),
   )
   assert_eq(
     moonclaw["anthropicBaseUrl"],
@@ -365,7 +366,7 @@ test "suite manifest publishes moongate service contract" {
   }
   assert_eq(
     moonclaw_env["OPENAI_BASE_URL"],
-    Json::string("http://127.0.0.1:15721/v1"),
+    Json::string("http://127.0.0.1:15721/openclaw/v1"),
   )
   assert_eq(moonclaw_env["OPENAI_API_KEY"], Json::string("moongate-local"))
   guard moonclaw["moonclawModelConfig"] is Object(model_config) else {
@@ -375,7 +376,10 @@ test "suite manifest publishes moongate service contract" {
   assert_eq(model_config["model_name"], Json::string("gpt-5"))
   assert_eq(model_config["model_type"], Json::string("saas/openai"))
   assert_eq(model_config["api_key"], Json::string("moongate-local"))
-  assert_eq(model_config["base_url"], Json::string("http://127.0.0.1:15721/v1"))
+  assert_eq(
+    model_config["base_url"],
+    Json::string("http://127.0.0.1:15721/openclaw/v1"),
+  )
   assert_eq(model_config["safe_zone_tokens"], Json::number(200000.0))
   guard moonclaw["moonclawModelsJson"] is Array(models_json) else {
     fail("expected moonclaw models json")
@@ -417,7 +421,7 @@ test "suite manifest publishes moongate service contract" {
   }
   assert_eq(
     moongate_provider["baseUrl"],
-    Json::string("http://127.0.0.1:15721/v1"),
+    Json::string("http://127.0.0.1:15721/openclaw/v1"),
   )
   assert_eq(moongate_provider["api"], Json::string("openai"))
   assert_eq(moongate_provider["apiKey"], Json::string("moongate-local"))
@@ -640,6 +644,22 @@ async test "moonclaw providers file writer materializes suite provider config" {
     let path = @pathx.join(
       tmpdir, ".moonsuite/products/moonclaw/providers.json",
     )
+    @fsx.make_directory(@pathx.dirname(path), recursive=true, exists_ok=true)
+    @fsx.write_to_file(
+      path,
+      (
+        {
+          "schema": "moonclaw.providers.v1",
+          "providers": {
+            "direct": {
+              "baseUrl": "https://api.example/v1",
+              "apiKey": "sk-existing",
+              "models": [],
+            },
+          },
+        } : Json).stringify(),
+      create=0o600,
+    )
     let written = write_moongate_moonclaw_providers_file(
       path~,
       host="0.0.0.0",
@@ -648,22 +668,19 @@ async test "moonclaw providers file writer materializes suite provider config" {
     )
     assert_eq(written, path)
     let json = @json.parse(@fsx.read_file(path))
-    assert_eq(
-      json,
-      moongate_moonclaw_providers_file_json(
-        host="0.0.0.0",
-        port=18081,
-        model="gpt-5",
-      ),
-    )
     guard json is Object(obj) else { fail("expected providers object") }
+    assert_eq(obj["schema"], Json::string("moonclaw.providers.v1"))
     guard obj["providers"] is Object(providers) else {
       fail("expected providers map")
     }
+    assert_true(providers.get("direct") is Some(_))
     guard providers["moongate"] is Object(provider) else {
       fail("expected moongate provider")
     }
-    assert_eq(provider["baseUrl"], Json::string("http://127.0.0.1:18081/v1"))
+    assert_eq(
+      provider["baseUrl"],
+      Json::string("http://127.0.0.1:18081/openclaw/v1"),
+    )
     assert_eq(provider["api"], Json::string("openai"))
     assert_eq(provider["apiKey"], Json::string("moongate-local"))
   })
@@ -774,6 +791,12 @@ async test "suite drift report derives canonical paths from moonsuite contract" 
       canonical["moonclawProviders"],
       Json::string(
         @pathx.join(tmpdir, ".moonsuite/products/moonclaw/providers.json"),
+      ),
+    )
+    assert_eq(
+      canonical["moonclawConfig"],
+      Json::string(
+        @pathx.join(tmpdir, ".moonsuite/products/moonclaw/moonclaw.json"),
       ),
     )
     assert_eq(

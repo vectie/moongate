@@ -1,6 +1,7 @@
 ///|
 test "automatic app bindings are limited to real managed config writers" {
   assert_eq(moon_binding_mode("moondesk"), "automatic")
+  assert_eq(moon_binding_mode("moonclaw"), "automatic")
   assert_eq(moon_binding_mode("codex"), "automatic")
   assert_eq(moon_binding_mode("claude-desktop"), "automatic")
   assert_eq(moon_binding_mode("claude"), "manual")
@@ -11,9 +12,91 @@ test "automatic app bindings are limited to real managed config writers" {
 }
 
 ///|
-test "MoonDesk binding reuses Codex-compatible providers" {
-  assert_eq(moon_binding_provider_app_type("moondesk"), "codex")
+test "MoonDesk and MoonClaw bindings use the OpenClaw provider scope" {
+  assert_eq(moon_binding_provider_app_type("moondesk"), "openclaw")
+  assert_eq(moon_binding_provider_app_type("moonclaw"), "openclaw")
   assert_eq(moon_binding_provider_app_type("claude"), "claude")
+}
+
+///|
+async test "MoonClaw binding requires canonical onboarding config" {
+  @fsx.with_temporary_directory("moongate-moonclaw-init-XXXXXX", tmpdir => {
+    assert_false(moon_binding_moonclaw_initialized(tmpdir))
+    let path = moon_binding_moonclaw_config_path(tmpdir)
+    @fsx.make_directory(@pathx.dirname(path), recursive=true, exists_ok=true)
+    @fsx.write_to_file(
+      path,
+      ({ "agents": {}, "gateway": {} } : Json).stringify(),
+      create=0o600,
+    )
+    assert_true(moon_binding_moonclaw_initialized(tmpdir))
+  })
+}
+
+///|
+async test "MoonClaw binding owns only the moongate provider entry" {
+  @fsx.with_temporary_directory("moongate-moonclaw-binding-XXXXXX", tmpdir => {
+    let config_path = moon_binding_moonclaw_config_path(tmpdir)
+    let provider_path = moon_binding_moondesk_provider_path(tmpdir)
+    @fsx.make_directory(
+      @pathx.dirname(config_path),
+      recursive=true,
+      exists_ok=true,
+    )
+    @fsx.write_to_file(
+      config_path,
+      ({ "agents": {}, "gateway": {} } : Json).stringify(),
+      create=0o600,
+    )
+    @fsx.write_to_file(
+      provider_path,
+      (
+        {
+          "providers": {
+            "direct": {
+              "baseUrl": "https://api.example/v1",
+              "apiKey": "sk-existing",
+              "models": [],
+            },
+          },
+        } : Json).stringify(),
+      create=0o600,
+    )
+    assert_false(moon_binding_moongate_provider_exists(tmpdir))
+    guard moon_binding_write_moondesk_provider(
+        tmpdir, "127.0.0.1", 18081, "openai/gpt-5.6-sol",
+      )
+      is Ok(_) else {
+      fail("expected MoonGate provider merge")
+    }
+    guard @json.parse(@fsx.read_file(provider_path)) is Object(root) else {
+      fail("expected provider manifest")
+    }
+    guard root["providers"] is Object(providers) else {
+      fail("expected provider map")
+    }
+    assert_true(providers.get("direct") is Some(_))
+    guard providers["moongate"] is Object(moongate) else {
+      fail("expected moongate provider")
+    }
+    assert_eq(
+      moongate["baseUrl"],
+      Json::string("http://127.0.0.1:18081/openclaw/v1"),
+    )
+    assert_true(moon_binding_moongate_provider_exists(tmpdir))
+    guard moon_binding_remove_moondesk_provider(tmpdir) is Ok(_) else {
+      fail("expected MoonGate provider removal")
+    }
+    guard @json.parse(@fsx.read_file(provider_path)) is Object(after) else {
+      fail("expected provider manifest after removal")
+    }
+    guard after["providers"] is Object(after_providers) else {
+      fail("expected provider map after removal")
+    }
+    assert_true(after_providers.get("direct") is Some(_))
+    assert_true(after_providers.get("moongate") is None)
+    assert_false(moon_binding_moongate_provider_exists(tmpdir))
+  })
 }
 
 ///|

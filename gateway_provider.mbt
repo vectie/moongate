@@ -301,6 +301,29 @@ async fn ProxyService::handle_models(
 }
 
 ///|
+async fn ProxyService::handle_models_for_app(
+  self : ProxyService,
+  w : @httpx.ResponseWriter,
+  app_type : String,
+  fallback_model : String,
+) -> Unit {
+  let model = match self.provider_router.current_provider_id(app_type) {
+    Some(provider_id) =>
+      match self.provider_router.provider_by_id(app_type, provider_id) {
+        Some(provider) => provider.binding_model(fallback_model)
+        None => fallback_model
+      }
+    None => fallback_model
+  }
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.Ok)
+  w.write(
+    moon_models_endpoint_response_json(None, fallback_model=model).stringify(),
+  )
+  w.flush()
+}
+
+///|
 async fn ProxyService::handle_claude_desktop_models(
   self : ProxyService,
   auth : AuthService,
