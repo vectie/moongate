@@ -11,6 +11,8 @@ fn suite_cli_commands() -> Array[CliCommandSpec] {
       patterns: ["suite constitution-negative"],
     },
     { id: "suite_drift", patterns: ["suite drift"] },
+    { id: "suite_capabilities", patterns: ["suite capabilities"] },
+    { id: "suite_capability_resolve", patterns: ["suite capability-resolve"] },
     { id: "suite_write_status", patterns: ["suite write-status"] },
     { id: "suite_session", patterns: ["suite session"] },
     { id: "suite_autonomy_check", patterns: ["suite autonomy-check"] },
@@ -40,6 +42,8 @@ async fn run_suite_cli_command(
     "suite_constitution" => print_suite_constitution(args)
     "suite_constitution_negative" => print_suite_constitution_negative(args)
     "suite_drift" => print_suite_drift(args)
+    "suite_capabilities" => print_suite_capabilities(args)
+    "suite_capability_resolve" => print_suite_capability_resolution(args)
     "suite_write_status" => write_suite_status(args)
     "suite_session" => write_ai_session_receipt(args)
     "suite_autonomy_check" => check_autonomy_event(args)
@@ -142,6 +146,45 @@ async fn print_suite_drift(args : Array[String]) -> Unit {
     @moongate.moongate_suite_drift_report_json(suite_root=root).stringify(
       indent=2,
     ),
+  )
+}
+
+///|
+async fn print_suite_capabilities(args : Array[String]) -> Unit {
+  let root = parse_string_arg(args, "--root").unwrap_or(".")
+  let registry_path = parse_string_arg(args, "--registry").unwrap_or("")
+  println(
+    @moongate.moongate_capability_projection_json(
+      suite_root=root,
+      registry_path~,
+    ).stringify(indent=2),
+  )
+}
+
+///|
+async fn print_suite_capability_resolution(args : Array[String]) -> Unit {
+  let root = parse_string_arg(args, "--root").unwrap_or(".")
+  let registry_path = parse_string_arg(args, "--registry").unwrap_or("")
+  let product_id = parse_string_arg(args, "--product").unwrap_or("")
+  let operation_id = parse_string_arg(args, "--operation").unwrap_or("")
+  if product_id.trim().is_empty() || operation_id.trim().is_empty() {
+    fail(
+      "suite capability-resolve requires --product <id> and --operation <id>",
+    )
+  }
+  let projection = @moongate.moongate_capability_projection_json(
+    suite_root=root,
+    registry_path~,
+  )
+  println(
+    @moongate.moongate_capability_resolution_json(
+      projection,
+      product_id,
+      operation_id,
+      requested_authority=parse_string_arg(args, "--authority").unwrap_or(""),
+      input_schema_id=parse_string_arg(args, "--input-schema").unwrap_or(""),
+      output_schema_id=parse_string_arg(args, "--output-schema").unwrap_or(""),
+    ).stringify(indent=2),
   )
 }
 

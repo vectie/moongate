@@ -183,7 +183,7 @@
   "stat.model": "Model",
   "stat.no_health": "No provider health data yet.",
   "stat.no_data": "No data yet",
-  "stat.populate_panel": "Use moonstat through the proxy to populate this panel.",
+  "stat.populate_panel": "Use MoonGate through the proxy to populate this panel.",
   "stat.updated": "Updated{suffix} {time}",
   "stat.framework_warnings": "{count} framework warnings",
   "stat.openai_clients": "OpenAI-compatible clients",

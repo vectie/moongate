@@ -183,7 +183,7 @@
   "stat.model": "模型",
   "stat.no_health": "暂无提供商健康数据。",
   "stat.no_data": "暂无数据",
-  "stat.populate_panel": "通过代理使用 moonstat 后，此面板会显示数据。",
+  "stat.populate_panel": "通过代理使用 MoonGate 后，此面板会显示数据。",
   "stat.updated": "更新于{suffix} {time}",
   "stat.framework_warnings": "{count} 个框架警告",
   "stat.openai_clients": "兼容 OpenAI 的客户端",

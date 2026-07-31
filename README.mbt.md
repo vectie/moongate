@@ -1,5 +1,9 @@
 # MoonGate
 
+> **Platform/application · feature-testing alpha.** Read the
+> [product contract](docs/PRODUCT_CONTRACT.md) for provider prerequisites,
+> security, capability status and release gates.
+
 MoonGate's active technical identity is moongate across its module, CLI,
 environment variables, APIs, assets, and product state. See
 [the technical identity migration](docs/MOONGATE_TECHNICAL_MIGRATION.md) for
@@ -264,6 +268,11 @@ moon run cmd/main -- suite manifest
 moon run cmd/main -- suite status
 moon run cmd/main -- suite constitution --checked-at 2026-07-12T09:00:00+08:00
 moon run cmd/main -- suite constitution-negative --checked-at 2026-07-12T09:00:00+08:00
+moon run cmd/main -- suite capabilities --root "$MOONSUITE_WORKSPACE_ROOT"
+moon run cmd/main -- suite capability-resolve \
+  --root "$MOONSUITE_WORKSPACE_ROOT" \
+  --product moonmold \
+  --operation spatial.operation.execute
 moon run cmd/main -- suite write-status
 ```
 
@@ -280,6 +289,20 @@ status contract to `.moonsuite/suite-status.json` by default, and `start`
 refreshes that file when the gateway boots. `GET /suite/moonclaw-providers`
 and `POST /suite/moonclaw-providers/write` expose the MoonClaw providers file
 contract over HTTP.
+
+`suite capabilities` and `GET /suite/capabilities` produce the live
+`moonsuite.capability-projection.v1` contract. The projection keeps inventory
+presence separate from executable operations and verifies pack manifests,
+versioned schemas, generic authority classes, claim ceilings, runtime
+bindings, health evidence and endpoint or MoonFlow adapter availability.
+`suite capability-resolve` and `GET /suite/capabilities/resolve` resolve one
+exact product/tool pair without aliases or fuzzy matching. See
+[the executable capability projection](docs/CAPABILITY_REGISTRY.md).
+
+MoonFlow remains the orchestration and adapter-catalog compiler. MoonGate
+consumes its canonical `moonflow.capability-catalog.v1`, derived from
+`moonflow.adapter-declaration.v1` and `moonflow.adapter-health.v1`; it does not
+create another runtime.
 
 `suite constitution` returns the 12-product registry together with a shared
 validator report for every boundary. `suite constitution-negative` is a
@@ -321,6 +344,8 @@ MoonGate currently exposes the standalone local routes below:
 - `GET /metrics`
 - `GET /suite/manifest`
 - `GET /suite/status`
+- `GET /suite/capabilities`
+- `GET /suite/capabilities/resolve`
 - `POST /suite/status/write`
 - `GET /suite/moonclaw-providers`
 - `POST /suite/moonclaw-providers/write`

@@ -45,6 +45,12 @@ fn print_help() -> Unit {
     "  suite constitution-negative  Print fail-closed constitutional probes",
   )
   println("  suite drift               Report MoonSuite legacy path drift")
+  println(
+    "  suite capabilities        Project installed inventory into executable capability truth",
+  )
+  println(
+    "  suite capability-resolve  Resolve one exact versioned product operation",
+  )
   println("  suite write-status        Write .moonsuite/suite-status.json")
   println(
     "  suite autonomy-check     Authorize and persist one unattended action decision",

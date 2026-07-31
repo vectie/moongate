@@ -137,6 +137,8 @@ pub fn moongate_ui_endpoints_json() -> Json {
     "suiteManifest": Json::string("/suite/manifest"),
     "suiteStatus": Json::string("/suite/status"),
     "suiteDrift": Json::string("/suite/drift"),
+    "suiteCapabilities": Json::string("/suite/capabilities"),
+    "suiteCapabilityResolve": Json::string("/suite/capabilities/resolve"),
     "suiteWriteStatus": Json::string("/suite/status/write"),
     "suiteMoonclawProviders": Json::string("/suite/moonclaw-providers"),
     "suiteWriteMoonclawProviders": Json::string(

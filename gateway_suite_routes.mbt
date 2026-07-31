@@ -13,6 +13,12 @@ fn Gateway::register_suite_routes(
   router.add_handler(Get, "/suite/drift", (r, w) => {
     self.handle_suite_drift(r, w)
   })
+  router.add_handler(Get, "/suite/capabilities", (r, w) => {
+    self.handle_suite_capabilities(r, w)
+  })
+  router.add_handler(Get, "/suite/capabilities/resolve", (r, w) => {
+    self.handle_suite_capability_resolution(r, w)
+  })
   router.add_handler(Post, "/suite/status/write", (r, w) => {
     self.handle_suite_write_status(r, w, bound_port)
   })
@@ -67,6 +73,67 @@ async fn Gateway::handle_suite_drift(
   let root = proxy_string_request(r.path, None, "root").unwrap_or(".")
   let report = moongate_suite_drift_report_json(suite_root=root)
   write_usage_json(w, report)
+}
+
+///|
+async fn Gateway::handle_suite_capabilities(
+  _self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let root = proxy_string_request(r.path, None, "root").unwrap_or(".")
+  let registry_path = proxy_string_request(r.path, None, "registryPath").unwrap_or(
+    "",
+  )
+  write_usage_json(
+    w,
+    moongate_capability_projection_json(suite_root=root, registry_path~),
+  )
+}
+
+///|
+async fn Gateway::handle_suite_capability_resolution(
+  _self : Gateway,
+  r : @httpx.RequestReader,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let product_id = proxy_string_request(r.path, None, "productId").unwrap_or("")
+  let operation_id = proxy_string_request(r.path, None, "operationId").unwrap_or(
+    "",
+  )
+  if product_id.trim().is_empty() || operation_id.trim().is_empty() {
+    write_usage_bad_request(
+      w, "productId and operationId are required for capability resolution",
+    )
+    return
+  }
+  let root = proxy_string_request(r.path, None, "root").unwrap_or(".")
+  let registry_path = proxy_string_request(r.path, None, "registryPath").unwrap_or(
+    "",
+  )
+  let projection = moongate_capability_projection_json(
+    suite_root=root,
+    registry_path~,
+  )
+  write_usage_json(
+    w,
+    moongate_capability_resolution_json(
+      projection,
+      product_id,
+      operation_id,
+      requested_authority=proxy_string_request(
+        r.path,
+        None,
+        "requestedAuthority",
+      ).unwrap_or(""),
+      input_schema_id=proxy_string_request(r.path, None, "inputSchemaId").unwrap_or(
+        "",
+      ),
+      output_schema_id=proxy_string_request(r.path, None, "outputSchemaId").unwrap_or(
+        "",
+      ),
+    ),
+  )
 }
 
 ///|

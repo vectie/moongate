@@ -124,6 +124,10 @@ pub fn moongate_agent_clients_from_suite_status(Json) -> Result[Array[MoonGateAg
 
 pub fn moongate_base_url_from_suite_status(Json) -> String?
 
+pub async fn moongate_capability_projection_json(suite_root? : String, registry_path? : String) -> Json
+
+pub fn moongate_capability_resolution_json(Json, String, String, requested_authority? : String, input_schema_id? : String, output_schema_id? : String) -> Json
+
 pub fn moongate_framework_apps_json() -> Json
 
 pub fn moongate_lepusa_manifest(port? : Int) -> String
