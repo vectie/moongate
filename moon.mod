@@ -10,7 +10,7 @@ license = "Apache-2.0"
 
 keywords = [ ]
 
-description = "MoonBit-native local proxy and usage statistics gateway for the Moon suite"
+description = "Retired pre-MoonGate implementation retained for legacy-state migration"
 
 import {
   "moonbitlang/async@0.16.6",

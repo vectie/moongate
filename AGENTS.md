@@ -1,97 +1,78 @@
-# Project Agents.md Guide
+# MoonStat repository guide
 
-This is a [MoonBit](https://docs.moonbitlang.com) project.
+This is a MoonBit project containing the preserved pre-rename implementation of
+MoonGate.
 
-You can browse and install extra skills here:
-<https://github.com/moonbitlang/skills>
+## Product lifecycle
 
-## Project Structure
+MoonStat is retired. MoonGate is the sole live MoonSuite product for proxy
+routing, providers, credentials, usage, resilience, capability observation and
+suite health.
 
-- MoonBit packages are organized per directory; each directory contains a
-  `moon.pkg` file listing its dependencies. Each package has its files and
-  blackbox test files (ending in `_test.mbt`) and whitebox test files (ending in
-  `_wbtest.mbt`).
+This repository is not a second product and must not gain new features. It is
+retained for historical inspection, legacy-state interpretation, migration
+verification and isolated rollback diagnosis.
 
-- In the toplevel directory, there is a `moon.mod` file listing module
-  metadata.
+Normative documents:
 
-## Coding convention
+- `docs/PRODUCT_CONTRACT.md`
+- `docs/MIGRATION_TO_MOONGATE.md`
+- `PLAN.md`
 
-- MoonBit code is organized in block style, each block is separated by `///|`,
-  the order of each block is irrelevant. In some refactorings, you can process
-  block by block independently.
+## Identity rules
 
-- Try to keep deprecated blocks in file called `deprecated.mbt` in each
-  directory.
+- Do not add a MoonStat pack, capability, adapter declaration or workflow node.
+- Do not add current-state output with `product_id`, `service_id`, `project_id`
+  or operation identity `moonstat`.
+- Do not make MoonStat discoverable or callable from MoonFlow, MoonGate,
+  MoonDesk or any other live product.
+- Do not add new `MOONSTAT_` configuration. New live configuration belongs to
+  MoonGate and uses `MOONGATE_`.
+- Historical source, tests, state, logs and immutable receipts may retain the
+  former identity. Do not rewrite evidence just to rename it.
 
-## Current Product Direction
+## Allowed changes
 
-- Moonstat is in a feature-testing phase. Prefer testing real proxy, usage,
-  suite discovery, install/config, and failure workflows before broad structural
-  cleanup.
+- retirement and migration documentation;
+- narrowly scoped security fixes needed to read or migrate legacy state safely;
+- tests that prove source state is unchanged and destination conflicts are not
+  overwritten;
+- fixes necessary to preserve historical buildability for forensic use.
 
-- Preserve active framework integrations. Codex/OpenAI-compatible clients,
-  Claude/Anthropic-compatible clients, Claude Desktop, OpenClaw, Hermes, Gemini,
-  OpenCode-style logs, GitHub Copilot, and MoonClaw/MoonBook/Moontown/Moondesk
-  adapters are supported features, not stale compatibility.
+Feature work, provider additions, UI expansion, new suite integrations and
+release packaging belong in `/Users/kq/Workspace/moongate`.
 
-- Cleanup should target stale old-version aliases, deprecated command shims,
-  dead local probes, and unnecessary compatibility paths. Do not remove active
-  framework support unless explicitly requested.
+Do not delete the historical implementation, remove its framework parsers, or
+change existing state formats as cleanup. Do not run MoonStat and MoonGate
+against the same workspace at the same time.
 
-- Lepusa is the frontend/desktop framework for Moonstat. The checked-in
-  `lepusa.json` is the standalone app boundary and should wrap Moonstat's
-  localhost gateway until a deeper Lepusa/Rabbita UI rewrite is worth doing.
-  Backend, suite, proxy, usage, and test coverage work can continue without
-  replacing the current gateway-served dashboard payload.
+## Project structure
 
-- Use published Rabbita and Lepusa packages in `moon.mod`. Do not wire Moonstat
-  to local `../rba` or `../lepusa` workspaces except for temporary inspection
-  or upstream validation.
+- MoonBit packages are directories containing `moon.pkg`.
+- Top-level blocks are separated with `///|`.
+- Black-box tests end in `_test.mbt`; white-box tests end in `_wbtest.mbt`.
+- Generated `.mbti` files are public-interface evidence and must be regenerated
+  with `moon info`, never hand-edited.
 
-- Known structural cleanup backlog: split remaining large files such as
-  `cmd/main/cmd_misc.mbt`, `gateway_provider.mbt`,
-  `gateway_claude_anthropic.mbt`, and `gateway_usage.mbt` when tests expose
-  friction or during release hardening.
+## Editing and validation
 
-## Tooling
+Preserve unrelated worktree changes. Keep fixes small and package-local. Use
+`moon ide` for semantic navigation and `moon fmt` for MoonBit formatting.
 
-- `moon fmt` is used to format your code properly.
+For documentation-only retirement work, run:
 
-- `moon ide` provides project navigation helpers like `peek-def`, `outline`, and
-  `find-references`. See $moonbit-agent-guide for details.
+```sh
+git diff --check
+```
 
-- `moon info` is used to update the generated interface of the package, each
-  package has a generated interface file `.mbti`, it is a brief formal
-  description of the package. If nothing in `.mbti` changes, this means your
-  change does not bring the visible changes to the external package users, it is
-  typically a safe refactoring.
+If MoonBit source changes, run the smallest affected tests first, then:
 
-- In the last step, run `moon info && moon fmt` to update the interface and
-  format the code. Check the diffs of `.mbti` file to see if the changes are
-  expected.
+```sh
+moon check --target native --deny-warn
+moon test --target native --deny-warn
+moon info
+moon fmt
+```
 
-- Run `moon test` to check tests pass. MoonBit supports snapshot testing; when
-  changes affect outputs, run `moon test --update` to refresh snapshots.
-
-- Prefer `assert_eq` or `assert_true(pattern is Pattern(...))` for results that
-  are stable or very unlikely to change. Use snapshot tests to record current
-  behavior. For solid, well-defined results (e.g. scientific computations),
-  prefer assertion tests. You can use `moon coverage analyze > uncovered.log` to
-  see which parts of your code are not covered by tests.
-
-## Feature Test Matrix
-
-- Core validation: `moon info`, `moon fmt`,
-  `moon check --target native --deny-warn`, and
-  `moon test --target native --deny-warn`.
-
-- Suite adapter validation when touching discovery/contracts:
-  `../moonclaw` `moon test plugin/moonstat --target native --deny-warn`,
-  `../moondesk` `moon test plugin/moonstat --target native --deny-warn`,
-  `../moontown` `moon test src/plugin/moonstat --target native --deny-warn`,
-  and `../moonbook` `moon test plugins/moonstat --target native --deny-warn`.
-
-- Feature areas to exercise: proxy routing, streaming, usage accounting,
-  provider management, suite status discovery, install/config flows, and
-  failure handling.
+Only validate sibling products when a shared migration contract changed. Never
+edit MoonDesk from this repository task.
