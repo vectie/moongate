@@ -60,6 +60,15 @@ fn UsageService::register_routes(
   router.add_handler(Get, "/usage/data-sources", (_, w) => {
     self.handle_usage_data_sources(w)
   })
+  router.add_handler(Get, "/operations/monitor", (_, w) => {
+    self.handle_operations_monitor(w, provider_router)
+  })
+  router.add_handler(Post, "/benchmark/deterministic", (_, w) => {
+    self.handle_deterministic_benchmark(w)
+  })
+  router.add_handler(Post, "/benchmark/live", (r, w) => {
+    self.handle_live_benchmark_control(r, w)
+  })
   router.add_handler(Get, "/usage/provider-usage", (r, w) => {
     self.handle_query_provider_usage(r, w, provider_router)
   })

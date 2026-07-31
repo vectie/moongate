@@ -53,7 +53,7 @@ textarea {
 button,
 .button-secondary {
   display: inline-flex;
-  min-height: 36px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -197,7 +197,7 @@ code,
 
 .nav-item {
   display: flex;
-  min-height: 40px;
+  min-height: 44px;
   align-items: center;
   gap: 10px;
   border-radius: 7px;
@@ -220,17 +220,16 @@ code,
 }
 
 .nav-icon {
-  display: grid;
-  width: 22px;
-  height: 22px;
+  display: block;
+  width: 20px;
+  height: 20px;
   flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 5px;
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: -0.03em;
-  opacity: 0.72;
+  opacity: 0.78;
+}
+
+.nav-item.active .nav-icon,
+.nav-item:hover .nav-icon {
+  opacity: 1;
 }
 
 .sidebar-footer {
@@ -362,6 +361,126 @@ code,
 
 .page.active {
   display: block;
+}
+
+.goal-compass {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.9fr) minmax(430px, 1.5fr) minmax(180px, auto);
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(139, 157, 255, 0.24);
+  border-radius: 14px;
+  padding: 18px 20px;
+  background:
+    linear-gradient(110deg, rgba(139, 157, 255, 0.12), transparent 55%),
+    var(--panel);
+}
+
+.goal-copy h2,
+.goal-copy p {
+  margin: 0;
+}
+
+.goal-copy h2 {
+  margin-top: 3px;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.goal-copy #goal-next-detail {
+  max-width: 540px;
+  margin-top: 6px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.goal-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(82px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goal-step {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 7px;
+  min-height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 9px;
+  background: rgba(10, 12, 18, 0.32);
+}
+
+.goal-step.current {
+  border-color: rgba(139, 157, 255, 0.52);
+  background: var(--accent-soft);
+}
+
+.goal-step.done {
+  border-color: rgba(62, 207, 142, 0.28);
+}
+
+.goal-step-icon {
+  width: 18px;
+  height: 18px;
+  grid-row: 1 / span 2;
+  opacity: 0.76;
+}
+
+.goal-step span,
+.goal-step small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-step span {
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.goal-step small {
+  color: var(--text-3);
+  font-size: 9px;
+}
+
+.goal-step.current small {
+  color: var(--accent-strong);
+}
+
+.goal-step.done small {
+  color: var(--good);
+}
+
+.goal-action {
+  display: grid;
+  justify-items: stretch;
+  gap: 7px;
+}
+
+#primary-next-action {
+  min-width: 180px;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.goal-action-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.goal-recovery {
+  max-width: 260px;
+  margin: 0;
+  color: var(--bad);
+  font-size: 10px;
 }
 
 @keyframes page-in {
@@ -1832,6 +1951,15 @@ td select,
     flex-wrap: wrap;
   }
 
+  .goal-compass {
+    grid-template-columns: 1fr auto;
+  }
+
+  .goal-steps {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
   .hero-actions {
     margin-left: 0;
   }
@@ -1918,6 +2046,19 @@ td select,
     border-left: 0;
     padding-top: 14px;
     padding-left: 0;
+  }
+
+  .goal-compass {
+    grid-template-columns: 1fr;
+  }
+
+  .goal-steps {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .goal-action {
+    justify-items: start;
   }
 
   .status-grid,
@@ -2018,6 +2159,15 @@ td select,
 }
 
 @media (max-width: 460px) {
+  .goal-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .goal-action,
+  #primary-next-action {
+    width: 100%;
+  }
+
   .hero {
     padding: 17px;
   }

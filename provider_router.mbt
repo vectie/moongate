@@ -661,6 +661,8 @@ fn provider_route_model_mapping_json(value : ModelMapping?) -> Json {
 priv enum ProviderSelectionError {
   NoProvidersConfigured
   AllProvidersCircuitOpen
+  NoProviderCapacity
+  ProviderQuotaExhausted
 } derive(Eq)
 
 ///|
@@ -668,6 +670,8 @@ fn ProviderSelectionError::to_string(self : ProviderSelectionError) -> String {
   match self {
     NoProvidersConfigured => "no_providers_configured"
     AllProvidersCircuitOpen => "all_providers_circuit_open"
+    NoProviderCapacity => "no_provider_capacity"
+    ProviderQuotaExhausted => "provider_quota_exhausted"
   }
 }
 
@@ -778,7 +782,23 @@ priv struct ProviderRouter {
   max_retries : Map[String, Int]
   circuit_breakers : Map[String, CircuitBreaker]
   provider_health : Map[String, ProviderHealthState]
+  provider_health_observed_at_ms : Map[String, Int64]
   app_circuit_configs : Map[String, CircuitBreakerConfig]
+  routing_policy_drafts : Map[String, @routing.RoutingPolicyV1]
+  active_routing_policies : Map[String, @routing.RoutingPolicyV1]
+  previous_routing_policies : Map[String, @routing.RoutingPolicyV1]
+  routing_smooth_states : Map[String, @routing.SmoothStateV1]
+  routing_shadow_smooth_states : Map[String, @routing.SmoothStateV1]
+  routing_session_bindings : Map[String, String]
+  routing_shadow_counts : Map[String, Int]
+  routing_shadow_first_observed_at_ms : Map[String, Int64]
+  routing_canary_counters : Map[String, Int]
+  routing_last_shadow_decisions : Map[String, @routing.RoutingDecisionV1]
+  routing_last_active_decisions : Map[String, @routing.RoutingDecisionV1]
+  routing_activation_receipts : Array[@routing.RoutingPolicyActivationReceiptV1]
+  provider_inflight : Map[String, Int]
+  provider_quota_exhausted : Map[String, Bool]
+  provider_quota_evidence_supported : Map[String, Bool]
   mut circuit_config : CircuitBreakerConfig
 }
 
@@ -797,7 +817,23 @@ fn ProviderRouter::new(
     max_retries: Map([], capacity=0),
     circuit_breakers: Map([], capacity=0),
     provider_health: Map([], capacity=0),
+    provider_health_observed_at_ms: Map([], capacity=0),
     app_circuit_configs: Map([], capacity=0),
+    routing_policy_drafts: Map([], capacity=0),
+    active_routing_policies: Map([], capacity=0),
+    previous_routing_policies: Map([], capacity=0),
+    routing_smooth_states: Map([], capacity=0),
+    routing_shadow_smooth_states: Map([], capacity=0),
+    routing_session_bindings: Map([], capacity=0),
+    routing_shadow_counts: Map([], capacity=0),
+    routing_shadow_first_observed_at_ms: Map([], capacity=0),
+    routing_canary_counters: Map([], capacity=0),
+    routing_last_shadow_decisions: Map([], capacity=0),
+    routing_last_active_decisions: Map([], capacity=0),
+    routing_activation_receipts: [],
+    provider_inflight: Map([], capacity=0),
+    provider_quota_exhausted: Map([], capacity=0),
+    provider_quota_evidence_supported: Map([], capacity=0),
     circuit_config,
   }
 }
@@ -1702,11 +1738,19 @@ fn ProviderRouter::select_providers(
   self : ProviderRouter,
   app_type : String,
   now_ms? : Int = @async.now().to_int(),
+  session_key? : String? = None,
 ) -> ProviderSelection {
-  if self.auto_failover_enabled.get(app_type).unwrap_or(false) {
+  let baseline = if self.auto_failover_enabled.get(app_type).unwrap_or(false) {
     self.select_failover_queue(app_type, now_ms)
   } else {
     self.select_current_provider(app_type)
+  }
+  self.observe_shadow_routing(app_type, now_ms, session_key~)
+  match self.active_routing_policies.get(app_type) {
+    Some(policy) if self.routing_policy_uses_canary(policy, session_key~) =>
+      self.select_with_routing_policy(policy, now_ms, session_key~)
+    None => baseline
+    Some(_) => baseline
   }
 }
 
@@ -1717,7 +1761,27 @@ fn ProviderRouter::allow_provider_request(
   app_type : String,
   now_ms? : Int = @async.now().to_int(),
 ) -> AllowResult {
-  self.breaker_for(app_type, provider_id).allow_request(now_ms~)
+  if self.provider_at_capacity(app_type, provider_id) {
+    return { allowed: false, used_half_open_permit: false }
+  }
+  let allow = self.breaker_for(app_type, provider_id).allow_request(now_ms~)
+  if allow.allowed {
+    self.increment_provider_inflight(app_type, provider_id)
+  }
+  allow
+}
+
+///|
+fn ProviderRouter::allow_provider_request_without_circuit(
+  self : ProviderRouter,
+  provider_id : String,
+  app_type : String,
+) -> AllowResult {
+  if self.provider_at_capacity(app_type, provider_id) {
+    return { allowed: false, used_half_open_permit: false }
+  }
+  self.increment_provider_inflight(app_type, provider_id)
+  { allowed: true, used_half_open_permit: false }
 }
 
 ///|
@@ -1729,6 +1793,7 @@ fn ProviderRouter::record_result(
   success : Bool,
   now_ms? : Int = @async.now().to_int(),
 ) -> Unit {
+  self.decrement_provider_inflight(app_type, provider_id)
   let breaker = self.breaker_for(app_type, provider_id)
   if success {
     breaker.record_success(used_half_open_permit)
@@ -1756,6 +1821,7 @@ fn ProviderRouter::release_permit_neutral(
   app_type : String,
   used_half_open_permit : Bool,
 ) -> Unit {
+  self.decrement_provider_inflight(app_type, provider_id)
   if used_half_open_permit {
     self.breaker_for(app_type, provider_id).release_half_open_permit()
   }
@@ -1903,6 +1969,7 @@ fn ProviderRouter::record_provider_health_success(
   updated_at : String,
 ) -> Unit {
   let key = provider_health_key(app_type, provider_id)
+  self.provider_health_observed_at_ms.set(key, moongate_epoch_ms())
   let last_failure_at = match self.provider_health.get(key) {
     Some(state) => state.last_failure_at
     None => None
@@ -1923,6 +1990,7 @@ fn ProviderRouter::record_provider_health_failure(
   is_healthy~ : Bool,
 ) -> Unit {
   let key = provider_health_key(app_type, provider_id)
+  self.provider_health_observed_at_ms.set(key, moongate_epoch_ms())
   let previous = self.provider_health.get(key)
   let consecutive_failures = previous
     .map(fn(state) { state.consecutive_failures })
@@ -2003,6 +2071,15 @@ fn provider_router_prometheus_metrics(router : ProviderRouter) -> String {
   provider_router_metric_header(
     out, "gauge", "moongate_provider_healthy", "Provider health including circuit breaker state.",
   )
+  provider_router_metric_header(
+    out, "gauge", "moongate_provider_inflight", "In-flight provider/model requests held by MoonGate.",
+  )
+  provider_router_metric_header(
+    out, "gauge", "moongate_provider_concurrency_limit", "Active routing-policy concurrency limit; zero means unbounded.",
+  )
+  provider_router_metric_header(
+    out, "gauge", "moongate_provider_quota_exhausted", "Configured provider quota eligibility state.",
+  )
   for app_type in router.providers.keys() {
     guard router.providers.get(app_type) is Some(providers) else { continue }
     let current_provider_id = router.current_provider_ids.get(app_type)
@@ -2044,6 +2121,30 @@ fn provider_router_prometheus_metrics(router : ProviderRouter) -> String {
         "moongate_provider_healthy",
         labels,
         if health.is_healthy && !is_circuit_open {
+          1.0
+        } else {
+          0.0
+        },
+      )
+      provider_router_metric_sample(
+        out,
+        "moongate_provider_inflight",
+        labels,
+        router.provider_inflight_count(app_type, provider_id).to_double(),
+      )
+      provider_router_metric_sample(
+        out,
+        "moongate_provider_concurrency_limit",
+        labels,
+        router.provider_concurrency_limit(app_type, provider_id).to_double(),
+      )
+      provider_router_metric_sample(
+        out,
+        "moongate_provider_quota_exhausted",
+        labels,
+        if router.provider_quota_exhausted
+          .get(provider_routing_key(app_type, provider_id))
+          .unwrap_or(false) {
           1.0
         } else {
           0.0

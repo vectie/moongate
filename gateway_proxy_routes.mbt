@@ -275,6 +275,21 @@ fn ProxyService::register_management_routes(
   router.add_handler(Post, "/providers/test-endpoints", (r, w) => {
     self.handle_test_api_endpoints(r, w)
   })
+  router.add_handler(Get, "/routing/policies", (r, w) => {
+    self.handle_get_routing_policy(r, w)
+  })
+  router.add_handler(Post, "/routing/policies/configure", (r, w) => {
+    self.handle_configure_routing_policy(r, w)
+  })
+  router.add_handler(Post, "/routing/policies/shadow", (r, w) => {
+    self.handle_observe_routing_shadow(r, w)
+  })
+  router.add_handler(Post, "/routing/policies/activate", (r, w) => {
+    self.handle_activate_routing_policy(r, w)
+  })
+  router.add_handler(Post, "/routing/policies/rollback", (r, w) => {
+    self.handle_rollback_routing_policy(r, w)
+  })
   router.add_handler(Post, "/providers/sort-order", (r, w) => {
     self.handle_update_providers_sort_order(r, w)
   })

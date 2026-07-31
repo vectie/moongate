@@ -25,7 +25,7 @@ pub fn moongate_rabbita_shell_dom_ids() -> Array[String] {
   [
     "nav", "sidebar-gateway-dot", "sidebar-gateway-state", "ui-updated", "page-title",
     "page-subtitle", "topbar-updated", "overview", "page-overview", "page-connect",
-    "page-bindings", "page-connections", "page-providers", "page-requests", "page-usage",
+    "page-bindings", "page-connections", "page-providers", "page-requests", "page-usage", "page-operations",
     "page-suite", "refresh", "proxy-start", "proxy-stop", "gateway-dot", "gateway-endpoint",
     "gateway-hero-dot", "gateway-state", "gateway-detail", "proxy-state", "proxy-detail",
     "request-total", "request-total-detail", "cost-total", "cost-detail", "readiness",
@@ -58,6 +58,14 @@ pub fn moongate_rabbita_shell_dom_ids() -> Array[String] {
     "provider-rows", "usage", "app-usage", "model-usage", "usage-explorer", "usage-app",
     "usage-range", "usage-apply", "usage-filter-requests", "usage-filter-cost", "usage-filter-tokens",
     "usage-filter-cache", "usage-trends", "provider-usage", "filtered-model-usage",
+    "operations-latency-p50", "operations-latency-p95", "operations-latency-p99",
+    "operations-ttft-p95", "operations-inflight", "operations-queue", "operations-circuits",
+    "operations-failovers", "operations-app", "routing-policy-form", "routing-policy-mode",
+    "routing-policy-id", "routing-policy-weights", "routing-policy-limits", "routing-policy-save",
+    "routing-policy-observe", "routing-policy-status", "routing-draft-revision", "routing-shadow-count",
+    "routing-shadow-choice", "routing-active-policy", "routing-actor-principal", "routing-authority-decision", "routing-policy-activate",
+    "routing-policy-rollback", "routing-receipt", "benchmark-run", "benchmark-mode", "benchmark-claim",
+    "benchmark-p95", "benchmark-throughput", "benchmark-status", "operations-monitor-status",
     "requests", "request-log", "request-detail-panel", "request-detail-id", "request-detail",
     "error-box", "error-message", "toast", "toast-text",
   ]

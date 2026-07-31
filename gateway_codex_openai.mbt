@@ -105,6 +105,7 @@ async fn ProxyService::handle_codex_responses(
         json,
         client_format,
       )
+      ignore(usage.bind_routing_session(self, "codex", session.session_id))
       let upstream_session_id = session.upstream_session_id()
       usage.record_request_context(
         "codex",
@@ -173,6 +174,7 @@ async fn ProxyService::handle_chat_completions(
         json,
         client_format,
       )
+      ignore(usage.bind_routing_session(self, app_type, session.session_id))
       let upstream_session_id = session.upstream_session_id()
       usage.record_request_context(
         app_type,
@@ -217,7 +219,10 @@ async fn ProxyService::forward_non_streaming_chat_completion(
   app_type : String,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let selection = self.provider_router.select_providers(app_type)
+  let selection = self.provider_router.provider_chain_after_activation(
+    app_type,
+    usage.current_provider_id(),
+  )
   if provider_selection_is_all_circuits_open(selection) {
     usage.write_provider_selection_error(
       self,
@@ -399,7 +404,10 @@ async fn ProxyService::forward_streaming_chat_completion(
   app_type : String,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let selection = self.provider_router.select_providers(app_type)
+  let selection = self.provider_router.provider_chain_after_activation(
+    app_type,
+    usage.current_provider_id(),
+  )
   if provider_selection_is_all_circuits_open(selection) {
     usage.write_provider_selection_error(
       self,
@@ -659,7 +667,10 @@ async fn ProxyService::forward_non_streaming_codex_response(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let selection = self.provider_router.select_providers("codex")
+  let selection = self.provider_router.provider_chain_after_activation(
+    "codex",
+    usage.current_provider_id(),
+  )
   if provider_selection_is_all_circuits_open(selection) {
     usage.write_provider_selection_error(
       self,
@@ -844,7 +855,10 @@ async fn ProxyService::forward_streaming_codex_response(
   session_id : String?,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let selection = self.provider_router.select_providers("codex")
+  let selection = self.provider_router.provider_chain_after_activation(
+    "codex",
+    usage.current_provider_id(),
+  )
   if provider_selection_is_all_circuits_open(selection) {
     usage.write_provider_selection_error(
       self,

@@ -9,6 +9,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("/assets/moongate-setup.js"))
   assert_true(html.contains("/assets/moongate-suite.js"))
   assert_true(html.contains("/assets/moongate-resilience.js"))
+  assert_true(html.contains("/assets/moongate-operations.js"))
   assert_true(html.contains("/assets/moongate.js"))
   assert_true(html.contains("/assets/moongate.svg"))
   assert_true(html.contains("/assets/moonsuite-i18n.js"))
@@ -62,6 +63,9 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Save Failure Rules"))
   assert_true(html.contains("Save Test Settings"))
   assert_true(html.contains("Run Connection Test"))
+  assert_true(html.contains("Save as Shadow"))
+  assert_true(html.contains("Run Deterministic Fixture"))
+  assert_true(html.contains("It is not a live provider latency or throughput claim"))
   assert_true(html.contains("Save Provider"))
   assert_true(html.contains("Available to MoonGate routing"))
   assert_true(html.contains("Saving a provider does not connect any app"))
@@ -87,12 +91,12 @@ test "moongate ui section metadata drives primary navigation" {
   guard moongate_ui_sections_json() is Array(sections) else {
     fail("expected section array")
   }
-  assert_eq(sections.length(), 9)
+  assert_eq(sections.length(), 10)
   let html = moongate_rabbita_shell_html()
   for
     id in [
       "overview", "providers", "bindings", "connections", "connect", "requests",
-      "usage", "suite", "guide",
+      "usage", "operations", "suite", "guide",
     ] {
     assert_true(html.contains("href=\"#\{id}\""))
     assert_true(
@@ -112,6 +116,7 @@ async test "moongate ui fetches current backend route surface" {
   let setup = @fsx.read_file("public/assets/moongate-setup.js")
   let suite = @fsx.read_file("public/assets/moongate-suite.js")
   let resilience = @fsx.read_file("public/assets/moongate-resilience.js")
+  let operations = @fsx.read_file("public/assets/moongate-operations.js")
   let js = @fsx.read_file("public/assets/moongate.js")
   let assets = core +
     "\n" +
@@ -124,6 +129,8 @@ async test "moongate ui fetches current backend route surface" {
     suite +
     "\n" +
     resilience +
+    "\n" +
+    operations +
     "\n" +
     js
   let endpoint_contract = moongate_ui_endpoints_json().stringify()
@@ -141,6 +148,9 @@ async test "moongate ui fetches current backend route surface" {
     "/proxy/available-failover-providers", "/proxy/auto-failover-enabled", "/usage/provider-limits",
     "/proxy/stream-check/all", "/proxy/stream-check/config", "/suite/manifest", "/suite/status",
     "/suite/drift", "/suite/status/write", "/suite/moonclaw-providers", "/suite/moonclaw-providers/write",
+    "/operations/monitor", "/benchmark/deterministic", "/benchmark/live",
+    "/routing/policies", "/routing/policies/configure", "/routing/policies/shadow",
+    "/routing/policies/activate", "/routing/policies/rollback",
   ]
   for route in required {
     assert_true(endpoint_contract.contains(route))
@@ -205,6 +215,9 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(suite.contains("Primary"))
   assert_true(resilience.contains("loadResilience"))
   assert_true(resilience.contains("resilienceLoadGeneration"))
+  assert_true(operations.contains("loadOperations"))
+  assert_true(operations.contains("live routing was unchanged"))
+  assert_true(operations.contains("No provider request was timed"))
   assert_false(js.contains("function loadSetupStatus"))
   assert_false(js.contains("function loadSuite"))
   assert_false(js.contains("function loadResilience"))

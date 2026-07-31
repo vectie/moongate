@@ -32,6 +32,7 @@ fn moongate_rabbita_shell_view(
           moongate_rabbita_connect_page(),
           moongate_rabbita_requests_page(),
           moongate_rabbita_usage_page(),
+          moongate_rabbita_operations_page(),
           moongate_rabbita_suite_page(),
           moongate_rabbita_guide_page(),
           @html.section(id="error-box", class="error-box", hidden=true, [
@@ -57,6 +58,7 @@ fn moongate_rabbita_shell_view(
     @html.script(src="/assets/moongate-setup.js?v=15", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-suite.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-resilience.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-operations.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate.js", moongate_rabbita_empty()),
   ])
 }
@@ -88,17 +90,18 @@ fn moongate_rabbita_sidebar() -> @html.Html {
       ]),
       @html.nav(id="nav", class="nav", [
         moongate_rabbita_nav_group("Start"),
-        moongate_rabbita_nav_link("overview", "OV", "Overview", active=true),
+        moongate_rabbita_nav_link("overview", "Overview", active=true),
         moongate_rabbita_nav_group("Configure"),
-        moongate_rabbita_nav_link("providers", "PR", "Providers"),
-        moongate_rabbita_nav_link("bindings", "AB", "App Bindings"),
-        moongate_rabbita_nav_link("connections", "CG", "Connection Graph"),
-        moongate_rabbita_nav_link("connect", "CN", "Manual Connect"),
-        moongate_rabbita_nav_link("requests", "RQ", "Requests"),
+        moongate_rabbita_nav_link("providers", "Providers"),
+        moongate_rabbita_nav_link("bindings", "App Bindings"),
+        moongate_rabbita_nav_link("connections", "Connection Graph"),
+        moongate_rabbita_nav_link("connect", "Manual Connect"),
+        moongate_rabbita_nav_link("requests", "Requests"),
         moongate_rabbita_nav_group("Review"),
-        moongate_rabbita_nav_link("usage", "US", "Usage"),
-        moongate_rabbita_nav_link("suite", "SU", "Suite"),
-        moongate_rabbita_nav_link("guide", "?", "Guide"),
+        moongate_rabbita_nav_link("usage", "Usage"),
+        moongate_rabbita_nav_link("operations", "Operations"),
+        moongate_rabbita_nav_link("suite", "Suite"),
+        moongate_rabbita_nav_link("guide", "Guide"),
       ]),
       @html.div(class="sidebar-footer", [
         @html.div(class="sidebar-status", [
@@ -121,22 +124,15 @@ fn moongate_rabbita_nav_group(label : String) -> @html.Html {
 ///|
 fn moongate_rabbita_nav_link(
   page : String,
-  icon : String,
   label : String,
   active? : Bool = false,
 ) -> @html.Html {
   @html.a(
     href="#\{page}",
     class=if active { "nav-item active" } else { "nav-item" },
+    title=label,
     attrs=@html.Attrs::build().data_set("page", page),
-    [
-      @html.span(
-        class="nav-icon",
-        attrs=@html.Attrs::build().aria_hidden("true"),
-        icon,
-      ),
-      @html.span(class="nav-label", label),
-    ],
+    [moongate_rabbita_nav_icon(page), @html.span(class="nav-label", label)],
   )
 }
 
@@ -193,6 +189,7 @@ fn moongate_rabbita_overview_page() -> @html.Html {
     "See whether MoonGate is ready, which provider is in use, and what it has handled.",
     true,
     [
+      moongate_rabbita_goal_compass(),
       @html.section(id="overview", class="hero", [
         @html.div(class="hero-state", [
           @html.span(id="gateway-hero-dot", class="dot warn", ""),
@@ -223,7 +220,12 @@ fn moongate_rabbita_overview_page() -> @html.Html {
             type_="button",
             "Stop Routing",
           ),
-          @html.button(id="proxy-start", type_="button", "Start Routing"),
+          @html.button(
+            id="proxy-start",
+            class="button-secondary",
+            type_="button",
+            "Start Routing",
+          ),
           @html.button(
             class="button-secondary",
             type_="button",

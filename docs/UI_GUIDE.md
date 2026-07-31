@@ -79,6 +79,22 @@ Use Requests to inspect individual AI calls. A request may show the provider, mo
 
 Use Usage to review totals for a time range or AI app. It shows request count, estimated cost, tokens, reused input, daily activity, and breakdowns by app, provider, and model.
 
+### Operations
+
+Use Operations to answer “can MoonGate route this provider request safely?”
+
+1. Review p50/p95/p99 latency, first-token time, in-flight requests, quota state, circuit state, failovers, storage health and evidence freshness. `Not implemented` means the gateway has no real queue; it is not a zero-depth guarantee.
+2. Select an app and save a routing policy. This creates only a shadow revision.
+3. Click **Observe Shadow Decision**. Review the selected provider and every eligibility reason. Live routing is unchanged.
+4. Paste the host-issued `moonsuite.principal-ref.v1` and fresh `moonsuite.authority-decision-ref.v1` JSON references, then activate only after the shadow choice is eligible. MoonGate does not create authority from a typed name. Keep the returned digest-bound receipt.
+5. Use **Roll Back** to restore the previous policy; rollback also creates a receipt.
+6. **Run Deterministic Fixture** checks fixed local arithmetic. Its results are always labeled fixture-only and do not measure a provider.
+
+The live benchmark API is intentionally absent from the normal UI until a real
+adapter and authority verifier exist. Its typed request includes provider,
+model, workload, request/token/cost ceilings, deadline and cancellation ID, and
+currently returns a fail-closed denied/unavailable result without network I/O.
+
 ### Suite
 
 Use Suite to see how the Moon apps connect to MoonGate. MoonDesk is the primary desktop control app and appears first. MoonClaw sends AI requests, MoonBook uses usage summaries for reports, and MoonTown checks health for scheduled work.

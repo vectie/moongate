@@ -84,8 +84,10 @@ fn ProxyService::activate_provider(
   self : ProxyService,
   usage : UsageRequest,
   app_type : String,
+  session_key? : String? = None,
 ) -> ProviderRouteTarget? {
-  let selected = self.provider_router.select_providers(app_type)
+  usage.sync_provider_quota_eligibility(self.provider_router, app_type)
+  let selected = self.provider_router.select_providers(app_type, session_key~)
   guard selected.error is None else { return None }
   self.activate_first_available_provider(usage, app_type, selected.providers)
 }
@@ -141,7 +143,10 @@ fn ProxyService::activate_provider_target(
   bypass_circuit_breaker? : Bool = false,
 ) -> Bool {
   let allow = if bypass_circuit_breaker {
-    { allowed: true, used_half_open_permit: false }
+    self.provider_router.allow_provider_request_without_circuit(
+      provider.provider_id,
+      app_type,
+    )
   } else {
     self.provider_router.allow_provider_request(provider.provider_id, app_type)
   }
@@ -195,7 +200,8 @@ fn ProxyService::activate_next_provider_after_upstream_status(
 ///|
 fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
   match error {
-    NoProvidersConfigured | AllProvidersCircuitOpen =>
+    NoProvidersConfigured | AllProvidersCircuitOpen | NoProviderCapacity |
+    ProviderQuotaExhausted =>
       @status.ServiceUnavailable
   }
 }
@@ -205,6 +211,8 @@ fn provider_selection_error_code(error : ProviderSelectionError) -> String {
   match error {
     NoProvidersConfigured => "moongate_no_providers_configured"
     AllProvidersCircuitOpen => "moongate_all_providers_circuit_open"
+    NoProviderCapacity => "moongate_no_provider_capacity"
+    ProviderQuotaExhausted => "moongate_provider_quota_exhausted"
   }
 }
 
@@ -218,6 +226,10 @@ fn provider_selection_error_message(
       "MoonGate local proxy has no configured provider for \{app_type}"
     AllProvidersCircuitOpen =>
       "MoonGate local proxy has no available \{app_type} provider because all provider circuits are open"
+    NoProviderCapacity =>
+      "MoonGate local proxy has no available \{app_type} provider capacity"
+    ProviderQuotaExhausted =>
+      "MoonGate local proxy has no \{app_type} provider with remaining configured quota"
   }
 }
 
@@ -2619,46 +2631,54 @@ fn provider_endpoint_urls_from_array(items : Array[Json]) -> Array[String] {
 }
 
 ///|
-fn provider_endpoint_latency_results_json(
-  urls : Array[String],
-  timeout_secs : Int,
-) -> Json {
-  ignore(timeout_secs)
-  Json::array(urls.map(provider_endpoint_latency_result_json))
+fn provider_endpoint_validation_results_json(urls : Array[String]) -> Json {
+  Json::array(urls.map(provider_endpoint_validation_result_json))
 }
 
 ///|
-fn provider_endpoint_latency_result_json(raw_url : String) -> Json {
+fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
   let trimmed = raw_url.trim().to_owned()
   if trimmed.is_empty() {
     return {
       "url": Json::string(raw_url),
+      "valid": Json::boolean(false),
+      "probePerformed": Json::boolean(false),
       "latency": Json::null(),
       "status": Json::null(),
       "error": Json::string("URL 不能为空"),
+      "message": Json::string("URL validation failed; no network probe was performed"),
     }.to_json()
   }
   if !(trimmed.has_prefix("http://") || trimmed.has_prefix("https://")) {
     return {
       "url": Json::string(trimmed),
+      "valid": Json::boolean(false),
+      "probePerformed": Json::boolean(false),
       "latency": Json::null(),
       "status": Json::null(),
       "error": Json::string(moon_endpoint_invalid_url_error(trimmed)),
+      "message": Json::string("URL validation failed; no network probe was performed"),
     }.to_json()
   }
   if moon_endpoint_url_missing_host(trimmed) {
     return {
       "url": Json::string(trimmed),
+      "valid": Json::boolean(false),
+      "probePerformed": Json::boolean(false),
       "latency": Json::null(),
       "status": Json::null(),
       "error": Json::string(moon_endpoint_invalid_url_error(trimmed)),
+      "message": Json::string("URL validation failed; no network probe was performed"),
     }.to_json()
   }
   {
     "url": Json::string(trimmed),
-    "latency": Json::number(0.0),
-    "status": Json::number(200.0),
+    "valid": Json::boolean(true),
+    "probePerformed": Json::boolean(false),
+    "latency": Json::null(),
+    "status": Json::null(),
     "error": Json::null(),
+    "message": Json::string("URL syntax is valid; no network probe was performed"),
   }.to_json()
 }
 
@@ -2666,8 +2686,12 @@ fn provider_endpoint_latency_result_json(raw_url : String) -> Json {
 fn ProxyService::selected_provider_chain(
   self : ProxyService,
   app_type : String,
+  active_provider_id? : String? = None,
 ) -> Array[ProviderRouteTarget] {
-  let selection = self.provider_router.select_providers(app_type)
+  let selection = self.provider_router.provider_chain_after_activation(
+    app_type,
+    active_provider_id,
+  )
   if selection.is_ok() {
     selection.providers
   } else {

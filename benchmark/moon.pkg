@@ -1,0 +1,6 @@
+import {
+  "vectie/moongate/telemetry",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "native"

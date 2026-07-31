@@ -53,6 +53,108 @@ function readinessCardState(card, state) {
   return { ok: false, value: card.waiting, detail: card.label };
 }
 
+function setGoalStep(id, status) {
+  const step = $(`goal-step-${id}`);
+  if (!step) return;
+  step.className = `goal-step ${status}`;
+  const labels = { done: "Done", current: "Next", waiting: "Waiting" };
+  text(`goal-step-${id}-status`, labels[status] || labels.waiting);
+  if (status === "current") step.setAttribute("aria-current", "step");
+  else step.removeAttribute("aria-current");
+}
+
+function setPrimaryGoalAction(label, detail, action, target, recovery = "") {
+  const button = $("primary-next-action");
+  text("primary-next-action-label", label);
+  text("goal-next-detail", detail);
+  if (button) {
+    button.dataset.goalAction = action;
+    button.dataset.goalTarget = target || "";
+  }
+  const recoveryNode = $("goal-recovery");
+  if (recoveryNode) {
+    recoveryNode.hidden = recovery === "";
+    recoveryNode.textContent = recovery;
+  }
+}
+
+function renderGoalCompass(state) {
+  const healthKnown = typeof state.healthOk === "boolean";
+  const providerDone = number(state.providerCount) > 0;
+  const routingDone = state.proxyRunning === true;
+  const appDone = number(state.bindingCount) > 0;
+  const observed = number(state.recentRequestCount) > 0;
+  let current = "";
+
+  if (healthKnown && state.healthOk) {
+    if (!providerDone) current = "provider";
+    else if (!routingDone) current = "routing";
+    else if (!appDone) current = "app";
+    else if (!observed) current = "observe";
+  }
+  for (const [id, done] of [
+    ["provider", providerDone],
+    ["routing", routingDone],
+    ["app", appDone],
+    ["observe", observed],
+  ]) {
+    setGoalStep(id, done ? "done" : id === current ? "current" : "waiting");
+  }
+
+  if (!healthKnown) {
+    setPrimaryGoalAction(
+      "Check readiness",
+      "MoonGate is checking the local gateway before choosing the next safe action.",
+      "refresh",
+      "",
+    );
+  } else if (!state.healthOk) {
+    const detail = state.gatewayDetail || "The local MoonGate service did not answer.";
+    setPrimaryGoalAction(
+      "Retry gateway check",
+      "Restore the local service, then retry the same health check.",
+      "refresh",
+      "",
+      `Blocked: ${detail}`,
+    );
+  } else if (!providerDone) {
+    setPrimaryGoalAction(
+      "Add a provider",
+      "Choose a provider template, retain credentials as host secrets, then run its bounded connection test.",
+      "navigate",
+      "providers",
+    );
+  } else if (!routingDone) {
+    setPrimaryGoalAction(
+      "Start routing",
+      "A provider exists. Start the local route before connecting an app.",
+      "start-routing",
+      "",
+    );
+  } else if (!appDone) {
+    setPrimaryGoalAction(
+      "Connect an app",
+      "Bind one detected app to the tested provider and verify its real configuration.",
+      "navigate",
+      "bindings",
+    );
+  } else if (!observed) {
+    setPrimaryGoalAction(
+      "Open connection details",
+      "Send one bounded request from the connected app so routing and accounting can be observed.",
+      "navigate",
+      "connect",
+    );
+  } else {
+    setPrimaryGoalAction(
+      "Review live usage",
+      "The connection loop is complete. Inspect its provider, model, request, and cost evidence.",
+      "navigate",
+      "usage",
+    );
+  }
+}
+
 function renderReadiness(state) {
   const target = $("readiness-cards");
   if (!target) return;
@@ -68,6 +170,7 @@ function renderReadiness(state) {
       `;
     })
     .join("");
+  renderGoalCompass(state);
 }
 
 function probeData(probe, fallback) {
@@ -290,6 +393,18 @@ $("proxy-start")?.addEventListener("click", () => {
 
 $("proxy-stop")?.addEventListener("click", () => {
   postJson(endpoints.proxyStop).then(refresh).catch(showError);
+});
+
+$("primary-next-action")?.addEventListener("click", () => {
+  const button = $("primary-next-action");
+  const action = button?.dataset.goalAction || "refresh";
+  if (action === "start-routing") {
+    postJson(endpoints.proxyStart).then(refresh).catch(showError);
+  } else if (action === "navigate") {
+    navigateToPage(button?.dataset.goalTarget || "overview");
+  } else {
+    refresh().catch(showError);
+  }
 });
 
 $("bindings-refresh")?.addEventListener("click", () => {

@@ -111,6 +111,231 @@ fn ProviderRouter::provider_health_store_json(self : ProviderRouter) -> Json {
 }
 
 ///|
+fn routing_policy_map_store_json(
+  policies : Map[String, @routing.RoutingPolicyV1],
+) -> Json {
+  let obj : Map[String, Json] = {}
+  for app_type, policy in policies {
+    obj[app_type] = policy.to_json()
+  }
+  Json::object(obj)
+}
+
+///|
+fn routing_decision_map_store_json(
+  decisions : Map[String, @routing.RoutingDecisionV1],
+) -> Json {
+  let obj : Map[String, Json] = {}
+  for app_type, decision in decisions {
+    obj[app_type] = decision.to_json()
+  }
+  Json::object(obj)
+}
+
+///|
+fn routing_smooth_map_store_json(
+  states : Map[String, @routing.SmoothStateV1],
+) -> Json {
+  let obj : Map[String, Json] = {}
+  for app_type, state in states {
+    obj[app_type] = state.to_json()
+  }
+  Json::object(obj)
+}
+
+///|
+fn routing_int_map_store_json(values : Map[String, Int]) -> Json {
+  let obj : Map[String, Json] = {}
+  for key, value in values {
+    obj[key] = Json::number(value.to_double())
+  }
+  Json::object(obj)
+}
+
+///|
+fn routing_int64_map_store_json(values : Map[String, Int64]) -> Json {
+  let obj : Map[String, Json] = {}
+  for key, value in values {
+    obj[key] = Json::number(value.to_double())
+  }
+  Json::object(obj)
+}
+
+///|
+fn ProviderRouter::routing_policy_store_json(self : ProviderRouter) -> Json {
+  {
+    "contractId": Json::string("moongate.routing-policy-store.v1"),
+    "drafts": routing_policy_map_store_json(self.routing_policy_drafts),
+    "active": routing_policy_map_store_json(self.active_routing_policies),
+    "previous": routing_policy_map_store_json(self.previous_routing_policies),
+    "activeSmoothState": routing_smooth_map_store_json(
+      self.routing_smooth_states,
+    ),
+    "shadowSmoothState": routing_smooth_map_store_json(
+      self.routing_shadow_smooth_states,
+    ),
+    "shadowCounts": routing_int_map_store_json(self.routing_shadow_counts),
+    "shadowFirstObservedAtMs": routing_int64_map_store_json(
+      self.routing_shadow_first_observed_at_ms,
+    ),
+    "lastShadowDecisions": routing_decision_map_store_json(
+      self.routing_last_shadow_decisions,
+    ),
+    "lastActiveDecisions": routing_decision_map_store_json(
+      self.routing_last_active_decisions,
+    ),
+    "activationReceipts": Json::array(
+      self.routing_activation_receipts.map(fn(receipt) { receipt.to_json() }),
+    ),
+  }.to_json()
+}
+
+///|
+fn routing_policy_from_store(value : Json) -> @routing.RoutingPolicyV1? {
+  Some(@json.from_json(value)) catch { _ => None }
+}
+
+///|
+fn routing_decision_from_store(value : Json) -> @routing.RoutingDecisionV1? {
+  Some(@json.from_json(value)) catch { _ => None }
+}
+
+///|
+fn routing_smooth_state_from_store(value : Json) -> @routing.SmoothStateV1? {
+  Some(@json.from_json(value)) catch { _ => None }
+}
+
+///|
+fn routing_receipt_from_store(
+  value : Json,
+) -> @routing.RoutingPolicyActivationReceiptV1? {
+  Some(@json.from_json(value)) catch { _ => None }
+}
+
+///|
+fn apply_import_routing_policy_map(
+  target : Map[String, @routing.RoutingPolicyV1],
+  value : Json,
+) -> Unit {
+  guard value is Object(rows) else { return }
+  for app_type, policy_json in rows {
+    match routing_policy_from_store(policy_json) {
+      Some(policy) if policy.contract_id == @routing.routing_policy_contract_v1() &&
+        policy.app_type == app_type => target[app_type] = policy
+      _ => ()
+    }
+  }
+}
+
+///|
+fn apply_import_routing_decision_map(
+  target : Map[String, @routing.RoutingDecisionV1],
+  value : Json,
+) -> Unit {
+  guard value is Object(rows) else { return }
+  for app_type, decision_json in rows {
+    match routing_decision_from_store(decision_json) {
+      Some(decision) if decision.app_type == app_type =>
+        target[app_type] = decision
+      _ => ()
+    }
+  }
+}
+
+///|
+fn apply_import_routing_smooth_map(
+  target : Map[String, @routing.SmoothStateV1],
+  value : Json,
+) -> Unit {
+  guard value is Object(rows) else { return }
+  for app_type, state_json in rows {
+    match routing_smooth_state_from_store(state_json) {
+      Some(state) => target[app_type] = state
+      None => ()
+    }
+  }
+}
+
+///|
+fn ProviderRouter::apply_import_routing_policy_store(
+  self : ProviderRouter,
+  value : Json,
+) -> Unit {
+  guard value is Object(store) else { return }
+  match store.get("contractId") {
+    Some(String("moongate.routing-policy-store.v1")) => ()
+    _ => return
+  }
+  match store.get("drafts") {
+    Some(value) => apply_import_routing_policy_map(self.routing_policy_drafts, value)
+    None => ()
+  }
+  match store.get("active") {
+    Some(value) => apply_import_routing_policy_map(self.active_routing_policies, value)
+    None => ()
+  }
+  match store.get("previous") {
+    Some(value) => apply_import_routing_policy_map(self.previous_routing_policies, value)
+    None => ()
+  }
+  match store.get("activeSmoothState") {
+    Some(value) => apply_import_routing_smooth_map(self.routing_smooth_states, value)
+    None => ()
+  }
+  match store.get("shadowSmoothState") {
+    Some(value) => apply_import_routing_smooth_map(
+      self.routing_shadow_smooth_states,
+      value,
+    )
+    None => ()
+  }
+  match store.get("shadowCounts") {
+    Some(Object(counts)) =>
+      for app_type, count_json in counts {
+        if count_json is Number(count, ..) {
+          self.routing_shadow_counts[app_type] = max_int(count.trunc().to_int(), 0)
+        }
+      }
+    _ => ()
+  }
+  match store.get("shadowFirstObservedAtMs") {
+    Some(Object(values)) =>
+      for app_type, value_json in values {
+        if value_json is Number(value, ..) {
+          self.routing_shadow_first_observed_at_ms[app_type] = value
+            .trunc()
+            .to_int64()
+        }
+      }
+    _ => ()
+  }
+  match store.get("lastShadowDecisions") {
+    Some(value) => apply_import_routing_decision_map(
+      self.routing_last_shadow_decisions,
+      value,
+    )
+    None => ()
+  }
+  match store.get("lastActiveDecisions") {
+    Some(value) => apply_import_routing_decision_map(
+      self.routing_last_active_decisions,
+      value,
+    )
+    None => ()
+  }
+  match store.get("activationReceipts") {
+    Some(Array(receipts)) =>
+      for receipt_json in receipts {
+        match routing_receipt_from_store(receipt_json) {
+          Some(receipt) => self.append_routing_receipt(receipt)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+}
+
+///|
 fn provider_health_state_from_store(
   row : Map[String, Json],
 ) -> ProviderHealthState? {
@@ -205,7 +430,23 @@ fn ProviderRouter::clear_imported_state(self : ProviderRouter) -> Unit {
   self.max_retries.clear()
   self.circuit_breakers.clear()
   self.provider_health.clear()
+  self.provider_health_observed_at_ms.clear()
   self.app_circuit_configs.clear()
+  self.routing_policy_drafts.clear()
+  self.active_routing_policies.clear()
+  self.previous_routing_policies.clear()
+  self.routing_smooth_states.clear()
+  self.routing_shadow_smooth_states.clear()
+  self.routing_session_bindings.clear()
+  self.routing_shadow_counts.clear()
+  self.routing_shadow_first_observed_at_ms.clear()
+  self.routing_canary_counters.clear()
+  self.routing_last_shadow_decisions.clear()
+  self.routing_last_active_decisions.clear()
+  self.routing_activation_receipts.clear()
+  self.provider_inflight.clear()
+  self.provider_quota_exhausted.clear()
+  self.provider_quota_evidence_supported.clear()
 }
 
 ///|
@@ -315,6 +556,10 @@ fn ProxyService::moon_apply_import_providers(
         }
       }
     _ => ()
+  }
+  match root.get("routingPolicies") {
+    Some(value) => self.provider_router.apply_import_routing_policy_store(value)
+    None => ()
   }
   Ok(imported)
 }

@@ -523,7 +523,15 @@ MoonGate currently exposes the standalone local routes below:
 - `POST /providers/universal?id=custom&name=Custom&apps=claude,codex`
 - `DELETE /providers/universal?id=custom`
 - `POST /providers/universal/sync?id=custom`
-- `POST /providers/test-endpoints?urls=https://api.example.com/v1`
+- `POST /providers/test-endpoints?urls=https://api.example.com/v1` (URL syntax validation only; no network request, HTTP status, or latency claim)
+- `GET /operations/monitor`
+- `POST /benchmark/deterministic`
+- `POST /benchmark/live` (typed, bounded control request; fails closed until authority verification and a live adapter exist)
+- `GET /routing/policies?appType=codex`
+- `POST /routing/policies/configure`
+- `POST /routing/policies/shadow`
+- `POST /routing/policies/activate`
+- `POST /routing/policies/rollback`
 - `POST /providers/sort-order?appType=codex&id=custom&sortIndex=0`
 - `GET /providers/endpoints/list?appType=codex&providerId=custom`
 - `POST /providers/endpoints?appType=codex&providerId=custom&url=https://api.backup.example.com/v1`
@@ -620,8 +628,10 @@ The `/providers`, `/providers/current`, `/providers/update`,
 `/providers/live`, and `/providers/switch` routes manage provider CRUD and
 current-provider state. `/providers/live-settings`,
 `/proxy/sync-current-providers-live`, `/providers/test-endpoints`, and
-`/providers/sort-order` expose live settings, live sync, endpoint latency
-results, and `sortIndex` updates.
+`/providers/sort-order` expose live settings, live sync, URL-syntax validation,
+and `sortIndex` updates. The compatibility-named `test-endpoints` route does not
+perform a network request and always returns `probePerformed: false` with null
+HTTP status and latency fields.
 `/providers/live-ids`, `/providers/live-provider`, and
 `/providers/import-live` expose suite-facing provider views against MoonGate's
 standalone provider router state. The standalone OpenClaw health scan returns an

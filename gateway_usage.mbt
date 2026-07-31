@@ -29,9 +29,9 @@ fn UsageService::metrics_text(
   provider_metrics? : String = "",
 ) -> String {
   if provider_metrics.is_empty() {
-    self.stats.prometheus_metrics()
+    "\{self.stats.prometheus_metrics()}\n\{self.stats.operations_prometheus_metrics()}"
   } else {
-    "\{self.stats.prometheus_metrics()}\n\{provider_metrics}"
+    "\{self.stats.prometheus_metrics()}\n\{self.stats.operations_prometheus_metrics()}\n\{provider_metrics}"
   }
 }
 
@@ -132,8 +132,55 @@ fn UsageRequest::current_provider_id(self : UsageRequest) -> String? {
 }
 
 ///|
+fn UsageRequest::clear_provider_target(self : UsageRequest) -> Unit {
+  self.context.provider_id = None
+  self.context.provider_name = None
+  self.context.used_half_open_permit = false
+}
+
+///|
+fn UsageRequest::bind_routing_session(
+  self : UsageRequest,
+  proxy : ProxyService,
+  app_type : String,
+  raw_session_key : String,
+) -> ProviderRouteTarget? {
+  if !proxy.provider_router.active_routing_requires_session(app_type) {
+    return match self.current_provider_id() {
+      Some(provider_id) => proxy.provider_router.provider_by_id(
+        app_type,
+        provider_id,
+      )
+      None => None
+    }
+  }
+  self.release_provider_permit_neutral(proxy)
+  self.clear_provider_target()
+  proxy.activate_provider(
+    self,
+    app_type,
+    session_key=Some(routing_session_key_digest(raw_session_key)),
+  )
+}
+
+///|
 fn UsageRequest::set_last_error(self : UsageRequest, error : String) -> Unit {
   self.service.stats.last_error = Some(error)
+}
+
+///|
+fn UsageRequest::sync_provider_quota_eligibility(
+  self : UsageRequest,
+  router : ProviderRouter,
+  app_type : String,
+) -> Unit {
+  for provider_id in router.routing_pool_ids(app_type) {
+    router.set_provider_quota_exhausted(
+      app_type,
+      provider_id,
+      self.service.stats.provider_limit_exceeded(provider_id, app_type),
+    )
+  }
 }
 
 ///|

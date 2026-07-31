@@ -21,7 +21,7 @@ async fn ProxyService::handle_messages(
   } else {
     "claude"
   }
-  let active_provider = self.activate_provider(usage, app_type)
+  let mut active_provider = self.activate_provider(usage, app_type)
   usage.record_request_context(app_type, default_model)
   if active_provider is None && self.all_provider_circuits_open(app_type) {
     usage.write_provider_selection_error(
@@ -53,6 +53,11 @@ async fn ProxyService::handle_messages(
         r.headers,
         json,
         client_format,
+      )
+      active_provider = usage.bind_routing_session(
+        self,
+        app_type,
+        session.session_id,
       )
       let upstream_session_id = session.upstream_session_id()
       let anthropic_beta = r.headers.get("anthropic-beta")
@@ -105,7 +110,10 @@ async fn ProxyService::handle_messages(
               r.path.to_owned(),
               active_provider,
               app_type,
-              self.selected_provider_chain(app_type),
+              self.selected_provider_chain(
+                app_type,
+                active_provider_id=usage.current_provider_id(),
+              ),
               [],
               anthropic_beta,
               upstream_session_id,
@@ -125,7 +133,10 @@ async fn ProxyService::handle_messages(
               r.path.to_owned(),
               active_provider,
               app_type,
-              self.selected_provider_chain(app_type),
+              self.selected_provider_chain(
+                app_type,
+                active_provider_id=usage.current_provider_id(),
+              ),
               [],
               anthropic_beta,
               upstream_session_id,

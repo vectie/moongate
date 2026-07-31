@@ -83,6 +83,60 @@ fn TrafficStats::provider_limit_status_json(
 }
 
 ///|
+fn TrafficStats::provider_limit_exceeded(
+  self : TrafficStats,
+  provider_id : String,
+  app_type : String,
+  now_ts? : Int = trend_now_seconds(),
+) -> Bool {
+  guard self.provider_limits.get(provider_limit_key(provider_id, app_type))
+    is Some(config) else {
+    return false
+  }
+  let daily_limit = config.daily_limit_usd.map(fn(limit) {
+    parse_decimal_scaled(limit, NANO_USD_SCALE)
+  })
+  let monthly_limit = config.monthly_limit_usd.map(fn(limit) {
+    parse_decimal_scaled(limit, NANO_USD_SCALE)
+  })
+  limit_exceeded(
+    self.provider_daily_usage_nano(provider_id, app_type, now_ts),
+    daily_limit,
+  ) ||
+  limit_exceeded(
+    self.provider_monthly_usage_nano(provider_id, app_type, now_ts),
+    monthly_limit,
+  )
+}
+
+///|
+fn TrafficStats::provider_limit_monitor_counts(
+  self : TrafficStats,
+  now_ts? : Int = trend_now_seconds(),
+) -> (Int, Int) {
+  let mut configured_count = 0
+  let mut exceeded_count = 0
+  for key, config in self.provider_limits {
+    if config.daily_limit_usd is None && config.monthly_limit_usd is None {
+      continue
+    }
+    configured_count += 1
+    let parts = key.split("|").to_array()
+    if parts.length() != 2 {
+      continue
+    }
+    if self.provider_limit_exceeded(
+        parts[0].to_owned(),
+        parts[1].to_owned(),
+        now_ts~,
+      ) {
+      exceeded_count += 1
+    }
+  }
+  (configured_count, exceeded_count)
+}
+
+///|
 fn TrafficStats::provider_daily_usage_nano(
   self : TrafficStats,
   provider_id : String,

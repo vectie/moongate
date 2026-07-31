@@ -850,34 +850,42 @@ test "provider command helpers parse moongate sort and endpoint test payloads" {
   assert_eq(body_updates[1].sort_index, 1)
 
   json_inspect(
-    provider_endpoint_latency_results_json(
+    provider_endpoint_validation_results_json(
       provider_endpoint_urls_from_request(
         "/providers/test-endpoints?urls=https%3A%2F%2Fapi.example.com%2Fv1,not-a-url",
         None,
       ),
-      8,
     ),
     content=[
       {
         "url": "https://api.example.com/v1",
-        "latency": 0,
-        "status": 200,
+        "valid": true,
+        "probePerformed": false,
+        "latency": null,
+        "status": null,
         "error": null,
+        "message": "URL syntax is valid; no network probe was performed",
       },
       {
         "url": "not-a-url",
+        "valid": false,
+        "probePerformed": false,
         "latency": null,
         "status": null,
         "error": "URL 无效: relative URL without a base",
+        "message": "URL validation failed; no network probe was performed",
       },
     ],
   )
 
-  json_inspect(provider_endpoint_latency_result_json("http://"), content={
+  json_inspect(provider_endpoint_validation_result_json("http://"), content={
     "url": "http://",
+    "valid": false,
+    "probePerformed": false,
     "latency": null,
     "status": null,
     "error": "URL 无效: empty host",
+    "message": "URL validation failed; no network probe was performed",
   })
 
   assert_eq(provider_endpoint_sanitize_timeout_secs(Some(1)), 2)

@@ -6,13 +6,15 @@ async fn ProxyService::handle_test_api_endpoints(
 ) -> Unit {
   ignore(self)
   let body = proxy_json_body(r)
-  let timeout_secs = provider_endpoint_sanitize_timeout_secs(
-    proxy_int_request(r.path, body, "timeoutSecs"),
+  ignore(
+    provider_endpoint_sanitize_timeout_secs(
+      proxy_int_request(r.path, body, "timeoutSecs"),
+    ),
   )
   let urls = provider_endpoint_urls_from_request(r.path, body)
   write_usage_json(
     w,
-    provider_endpoint_latency_results_json(urls, timeout_secs),
+    provider_endpoint_validation_results_json(urls),
   )
 }
 

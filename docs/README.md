@@ -1,5 +1,8 @@
 # MoonGate documentation
 
+- [Responsibility and testability](RESPONSIBILITY_AND_TESTABILITY.md)
+- [UI-to-UI use cases](qualification/UI_TO_UI_USE_CASES.md)
+
 - [Product contract](PRODUCT_CONTRACT.md) — current maturity, security and
   release gates.
 - [Technical identity migration](MOONGATE_TECHNICAL_MIGRATION.md) — retiring
