@@ -115,10 +115,22 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
     {
       product_id: "moonclaw",
       owner: "bounded-agent-execution-and-tool-use",
-      operations: ["agent.goal.execute"],
+      operations: [
+        "agent.goal.execute", "supervisor.activate", "supervisor.message.send", "supervisor.wake",
+        "supervisor.steer", "supervisor.stop", "supervisor.retry-resume", "supervisor.delegate",
+        "supervisor.worker.steer", "supervisor.worker.stop", "supervisor.worker.retry-resume",
+        "supervisor.outcome-evidence.propose", "supervisor.mailbox.claim", "supervisor.mailbox.ack",
+        "supervisor.outcome-outbox.claim", "supervisor.outcome-outbox.ack",
+      ],
       allowed_authorities: [WorkspaceMutation],
-      input_contracts: ["moonclaw/agent-goal-execution-request@1.0.0"],
-      output_contracts: ["moonclaw/agent-goal-execution-receipt@1.0.0"],
+      input_contracts: [
+        "moonclaw/agent-goal-execution-request@1.0.0", "moonclaw/supervisor-command@1.0.0",
+        "moonclaw/supervisor-delegate-intent@1.0.0", "moonclaw/supervisor-worker-command@1.0.0",
+      ],
+      output_contracts: [
+        "moonclaw/agent-goal-execution-receipt@1.0.0", "moonclaw/supervisor-command-receipt@1.0.0",
+        "moonclaw/supervisor-delegate-intent-result@1.0.0",
+      ],
       claim_ceiling: DigitalArtifact,
       prohibited_claims: [
         AcceptedKnowledge,

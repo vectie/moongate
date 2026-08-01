@@ -28,7 +28,27 @@ test "constitutional capability rows match current pack-owned tools" {
   assert_false(moonbook.prohibited_claims.contains(AcceptedKnowledge))
   let moonclaw = registry.filter(boundary => boundary.product_id == "moonclaw")
   guard moonclaw is [moonclaw] else { fail("expected MoonClaw boundary") }
-  assert_eq(moonclaw.operations, ["agent.goal.execute"])
+  assert_eq(
+    moonclaw.operations,
+    [
+      "agent.goal.execute",
+      "supervisor.activate",
+      "supervisor.message.send",
+      "supervisor.wake",
+      "supervisor.steer",
+      "supervisor.stop",
+      "supervisor.retry-resume",
+      "supervisor.delegate",
+      "supervisor.worker.steer",
+      "supervisor.worker.stop",
+      "supervisor.worker.retry-resume",
+      "supervisor.outcome-evidence.propose",
+      "supervisor.mailbox.claim",
+      "supervisor.mailbox.ack",
+      "supervisor.outcome-outbox.claim",
+      "supervisor.outcome-outbox.ack",
+    ],
+  )
   assert_eq(moonclaw.allowed_authorities.map(authority => authority.id()), [
     "workspace-mutation",
   ])
