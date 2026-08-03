@@ -47,14 +47,12 @@ pub fn parse_terminal_outcome_v1(value : String) -> TerminalOutcomeV1? {
 }
 
 ///|
-pub impl ToJson for TerminalOutcomeV1 with to_json(
-  self : TerminalOutcomeV1,
-) -> Json {
+pub impl ToJson for TerminalOutcomeV1 with fn to_json(self : TerminalOutcomeV1) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for TerminalOutcomeV1 with from_json(
+pub impl @json.FromJson for TerminalOutcomeV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> TerminalOutcomeV1 raise @json.JsonDecodeError {
@@ -94,14 +92,12 @@ pub fn parse_circuit_state_v1(value : String) -> CircuitStateV1? {
 }
 
 ///|
-pub impl ToJson for CircuitStateV1 with to_json(
-  self : CircuitStateV1,
-) -> Json {
+pub impl ToJson for CircuitStateV1 with fn to_json(self : CircuitStateV1) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for CircuitStateV1 with from_json(
+pub impl @json.FromJson for CircuitStateV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> CircuitStateV1 raise @json.JsonDecodeError {

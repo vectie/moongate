@@ -38,12 +38,16 @@ fn moongate_rabbita_operations_page() -> @html.Html {
             "Save a policy into shadow mode first. Shadow observations never change live routing. Activation and rollback require a named operator and create durable receipts.",
           ),
           @html.form(id="routing-policy-form", class="form-grid", [
-            moongate_rabbita_select_label("Selection mode", "routing-policy-mode", [
-              ("priority", "Priority"),
-              ("smooth-weighted-round-robin", "Smooth weighted round robin"),
-              ("least-inflight", "Least in flight"),
-              ("session-sticky", "Session sticky"),
-            ]),
+            moongate_rabbita_select_label(
+              "Selection mode",
+              "routing-policy-mode",
+              [
+                ("priority", "Priority"),
+                ("smooth-weighted-round-robin", "Smooth weighted round robin"),
+                ("least-inflight", "Least in flight"),
+                ("session-sticky", "Session sticky"),
+              ],
+            ),
             moongate_rabbita_input_label(
               "Policy ID", "routing-policy-id", "codex.production", false,
             ),
@@ -66,7 +70,11 @@ fn moongate_rabbita_operations_page() -> @html.Html {
               ),
             ]),
             @html.div(class="form-actions span-2", [
-              @html.button(id="routing-policy-save", type_="submit", "Save as Shadow"),
+              @html.button(
+                id="routing-policy-save",
+                type_="submit",
+                "Save as Shadow",
+              ),
               @html.button(
                 id="routing-policy-observe",
                 class="button-secondary",
@@ -82,10 +90,18 @@ fn moongate_rabbita_operations_page() -> @html.Html {
             ]),
           ]),
           @html.div(class="usage-metrics", [
-            moongate_rabbita_status_value("Draft revision", "routing-draft-revision"),
-            moongate_rabbita_status_value("Shadow decisions", "routing-shadow-count"),
-            moongate_rabbita_status_value("Shadow choice", "routing-shadow-choice"),
-            moongate_rabbita_status_value("Active policy", "routing-active-policy"),
+            moongate_rabbita_status_value(
+              "Draft revision", "routing-draft-revision",
+            ),
+            moongate_rabbita_status_value(
+              "Shadow decisions", "routing-shadow-count",
+            ),
+            moongate_rabbita_status_value(
+              "Shadow choice", "routing-shadow-choice",
+            ),
+            moongate_rabbita_status_value(
+              "Active policy", "routing-active-policy",
+            ),
           ]),
           @html.details(class="advanced-disclosure", [
             @html.summary("Activate or roll back a reviewed policy"),
@@ -113,20 +129,28 @@ fn moongate_rabbita_operations_page() -> @html.Html {
                 ),
               ]),
               @html.div(class="form-actions span-2", [
-              @html.button(id="routing-policy-activate", type_="button", "Activate Reviewed Policy"),
-              @html.button(
-                id="routing-policy-rollback",
-                class="danger-ghost",
-                type_="button",
-                "Roll Back",
-              ),
+                @html.button(
+                  id="routing-policy-activate",
+                  type_="button",
+                  "Activate Reviewed Policy",
+                ),
+                @html.button(
+                  id="routing-policy-rollback",
+                  class="danger-ghost",
+                  type_="button",
+                  "Roll Back",
+                ),
               ]),
             ]),
             @html.code(id="routing-receipt", "No activation receipt"),
           ]),
         ]),
         @html.article(class="panel", [
-          moongate_rabbita_panel_head("Repeatable fixture", "Deterministic benchmark", []),
+          moongate_rabbita_panel_head(
+            "Repeatable fixture",
+            "Deterministic benchmark",
+            [],
+          ),
           @html.p(
             class="panel-description",
             "This benchmark checks MoonGate contract arithmetic with fixed samples. It is not a live provider latency or throughput claim.",
@@ -135,7 +159,9 @@ fn moongate_rabbita_operations_page() -> @html.Html {
             moongate_rabbita_status_value("Mode", "benchmark-mode"),
             moongate_rabbita_status_value("Claim ceiling", "benchmark-claim"),
             moongate_rabbita_status_value("Fixture p95", "benchmark-p95"),
-            moongate_rabbita_status_value("Fixture throughput", "benchmark-throughput"),
+            moongate_rabbita_status_value(
+              "Fixture throughput", "benchmark-throughput",
+            ),
           ]),
           @html.button(
             id="benchmark-run",

@@ -118,7 +118,9 @@ fn print_help() -> Unit {
   println("  provider sync-live     Sync current providers to live config")
   println("  provider switch        Switch provider")
   println("  provider live-settings Read live provider settings")
-  println("  provider test-endpoints Validate endpoint URL syntax (no network request)")
+  println(
+    "  provider test-endpoints Validate endpoint URL syntax (no network request)",
+  )
   println("  provider sort-order set Update provider sort order")
   println("  provider endpoints list    List custom endpoints")
   println("  provider endpoints add     Add custom endpoint")

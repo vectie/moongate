@@ -200,9 +200,10 @@ fn ProxyService::activate_next_provider_after_upstream_status(
 ///|
 fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
   match error {
-    NoProvidersConfigured | AllProvidersCircuitOpen | NoProviderCapacity |
-    ProviderQuotaExhausted =>
-      @status.ServiceUnavailable
+    NoProvidersConfigured
+    | AllProvidersCircuitOpen
+    | NoProviderCapacity
+    | ProviderQuotaExhausted => @status.ServiceUnavailable
   }
 }
 
@@ -2646,7 +2647,9 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
       "latency": Json::null(),
       "status": Json::null(),
       "error": Json::string("URL 不能为空"),
-      "message": Json::string("URL validation failed; no network probe was performed"),
+      "message": Json::string(
+        "URL validation failed; no network probe was performed",
+      ),
     }.to_json()
   }
   if !(trimmed.has_prefix("http://") || trimmed.has_prefix("https://")) {
@@ -2657,7 +2660,9 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
       "latency": Json::null(),
       "status": Json::null(),
       "error": Json::string(moon_endpoint_invalid_url_error(trimmed)),
-      "message": Json::string("URL validation failed; no network probe was performed"),
+      "message": Json::string(
+        "URL validation failed; no network probe was performed",
+      ),
     }.to_json()
   }
   if moon_endpoint_url_missing_host(trimmed) {
@@ -2668,7 +2673,9 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
       "latency": Json::null(),
       "status": Json::null(),
       "error": Json::string(moon_endpoint_invalid_url_error(trimmed)),
-      "message": Json::string("URL validation failed; no network probe was performed"),
+      "message": Json::string(
+        "URL validation failed; no network probe was performed",
+      ),
     }.to_json()
   }
   {
@@ -2678,7 +2685,9 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
     "latency": Json::null(),
     "status": Json::null(),
     "error": Json::null(),
-    "message": Json::string("URL syntax is valid; no network probe was performed"),
+    "message": Json::string(
+      "URL syntax is valid; no network probe was performed",
+    ),
   }.to_json()
 }
 
@@ -2689,8 +2698,7 @@ fn ProxyService::selected_provider_chain(
   active_provider_id? : String? = None,
 ) -> Array[ProviderRouteTarget] {
   let selection = self.provider_router.provider_chain_after_activation(
-    app_type,
-    active_provider_id,
+    app_type, active_provider_id,
   )
   if selection.is_ok() {
     selection.providers

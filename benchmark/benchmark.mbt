@@ -33,19 +33,21 @@ pub fn LiveBenchmarkStatusV1::id(self : LiveBenchmarkStatusV1) -> String {
 }
 
 ///|
-pub impl ToJson for LiveBenchmarkStatusV1 with to_json(
+pub impl ToJson for LiveBenchmarkStatusV1 with fn to_json(
   self : LiveBenchmarkStatusV1,
 ) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for LiveBenchmarkStatusV1 with from_json(
+pub impl @json.FromJson for LiveBenchmarkStatusV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> LiveBenchmarkStatusV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError((path, "LiveBenchmarkStatusV1: expected string"))
+    raise @json.JsonDecodeError(
+      (path, "LiveBenchmarkStatusV1: expected string"),
+    )
   }
   match id {
     "denied" => Denied
@@ -72,19 +74,21 @@ pub fn LiveBenchmarkReasonV1::id(self : LiveBenchmarkReasonV1) -> String {
 }
 
 ///|
-pub impl ToJson for LiveBenchmarkReasonV1 with to_json(
+pub impl ToJson for LiveBenchmarkReasonV1 with fn to_json(
   self : LiveBenchmarkReasonV1,
 ) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for LiveBenchmarkReasonV1 with from_json(
+pub impl @json.FromJson for LiveBenchmarkReasonV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> LiveBenchmarkReasonV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError((path, "LiveBenchmarkReasonV1: expected string"))
+    raise @json.JsonDecodeError(
+      (path, "LiveBenchmarkReasonV1: expected string"),
+    )
   }
   match id {
     "authority-decision-required" => AuthorityDecisionRequired
@@ -213,9 +217,7 @@ pub fn run_deterministic(
     concurrency: workload.concurrency,
     request_count: workload.latency_samples_ms.length(),
     latency: @telemetry.percentile_snapshot(workload.latency_samples_ms),
-    first_token: @telemetry.percentile_snapshot(
-      workload.first_token_samples_ms,
-    ),
+    first_token: @telemetry.percentile_snapshot(workload.first_token_samples_ms),
     output_tokens: workload.output_tokens,
     output_tokens_per_second_milli: throughput_milli,
     cost_nano_usd: workload.simulated_cost_nano_usd,
@@ -237,16 +239,19 @@ pub fn validate_live_request(
     request.cancellation_id.trim().is_empty() {
     fail("live benchmark identity fields are required")
   }
-  if request.max_requests < 1 || request.max_requests > 100 ||
-    request.max_concurrency < 1 || request.max_concurrency > 8 ||
-    request.max_input_tokens < 1 || request.max_input_tokens > 1_000_000 ||
-    request.max_output_tokens < 1 || request.max_output_tokens > 1_000_000 ||
+  if request.max_requests < 1 ||
+    request.max_requests > 100 ||
+    request.max_concurrency < 1 ||
+    request.max_concurrency > 8 ||
+    request.max_input_tokens < 1 ||
+    request.max_input_tokens > 1_000_000 ||
+    request.max_output_tokens < 1 ||
+    request.max_output_tokens > 1_000_000 ||
     request.max_cost_nano_usd < 1L ||
     request.max_cost_nano_usd > 10_000_000_000L {
     fail("live benchmark limits must be positive and bounded")
   }
-  if request.deadline_ms <= now_ms ||
-    request.deadline_ms - now_ms > 900_000L {
+  if request.deadline_ms <= now_ms || request.deadline_ms - now_ms > 900_000L {
     fail("live benchmark deadline must be within the next 15 minutes")
   }
 }

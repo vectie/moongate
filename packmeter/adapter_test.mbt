@@ -45,9 +45,7 @@ test "hard budget stops excess attributed cost" {
     evidence_ref: "evidence/run.json",
   }
   let mut stopped = false
-  try {
-    charge(value, usage) |> ignore
-  } catch {
+  try charge(value, usage) |> ignore catch {
     _ => stopped = true
   }
   assert_true(stopped)

@@ -192,24 +192,32 @@ fn ProviderRouter::routing_policy_store_json(self : ProviderRouter) -> Json {
 
 ///|
 fn routing_policy_from_store(value : Json) -> @routing.RoutingPolicyV1? {
-  Some(@json.from_json(value)) catch { _ => None }
+  Some(@json.from_json(value)) catch {
+    _ => None
+  }
 }
 
 ///|
 fn routing_decision_from_store(value : Json) -> @routing.RoutingDecisionV1? {
-  Some(@json.from_json(value)) catch { _ => None }
+  Some(@json.from_json(value)) catch {
+    _ => None
+  }
 }
 
 ///|
 fn routing_smooth_state_from_store(value : Json) -> @routing.SmoothStateV1? {
-  Some(@json.from_json(value)) catch { _ => None }
+  Some(@json.from_json(value)) catch {
+    _ => None
+  }
 }
 
 ///|
 fn routing_receipt_from_store(
   value : Json,
 ) -> @routing.RoutingPolicyActivationReceiptV1? {
-  Some(@json.from_json(value)) catch { _ => None }
+  Some(@json.from_json(value)) catch {
+    _ => None
+  }
 }
 
 ///|
@@ -220,7 +228,8 @@ fn apply_import_routing_policy_map(
   guard value is Object(rows) else { return }
   for app_type, policy_json in rows {
     match routing_policy_from_store(policy_json) {
-      Some(policy) if policy.contract_id == @routing.routing_policy_contract_v1() &&
+      Some(policy) if policy.contract_id ==
+        @routing.routing_policy_contract_v1() &&
         policy.app_type == app_type => target[app_type] = policy
       _ => ()
     }
@@ -267,33 +276,38 @@ fn ProviderRouter::apply_import_routing_policy_store(
     _ => return
   }
   match store.get("drafts") {
-    Some(value) => apply_import_routing_policy_map(self.routing_policy_drafts, value)
+    Some(value) =>
+      apply_import_routing_policy_map(self.routing_policy_drafts, value)
     None => ()
   }
   match store.get("active") {
-    Some(value) => apply_import_routing_policy_map(self.active_routing_policies, value)
+    Some(value) =>
+      apply_import_routing_policy_map(self.active_routing_policies, value)
     None => ()
   }
   match store.get("previous") {
-    Some(value) => apply_import_routing_policy_map(self.previous_routing_policies, value)
+    Some(value) =>
+      apply_import_routing_policy_map(self.previous_routing_policies, value)
     None => ()
   }
   match store.get("activeSmoothState") {
-    Some(value) => apply_import_routing_smooth_map(self.routing_smooth_states, value)
+    Some(value) =>
+      apply_import_routing_smooth_map(self.routing_smooth_states, value)
     None => ()
   }
   match store.get("shadowSmoothState") {
-    Some(value) => apply_import_routing_smooth_map(
-      self.routing_shadow_smooth_states,
-      value,
-    )
+    Some(value) =>
+      apply_import_routing_smooth_map(self.routing_shadow_smooth_states, value)
     None => ()
   }
   match store.get("shadowCounts") {
     Some(Object(counts)) =>
       for app_type, count_json in counts {
         if count_json is Number(count, ..) {
-          self.routing_shadow_counts[app_type] = max_int(count.trunc().to_int(), 0)
+          self.routing_shadow_counts[app_type] = max_int(
+            count.trunc().to_int(),
+            0,
+          )
         }
       }
     _ => ()
@@ -310,17 +324,19 @@ fn ProviderRouter::apply_import_routing_policy_store(
     _ => ()
   }
   match store.get("lastShadowDecisions") {
-    Some(value) => apply_import_routing_decision_map(
-      self.routing_last_shadow_decisions,
-      value,
-    )
+    Some(value) =>
+      apply_import_routing_decision_map(
+        self.routing_last_shadow_decisions,
+        value,
+      )
     None => ()
   }
   match store.get("lastActiveDecisions") {
-    Some(value) => apply_import_routing_decision_map(
-      self.routing_last_active_decisions,
-      value,
-    )
+    Some(value) =>
+      apply_import_routing_decision_map(
+        self.routing_last_active_decisions,
+        value,
+      )
     None => ()
   }
   match store.get("activationReceipts") {

@@ -65,7 +65,9 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Run Connection Test"))
   assert_true(html.contains("Save as Shadow"))
   assert_true(html.contains("Run Deterministic Fixture"))
-  assert_true(html.contains("It is not a live provider latency or throughput claim"))
+  assert_true(
+    html.contains("It is not a live provider latency or throughput claim"),
+  )
   assert_true(html.contains("Save Provider"))
   assert_true(html.contains("Available to MoonGate routing"))
   assert_true(html.contains("Saving a provider does not connect any app"))
@@ -148,9 +150,9 @@ async test "moongate ui fetches current backend route surface" {
     "/proxy/available-failover-providers", "/proxy/auto-failover-enabled", "/usage/provider-limits",
     "/proxy/stream-check/all", "/proxy/stream-check/config", "/suite/manifest", "/suite/status",
     "/suite/drift", "/suite/status/write", "/suite/moonclaw-providers", "/suite/moonclaw-providers/write",
-    "/operations/monitor", "/benchmark/deterministic", "/benchmark/live",
-    "/routing/policies", "/routing/policies/configure", "/routing/policies/shadow",
-    "/routing/policies/activate", "/routing/policies/rollback",
+    "/operations/monitor", "/benchmark/deterministic", "/benchmark/live", "/routing/policies",
+    "/routing/policies/configure", "/routing/policies/shadow", "/routing/policies/activate",
+    "/routing/policies/rollback",
   ]
   for route in required {
     assert_true(endpoint_contract.contains(route))

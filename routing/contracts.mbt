@@ -44,12 +44,12 @@ pub fn parse_routing_mode(value : String) -> RoutingMode? {
 }
 
 ///|
-pub impl ToJson for RoutingMode with to_json(self : RoutingMode) -> Json {
+pub impl ToJson for RoutingMode with fn to_json(self : RoutingMode) -> Json {
   Json::string(self.to_string())
 }
 
 ///|
-pub impl @json.FromJson for RoutingMode with from_json(
+pub impl @json.FromJson for RoutingMode with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> RoutingMode raise @json.JsonDecodeError {
@@ -88,19 +88,21 @@ pub fn RoutingDecisionReasonV1::id(self : RoutingDecisionReasonV1) -> String {
 }
 
 ///|
-pub impl ToJson for RoutingDecisionReasonV1 with to_json(
+pub impl ToJson for RoutingDecisionReasonV1 with fn to_json(
   self : RoutingDecisionReasonV1,
 ) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for RoutingDecisionReasonV1 with from_json(
+pub impl @json.FromJson for RoutingDecisionReasonV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> RoutingDecisionReasonV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError((path, "RoutingDecisionReasonV1: expected string"))
+    raise @json.JsonDecodeError(
+      (path, "RoutingDecisionReasonV1: expected string"),
+    )
   }
   match id {
     "highest-priority-eligible" => HighestPriorityEligible
@@ -133,19 +135,21 @@ pub fn RoutingActivationActionV1::id(
 }
 
 ///|
-pub impl ToJson for RoutingActivationActionV1 with to_json(
+pub impl ToJson for RoutingActivationActionV1 with fn to_json(
   self : RoutingActivationActionV1,
 ) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for RoutingActivationActionV1 with from_json(
+pub impl @json.FromJson for RoutingActivationActionV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> RoutingActivationActionV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError((path, "RoutingActivationActionV1: expected string"))
+    raise @json.JsonDecodeError(
+      (path, "RoutingActivationActionV1: expected string"),
+    )
   }
   match id {
     "activate" => Activate
@@ -164,9 +168,7 @@ pub(all) enum RoutingActivationScopeV1 {
 } derive(Debug, Eq)
 
 ///|
-pub fn RoutingActivationScopeV1::id(
-  self : RoutingActivationScopeV1,
-) -> String {
+pub fn RoutingActivationScopeV1::id(self : RoutingActivationScopeV1) -> String {
   match self {
     BoundedCanary => "bounded-canary"
     RollbackScope => "rollback"
@@ -174,19 +176,21 @@ pub fn RoutingActivationScopeV1::id(
 }
 
 ///|
-pub impl ToJson for RoutingActivationScopeV1 with to_json(
+pub impl ToJson for RoutingActivationScopeV1 with fn to_json(
   self : RoutingActivationScopeV1,
 ) -> Json {
   Json::string(self.id())
 }
 
 ///|
-pub impl @json.FromJson for RoutingActivationScopeV1 with from_json(
+pub impl @json.FromJson for RoutingActivationScopeV1 with fn from_json(
   value : Json,
   path : @json.JsonPath,
 ) -> RoutingActivationScopeV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError((path, "RoutingActivationScopeV1: expected string"))
+    raise @json.JsonDecodeError(
+      (path, "RoutingActivationScopeV1: expected string"),
+    )
   }
   match id {
     "bounded-canary" => BoundedCanary
@@ -329,10 +333,13 @@ pub fn policy(
       fail("routing concurrency limits must be non-negative")
     }
   }
-  if minimum_shadow_decisions < 1 || minimum_shadow_decisions > 10_000 ||
+  if minimum_shadow_decisions < 1 ||
+    minimum_shadow_decisions > 10_000 ||
     minimum_shadow_window_ms < 0L ||
-    canary_traffic_basis_points < 1 || canary_traffic_basis_points > 2500 ||
-    rollback_error_rate_milli < 1 || rollback_error_rate_milli > 1000 ||
+    canary_traffic_basis_points < 1 ||
+    canary_traffic_basis_points > 2500 ||
+    rollback_error_rate_milli < 1 ||
+    rollback_error_rate_milli > 1000 ||
     rollback_p95_latency_ms < 1 ||
     rollback_minimum_requests < 1 {
     fail("routing evidence, canary, and rollback bounds are invalid")

@@ -147,10 +147,8 @@ fn UsageRequest::bind_routing_session(
 ) -> ProviderRouteTarget? {
   if !proxy.provider_router.active_routing_requires_session(app_type) {
     return match self.current_provider_id() {
-      Some(provider_id) => proxy.provider_router.provider_by_id(
-        app_type,
-        provider_id,
-      )
+      Some(provider_id) =>
+        proxy.provider_router.provider_by_id(app_type, provider_id)
       None => None
     }
   }

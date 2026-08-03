@@ -27,14 +27,13 @@ fn routing_actor_and_authority_from_body(
   guard body_obj.get("authorityDecision") is Some(authority_json) else {
     return Err("missing_authority_decision")
   }
-  let actor_result : Result[@capability.PrincipalRefV1, Error] = moon_result(
-    () => @capability.decode_principal_ref_v1(actor_json),
-  )
-  guard actor_result is Ok(actor) else {
-    return Err("invalid_actor_principal")
-  }
-  let authority_result : Result[@capability.AuthorityDecisionRefV1, Error] = moon_result(
-    () => @capability.decode_authority_decision_ref_v1(authority_json),
+  let actor_result : Result[@capability.PrincipalRefV1, Error] = moon_result(() => {
+    @capability.decode_principal_ref_v1(actor_json)
+  })
+  guard actor_result is Ok(actor) else { return Err("invalid_actor_principal") }
+  let authority_result : Result[@capability.AuthorityDecisionRefV1, Error] = moon_result(() => {
+      @capability.decode_authority_decision_ref_v1(authority_json)
+    },
   )
   guard authority_result is Ok(authority) else {
     return Err("invalid_authority_decision")
@@ -81,18 +80,21 @@ async fn ProxyService::handle_configure_routing_policy(
     write_usage_bad_request(w, "invalid_concurrency_limits")
     return
   }
-  let policy_id = proxy_string_request(r.path, body, "policyId")
-    .unwrap_or("\{app_type}.routing")
+  let policy_id = proxy_string_request(r.path, body, "policyId").unwrap_or(
+    "\{app_type}.routing",
+  )
   let minimum_shadow_decisions = proxy_int_request(
     r.path,
     body,
     "minimumShadowDecisions",
   ).unwrap_or(20)
   let minimum_shadow_window_ms = proxy_int_request(
-    r.path,
-    body,
-    "minimumShadowWindowMs",
-  ).unwrap_or(300_000).to_int64()
+      r.path,
+      body,
+      "minimumShadowWindowMs",
+    )
+    .unwrap_or(300_000)
+    .to_int64()
   let canary_traffic_basis_points = proxy_int_request(
     r.path,
     body,
@@ -113,30 +115,34 @@ async fn ProxyService::handle_configure_routing_policy(
     body,
     "rollbackMinimumRequests",
   ).unwrap_or(20)
-  match self.provider_router.configure_routing_policy(
-    app_type~,
-    policy_id~,
-    mode~,
-    weights~,
-    concurrency_limits~,
-    minimum_shadow_decisions~,
-    minimum_shadow_window_ms~,
-    canary_traffic_basis_points~,
-    rollback_error_rate_milli~,
-    rollback_p95_latency_ms~,
-    rollback_minimum_requests~,
-    configured_at_ms=moongate_epoch_ms(),
-  ) {
+  match
+    self.provider_router.configure_routing_policy(
+      app_type~,
+      policy_id~,
+      mode~,
+      weights~,
+      concurrency_limits~,
+      minimum_shadow_decisions~,
+      minimum_shadow_window_ms~,
+      canary_traffic_basis_points~,
+      rollback_error_rate_milli~,
+      rollback_p95_latency_ms~,
+      rollback_minimum_requests~,
+      configured_at_ms=moongate_epoch_ms(),
+    ) {
     Err(error) => write_usage_bad_request(w, error)
     Ok(policy) => {
       if !self.persist_provider_store_or_error(w) {
         return
       }
-      write_usage_json(w, {
-        "status": Json::string("shadow-only"),
-        "policy": policy.to_json(),
-        "activationAllowed": Json::boolean(false),
-      }.to_json())
+      write_usage_json(
+        w,
+        {
+          "status": Json::string("shadow-only"),
+          "policy": policy.to_json(),
+          "activationAllowed": Json::boolean(false),
+        }.to_json(),
+      )
     }
   }
 }
@@ -194,15 +200,16 @@ async fn ProxyService::handle_activate_routing_policy(
     return
   }
   let authority_checked_at = moongate_canonical_utc_now()
-  match self.provider_router.activate_routing_policy(
-    app_type~,
-    expected_revision~,
-    actor_principal~,
-    authority_decision~,
-    authority_checked_at~,
-    receipt_id="routing-\{moongate_random_id()}",
-    recorded_at_ms=moongate_epoch_ms(),
-  ) {
+  match
+    self.provider_router.activate_routing_policy(
+      app_type~,
+      expected_revision~,
+      actor_principal~,
+      authority_decision~,
+      authority_checked_at~,
+      receipt_id="routing-\{moongate_random_id()}",
+      recorded_at_ms=moongate_epoch_ms(),
+    ) {
     Err(error) => write_usage_bad_request(w, error)
     Ok(receipt) => {
       if !self.persist_provider_store_or_error(w) {
@@ -235,14 +242,15 @@ async fn ProxyService::handle_rollback_routing_policy(
     return
   }
   let authority_checked_at = moongate_canonical_utc_now()
-  match self.provider_router.rollback_routing_policy(
-    app_type~,
-    actor_principal~,
-    authority_decision~,
-    authority_checked_at~,
-    receipt_id="routing-\{moongate_random_id()}",
-    recorded_at_ms=moongate_epoch_ms(),
-  ) {
+  match
+    self.provider_router.rollback_routing_policy(
+      app_type~,
+      actor_principal~,
+      authority_decision~,
+      authority_checked_at~,
+      receipt_id="routing-\{moongate_random_id()}",
+      recorded_at_ms=moongate_epoch_ms(),
+    ) {
     Err(error) => write_usage_bad_request(w, error)
     Ok(receipt) => {
       if !self.persist_provider_store_or_error(w) {

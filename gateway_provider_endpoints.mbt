@@ -12,10 +12,7 @@ async fn ProxyService::handle_test_api_endpoints(
     ),
   )
   let urls = provider_endpoint_urls_from_request(r.path, body)
-  write_usage_json(
-    w,
-    provider_endpoint_validation_results_json(urls),
-  )
+  write_usage_json(w, provider_endpoint_validation_results_json(urls))
 }
 
 ///|

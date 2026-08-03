@@ -42,28 +42,35 @@ fn TrafficStats::operations_monitor_snapshot(
       _ => Some(recorded_at_ms)
     }
   }
-  let (quota_configured_count, quota_exceeded_count) = self
-    .provider_limit_monitor_counts()
-  let (circuit_open_count, circuit_half_open_count) = provider_router
-    .circuit_state_counts()
+  let (quota_configured_count, quota_exceeded_count) = self.provider_limit_monitor_counts()
+  let (circuit_open_count, circuit_half_open_count) = provider_router.circuit_state_counts()
   let newest_evidence_age_ms = newest_evidence_at_ms.map(fn(recorded_at) {
     let age = observed_at_ms - recorded_at
-    if age > 0L { age } else { 0L }
+    if age > 0L {
+      age
+    } else {
+      0L
+    }
   })
   let oldest_evidence_age_ms = oldest_evidence_at_ms.map(fn(recorded_at) {
     let age = observed_at_ms - recorded_at
-    if age > 0L { age } else { 0L }
+    if age > 0L {
+      age
+    } else {
+      0L
+    }
   })
   let terminal_outcome_counts : Array[@telemetry.TerminalOutcomeCountV1] = []
-  for outcome in [
-    @telemetry.Success,
-    @telemetry.Timeout,
-    @telemetry.RateLimited,
-    @telemetry.Cancelled,
-    @telemetry.ProtocolClientError,
-    @telemetry.UpstreamError,
-    @telemetry.Unknown,
-  ] {
+  for
+    outcome in [
+      @telemetry.Success,
+      @telemetry.Timeout,
+      @telemetry.RateLimited,
+      @telemetry.Cancelled,
+      @telemetry.ProtocolClientError,
+      @telemetry.UpstreamError,
+      @telemetry.Unknown,
+    ] {
     let count = terminal_outcome_count_map.get(outcome.id()).unwrap_or(0)
     if count > 0 {
       terminal_outcome_counts.push({ outcome, count })
@@ -89,27 +96,29 @@ fn TrafficStats::operations_monitor_snapshot(
     active_policies=provider_router.active_policy_observations(),
     storage_healthy=self.storage_healthy,
     storage_failure_count=self.storage_failure_count,
-    evidence_fresh=newest_evidence_age_ms.map(fn(age) { age <= 300_000L }).unwrap_or(
-      false,
-    ),
+    evidence_fresh=newest_evidence_age_ms
+      .map(fn(age) { age <= 300_000L })
+      .unwrap_or(false),
     newest_evidence_age_ms~,
     oldest_evidence_age_ms~,
   )
 }
 
 ///|
-fn request_log_terminal_outcome(log : RequestLog) -> @telemetry.TerminalOutcomeV1 {
+fn request_log_terminal_outcome(
+  log : RequestLog,
+) -> @telemetry.TerminalOutcomeV1 {
   if log.status_code == 408 ||
-    log.error_message.map(fn(value) { value.to_lower().contains("timeout") }).unwrap_or(
-      false,
-    ) {
+    log.error_message
+    .map(fn(value) { value.to_lower().contains("timeout") })
+    .unwrap_or(false) {
     @telemetry.Timeout
   } else if log.status_code == 429 {
     @telemetry.RateLimited
   } else if log.status_code == 499 ||
-    log.error_message.map(fn(value) { value.to_lower().contains("cancel") }).unwrap_or(
-      false,
-    ) {
+    log.error_message
+    .map(fn(value) { value.to_lower().contains("cancel") })
+    .unwrap_or(false) {
     @telemetry.Cancelled
   } else if log.status_code >= 200 && log.status_code < 300 {
     @telemetry.Success
@@ -170,17 +179,12 @@ fn TrafficStats::operations_prometheus_metrics(self : TrafficStats) -> String {
     Some(value) => prometheus_gauge(out, "moongate_first_token_p99_ms", value)
     None => ()
   }
-  let (quota_configured_count, quota_exceeded_count) = self
-    .provider_limit_monitor_counts()
+  let (quota_configured_count, quota_exceeded_count) = self.provider_limit_monitor_counts()
   prometheus_gauge(
-    out,
-    "moongate_provider_quota_configured",
-    quota_configured_count,
+    out, "moongate_provider_quota_configured", quota_configured_count,
   )
   prometheus_gauge(
-    out,
-    "moongate_provider_quota_exceeded",
-    quota_exceeded_count,
+    out, "moongate_provider_quota_exceeded", quota_exceeded_count,
   )
   prometheus_gauge(out, "moongate_queue_depth", 0)
   prometheus_gauge(out, "moongate_queue_supported", 0)
@@ -237,17 +241,14 @@ async fn UsageService::handle_live_benchmark_control(
     write_usage_bad_request(w, "missing_live_benchmark_request")
     return
   }
-  let parsed : Result[@benchmark.LiveBenchmarkRequestV1, Error] = moon_result(
-    () => @json.from_json(body),
-  )
+  let parsed : Result[@benchmark.LiveBenchmarkRequestV1, Error] = moon_result(() => {
+    @json.from_json(body)
+  })
   guard parsed is Ok(request) else {
     write_usage_bad_request(w, "invalid_live_benchmark_request")
     return
   }
-  let result = @benchmark.fail_closed_live_result(
-    request,
-    moongate_epoch_ms(),
-  ) catch {
+  let result = @benchmark.fail_closed_live_result(request, moongate_epoch_ms()) catch {
     error => {
       write_usage_bad_request(w, error.to_string())
       return

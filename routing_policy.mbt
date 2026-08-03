@@ -4,7 +4,10 @@ fn provider_routing_key(app_type : String, provider_id : String) -> String {
 }
 
 ///|
-fn provider_routing_session_key(app_type : String, session_key : String) -> String {
+fn provider_routing_session_key(
+  app_type : String,
+  session_key : String,
+) -> String {
   "\{app_type}:\{session_key}"
 }
 
@@ -32,9 +35,11 @@ fn ProviderRouter::routing_policy_uses_canary(
   let slot = match session_key {
     Some(value) => routing_session_canary_slot(value)
     None => {
-      let counter = self.routing_canary_counters.get(policy.app_type).unwrap_or(0)
+      let counter = self.routing_canary_counters
+        .get(policy.app_type)
+        .unwrap_or(0)
       self.routing_canary_counters.set(policy.app_type, counter + 1)
-      ((counter * 7919) + (policy.revision * 1049)) % 10_000
+      (counter * 7919 + policy.revision * 1049) % 10_000
     }
   }
   slot < policy.canary_traffic_basis_points
@@ -67,7 +72,10 @@ fn ProviderRouter::increment_provider_inflight(
   provider_id : String,
 ) -> Unit {
   let key = provider_routing_key(app_type, provider_id)
-  self.provider_inflight.set(key, self.provider_inflight.get(key).unwrap_or(0) + 1)
+  self.provider_inflight.set(
+    key,
+    self.provider_inflight.get(key).unwrap_or(0) + 1,
+  )
 }
 
 ///|
@@ -164,9 +172,9 @@ fn ProviderRouter::routing_candidates(
       .is_available(now_ms~)
     candidates.push({
       provider_id,
-      priority: self.provider_sort_index(policy.app_type, provider_id).unwrap_or(
-        index,
-      ),
+      priority: self
+      .provider_sort_index(policy.app_type, provider_id)
+      .unwrap_or(index),
       weight: policy.weights.get(provider_id).unwrap_or(1),
       inflight: self.provider_inflight_count(policy.app_type, provider_id),
       concurrency_limit: policy.concurrency_limits.get(provider_id).unwrap_or(0),
@@ -185,13 +193,16 @@ fn ProviderRouter::routing_candidates(
       protocol_evidence_supported: true,
       protocol_supported: provider.app_type == policy.app_type,
       budget_evidence_supported: self.provider_quota_evidence_supported
-        .get(key)
-        .unwrap_or(false),
+      .get(key)
+      .unwrap_or(false),
       budget_available: !self.provider_quota_exhausted.get(key).unwrap_or(false),
       capacity_evidence_supported: true,
-      capacity_available: policy.concurrency_limits.get(provider_id).unwrap_or(0) == 0 ||
-        self.provider_inflight_count(policy.app_type, provider_id) <
-        policy.concurrency_limits.get(provider_id).unwrap_or(0),
+      capacity_available: policy.concurrency_limits
+      .get(provider_id)
+      .unwrap_or(0) ==
+      0 ||
+      self.provider_inflight_count(policy.app_type, provider_id) <
+      policy.concurrency_limits.get(provider_id).unwrap_or(0),
     })
   }
   candidates
@@ -299,11 +310,7 @@ fn ProviderRouter::select_with_routing_policy(
     None => ()
   }
   ProviderSelection::ok(
-    self.ordered_providers_for_decision(
-      policy.app_type,
-      provider_id,
-      decision,
-    ),
+    self.ordered_providers_for_decision(policy.app_type, provider_id, decision),
   )
 }
 
@@ -417,7 +424,7 @@ fn ProviderRouter::configure_routing_policy(
       .map(fn(policy) { policy.revision + 1 })
       .unwrap_or(1),
     )
-  let result : Result[@routing.RoutingPolicyV1, Error] = moon_result(() =>
+  let result : Result[@routing.RoutingPolicyV1, Error] = moon_result(() => {
     @routing.policy(
       policy_id~,
       app_type~,
@@ -432,8 +439,8 @@ fn ProviderRouter::configure_routing_policy(
       rollback_p95_latency_ms~,
       rollback_minimum_requests~,
       configured_at_ms~,
-    ),
-  )
+    )
+  })
   match result {
     Err(error) => Err(error.to_string())
     Ok(policy) => {
@@ -458,10 +465,7 @@ fn ProviderRouter::activate_routing_policy(
   receipt_id~ : String,
   recorded_at_ms~ : Int64,
 ) -> Result[@routing.RoutingPolicyActivationReceiptV1, String] {
-  guard authority_decision.is_fresh_for(
-    actor_principal,
-    authority_checked_at,
-  ) else {
+  guard authority_decision.is_fresh_for(actor_principal, authority_checked_at) else {
     return Err("a fresh authority decision for the actor principal is required")
   }
   guard self.routing_policy_drafts.get(app_type) is Some(policy) else {
@@ -472,10 +476,12 @@ fn ProviderRouter::activate_routing_policy(
   }
   if self.routing_shadow_counts.get(app_type).unwrap_or(0) <
     policy.minimum_shadow_decisions {
-    return Err("the routing policy minimum shadow decision count has not been met")
+    return Err(
+      "the routing policy minimum shadow decision count has not been met",
+    )
   }
-  guard self.routing_last_shadow_decisions.get(app_type)
-    is Some(decision) && decision.selected_provider_id is Some(_) else {
+  guard self.routing_last_shadow_decisions.get(app_type) is Some(decision) &&
+    decision.selected_provider_id is Some(_) else {
     return Err("the latest shadow decision has no eligible provider")
   }
   guard self.routing_shadow_first_observed_at_ms.get(app_type)
@@ -483,7 +489,9 @@ fn ProviderRouter::activate_routing_policy(
     return Err("the routing policy shadow evidence window is unavailable")
   }
   if recorded_at_ms - first_observed_at_ms < policy.minimum_shadow_window_ms {
-    return Err("the routing policy minimum shadow evidence window has not elapsed")
+    return Err(
+      "the routing policy minimum shadow evidence window has not elapsed",
+    )
   }
   let previous = self.active_routing_policies.get(app_type)
   match previous {
@@ -531,10 +539,7 @@ fn ProviderRouter::rollback_routing_policy(
   receipt_id~ : String,
   recorded_at_ms~ : Int64,
 ) -> Result[@routing.RoutingPolicyActivationReceiptV1, String] {
-  guard authority_decision.is_fresh_for(
-    actor_principal,
-    authority_checked_at,
-  ) else {
+  guard authority_decision.is_fresh_for(actor_principal, authority_checked_at) else {
     return Err("a fresh authority decision for the actor principal is required")
   }
   guard self.active_routing_policies.get(app_type) is Some(current) else {

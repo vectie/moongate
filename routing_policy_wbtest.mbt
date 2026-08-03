@@ -1,6 +1,8 @@
 ///|
-fn routing_test_actor_and_authority(
-) -> (@capability.PrincipalRefV1, @capability.AuthorityDecisionRefV1) raise {
+fn routing_test_actor_and_authority() -> (
+  @capability.PrincipalRefV1,
+  @capability.AuthorityDecisionRefV1,
+) raise {
   let actor = @capability.principal_ref_v1(
     "operator-1",
     @capability.Human,
@@ -8,11 +10,8 @@ fn routing_test_actor_and_authority(
     "operator-1",
   )
   let authority = @capability.authority_decision_ref_v1(
-    "route-change-1",
-    actor,
-    "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-    "2026-07-31T00:00:00Z",
-    "2026-08-01T00:00:00Z",
+    "route-change-1", actor, "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "2026-07-31T00:00:00Z", "2026-08-01T00:00:00Z",
   )
   (actor, authority)
 }

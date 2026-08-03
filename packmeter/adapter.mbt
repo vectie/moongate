@@ -71,10 +71,7 @@ pub fn metering_scope(
 
 ///|
 /// Apply an attributed charge or stop before the hard pack budget is crossed.
-pub fn charge(
-  value : PackBudget,
-  usage : UsageAttribution,
-) -> PackBudget raise {
+pub fn charge(value : PackBudget, usage : UsageAttribution) -> PackBudget raise {
   if usage.pack_id != value.pack_id {
     fail("usage attribution does not match pack budget")
   }

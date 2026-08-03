@@ -29,8 +29,7 @@ pub fn candidate_review(candidate : ProviderCandidateV1) -> CandidateReviewV1 {
   } else {
     reasons.push("health-evidence-missing")
   }
-  if candidate.credential_evidence_supported &&
-    !candidate.credentials_available {
+  if candidate.credential_evidence_supported && !candidate.credentials_available {
     reasons.push("credentials-unavailable")
   }
   if !candidate.credential_evidence_supported {
@@ -115,12 +114,23 @@ fn smooth_select(
   let mut selected_id = eligible[0].provider_id
   let mut selected_weight = -2147483647
   for candidate in eligible {
-    let effective_weight = if candidate.weight < 1 { 1 } else { candidate.weight }
-    let current = smooth_current(state, candidate.provider_id) + effective_weight
+    let effective_weight = if candidate.weight < 1 {
+      1
+    } else {
+      candidate.weight
+    }
+    let current = smooth_current(state, candidate.provider_id) +
+      effective_weight
     total_weight += effective_weight
-    next_entries.push({ provider_id: candidate.provider_id, current_weight: current })
+    next_entries.push({
+      provider_id: candidate.provider_id,
+      current_weight: current,
+    })
     if current > selected_weight ||
-      (current == selected_weight && candidate.provider_id.compare(selected_id) < 0) {
+      (
+        current == selected_weight &&
+        candidate.provider_id.compare(selected_id) < 0
+      ) {
       selected_id = candidate.provider_id
       selected_weight = current
     }
@@ -136,9 +146,7 @@ fn smooth_select(
 }
 
 ///|
-fn least_inflight_select(
-  eligible : Array[ProviderCandidateV1],
-) -> String? {
+fn least_inflight_select(eligible : Array[ProviderCandidateV1]) -> String? {
   if eligible.is_empty() {
     return None
   }
@@ -190,9 +198,8 @@ pub fn select(
     SessionSticky =>
       match sticky_provider_id {
         Some(provider_id) if eligible.any(fn(candidate) {
-          candidate.provider_id == provider_id
-        }) =>
-          (Some(provider_id), smooth_state, ExistingSessionBinding)
+            candidate.provider_id == provider_id
+          }) => (Some(provider_id), smooth_state, ExistingSessionBinding)
         _ => {
           let (selected, next) = smooth_select(eligible, smooth_state)
           (selected, next, NewSessionWeightedSelection)
@@ -210,7 +217,11 @@ pub fn select(
       session_key_present,
       decided_at_ms,
       selected_provider_id: selected,
-      reason: if selected is Some(_) { reason } else { NoEligibleProvider },
+      reason: if selected is Some(_) {
+        reason
+      } else {
+        NoEligibleProvider
+      },
       reviews,
     },
     next_state,
