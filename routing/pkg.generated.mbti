@@ -1,0 +1,167 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/routing"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn candidate_review(ProviderCandidateV1) -> CandidateReviewV1
+
+pub fn default_priority_policy(String, Int64) -> RoutingPolicyV1
+
+pub fn empty_smooth_state() -> SmoothStateV1
+
+pub fn parse_routing_mode(String) -> RoutingMode?
+
+pub fn policy(policy_id~ : String, app_type~ : String, revision~ : Int, mode~ : RoutingMode, weights? : Map[String, Int], concurrency_limits? : Map[String, Int], minimum_shadow_decisions? : Int, minimum_shadow_window_ms? : Int64, canary_traffic_basis_points? : Int, rollback_error_rate_milli? : Int, rollback_p95_latency_ms? : Int, rollback_minimum_requests? : Int, configured_at_ms~ : Int64) -> RoutingPolicyV1 raise
+
+pub fn routing_activation_receipt_contract_v1() -> String
+
+pub fn routing_decision_contract_v1() -> String
+
+pub fn routing_policy_contract_v1() -> String
+
+pub fn select(RoutingPolicyV1, Array[ProviderCandidateV1], SmoothStateV1, shadow~ : Bool, sticky_provider_id? : String?, session_key_present? : Bool, decided_at_ms~ : Int64) -> (RoutingDecisionV1, SmoothStateV1) raise
+
+// Errors
+
+// Types and methods
+pub(all) struct CandidateReviewV1 {
+  provider_id : String
+  eligible : Bool
+  reasons : Array[String]
+  warnings : Array[String]
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct ProviderCandidateV1 {
+  provider_id : String
+  priority : Int
+  weight : Int
+  inflight : Int
+  concurrency_limit : Int
+  enabled : Bool
+  compatible : Bool
+  healthy : Bool
+  circuit_open : Bool
+  quota_exhausted : Bool
+  health_evidence_supported : Bool
+  health_observed_at_ms : Int64?
+  health_fresh : Bool
+  credential_evidence_supported : Bool
+  credentials_available : Bool
+  model_evidence_supported : Bool
+  model_supported : Bool
+  protocol_evidence_supported : Bool
+  protocol_supported : Bool
+  budget_evidence_supported : Bool
+  budget_available : Bool
+  capacity_evidence_supported : Bool
+  capacity_available : Bool
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) enum RoutingActivationActionV1 {
+  Activate
+  Rollback
+} derive(Eq, @debug.Debug)
+pub fn RoutingActivationActionV1::id(Self) -> String
+pub impl ToJson for RoutingActivationActionV1
+pub impl @json.FromJson for RoutingActivationActionV1
+
+pub(all) enum RoutingActivationScopeV1 {
+  BoundedCanary
+  RollbackScope
+} derive(Eq, @debug.Debug)
+pub fn RoutingActivationScopeV1::id(Self) -> String
+pub impl ToJson for RoutingActivationScopeV1
+pub impl @json.FromJson for RoutingActivationScopeV1
+
+pub(all) enum RoutingDecisionReasonV1 {
+  HighestPriorityEligible
+  LeastInflightEligible
+  SmoothWeightedRoundRobinSelection
+  ExistingSessionBinding
+  NewSessionWeightedSelection
+  NoEligibleProvider
+} derive(Eq, @debug.Debug)
+pub fn RoutingDecisionReasonV1::id(Self) -> String
+pub impl ToJson for RoutingDecisionReasonV1
+pub impl @json.FromJson for RoutingDecisionReasonV1
+
+pub(all) struct RoutingDecisionV1 {
+  contract_id : String
+  policy_id : String
+  policy_revision : Int
+  app_type : String
+  mode : RoutingMode
+  shadow : Bool
+  session_key_present : Bool
+  decided_at_ms : Int64
+  selected_provider_id : String?
+  reason : RoutingDecisionReasonV1
+  reviews : Array[CandidateReviewV1]
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) enum RoutingMode {
+  Priority
+  SmoothWeightedRoundRobin
+  LeastInflight
+  SessionSticky
+} derive(Eq, @debug.Debug)
+pub fn RoutingMode::to_string(Self) -> String
+pub impl ToJson for RoutingMode
+pub impl @json.FromJson for RoutingMode
+
+pub(all) struct RoutingPolicyActivationReceiptV1 {
+  contract_id : String
+  receipt_id : String
+  action : RoutingActivationActionV1
+  app_type : String
+  actor_principal : String
+  authority_decision_id : String
+  authority_decision_digest : String
+  policy_id : String
+  policy_revision : Int
+  previous_policy_id : String?
+  previous_policy_revision : Int?
+  activation_scope : RoutingActivationScopeV1
+  canary_traffic_basis_points : Int
+  minimum_shadow_decisions : Int
+  minimum_shadow_window_ms : Int64
+  rollback_error_rate_milli : Int
+  rollback_p95_latency_ms : Int
+  rollback_minimum_requests : Int
+  recorded_at_ms : Int64
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct RoutingPolicyV1 {
+  contract_id : String
+  policy_id : String
+  app_type : String
+  revision : Int
+  mode : RoutingMode
+  weights : Map[String, Int]
+  concurrency_limits : Map[String, Int]
+  minimum_shadow_decisions : Int
+  minimum_shadow_window_ms : Int64
+  canary_traffic_basis_points : Int
+  rollback_error_rate_milli : Int
+  rollback_p95_latency_ms : Int
+  rollback_minimum_requests : Int
+  configured_at_ms : Int64
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct SmoothStateV1 {
+  entries : Array[SmoothWeightV1]
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct SmoothWeightV1 {
+  provider_id : String
+  current_weight : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+// Type aliases
+
+// Traits
+

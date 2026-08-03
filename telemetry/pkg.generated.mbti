@@ -1,0 +1,154 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/telemetry"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn monitor_snapshot(observed_at_ms~ : Int64, latency_samples_ms~ : Array[Int], first_token_samples_ms~ : Array[Int], permit_wait_samples_ms? : Array[Int], throughput_samples_milli? : Array[Int], terminal_outcome_counts? : Array[TerminalOutcomeCountV1], recent_input_tokens? : Int, recent_output_tokens? : Int, inflight_requests~ : Int, queue_depth? : Int, queue_supported? : Bool, permit_supported? : Bool, quota_configured_count? : Int, quota_exceeded_count? : Int, quota_headroom_nano_usd? : Int64?, quota_headroom_supported? : Bool, budget_headroom_nano_usd? : Int64?, budget_headroom_supported? : Bool, recent_cost_nano_usd? : Int64, circuit_open_count? : Int, circuit_half_open_count? : Int, failover_count? : Int, active_policies? : Array[ActivePolicyObservationV1], storage_healthy? : Bool, storage_failure_count? : Int, evidence_fresh? : Bool, newest_evidence_age_ms? : Int64?, oldest_evidence_age_ms? : Int64?) -> MonitorSnapshotV1
+
+pub fn monitor_snapshot_contract_v1() -> String
+
+pub fn numeric_percentile_snapshot(Array[Int]) -> NumericPercentileSnapshotV1
+
+pub fn parse_circuit_state_v1(String) -> CircuitStateV1?
+
+pub fn parse_terminal_outcome_v1(String) -> TerminalOutcomeV1?
+
+pub fn percentile_snapshot(Array[Int]) -> PercentileSnapshotV1
+
+pub fn telemetry_contract_v1() -> String
+
+// Errors
+
+// Types and methods
+pub(all) struct ActivePolicyObservationV1 {
+  app_type : String
+  policy_id : String
+  policy_revision : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) enum CircuitStateV1 {
+  Closed
+  Open
+  HalfOpen
+  Unsupported
+} derive(Eq, @debug.Debug)
+pub fn CircuitStateV1::id(Self) -> String
+pub impl ToJson for CircuitStateV1
+pub impl @json.FromJson for CircuitStateV1
+
+pub(all) struct MonitorSnapshotV1 {
+  contract_id : String
+  observed_at_ms : Int64
+  latency : PercentileSnapshotV1
+  first_token : PercentileSnapshotV1
+  permit_wait : PercentileSnapshotV1
+  throughput_tokens_per_second_milli : NumericPercentileSnapshotV1
+  terminal_outcome_counts : Array[TerminalOutcomeCountV1]
+  recent_input_tokens : Int
+  recent_output_tokens : Int
+  inflight_requests : Int
+  queue_depth : Int
+  queue_supported : Bool
+  permit_supported : Bool
+  quota_configured_count : Int
+  quota_exceeded_count : Int
+  quota_headroom_nano_usd : Int64?
+  quota_headroom_supported : Bool
+  budget_headroom_nano_usd : Int64?
+  budget_headroom_supported : Bool
+  recent_cost_nano_usd : Int64
+  circuit_open_count : Int
+  circuit_half_open_count : Int
+  failover_count : Int
+  active_policies : Array[ActivePolicyObservationV1]
+  storage_healthy : Bool
+  storage_failure_count : Int
+  evidence_fresh : Bool
+  newest_evidence_age_ms : Int64?
+  oldest_evidence_age_ms : Int64?
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct NumericPercentileSnapshotV1 {
+  sample_count : Int
+  p50 : Int?
+  p95 : Int?
+  p99 : Int?
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct PercentileSnapshotV1 {
+  sample_count : Int
+  p50_ms : Int?
+  p95_ms : Int?
+  p99_ms : Int?
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct RequestTelemetryV1 {
+  contract_id : String
+  request_id : String
+  attempt_id : String
+  app_type : String
+  provider_id : String
+  model : String?
+  accepted_at_ms : Int64
+  queued_at_ms : Int64?
+  permit_acquired_at_ms : Int64?
+  connect_started_at_ms : Int64?
+  connected_at_ms : Int64?
+  first_token_at_ms : Int64?
+  completed_at_ms : Int64?
+  connect_ms : Int?
+  latency_ms : Int
+  first_token_ms : Int?
+  completion_ms : Int?
+  success : Bool
+  terminal_outcome : TerminalOutcomeV1
+  terminal_detail : String?
+  retry_count : Int
+  failover_count : Int
+  failover_chain : Array[String]
+  input_tokens : Int
+  output_tokens : Int
+  output_tokens_per_second_milli : Int?
+  queue_depth_at_accept : Int?
+  queue_supported : Bool
+  permit_wait_ms : Int?
+  permit_supported : Bool
+  quota_headroom_nano_usd : Int64?
+  quota_supported : Bool
+  budget_headroom_nano_usd : Int64?
+  budget_supported : Bool
+  circuit_state : CircuitStateV1
+  policy_id : String?
+  policy_revision : Int?
+  storage_healthy : Bool
+  evidence_fresh : Bool
+  evidence_age_ms : Int64?
+  cost_nano_usd : Int64
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct TerminalOutcomeCountV1 {
+  outcome : TerminalOutcomeV1
+  count : Int
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) enum TerminalOutcomeV1 {
+  Success
+  Timeout
+  RateLimited
+  Cancelled
+  ProtocolClientError
+  UpstreamError
+  Unknown
+} derive(Eq, @debug.Debug)
+pub fn TerminalOutcomeV1::id(Self) -> String
+pub impl ToJson for TerminalOutcomeV1
+pub impl @json.FromJson for TerminalOutcomeV1
+
+// Type aliases
+
+// Traits
+

@@ -1,0 +1,106 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/benchmark"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+  "vectie/moongate/telemetry",
+}
+
+// Values
+pub fn benchmark_report_contract_v1() -> String
+
+pub fn benchmark_workload_contract_v1() -> String
+
+pub fn default_deterministic_workload() -> DeterministicWorkloadV1
+
+pub fn fail_closed_live_result(LiveBenchmarkRequestV1, Int64) -> LiveBenchmarkResultV1 raise
+
+pub fn live_benchmark_request_contract_v1() -> String
+
+pub fn live_benchmark_result_contract_v1() -> String
+
+pub fn run_deterministic(DeterministicWorkloadV1) -> BenchmarkReportV1 raise
+
+pub fn validate_live_request(LiveBenchmarkRequestV1, Int64) -> Unit raise
+
+// Errors
+
+// Types and methods
+pub(all) struct BenchmarkReportV1 {
+  contract_id : String
+  workload_id : String
+  workload_version : String
+  mode : String
+  claim_ceiling : String
+  live_provider : Bool
+  concurrency : Int
+  request_count : Int
+  latency : @telemetry.PercentileSnapshotV1
+  first_token : @telemetry.PercentileSnapshotV1
+  output_tokens : Int
+  output_tokens_per_second_milli : Int
+  cost_nano_usd : Int64
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct DeterministicWorkloadV1 {
+  contract_id : String
+  workload_id : String
+  workload_version : String
+  concurrency : Int
+  latency_samples_ms : Array[Int]
+  first_token_samples_ms : Array[Int]
+  output_tokens : Int
+  simulated_cost_nano_usd : Int64
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) enum LiveBenchmarkReasonV1 {
+  AuthorityDecisionRequired
+  AuthorityVerificationUnavailable
+} derive(Eq, @debug.Debug)
+pub fn LiveBenchmarkReasonV1::id(Self) -> String
+pub impl ToJson for LiveBenchmarkReasonV1
+pub impl @json.FromJson for LiveBenchmarkReasonV1
+
+pub(all) struct LiveBenchmarkRequestV1 {
+  contract_id : String
+  request_id : String
+  provider_id : String
+  model : String
+  workload_id : String
+  max_requests : Int
+  max_concurrency : Int
+  max_input_tokens : Int
+  max_output_tokens : Int
+  max_cost_nano_usd : Int64
+  deadline_ms : Int64
+  cancellation_id : String
+  authority_decision_id : String?
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) struct LiveBenchmarkResultV1 {
+  contract_id : String
+  request_id : String
+  status : LiveBenchmarkStatusV1
+  reason_code : LiveBenchmarkReasonV1
+  network_request_performed : Bool
+  provider_id : String
+  model : String
+  workload_id : String
+  authority_decision_id : String?
+  adapter_id : String?
+  recorded_at_ms : Int64
+} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+
+pub(all) enum LiveBenchmarkStatusV1 {
+  Denied
+  Unavailable
+} derive(Eq, @debug.Debug)
+pub fn LiveBenchmarkStatusV1::id(Self) -> String
+pub impl ToJson for LiveBenchmarkStatusV1
+pub impl @json.FromJson for LiveBenchmarkStatusV1
+
+// Type aliases
+
+// Traits
+
