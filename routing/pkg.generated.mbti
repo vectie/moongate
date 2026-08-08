@@ -164,4 +164,3 @@ pub(all) struct SmoothWeightV1 {
 // Type aliases
 
 // Traits
-

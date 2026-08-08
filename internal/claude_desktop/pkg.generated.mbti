@@ -39,4 +39,3 @@ pub fn ClaudeDesktopStatus::new(configured~ : Bool, profile_path~ : String, meta
 // Type aliases
 
 // Traits
-

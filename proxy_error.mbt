@@ -29,6 +29,78 @@ pub enum MoonProxyError {
 }
 
 ///|
+/// Classifies provider failures without leaking domain or credential details.
+/// The value is safe to expose as a local MoonGate diagnostic header.
+fn moon_provider_error_class(status_code : Int, body : String) -> String {
+  let normalized = body.to_lower()
+  if normalized.contains("serveroverloaded") ||
+    normalized.contains("server overloaded") {
+    return "server_overloaded"
+  }
+  if normalized.contains("requestbursttoofast") ||
+    normalized.contains("request burst too fast") {
+    return "request_burst"
+  }
+  if normalized.contains("quotaexceeded") ||
+    normalized.contains("quota exhausted") ||
+    normalized.contains("insufficient_quota") ||
+    normalized.contains("accountoverdue") ||
+    normalized.contains("account overdue") {
+    return "quota_exhausted"
+  }
+  if status_code == 429 {
+    return "rate_limited"
+  }
+  if status_code == 408 ||
+    status_code == 500 ||
+    status_code == 502 ||
+    status_code == 503 ||
+    status_code == 504 {
+    return "transient_http"
+  }
+  "permanent_http"
+}
+
+///|
+/// Forwards only retry/rate-limit diagnostics. Hop-by-hop, authorization and
+/// provider-specific secret headers are deliberately excluded.
+fn moon_forward_upstream_failure_headers(
+  upstream : Map[String, String],
+  status_code : Int,
+  body : String,
+  w : @httpx.ResponseWriter,
+) -> Unit {
+  let class = moon_provider_error_class(status_code, body)
+  w.header().set("X-MoonGate-Provider-Error-Class", class)
+  let safe_names = [
+    "retry-after", "ratelimit-limit", "ratelimit-remaining", "ratelimit-reset", "x-ratelimit-limit-requests",
+    "x-ratelimit-remaining-requests", "x-ratelimit-reset-requests", "x-ratelimit-limit-tokens",
+    "x-ratelimit-remaining-tokens", "x-ratelimit-reset-tokens", "x-request-id", "x-tt-logid",
+  ]
+  let mut has_retry_after = false
+  for key, value in upstream {
+    let normalized = key.to_lower()
+    if safe_names.contains(normalized) {
+      w.header().set(key, value)
+      if normalized == "retry-after" {
+        has_retry_after = true
+      }
+    }
+  }
+  if !has_retry_after && class != "quota_exhausted" {
+    let fallback = match class {
+      "server_overloaded" | "rate_limited" => Some("30")
+      "request_burst" => Some("10")
+      _ => None
+    }
+    match fallback {
+      Some(seconds) => w.header().set("Retry-After", seconds)
+      None => ()
+    }
+  }
+}
+
+///|
 pub fn MoonProxyError::to_string(self : MoonProxyError) -> String {
   match self {
     AlreadyRunning => "proxy already running"

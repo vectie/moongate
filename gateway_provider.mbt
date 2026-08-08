@@ -110,7 +110,6 @@ fn ProxyService::activate_first_available_provider_excluding(
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
 ) -> ProviderRouteTarget? {
-  let bypass_circuit_breaker = providers.length() == 1
   let max_attempts = self.provider_router.max_attempts_for_app(app_type)
   if attempted_provider_ids.length() >= max_attempts {
     return None
@@ -122,12 +121,7 @@ fn ProxyService::activate_first_available_provider_excluding(
     if attempted_provider_ids.contains(provider.provider_id) {
       continue
     }
-    if self.activate_provider_target(
-        usage,
-        app_type,
-        provider,
-        bypass_circuit_breaker~,
-      ) {
+    if self.activate_provider_target(usage, app_type, provider) {
       return Some(provider)
     }
   }

@@ -48,4 +48,3 @@ pub(all) enum Type {
 // Type aliases
 
 // Traits
-

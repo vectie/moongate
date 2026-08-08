@@ -37,4 +37,3 @@ pub fn version() -> String
 // Type aliases
 
 // Traits
-

@@ -76,4 +76,3 @@ pub(all) enum RedirectOutput {
 // Type aliases
 
 // Traits
-

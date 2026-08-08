@@ -21,4 +21,3 @@ pub async fn uninstall_reroute() -> Result[Unit, String]
 // Type aliases
 
 // Traits
-

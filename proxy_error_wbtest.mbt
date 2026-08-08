@@ -102,3 +102,21 @@ test "moongate summarize text for log collapses whitespace and truncates" {
     "line1 line2...",
   )
 }
+
+///|
+test "moongate classifies Ark overload and quota separately" {
+  assert_eq(
+    moon_provider_error_class(
+      429, "{\"error\":{\"code\":\"ServerOverloaded\"}}",
+    ),
+    "server_overloaded",
+  )
+  assert_eq(
+    moon_provider_error_class(
+      429, "{\"error\":{\"code\":\"RequestBurstTooFast\"}}",
+    ),
+    "request_burst",
+  )
+  assert_eq(moon_provider_error_class(429, "QuotaExceeded"), "quota_exhausted")
+  assert_eq(moon_provider_error_class(503, "unavailable"), "transient_http")
+}

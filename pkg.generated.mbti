@@ -424,4 +424,3 @@ pub fn TokenUsage::new(input_tokens~ : Int, output_tokens~ : Int, cache_read_tok
 // Type aliases
 
 // Traits
-

@@ -131,4 +131,3 @@ pub(open) trait FromEvent {
 pub(open) trait ToEvent {
   fn to_event(Self) -> Event
 }
-

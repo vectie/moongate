@@ -11,4 +11,3 @@ pub fn localhost_port_open(Int, timeout_ms? : Int) -> Bool
 // Type aliases
 
 // Traits
-

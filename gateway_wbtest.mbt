@@ -6181,7 +6181,7 @@ test "gateway nonretryable upstream status does not activate failover provider" 
 }
 
 ///|
-test "gateway activation bypasses circuit breaker for single provider" {
+test "gateway activation respects circuit breaker for single provider" {
   let gateway = Gateway::new(port=0)
   gateway.proxy.provider_router.update_all_configs({
     failure_threshold: 1,
@@ -6191,11 +6191,7 @@ test "gateway activation bypasses circuit breaker for single provider" {
     min_requests: 10,
   })
   gateway.proxy.provider_router.record_result(
-    "codex-oauth",
-    "codex",
-    false,
-    false,
-    now_ms=1000,
+    "codex-oauth", "codex", false, false,
   )
   guard gateway.proxy.provider_router.get_circuit_breaker_stats(
       "codex-oauth", "codex",
@@ -6207,12 +6203,8 @@ test "gateway activation bypasses circuit breaker for single provider" {
 
   let usage = gateway.usage.begin_request(0)
   let selected = gateway.proxy.activate_provider(usage, "codex")
-  guard selected is Some(provider) else {
-    fail("single provider should bypass circuit gating")
-  }
-  assert_eq(provider.provider_id, "codex-oauth")
-  assert_eq(gateway.usage.stats.current_provider_id, Some("codex-oauth"))
-  assert_false(usage.context.used_half_open_permit)
+  assert_true(selected is None)
+  assert_eq(gateway.usage.stats.current_provider_id, None)
 }
 
 ///|
