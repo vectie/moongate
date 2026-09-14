@@ -14,7 +14,7 @@ description = "MoonBit-native local proxy and usage statistics gateway for the M
 
 import {
   "moonbitlang/async@0.16.6",
-  "moonbitlang/x@0.4.40",
+  "moonbitlang/x@0.4.50",
   "moonbitlang/regexp@0.3.5",
   "vectie/moonlib@0.1.23",
   "vectie/lepusa@0.1.4",

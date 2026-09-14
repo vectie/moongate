@@ -8,7 +8,6 @@ import {
   "vectie/moonlib/fsx",
   "moonbitlang/core/encoding/utf8" @encoding/utf8,
   "moonbitlang/core/json",
-  "moonbitlang/core/test",
 }
 
 supported_targets = "native"

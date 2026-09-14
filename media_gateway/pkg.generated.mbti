@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/media_gateway"
+
+import {
+  "moonbitlang/core/debug",
+  "vectie/moongate/internal/httpx",
+}
+
+// Values
+pub fn allowed_route(@httpx.Method, String) -> Bool
+
+pub async fn unavailable(@httpx.ResponseWriter) -> Unit
+
+// Errors
+pub(all) suberror MediaGatewayError {
+  InvalidConfiguration
+  InvalidResponse
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub struct MediaGateway {
+  origin : String
+}
+pub async fn MediaGateway::handle(Self, @httpx.RequestReader, @httpx.ResponseWriter) -> Unit
+pub fn MediaGateway::new(String) -> Self raise MediaGatewayError
+
+// Type aliases
+
+// Traits

@@ -67,6 +67,7 @@ fn moongate_route_requires_control(
 
 ///|
 fn moongate_inference_route(method_ : @httpx.Method, path : String) -> Bool {
+  if @media_gateway.allowed_route(method_, path) { return true }
   match method_ {
     Post =>
       path == "/v1/messages" ||

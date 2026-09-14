@@ -9,6 +9,20 @@ fn ProxyService::register_inference_routes(
   model : String,
   logger : @pino.Logger,
 ) -> Unit {
+  let media = match @env.get_env_var("MOONGATE_LUNANEXA_MEDIA_ORIGIN") {
+    Some(origin) => try Some(@media_gateway.MediaGateway::new(origin)) catch { _ => None }
+    None => None
+  }
+  for verb in [@httpx.Method::Post, Get, Delete] {
+    for path in ["/v1/videos", "/v1/videos/*path"] {
+      router.add_handler(verb, path, (r, w) => {
+        match media {
+          Some(gateway) => gateway.handle(r, w)
+          None => @media_gateway.unavailable(w)
+        }
+      })
+    }
+  }
   router.add_handler(Post, "/v1/messages", (r, w) => {
     self.handle_messages(auth, usage, config, session, model, logger, r, w)
   })
