@@ -1737,7 +1737,17 @@ test "codex compatible provider headers honor custom user agent" {
   )
   assert_eq(headers["Authorization"], "Bearer sk-test")
   assert_eq(headers["Accept"], "text/event-stream")
+  assert_eq(headers["Accept-Encoding"], "identity")
   assert_eq(headers["User-Agent"], "codex_cli_rs/0.99")
+}
+
+///|
+test "codex compatible provider fixes JSON request byte length" {
+  let request = Json::object({ "message": Json::string("你好") })
+  let headers = codex_compatible_provider_request_headers(request)
+  let bytes = @encoding/utf8.encode(request.stringify())
+  assert_eq(headers["Content-Length"], bytes.length().to_string())
+  assert_eq(headers["Content-Length"], "20")
 }
 
 ///|

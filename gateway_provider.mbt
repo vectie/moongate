@@ -529,10 +529,31 @@ async fn ProxyService::post_codex_compatible_provider_json(
     Err(message) => return Err(message)
     Ok(_) => ()
   }
-  let (response, data) = @http.post(url, request, headers~) catch {
-    error => return Err("\{error}")
+  // Content-Length must be a per-request header: the HTTP client drops it
+  // from persistent headers and otherwise sends a chunked body. A fixed byte
+  // length keeps JSON request framing predictable across upstream providers.
+  let (origin, path) = split_origin_and_path(url)
+  let client = @http.Client::Client(origin, headers~)
+  defer client.close()
+  let request_headers = codex_compatible_provider_request_headers(request)
+  let response = client.post(path, request, extra_headers=request_headers) catch {
+    error => return Err("upstream response header: \{error}")
+  }
+  let data = client.read_all() catch {
+    error => return Err("upstream response body: \{error}")
   }
   Ok((response, data.text()))
+}
+
+///|
+fn codex_compatible_provider_request_headers(
+  request : Json,
+) -> Map[String, String] {
+  {
+    "Content-Length": @encoding/utf8.encode(request.stringify())
+    .length()
+    .to_string(),
+  }
 }
 
 ///|
@@ -671,6 +692,9 @@ fn codex_compatible_provider_headers(
     "Authorization": "Bearer \{api_key}",
     "Content-Type": "application/json",
     "Accept": accept,
+    // Ark compressed responses intermittently ended with ReaderClosed in the
+    // native HTTP reader for longer non-streaming Chat Completions replies.
+    "Accept-Encoding": "identity",
   }
   match custom_user_agent {
     Some(value) => headers["User-Agent"] = value
