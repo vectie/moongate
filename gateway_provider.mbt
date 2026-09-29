@@ -2,6 +2,7 @@
 fn moongate_default_provider_router() -> ProviderRouter {
   let router = ProviderRouter::new()
   let claude_model_mapping = moon_model_mapping_from_env()
+  let mut codex_current_provider = "codex-oauth"
   let mut claude_current_provider = "codex-oauth"
   let mut claude_desktop_current_provider = "codex-oauth"
   router.upsert_provider(
@@ -35,9 +36,11 @@ fn moongate_default_provider_router() -> ProviderRouter {
   )
   match codex_provider_from_env() {
     Some(provider) => {
+      let provider_id = provider.provider_id
       router.upsert_provider(provider)
-      router.set_current_provider("codex", provider.provider_id)
-      router.set_failover_queue("codex", [provider.provider_id, "codex-oauth"])
+      codex_current_provider = provider_id
+      router.set_current_provider("codex", provider_id)
+      router.set_failover_queue("codex", [provider_id, "codex-oauth"])
       router.set_auto_failover("codex", true)
     }
     None => ()
@@ -74,7 +77,7 @@ fn moongate_default_provider_router() -> ProviderRouter {
   )
   router.set_current_provider("claude", claude_current_provider)
   router.set_current_provider("claude-desktop", claude_desktop_current_provider)
-  router.set_current_provider("codex", "codex-oauth")
+  router.set_current_provider("codex", codex_current_provider)
   router.set_current_provider("gemini", "gemini-api-key")
   router
 }
@@ -1970,20 +1973,20 @@ fn stream_check_effective_config_for_provider(
     None => ()
   }
   match proxy_json_int(test_config, "timeoutSecs") {
-    Some(value) if value >= 0 => config = { ..config, timeout_secs: value }
+    Some(value) if value >= 0 => config = { ..config, timeout_secs: value, }
     _ => ()
   }
   match proxy_json_int(test_config, "maxRetries") {
-    Some(value) if value >= 0 => config = { ..config, max_retries: value }
+    Some(value) if value >= 0 => config = { ..config, max_retries: value, }
     _ => ()
   }
   match proxy_json_int(test_config, "degradedThresholdMs") {
     Some(value) if value >= 0 =>
-      config = { ..config, degraded_threshold_ms: value }
+      config = { ..config, degraded_threshold_ms: value, }
     _ => ()
   }
   match json_string_from_map(test_config, "testPrompt") {
-    Some(prompt) => config = { ..config, test_prompt: prompt }
+    Some(prompt) => config = { ..config, test_prompt: prompt, }
     None => ()
   }
   config
@@ -2537,7 +2540,7 @@ fn provider_sort_updates_from_request(
   }
   guard provider_id_from_request(path, body) is Some(id) else { return updates }
   let sort_index = proxy_int_request(path, body, "sortIndex").unwrap_or(0)
-  updates.push({ id, sort_index })
+  updates.push({ id, sort_index, })
   updates
 }
 
@@ -2572,7 +2575,7 @@ fn provider_sort_updates_from_array(
         }
       _ => 0
     }
-    updates.push({ id, sort_index })
+    updates.push({ id, sort_index, })
   }
   updates
 }

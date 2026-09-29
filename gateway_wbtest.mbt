@@ -4671,6 +4671,30 @@ test "moongate env providers ignore app native provider aliases" {
 }
 
 ///|
+test "moongate selects the configured Codex provider from environment" {
+  let keys = [
+    "MOONGATE_CODEX_BASE_URL", "MOONGATE_CODEX_API_KEY", "MOONGATE_CODEX_PROVIDER_ID",
+  ]
+  let previous : Array[String?] = keys.map(key => {
+    @os.getenv(key) catch {
+      _ => None
+    }
+  })
+  @os.setenv(
+    "MOONGATE_CODEX_BASE_URL",
+    "https://lunanexa.example/v1",
+    overwrite=true,
+  )
+  @os.setenv("MOONGATE_CODEX_API_KEY", "runtime-secret", overwrite=true)
+  @os.setenv("MOONGATE_CODEX_PROVIDER_ID", "lunanexa", overwrite=true)
+  let router = moongate_default_provider_router()
+  assert_eq(router.current_provider_id("codex"), Some("lunanexa"))
+  for index, key in keys {
+    moon_wbtest_restore_env(key, previous[index])
+  }
+}
+
+///|
 test "moongate full url flags ignore app native aliases" {
   let old_moon_gemini = @os.getenv("MOONGATE_GEMINI_FULL_URL") catch {
     _ => None
@@ -5726,8 +5750,8 @@ async test "gateway nonretryable upstream errors release half open permit" {
   )
   assert_true(
     gateway.proxy.provider_router.update_providers_sort_order("codex", [
-      { id: "codex-oauth", sort_index: 0 },
-      { id: "codex-alt", sort_index: 1 },
+      { id: "codex-oauth", sort_index: 0, },
+      { id: "codex-alt", sort_index: 1, },
     ]),
   )
   gateway.proxy.provider_router.set_failover_queue("codex", [
@@ -5844,8 +5868,8 @@ test "gateway activation skips occupied half open provider in failover chain" {
   )
   assert_true(
     gateway.proxy.provider_router.update_providers_sort_order("codex", [
-      { id: "codex-oauth", sort_index: 0 },
-      { id: "codex-alt", sort_index: 1 },
+      { id: "codex-oauth", sort_index: 0, },
+      { id: "codex-alt", sort_index: 1, },
     ]),
   )
   gateway.proxy.provider_router.set_failover_queue("codex", [
@@ -5927,8 +5951,8 @@ test "gateway retryable upstream status activates next failover provider" {
   )
   assert_true(
     gateway.proxy.provider_router.update_providers_sort_order("codex", [
-      { id: "codex-oauth", sort_index: 0 },
-      { id: "codex-alt", sort_index: 1 },
+      { id: "codex-oauth", sort_index: 0, },
+      { id: "codex-alt", sort_index: 1, },
     ]),
   )
   gateway.proxy.provider_router.set_failover_queue("codex", [
@@ -6002,8 +6026,8 @@ test "gateway retryable upstream status respects moongate max retries cap before
   )
   assert_true(
     gateway.proxy.provider_router.update_providers_sort_order("codex", [
-      { id: "codex-oauth", sort_index: 0 },
-      { id: "codex-alt", sort_index: 1 },
+      { id: "codex-oauth", sort_index: 0, },
+      { id: "codex-alt", sort_index: 1, },
     ]),
   )
   gateway.proxy.provider_router.set_failover_queue("codex", [
@@ -6129,8 +6153,8 @@ test "gateway nonretryable upstream status does not activate failover provider" 
   )
   assert_true(
     gateway.proxy.provider_router.update_providers_sort_order("codex", [
-      { id: "codex-oauth", sort_index: 0 },
-      { id: "codex-alt", sort_index: 1 },
+      { id: "codex-oauth", sort_index: 0, },
+      { id: "codex-alt", sort_index: 1, },
     ]),
   )
   gateway.proxy.provider_router.set_failover_queue("codex", [
