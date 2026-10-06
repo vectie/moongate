@@ -57,7 +57,7 @@ async fn TrafficStats::save_persistent_store(self : TrafficStats) -> Unit {
     }
   }
   let path = @pathx.join(storage_dir, MOONGATE_USAGE_STORE_FILE)
-  atomic_write_store_file(path, self.usage_store_json().stringify()) catch {
+  atomic_write_store_file(path, self.usage_store_text()) catch {
     error => {
       self.mark_storage_failure("write_snapshot", "\{error}")
       return
@@ -115,33 +115,52 @@ async fn atomic_write_store_file(
 }
 
 ///|
-fn TrafficStats::usage_store_json(self : TrafficStats) -> Json {
-  let request_logs : Array[Json] = []
-  for log in self.request_logs {
-    request_logs.push(log.to_json())
+fn RequestLog::store_json_text(self : RequestLog) -> String {
+  match self.cached_store_json {
+    Some(text) => text
+    None => {
+      let text = self.to_json().stringify()
+      self.cached_store_json = Some(text)
+      text
+    }
   }
-  let daily_rollups : Array[Json] = []
-  for rollup in self.daily_rollups {
-    daily_rollups.push(rollup.to_json())
+}
+
+///|
+fn TrafficStats::usage_store_text(self : TrafficStats) -> String {
+  let out = StringBuilder()
+  out.write_string(
+    "{\"schemaVersion\":\{MOONGATE_USAGE_STORE_SCHEMA_VERSION},\"requestLogs\":[",
+  )
+  for i, log in self.request_logs {
+    if i > 0 {
+      out.write_string(",")
+    }
+    out.write_string(log.store_json_text())
   }
-  let session_sync : Array[Json] = []
+  out.write_string("],\"dailyRollups\":[")
+  for i, rollup in self.daily_rollups {
+    if i > 0 {
+      out.write_string(",")
+    }
+    out.write_string(rollup.to_json().stringify())
+  }
+  out.write_string("],\"sessionSync\":[")
+  let mut first = true
   for file_path, state in self.session_sync_state {
-    session_sync.push(
-      {
-        "filePath": Json::string(file_path),
-        "lastModified": Json::number(state.last_modified.to_double()),
-        "lastLineOffset": Json::number(state.last_line_offset.to_double()),
-      }.to_json(),
-    )
+    if !first {
+      out.write_string(",")
+    }
+    first = false
+    let row : Json = {
+      "filePath": file_path,
+      "lastModified": state.last_modified.to_double(),
+      "lastLineOffset": state.last_line_offset,
+    }
+    out.write_string(row.stringify())
   }
-  {
-    "schemaVersion": Json::number(
-      MOONGATE_USAGE_STORE_SCHEMA_VERSION.to_double(),
-    ),
-    "requestLogs": Json::array(request_logs),
-    "dailyRollups": Json::array(daily_rollups),
-    "sessionSync": Json::array(session_sync),
-  }.to_json()
+  out.write_string("]}")
+  out.to_string()
 }
 
 ///|

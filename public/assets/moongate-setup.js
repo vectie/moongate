@@ -128,7 +128,7 @@ function connectionGraphCheck(label, tone) {
 
 function connectionGraphTestState(provider, providerAppType) {
   const providerId = firstString(provider, ["id", "providerId"], "");
-  const latest = providerTestResults.get(providerRouteKey(providerAppType, providerId));
+  const latest = savedProviderTestResult(provider, providerAppType, providerId);
   if (latest) {
     const passed = latest.networkRequestPerformed === true && latest.success === true;
     return {

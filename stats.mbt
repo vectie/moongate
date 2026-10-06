@@ -6,6 +6,9 @@ const USAGE_ROLLUP_RETAIN_DAYS = 30
 
 ///|
 priv struct RequestLog {
+  // All persisted fields are immutable. Repricing replaces the whole log,
+  // so a cached row never survives a change to its accounting values.
+  mut cached_store_json : String?
   request_id : String
   provider_id : String
   provider_name : String?
@@ -151,6 +154,7 @@ fn RequestLog::new(
   data_source? : String = "proxy",
 ) -> RequestLog {
   {
+    cached_store_json: None,
     request_id,
     provider_id,
     provider_name,
@@ -349,7 +353,7 @@ fn TrafficStats::set_active_target(
   }
   self.current_provider = Some(provider_name)
   self.current_provider_id = Some(provider_id)
-  self.active_targets.set(app_type, { app_type, provider_id, provider_name })
+  self.active_targets.set(app_type, { app_type, provider_id, provider_name, })
 }
 
 ///|
@@ -963,7 +967,7 @@ fn RequestLogFilters::new(
   start_date? : Int? = None,
   end_date? : Int? = None,
 ) -> RequestLogFilters {
-  { app_type, provider_name, model, status_code, start_date, end_date }
+  { app_type, provider_name, model, status_code, start_date, end_date, }
 }
 
 ///|
@@ -1511,7 +1515,7 @@ fn ProviderStatsAccumulator::to_json(self : ProviderStatsAccumulator) -> Json {
 
 ///|
 fn ModelStatsAccumulator::new(model : String) -> ModelStatsAccumulator {
-  { model, request_count: 0, total_tokens: 0, total_cost_nano: 0L }
+  { model, request_count: 0, total_tokens: 0, total_cost_nano: 0L, }
 }
 
 ///|
@@ -1562,7 +1566,7 @@ fn ModelStatsAccumulator::to_json(self : ModelStatsAccumulator) -> Json {
 fn DataSourceStatsAccumulator::new(
   data_source : String,
 ) -> DataSourceStatsAccumulator {
-  { data_source, request_count: 0, total_cost_nano: 0L }
+  { data_source, request_count: 0, total_cost_nano: 0L, }
 }
 
 ///|

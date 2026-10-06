@@ -5,10 +5,50 @@ let frameworkLoadGeneration = 0;
 let providerTemplateLoadGeneration = 0;
 let pendingProviderDeleteKey = "";
 let selectedProviderKey = "";
+let providerFormRevision = 0;
+let providerTestGeneration = 0;
 const providerTestResults = new Map();
 
 function providerRouteKey(appType, providerId) {
   return `${appType}:${providerId}`;
+}
+
+function providerConfigIdentity(provider, appType, providerId) {
+  // Only compare editor configuration, never API keys or arbitrary settings.
+  return JSON.stringify([
+    appType || firstString(provider, ["appType", "app", "type"], ""),
+    providerId || firstString(provider, ["id", "providerId"], ""),
+    firstString(provider, ["name", "providerName"], providerId || provider.id || ""),
+    firstString(provider, ["providerType", "category"], ""),
+    firstString(provider, ["baseUrl", "websiteUrl"], ""),
+    firstString(provider, ["apiFormat"], firstString(provider.settingsConfig, ["apiFormat"], "")),
+    provider.enabled !== false,
+    provider.isFullUrl === true,
+    provider.codexFastMode === true || provider.settingsConfig?.codexFastMode === true,
+    firstString(provider, ["notes"], ""),
+    ...["defaultModel", "sonnetModel", "haikuModel", "opusModel"].map(
+      (key) => firstString(provider.modelMapping, [key], ""),
+    ),
+    provider.clearModelMapping === true,
+  ]);
+}
+
+function providerCredentialIdentity(provider) {
+  return firstString(provider, ["credentialState"], provider?.hasApiKey === true ? "stored" : "missing");
+}
+
+function savedProviderTestResult(provider, appType, providerId) {
+  const tested = providerTestResults.get(providerRouteKey(appType, providerId));
+  return tested && tested.config === providerConfigIdentity(provider, appType, providerId)
+    && tested.credential === providerCredentialIdentity(provider)
+    ? tested.result : null;
+}
+
+function providerFormChanged(event) {
+  if (["provider-template", "provider-template-file", "provider-app"].includes(event?.target?.id)) return;
+  providerFormRevision += 1;
+  setProviderTestResult();
+  setProviderStatus("Unsaved changes · test again after editing");
 }
 
 function selectProviderRow(appType, providerId) {
@@ -70,7 +110,7 @@ function renderProviderRows(data, error = "") {
     const provider = firstString(row, ["providerName", "name"], providerId);
     const app = firstString(row, ["appType", "app", "type"]);
     const routeKey = providerRouteKey(app, providerId);
-    const latestTest = providerTestResults.get(routeKey);
+    const latestTest = savedProviderTestResult(row, app, providerId);
     const status = firstString(row, ["healthStatus", "status", "state", "health", "isHealthy", "is_healthy"], "unknown");
     const statusLabel = row.enabled === false
       ? "Paused"
@@ -301,6 +341,7 @@ function renderProviderRouteState(appType, providerId = "") {
 }
 
 function clearProviderForm(appType) {
+  providerFormRevision += 1;
   resetProviderDeleteConfirmation();
   text("provider-original-id", "");
   $("provider-original-id").value = "";
@@ -523,6 +564,7 @@ function loadCachedProviderTemplates() {
 }
 
 function editProvider(appType, providerId) {
+  providerFormRevision += 1;
   const provider = providerById(appType, providerId);
   if (!provider) {
     clearProviderForm(appType);
@@ -558,7 +600,7 @@ function editProvider(appType, providerId) {
   $("provider-delete").title = provider.builtIn === true
     ? "Built-in providers cannot be deleted"
     : "Delete this configured provider";
-  setProviderTestResult(providerTestResults.get(providerRouteKey(appType, providerId)) || null);
+  setProviderTestResult(savedProviderTestResult(provider, appType, providerId));
   renderProviderRouteState(appType, providerId);
   setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in provider)" : ""}`);
 }
@@ -622,6 +664,9 @@ async function saveProvider() {
   } else {
     await postJson(endpoints.providerCreate, payload);
   }
+  // Saving can replace a credential without exposing its value to the UI cache.
+  providerTestResults.delete(providerRouteKey(originalAppType || payload.appType, originalId || payload.id));
+  providerTestResults.delete(providerRouteKey(payload.appType, payload.id));
   await refresh();
   editProvider(payload.appType, payload.id);
   setProviderStatus(`${originalId ? "Updated" : "Created"} ${payload.id}`);
@@ -648,6 +693,7 @@ async function deleteProviderFromForm() {
     return;
   }
   await deleteJson(endpoints.providerDelete, { appType, id: providerId });
+  providerTestResults.delete(providerRouteKey(appType, providerId));
   clearProviderForm(appType);
   await refresh();
   setProviderStatus(`Deleted ${providerId}`);
@@ -661,25 +707,43 @@ async function testProviderFromForm() {
     setProviderStatus("Select a provider before testing");
     return;
   }
-  const result = await postJson(endpoints.providerStreamCheck, {
-    ...payload,
-    providerId,
-    draft: true,
-  });
-  providerTestResults.set(providerRouteKey(appType, providerId), result);
-  setProviderTestResult(result);
-  if (providerById(appType, providerId)) {
-    await loadFrameworks();
-    await loadSetupStatus();
-    editProvider(appType, providerId);
+  const revision = providerFormRevision;
+  const generation = ++providerTestGeneration;
+  const config = providerConfigIdentity(payload, appType, providerId);
+  const provider = providerById(appType, providerId);
+  // A draft key is used only by the existing request, never kept in test proof.
+  const credential = payload.apiKey || payload.clearApiKey ? null : providerCredentialIdentity(provider);
+  const unsaved = !provider || credential === null || config !== providerConfigIdentity(provider, appType, providerId);
+  const isCurrent = () => revision === providerFormRevision && generation === providerTestGeneration;
+  setProviderTestResult();
+  setProviderStatus("Testing this configuration…");
+  try {
+    const result = await postJson(endpoints.providerStreamCheck, {
+      ...payload,
+      providerId,
+      draft: true,
+    });
+    if (!isCurrent()) return;
+    // A draft result belongs to this editor, not to the saved provider's proof.
+    if (!unsaved) {
+      providerTestResults.set(providerRouteKey(appType, providerId), { config, credential, result });
+    }
     setProviderTestResult(result);
+    if (provider) {
+      await loadFrameworks();
+      if (!isCurrent()) return;
+      await loadSetupStatus();
+      if (!isCurrent()) return;
+    }
+    if (result.networkRequestPerformed !== true) {
+      setProviderStatus("Test rejected: the backend did not perform a network request");
+      return;
+    }
+    const status = Number.isFinite(result.httpStatus) ? `HTTP ${result.httpStatus}` : "no HTTP response";
+    setProviderStatus(`${firstString(result, ["message", "status"], "Provider test completed")} · ${status}${unsaved ? " · Draft tested; save to keep these changes" : ""}`);
+  } catch (error) {
+    if (isCurrent()) throw error;
   }
-  if (result.networkRequestPerformed !== true) {
-    setProviderStatus("Test rejected: the backend did not perform a network request");
-    return;
-  }
-  const status = Number.isFinite(result.httpStatus) ? `HTTP ${result.httpStatus}` : "no HTTP response";
-  setProviderStatus(`${firstString(result, ["message", "status"], "Provider test completed")} · ${status}`);
 }
 
 async function loadFrameworkRow(app) {

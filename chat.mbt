@@ -30,7 +30,7 @@ const CUSTOM_TOOL_PRESERVED_METADATA_HEADING = "Original tool definition:"
 
 ///|
 fn codex_chat_empty_tool_context() -> CodexChatToolContext {
-  { specs: {} }
+  { specs: {}, }
 }
 
 ///|
@@ -68,7 +68,7 @@ fn add_codex_response_tool_to_chat_context(
 ) -> Unit {
   match tool {
     String(name) =>
-      add_chat_tool_spec(context, name, { kind: "custom", name, ns_name: None })
+      add_chat_tool_spec(context, name, { kind: "custom", name, ns_name: None, })
     Object(tool_obj) =>
       match json_string_from_map(tool_obj, "type") {
         Some("function") => {
@@ -1306,7 +1306,7 @@ priv struct ChatToCodexResponsesToolState {
   mut item_id : String
   mut call_id : String
   mut name : String
-  mut arguments : String
+  arguments : StringBuilder
   mut added : Bool
   mut done : Bool
 }
@@ -1321,7 +1321,7 @@ priv struct ChatToCodexResponsesStreamState {
   mut next_output_index : Int
   mut text_output_index : Int?
   mut text_item_id : String
-  mut text : String
+  text : StringBuilder
   mut text_added : Bool
   mut text_done : Bool
   tool_states : Map[Int, ChatToCodexResponsesToolState]
@@ -1345,7 +1345,7 @@ fn ChatToCodexResponsesStreamState::new_with_context(
     next_output_index: 0,
     text_output_index: None,
     text_item_id: "",
-    text: "",
+    text: StringBuilder(),
     text_added: false,
     text_done: false,
     tool_states: Map([], capacity=0),
@@ -1475,7 +1475,7 @@ fn ChatToCodexResponsesStreamState::push_text_delta(
       }),
     )
   }
-  self.text += delta
+  self.text.write_string(delta)
   let output_index = self.text_output_index.unwrap_or(0)
   events.push(
     Json::object({
@@ -1504,7 +1504,7 @@ fn ChatToCodexResponsesStreamState::push_tool_call_delta(
         item_id: "",
         call_id: "",
         name: "",
-        arguments: "",
+        arguments: StringBuilder(),
         added: false,
         done: false,
       }
@@ -1521,7 +1521,7 @@ fn ChatToCodexResponsesStreamState::push_tool_call_delta(
     }
     if json_string_from_map(function, "arguments") is Some(arguments) &&
       !arguments.is_empty() {
-      state.arguments += arguments
+      state.arguments.write_string(arguments)
     }
   }
   if !state.added && (!state.call_id.is_empty() || !state.name.is_empty()) {
@@ -1560,7 +1560,7 @@ fn ChatToCodexResponsesStreamState::push_tool_call_delta(
           "type": Json::string("response.function_call_arguments.delta"),
           "item_id": Json::string(state.item_id),
           "output_index": Json::number(output_index.to_double()),
-          "delta": Json::string(state.arguments),
+          "delta": Json::string(state.arguments.to_string()),
         }),
       )
     }
@@ -1613,9 +1613,10 @@ fn ChatToCodexResponsesStreamState::finish_text(
     return []
   }
   let output_index = self.text_output_index.unwrap_or(0)
+  let text = self.text.to_string()
   let part = Json::object({
     "type": Json::string("output_text"),
-    "text": Json::string(self.text),
+    "text": Json::string(text),
     "annotations": Json::array([]),
   })
   let item = Json::object({
@@ -1633,7 +1634,7 @@ fn ChatToCodexResponsesStreamState::finish_text(
       "item_id": Json::string(self.text_item_id),
       "output_index": Json::number(output_index.to_double()),
       "content_index": Json::number(0.0),
-      "text": Json::string(self.text),
+      "text": Json::string(text),
     }),
     Json::object({
       "type": Json::string("response.content_part.done"),
@@ -1661,7 +1662,7 @@ fn ChatToCodexResponsesStreamState::finish_tools(
     }
     let output_index = state.output_index.unwrap_or(0)
     let arguments = canonicalize_tool_arguments(
-      Some(Json::string(state.arguments)),
+      Some(Json::string(state.arguments.to_string())),
     )
     let is_custom_tool = codex_chat_tool_context_is_custom(
       self.tool_context,
@@ -1799,7 +1800,7 @@ fn openai_chat_delta_chunk(
 fn extract_chat_completion_output(body : Json) -> ChatCompletionOutput {
   let mut content = ""
   let tool_calls : Array[Json] = []
-  guard body is Object(obj) else { return { content, tool_calls } }
+  guard body is Object(obj) else { return { content, tool_calls, } }
   if obj.get("output_text") is Some(String(text)) {
     content = text
   }
@@ -1815,7 +1816,7 @@ fn extract_chat_completion_output(body : Json) -> ChatCompletionOutput {
       }
     }
   }
-  { content, tool_calls }
+  { content, tool_calls, }
 }
 
 ///|

@@ -1630,9 +1630,7 @@ async fn ProxyService::handle_stream_check_provider(
     let result = self.stream_check_provider_target_result_json(
       auth, stream_check_config, target,
     )
-    if self.provider_router.provider_by_id(app_type, provider_id) is Some(_) {
-      self.record_stream_check_provider_health(target, result)
-    }
+    self.record_stream_check_provider_health(target, result, draft=true)
     result
   } else {
     guard self.stream_check_provider_result_json(
@@ -1709,7 +1707,12 @@ fn ProxyService::record_stream_check_provider_health(
   self : ProxyService,
   provider : ProviderRouteTarget,
   result : Json,
+  draft? : Bool = false,
 ) -> Unit {
+  // A draft result cannot certify or invalidate the stored configuration.
+  if draft {
+    return
+  }
   guard json_bool_field(result, "networkRequestPerformed").unwrap_or(false) else {
     return
   }

@@ -45,17 +45,34 @@ const frameworkApps = readFrameworkApps();
 
 const $ = (id) => document.getElementById(id);
 
-const controlTokenPromise = fetch("/control/bootstrap", {
-  headers: { Accept: "application/json" },
-})
-  .then((response) => {
-    if (!response.ok) throw new Error(`control bootstrap returned ${response.status}`);
-    return response.json();
-  })
-  .then((payload) => (payload && typeof payload.token === "string" ? payload.token : ""));
+let controlTokenPromise = null;
+
+function acquireControlToken() {
+  if (!controlTokenPromise) {
+    controlTokenPromise = fetch("/control/bootstrap", {
+      headers: { Accept: "application/json" },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`control bootstrap returned ${response.status}`);
+        return response.json();
+      })
+      .then((payload) => {
+        if (!payload || typeof payload.token !== "string" || payload.token.trim() === "") {
+          throw new Error("control bootstrap did not return a control token");
+        }
+        return payload.token;
+      })
+      .catch((error) => {
+        // Share each attempt, but let the next user request recover from failure.
+        controlTokenPromise = null;
+        throw error;
+      });
+  }
+  return controlTokenPromise;
+}
 
 async function requestHeaders(extra) {
-  const token = await controlTokenPromise;
+  const token = await acquireControlToken();
   return {
     Accept: "application/json",
     ...(token ? { "X-MoonGate-Control-Token": token } : {}),

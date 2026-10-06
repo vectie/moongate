@@ -616,6 +616,9 @@ $("provider-template-file")?.addEventListener("change", (event) => {
   });
 });
 
+$("provider-form")?.addEventListener("input", providerFormChanged);
+$("provider-form")?.addEventListener("change", providerFormChanged);
+
 $("provider-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
   saveProvider().catch(showError);
