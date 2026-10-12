@@ -1,6 +1,7 @@
 supported_targets = "native"
 
 import {
+  "vectie/moongate/usage_preview",
   "vectie/moongate/suite",
   "vectie/moongate/media_gateway",
   "vectie/moongate/telemetry",

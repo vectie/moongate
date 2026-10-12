@@ -1,0 +1,7 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/batch_usage",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+}

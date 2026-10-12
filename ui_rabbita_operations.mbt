@@ -6,6 +6,87 @@ fn moongate_rabbita_operations_page() -> @html.Html {
     "Observe provider latency, capacity, quotas, failover, and routing-policy decisions.",
     false,
     [
+      @html.article(class="panel", [
+        moongate_rabbita_panel_head(
+          "Read-only retained requests",
+          "Cohort comparison",
+          [],
+        ),
+        @html.p(
+          class="panel-description",
+          "Compare exact provider IDs and explicitly recorded request models from one frozen UTC snapshot. Retained proxy requests only; imported sessions and historical rollups are excluded. This is observational evidence, not a provider ranking, SLA, cost estimate, or routing recommendation.",
+        ),
+        @html.form(id="cohort-query", class="form-grid", [
+          @html.label([
+            @html.span("App"),
+            @html.select(id="cohort-app", moongate_rabbita_empty()),
+          ]),
+          moongate_rabbita_select_label("Streaming mode", "cohort-streaming", [
+            ("all", "All modes"),
+            ("streaming", "Streaming only"),
+            ("non-streaming", "Non-streaming only"),
+          ]),
+          moongate_rabbita_select_label("UTC interval", "cohort-period", [
+            ("24h", "Last 24 hours"),
+            ("7d", "Last 7 days"),
+            ("30d", "Last 30 days"),
+            ("all", "All retained before capture"),
+          ]),
+          @html.div(class="form-actions span-2", [
+            @html.button(
+              id="cohort-capture",
+              type_="submit",
+              "Capture snapshot",
+            ),
+            @html.button(
+              id="cohort-refresh",
+              type_="button",
+              class="button-secondary",
+              "Refresh with new upper bound",
+            ),
+            @html.button(
+              id="cohort-retry",
+              type_="button",
+              class="button-secondary",
+              "Retry same UTC bounds",
+            ),
+          ]),
+        ]),
+        @html.p(
+          id="cohort-status",
+          attrs=@html.Attrs::build().aria_live("polite"),
+          "Choose filters, then capture a snapshot",
+        ),
+        @html.div(class="form-grid", [
+          @html.label([
+            @html.span("A: exact provider ID"),
+            @html.select(id="cohort-a-provider", moongate_rabbita_empty()),
+          ]),
+          @html.label([
+            @html.span("A: explicit request model"),
+            @html.select(id="cohort-a-model", moongate_rabbita_empty()),
+          ]),
+          @html.label([
+            @html.span("B: exact provider ID"),
+            @html.select(id="cohort-b-provider", moongate_rabbita_empty()),
+          ]),
+          @html.label([
+            @html.span("B: explicit request model"),
+            @html.select(id="cohort-b-model", moongate_rabbita_empty()),
+          ]),
+        ]),
+        @html.pre(id="cohort-report", class="card-help", "No snapshot captured"),
+        @html.button(
+          id="cohort-export",
+          type_="button",
+          class="button-secondary",
+          "Export displayed comparison report",
+        ),
+        @html.p(
+          class="card-help",
+          "Elapsed latency is MoonGate request elapsed time for successful 2xx rows without a recorded error. First accepted stream event timing is not guaranteed to be the first token. Missing or zero elapsed timing is excluded; first-event coverage has its own streaming-success denominator. Stored duration duplicates elapsed latency: neither proxy overhead nor provider causality can be inferred. Retention may evict older requests; small samples and unequal workloads limit comparison.",
+        ),
+      ]),
       @html.section(
         class="status-grid",
         attrs=@html.Attrs::build().aria_label("Live provider request telemetry"),

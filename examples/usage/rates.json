@@ -1,0 +1,13 @@
+{
+  "schema": "moongate.usage-rate-card.v1",
+  "name": "Hypothetical fixture only",
+  "currency": "USD",
+  "rates": [
+    {
+      "providerId": "fixture-east",
+      "model": "fixture-small",
+      "inputUsdPerMillion": 2,
+      "outputUsdPerMillion": 4
+    }
+  ]
+}

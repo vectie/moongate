@@ -82,6 +82,26 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
       moongate_rabbita_input_label(
         "Default Model", "provider-default-model", "", false,
       ),
+      @html.div(class="span-2", [
+        @html.div(class="inline-actions", [
+          @html.button(
+            id="provider-models-refresh",
+            class="button-secondary",
+            type_="button",
+            "Refresh models",
+          ),
+          @html.label([
+            @html.span("Choose a discovered model"),
+            @html.select(id="provider-models-select", disabled=true, [
+              @html.option(value="", "Refresh models to choose"),
+            ]),
+          ]),
+        ]),
+        @html.small(
+          id="provider-models-status",
+          "Save the provider, then fetch its model IDs using the host-held key. Choosing a model only edits the form; Save, Test and Bind stay separate.",
+        ),
+      ]),
       @html.label(class="span-2", [
         @html.span("Notes"),
         @html.textarea(id="provider-notes", rows=3, moongate_rabbita_empty()),
@@ -573,7 +593,7 @@ fn moongate_rabbita_provider_health_panel() -> @html.Html {
 ///|
 fn moongate_rabbita_usage_panel() -> @html.Html {
   @html.article(id="usage", class="panel", [
-    moongate_rabbita_panel_head("Usage", "By App", []),
+    moongate_rabbita_panel_head("All-time totals, all apps", "By App", []),
     @html.div(id="app-usage", class="stack", moongate_rabbita_empty()),
   ])
 }
@@ -620,10 +640,14 @@ fn moongate_rabbita_usage_explorer_panel() -> @html.Html {
     ]),
     @html.div(class="usage-metrics", [
       moongate_rabbita_status_value("Requests", "usage-filter-requests"),
-      moongate_rabbita_status_value("Cost", "usage-filter-cost"),
+      moongate_rabbita_status_value("Estimated cost", "usage-filter-cost"),
       moongate_rabbita_status_value("Tokens", "usage-filter-tokens"),
       moongate_rabbita_status_value("Reused input", "usage-filter-cache"),
     ]),
+    @html.p(
+      class="panel-description",
+      "These aggregate totals and the provider/model breakdowns use only the Usage app and time controls. Requests-page provider, model and status filters do not apply. Aggregates may include older rollups; retained request pages are not a complete billing record.",
+    ),
     @html.div(id="usage-trends", class="trend-bars", moongate_rabbita_empty()),
   ])
 }
@@ -631,12 +655,94 @@ fn moongate_rabbita_usage_explorer_panel() -> @html.Html {
 ///|
 fn moongate_rabbita_request_log_panel() -> @html.Html {
   @html.article(id="requests", class="panel wide", [
-    moongate_rabbita_panel_head("Recent", "AI requests", [
+    moongate_rabbita_panel_head("Retained history", "AI requests", [
       @html.button(
+        id="request-export-page",
         class="button-secondary",
         type_="button",
-        attrs=@html.Attrs::build().data_set("copy-path", "/usage/logs"),
-        "Copy Developer JSON URL",
+        disabled=true,
+        "Export displayed page CSV",
+      ),
+    ]),
+    @html.form(id="request-filters", class="request-filters", [
+      @html.label([
+        @html.span("App"),
+        @html.select(id="request-app", moongate_rabbita_empty()),
+      ]),
+      @html.label([
+        @html.span("Time range"),
+        @html.select(id="request-range", [
+          @html.option(value="86400", "24 hours"),
+          @html.option(value="604800", selected=true, "7 days"),
+          @html.option(value="2592000", "30 days"),
+          @html.option(value="all", "All retained history"),
+        ]),
+      ]),
+      @html.label([
+        @html.span("Provider name contains"),
+        @html.input(id="request-provider", placeholder="Any provider"),
+      ]),
+      @html.label([
+        @html.span("Model contains"),
+        @html.input(id="request-model", placeholder="Any model"),
+      ]),
+      @html.label([
+        @html.span("HTTP status"),
+        @html.input(id="request-status", placeholder="Any status, e.g. 200"),
+      ]),
+      @html.div(class="filter-row", [
+        @html.button(
+          id="request-apply",
+          type_="submit",
+          "Apply / refresh interval",
+        ),
+        @html.button(
+          id="request-reset",
+          class="button-secondary",
+          type_="button",
+          "Reset filters",
+        ),
+      ]),
+    ]),
+    @html.p(
+      id="request-query-summary",
+      class="panel-description",
+      "No applied query",
+    ),
+    @html.p(
+      class="panel-description",
+      "Provider and model match partial names, ignoring case. The UTC interval stays fixed until Apply or Reset. Pages use offsets, so retention or late imports may shift rows. Exports contain only the displayed page or selected request, with estimated costs; zero cost or latency can also mean unavailable. Prompts, credentials and raw errors are excluded.",
+    ),
+    @html.p(
+      id="request-feedback",
+      attrs=@html.Attrs::build().aria_live("polite"),
+      "",
+    ),
+    @html.div(class="request-pagination", [
+      @html.button(
+        id="request-prev",
+        class="button-secondary",
+        type_="button",
+        disabled=true,
+        "Previous",
+      ),
+      @html.span(
+        id="request-page-summary",
+        attrs=@html.Attrs::build().aria_live("polite"),
+        "Loading retained requests…",
+      ),
+      @html.button(
+        id="request-next",
+        class="button-secondary",
+        type_="button",
+        disabled=true,
+        "Next",
+      ),
+      @html.button(
+        id="request-retry",
+        class="button-secondary",
+        type_="button",
+        "Reload page",
       ),
     ]),
     @html.div(
@@ -653,6 +759,20 @@ fn moongate_rabbita_request_detail_panel() -> @html.Html {
   @html.article(id="request-detail-panel", class="panel wide", [
     moongate_rabbita_panel_head("Request", "Request Detail", [
       @html.span(id="request-detail-id", class="pill", "No selection"),
+      @html.button(
+        id="request-detail-retry",
+        class="button-secondary",
+        type_="button",
+        disabled=true,
+        "Retry details",
+      ),
+      @html.button(
+        id="request-export-detail",
+        class="button-secondary",
+        type_="button",
+        disabled=true,
+        "Export selected report",
+      ),
     ]),
     @html.div(
       id="request-detail",

@@ -5,8 +5,8 @@ fn extract_client_session_context(
   client_format : String,
 ) -> MoonClientSession {
   match extract_client_session_id(headers, body, client_format) {
-    Some(session_id) => { session_id, client_provided: true }
-    None => { session_id: generate_moon_session_id(), client_provided: false }
+    Some(session_id) => { session_id, client_provided: true, }
+    None => { session_id: generate_moon_session_id(), client_provided: false, }
   }
 }
 

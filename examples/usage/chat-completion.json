@@ -1,0 +1,29 @@
+{
+  "id": "chat-json-fixture",
+  "object": "chat.completion",
+  "model": "fixture-small",
+  "created": 1791504000,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "PRIVATE_SYNTHETIC_RESPONSE",
+        "tool_calls": [
+          {
+            "arguments": "PRIVATE_SYNTHETIC_TOOL"
+          }
+        ]
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 2,
+    "total_tokens": 12,
+    "prompt_tokens_details": {
+      "cached_tokens": 8
+    }
+  }
+}

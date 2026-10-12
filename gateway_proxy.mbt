@@ -1180,7 +1180,7 @@ fn proxy_provider_query_from_request(
   guard proxy_app_type_from_request(path, body) is Some(app_type) else {
     return None
   }
-  Some({ provider_id, app_type })
+  Some({ provider_id, app_type, })
 }
 
 ///|

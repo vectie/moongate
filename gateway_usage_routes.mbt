@@ -36,6 +36,7 @@ fn UsageService::register_routes(
   auth : AuthService,
   provider_router : ProviderRouter,
 ) -> Unit {
+  router.add_handler(Post, "/usage/preview", handle_usage_file_preview)
   router.add_handler(Get, "/usage/logs", (r, w) => {
     self.handle_usage_logs(r, w, self.pricing_override_rows())
   })
@@ -65,6 +66,9 @@ fn UsageService::register_routes(
   })
   router.add_handler(Get, "/operations/monitor", (_, w) => {
     self.handle_operations_monitor(w, provider_router)
+  })
+  router.add_handler(Get, "/operations/cohort-snapshot", (r, w) => {
+    self.handle_retained_cohort_snapshot(r, w)
   })
   router.add_handler(Post, "/benchmark/deterministic", (_, w) => {
     self.handle_deterministic_benchmark(w)

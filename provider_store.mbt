@@ -531,7 +531,7 @@ fn ProxyService::moon_apply_import_providers(
         Some(sort_index) =>
           ignore(
             self.provider_router.update_providers_sort_order(app_type, [
-              { id: target.provider_id, sort_index },
+              { id: target.provider_id, sort_index, },
             ]),
           )
         None => ()

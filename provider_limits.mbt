@@ -9,7 +9,7 @@ fn ProviderLimitConfig::new(
   daily_limit_usd? : String? = None,
   monthly_limit_usd? : String? = None,
 ) -> ProviderLimitConfig {
-  { daily_limit_usd, monthly_limit_usd }
+  { daily_limit_usd, monthly_limit_usd, }
 }
 
 ///|

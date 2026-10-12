@@ -1,0 +1,5 @@
+[
+  {"requestId":"after-1","appType":"codex","providerId":"team-fixture","model":"moon-small","totalTokens":150,"totalCostUsd":0.15,"date":"2026-10-08"},
+  {"requestId":"after-2","appType":"codex","providerId":"new-fixture","model":"moon-large","totalTokens":300,"totalCostUsd":0.9,"date":"2026-10-09"},
+  {"requestId":"after-3","appType":"claude","providerId":"new-fixture","model":"moon-large","totalTokens":50,"totalCostUsd":0,"date":"2026-10-09"}
+]

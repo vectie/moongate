@@ -1,0 +1,17 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Example model API", "version": "1.0"},
+  "servers": [{"url": "https://models.example.invalid/v1"}],
+  "security": [{"bearerAuth": []}],
+  "paths": {
+    "/models": {"get": {"operationId": "listModels", "tags": ["Models"], "summary": "List model metadata", "parameters": [{"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}}], "responses": {"200": {"description": "Model list"}}}},
+    "/models/{model}": {"parameters": [{"$ref": "#/components/parameters/Model"}], "get": {"operationId": "getModel", "tags": ["Models"], "summary": "Inspect a model", "responses": {"200": {"description": "Model metadata"}}}},
+    "/chat/completions": {"post": {"operationId": "createChat", "tags": ["Chat"], "summary": "Prepare a non-streaming chat", "requestBody": {"$ref": "#/components/requestBodies/Chat"}, "responses": {"200": {"description": "Chat result"}}}}
+  },
+  "components": {
+    "parameters": {"Model": {"name": "model", "in": "path", "required": true, "example": "example-small"}},
+    "requestBodies": {"Chat": {"required": true, "content": {"application/json": {"examples": {"short": {"$ref": "#/components/examples/Chat"}}}}}},
+    "examples": {"Chat": {"value": {"model": "example-small", "messages": [{"role": "user", "content": "Explain a lunar eclipse in one sentence."}], "stream": false}}},
+    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer"}}
+  }
+}

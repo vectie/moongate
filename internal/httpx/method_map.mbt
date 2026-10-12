@@ -37,11 +37,7 @@ fn[T] MethodMap::at(self : MethodMap[T], method_ : Method) -> T {
 
 ///|
 #alias("_[_]=_")
-fn[T] MethodMap::set(
-  self : MethodMap[T],
-  method_ : Method,
-  value : T,
-) -> Unit {
+fn[T] MethodMap::set(self : MethodMap[T], method_ : Method, value : T) -> Unit {
   match method_ {
     Get => self.get = Some(value)
     Head => self.head = Some(value)

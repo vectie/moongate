@@ -1,0 +1,7 @@
+{
+  "messages": [
+    { "role": "user", "content": "How do I keep this conversation?" },
+    { "role": "assistant", "content": "Download JSON to reopen it later, or Markdown for your project notes." },
+    { "role": "user", "content": "I will keep a Markdown copy. 月" }
+  ]
+}

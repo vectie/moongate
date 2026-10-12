@@ -1,0 +1,2 @@
+{"id":"batch_req_5","custom_id":"expired-1","response":null,"error":{"code":"batch_expired","message":"PRIVATE_BATCH_ERROR_SENTINEL"}}
+{"id":"batch_req_6","custom_id":"http-failed-1","response":{"status_code":429,"body":{"error":{"message":"PRIVATE_BATCH_HTTP_SENTINEL"}}},"error":null}

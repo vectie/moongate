@@ -32,6 +32,7 @@ fn moongate_rabbita_shell_view(
           moongate_rabbita_connect_page(),
           moongate_rabbita_requests_page(),
           moongate_rabbita_usage_page(),
+          moongate_rabbita_transcript_page(),
           moongate_rabbita_operations_page(),
           moongate_rabbita_suite_page(),
           moongate_rabbita_guide_page(),
@@ -59,6 +60,8 @@ fn moongate_rabbita_shell_view(
     @html.script(src="/assets/moongate-suite.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-resilience.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate-operations.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-cohorts.js", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-transcript.js", moongate_rabbita_empty()),
     @html.script(src="/assets/moongate.js", moongate_rabbita_empty()),
   ])
 }
@@ -99,6 +102,7 @@ fn moongate_rabbita_sidebar() -> @html.Html {
         moongate_rabbita_nav_link("requests", "Requests"),
         moongate_rabbita_nav_group("Review"),
         moongate_rabbita_nav_link("usage", "Usage"),
+        moongate_rabbita_nav_link("transcripts", "Transcript Reader"),
         moongate_rabbita_nav_link("operations", "Operations"),
         moongate_rabbita_nav_link("suite", "Suite"),
         moongate_rabbita_nav_link("guide", "Guide"),
@@ -314,7 +318,7 @@ fn moongate_rabbita_requests_page() -> @html.Html {
   moongate_rabbita_page(
     "requests",
     "Requests",
-    "See each AI request, which provider handled it, its cost, and whether it succeeded.",
+    "Explore retained AI requests, filter results, inspect one request, and export the displayed page. Costs are estimates.",
     false,
     [
       @html.div(class="master-detail request-master-detail", [
@@ -334,13 +338,14 @@ fn moongate_rabbita_usage_page() -> @html.Html {
     false,
     [
       moongate_rabbita_usage_explorer_panel(),
+      moongate_rabbita_usage_file_panel(),
       @html.div(class="usage-breakdown-grid", [
         moongate_rabbita_usage_panel(),
         moongate_rabbita_stack_panel(
-          "Providers", "By Provider", "provider-usage",
+          "App and time totals", "By Provider", "provider-usage",
         ),
         moongate_rabbita_stack_panel(
-          "Models", "By Model", "filtered-model-usage",
+          "App and time totals", "By Model", "filtered-model-usage",
         ),
       ]),
     ],

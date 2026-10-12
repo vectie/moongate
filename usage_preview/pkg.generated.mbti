@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/usage_preview"
+
+// Values
+pub fn compare_usage_files_json(String, String, before_name? : String, after_name? : String, app? : String, provider? : String, model? : String, before_start_day? : String, before_end_day? : String, after_start_day? : String, after_end_day? : String) -> Result[Json, String]
+
+pub fn export_usage_csv(String, source_name? : String, view? : String, app? : String, provider? : String, model? : String, start_day? : String, end_day? : String) -> Result[String, String]
+
+pub fn merge_usage_files_json(Array[(String, String)], scope~ : String) -> Result[Json, String]
+
+pub fn moongate_preview_usage_file_json(String, source_name? : String, app? : String, provider? : String, model? : String, start_day? : String, end_day? : String) -> Result[Json, String]
+
+pub fn price_usage_file_json(String, String, source_name? : String) -> Result[Json, String]
+
+pub fn profile_usage_latency_json(String, source_name? : String, app? : String, provider? : String, model? : String, start_day? : String, end_day? : String) -> Result[Json, String]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

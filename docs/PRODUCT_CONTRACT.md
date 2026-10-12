@@ -30,6 +30,8 @@ browsing or domain policy.
 | --- | --- |
 | Local proxy and provider routing | available |
 | Usage, pricing, quota and request inspection | available |
+| Operator notes, resumable/mergeable selected-request investigations and readable reports | bounded dashboard JavaScript workflow; user annotations stay separate from recorded metadata; see [Requests](RETAINED_REQUEST_EXPLORER.md#add-operator-notes-and-export-an-investigation-report) |
+| Focused request-review subsets | bounded dashboard JavaScript workflow; local metadata/note search, explicit selection and resumable partial export without discarding the full review; see [focused subsets](RETAINED_REQUEST_EXPLORER.md#find-observations-and-save-a-focused-subset) |
 | Failover, circuit and stream checks | available |
 | Typed operations telemetry and percentiles | available for recorded request evidence; unsupported fields are explicit |
 | Versioned provider routing policies | shadow, explicit activation and receipt-bearing rollback available |

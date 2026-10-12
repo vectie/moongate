@@ -85,7 +85,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_false(html.contains("href=\"/metrics\""))
   assert_false(html.contains("href=\"/usage/logs\""))
   assert_true(html.contains("data-copy-path=\"/metrics\""))
-  assert_true(html.contains("data-copy-path=\"/usage/logs\""))
+  assert_true(html.contains("id=\"request-export-page\""))
 }
 
 ///|
@@ -93,12 +93,12 @@ test "moongate ui section metadata drives primary navigation" {
   guard moongate_ui_sections_json() is Array(sections) else {
     fail("expected section array")
   }
-  assert_eq(sections.length(), 10)
+  assert_eq(sections.length(), 11)
   let html = moongate_rabbita_shell_html()
   for
     id in [
       "overview", "providers", "bindings", "connections", "connect", "requests",
-      "usage", "operations", "suite", "guide",
+      "usage", "transcripts", "operations", "suite", "guide",
     ] {
     assert_true(html.contains("href=\"#\{id}\""))
     assert_true(

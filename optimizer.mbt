@@ -153,7 +153,7 @@ fn apply_moon_copilot_optimizer_for_provider(
 ) -> CopilotOptimizationResult {
   let config = moon_copilot_optimizer_runtime_config(config_json)
   if !config.enabled || !moon_copilot_optimizer_provider_enabled(provider) {
-    return { body, headers: {} }
+    return { body, headers: {}, }
   }
   let classification = classify_moon_copilot_request(
     body,
@@ -254,7 +254,7 @@ fn classify_moon_copilot_request(
   }
   let last_message = messages[messages.length() - 1]
   guard last_message is Object(last_obj) else {
-    return { initiator: "user", is_warmup: false, is_compact, is_subagent }
+    return { initiator: "user", is_warmup: false, is_compact, is_subagent, }
   }
   if json_string_from_map(last_obj, "role") != Some("user") {
     return {

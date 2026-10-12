@@ -1,0 +1,8 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/x/time",
+}

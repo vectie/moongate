@@ -76,7 +76,7 @@ pub fn FileServer::new(path : StringView) -> FileServer {
       w.write(content)
     }
   }
-  { path: path.to_owned(), middleware, handler: middleware(not_found) }
+  { path: path.to_owned(), middleware, handler: middleware(not_found), }
 }
 
 ///|

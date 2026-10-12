@@ -578,7 +578,7 @@ fn moon_token_credentials(
   status~ : CredentialStatus,
   message? : String? = None,
 ) -> MoonTokenCredentials {
-  { token, refresh_token, account_id, status, message }
+  { token, refresh_token, account_id, status, message, }
 }
 
 ///|
@@ -736,7 +736,7 @@ fn moon_gemini_oauth_client() -> MoonGeminiOAuthClient? {
     is Some(client_secret) else {
     return None
   }
-  Some({ client_id, client_secret })
+  Some({ client_id, client_secret, })
 }
 
 ///|
@@ -772,12 +772,12 @@ async fn moon_fetch_json_get(
 ) -> Result[Json, MoonQuotaFetchError] {
   let target = match models_url_target(url) {
     Ok(target) => target
-    Err(err) => return Err({ status: Valid, message: err })
+    Err(err) => return Err({ status: Valid, message: err, })
   }
   let client = @http.Client::Client(target.origin, headers~)
   defer client.close()
   let response = client.get(target.path) catch {
-    err => return Err({ status: Valid, message: "Network error: \{err}" })
+    err => return Err({ status: Valid, message: "Network error: \{err}", })
   }
   moon_read_quota_json_response(client, response.code, expired_message)
 }
@@ -792,7 +792,7 @@ async fn moon_fetch_json_post(
 ) -> Result[Json, MoonQuotaFetchError] {
   let target = match models_url_target(url) {
     Ok(target) => target
-    Err(err) => return Err({ status: Valid, message: err })
+    Err(err) => return Err({ status: Valid, message: err, })
   }
   let client = @http.Client::Client(target.origin, headers~)
   defer client.close()
@@ -802,7 +802,7 @@ async fn moon_fetch_json_post(
         Some(label) => "Network error (\{label})"
         None => "Network error"
       }
-      return Err({ status: Valid, message: "\{prefix}: \{err}" })
+      return Err({ status: Valid, message: "\{prefix}: \{err}", })
     }
   }
   moon_read_quota_json_response(
@@ -822,7 +822,10 @@ async fn moon_read_quota_json_response(
 ) -> Result[Json, MoonQuotaFetchError] {
   let body = client.read_all().text()
   if code == 401 || code == 403 {
-    return Err({ status: Expired, message: "\{expired_message} (HTTP \{code})" })
+    return Err({
+      status: Expired,
+      message: "\{expired_message} (HTTP \{code})",
+    })
   }
   if !(code is (200..=299)) {
     let prefix = match network_label {
@@ -830,11 +833,11 @@ async fn moon_read_quota_json_response(
       Some("retrieveUserQuota") => "retrieveUserQuota failed"
       _ => "API error"
     }
-    return Err({ status: Valid, message: "\{prefix} (HTTP \{code}): \{body}" })
+    return Err({ status: Valid, message: "\{prefix} (HTTP \{code}): \{body}", })
   }
   try @json.parse(body) catch {
     err =>
-      Err({ status: Valid, message: "Failed to parse API response: \{err}" })
+      Err({ status: Valid, message: "Failed to parse API response: \{err}", })
   } noraise {
     json => Ok(json)
   }

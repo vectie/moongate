@@ -97,8 +97,12 @@ test "gateway security keeps inference public and protects control plane" {
   assert_false(
     moongate_route_requires_control(Post, "/openclaw/v1/chat/completions"),
   )
+  assert_false(
+    moongate_route_requires_control(Post, "/paiwork/v1/chat/completions"),
+  )
   assert_false(moongate_route_requires_control(Post, "/openclaw/v1/responses"))
   assert_false(moongate_route_requires_control(Get, "/openclaw/v1/models"))
+  assert_false(moongate_route_requires_control(Get, "/paiwork/v1/models"))
   assert_false(
     moongate_route_requires_control(Post, "/claude-desktop/v1/messages"),
   )
@@ -217,7 +221,7 @@ test "gateway security supports strict IPv6 loopback authority" {
 test "gateway security keeps adversarial public-route mutations protected" {
   let public_inference = [
     "/v1/messages", "/v1/chat/completions", "/v1/responses", "/v1/responses/compact",
-    "/openclaw/v1/chat/completions",
+    "/openclaw/v1/chat/completions", "/paiwork/v1/chat/completions",
   ]
   let suffixes = ["/", "/..", ".json", "%00", "#fragment"]
   for path in public_inference {

@@ -50,7 +50,7 @@ fn prepare_upstream_request(
         anthropic_beta is Some(_),
         client_session_id=session_id,
       )
-    None => { body: filtered, headers: {} }
+    None => { body: filtered, headers: {}, }
   }
   let optimized = apply_moon_optimizer_for_provider(
     copilot_optimization.body,
@@ -114,18 +114,18 @@ fn replace_images_for_text_only_model(
   body : Json,
   provider? : ProviderRouteTarget? = None,
 ) -> MediaReplacementResult {
-  guard body is Object(obj) else { return { body, count: 0 } }
+  guard body is Object(obj) else { return { body, count: 0, } }
   let model = json_string_from_map(obj, "model").unwrap_or("")
   match explicit_model_image_support(provider, model) {
-    Some(true) => return { body: Json::object(obj), count: 0 }
+    Some(true) => return { body: Json::object(obj), count: 0, }
     Some(false) => return replace_image_blocks_with_marker(Json::object(obj))
     None => ()
   }
   if !rectifier_media_heuristic_enabled(provider) {
-    return { body: Json::object(obj), count: 0 }
+    return { body: Json::object(obj), count: 0, }
   }
   if !known_text_only_model(model) {
-    return { body: Json::object(obj), count: 0 }
+    return { body: Json::object(obj), count: 0, }
   }
   replace_image_blocks_with_marker(Json::object(obj))
 }
@@ -440,7 +440,7 @@ fn extract_upstream_error_text(body : String) -> String {
 
 ///|
 fn replace_image_blocks_with_marker(body : Json) -> MediaReplacementResult {
-  guard body is Object(obj) else { return { body, count: 0 } }
+  guard body is Object(obj) else { return { body, count: 0, } }
   let mut count = 0
   match obj.get("messages") {
     Some(Array(messages)) => {
@@ -472,7 +472,7 @@ fn replace_image_blocks_with_marker(body : Json) -> MediaReplacementResult {
     }
     None => ()
   }
-  { body: Json::object(obj), count }
+  { body: Json::object(obj), count, }
 }
 
 ///|
@@ -480,7 +480,7 @@ fn replace_images_in_content(
   content : Json,
   text_type : String,
 ) -> MediaReplacementResult {
-  guard content is Array(blocks) else { return { body: content, count: 0 } }
+  guard content is Array(blocks) else { return { body: content, count: 0, } }
   let replaced_blocks : Array[Json] = []
   let mut count = 0
   for block in blocks {
@@ -503,7 +503,7 @@ fn replace_images_in_content(
       _ => replaced_blocks.push(block)
     }
   }
-  { body: Json::array(replaced_blocks), count }
+  { body: Json::array(replaced_blocks), count, }
 }
 
 ///|
@@ -517,10 +517,10 @@ fn replace_images_in_responses_input(input : Json) -> MediaReplacementResult {
         count += result.count
         replaced_items.push(result.body)
       }
-      { body: Json::array(replaced_items), count }
+      { body: Json::array(replaced_items), count, }
     }
     Object(_) => replace_images_in_responses_input_item(input)
-    _ => { body: input, count: 0 }
+    _ => { body: input, count: 0, }
   }
 }
 
@@ -528,12 +528,12 @@ fn replace_images_in_responses_input(input : Json) -> MediaReplacementResult {
 fn replace_images_in_responses_input_item(
   item : Json,
 ) -> MediaReplacementResult {
-  guard item is Object(item_obj) else { return { body: item, count: 0 } }
+  guard item is Object(item_obj) else { return { body: item, count: 0, } }
   let mut count = 0
   if json_string_from_map(item_obj, "type") == Some("input_image") {
     let marker = image_marker_block(Json::object(item_obj), "input_text")
     guard marker is Object(marker_obj) else {
-      return { body: marker, count: 1 }
+      return { body: marker, count: 1, }
     }
     count += 1
     match marker_obj.get("content") {
@@ -544,7 +544,7 @@ fn replace_images_in_responses_input_item(
       }
       None => ()
     }
-    return { body: Json::object(marker_obj), count }
+    return { body: Json::object(marker_obj), count, }
   }
   match item_obj.get("content") {
     Some(content) => {
@@ -554,7 +554,7 @@ fn replace_images_in_responses_input_item(
     }
     None => ()
   }
-  { body: Json::object(item_obj), count }
+  { body: Json::object(item_obj), count, }
 }
 
 ///|

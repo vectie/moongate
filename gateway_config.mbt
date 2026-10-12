@@ -1364,42 +1364,42 @@ fn stream_check_config_from_request(
     return None
   }
   match stream_check_int_request(path, obj, "timeoutSecs") {
-    Some(value) if value > 0 => config = { ..config, timeout_secs: value }
+    Some(value) if value > 0 => config = { ..config, timeout_secs: value, }
     Some(_) => return None
     None => ()
   }
   match stream_check_int_request(path, obj, "maxRetries") {
-    Some(value) if value >= 0 => config = { ..config, max_retries: value }
+    Some(value) if value >= 0 => config = { ..config, max_retries: value, }
     Some(_) => return None
     None => ()
   }
   match stream_check_int_request(path, obj, "degradedThresholdMs") {
     Some(value) if value > 0 =>
-      config = { ..config, degraded_threshold_ms: value }
+      config = { ..config, degraded_threshold_ms: value, }
     Some(_) => return None
     None => ()
   }
   match stream_check_string_request(path, obj, "claudeModel") {
     Some(value) if !value.trim().is_empty() =>
-      config = { ..config, claude_model: value.trim().to_owned() }
+      config = { ..config, claude_model: value.trim().to_owned(), }
     Some(_) => return None
     None => ()
   }
   match stream_check_string_request(path, obj, "codexModel") {
     Some(value) if !value.trim().is_empty() =>
-      config = { ..config, codex_model: value.trim().to_owned() }
+      config = { ..config, codex_model: value.trim().to_owned(), }
     Some(_) => return None
     None => ()
   }
   match stream_check_string_request(path, obj, "geminiModel") {
     Some(value) if !value.trim().is_empty() =>
-      config = { ..config, gemini_model: value.trim().to_owned() }
+      config = { ..config, gemini_model: value.trim().to_owned(), }
     Some(_) => return None
     None => ()
   }
   match stream_check_string_request(path, obj, "testPrompt") {
     Some(value) if !value.trim().is_empty() =>
-      config = { ..config, test_prompt: value.trim().to_owned() }
+      config = { ..config, test_prompt: value.trim().to_owned(), }
     Some(_) => return None
     None => ()
   }

@@ -1,0 +1,4 @@
+curl 'https://example.invalid/v1/chat/completions' \
+  -H 'Authorization: Bearer synthetic-do-not-copy' \
+  -H 'X-Trace: import-demo' \
+  --json '{"model":"example-small","messages":[{"role":"user","content":"Hello"}]}'

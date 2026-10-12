@@ -7,7 +7,7 @@ priv struct AuthService {
 
 ///|
 fn AuthService::new() -> AuthService {
-  { credentials: None, auth_device_user_codes: Map([], capacity=8) }
+  { credentials: None, auth_device_user_codes: Map([], capacity=8), }
 }
 
 ///|
@@ -80,7 +80,7 @@ priv struct ControlPlaneAuth {
 
 ///|
 fn ControlPlaneAuth::new() -> ControlPlaneAuth {
-  { token: None }
+  { token: None, }
 }
 
 ///|
@@ -134,7 +134,7 @@ priv struct SessionService {
 
 ///|
 fn SessionService::new() -> SessionService {
-  { codex_chat_history: CodexChatHistoryStore::new() }
+  { codex_chat_history: CodexChatHistoryStore::new(), }
 }
 
 ///|
@@ -145,7 +145,7 @@ priv struct WorkspaceService {
 
 ///|
 fn WorkspaceService::new() -> WorkspaceService {
-  { _unit: () }
+  { _unit: (), }
 }
 
 ///|
@@ -156,7 +156,7 @@ priv struct RuntimeService {
 
 ///|
 fn RuntimeService::new() -> RuntimeService {
-  { last_external_url: None }
+  { last_external_url: None, }
 }
 
 ///|
@@ -167,7 +167,7 @@ priv struct SkillService {
 
 ///|
 fn SkillService::new() -> SkillService {
-  { _unit: () }
+  { _unit: (), }
 }
 
 ///|

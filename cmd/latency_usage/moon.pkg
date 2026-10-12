@@ -1,0 +1,9 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/async",
+  "vectie/moongate/usage_latency_cli",
+  "vectie/moonlib/os",
+}
+
+pkgtype(kind: "executable")

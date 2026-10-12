@@ -1,0 +1,4 @@
+{"type":"user","timestamp":"2026-10-08T10:00:00Z","message":{"role":"user","content":"Can you read the notes?"}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Read"}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","content":"Notes: keep source logs and portable copies."}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Keep the source log, then download a portable copy from Transcript Reader."}]}}

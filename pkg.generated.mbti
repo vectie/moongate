@@ -130,6 +130,8 @@ pub fn moongate_capability_resolution_json(Json, String, String, requested_autho
 
 pub fn moongate_framework_apps_json() -> Json
 
+pub fn moongate_har_collection_json(String, request_method? : String, url_contains? : String) -> Result[Json, String]
+
 pub fn moongate_lepusa_manifest(port? : Int) -> String
 
 pub fn moongate_lepusa_manifest_json(port? : Int) -> Json
@@ -139,6 +141,14 @@ pub fn moongate_models_from_json(Json) -> Result[Array[MoonGateModel], String]
 pub fn moongate_moonclaw_providers_file_json(host? : String, port? : Int, model? : String) -> Json
 
 pub fn moongate_moonflow_adapter_capability_json() -> Json
+
+pub fn moongate_openapi_collection_json(String, tag? : String, operation? : String) -> Result[Json, String]
+
+pub fn moongate_postman_collection_json(String, folder? : String, request_method? : String) -> Result[Json, String]
+
+pub fn moongate_preview_transcript_json(String, format? : String, source_name? : String) -> Result[Json, String]
+
+pub fn moongate_preview_usage_file_json(String, source_name? : String, app? : String, provider? : String, model? : String, start_day? : String, end_day? : String) -> Result[Json, String]
 
 pub fn moongate_product_home_for_workspace_root(String) -> String
 

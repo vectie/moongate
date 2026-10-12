@@ -26,7 +26,7 @@ pub fn Router::middleware(self : Router) -> Middleware {
 
 ///|
 fn Route::new(handle : Handler) -> Route {
-  { handle, names: [] }
+  { handle, names: [], }
 }
 
 ///|
@@ -196,7 +196,7 @@ pub fn Router::new() -> Router {
       }
     }
   }
-  { layer, allow, handler: middleware(not_found), middleware }
+  { layer, allow, handler: middleware(not_found), middleware, }
 }
 
 ///|

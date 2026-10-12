@@ -115,7 +115,7 @@ fn normalize_trend_range(start_ts : Int?, end_ts : Int?) -> TrendRange {
   if start_ts >= end_ts {
     start_ts = end_ts - TREND_DAY_SECONDS
   }
-  { start_ts, end_ts, duration: end_ts - start_ts }
+  { start_ts, end_ts, duration: end_ts - start_ts, }
 }
 
 ///|

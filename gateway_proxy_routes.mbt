@@ -10,7 +10,10 @@ fn ProxyService::register_inference_routes(
   logger : @pino.Logger,
 ) -> Unit {
   let media = match @env.get_env_var("MOONGATE_LUNANEXA_MEDIA_ORIGIN") {
-    Some(origin) => try Some(@media_gateway.MediaGateway::new(origin)) catch { _ => None }
+    Some(origin) =>
+      Some(@media_gateway.MediaGateway::new(origin)) catch {
+        _ => None
+      }
     None => None
   }
   for verb in [@httpx.Method::Post, Get, Delete] {
@@ -51,6 +54,17 @@ fn ProxyService::register_inference_routes(
       app_type="openclaw",
     )
   })
+  router.add_handler(Post, "/paiwork/v1/chat/completions", (r, w) => {
+    self.handle_chat_completions(
+      auth,
+      usage,
+      session,
+      model,
+      r,
+      w,
+      app_type="paiwork",
+    )
+  })
   router.add_handler(Post, "/openclaw/v1/responses", (r, w) => {
     self.handle_codex_responses(
       auth,
@@ -71,6 +85,9 @@ fn ProxyService::register_inference_routes(
   router.add_handler(Get, "/v1/models", (_, w) => self.handle_models(w, model))
   router.add_handler(Get, "/openclaw/v1/models", (_, w) => {
     self.handle_models_for_app(w, "openclaw", model)
+  })
+  router.add_handler(Get, "/paiwork/v1/models", (_, w) => {
+    self.handle_models_for_app(w, "paiwork", model)
   })
   router.add_handler(Get, "/claude-desktop/v1/models", (r, w) => {
     self.handle_claude_desktop_models(auth, usage, r, w)
@@ -211,6 +228,9 @@ fn ProxyService::register_management_routes(
   })
   router.add_handler(Get, "/providers", (r, w) => {
     self.handle_get_providers(r, w)
+  })
+  router.add_handler(Get, "/providers/models", (r, w) => {
+    self.handle_saved_provider_models(r, w)
   })
   router.add_handler(Get, "/providers/current", (r, w) => {
     self.handle_get_current_provider(r, w)

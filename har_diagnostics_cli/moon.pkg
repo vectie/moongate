@@ -1,0 +1,10 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/async/stdio",
+  "vectie/moongate/har_diagnostics",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+  "moonbitlang/core/string",
+}

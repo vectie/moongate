@@ -253,7 +253,7 @@ fn moon_delete_session_request_from_json(
   guard json_string_from_map(obj, "sourcePath") is Some(source_path) else {
     return None
   }
-  Some({ provider_id, session_id, source_path })
+  Some({ provider_id, session_id, source_path, })
 }
 
 ///|
@@ -363,7 +363,7 @@ fn moon_session_terminal_app_launch(
     "    do script \"\{escaped}\"",
     "end tell",
   ].join("\n")
-  { program: "osascript", args: ["-e", script] }
+  { program: "osascript", args: ["-e", script], }
 }
 
 ///|
@@ -382,7 +382,7 @@ fn moon_session_iterm_launch(
     "    end tell",
     "end tell",
   ].join("\n")
-  { program: "osascript", args: ["-e", script] }
+  { program: "osascript", args: ["-e", script], }
 }
 
 ///|
@@ -403,7 +403,7 @@ fn moon_session_ghostty_launch(
   args.push("-l")
   args.push("-c")
   args.push(command)
-  { program: "open", args }
+  { program: "open", args, }
 }
 
 ///|
@@ -444,7 +444,7 @@ fn moon_session_wezterm_like_launch(
   args.push(moon_session_shell())
   args.push("-c")
   args.push(moon_session_shell_command(command, None))
-  { program: "open", args }
+  { program: "open", args, }
 }
 
 ///|
@@ -464,7 +464,7 @@ fn moon_session_alacritty_launch(
   args.push(moon_session_shell())
   args.push("-c")
   args.push(moon_session_shell_command(command, None))
-  { program: "open", args }
+  { program: "open", args, }
 }
 
 ///|
@@ -483,7 +483,7 @@ fn moon_session_custom_launch(
   let final_command = template
     .replace_all(old="{command}", new=command)
     .replace_all(old="{cwd}", new=dir)
-  Ok({ program: "sh", args: ["-c", final_command] })
+  Ok({ program: "sh", args: ["-c", final_command], })
 }
 
 ///|
@@ -1673,7 +1673,7 @@ fn moon_parse_opencode_sqlite_source(
   if db_path.is_empty() || session_id.is_empty() {
     None
   } else {
-    Some({ db_path, session_id })
+    Some({ db_path, session_id, })
   }
 }
 
@@ -1688,7 +1688,7 @@ fn moon_parse_hermes_sqlite_source(source : String) -> MoonSqliteSessionSource? 
   if db_path.is_empty() || session_id.is_empty() {
     None
   } else {
-    Some({ db_path, session_id })
+    Some({ db_path, session_id, })
   }
 }
 

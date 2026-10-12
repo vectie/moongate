@@ -61,6 +61,8 @@ Use Providers to add, edit, test, delete, or pause an upstream provider account.
 
 The table shows credential state, availability, and last known health. **Test Provider** performs a live network request and reports the HTTP status, model, and latency; a locally valid form is not reported as a successful provider test.
 
+After saving an OpenAI-compatible or Anthropic API-key provider, use **Refresh models** to fetch its model IDs with the key already held by MoonGate. Choose an ID to fill **Default Model**, then use **Save Provider** to retain it. Save changed connection settings before discovery. OAuth-managed and Gemini Native providers retain manual model entry. Empty, unsupported, and unavailable catalogs leave the model unchanged and can be retried. Catalog discovery does not test inference, certify availability, change the active provider, or bind an app; **Test Provider** and **App Bindings** remain separate actions.
+
 The built-in template picker includes ready forms for DeepSeek, OpenRouter, Fireworks AI, SiliconFlow, Qwen Token Plan, Qwen Pay-As-You-Go, Google Gemini, Anthropic, OpenAI, Z.AI/GLM, and Moonshot/Kimi. OpenRouter includes the general `openrouter/free` router plus explicit free templates for Ling 3.0 Flash, Nemotron 3 Ultra, and Laguna M.1. MoonDesk is listed first, followed by MoonClaw, MoonBook, and MoonTown, then external clients. Each template selects the correct upstream protocol, endpoint, and default model for its route.
 
 OpenRouter still requires an OpenRouter API key for free models. “Free” means the selected model reports zero token prices; it does not mean anonymous requests are accepted. Free model availability can change, so use **Refresh Built-ins** after upgrading MoonGate and run **Test Provider** before saving.
@@ -72,6 +74,17 @@ Templates fill non-secret configuration fields. API keys stay separate and are s
 ### Requests
 
 Use Requests to inspect individual AI calls. A request may show the provider, model, HTTP result, input and output token counts, reused-input counts, latency, and estimated cost.
+
+In **Selected request observations**, keep details and notes, save/reopen an
+investigation, or choose another review and **Merge saved review into collection**.
+Inspect the merge preview and confirm a common request-ID namespace first;
+conflicts block replacement. See the [request investigation guide](RETAINED_REQUEST_EXPLORER.md#combine-saved-investigations-without-replacing-current-work).
+
+For a focused handoff, search kept metadata or notes, check **Include in subset**
+on the relevant requests, and use **Save subset review JSON**. Hidden checked
+requests remain included and are listed in the preview; your full investigation
+stays intact. The global summary is excluded unless you opt in. See
+[focused subsets](RETAINED_REQUEST_EXPLORER.md#find-observations-and-save-a-focused-subset).
 
 **Copy Developer JSON URL** copies a machine-readable data address for debugging. It does not navigate away from MoonGate.
 

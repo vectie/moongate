@@ -1,0 +1,8 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/async/stdio",
+  "vectie/moongate/usage_preview",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+}

@@ -362,12 +362,12 @@ async fn check_proxy_running(args : Array[String]) -> Unit {
 ///|
 fn proxy_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "update_global_proxy_config", patterns: ["proxy global-config set"] },
-    { id: "get_global_proxy_config", patterns: ["proxy global-config"] },
-    { id: "set_global_proxy_url", patterns: ["proxy global-url set"] },
-    { id: "get_global_proxy_url", patterns: ["proxy global-url"] },
-    { id: "update_proxy_config_for_app", patterns: ["proxy app-config set"] },
-    { id: "get_proxy_config_for_app", patterns: ["proxy app-config"] },
+    { id: "update_global_proxy_config", patterns: ["proxy global-config set"], },
+    { id: "get_global_proxy_config", patterns: ["proxy global-config"], },
+    { id: "set_global_proxy_url", patterns: ["proxy global-url set"], },
+    { id: "get_global_proxy_url", patterns: ["proxy global-url"], },
+    { id: "update_proxy_config_for_app", patterns: ["proxy app-config set"], },
+    { id: "get_proxy_config_for_app", patterns: ["proxy app-config"], },
     {
       id: "set_default_cost_multiplier",
       patterns: ["proxy default-cost-multiplier set"],
@@ -380,7 +380,10 @@ fn proxy_cli_commands() -> Array[CliCommandSpec] {
       id: "set_pricing_model_source",
       patterns: ["proxy pricing-model-source set"],
     },
-    { id: "get_pricing_model_source", patterns: ["proxy pricing-model-source"] },
+    {
+      id: "get_pricing_model_source",
+      patterns: ["proxy pricing-model-source"],
+    },
     {
       id: "update_circuit_breaker_config",
       patterns: ["proxy circuit-breaker-config set"],
@@ -389,12 +392,12 @@ fn proxy_cli_commands() -> Array[CliCommandSpec] {
       id: "get_circuit_breaker_config",
       patterns: ["proxy circuit-breaker-config"],
     },
-    { id: "add_to_failover_queue", patterns: ["proxy failover-queue add"] },
+    { id: "add_to_failover_queue", patterns: ["proxy failover-queue add"], },
     {
       id: "remove_from_failover_queue",
       patterns: ["proxy failover-queue remove"],
     },
-    { id: "get_failover_queue", patterns: ["proxy failover-queue"] },
+    { id: "get_failover_queue", patterns: ["proxy failover-queue"], },
     {
       id: "set_auto_failover_enabled",
       patterns: ["proxy auto-failover-enabled set"],
@@ -407,27 +410,27 @@ fn proxy_cli_commands() -> Array[CliCommandSpec] {
       id: "set_proxy_takeover_for_app",
       patterns: ["proxy takeover-status set"],
     },
-    { id: "get_proxy_takeover_status", patterns: ["proxy takeover-status"] },
-    { id: "get_proxy_status", patterns: ["proxy status"] },
-    { id: "start_proxy_server", patterns: ["proxy start"] },
-    { id: "stop_proxy_server", patterns: ["proxy stop"] },
-    { id: "stop_proxy_with_restore", patterns: ["proxy stop-with-restore"] },
-    { id: "test_proxy_url", patterns: ["proxy test-url"] },
-    { id: "get_upstream_proxy_status", patterns: ["proxy upstream-status"] },
-    { id: "scan_local_proxies", patterns: ["proxy scan-local"] },
-    { id: "get_provider_health", patterns: ["proxy provider-health"] },
+    { id: "get_proxy_takeover_status", patterns: ["proxy takeover-status"], },
+    { id: "get_proxy_status", patterns: ["proxy status"], },
+    { id: "start_proxy_server", patterns: ["proxy start"], },
+    { id: "stop_proxy_server", patterns: ["proxy stop"], },
+    { id: "stop_proxy_with_restore", patterns: ["proxy stop-with-restore"], },
+    { id: "test_proxy_url", patterns: ["proxy test-url"], },
+    { id: "get_upstream_proxy_status", patterns: ["proxy upstream-status"], },
+    { id: "scan_local_proxies", patterns: ["proxy scan-local"], },
+    { id: "get_provider_health", patterns: ["proxy provider-health"], },
     {
       id: "get_circuit_breaker_stats",
       patterns: ["proxy circuit-breaker-stats"],
     },
-    { id: "reset_circuit_breaker", patterns: ["proxy reset-circuit-breaker"] },
+    { id: "reset_circuit_breaker", patterns: ["proxy reset-circuit-breaker"], },
     {
       id: "get_available_providers_for_failover",
       patterns: ["proxy available-failover-providers"],
     },
-    { id: "is_live_takeover_active", patterns: ["proxy live-takeover-active"] },
-    { id: "switch_proxy_provider", patterns: ["proxy switch-provider"] },
-    { id: "get_proxy_running", patterns: ["proxy running"] },
+    { id: "is_live_takeover_active", patterns: ["proxy live-takeover-active"], },
+    { id: "switch_proxy_provider", patterns: ["proxy switch-provider"], },
+    { id: "get_proxy_running", patterns: ["proxy running"], },
   ]
 }
 

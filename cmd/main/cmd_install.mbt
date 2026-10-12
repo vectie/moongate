@@ -1,15 +1,15 @@
 ///|
 fn install_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "start", patterns: ["start"] },
-    { id: "install_reroute", patterns: ["hosts install"] },
-    { id: "uninstall_reroute", patterns: ["hosts uninstall"] },
-    { id: "install_claude_desktop", patterns: ["claude-desktop install"] },
-    { id: "uninstall_claude_desktop", patterns: ["claude-desktop uninstall"] },
-    { id: "status_claude_desktop", patterns: ["claude-desktop status"] },
-    { id: "install_codex", patterns: ["codex install"] },
-    { id: "uninstall_codex", patterns: ["codex uninstall"] },
-    { id: "status_codex", patterns: ["codex status"] },
+    { id: "start", patterns: ["start"], },
+    { id: "install_reroute", patterns: ["hosts install"], },
+    { id: "uninstall_reroute", patterns: ["hosts uninstall"], },
+    { id: "install_claude_desktop", patterns: ["claude-desktop install"], },
+    { id: "uninstall_claude_desktop", patterns: ["claude-desktop uninstall"], },
+    { id: "status_claude_desktop", patterns: ["claude-desktop status"], },
+    { id: "install_codex", patterns: ["codex install"], },
+    { id: "uninstall_codex", patterns: ["codex uninstall"], },
+    { id: "status_codex", patterns: ["codex status"], },
   ]
 }
 

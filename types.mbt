@@ -53,7 +53,7 @@ impl FromJson for AnthropicRequest with fn from_json(
     Some(false) => Some(false)
     _ => None
   }
-  { model, max_tokens, messages, system, tools, stream }
+  { model, max_tokens, messages, system, tools, stream, }
 }
 
 ///|
@@ -85,7 +85,7 @@ impl FromJson for AnthropicMessage with fn from_json(
     }
     _ => raise JsonDecodeError((path, "AnthropicMessage: missing 'content'"))
   }
-  { role, content }
+  { role, content, }
 }
 
 ///|
@@ -116,7 +116,7 @@ impl FromJson for AnthropicBlock with fn from_json(
     Some(String(s)) => Some(s)
     _ => None
   }
-  { type_, text }
+  { type_, text, }
 }
 
 ///|
@@ -146,7 +146,7 @@ impl FromJson for AnthropicTool with fn from_json(
     Some(schema) => schema
     _ => raise JsonDecodeError((path, "AnthropicTool: missing 'input_schema'"))
   }
-  { name, description, input_schema }
+  { name, description, input_schema, }
 }
 
 ///|

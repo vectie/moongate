@@ -261,16 +261,16 @@ fn rectify_thinking_budget(body : Json) -> BudgetRectifyResult {
   let copied = copy_json(body)
   let before = snapshot_thinking_budget(copied)
   if before.thinking_type == Some("adaptive") {
-    return { body: copied, applied: false, before, after: before }
+    return { body: copied, applied: false, before, after: before, }
   }
   guard copied is Object(obj) else {
-    return { body: copied, applied: false, before, after: before }
+    return { body: copied, applied: false, before, after: before, }
   }
   if !(obj.get("thinking") is Some(Object(_))) {
     obj["thinking"] = Json::object({})
   }
   guard obj.get("thinking") is Some(Object(thinking)) else {
-    return { body: Json::object(obj), applied: false, before, after: before }
+    return { body: Json::object(obj), applied: false, before, after: before, }
   }
   thinking["type"] = Json::string("enabled")
   thinking["budget_tokens"] = Json::number(MAX_THINKING_BUDGET.to_double())
@@ -281,7 +281,7 @@ fn rectify_thinking_budget(body : Json) -> BudgetRectifyResult {
   }
   let body = Json::object(obj)
   let after = snapshot_thinking_budget(body)
-  { body, applied: !budget_snapshot_equal(before, after), before, after }
+  { body, applied: !budget_snapshot_equal(before, after), before, after, }
 }
 
 ///|
@@ -302,7 +302,7 @@ fn snapshot_thinking_budget(body : Json) -> BudgetRectifySnapshot {
     Some(Object(thinking)) => json_int_from_map(thinking, "budget_tokens")
     _ => None
   }
-  { max_tokens, thinking_type, thinking_budget_tokens }
+  { max_tokens, thinking_type, thinking_budget_tokens, }
 }
 
 ///|

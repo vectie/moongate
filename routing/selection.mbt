@@ -1,6 +1,6 @@
 ///|
 pub fn empty_smooth_state() -> SmoothStateV1 {
-  { entries: [] }
+  { entries: [], }
 }
 
 ///|
@@ -137,12 +137,12 @@ fn smooth_select(
   }
   let settled = next_entries.map(fn(entry) {
     if entry.provider_id == selected_id {
-      { ..entry, current_weight: entry.current_weight - total_weight }
+      { ..entry, current_weight: entry.current_weight - total_weight, }
     } else {
       entry
     }
   })
-  (Some(selected_id), { entries: settled })
+  (Some(selected_id), { entries: settled, })
 }
 
 ///|

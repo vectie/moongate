@@ -84,7 +84,7 @@ fn UsageService::begin_request(
   self : UsageService,
   request_bytes : Int,
 ) -> UsageRequest {
-  { service: self, context: self.stats.begin_request(request_bytes) }
+  { service: self, context: self.stats.begin_request(request_bytes), }
 }
 
 ///|

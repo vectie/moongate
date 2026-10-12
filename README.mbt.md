@@ -19,6 +19,25 @@ suite. It is a standalone app and also fits beside:
 
 The proxy listens on `127.0.0.1:15721` by default.
 
+**Transcript Reader** opens exported Codex/Claude logs or role/content JSON
+without an AI provider. Find text, filter by speaker, and download the visible
+conversation as JSON or Markdown. See the [local transcript workflow](docs/TRANSCRIPT_READER.md)
+and `moongate sessions preview --file examples/transcripts/codex.jsonl`.
+
+**Retained request comparison** lets an operator keep a failed request and a
+successful reference across pages, then inspect metadata differences and guarded
+recorded-value deltas directly in Requests. **Save review JSON** and explicitly
+reopen it later to continue the investigation, including the chosen comparison.
+Reopened metadata is labeled as unverified file content, separate from live detail.
+**Merge saved review into collection** combines an earlier review with current
+observations and notes after namespace confirmation and conflict preview. See
+[combine investigations](docs/RETAINED_REQUEST_EXPLORER.md#combine-saved-investigations-without-replacing-current-work).
+For a focused handoff, search the kept metadata/notes, check exact requests, and
+**Save subset review JSON** without deleting the remaining investigation. Hidden
+selections stay included; the global summary is opt-in. See
+[focused subsets](docs/RETAINED_REQUEST_EXPLORER.md#find-observations-and-save-a-focused-subset).
+See the [request review workflow](docs/RETAINED_REQUEST_EXPLORER.md#compare-a-failed-request-with-a-reference).
+
 ## Current Phase
 
 MoonGate is currently in a feature-testing phase. The backend, suite discovery,
@@ -196,6 +215,55 @@ for runtime validation. Regenerate the preview contract with
 
 ## Feature Testing Focus
 
+### Retained-request cohort comparison
+
+Open **Operations → Cohort comparison**, choose the app, streaming mode, and
+24-hour, 7-day, 30-day, or all-retained interval, then **Capture snapshot**.
+Choose A and B by exact provider ID and explicitly recorded request model.
+Both selections use the same native snapshot; changing A/B does not fetch data.
+The report and its text export have identical allowlisted metadata.
+
+The authenticated, no-store `GET /operations/cohort-snapshot` endpoint accepts
+`appType`, `streaming` (`all`, `streaming`, `non-streaming`), `period`
+(`24h`, `7d`, `30d`, `all`), and an integer Unix-second `end`. Bounds are UTC
+`[end - interval, end)`, or all valid retained timestamps before `end`.
+**Retry same UTC bounds** preserves the failed query's interval; retained data
+may change between attempts. **Refresh with new upper bound** captures again.
+Editing filters or leaving Operations invalidates the previous report and export.
+
+This endpoint is a synchronous read-only projection. It never calls the usage
+log endpoint's repricing/backfill path, persists files, reads imported session
+files, invokes a provider, changes routing, or substitutes daily rollups for
+samples. Its independent limits are 500 retained rows and 262,144 UTF-8 response
+bytes. Exceeding either refuses the whole snapshot; there is no truncated report.
+The source retention limit can evict older requests, so this is not complete
+historical coverage. Missing explicit request models are unclassified, rather
+than inferred from a success/error-dependent stored response model.
+
+Status buckets count 2xx, 4xx, 5xx, and all other statuses. Successful timing
+samples additionally require no recorded error and positive elapsed latency.
+Percentiles use the existing native nearest-rank implementation. First-event
+samples use successful streaming requests, a valid elapsed time, and a recorded
+first accepted stream event between zero and elapsed time inclusive. Their
+coverage denominator is all successful streaming requests, with separate missing
+or invalid timing exclusions. Non-streaming rows never supply first-event samples.
+The response-model mix is shown separately for successful rows only; error rows
+can contain a request-model fallback, so they do not establish a response model.
+Successful stored model values can also fall back to the outbound/request model
+when the response omits its model; the mix is not proof of the actual model used.
+
+No samples means unavailable. Counts, UTC coverage, exclusions, and sample sizes
+are always shown; fewer than 20 timing samples triggers a descriptive small-sample
+warning. This is not a statistical sufficiency threshold. First accepted stream
+event timing is not guaranteed first-token timing, and duration duplicates elapsed
+latency. These records cannot establish proxy overhead, provider causality, an
+SLA, a ranking, savings, or a routing recommendation.
+
+Regression coverage: `operations_cohorts_wbtest.mbt` and
+`tests/moongate-cohorts.test.cjs`. The native test starts an authenticated loopback
+gateway, fetches the generated shell and exact served JavaScript, executes the
+comparison code against the real native endpoint, and checks report/export parity.
+
 Use the current codebase for end-to-end feature testing. The highest-value
 areas are:
 
@@ -284,9 +352,15 @@ is used only as a local development fallback.
 print JSON contracts for MoonClaw,
 MoonBook, MoonTown, MoonDesk, or any other local probe. They expose the
 gateway URLs, status file, capabilities, and command map needed by suite
-launchers. `suite write-status` and `POST /suite/status/write` write the same
-status contract to `.moonsuite/suite-status.json` by default, and `start`
-refreshes that file when the gateway boots. `GET /suite/moonclaw-providers`
+launchers. The `suite status` CLI reads the saved endpoint when available and
+probes its live `/health` route. It reports `stopped` and `ready: false` when
+that endpoint is unreachable, even if an old status file says `running`. Pass
+`--host` and `--port` to probe a different instance. The file is a startup
+snapshot and can outlive a crashed process, so consumers must probe the
+published health or models URL before treating it as ready. `suite write-status`
+and `POST /suite/status/write` write the status contract to
+`.moonsuite/suite-status.json` by default, and `start` refreshes that file when
+the gateway boots. `GET /suite/moonclaw-providers`
 and `POST /suite/moonclaw-providers/write` expose the MoonClaw providers file
 contract over HTTP.
 
@@ -641,6 +715,14 @@ HTTP status and latency fields.
 `/providers/import-live` expose suite-facing provider views against MoonGate's
 standalone provider router state. The standalone OpenClaw health scan returns an
 empty warning list because MoonGate does not own OpenClaw's live config file.
+PaiWork has an isolated OpenAI-compatible route at
+`http://127.0.0.1:15721/paiwork/v1` (or the configured MoonGate port).
+Create a provider with `appType: "paiwork"`, a `baseUrl`, `apiKey`,
+`apiFormat: "openai_chat"`, and a `modelMapping.defaultModel` using the
+authenticated `POST /providers` management route. The credential is stored in
+MoonGate's mode-0600 provider store; reads omit it. `GET /paiwork/v1/models`
+advertises the current mapped model, and `POST /paiwork/v1/chat/completions`
+uses the isolated provider. PaiWork only needs the local base URL and model ID.
 The OpenClaw default-model/catalog/agents/env/tools routes and Hermes
 model/memory/dashboard routes keep their JSON state in MoonGate, returning
 `null` or defaults before a standalone caller sets them. Config-folder,
@@ -781,3 +863,60 @@ URL, primary route, and setup command when MoonGate owns one.
 MoonBook remains the durable output owner, MoonTown owns scheduling and standing
 goals, MoonClaw owns execution, and MoonDesk owns the local operator UI.
 MoonGate owns local traffic rerouting and usage/statistics accounting.
+
+## Import a copied curl request
+
+`moongate provider curl --file examples/curl/chat.curl` converts a literal curl
+command into an editable `.http` request without executing it. It preserves a
+single URL, method, repeated headers and literal body, and replaces recognizable
+credential headers with edit placeholders. The lightweight `cmd/import_curl`
+companion uses the same importer. See [curl import support and limits](docs/CURL_IMPORT.md).
+
+## OpenAPI request collections
+
+For provider API integration, `moongate provider openapi --file examples/openapi/model-api.json --operation createChat --http` explores an OpenAPI 3 JSON export and creates an editable offline request collection. Filter by tag or operation, inspect local-reference examples and prepare `.http` requests without contacting a provider. See [OpenAPI collection workflow and limits](docs/OPENAPI_COLLECTION.md).
+
+## Usage File Explorer
+
+Import locally saved OpenAI Batch result/error JSONL with `moongate usage import-batch --file results.jsonl --errors errors.jsonl`. Add `--requests input.jsonl` to join the supplied request manifest by exact `custom_id`, exposing missing and unexpected results without copying prompts. Reopen the normalized usage JSON in Usage File Explorer; missing telemetry and failed results remain visible, costs stay unknown, and response bodies are omitted. See [Batch usage import](docs/batch-usage-import.md).
+
+Compare two exported snapshots offline with `moongate usage compare --before before.csv --after after.json --report`. Review observed token/request differences and added/removed models, apps and providers, with explicit unknown-cost and partial-source caveats. See [usage comparison](docs/usage-comparison.md) for independent UTC windows and JSON output.
+
+Use **Usage → Usage File Explorer** to open JSON/JSONL request exports, filter by app/provider/model/UTC day, inspect known and unknown costs, and download filtered JSON or a readable report. Imported rows are temporary and never change live usage. The offline CLI is `moongate usage preview --file examples/usage/requests.json [--app codex] [--report]`. See [formats, examples and limits](docs/usage-file-explorer.md).
+
+### Merge overlapping usage exports offline
+
+`moongate usage merge --scope NAME --file FILE --file FILE [--report]` combines
+local request exports without double-counting identical IDs in one declared
+namespace. Conflicting telemetry is refused; incomplete coverage and unknown
+costs remain visible. See [usage merge](docs/usage-merge.md).
+
+## Hypothetical offline usage pricing
+
+`moongate usage price --file FILE --rates RATE_CARD.json [--report]` applies an
+explicit user-supplied USD rate card to local CSV/JSON/JSONL usage. It preserves
+unknown costs and original normalized estimates, and produces an export that
+reopens in the Usage File Explorer. No prices are fetched and no accounting is
+changed. See [usage pricing](docs/usage-pricing.md) for the complete workflow,
+example rate card and calculation limits.
+
+## Offline HAR request diagnostics
+
+Use `moongate requests har --file capture.har` to inspect a saved HAR 1.2 capture's
+HTTP outcomes and timing phases without model/token telemetry or a running gateway.
+Filter errors or a captured origin, then use `--entry N --report` to inspect the
+original request number. No capture is replayed. See the complete synthetic
+[request investigation journey](docs/har-diagnostics.md).
+
+Compare two saved captures with `moongate requests compare-har --baseline before.har --candidate after.har`.
+Review per-origin/method HTTP outcomes and recorded latency differences, including
+unknown timings and unmatched groups. See [HAR comparison](docs/har-comparison.md).
+
+Saved Anthropic Message Batches results are supported with `import_batch_usage --format anthropic --file results.jsonl` (shared by `moongate usage import-batch`). It includes cache-read/cache-write token categories, per-result outcomes and explicit missing-component coverage, and reopens in Usage File Explorer. See [Anthropic Batch usage review](docs/anthropic-batch-usage.md) for the qualified executable, input subset and unknown-value behavior.
+
+## Offline Ollama capture review
+
+`moongate usage import-ollama --file capture.ndjson` reviews one saved Ollama
+generate/chat response per file and exports complete terminal usage for the
+Usage File Explorer. It preserves interruption/error states and nanosecond
+timing evidence without contacting Ollama. See [the capture workflow](docs/ollama-capture-import.md).

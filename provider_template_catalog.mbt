@@ -59,7 +59,7 @@ fn moon_provider_template_targets() -> Array[ProviderTemplateTarget] {
       provider_app_type: "claude-desktop",
       priority: 100,
     },
-    { id: "codex", label: "Codex", provider_app_type: "codex", priority: 100 },
+    { id: "codex", label: "Codex", provider_app_type: "codex", priority: 100, },
     {
       id: "gemini",
       label: "Gemini",

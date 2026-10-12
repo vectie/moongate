@@ -73,7 +73,7 @@ fn TrafficStats::operations_monitor_snapshot(
     ] {
     let count = terminal_outcome_count_map.get(outcome.id()).unwrap_or(0)
     if count > 0 {
-      terminal_outcome_counts.push({ outcome, count })
+      terminal_outcome_counts.push({ outcome, count, })
     }
   }
   @telemetry.monitor_snapshot(

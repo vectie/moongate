@@ -8,7 +8,7 @@ priv struct LegacyStateMigration {
 
 ///|
 fn legacy_state_migration() -> LegacyStateMigration {
-  { copied: 0, identical: 0, conflicts: [], errors: [] }
+  { copied: 0, identical: 0, conflicts: [], errors: [], }
 }
 
 ///|

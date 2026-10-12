@@ -32,7 +32,7 @@ test "live benchmark control path fails closed without authority or adapter" {
   assert_eq(denied.status, Denied)
   assert_false(denied.network_request_performed)
   let unavailable = fail_closed_live_result(
-    { ..request, authority_decision_id: Some("authority-1") },
+    { ..request, authority_decision_id: Some("authority-1"), },
     1000L,
   )
   assert_eq(unavailable.status, Unavailable)

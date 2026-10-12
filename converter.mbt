@@ -138,7 +138,7 @@ fn convert_anthropic_to_codex(
       )
     _ => None
   }
-  { messages, tools }
+  { messages, tools, }
 }
 
 ///|
@@ -180,7 +180,7 @@ fn extract_tool_calls(content : AnthropicContent) -> Array[ToolCall] {
             Some(n) => n
             None => continue
           }
-          result.push({ name, arguments: "{}" })
+          result.push({ name, arguments: "{}", })
         }
       }
     _ => ()
@@ -199,7 +199,7 @@ fn parse_tool_result(content : String) -> ToolResult {
       }
     _ => "unknown"
   }
-  { tool_use_id, content }
+  { tool_use_id, content, }
 }
 
 ///|
@@ -295,6 +295,6 @@ priv struct ToolCallInfo {
 
 ///|
 fn init {
-  let tool_call : ToolCallInfo = { id: "id", name: "name", arguments: "{}" }
+  let tool_call : ToolCallInfo = { id: "id", name: "name", arguments: "{}", }
   ignore(tool_call)
 }

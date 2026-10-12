@@ -5,7 +5,7 @@ priv struct FilePathFuzzer {
 
 ///|
 fn FilePathFuzzer::new(seed : Int64) -> FilePathFuzzer {
-  { state: seed }
+  { state: seed, }
 }
 
 ///|

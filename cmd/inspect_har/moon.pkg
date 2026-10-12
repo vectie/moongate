@@ -1,0 +1,11 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/async/stdio",
+  "moonbitlang/async/io",
+  "moonbitlang/async",
+  "vectie/moongate/har_diagnostics_cli",
+  "vectie/moonlib/os",
+}
+
+pkgtype(kind: "executable")

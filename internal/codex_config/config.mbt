@@ -62,7 +62,7 @@ async fn install_proxy_config_at(
       codex_model_catalog_json_from_settings(Json::object({}), existing, model).stringify(),
     )
     overwrite_config_file(path, content)
-    Ok({ config_path: path, model_catalog_path: catalog_path, base_url, model })
+    Ok({ config_path: path, model_catalog_path: catalog_path, base_url, model, })
   } catch {
     err => Err("failed to install Codex proxy config: \{err}")
   }
@@ -289,7 +289,7 @@ fn codex_catalog_model_specs(
           None => default_context_window
         }
     }
-    specs.push({ model, display_name, context_window })
+    specs.push({ model, display_name, context_window, })
   }
   specs
 }

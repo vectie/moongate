@@ -10,7 +10,7 @@ test "usage attribution stays product neutral" {
     tools: [],
     schedules: [],
     app_entrypoints: [
-      { id: "fixture.console", path: "apps/console", audience: "operator" },
+      { id: "fixture.console", path: "apps/console", audience: "operator", },
     ],
     provider_ports: [],
     policies: [],

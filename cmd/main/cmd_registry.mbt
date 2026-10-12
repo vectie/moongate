@@ -16,8 +16,8 @@ fn registered_cli_command_groups() -> Array[CliCommandGroup] {
     {
       family: "core",
       commands: [
-        { id: "help", patterns: ["help"] },
-        { id: "version", patterns: ["version"] },
+        { id: "help", patterns: ["help"], },
+        { id: "version", patterns: ["version"], },
       ],
     },
     { family: "provider", commands: provider_cli_commands() },
@@ -27,6 +27,13 @@ fn registered_cli_command_groups() -> Array[CliCommandGroup] {
     { family: "proxy", commands: proxy_cli_commands() },
     { family: "config", commands: config_cli_commands() },
     { family: "usage", commands: usage_cli_commands() },
+    {
+      family: "requests",
+      commands: [
+        { id: "compare_har", patterns: ["requests compare-har"] },
+        { id: "inspect_har", patterns: ["requests har"] },
+      ],
+    },
     { family: "suite", commands: suite_cli_commands() },
     { family: "install", commands: install_cli_commands() },
     { family: "stream-check", commands: stream_check_cli_commands() },
@@ -140,6 +147,14 @@ async fn run_registered_cli_command(args : Array[String]) -> Bool {
     }
     Some(("session", command_id)) => {
       run_session_cli_command(command_id, args)
+      true
+    }
+    Some(("requests", "inspect_har")) => {
+      @har_diagnostics_cli.run(args[3:].to_owned())
+      true
+    }
+    Some(("requests", "compare_har")) => {
+      @har_compare_cli.run(args[3:].to_owned())
       true
     }
     Some(("usage", command_id)) => {

@@ -39,7 +39,7 @@ fn UsageData::new(
   remaining? : Double? = None,
   unit? : String? = None,
 ) -> UsageData {
-  { plan_name, extra, is_valid, invalid_message, total, used, remaining, unit }
+  { plan_name, extra, is_valid, invalid_message, total, used, remaining, unit, }
 }
 
 ///|
@@ -160,7 +160,7 @@ fn UsageResult::new(
   data? : Array[UsageData]? = None,
   error? : String? = None,
 ) -> UsageResult {
-  { success, data, error }
+  { success, data, error, }
 }
 
 ///|
@@ -297,7 +297,7 @@ const MOONGATE_USAGE_KEEP_LAST_GOOD_MS : Int64 = 10L * 60L * 1000L
 
 ///|
 fn UsageCache::new() -> UsageCache {
-  { subscription: Map([], capacity=0), script: Map([], capacity=0) }
+  { subscription: Map([], capacity=0), script: Map([], capacity=0), }
 }
 
 ///|

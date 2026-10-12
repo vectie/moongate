@@ -1,0 +1,17 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/har_diagnostics"
+
+// Values
+pub fn compare_captures_json(String, String, request_method? : String, origin? : String) -> Result[Json, String]
+
+pub fn export_capture_csv(String, request_method? : String, status? : String, origin? : String, entry? : Int) -> Result[String, String]
+
+pub fn inspect_capture_json(String, request_method? : String, status? : String, origin? : String, entry? : Int) -> Result[Json, String]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

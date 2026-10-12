@@ -2218,3 +2218,29 @@ td select,
     transition-duration: 0.01ms !important;
   }
 }
+
+.request-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.request-filters label { display: grid; gap: 6px; }
+.request-filters input, .request-filters select { width: 100%; min-width: 0; }
+.request-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+#request-query-summary, #request-detail strong, #request-log strong, #request-log small { overflow-wrap: anywhere; white-space: pre-wrap; }
+#request-page-summary { flex: 1; min-width: 180px; }
+#requests button:disabled, #request-detail-panel button:disabled { cursor: default; opacity: 0.5; }
+#cohort-report { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 48rem; overflow-y: auto; }
+.transcript-messages { display: grid; gap: 14px; margin-top: 16px; }
+.transcript-message { border: 1px solid var(--line-strong); border-radius: 10px; padding: 16px; min-width: 0; }
+.transcript-message pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; margin: 10px 0 0; }
+#usage-file-summary { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 36rem; overflow-y: auto; }
+#usage-file-rows .row-card, #usage-file-status { overflow-wrap: anywhere; }
+
+/* Retained request comparison is local to the observation collection. */
+#request-comparison { margin-top: 24px; }
+#request-compare-context { white-space: pre-wrap; overflow-wrap: anywhere; }
+#request-compare-table td, #request-compare-table th { white-space: pre-wrap; overflow-wrap: anywhere; }
+#request-compare-table caption { text-align: left; padding: 12px 0; }

@@ -1,0 +1,8 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/usage_preview",
+  "vectie/moonlib/os",
+}
+
+pkgtype(kind: "executable")

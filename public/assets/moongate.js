@@ -1,6 +1,7 @@
 let readinessState = {};
 
 function mergeReadinessState(next) {
+  if (next?.healthOk === false && typeof invalidateCohortComparison === "function") invalidateCohortComparison("Gateway unavailable; capture again after recovery");
   readinessState = { ...readinessState, ...(next || {}) };
   renderReadiness(readinessState);
 }
@@ -263,6 +264,7 @@ async function refreshDashboard() {
     loadSetupStatus(),
     loadSuite(),
     loadResilience(),
+    ensureRequestExplorer(),
   ]);
   const coreWarningCount = [healthProbe, statusProbe, proxyProbe, summaryProbe, byAppProbe, modelStatsProbe]
     .some((probe) => !probe.ok) ? 1 : 0;
@@ -270,7 +272,7 @@ async function refreshDashboard() {
     if (result.status === "rejected") return total + 1;
     return total + number(result.value?.warningCount);
   }, coreWarningCount);
-  const usageResult = panelResults[1];
+  const usageResult = panelResults[5];
   if (usageResult.status === "fulfilled" && usageResult.value?.stale !== true) {
     mergeReadinessState({ recentRequestCount: usageResult.value?.recentRequestCount || 0 });
   }
@@ -438,6 +440,18 @@ $("usage-apply")?.addEventListener("click", () => {
   loadUsageExplorer().catch(showError);
 });
 
+$("request-filters")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  applyRequestFilters().catch(showError);
+});
+$("request-reset")?.addEventListener("click", () => applyRequestFilters(true).catch(showError));
+$("request-prev")?.addEventListener("click", () => changeRequestPage(-1).catch(showError));
+$("request-next")?.addEventListener("click", () => changeRequestPage(1).catch(showError));
+$("request-retry")?.addEventListener("click", () => loadRequestExplorer().catch(showError));
+$("request-detail-retry")?.addEventListener("click", () => selectRequestDetail(requestSelectedId).catch(showError));
+$("request-export-page")?.addEventListener("click", () => downloadRequestExport("page"));
+$("request-export-detail")?.addEventListener("click", () => downloadRequestExport("detail"));
+
 $("resilience-app")?.addEventListener("change", () => {
   loadResilience().catch(showError);
 });
@@ -510,9 +524,7 @@ $("resilience-stream-check")?.addEventListener("click", () => {
 $("request-log")?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-request-id]");
   if (!button) return;
-  getJson(`${endpoints.requestDetail}/${encodeURIComponent(button.dataset.requestId)}`)
-    .then(renderRequestDetail)
-    .catch(showError);
+  selectRequestDetail(button.dataset.requestId).catch(showError);
 });
 
 $("provider-rows")?.addEventListener("click", (event) => {
@@ -537,6 +549,7 @@ $("provider-rows")?.addEventListener("keydown", (event) => {
 function goToPage(page) {
   const target = document.querySelector(`[data-page-view="${page}"]`);
   if (!target) return;
+  if (page !== "operations" && typeof invalidateCohortComparison === "function") invalidateCohortComparison("Comparison cleared after navigation; capture a new snapshot");
   document.querySelectorAll("[data-page-view]").forEach((node) => {
     node.classList.toggle("active", node === target);
   });
@@ -578,6 +591,7 @@ window.addEventListener("hashchange", () => {
 
 initProviderAppSelect();
 initUsageAppSelect();
+initRequestAppSelect();
 initResilienceAppSelect();
 loadCachedProviderTemplates();
 clearProviderForm("claude");
@@ -631,6 +645,12 @@ $("provider-delete")?.addEventListener("click", () => {
 $("provider-test")?.addEventListener("click", () => {
   testProviderFromForm().catch(showError);
 });
+
+$("provider-models-refresh")?.addEventListener("click", () => {
+  refreshProviderModels().catch(showError);
+});
+
+$("provider-models-select")?.addEventListener("change", chooseProviderCatalogModel);
 
 Promise.all([refresh(), loadProviderTemplates()]).catch(showError);
 

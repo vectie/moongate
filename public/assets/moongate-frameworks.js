@@ -8,6 +8,8 @@ let selectedProviderKey = "";
 let providerFormRevision = 0;
 let providerTestGeneration = 0;
 const providerTestResults = new Map();
+let providerCatalogGeneration = 0;
+let providerCatalog = null;
 
 function providerRouteKey(appType, providerId) {
   return `${appType}:${providerId}`;
@@ -45,8 +47,9 @@ function savedProviderTestResult(provider, appType, providerId) {
 }
 
 function providerFormChanged(event) {
-  if (["provider-template", "provider-template-file", "provider-app"].includes(event?.target?.id)) return;
+  if (["provider-template", "provider-template-file", "provider-app", "provider-models-select"].includes(event?.target?.id)) return;
   providerFormRevision += 1;
+  resetProviderModelCatalog("Settings changed. Refresh models after saving any connection changes.");
   setProviderTestResult();
   setProviderStatus("Unsaved changes · test again after editing");
 }
@@ -342,6 +345,7 @@ function renderProviderRouteState(appType, providerId = "") {
 
 function clearProviderForm(appType) {
   providerFormRevision += 1;
+  resetProviderModelCatalog();
   resetProviderDeleteConfirmation();
   text("provider-original-id", "");
   $("provider-original-id").value = "";
@@ -565,6 +569,7 @@ function loadCachedProviderTemplates() {
 
 function editProvider(appType, providerId) {
   providerFormRevision += 1;
+  resetProviderModelCatalog();
   const provider = providerById(appType, providerId);
   if (!provider) {
     clearProviderForm(appType);
@@ -744,6 +749,113 @@ async function testProviderFromForm() {
   } catch (error) {
     if (isCurrent()) throw error;
   }
+}
+
+function resetProviderModelCatalog(message = "Refresh the saved provider's model list. Its key stays on the host.") {
+  providerCatalogGeneration += 1;
+  providerCatalog = null;
+  const select = $("provider-models-select");
+  if (select) {
+    select.innerHTML = '<option value="">Refresh models to choose</option>';
+    select.value = "";
+    select.disabled = true;
+  }
+  const refreshButton = $("provider-models-refresh");
+  if (refreshButton) refreshButton.disabled = false;
+  text("provider-models-status", message);
+}
+
+function providerCatalogTarget() {
+  const appType = $("provider-original-app").value;
+  const providerId = $("provider-original-id").value;
+  const saved = providerById(appType, providerId);
+  if (!saved || !providerId || $("provider-app").value !== appType || $("provider-id").value.trim() !== providerId) {
+    throw new Error("Save this provider before refreshing models.");
+  }
+  const payload = providerPayloadFromForm();
+  const connection = (provider) => JSON.stringify([
+    firstString(provider, ["baseUrl", "websiteUrl"], ""),
+    firstString(provider, ["apiFormat"], firstString(provider.settingsConfig, ["apiFormat"], "")),
+    firstString(provider, ["providerType", "category"], ""),
+    provider.isFullUrl === true,
+  ]);
+  if (payload.apiKey || payload.clearApiKey || connection(payload) !== connection(saved)) {
+    throw new Error("Save connection or credential changes before refreshing models. Discovery uses only the saved provider.");
+  }
+  return { appType, providerId, identity: connection(saved), credential: providerCredentialIdentity(saved) };
+}
+
+async function refreshProviderModels() {
+  resetProviderModelCatalog();
+  let target;
+  try {
+    target = providerCatalogTarget();
+  } catch (error) {
+    text("provider-models-status", error.message);
+    return;
+  }
+  const generation = providerCatalogGeneration;
+  const revision = providerFormRevision;
+  const isCurrent = () => {
+    if (generation !== providerCatalogGeneration || revision !== providerFormRevision) return false;
+    try { return JSON.stringify(providerCatalogTarget()) === JSON.stringify(target); }
+    catch (_error) { return false; }
+  };
+  $("provider-models-refresh").disabled = true;
+  text("provider-models-status", `Fetching model IDs for ${target.providerId}… No model completion is requested.`);
+  try {
+    const result = await getJson(endpoint(endpoints.providerModels, { appType: target.appType, providerId: target.providerId }));
+    if (!isCurrent()) return;
+    if (result?.appType !== target.appType || result?.providerId !== target.providerId || !Array.isArray(result.models)) {
+      throw new Error("The model list did not match this saved provider. Refresh again.");
+    }
+    const ids = [];
+    for (const model of result.models) {
+      const id = model?.id;
+      if (typeof id !== "string" || !id || id.length > 256 || /[\s\u0000-\u001f\u007f\u0085]/u.test(id)) {
+        throw new Error("The provider returned an invalid model ID. Enter a model ID manually or refresh again.");
+      }
+      if (!ids.includes(id)) ids.push(id);
+    }
+    providerCatalog = { target, ids };
+    const select = $("provider-models-select");
+    select.innerHTML = '<option value="">Choose a model to use in the form</option>'
+      + ids.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`).join("");
+    const current = $("provider-default-model").value;
+    select.value = ids.includes(current) ? current : "";
+    select.disabled = ids.length === 0;
+    text("provider-models-status", ids.length
+      ? `${ids.length} model IDs found. Choose one, then Save Provider. Discovery does not prove model availability or change the active route.`
+      : "The provider returned an empty model list. Your default model is unchanged; enter an ID manually or refresh again.");
+  } catch (error) {
+    if (isCurrent()) {
+      providerCatalog = null;
+      text("provider-models-status", error.message || "Could not refresh models. Try again.");
+    }
+  } finally {
+    if (generation === providerCatalogGeneration) {
+      $("provider-models-refresh").disabled = false;
+      if (!isCurrent()) resetProviderModelCatalog("The saved provider changed during discovery. Refresh its model list again.");
+    }
+  }
+}
+
+function chooseProviderCatalogModel() {
+  const id = $("provider-models-select").value;
+  if (!id || !providerCatalog) return;
+  let target;
+  try { target = providerCatalogTarget(); }
+  catch (error) { resetProviderModelCatalog(error.message); return; }
+  if (JSON.stringify(target) !== JSON.stringify(providerCatalog.target) || !providerCatalog.ids.includes(id)) {
+    resetProviderModelCatalog("This model list is stale. Refresh the saved provider's models again.");
+    return;
+  }
+  $("provider-default-model").value = id;
+  $("provider-clear-models").checked = false;
+  providerFormRevision += 1;
+  setProviderTestResult();
+  setProviderStatus(`Selected ${id} in the form. Save Provider to keep it; Test Provider and Bind remain separate.`);
+  text("provider-models-status", "Model selected in the form. No provider, binding, or model request was changed.");
 }
 
 async function loadFrameworkRow(app) {

@@ -1,0 +1,9 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/ollama_capture_cli",
+  "moonbitlang/async",
+  "vectie/moonlib/os",
+}
+
+pkgtype(kind: "executable")

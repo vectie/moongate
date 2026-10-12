@@ -65,6 +65,7 @@ function acquireControlToken() {
       .catch((error) => {
         // Share each attempt, but let the next user request recover from failure.
         controlTokenPromise = null;
+        if (typeof invalidateCohortComparison === "function") invalidateCohortComparison("Control authentication changed; capture again");
         throw error;
       });
   }

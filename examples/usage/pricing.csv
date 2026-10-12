@@ -1,0 +1,5 @@
+requestId,model,provider,inputTokens,outputTokens,totalTokens,totalCostUsd,date
+price-one,fixture-small,fixture-east,1000000,500000,1500000,5,2026-10-10
+price-zero,fixture-small,fixture-east,0,0,0,,2026-10-10
+price-unknown,fixture-small,fixture-east,,,20,7,2026-10-11
+price-unlisted,fixture-small,fixture-west,10,5,15,3,2026-10-11

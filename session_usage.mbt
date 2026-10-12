@@ -72,7 +72,7 @@ priv struct OpenCodeMessageData {
 
 ///|
 fn SessionSyncResult::new() -> SessionSyncResult {
-  { imported: 0, skipped: 0, files_scanned: 0, errors: [] }
+  { imported: 0, skipped: 0, files_scanned: 0, errors: [], }
 }
 
 ///|
@@ -90,7 +90,7 @@ fn SessionFileSyncState::new(
   last_modified~ : Int64,
   last_line_offset~ : Int,
 ) -> SessionFileSyncState {
-  { last_modified, last_line_offset }
+  { last_modified, last_line_offset, }
 }
 
 ///|

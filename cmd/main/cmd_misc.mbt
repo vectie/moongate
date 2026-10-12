@@ -71,7 +71,25 @@ fn print_help() -> Unit {
   println("  proxy status           Show proxy server status")
   println("  proxy <command>        Manage routing, failover, and proxy state")
   println("  provider <command>     Manage provider configuration")
+  println(
+    "  usage import-chat      Read saved Chat Completions JSON/SSE: --file FILE [--file FILE ...] [--app LABEL] [--provider LABEL] [--report]",
+  )
   println("  usage <command>        Inspect traffic, tokens, cost, and quotas")
+  println(
+    "  usage import-batch     Import local Batch results: --file FILE [--format openai|anthropic] [--errors FILE] [--requests FILE] [--app LABEL] [--provider LABEL] [--report]",
+  )
+  println(
+    "  usage merge            Combine overlapping exports: --scope NAME --file FILE --file FILE [--file FILE ...] [--report]",
+  )
+  println(
+    "  usage price            Apply hypothetical USD rates: --file FILE --rates RATE_CARD.json [--report]",
+  )
+  println(
+    "  usage latency          Profile local latency: --file FILE [--app VALUE] [--provider VALUE] [--model VALUE] [--start-day DAY] [--end-day DAY] [--report]",
+  )
+  println(
+    "  usage compare          Compare local exports: --before FILE --after FILE [--app VALUE] [--provider VALUE] [--model VALUE] [--before-start-day DAY] [--before-end-day DAY] [--after-start-day DAY] [--after-end-day DAY] [--report]",
+  )
   println("  stream-check <command> Validate provider stream behavior")
   println("  mcp list/upsert/delete/toggle  Manage MCP servers")
   println("  mcp config/upsert-config       Manage app MCP config view")
@@ -110,6 +128,22 @@ fn print_help() -> Unit {
   println("  proxy switch-provider  Hot-switch current app provider")
   println("  proxy running          Show proxy running boolean")
   println("  provider list          List providers")
+  println(
+    "  provider openapi       Offline OpenAPI 3 JSON explorer: --file path [--tag name] [--operation id] [--http]",
+  )
+  println("  provider curl          Offline curl command to .http: --file path")
+  println(
+    "  provider postman       Offline Postman v2.1 requests: --file path [--folder path] [--method POST] [--http]",
+  )
+  println(
+    "  requests har           Offline HAR diagnostics: --file FILE [--method POST] [--status errors|429|2xx] [--origin ORIGIN] [--entry N] [--report|--csv]",
+  )
+  println(
+    "  requests compare-har   Compare captured origin/method groups: --baseline BEFORE.har --candidate AFTER.har [--method POST] [--origin ORIGIN] [--report]",
+  )
+  println(
+    "  provider har           Offline HAR 1.2 requests: --file path [--method POST] [--url-contains text] [--http]",
+  )
   println("  provider current       Show current provider")
   println("  provider add           Add provider")
   println("  provider update        Update provider")
@@ -146,11 +180,17 @@ fn print_help() -> Unit {
   )
   println("  usage logs  Show recent proxy request logs")
   println("  usage summary    Show usage summary")
+  println(
+    "  usage preview    Explore a local export: --file <path> [--app value] [--provider value] [--model value] [--start-day YYYY-MM-DD] [--end-day YYYY-MM-DD] [--report]",
+  )
   println("  usage apps       Show usage summary by app")
   println("  usage trends     Show hourly/daily usage trends")
   println("  usage limits     Show provider limit status")
   println("  usage sync       Sync Claude/Codex/Gemini/OpenCode session logs")
   println("  sessions list      List known sessions")
+  println(
+    "  sessions preview   Read an exported log locally: --file <path> [--format auto|codex|claude|json]",
+  )
   println("  sessions messages  Read session messages")
   println("  sessions delete    Delete one session")
   println("  sessions delete-many  Delete multiple sessions")

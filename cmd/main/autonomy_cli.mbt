@@ -38,7 +38,7 @@ fn autonomy_decision_with_finding(
   decision : @pipeline.AutonomyDecision,
   finding : String,
 ) -> @pipeline.AutonomyDecision {
-  { ..decision, accepted: false, findings: decision.findings + [finding] }
+  { ..decision, accepted: false, findings: decision.findings + [finding], }
 }
 
 ///|

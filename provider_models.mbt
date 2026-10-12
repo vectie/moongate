@@ -191,7 +191,7 @@ priv struct ModelsUrlTarget {
 ///|
 fn models_url_target(url : String) -> Result[ModelsUrlTarget, String] {
   match moon_parse_network_url(url, ["http", "https"]) {
-    Ok(target) => Ok({ origin: target.origin, path: target.path })
+    Ok(target) => Ok({ origin: target.origin, path: target.path, })
     Err(_) => Err("Invalid models endpoint URL: \{url}")
   }
 }
@@ -241,7 +241,7 @@ fn parse_model_entry(entry : Json) -> Result[FetchedModel, String] {
     Some(Null) | None => None
     _ => return Err("Failed to parse response: owned_by must be a string")
   }
-  Ok({ id, owned_by })
+  Ok({ id, owned_by, })
 }
 
 ///|
@@ -309,7 +309,7 @@ fn push_codex_oauth_model_entry(
     String(value) => {
       let id = value.trim().to_owned()
       if !id.is_empty() {
-        models.push({ id, owned_by: Some("Codex") })
+        models.push({ id, owned_by: Some("Codex"), })
       }
     }
     Object(obj) => {
@@ -331,7 +331,7 @@ fn push_codex_oauth_model_entry(
             Some(value) => Some(value)
             None => Some("Codex")
           }
-          models.push({ id, owned_by })
+          models.push({ id, owned_by, })
         }
         _ => ()
       }
@@ -341,7 +341,7 @@ fn push_codex_oauth_model_entry(
         Some(value) => {
           let id = value.trim().to_owned()
           if !id.is_empty() {
-            models.push({ id, owned_by: Some("Codex") })
+            models.push({ id, owned_by: Some("Codex"), })
           }
         }
         None => ()

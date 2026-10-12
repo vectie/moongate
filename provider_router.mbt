@@ -227,17 +227,17 @@ fn CircuitBreaker::allow_request(
   now_ms? : Int = @async.now().to_int(),
 ) -> AllowResult {
   match self.state {
-    Closed => { allowed: true, used_half_open_permit: false }
+    Closed => { allowed: true, used_half_open_permit: false, }
     Open =>
       if self.open_timeout_elapsed(now_ms) {
         self.transition_to_half_open()
         match self.state {
-          Closed => { allowed: true, used_half_open_permit: false }
+          Closed => { allowed: true, used_half_open_permit: false, }
           HalfOpen => self.allow_half_open_probe()
-          Open => { allowed: false, used_half_open_permit: false }
+          Open => { allowed: false, used_half_open_permit: false, }
         }
       } else {
-        { allowed: false, used_half_open_permit: false }
+        { allowed: false, used_half_open_permit: false, }
       }
     HalfOpen => self.allow_half_open_probe()
   }
@@ -331,9 +331,9 @@ fn CircuitBreaker::open_timeout_elapsed(
 fn CircuitBreaker::allow_half_open_probe(self : CircuitBreaker) -> AllowResult {
   if self.half_open_requests < 1 {
     self.half_open_requests += 1
-    { allowed: true, used_half_open_permit: true }
+    { allowed: true, used_half_open_permit: true, }
   } else {
-    { allowed: false, used_half_open_permit: false }
+    { allowed: false, used_half_open_permit: false, }
   }
 }
 
@@ -405,7 +405,7 @@ fn ClaudeDesktopModelRoute::new(
   label_override? : String? = None,
   supports_1m? : Bool? = None,
 ) -> ClaudeDesktopModelRoute {
-  { model, label_override, supports_1m }
+  { model, label_override, supports_1m, }
 }
 
 ///|
@@ -696,7 +696,7 @@ priv struct ProviderSortUpdate {
 
 ///|
 fn CustomEndpoint::new(url : String, added_at : Int) -> CustomEndpoint {
-  { url, added_at, last_used: None }
+  { url, added_at, last_used: None, }
 }
 
 ///|
@@ -757,12 +757,12 @@ fn provider_health_key(app_type : String, provider_id : String) -> String {
 fn ProviderSelection::ok(
   providers : Array[ProviderRouteTarget],
 ) -> ProviderSelection {
-  { providers, error: None }
+  { providers, error: None, }
 }
 
 ///|
 fn ProviderSelection::err(error : ProviderSelectionError) -> ProviderSelection {
-  { providers: [], error: Some(error) }
+  { providers: [], error: Some(error), }
 }
 
 ///|
@@ -1574,7 +1574,7 @@ fn ProviderRouter::update_endpoint_last_used(
     return
   }
   guard provider_endpoints.get(normalized) is Some(endpoint) else { return }
-  provider_endpoints.set(normalized, { ..endpoint, last_used: Some(now_ms) })
+  provider_endpoints.set(normalized, { ..endpoint, last_used: Some(now_ms), })
   app_endpoints.set(provider_id, provider_endpoints)
   self.custom_endpoints.set(app_type, app_endpoints)
 }
@@ -1762,7 +1762,7 @@ fn ProviderRouter::allow_provider_request(
   now_ms? : Int = @async.now().to_int(),
 ) -> AllowResult {
   if self.provider_at_capacity(app_type, provider_id) {
-    return { allowed: false, used_half_open_permit: false }
+    return { allowed: false, used_half_open_permit: false, }
   }
   let allow = self.breaker_for(app_type, provider_id).allow_request(now_ms~)
   if allow.allowed {
@@ -1778,10 +1778,10 @@ fn ProviderRouter::allow_provider_request_without_circuit(
   app_type : String,
 ) -> AllowResult {
   if self.provider_at_capacity(app_type, provider_id) {
-    return { allowed: false, used_half_open_permit: false }
+    return { allowed: false, used_half_open_permit: false, }
   }
   self.increment_provider_inflight(app_type, provider_id)
-  { allowed: true, used_half_open_permit: false }
+  { allowed: true, used_half_open_permit: false, }
 }
 
 ///|

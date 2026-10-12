@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "Synthetic model integration library",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://api.example.invalid/v1" },
+    { "key": "model", "value": "fixture-small" },
+    { "key": "apiToken", "value": "SYNTHETIC_TOKEN_DO_NOT_EXPORT" }
+  ],
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{apiToken}}" }] },
+  "event": [{ "listen": "prerequest", "script": { "exec": ["pm.variables.set('trace', 'SYNTHETIC_SCRIPT_NOT_EXECUTED');"] } }],
+  "item": [
+    {
+      "name": "Models",
+      "item": [
+        {
+          "name": "List models",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/models?tag=small&tag=local&debug=true",
+              "query": [
+                { "key": "tag", "value": "small" },
+                { "key": "tag", "value": "local tools" },
+                { "key": "debug", "value": "true", "disabled": true }
+              ]
+            },
+            "header": [{ "key": "Accept", "value": "application/json" }]
+          }
+        },
+        {
+          "name": "Inspect model",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/models/:modelId",
+              "variable": [{ "key": "modelId", "value": "fixture-small" }]
+            }
+          }
+        },
+        {
+          "name": "Chat",
+          "variable": [{ "key": "model", "value": "fixture-chat" }],
+          "item": [{
+            "name": "Create chat",
+            "request": {
+              "method": "POST",
+              "url": "{{baseUrl}}/chat/completions",
+              "header": [
+                { "key": "X-Trace", "value": "{{trace}}" },
+                { "key": "X-Disabled", "value": "SYNTHETIC_DISABLED_NOT_EXPORTED", "disabled": true }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"model\": \"{{model}}\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"Say hello\"}],\n  \"stream\": false\n}",
+                "options": { "raw": { "language": "json" } }
+              }
+            },
+            "response": [{ "body": "SYNTHETIC_RESPONSE_NOT_EXPORTED" }]
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Public health",
+      "request": { "method": "GET", "url": "https://status.example.invalid/health", "auth": { "type": "noauth" } }
+    }
+  ]
+}

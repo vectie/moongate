@@ -5,6 +5,7 @@ const MOONGATE_DB_BACKUP_DIR = "backups"
 fn moon_suite_app_types() -> Array[String] {
   [
     "claude", "claude-desktop", "codex", "gemini", "opencode", "openclaw", "hermes",
+    "paiwork",
   ]
 }
 

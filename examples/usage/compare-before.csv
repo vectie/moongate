@@ -1,0 +1,4 @@
+requestId,app,provider,model,totalTokens,costUsd,date
+before-1,codex,team-fixture,moon-small,100,0.1,2026-10-01
+before-2,codex,team-fixture,moon-small,200,0.2,2026-10-02
+before-3,claude,old-fixture,moon-old,50,,2026-10-02

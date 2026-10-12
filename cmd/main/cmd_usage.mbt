@@ -1,6 +1,15 @@
 ///|
 fn usage_cli_commands() -> Array[CliCommandSpec] {
   [
+    { id: "import_chat_capture", patterns: ["usage import-chat"] },
+    { id: "export_usage_csv", patterns: ["usage export-csv"] },
+    { id: "import_ollama_capture", patterns: ["usage import-ollama"] },
+    { id: "price_usage_file", patterns: ["usage price"] },
+    { id: "profile_usage_latency", patterns: ["usage latency"] },
+    { id: "import_batch_usage", patterns: ["usage import-batch"], },
+    { id: "merge_usage_files", patterns: ["usage merge"] },
+    { id: "compare_usage_files", patterns: ["usage compare"] },
+    { id: "preview_usage_file", patterns: ["usage preview"], },
     { id: "get_usage_summary", patterns: ["usage summary"] },
     { id: "get_usage_summary_by_app", patterns: ["usage apps"] },
     { id: "get_usage_trends", patterns: ["usage trends"] },
@@ -67,6 +76,15 @@ async fn run_usage_cli_command(
   args : Array[String],
 ) -> Unit {
   match command_id {
+    "import_chat_capture" => @chat_capture_cli.run(args[3:].to_owned())
+    "export_usage_csv" => @usage_export_cli.run(args[3:].to_owned())
+    "import_ollama_capture" => @ollama_capture_cli.run(args[3:].to_owned())
+    "price_usage_file" => @usage_price_cli.run(args[3:].to_owned())
+    "profile_usage_latency" => @usage_latency_cli.run(args[3:].to_owned())
+    "import_batch_usage" => @batch_usage_cli.run(args[3:].to_owned())
+    "merge_usage_files" => @usage_merge_cli.run(args[3:].to_owned())
+    "compare_usage_files" => @usage_compare_cli.run(args[3:].to_owned())
+    "preview_usage_file" => preview_usage_file(args)
     "get_usage_summary" => check_usage_summary(args)
     "get_usage_summary_by_app" => check_usage_apps(args)
     "get_usage_trends" => check_usage_trends(args)
@@ -389,17 +407,59 @@ async fn status_codex() -> Unit {
 }
 
 ///|
-fn print_suite_status(args : Array[String]) -> Unit {
+async fn print_suite_status(args : Array[String]) -> Unit {
   let host = parse_string_arg(args, "--host").unwrap_or(@suite.default_host())
   let port = parse_int_arg(args, "--port", default=@suite.default_port())
   let model = parse_string_arg(args, "--model").unwrap_or(
     @suite.default_model(),
   )
-  println(
-    @moongate.moongate_suite_status_json(host~, port~, model~).stringify(
-      indent=2,
-    ),
-  )
+  let explicit_target = parse_string_arg(args, "--host") is Some(_) ||
+    parse_string_arg(args, "--port") is Some(_)
+  let saved = if explicit_target {
+    Json::null()
+  } else {
+    @json.parse(
+      @fsx.read_file(@moongate.default_moongate_suite_status_path()) catch {
+        _ => ""
+      },
+    ) catch {
+      _ => Json::null()
+    }
+  }
+  let template = if @moongate.MoonGateClient::from_suite_status(saved)
+    is Some(_) {
+    saved
+  } else {
+    @moongate.moongate_suite_status_json(host~, port~, model~)
+  }
+  let health = match @moongate.MoonGateClient::from_suite_status(template) {
+    Some(client) =>
+      client.health() catch {
+        _ => Err("MoonGate health endpoint is unavailable")
+      }
+    None => Err("Invalid MoonGate suite status target")
+  }
+  println(suite_status_after_health(template, health).stringify(indent=2))
+}
+
+///|
+fn suite_status_after_health(
+  template : Json,
+  health : Result[Json, String],
+) -> Json {
+  guard template is Object(fields) else { return template }
+  let state = match health {
+    Ok(Object(response)) =>
+      match response.get("status") {
+        Some(String("healthy")) => ("running", true)
+        Some(String("degraded")) => ("running", false)
+        _ => ("stopped", false)
+      }
+    _ => ("stopped", false)
+  }
+  fields["status"] = Json::string(state.0)
+  fields["ready"] = Json::boolean(state.1)
+  Json::object(fields)
 }
 
 ///|

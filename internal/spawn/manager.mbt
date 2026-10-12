@@ -19,7 +19,7 @@ pub struct Manager {
 
 ///|
 pub fn Manager::new(cwd~ : String) -> Manager {
-  { id: 0, cwd, process: {}, spawn: Queue(kind=Unbounded) }
+  { id: 0, cwd, process: {}, spawn: Queue(kind=Unbounded), }
 }
 
 ///|
@@ -63,7 +63,7 @@ struct Buffer {
 
 ///|
 pub fn Buffer::new() -> Buffer {
-  { chunks: [] }
+  { chunks: [], }
 }
 
 ///|

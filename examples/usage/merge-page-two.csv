@@ -1,0 +1,3 @@
+id,app,provider,model,totalTokens,costUsd,date
+request-b,codex,fixture,small,20,,2026-10-01
+request-c,claude,fixture,large,30,0.5,2026-10-02

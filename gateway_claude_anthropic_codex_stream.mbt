@@ -880,7 +880,7 @@ fn convert_stream_event(
           "usage": usage,
         }),
       })
-      Some({ event_type: "message_start", data: event_data.stringify() })
+      Some({ event_type: "message_start", data: event_data.stringify(), })
     }
     "response.output_text.delta" => {
       let delta = match obj.get("delta") {
@@ -971,7 +971,7 @@ fn responses_stream_completed_event(
     "delta": { "stop_reason": stop_reason, "stop_sequence": Json::null() }.to_json(),
     "usage": usage,
   }
-  { event_type: "message_delta", data: event_data.to_json().stringify() }
+  { event_type: "message_delta", data: event_data.to_json().stringify(), }
 }
 
 ///|

@@ -1,0 +1,6 @@
+{"custom_id": "summarize-1", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "requested-alias", "messages": [{"role": "user", "content": "PRIVATE_REQUEST_SENTINEL\n你好"}]}}
+{"custom_id": "summarize-2", "method": "POST", "url": "/v1/responses", "body": {"model": "请求模型\nβ", "messages": [{"role": "user", "content": "PRIVATE_REQUEST_SENTINEL\n你好"}]}}
+{"custom_id": "missing-任务\nα", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "requested-alias", "messages": [{"role": "user", "content": "PRIVATE_REQUEST_SENTINEL\n你好"}]}}
+{"custom_id": "expired-1", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "requested-alias", "messages": [{"role": "user", "content": "PRIVATE_REQUEST_SENTINEL\n你好"}]}}
+{"custom_id": "reason-1", "method": "POST", "url": "/v1/responses", "body": {"model": "moon-reason", "messages": [{"role": "user", "content": "PRIVATE_REQUEST_SENTINEL\n你好"}]}}
+{"custom_id": "missing-usage", "method": "POST", "url": "/v1/chat/completions", "body": {"model": "moon-small", "messages": [{"role": "user", "content": "PRIVATE_REQUEST_SENTINEL\n你好"}]}}

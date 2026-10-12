@@ -152,7 +152,7 @@ async fn capability_read_document(
   let value = @json.parse(raw) catch {
     err => return Err("invalid JSON: \{err}")
   }
-  Ok({ value, digest: capability_document_digest(raw) })
+  Ok({ value, digest: capability_document_digest(raw), })
 }
 
 ///|

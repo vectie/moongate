@@ -1,0 +1,10 @@
+: saved synthetic response
+event: message
+data: {"id": "chat-stream-fixture", "object": "chat.completion.chunk", "model": "fixture-large", "created": 1791417600, "choices": [{"index": 0, "delta": {"content": "PRIVATE_SYNTHETIC_STREAM"}, "finish_reason": null}], "usage": null}
+
+data: {"id": "chat-stream-fixture", "object": "chat.completion.chunk", "model": "fixture-large", "created": 1791417600, "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}], "usage": null}
+
+data: {"id": "chat-stream-fixture", "object": "chat.completion.chunk", "model": "fixture-large", "created": 1791417600, "choices": [], "usage": {"prompt_tokens": 20, "completion_tokens": 5, "total_tokens": 25}}
+
+data: [DONE]
+

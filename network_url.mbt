@@ -212,5 +212,5 @@ fn moon_parse_network_url(
   } else {
     remainder
   }
-  Ok({ origin: "\{scheme}://\{raw_authority}", path })
+  Ok({ origin: "\{scheme}://\{raw_authority}", path, })
 }

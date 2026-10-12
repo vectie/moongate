@@ -497,7 +497,7 @@ fn moon_sync_device_name() -> String {
 
 ///|
 fn moon_sync_artifact_meta(bytes : Bytes) -> MoonSyncArtifactMeta {
-  { sha256: moon_sync_sha256_hex(bytes), size: bytes.length() }
+  { sha256: moon_sync_sha256_hex(bytes), size: bytes.length(), }
 }
 
 ///|
@@ -809,7 +809,7 @@ fn moon_s3_curl_head_request(
     args.push(path)
   }
   args.push(url)
-  Ok({ program: "curl", args })
+  Ok({ program: "curl", args, })
 }
 
 ///|
@@ -835,7 +835,7 @@ fn moon_s3_curl_put_request(
   args.push("-w")
   args.push("%{http_code}")
   args.push(url)
-  Ok({ program: "curl", args })
+  Ok({ program: "curl", args, })
 }
 
 ///|
@@ -859,7 +859,7 @@ fn moon_s3_curl_get_request(
     args.push(path)
   }
   args.push(url)
-  Ok({ program: "curl", args })
+  Ok({ program: "curl", args, })
 }
 
 ///|
@@ -877,7 +877,7 @@ async fn moon_webdav_get_text(
   let response = client.get(if path.is_empty() { "/" } else { path }) catch {
     err => return Err("WebDAV GET failed: \{err}")
   }
-  Ok({ code: response.code, body: client.read_all().text() })
+  Ok({ code: response.code, body: client.read_all().text(), })
 }
 
 ///|
@@ -906,7 +906,7 @@ fn moon_webdav_curl_status_request(
     )
   }
   args.push(url)
-  Ok({ program: "curl", args })
+  Ok({ program: "curl", args, })
 }
 
 ///|
@@ -943,7 +943,7 @@ fn moon_webdav_curl_put_request(
     )
   }
   args.push(url)
-  Ok({ program: "curl", args })
+  Ok({ program: "curl", args, })
 }
 
 ///|
@@ -973,7 +973,7 @@ fn moon_webdav_curl_get_request(
     )
   }
   args.push(url)
-  Ok({ program: "curl", args })
+  Ok({ program: "curl", args, })
 }
 
 ///|
@@ -1769,7 +1769,7 @@ async fn moon_webdav_fetch_manifest_snapshot(
     Ok(manifest) => manifest
     Err(error) => return Some(Err(error))
   }
-  Some(Ok({ manifest, manifest_bytes: @encoding/utf8.encode(response.body) }))
+  Some(Ok({ manifest, manifest_bytes: @encoding/utf8.encode(response.body), }))
 }
 
 ///|
@@ -2082,7 +2082,7 @@ fn moon_sync_manifest_info_from_json(
     guard proxy_json_int(meta_obj, "size") is Some(size) else {
       return Err("Remote manifest artifact \{name} is missing size.")
     }
-    artifact_meta[name] = { sha256, size }
+    artifact_meta[name] = { sha256, size, }
   }
   Ok({
     format,

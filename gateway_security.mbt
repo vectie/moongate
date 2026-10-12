@@ -67,13 +67,16 @@ fn moongate_route_requires_control(
 
 ///|
 fn moongate_inference_route(method_ : @httpx.Method, path : String) -> Bool {
-  if @media_gateway.allowed_route(method_, path) { return true }
+  if @media_gateway.allowed_route(method_, path) {
+    return true
+  }
   match method_ {
     Post =>
       path == "/v1/messages" ||
       path == "/claude-desktop/v1/messages" ||
       path == "/v1/chat/completions" ||
       path == "/openclaw/v1/chat/completions" ||
+      path == "/paiwork/v1/chat/completions" ||
       path == "/openclaw/v1/responses" ||
       path == "/v1/responses" ||
       path == "/v1/responses/compact" ||
@@ -82,6 +85,7 @@ fn moongate_inference_route(method_ : @httpx.Method, path : String) -> Bool {
     Get =>
       path == "/v1/models" ||
       path == "/openclaw/v1/models" ||
+      path == "/paiwork/v1/models" ||
       path == "/claude-desktop/v1/models" ||
       path.has_prefix("/gemini/v1/") ||
       path.has_prefix("/gemini/v1beta/")
@@ -228,7 +232,7 @@ fn moongate_parse_authority(authority : String) -> MoongateAuthority? {
           }
           _ => return None
         }
-        Some({ host, port })
+        Some({ host, port, })
       }
       _ => None
     }
@@ -238,14 +242,14 @@ fn moongate_parse_authority(authority : String) -> MoongateAuthority? {
         if !moon_network_host_syntax_valid(host.to_owned()) {
           None
         } else {
-          Some({ host: host.to_owned(), port: None })
+          Some({ host: host.to_owned(), port: None, })
         }
       [host, port] => {
         if !moon_network_host_syntax_valid(host.to_owned()) {
           return None
         }
         guard moongate_parse_port(port) is Some(port) else { return None }
-        Some({ host: host.to_owned(), port: Some(port) })
+        Some({ host: host.to_owned(), port: Some(port), })
       }
       _ => None
     }

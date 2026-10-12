@@ -9,7 +9,7 @@ priv struct AdversarialFuzzer {
 ///|
 fn AdversarialFuzzer::new(seed : Int64) -> AdversarialFuzzer {
   let state = seed % 2_147_483_647L
-  { state: if state <= 0L { state + 2_147_483_646L } else { state } }
+  { state: if state <= 0L { state + 2_147_483_646L } else { state }, }
 }
 
 ///|

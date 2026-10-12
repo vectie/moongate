@@ -1,0 +1,162 @@
+///|
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+extern "js" fn invoke(program : String, args : FixedArray[String]) -> String =
+  #|(program,args) => { const r=require('node:child_process').spawnSync(program,args,{encoding:'utf8',maxBuffer:16000000}); return JSON.stringify({status:r.status,stdout:r.stdout,stderr:r.stderr}); }
+
+///|
+extern "js" fn save(path : String, text : String) -> Unit =
+  #|(path,text) => require('node:fs').writeFileSync(path,text)
+
+///|
+extern "js" fn fresh_directory(path : String) -> Unit =
+  #|path => { const fs=require('node:fs'); if(fs.existsSync(path)){if(fs.readdirSync(path).length)throw Error('Output directory must be empty');}else{fs.mkdirSync(path,{recursive:true});} }
+
+///|
+extern "js" fn digest(path : String) -> String =
+  #|path => require('node:crypto').createHash('sha256').update(require('node:fs').readFileSync(path)).digest('hex')
+
+///|
+extern "js" fn oversize(path : String) -> Unit =
+  #|path => { const fs=require('node:fs'); const fd=fs.openSync(path,'wx'); try{fs.ftruncateSync(fd,4194305);}finally{fs.closeSync(fd);} }
+
+///|
+fn get(value : Json, key : String) -> Json raise {
+  guard value is Object(obj) && obj.get(key) is Some(value) else {
+    fail("Missing field: \{key}")
+  }
+  value
+}
+
+///|
+fn success(program : String, args : Array[String]) -> String raise {
+  let result = @json.parse(invoke(program, FixedArray::makei(args.length(), i => args[i])))
+  guard result is {"status": Number(0, ..), "stdout": String(output), "stderr": String(""), ..} else {
+    fail("Expected command success: " + result.stringify())
+  }
+  output
+}
+
+///|
+fn refuse(program : String, args : Array[String], path : String) -> Unit raise {
+  let result = @json.parse(invoke(program, FixedArray::makei(args.length(), i => args[i])))
+  assert_eq(get(result, "status"), Json::number(1))
+  save(path, result.stringify(indent=2) + "\n")
+}
+
+///|
+fn verify() -> Unit raise {
+  let args = @env.args()
+  guard args.length() == 6 else {
+    abort("Arguments: MAIN_EXE IMPORT_BATCH_EXE FIXTURES_DIRECTORY EMPTY_OUTPUT_DIRECTORY")
+  }
+  let main = args[2]
+  let companion = args[3]
+  let fixtures = args[4]
+  let out = args[5]
+  fresh_directory(out)
+  let results = fixtures + "/batch-results.jsonl"
+  let errors = fixtures + "/batch-errors.jsonl"
+  let input_hashes = [digest(results), digest(errors)]
+  let options = ["--file", results, "--errors", errors, "--app", "nightly-eval", "--provider", "provider-a"]
+  let imported = success(companion, options)
+  assert_eq(success(main, ["usage", "import-batch"] + options), imported)
+  save(out + "/batch-usage.json", imported)
+  let value = @json.parse(imported)
+  let summary = get(value, "summary")
+  let meta = get(value, "batchImport")
+  assert_eq(get(summary, "tokens"), Json::number(355))
+  assert_eq(get(summary, "requests"), Json::number(3))
+  assert_eq(get(summary, "missingCostCount"), Json::number(3))
+  assert_eq(get(summary, "undatedCount"), Json::number(1))
+  assert_eq(get(value, "sourceTotal"), Json::number(6))
+  assert_eq(get(value, "partial"), Json::boolean(true))
+  assert_eq(get(meta, "missingUsageCount"), Json::number(1))
+  assert_eq(get(meta, "batchErrorCount"), Json::number(1))
+  assert_eq(get(meta, "httpErrorCount"), Json::number(1))
+  assert_eq(get(meta, "nonCompletedResponseCount"), Json::number(1))
+  assert_eq(get(meta, "batchCompleteness"), Json::string("unverified"))
+  assert_false(imported.contains("PRIVATE_BATCH_"))
+  let report = success(companion, options + ["--report"])
+  assert_eq(success(main, ["usage", "import-batch"] + options + ["--report"]), report)
+  assert_true(report.contains("all imported costs remain unknown"))
+  save(out + "/import-report.txt", report)
+  let reopened = success(main, ["usage", "preview", "--file", out + "/batch-usage.json"])
+  save(out + "/reopened.json", reopened)
+  let reopened_json = @json.parse(reopened)
+  assert_eq(get(reopened_json, "summary"), summary)
+  assert_eq(get(reopened_json, "data"), get(value, "data"))
+  assert_eq(get(reopened_json, "sourceTotal"), Json::number(6))
+  assert_eq(get(reopened_json, "partial"), Json::boolean(true))
+  let filtered = success(main, ["usage", "preview", "--file", out + "/batch-usage.json", "--model", "moon-small", "--start-day", "2026-10-02"])
+  save(out + "/filtered.json", filtered)
+  assert_eq(get(get(@json.parse(filtered), "summary"), "tokens"), Json::number(125))
+  assert_eq(get(get(@json.parse(filtered), "summary"), "requests"), Json::number(1))
+  let comparison = success(main, ["usage", "compare", "--before", out + "/batch-usage.json", "--after", out + "/reopened.json"])
+  save(out + "/comparison.json", comparison)
+  let comparison_summary = get(@json.parse(comparison), "summary")
+  assert_eq(get(get(comparison_summary, "delta"), "tokens"), Json::number(0))
+  assert_eq(get(comparison_summary, "estimatedUsdDelta"), Json::null())
+  let subset_comparison = success(main, ["usage", "compare", "--before", out + "/filtered.json", "--after", out + "/batch-usage.json", "--report"])
+  assert_true(subset_comparison.contains("tokens 125 -> 355"))
+  save(out + "/subset-comparison.txt", subset_comparison)
+  let errors_only = success(companion, ["--file", errors])
+  save(out + "/errors-only.json", errors_only)
+  assert_eq(get(@json.parse(errors_only), "total"), Json::number(0))
+  assert_eq(get(@json.parse(errors_only), "sourceTotal"), Json::number(2))
+  assert_eq(get(@json.parse(errors_only), "partial"), Json::boolean(true))
+  let negative = "{\"custom_id\":\"negative\",\"response\":{\"status_code\":200,\"body\":{\"object\":\"chat.completion\",\"model\":\"moon-small\",\"usage\":{\"prompt_tokens\":-1,\"completion_tokens\":1}}}}\n"
+  save(out + "/negative.jsonl", negative)
+  refuse(companion, ["--file", out + "/negative.jsonl"], out + "/negative-companion-refusal.json")
+  refuse(main, ["usage", "import-batch", "--file", out + "/negative.jsonl"], out + "/negative-main-refusal.json")
+  refuse(companion, ["--file", results, "--errors", results], out + "/duplicate-refusal.json")
+  refuse(companion, ["--file", out + "/absent.jsonl"], out + "/missing-file-refusal.json")
+  refuse(companion, ["--file", results, "--errors"], out + "/missing-value-refusal.json")
+  oversize(out + "/oversize.jsonl")
+  refuse(companion, ["--file", out + "/oversize.jsonl"], out + "/oversize-refusal.json")
+  for i, token in ["9007199254740990.5", "1.0000000000000001", "1e-400", "-1e-400", "9007199254740991.1"] {
+    let path = out + "/fraction-\{i}.jsonl"
+    save(path, "{\"custom_id\":\"fraction\",\"response\":{\"status_code\":200,\"body\":{\"object\":\"chat.completion\",\"model\":\"m\",\"usage\":{\"prompt_tokens\":\{token},\"completion_tokens\":0}}}}\n")
+    refuse(companion, ["--file", path], out + "/fraction-\{i}-companion-refusal.json")
+    refuse(main, ["usage", "import-batch", "--file", path], out + "/fraction-\{i}-main-refusal.json")
+  }
+  for i, pair in [("1.20e2", 120.0), ("9007199254740991.0", 9007199254740991.0), ("90071992547409910e-1", 9007199254740991.0), ("-0.0E400", 0.0)] {
+    let (token, expected) = pair
+    let path = out + "/integral-\{i}.jsonl"
+    save(path, "{\"custom_id\":\"integral\",\"response\":{\"status_code\":2e2,\"body\":{\"object\":\"chat.completion\",\"model\":\"m\",\"usage\":{\"prompt_tokens\":\{token},\"completion_tokens\":0}}}}\n")
+    let output = success(companion, ["--file", path])
+    assert_eq(success(main, ["usage", "import-batch", "--file", path]), output)
+    assert_eq(get(get(@json.parse(output), "summary"), "tokens"), Json::number(expected))
+    save(out + "/integral-\{i}.json", output)
+  }
+  assert_eq([digest(results), digest(errors)], input_hashes)
+  let receipt : Json = {
+    "status": "pass",
+    "mainAndCompanionIdentical": true,
+    "actualPreviewReopen": true,
+    "actualComparison": true,
+    "inputSha256": input_hashes.to_json(),
+    "sourceResultCount": 6,
+    "importedUsageCount": 3,
+    "tokens": 355,
+    "unknownCosts": 3,
+    "exactNumericLexemesVerified": true,
+    "scope": "Synthetic local files; no provider or billing qualification",
+  }
+  save(out + "/verification.json", receipt.stringify(indent=2) + "\n")
+  println(receipt.stringify(indent=2))
+}
+
+///|
+fn main {
+  verify() catch {
+    error => {
+      println("Batch CLI verification failed: \{error}")
+      abort("Batch CLI verification failed")
+    }
+  }
+}

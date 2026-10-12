@@ -1,0 +1,19 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/internal/exact_json"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn exact_count(String) -> Double?
+
+pub fn parse_with_number_text(StringView) -> Json raise @json.ParseError
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

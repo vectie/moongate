@@ -1652,3 +1652,35 @@ test "top level moongate skill commands build paths" {
     "/skills/install-zip?filePath=%2Ftmp%2Fskill%20bundle&currentApp=codex",
   )
 }
+
+///|
+test "suite status liveness overrides a stale running descriptor" {
+  let saved = @moongate.moongate_suite_status_json(
+    host="127.0.0.1",
+    port=15722,
+    status="running",
+    ready=true,
+  )
+  let closed = suite_status_after_health(saved, Err("connection refused"))
+  guard closed is Object(closed_fields) else { fail("expected status object") }
+  guard saved is Object(saved_fields) else { fail("expected saved object") }
+  assert_eq(closed_fields["status"], Json::string("stopped"))
+  assert_eq(closed_fields["ready"], Json::boolean(false))
+  assert_eq(closed_fields["manifest"], saved_fields["manifest"])
+  let live = suite_status_after_health(
+    saved,
+    Ok({ "status": Json::string("healthy") }.to_json()),
+  )
+  guard live is Object(live_fields) else { fail("expected live object") }
+  assert_eq(live_fields["status"], Json::string("running"))
+  assert_eq(live_fields["ready"], Json::boolean(true))
+  let degraded = suite_status_after_health(
+    saved,
+    Ok({ "status": Json::string("degraded") }.to_json()),
+  )
+  guard degraded is Object(degraded_fields) else {
+    fail("expected degraded object")
+  }
+  assert_eq(degraded_fields["status"], Json::string("running"))
+  assert_eq(degraded_fields["ready"], Json::boolean(false))
+}

@@ -231,6 +231,7 @@ test "suite manifest publishes moongate service contract" {
   assert_true(routes.contains(Json::string("GET /sync/s3/remote-info")))
   assert_true(routes.contains(Json::string("GET /sessions")))
   assert_true(routes.contains(Json::string("GET /sessions/messages")))
+  assert_true(routes.contains(Json::string("POST /sessions/preview")))
   assert_true(routes.contains(Json::string("POST /sessions/terminal")))
   assert_true(routes.contains(Json::string("POST /sessions/delete")))
   assert_true(routes.contains(Json::string("POST /sessions/delete-many")))

@@ -83,8 +83,12 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
   self.register_suite_routes(router, bound_port)
   router.set_not_found_handler(file_server.handler())
   self.logger.info("Gateway started on \{self.host}:\{bound_port}")
-  let request_host = @env.get_env_var("MOONGATE_REQUEST_HOST").unwrap_or(self.host)
-  if !moon_network_host_syntax_valid(request_host) { raise Failure("invalid MoonGate request host") }
+  let request_host = @env.get_env_var("MOONGATE_REQUEST_HOST").unwrap_or(
+    self.host,
+  )
+  if !moon_network_host_syntax_valid(request_host) {
+    raise Failure("invalid MoonGate request host")
+  }
   server.serve(
     moongate_security_handler(
       router.handler(),

@@ -1,18 +1,18 @@
 ///|
 fn copilot_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "copilot_start_device_flow", patterns: ["copilot login"] },
-    { id: "copilot_poll_for_account", patterns: ["copilot poll"] },
-    { id: "copilot_poll_for_auth", patterns: ["copilot auth-poll"] },
-    { id: "copilot_list_accounts", patterns: ["copilot accounts"] },
-    { id: "copilot_get_auth_status", patterns: ["copilot status"] },
-    { id: "copilot_is_authenticated", patterns: ["copilot authenticated"] },
-    { id: "copilot_logout", patterns: ["copilot logout"] },
-    { id: "copilot_remove_account", patterns: ["copilot remove"] },
-    { id: "copilot_set_default_account", patterns: ["copilot default"] },
-    { id: "copilot_get_token", patterns: ["copilot token"] },
-    { id: "copilot_get_models", patterns: ["copilot models"] },
-    { id: "copilot_get_usage", patterns: ["copilot usage"] },
+    { id: "copilot_start_device_flow", patterns: ["copilot login"], },
+    { id: "copilot_poll_for_account", patterns: ["copilot poll"], },
+    { id: "copilot_poll_for_auth", patterns: ["copilot auth-poll"], },
+    { id: "copilot_list_accounts", patterns: ["copilot accounts"], },
+    { id: "copilot_get_auth_status", patterns: ["copilot status"], },
+    { id: "copilot_is_authenticated", patterns: ["copilot authenticated"], },
+    { id: "copilot_logout", patterns: ["copilot logout"], },
+    { id: "copilot_remove_account", patterns: ["copilot remove"], },
+    { id: "copilot_set_default_account", patterns: ["copilot default"], },
+    { id: "copilot_get_token", patterns: ["copilot token"], },
+    { id: "copilot_get_models", patterns: ["copilot models"], },
+    { id: "copilot_get_usage", patterns: ["copilot usage"], },
   ]
 }
 

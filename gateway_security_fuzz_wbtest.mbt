@@ -76,10 +76,12 @@ test "fuzz exact public routes fail closed under mutation" {
     (Post, "/v1/responses"),
     (Post, "/v1/responses/compact"),
     (Post, "/openclaw/v1/chat/completions"),
+    (Post, "/paiwork/v1/chat/completions"),
     (Post, "/openclaw/v1/responses"),
     (Post, "/claude-desktop/v1/messages"),
     (Get, "/v1/models"),
     (Get, "/openclaw/v1/models"),
+    (Get, "/paiwork/v1/models"),
     (Get, "/claude-desktop/v1/models"),
   ]
   let mutations = ["/", "/..", ".json", "%00", "%2f", "#x", "\\x", "//"]

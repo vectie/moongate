@@ -502,7 +502,7 @@ async fn snapshot_files(paths : Array[String]) -> Array[FileSnapshot] {
     } else {
       None
     }
-    snapshots.push({ path, content })
+    snapshots.push({ path, content, })
   }
   snapshots
 }

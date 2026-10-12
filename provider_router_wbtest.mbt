@@ -85,6 +85,32 @@ test "provider router failover disabled uses current provider" {
 }
 
 ///|
+test "paiwork provider selection does not replace codex or openclaw" {
+  let router = ProviderRouter::new()
+  for
+    (app_type, provider_id) in [
+      ("codex", "codex-oauth"),
+      ("openclaw", "lunanexa-lease"),
+      ("paiwork", "ark-deepseek"),
+    ] {
+    router.upsert_provider(
+      ProviderRouteTarget::new(
+        app_type~,
+        provider_id~,
+        provider_name=provider_id,
+      ),
+    )
+    router.set_current_provider(app_type, provider_id)
+  }
+  assert_eq(
+    router.select_providers("paiwork", now_ms=1000).providers[0].provider_id,
+    "ark-deepseek",
+  )
+  assert_eq(router.current_provider_id("codex"), Some("codex-oauth"))
+  assert_eq(router.current_provider_id("openclaw"), Some("lunanexa-lease"))
+}
+
+///|
 test "provider router current selection rejects a disabled provider" {
   let router = ProviderRouter::new()
   router.upsert_provider(
@@ -593,8 +619,8 @@ test "provider router failover queue uses moongate stored provider sort index" {
   )
   assert_true(
     router.update_providers_sort_order("codex", [
-      { id: "a", sort_index: 3 },
-      { id: "b", sort_index: 7 },
+      { id: "a", sort_index: 3, },
+      { id: "b", sort_index: 7, },
     ]),
   )
   router.set_failover_queue("codex", ["b", "a"])
@@ -683,8 +709,8 @@ test "provider router moongate auto failover command switches to p1" {
   router.set_current_provider("codex", "current")
   assert_true(
     router.update_providers_sort_order("codex", [
-      { id: "p1", sort_index: 0 },
-      { id: "current", sort_index: 1 },
+      { id: "p1", sort_index: 0, },
+      { id: "current", sort_index: 1, },
     ]),
   )
   router.set_failover_queue("codex", ["current", "p1"])
@@ -1037,8 +1063,8 @@ test "provider router mirrors moongate live settings and sort updates" {
   assert_eq(router.live_provider_json("codex", "missing"), Json::null())
   assert_true(
     router.update_providers_sort_order("codex", [
-      { id: "b", sort_index: 0 },
-      { id: "a", sort_index: 1 },
+      { id: "b", sort_index: 0, },
+      { id: "a", sort_index: 1, },
     ]),
   )
   guard router.providers_moon_json("codex") is Object(providers) else {
@@ -1075,8 +1101,8 @@ test "provider router syncs current live providers with moongate sort order" {
   router.set_current_provider("codex", "stale")
   assert_true(
     router.update_providers_sort_order("codex", [
-      { id: "b", sort_index: 0 },
-      { id: "a", sort_index: 1 },
+      { id: "b", sort_index: 0, },
+      { id: "a", sort_index: 1, },
     ]),
   )
   let targets = router.sync_current_provider_targets()

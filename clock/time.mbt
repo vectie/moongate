@@ -4,7 +4,7 @@ struct Epoch {
 }
 
 ///|
-pub let epoch : Epoch = { _unit: () }
+pub let epoch : Epoch = { _unit: (), }
 
 ///|
 pub impl Clock for Epoch with fn now(_ : Epoch) -> Timestamp {

@@ -52,7 +52,7 @@ function harness(fetch = async () => response({ token: "dummy-control-token" }))
           getAttribute: () => JSON.stringify([{ id: "claude", label: "Dummy app", mode: "single" }]),
         };
         if (selector === "[data-moongate-endpoints]") return {
-          getAttribute: () => JSON.stringify({ providerStreamCheck: "/dummy/test", providerCreate: "/dummy/providers", providerCurrent: "/dummy/current" }),
+          getAttribute: () => JSON.stringify({ providerStreamCheck: "/dummy/test", providerCreate: "/dummy/providers", providerUpdate: "/dummy/update", providerModels: "/providers/models", providerCurrent: "/dummy/current" }),
         };
         return null;
       },
@@ -381,3 +381,5 @@ test("draft requests are wired to the backend non-persisting health guard", () =
   assert.match(source, /record_stream_check_provider_health\(target, result, draft=true\)/);
   assert.match(source, /record_stream_check_provider_health\(provider, result\)/);
 });
+
+require("./catalog-cases.fixture.cjs").registerCatalogCases({ test, assert, providerHarness, deferred });

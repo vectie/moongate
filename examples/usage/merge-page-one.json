@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "requestId": "request-a",
+      "app": "codex",
+      "provider": "fixture",
+      "model": "small",
+      "totalTokens": 10,
+      "costUsd": 0,
+      "date": "2026-10-01"
+    },
+    {
+      "requestId": "request-b",
+      "app": "codex",
+      "provider": "fixture",
+      "model": "small",
+      "totalTokens": 20,
+      "date": "2026-10-01"
+    }
+  ],
+  "total": 4
+}

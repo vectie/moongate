@@ -9,7 +9,7 @@ priv struct CachedCodexChatResponse {
 
 ///|
 fn CachedCodexChatResponse::new() -> CachedCodexChatResponse {
-  { calls_by_id: Map([], capacity=0), call_order: [] }
+  { calls_by_id: Map([], capacity=0), call_order: [], }
 }
 
 ///|

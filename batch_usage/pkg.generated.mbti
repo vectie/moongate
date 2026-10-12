@@ -1,0 +1,15 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/batch_usage"
+
+// Values
+pub fn import_anthropic_batch_usage_json(String, source_name? : String, app? : String, provider? : String) -> Result[Json, String]
+
+pub fn import_batch_usage_json(String, source_name? : String, app? : String, provider? : String, requests? : String) -> Result[Json, String]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

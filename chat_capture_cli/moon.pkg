@@ -1,0 +1,7 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/chat_capture",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+}

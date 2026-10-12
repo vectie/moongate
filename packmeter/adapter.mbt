@@ -37,7 +37,7 @@ pub fn budget(pack_id : String, limit_micros : Int) -> PackBudget raise {
   if limit_micros < 0 {
     fail("pack budget must be non-negative")
   }
-  { pack_id, limit_micros, spent_micros: 0 }
+  { pack_id, limit_micros, spent_micros: 0, }
 }
 
 ///|
@@ -54,13 +54,13 @@ pub fn metering_scope(
   }
   let capabilities : Array[MeteredCapability] = []
   for tool in projection.tools {
-    capabilities.push({ kind: "tool", id: tool.id })
+    capabilities.push({ kind: "tool", id: tool.id, })
   }
   for schedule in projection.schedules {
-    capabilities.push({ kind: "schedule", id: schedule.id })
+    capabilities.push({ kind: "schedule", id: schedule.id, })
   }
   for entrypoint in projection.app_entrypoints {
-    capabilities.push({ kind: "app", id: entrypoint.id })
+    capabilities.push({ kind: "app", id: entrypoint.id, })
   }
   {
     pack_id: projection.pack_id,
@@ -78,7 +78,7 @@ pub fn charge(value : PackBudget, usage : UsageAttribution) -> PackBudget raise 
   if usage.amount_micros > remaining(value) {
     fail("pack cost budget exceeded")
   }
-  { ..value, spent_micros: value.spent_micros + usage.amount_micros }
+  { ..value, spent_micros: value.spent_micros + usage.amount_micros, }
 }
 
 ///|

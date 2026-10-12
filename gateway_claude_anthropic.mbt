@@ -1053,7 +1053,7 @@ fn OpenAIChatSseState::push_chat_sse_tool_call(
   let state = match self.tool_calls.get(index) {
     Some(existing) => existing
     None => {
-      let created : OpenAIChatSseToolCall = { id: "", name: "", arguments: "" }
+      let created : OpenAIChatSseToolCall = { id: "", name: "", arguments: "", }
       self.tool_calls.set(index, created)
       created
     }

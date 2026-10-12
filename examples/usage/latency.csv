@@ -1,0 +1,5 @@
+requestId,model,providerId,appType,date,totalTokens,latencyMs,totalCostUsd
+latency-one,moon-small,fixture-east,codex,2026-10-08,100,0,0
+latency-two,moon-small,fixture-east,codex,2026-10-08,120,25.5,
+latency-three,moon-large,fixture-west,claude,2026-10-09,200,350,0.02
+latency-four,moon-small,fixture-east,codex,2026-10-09,80,,
