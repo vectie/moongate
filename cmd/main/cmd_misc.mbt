@@ -72,7 +72,19 @@ fn print_help() -> Unit {
   println("  proxy <command>        Manage routing, failover, and proxy state")
   println("  provider <command>     Manage provider configuration")
   println(
+    "  usage attribute        Edit saved workload labels: --file FILE --scope NAMESPACE [--plan PLAN.json] [--workload LABEL|--unassigned] [--report|--csv groups|requests]",
+  )
+  println(
     "  usage import-chat      Read saved Chat Completions JSON/SSE: --file FILE [--file FILE ...] [--app LABEL] [--provider LABEL] [--report]",
+  )
+  println(
+    "  usage import-responses Read saved Responses JSON/HTTP SSE: --file FILE [--file FILE ...] [--app LABEL] [--provider LABEL] [--report]",
+  )
+  println(
+    "  usage import-otel      Read saved OpenTelemetry GenAI JSON/JSONL: --file FILE [--report]",
+  )
+  println(
+    "  usage review-costs     Compare saved OpenAI Costs with estimates: --file FILE --costs COSTS.json --provider ID --scope TEXT [--app APP] [--project ID] [--line-item NAME] [--report|--csv]",
   )
   println("  usage <command>        Inspect traffic, tokens, cost, and quotas")
   println(
@@ -83,6 +95,9 @@ fn print_help() -> Unit {
   )
   println(
     "  usage price            Apply hypothetical USD rates: --file FILE --rates RATE_CARD.json [--report]",
+  )
+  println(
+    "  usage reroute          Rehearse fixed-token route costs: --file FILE --plan ROUTE_PLAN.json [--report]",
   )
   println(
     "  usage latency          Profile local latency: --file FILE [--app VALUE] [--provider VALUE] [--model VALUE] [--start-day DAY] [--end-day DAY] [--report]",
@@ -132,6 +147,9 @@ fn print_help() -> Unit {
     "  provider openapi       Offline OpenAPI 3 JSON explorer: --file path [--tag name] [--operation id] [--http]",
   )
   println("  provider curl          Offline curl command to .http: --file path")
+  println(
+    "  provider insomnia      Offline Insomnia v4 JSON: --file path [--workspace ID] [--folder ID] [--request ID] [--http]",
+  )
   println(
     "  provider postman       Offline Postman v2.1 requests: --file path [--folder path] [--method POST] [--http]",
   )

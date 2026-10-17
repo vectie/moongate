@@ -136,7 +136,10 @@ pub fn price_usage_file_json(
     "data": rows.to_json(),
     "sourceTotal": preview["sourceTotal"],
   }
-  for key in ["sourceCoverageUnknown", "usageMergeScope"] {
+  for
+    key in [
+      "sourceCoverageUnknown", "usageMergeScope", "usageEvidenceKind", "usageScenarioName",
+    ] {
     if preview.get(key) is Some(value) {
       envelope[key] = value
     }

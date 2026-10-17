@@ -33,8 +33,18 @@ pub fn moongate_preview_usage_file_json(
   let mut source_total = 0
   let mut source_coverage_unknown = false
   let mut merge_scope : String? = None
+  let mut scenario_name : String? = None
   let records = match moon_parse_json_line(source) {
     Some(Object(obj)) if obj.get("data") is Some(Array(rows)) => {
+      if obj.contains("usageEvidenceKind") {
+        guard obj.get("usageEvidenceKind") ==
+          Some("hypothetical-route-scenario".to_json()) &&
+          obj.get("usageScenarioName") is Some(String(name)) &&
+          !name.trim().is_empty() else {
+          return Err("Unsupported or incomplete hypothetical usage marker")
+        }
+        scenario_name = Some(name)
+      }
       source_coverage_unknown = obj.get("sourceCoverageUnknown") ==
         Some(true.to_json())
       if obj.get("usageMergeScope") is Some(String(scope)) {
@@ -145,6 +155,14 @@ pub fn moongate_preview_usage_file_json(
   }
   if merge_scope is Some(scope) {
     result["usageMergeScope"] = scope.to_json()
+  }
+  if scenario_name is Some(name) {
+    result["usageEvidenceKind"] = "hypothetical-route-scenario".to_json()
+    result["usageScenarioName"] = name.to_json()
+    result["report"] = ("HYPOTHETICAL ROUTE SCENARIO: " +
+    name.to_json().stringify() +
+    "\nFixed recorded token counts; target quality, tokenization and runtime behavior are not predicted. No actual rerouting or savings established.\n" +
+    report).to_json()
   }
   Ok(Json::object(result))
 }

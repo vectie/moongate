@@ -61,11 +61,16 @@ pub fn export_usage_csv(
     }
   }
   let headers = columns.copy()
+  let hypothetical = preview.contains("usageEvidenceKind")
   for
     key in [
       "sourceTotal", "importedRows", "filteredRows", "partialSource", "sourceCoverageUnknown",
     ] {
     headers.push(key)
+  }
+  if hypothetical {
+    headers.push("usageEvidenceKind")
+    headers.push("usageScenarioName")
   }
   let lines = [headers.join(",")]
   for row in rows {
@@ -87,6 +92,10 @@ pub fn export_usage_csv(
     })
     for value in provenance {
       cells.push(usage_export_cell(value))
+    }
+    if hypothetical {
+      cells.push(usage_export_cell(preview["usageEvidenceKind"]))
+      cells.push(usage_export_cell(preview["usageScenarioName"]))
     }
     lines.push(cells.join(","))
   }

@@ -41,6 +41,11 @@ pub fn merge_usage_files_json(
       existing != scope {
       return Err("\{label}: existing merge scope differs; no files merged")
     }
+    if compare_field(preview, "usageEvidenceKind") != Json::null() {
+      return Err(
+        "\{label}: hypothetical route scenarios cannot be merged as recorded usage",
+      )
+    }
     guard compare_field(preview, "data") is Array(normalized) else {
       return Err("\{label}: no request rows; no files merged")
     }

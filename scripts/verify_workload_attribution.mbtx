@@ -1,0 +1,212 @@
+///|
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/fs",
+  "moonbitlang/async@0.19.4/io",
+  "moonbitlang/async@0.19.4/process",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+fn field(value : Json, key : String) -> Json raise {
+  guard value is Object(fields) && fields.get(key) is Some(value) else {
+    fail("Missing " + key)
+  }
+  value
+}
+
+///|
+async fn save(path : String, value : &@io.Data) -> Unit {
+  @fs.write_file(path, value, create_mode=@fs.CreateOrTruncate)
+}
+
+///|
+struct Runner {
+  bin : String
+  workspace : String
+  calls : Array[Json]
+}
+
+///|
+async fn Runner::run(
+  self : Runner,
+  args : Array[String],
+  fails? : Bool = false,
+) -> String {
+  let (status, stdout, stderr) = @process.collect_output(self.bin, args)
+  let index = (self.calls.length() + 1).to_string()
+  save(self.workspace + "/" + index + ".stdout", stdout)
+  save(self.workspace + "/" + index + ".stderr", stderr)
+  self.calls.push({
+    "program": self.bin.to_json(),
+    "arguments": args.to_json(),
+    "exit": status.to_json(),
+    "expectedFailure": fails.to_json(),
+  })
+  save(
+    self.workspace + "/commands.json",
+    self.calls.to_json().stringify(indent=2),
+  )
+  assert_eq(status != 0, fails, msg=stdout.text() + stderr.text())
+  if fails {
+    assert_eq(stdout.text(), "", msg="No partial artifact on failed edits")
+  }
+  stdout.text()
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  guard args.length() == 4 else {
+    fail(
+      "Usage: verify_workload_attribution.mbtx ABS_EXE EXAMPLES_DIR NEW_WORKSPACE",
+    )
+  }
+  let runner : Runner = {
+    bin: @fs.realpath(args[1]),
+    workspace: args[3],
+    calls: [],
+  }
+  assert_true(runner.workspace.has_prefix("/"))
+  assert_false(
+    @fs.exists(runner.workspace),
+    msg="Use a new owned output directory",
+  )
+  @fs.mkdir(runner.workspace)
+  let examples = @fs.realpath(args[2])
+  let originals : Map[String, String] = Map([])
+  for
+    name in [
+      "workload-usage.json", "workload-plan.json", "workload-revise.json",
+    ] {
+    let path = examples + "/" + name
+    originals[path] = @fs.read_file(path).text()
+  }
+  let source = examples + "/workload-usage.json"
+  let plan = examples + "/workload-plan.json"
+  let revise = examples + "/workload-revise.json"
+  let base = ["--file", source, "--scope", "fixture-run"]
+  let initial_report = runner.run(base + ["--unassigned", "--report"])
+  assert_true(initial_report.contains("assigned: 0; unassigned: 4"))
+  save(runner.workspace + "/initial-report.txt", initial_report)
+  let edited = runner.run(base + ["--plan", plan])
+  let result = @json.parse(edited)
+  assert_eq(field(result, "schema"), "moongate.usage-file.v1".to_json())
+  assert_eq(field(result, "total"), (4).to_json())
+  assert_eq(field(result, "sourceTotal"), (8).to_json())
+  assert_eq(field(result, "sourceCoverageUnknown"), true.to_json())
+  assert_eq(field(field(result, "summary"), "tokens"), (40).to_json())
+  assert_eq(field(field(result, "summary"), "missingCostCount"), (1).to_json())
+  assert_eq(runner.run(base + ["--plan", plan]), edited)
+  let review_path = runner.workspace + "/review.json"
+  save(review_path, edited)
+  let reopen = ["--file", review_path, "--scope", "fixture-run"]
+  let research_report = runner.run(
+    reopen + ["--workload", "Research", "--report"],
+  )
+  assert_true(research_report.contains("SELECTED: 2 requests | 35 tokens"))
+  save(runner.workspace + "/research-report.txt", research_report)
+  let selected = runner.run(reopen + ["--workload", "Research"])
+  let selected_path = runner.workspace + "/filtered-review.json"
+  save(selected_path, selected)
+  assert_eq(field(@json.parse(selected), "data"), field(result, "data"))
+  let unassigned_csv = runner.run([
+    "--file", selected_path, "--scope", "fixture-run", "--unassigned", "--csv", "requests",
+  ])
+  assert_true(unassigned_csv.contains("'request-d"))
+  assert_false(unassigned_csv.contains("'request-a"))
+  save(runner.workspace + "/unassigned.csv", unassigned_csv)
+  let revised = runner.run(reopen + ["--plan", revise])
+  let revised_result = @json.parse(revised)
+  assert_eq(field(revised_result, "data"), field(result, "data"))
+  assert_eq(field(revised_result, "summary"), field(result, "summary"))
+  let revised_path = runner.workspace + "/revised.json"
+  save(revised_path, revised)
+  let revised_args = ["--file", revised_path, "--scope", "fixture-run"]
+  let report = runner.run(revised_args + ["--unassigned", "--report"])
+  assert_true(
+    report.contains(
+      "SELECTED: 1 requests | 23 tokens | USD 0 known estimate | 1 missing costs",
+    ),
+  )
+  save(runner.workspace + "/revised-report.txt", report)
+  let groups = runner.run(revised_args + ["--csv", "groups"])
+  assert_true(groups.contains("'Research\",true,1,5,0.1,0,1"))
+  assert_true(groups.contains("'Support\",true,2,12,0.25,0,0"))
+  save(runner.workspace + "/workloads.csv", groups)
+  let requests = runner.run(
+    revised_args + ["--workload", "Research", "--csv", "requests"],
+  )
+  assert_true(requests.contains("'request-d"))
+  assert_false(requests.contains("'request-b"))
+  save(runner.workspace + "/research.csv", requests)
+  ignore(runner.run(revised_args + ["--plan", revise], fails=true))
+  ignore(
+    runner.run(
+      ["--file", revised_path, "--scope", "different-namespace"],
+      fails=true,
+    ),
+  )
+  ignore(
+    runner.run(
+      revised_args + ["--workload", "Research", "--csv", "groups"],
+      fails=true,
+    ),
+  )
+  let malformed = runner.workspace + "/unknown-id-plan.json"
+  save(
+    malformed,
+    originals[plan].replace_all(old="request-a", new="absent-request"),
+  )
+  ignore(runner.run(base + ["--plan", malformed], fails=true))
+  let empty_report = runner.run(
+    revised_args + ["--workload", "Missing", "--report"],
+  )
+  assert_true(empty_report.contains("SELECTED: 0 requests | 0 tokens"))
+  // A plan may use any nonblank label. Exact-value syntax must make a saved
+  // leading-dash label reachable without interpreting it as another option.
+  let dash_plan = runner.workspace + "/dash-plan.json"
+  save(dash_plan, originals[plan].replace_all(old="Research", new="--ops"))
+  let dash_review = runner.run(base + ["--plan", dash_plan])
+  let dash_path = runner.workspace + "/dash-review.json"
+  save(dash_path, dash_review)
+  let dash_args = [
+    "--file=" + dash_path,
+    "--scope=fixture-run",
+    "--workload=--ops",
+  ]
+  let dash_report = runner.run(dash_args + ["--report"])
+  assert_true(dash_report.contains("SELECTED: 2 requests | 35 tokens"))
+  save(runner.workspace + "/dash-report.txt", dash_report)
+  let dash_csv = runner.run(dash_args + ["--csv=requests"])
+  assert_true(dash_csv.contains("'request-a"))
+  assert_true(dash_csv.contains("'request-b"))
+  assert_false(dash_csv.contains("'request-d"))
+  save(runner.workspace + "/dash-requests.csv", dash_csv)
+  assert_eq(@fs.read_file(review_path).text(), edited)
+  assert_eq(@fs.read_file(revised_path).text(), revised)
+  for path, original in originals {
+    assert_eq(@fs.read_file(path).text(), original)
+  }
+  save(
+    runner.workspace + "/RESULT.json",
+    (
+      {
+        "status": "passed",
+        "commands": runner.calls.length().to_json(),
+        "usageRows": 4,
+        "recordedTokens": 40,
+        "knownEstimatedUsd": 0.35,
+        "missingCostCount": 1,
+        "sourceUnchanged": true,
+        "savedReviewUnchanged": true,
+        "leadingDashLabelReopened": true,
+        "journey": "inspect, assign, save, reopen, filter without losing rows, reassign, clear, group and request CSV, stale/namespace/unknown-ID failure, empty selection",
+        "qualification": "Synthetic offline CLI workflow only; no provider, browser, installed lifecycle or settlement evidence",
+      } : Json).stringify(indent=2),
+  )
+  println(
+    "Workload attribution native journey passed: \{runner.calls.length()} commands",
+  )
+}

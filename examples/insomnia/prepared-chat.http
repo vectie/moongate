@@ -1,0 +1,25 @@
+# MoonGate offline Insomnia v4 request collection
+
+# Review before manually sending. No URLs fetched, requests sent, scripts run or file references read.
+
+# Keep the original export separately; this derived collection is incomplete and is not a secret scrubber.
+
+# Environments, authentication helpers, cookies, scripts, tests and runtime settings are never imported.
+
+# Other resource types are omitted; see the JSON receipt for their counts.
+
+### Synthetic model API/Models/Chat/Create completion
+# Source resource req_chat (index 2)
+# Authentication helper omitted; configure credentials manually.
+# preRequestScript omitted; reproduce any required setup manually.
+
+
+POST https://example.invalid/v1/chat/completions
+X-Review: offline
+Content-Type: application/json
+
+{
+  "model": "fixture-small",
+  "messages": [{"role": "user", "content": "Hello fixture"}],
+  "stream": false
+}

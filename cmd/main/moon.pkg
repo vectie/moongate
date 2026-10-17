@@ -1,7 +1,12 @@
 supported_targets = "native"
 
 import {
+  "vectie/moongate/usage_attribute_cli",
+  "vectie/moongate/insomnia_import_cli",
+  "vectie/moongate/costs_review_cli",
+  "vectie/moongate/otel_usage_cli",
   "vectie/moongate/chat_capture_cli",
+  "vectie/moongate/response_capture_cli",
   "vectie/moongate/usage_export_cli",
   "vectie/moongate/ollama_capture_cli",
   "vectie/moongate/har_diagnostics_cli",
@@ -10,6 +15,7 @@ import {
   "vectie/moongate/usage_compare_cli",
   "vectie/moongate/usage_latency_cli",
   "vectie/moongate/usage_price_cli",
+  "vectie/moongate/usage_reroute_cli",
   "vectie/moongate/usage_merge_cli",
   "vectie/moongate/curl_import",
   "vectie/moongate",
@@ -30,6 +36,7 @@ import {
   "moonbitlang/async/http",
   "moonbitlang/async/fs",
   "moonbitlang/async/io",
+  "moonbitlang/async/stdio",
 }
 
 pkgtype(kind: "executable")

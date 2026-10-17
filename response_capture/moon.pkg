@@ -1,0 +1,8 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/internal/exact_json",
+  "vectie/moongate/usage_preview",
+  "moonbitlang/core/encoding/utf8" @encoding/utf8,
+  "moonbitlang/core/json",
+}

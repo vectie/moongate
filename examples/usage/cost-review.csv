@@ -1,0 +1,7 @@
+requestId,model,totalTokens,costUsd,provider,app,date
+fixture-1,fixture-small,100,1.5,fixture-route,editor,2024-11-01
+fixture-2,fixture-small,0,0,fixture-route,editor,2024-11-02
+fixture-3,fixture-small,10,,fixture-route,editor,2024-11-03
+fixture-4,fixture-small,30,3,fixture-route,editor,2024-11-04
+fixture-5,fixture-small,10,99,other-route,editor,2024-11-01
+fixture-6,fixture-small,10,7,fixture-route,other-app,2024-11-01

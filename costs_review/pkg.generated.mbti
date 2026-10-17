@@ -1,0 +1,15 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/costs_review"
+
+// Values
+pub fn export_openai_costs_review_csv(String, String, provider~ : String, scope~ : String, app? : String, project? : String, line_item? : String) -> Result[String, String]
+
+pub fn review_openai_costs_json(String, String, provider~ : String, scope~ : String, app? : String, project? : String, line_item? : String) -> Result[Json, String]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

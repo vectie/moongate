@@ -1,0 +1,9 @@
+{
+  "schema": "moongate.workload-plan.v1",
+  "scope": "fixture-run",
+  "changes": [
+    {"requestId":"request-a","expectedWorkload":"Research","workload":"Support"},
+    {"requestId":"request-b","expectedWorkload":"Research","workload":null},
+    {"requestId":"request-d","expectedWorkload":null,"workload":"Research"}
+  ]
+}

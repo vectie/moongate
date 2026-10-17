@@ -1,5 +1,24 @@
 # MoonGate documentation
 
+- [Saved workload attribution](usage-workload-attribution.md): assign, correct and
+  remove operator labels for exact saved request IDs, review unassigned requests,
+  and export workload groups while retaining recorded usage and unknown costs.
+
+- [Saved Responses capture import](responses-capture-import.md): inspect saved
+  JSON/HTTP SSE outcomes, record only explicit terminal consumption, and reopen
+  the resulting usage artifact for grouping, filtering and CSV export.
+
+- [Saved provider Costs review](provider-cost-review.md): compare saved OpenAI
+  cost buckets with corresponding local estimates by UTC day, retain gaps, and
+  export a report or spreadsheet without treating costs as settled charges.
+
+- [Workload route cost rehearsal](usage-route-rehearsal.md): edit exact route
+  mappings and hypothetical rates, compare like-covered rows, then explore and
+  export a clearly marked fixed-token scenario without provider execution.
+
+- [OpenTelemetry GenAI usage import](otel-usage-import.md): saved trace exports
+  to service/model usage groups, duration profiles and spreadsheet output.
+
 - [Responsibility and testability](RESPONSIBILITY_AND_TESTABILITY.md)
 - [UI-to-UI use cases](qualification/UI_TO_UI_USE_CASES.md)
 

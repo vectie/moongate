@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>MoonGate route scenario studio</title>
+<style>body{font:16px system-ui;max-width:900px;margin:2rem auto;padding:1rem}label{display:block;margin:.7rem 0}input,textarea,select,button{font:inherit;padding:.4rem}input,textarea{max-width:95%}button{margin:.3rem}pre{white-space:pre-wrap}#message{min-height:2rem}</style>
+<h1>MoonGate route scenario studio</h1><p>Build an offline what-if plan for saved usage. Rates are your assumptions in USD per million tokens. This does not change routing or contact providers. The native rehearsal holds recorded token counts fixed; it cannot predict a different model's quality or token usage.</p>
+<p><a href="responses.html">Inspect OpenAPI response schemas offline</a></p>
+<label>Scenario name <input id="name" value="My route scenario"></label>
+<label>Existing route-plan JSON <textarea id="import-text" rows="4" cols="80"></textarea></label><button id="import">Load pasted plan</button>
+<fieldset><legend>Start a mapping from saved usage</legend>
+<p>Paste an original canonical moongate.usage-file.v1 JSON export, up to 4 MiB and 10,000 rows. Only exact provider/model labels and row counts are inspected. Missing labels stay unresolved. No rates, token counts, provider health or eligibility are inferred. Pasted data stays in this page and is not included in the route-plan download.</p>
+<label>Saved original usage JSON <textarea id="usage-text" rows="4" cols="80"></textarea></label><button id="load-usage">Load observed source pairs</button>
+<p id="usage-summary" role="status" aria-live="polite"></p>
+<label>Observed source pair <select id="usage-pair"></select></label><button id="use-usage-pair" disabled>Use selected source pair</button>
+</fieldset>
+<label>Choose mapping <select id="mapping"><option value="">New mapping</option></select></label>
+<label>Source provider ID <input id="sourceProviderId"></label><label>Source model <input id="sourceModel"></label>
+<label>Target provider ID <input id="targetProviderId"></label><label>Target model <input id="targetModel"></label>
+<label>Input USD per million <input id="inputUsdPerMillion" inputmode="decimal"></label><label>Output USD per million <input id="outputUsdPerMillion" inputmode="decimal"></label>
+<button id="save">Save mapping locally</button><button id="remove">Remove selected mapping</button><button id="new">New mapping (discard unsaved fields)</button><button id="undo">Undo last change</button>
+<p id="message" role="status" aria-live="polite"></p><h2>Retained mappings</h2><pre id="preview"></pre><button id="download">Download route plan</button>
+<p>Run with your own saved original usage: moongate usage reroute --file usage.json --plan moonGate-route-plan.json. The companion cmd/reroute_usage accepts --file and --plan as well. Review the hypothetical results before deciding on any actual configuration change.</p>
+<script src="studio.js"></script></html>

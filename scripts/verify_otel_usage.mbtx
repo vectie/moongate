@@ -1,0 +1,189 @@
+///|
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/fs",
+  "moonbitlang/async@0.19.4/io",
+  "moonbitlang/async@0.19.4/process",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+fn field(value : Json, key : String) -> Json raise {
+  guard value is Object(fields) && fields.get(key) is Some(value) else {
+    fail("Missing " + key)
+  }
+  value
+}
+
+///|
+async fn save(path : String, value : &@io.Data) -> Unit {
+  @fs.write_file(path, value, create_mode=@fs.CreateOrTruncate)
+}
+
+///|
+struct Runner {
+  bin : String
+  workspace : String
+  calls : Array[Json]
+}
+
+///|
+async fn Runner::run(
+  self : Runner,
+  name : String,
+  args : Array[String],
+  fails? : Bool = false,
+) -> String {
+  let (status, stdout, stderr) = @process.collect_output(
+    self.bin + "/" + name + "/" + name + ".exe",
+    args,
+  )
+  let index = (self.calls.length() + 1).to_string()
+  save(self.workspace + "/" + index + ".stdout", stdout)
+  save(self.workspace + "/" + index + ".stderr", stderr)
+  self.calls.push({
+    "program": name.to_json(),
+    "arguments": args.to_json(),
+    "exit": status.to_json(),
+    "expectedFailure": fails.to_json(),
+  })
+  save(
+    self.workspace + "/commands.json",
+    self.calls.to_json().stringify(indent=2),
+  )
+  assert_eq(status != 0, fails, msg=name + "\n" + stdout.text() + stderr.text())
+  if fails {
+    assert_eq(stdout.text(), "", msg="Failure must not emit partial JSON")
+  }
+  stdout.text()
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  guard args.length() == 4 else {
+    fail("Usage: verify_otel_usage.mbtx BIN_CMD_DIR FIXTURE NEW_WORKSPACE")
+  }
+  let runner : Runner = {
+    bin: @fs.realpath(args[1]),
+    workspace: args[3],
+    calls: [],
+  }
+  assert_true(runner.workspace.has_prefix("/"))
+  assert_false(@fs.exists(runner.workspace), msg="Use a new owned workspace")
+  @fs.mkdir(runner.workspace)
+  let fixture = @fs.realpath(args[2])
+  let original = @fs.read_file(fixture).text()
+  let imported = runner.run("import_otel_usage", ["--file", fixture])
+  let result = @json.parse(imported)
+  assert_eq(field(result, "total"), Json::number(3))
+  assert_eq(field(result, "sourceTotal"), Json::number(4))
+  assert_eq(field(field(result, "summary"), "tokens"), Json::number(165))
+  assert_eq(
+    field(field(result, "summary"), "missingCostCount"),
+    Json::number(3),
+  )
+  assert_eq(
+    field(field(result, "otelImport"), "errorSpanCount"),
+    Json::number(2),
+  )
+  assert_eq(
+    field(field(result, "otelImport"), "skippedSpanCount"),
+    Json::number(1),
+  )
+  assert_true(field(result, "partial") == Json::boolean(true))
+  assert_false(imported.contains("PRIVATE_FIXTURE"))
+  save(runner.workspace + "/usage.json", imported)
+  assert_eq(runner.run("import_otel_usage", ["--file", fixture]), imported)
+  let report = runner.run("import_otel_usage", ["--file", fixture, "--report"])
+  assert_true(report.contains("recorded imported tokens: 165"))
+  assert_false(report.contains("PRIVATE_FIXTURE"))
+  // This companion accepts synthetic text in argv. Never use private exports here.
+  let filtered = @json.parse(
+    runner.run("import_usage_csv", [imported, "--app", "research-app"]),
+  )
+  assert_eq(field(filtered, "total"), Json::number(1))
+  assert_eq(field(field(filtered, "summary"), "tokens"), Json::number(120))
+  let zero = @json.parse(
+    runner.run("import_usage_csv", [imported, "--model", "no-match"]),
+  )
+  assert_eq(field(zero, "total"), Json::number(0))
+  assert_eq(field(zero, "sourceCoverageUnknown"), Json::boolean(true))
+  let dated = @json.parse(
+    runner.run("import_usage_csv", [
+      imported, "--start-day", "2026-10-13", "--end-day", "2026-10-13",
+    ]),
+  )
+  assert_eq(field(dated, "total"), Json::number(1))
+  assert_eq(field(field(dated, "summary"), "tokens"), Json::number(45))
+  let latency = @json.parse(
+    runner.run("latency_usage", ["--file", runner.workspace + "/usage.json"]),
+  )
+  assert_eq(field(field(latency, "summary"), "sampleCount"), Json::number(2))
+  let csv = runner.run("export_usage_csv", [
+    "--file",
+    runner.workspace + "/usage.json",
+    "--view",
+    "model",
+  ])
+  assert_true(csv.contains("fixture-small") && csv.contains("fixture-large"))
+  assert_false(csv.contains("PRIVATE_FIXTURE"))
+  ignore(
+    runner.run("export_usage_csv", [
+      "--file",
+      runner.workspace + "/usage.json",
+      "--view",
+      "summary",
+    ]),
+  )
+  ignore(
+    runner.run(
+      "import_otel_usage",
+      ["--file", fixture, "--file", fixture],
+      fails=true,
+    ),
+  )
+  ignore(
+    runner.run(
+      "import_otel_usage",
+      ["--file", runner.workspace + "/missing.json"],
+      fails=true,
+    ),
+  )
+  save(runner.workspace + "/malformed.json", "{PRIVATE_BAD_JSON")
+  ignore(
+    runner.run(
+      "import_otel_usage",
+      ["--file", runner.workspace + "/malformed.json"],
+      fails=true,
+    ),
+  )
+  let compact = @json.parse(original).stringify()
+  save(runner.workspace + "/duplicate.jsonl", compact + "\n" + compact)
+  ignore(
+    runner.run(
+      "import_otel_usage",
+      ["--file", runner.workspace + "/duplicate.jsonl"],
+      fails=true,
+    ),
+  )
+  save(runner.workspace + "/empty.json", "{\"resourceSpans\":[]}")
+  let empty = @json.parse(
+    runner.run("import_otel_usage", ["--file", runner.workspace + "/empty.json"]),
+  )
+  assert_eq(field(empty, "total"), Json::number(0))
+  assert_eq(field(empty, "partial"), Json::boolean(true))
+  assert_eq(@fs.read_file(fixture).text(), original)
+  let receipt : Json = {
+    "status": "passed",
+    "nativeCalls": runner.calls.length().to_json(),
+    "sourceUnchanged": true,
+    "providerCalls": 0,
+    "scope": "Offline synthetic OTLP import, deterministic reopen/filter/date, latency, CSV, error and empty journeys only",
+  }
+  save(runner.workspace + "/RESULT.json", receipt.stringify(indent=2))
+  println(
+    "PASS: \{runner.calls.length()} native CLI calls; input unchanged; no provider requests",
+  )
+}
