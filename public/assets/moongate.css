@@ -2244,3 +2244,10 @@ td select,
 #request-compare-context { white-space: pre-wrap; overflow-wrap: anywhere; }
 #request-compare-table td, #request-compare-table th { white-space: pre-wrap; overflow-wrap: anywhere; }
 #request-compare-table caption { text-align: left; padding: 12px 0; }
+
+/* Explicit search context remains distinct from matching/exported messages. */
+.transcript-navigation { flex-wrap: wrap; margin-top: 16px; }
+.transcript-navigation label { display: flex; align-items: center; gap: 8px; }
+.transcript-active-match { outline: 2px solid currentColor; outline-offset: 2px; }
+.transcript-context-message { border-style: dashed; }
+.transcript-message mark { background: #ffeb99; color: #171717; }

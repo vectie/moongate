@@ -1,0 +1,167 @@
+///|
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/fs",
+  "moonbitlang/async@0.19.4/process",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+fn field(value : Json, key : String) -> Json raise {
+  guard value is Object(fields) && fields.get(key) is Some(value) else {
+    fail("Missing " + key)
+  }
+  value
+}
+
+///|
+priv struct Runner {
+  bin : String
+  output : String
+  calls : Array[Json]
+}
+
+///|
+async fn Runner::call(
+  self : Runner,
+  name : String,
+  args : Array[String],
+  fails? : Bool = false,
+) -> String {
+  let (status, out, err) = @process.collect_output(
+    self.bin + "/" + name + "/" + name + ".exe",
+    args,
+  )
+  let prefix = self.output + "/" + (self.calls.length() + 1).to_string()
+  @fs.write_file(prefix + ".stdout", out, create_mode=@fs.CreateNew)
+  @fs.write_file(prefix + ".stderr", err, create_mode=@fs.CreateNew)
+  self.calls.push({
+    "program": name.to_json(),
+    "args": args.to_json(),
+    "exit": status.to_json(),
+    "expectedFailure": fails.to_json(),
+  })
+  @fs.write_file(
+    self.output + "/commands.json",
+    self.calls.to_json().stringify(indent=2),
+    create_mode=@fs.CreateOrTruncate,
+  )
+  assert_eq(status != 0, fails, msg=out.text() + err.text())
+  if fails {
+    assert_eq(out.text(), "")
+    assert_true(!err.text().is_empty())
+  }
+  out.text()
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  guard args.length() == 4 else {
+    fail("verify_insomnia BIN_CMD_DIR EXAMPLE_JSON NEW_OUTPUT_DIR")
+  }
+  let runner : Runner = {
+    bin: @fs.realpath(args[1]),
+    output: args[3],
+    calls: [],
+  }
+  let input = @fs.realpath(args[2])
+  let original = @fs.read_file(input).binary()
+  assert_true(runner.output.has_prefix("/"))
+  assert_false(@fs.exists(runner.output), msg="Use a new output directory")
+  @fs.mkdir(runner.output)
+  let copied = runner.output + "/original-v4.json"
+  @fs.write_file(copied, original, create_mode=@fs.CreateNew)
+  let common = ["--file", copied]
+  let receipt = runner.call("import_insomnia", common)
+  let parsed = @json.parse(receipt)
+  assert_eq(field(parsed, "selectedRequests"), Json::number(3))
+  assert_eq(field(parsed, "sourceResources"), Json::number(9))
+  assert_true(!receipt.contains("DEMO_ONLY_NOT_REAL"))
+  assert_true(!receipt.contains("SCRIPT_MUST_NEVER_RUN"))
+  assert_eq(runner.call("main", ["provider", "insomnia"] + common), receipt)
+  assert_eq(runner.call("import_insomnia", common), receipt)
+  @fs.write_file(
+    runner.output + "/inventory.json",
+    receipt,
+    create_mode=@fs.CreateNew,
+  )
+  let selected = runner.call(
+    "import_insomnia",
+    common + ["--workspace", "wrk_models", "--folder", "fld_models"],
+  )
+  assert_eq(field(@json.parse(selected), "selectedRequests"), Json::number(2))
+  let http_args = common + ["--request", "req_chat", "--http"]
+  let http = runner.call("import_insomnia", http_args)
+  assert_eq(runner.call("main", ["provider", "insomnia"] + http_args), http)
+  assert_true(http.contains("POST https://example.invalid/v1/chat/completions"))
+  assert_true(http.contains("preRequestScript omitted"))
+  assert_true(http.contains("Source resource req_chat (index 2)"))
+  @fs.write_file(
+    runner.output + "/prepared.http",
+    http,
+    create_mode=@fs.CreateNew,
+  )
+  let edited = http.replace_all(old="fixture-small", new="fixture-reviewed")
+  @fs.write_file(
+    runner.output + "/edited.http",
+    edited,
+    create_mode=@fs.CreateNew,
+  )
+  assert_true(
+    @fs.read_file(runner.output + "/edited.http")
+    .text()
+    .contains("fixture-reviewed"),
+  )
+  assert_eq(runner.call("import_insomnia", http_args), http)
+  ignore(
+    runner.call(
+      "import_insomnia",
+      common + ["--request", "missing"],
+      fails=true,
+    ),
+  )
+  ignore(
+    runner.call(
+      "main",
+      ["provider", "insomnia"] + common + ["--folder", "missing"],
+      fails=true,
+    ),
+  )
+  ignore(runner.call("import_insomnia", common + ["--live"], fails=true))
+  let invalid = runner.output + "/unsupported-v5.json"
+  @fs.write_file(
+    invalid,
+    "{\"__export_format\":5,\"resources\":[]}",
+    create_mode=@fs.CreateNew,
+  )
+  ignore(runner.call("import_insomnia", ["--file", invalid], fails=true))
+  ignore(
+    runner.call("main", ["provider", "insomnia", "--file", invalid], fails=true),
+  )
+  let help = runner.call("import_insomnia", ["--help"])
+  assert_true(help.contains("--request ID"))
+  assert_eq(@fs.read_file(input).binary(), original)
+  assert_eq(@fs.read_file(copied).binary(), original)
+  let result : Json = {
+    "status": "pass",
+    "commands": runner.calls.length().to_json(),
+    "sourceRequests": 3,
+    "folderSelectedRequests": 2,
+    "requestSelectedRequests": 1,
+    "bothEntrypointsEqual": true,
+    "rerunsDeterministic": true,
+    "originalInputBytesUnchanged": true,
+    "editedArtifactSeparate": true,
+    "errorStdoutEmpty": true,
+    "requestsDispatched": false,
+    "providerReadinessEstablished": false,
+  }
+  @fs.write_file(
+    runner.output + "/RESULT.json",
+    result.stringify(indent=2),
+    create_mode=@fs.CreateNew,
+  )
+  println(result.stringify(indent=2))
+}

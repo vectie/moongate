@@ -1,0 +1,10 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/usage_preview",
+  "vectie/moongate/usage_csv",
+  "vectie/moongate/internal/exact_json",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
+  "moonbitlang/x/time",
+}

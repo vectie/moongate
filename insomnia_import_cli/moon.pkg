@@ -1,0 +1,10 @@
+supported_targets = "native"
+
+import {
+  "vectie/moongate/insomnia_import",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+}

@@ -1,0 +1,11 @@
+: synthetic saved HTTP SSE body
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp-fixture-stream","object":"response","status":"in_progress","model":"fixture-large","created_at":1791590400,"usage":null}}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","sequence_number":1,"item_id":"msg-fixture","output_index":0,"content_index":0,"delta":"PRIVATE_FIXTURE_DELTA"}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":2,"response":{"id":"resp-fixture-stream","object":"response","status":"completed","model":"fixture-large","created_at":1791590400,"output":[{"text":"PRIVATE_FIXTURE_OUTPUT"}],"usage":{"input_tokens":10,"output_tokens":2,"total_tokens":12}}}
+
+: end of saved capture

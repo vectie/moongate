@@ -1,0 +1,9 @@
+{
+  "schema": "moongate.usage-route-plan.v1",
+  "name": "Synthetic trace workload rehearsal",
+  "currency": "USD",
+  "routes": [
+    {"sourceProviderId":"fixture-east","sourceModel":"fixture-small","targetProviderId":"candidate-route","targetModel":"candidate-small","inputUsdPerMillion":2,"outputUsdPerMillion":4},
+    {"sourceProviderId":"fixture-west","sourceModel":"fixture-large","targetProviderId":"candidate-route","targetModel":"candidate-small","inputUsdPerMillion":2,"outputUsdPerMillion":4}
+  ]
+}

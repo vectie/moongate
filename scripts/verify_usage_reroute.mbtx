@@ -1,0 +1,243 @@
+///|
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/fs",
+  "moonbitlang/async@0.19.4/io",
+  "moonbitlang/async@0.19.4/process",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+fn field(value : Json, key : String) -> Json raise {
+  guard value is Object(fields) && fields.get(key) is Some(value) else {
+    fail("Missing " + key)
+  }
+  value
+}
+
+///|
+async fn save(path : String, value : &@io.Data) -> Unit {
+  @fs.write_file(path, value, create_mode=@fs.CreateNew)
+}
+
+///|
+struct Runner {
+  bin : String
+  output : String
+  calls : Array[Json]
+}
+
+///|
+async fn Runner::call(
+  self : Runner,
+  name : String,
+  args : Array[String],
+  fails? : Bool = false,
+) -> String {
+  let (exit, out, err) = @process.collect_output(
+    self.bin + "/" + name + "/" + name + ".exe",
+    args,
+  )
+  let index = (self.calls.length() + 1).to_string()
+  save(self.output + "/" + index + ".stdout", out)
+  save(self.output + "/" + index + ".stderr", err)
+  self.calls.push({
+    "program": name.to_json(),
+    "args": args.to_json(),
+    "exit": exit.to_json(),
+    "expectedFailure": fails.to_json(),
+  })
+  @fs.write_file(
+    self.output + "/commands.json",
+    self.calls.to_json().stringify(indent=2),
+    create_mode=@fs.CreateOrTruncate,
+  )
+  assert_eq(exit != 0, fails, msg=name + ": " + out.text() + err.text())
+  if fails {
+    assert_eq(out.text(), "", msg="No partial scenario on failure")
+  }
+  out.text()
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  guard args.length() == 4 else {
+    fail(
+      "verify_usage_reroute.mbtx BIN_CMD_DIR EXAMPLES_USAGE_DIR NEW_OUTPUT_DIR",
+    )
+  }
+  let runner : Runner = {
+    bin: @fs.realpath(args[1]),
+    output: args[3],
+    calls: [],
+  }
+  let examples = @fs.realpath(args[2])
+  assert_true(runner.output.has_prefix("/"))
+  assert_false(@fs.exists(runner.output), msg="Choose a fresh output directory")
+  @fs.mkdir(runner.output)
+  let originals : Map[String, String] = Map([])
+  for
+    name in [
+      "route-workload.csv", "route-plan.json", "otel-traces.json", "otel-route-plan.json",
+    ] {
+    let content = @fs.read_file(examples + "/" + name).text()
+    originals[name] = content
+    save(runner.output + "/" + name, content)
+  }
+  let workload = runner.output + "/route-workload.csv"
+  let plan = runner.output + "/route-plan.json"
+  let scenario = runner.call("reroute_usage", [
+    "--file", workload, "--plan", plan,
+  ])
+  save(runner.output + "/scenario.json", scenario)
+  let result = @json.parse(scenario)
+  let review = field(result, "usageRouteScenario")
+  assert_eq(
+    field(field(result, "summary"), "knownEstimatedUsd"),
+    Json::number(6),
+  )
+  assert_eq(field(review, "originalKnownEstimatedUsd"), Json::number(16))
+  assert_eq(field(review, "pairedCount"), Json::number(2))
+  assert_eq(field(review, "pairedDeltaUsd"), Json::number(-8))
+  assert_eq(field(review, "missingTokenCount"), Json::number(1))
+  assert_eq(field(review, "unmappedCount"), Json::number(1))
+  assert_eq(field(review, "unusedMappingIndices"), [3].to_json())
+  assert_eq(
+    runner.call("reroute_usage", ["--file", workload, "--plan", plan]),
+    scenario,
+  )
+  let report = runner.call("reroute_usage", [
+    "--file", workload, "--plan", plan, "--report",
+  ])
+  save(runner.output + "/report.txt", report)
+  assert_true(report.contains("Known scenario estimate: USD 6"))
+  // This legacy companion accepts text in argv: use synthetic fixtures only.
+  let filtered = runner.call("import_usage_csv", [
+    scenario, "--provider", "candidate-route",
+  ])
+  save(runner.output + "/candidate-preview.json", filtered)
+  assert_eq(field(@json.parse(filtered), "total"), Json::number(4))
+  assert_eq(
+    field(@json.parse(filtered), "usageEvidenceKind"),
+    "hypothetical-route-scenario".to_json(),
+  )
+  let filtered_report = runner.call("import_usage_csv", [filtered, "--report"])
+  assert_true(filtered_report.contains("HYPOTHETICAL ROUTE SCENARIO"))
+  save(runner.output + "/candidate-report.txt", filtered_report)
+  let csv = runner.call("export_usage_csv", [
+    "--file",
+    runner.output + "/scenario.json",
+    "--view",
+    "model",
+  ])
+  assert_true(
+    csv.contains("hypothetical-route-scenario") &&
+    csv.contains("candidate-small"),
+  )
+  save(runner.output + "/models.csv", csv)
+  guard @json.parse(originals["route-plan.json"]) is Object(edited) &&
+    edited["routes"] is Array(routes) else {
+    fail("plan")
+  }
+  edited["name"] = "Edited synthetic 3/6 route rehearsal".to_json()
+  for route in routes {
+    guard route is Object(fields) else { fail("route") }
+    fields["inputUsdPerMillion"] = Json::number(3)
+    fields["outputUsdPerMillion"] = Json::number(6)
+  }
+  save(
+    runner.output + "/edited-plan.json",
+    Json::object(edited).stringify(indent=2),
+  )
+  let changed = runner.call("reroute_usage", [
+    "--file",
+    workload,
+    "--plan",
+    runner.output + "/edited-plan.json",
+  ])
+  save(runner.output + "/edited-scenario.json", changed)
+  assert_eq(
+    field(field(@json.parse(changed), "summary"), "knownEstimatedUsd"),
+    Json::number(9),
+  )
+  assert_eq(
+    field(field(@json.parse(changed), "usageRouteScenario"), "pairedDeltaUsd"),
+    Json::number(-6),
+  )
+  let imported = runner.call("import_otel_usage", [
+    "--file",
+    runner.output + "/otel-traces.json",
+  ])
+  save(runner.output + "/otel-usage.json", imported)
+  let otel = runner.call("reroute_usage", [
+    "--file",
+    runner.output + "/otel-usage.json",
+    "--plan",
+    runner.output + "/otel-route-plan.json",
+  ])
+  save(runner.output + "/otel-scenario.json", otel)
+  let trace_result = @json.parse(otel)
+  assert_eq(field(trace_result, "sourceCoverageUnknown"), true.to_json())
+  assert_eq(field(trace_result, "sourceTotal"), Json::number(4))
+  assert_eq(field(field(trace_result, "summary"), "tokens"), Json::number(165))
+  assert_eq(
+    field(field(trace_result, "usageRouteScenario"), "pairedCount"),
+    Json::number(0),
+  )
+  assert_eq(
+    field(field(trace_result, "usageRouteScenario"), "unmappedCount"),
+    Json::number(1),
+  )
+  assert_false(otel.contains("PRIVATE_FIXTURE"))
+  ignore(
+    runner.call(
+      "reroute_usage",
+      ["--file", workload, "--plan", plan, "--plan", plan],
+      fails=true,
+    ),
+  )
+  ignore(
+    runner.call(
+      "reroute_usage",
+      ["--file", workload, "--plan", runner.output + "/absent.json"],
+      fails=true,
+    ),
+  )
+  save(
+    runner.output + "/bad-plan.json",
+    "{\"schema\":\"wrong\",\"PRIVATE_FIXTURE\":true}",
+  )
+  ignore(
+    runner.call(
+      "reroute_usage",
+      ["--file", workload, "--plan", runner.output + "/bad-plan.json"],
+      fails=true,
+    ),
+  )
+  ignore(
+    runner.call(
+      "reroute_usage",
+      ["--file", runner.output + "/scenario.json", "--plan", plan],
+      fails=true,
+    ),
+  )
+  for name, content in originals {
+    assert_eq(@fs.read_file(examples + "/" + name).text(), content)
+    assert_eq(@fs.read_file(runner.output + "/" + name).text(), content)
+  }
+  let receipt : Json = {
+    "status": "passed",
+    "nativeCalls": runner.calls.length().to_json(),
+    "inputsUnchanged": true,
+    "networkRequests": 0,
+    "scope": "native local synthetic import/edit/reroute/filter/report/CSV; no browser or provider qualification",
+  }
+  save(runner.output + "/RESULT.json", receipt.stringify(indent=2))
+  println(
+    "Native workload rehearsal passed: " +
+    runner.calls.length().to_string() +
+    " actual CLI calls",
+  )
+}

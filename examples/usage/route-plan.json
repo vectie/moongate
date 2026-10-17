@@ -1,0 +1,10 @@
+{
+  "schema": "moongate.usage-route-plan.v1",
+  "name": "Synthetic smaller-route rehearsal",
+  "currency": "USD",
+  "routes": [
+    {"sourceProviderId":"old-route","sourceModel":"large","targetProviderId":"candidate-route","targetModel":"candidate-small","inputUsdPerMillion":2,"outputUsdPerMillion":4},
+    {"sourceProviderId":"old-route","sourceModel":"small","targetProviderId":"candidate-route","targetModel":"candidate-small","inputUsdPerMillion":2,"outputUsdPerMillion":4},
+    {"sourceProviderId":"unused-route","sourceModel":"unused-model","targetProviderId":"candidate-route","targetModel":"candidate-small","inputUsdPerMillion":2,"outputUsdPerMillion":4}
+  ]
+}

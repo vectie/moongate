@@ -1,0 +1,11 @@
+{
+  "schema": "moongate.usage-file.v1",
+  "sourceTotal": 8,
+  "sourceCoverageUnknown": true,
+  "data": [
+    {"requestId":"request-a","appType":"fixture-client","providerId":"fixture-local","model":"small","date":"2026-10-12","inputTokens":10,"outputTokens":2,"totalTokens":12,"totalCostUsd":0.25},
+    {"requestId":"request-b","appType":"fixture-client","providerId":"fixture-local","model":"large","date":"2026-10-13","inputTokens":20,"outputTokens":3,"totalTokens":23,"totalCostUsd":null},
+    {"requestId":"request-c","appType":"fixture-client","providerId":"fixture-local","model":"small","date":"2026-10-13","inputTokens":0,"outputTokens":0,"totalTokens":0,"totalCostUsd":0},
+    {"requestId":"request-d","appType":"fixture-client","providerId":"fixture-local","model":"small","date":"","inputTokens":null,"outputTokens":null,"totalTokens":5,"totalCostUsd":0.1}
+  ]
+}

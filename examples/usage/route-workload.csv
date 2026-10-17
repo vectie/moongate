@@ -1,0 +1,6 @@
+requestId,appType,providerId,model,date,inputTokens,outputTokens,totalTokens,totalCostUsd
+fixture-1,editor,old-route,large,2026-10-10,1000000,500000,1500000,12
+fixture-2,editor,old-route,large,2026-10-10,0,0,0,0
+fixture-3,research,old-route,large,2026-10-11,,,50000,3
+fixture-4,research,other-route,unmapped,2026-10-11,100,50,150,1
+fixture-5,editor,old-route,small,2026-10-11,1000000,0,1000000,

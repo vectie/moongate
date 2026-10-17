@@ -19,6 +19,18 @@ suite. It is a standalone app and also fits beside:
 
 The proxy listens on `127.0.0.1:15721` by default.
 
+**Workload attribution** assigns exact saved request IDs to operator-defined
+project/work labels. Reopen the private review, correct assignments, find
+unassigned usage, and export workload groups without changing recorded usage.
+See the [offline editing workflow](docs/usage-workload-attribution.md) and
+`moongate usage attribute --file examples/usage/workload-usage.json --scope fixture-run --report`.
+
+**Saved Responses captures** turn a saved Responses JSON object or HTTP SSE
+stream into a private usage review. Terminal incomplete/failed outcomes remain
+separate from their explicit token consumption; interrupted captures stay
+visible without invented totals. See the [offline capture workflow](docs/responses-capture-import.md)
+and `moongate usage import-responses --file examples/usage/response-completed.json`.
+
 **Transcript Reader** opens exported Codex/Claude logs or role/content JSON
 without an AI provider. Find text, filter by speaker, and download the visible
 conversation as JSON or Markdown. See the [local transcript workflow](docs/TRANSCRIPT_READER.md)
@@ -37,6 +49,12 @@ For a focused handoff, search the kept metadata/notes, check exact requests, and
 selections stay included; the global summary is opt-in. See
 [focused subsets](docs/RETAINED_REQUEST_EXPLORER.md#find-observations-and-save-a-focused-subset).
 See the [request review workflow](docs/RETAINED_REQUEST_EXPLORER.md#compare-a-failed-request-with-a-reference).
+
+**Named Postman environment preparation** inspects a sanitized collection and
+environment, applies explicitly selected literal bindings, and saves a separate
+collection plus private original-byte/hash provenance. It runs offline with Node;
+native converter interoperability remains unrun. See the
+[preparation guide](docs/POSTMAN_ENVIRONMENT_PREPARATION.md).
 
 ## Current Phase
 
@@ -864,6 +882,15 @@ MoonBook remains the durable output owner, MoonTown owns scheduling and standing
 goals, MoonClaw owns execution, and MoonDesk owns the local operator UI.
 MoonGate owns local traffic rerouting and usage/statistics accounting.
 
+## Prepare a saved Insomnia workspace
+
+`moongate provider insomnia --file examples/insomnia/workspace-v4.json` inventories
+legacy Insomnia v4 JSON. Select exact `--workspace`, `--folder` or `--request` IDs
+and add `--http` for an editable request collection. Source IDs and omissions
+remain visible, original input stays read-only, and no requests or scripts run.
+The `cmd/import_insomnia` companion shares the workflow. See
+[Insomnia preparation and limits](docs/INSOMNIA_IMPORT.md).
+
 ## Import a copied curl request
 
 `moongate provider curl --file examples/curl/chat.curl` converts a literal curl
@@ -920,3 +947,13 @@ Saved Anthropic Message Batches results are supported with `import_batch_usage -
 generate/chat response per file and exports complete terminal usage for the
 Usage File Explorer. It preserves interruption/error states and nanosecond
 timing evidence without contacting Ollama. See [the capture workflow](docs/ollama-capture-import.md).
+
+Stage several app/provider connection changes, apply them sequentially, and
+reconcile uncertain results in the [staged connections workflow](docs/STAGED_APP_CONNECTIONS.md).
+
+## Route scenario authoring
+
+See [the local workflow guide](docs/route-scenario-studio.md) for the new offline editor and existing native consumer.
+The studio can load a canonical saved usage JSON export and seed mappings from
+exact observed provider/model pairs, while retaining missing-label and partial
+coverage warnings. Target routes and rate assumptions remain explicit choices.

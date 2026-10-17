@@ -1,15 +1,16 @@
 ///|
 fn provider_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "preview_curl", patterns: ["provider curl"] },
-    { id: "preview_postman", patterns: ["provider postman"] },
-    { id: "preview_har", patterns: ["provider har"] },
-    { id: "preview_openapi", patterns: ["provider openapi"] },
-    { id: "get_providers", patterns: ["provider list"] },
-    { id: "get_current_provider", patterns: ["provider current"] },
-    { id: "add_provider", patterns: ["provider add"] },
-    { id: "update_provider", patterns: ["provider update"] },
-    { id: "delete_provider", patterns: ["provider delete"] },
+    { id: "preview_insomnia", patterns: ["provider insomnia"], },
+    { id: "preview_curl", patterns: ["provider curl"], },
+    { id: "preview_postman", patterns: ["provider postman"], },
+    { id: "preview_har", patterns: ["provider har"], },
+    { id: "preview_openapi", patterns: ["provider openapi"], },
+    { id: "get_providers", patterns: ["provider list"], },
+    { id: "get_current_provider", patterns: ["provider current"], },
+    { id: "add_provider", patterns: ["provider add"], },
+    { id: "update_provider", patterns: ["provider update"], },
+    { id: "delete_provider", patterns: ["provider delete"], },
     {
       id: "remove_provider_from_live_config",
       patterns: ["provider remove-live"],
@@ -99,6 +100,13 @@ async fn run_provider_cli_command(
   args : Array[String],
 ) -> Unit {
   match command_id {
+    "preview_insomnia" =>
+      @insomnia_import_cli.run(args[3:].to_owned()) catch {
+        error => {
+          @io.Writer::write(@stdio.stderr, "Insomnia import failed: \{error}\n")
+          @os.exit(1)
+        }
+      }
     "preview_curl" => preview_curl(args)
     "preview_postman" => preview_postman(args)
     "preview_har" => preview_har(args)

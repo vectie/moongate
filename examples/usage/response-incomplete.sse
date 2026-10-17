@@ -1,0 +1,4 @@
+event: response.incomplete
+data: {"type":"response.incomplete","sequence_number":4,"response":{"id":"resp-fixture-incomplete","object":"response","status":"incomplete","model":"fixture-small","created_at":1791504000,"incomplete_details":{"reason":"max_output_tokens"},"usage":{"input_tokens":3,"output_tokens":4,"total_tokens":7}}}
+
+: end of saved capture

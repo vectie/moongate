@@ -27,6 +27,15 @@ matches an exact slash-separated folder path and its descendants, case-sensitive
 `--method` is case-insensitive. The two filters combine with AND; no match produces
 an empty collection. Source order and request numbers remain stable under filters.
 
+## Named environment preparation
+
+The native converter still does not load environment exports. For a separate
+offline inspect/select/prepare workflow, see
+[Named Postman environment preparation](POSTMAN_ENVIRONMENT_PREPARATION.md).
+It retains original bytes and hashes, applies only selected literal bindings,
+and produces a new collection for `provider postman --file`. Native
+interoperability for that preparation workflow remains unrun.
+
 ## What carries over
 
 - Nested folder/request names and collection order, including shorthand URL

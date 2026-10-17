@@ -426,7 +426,8 @@ $("binding-rows")?.addEventListener("click", (event) => {
   if (!button) return;
   const appType = button.dataset.app;
   const action = button.dataset.bindingAction;
-  if (action === "bind") bindApp(appType).catch(showError);
+  if (action === "stage") { try { stageBindingChange(appType); } catch (error) { showError(error); } }
+  else if (action === "bind") bindApp(appType).catch(showError);
   else if (action === "unbind") unbindApp(appType).catch(showError);
   else if (action === "verify") verifyBinding(appType).catch(showError);
   else if (action === "manual") navigateToPage("connect");

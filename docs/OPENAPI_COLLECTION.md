@@ -52,7 +52,72 @@ message example. No provider records or user configuration are changed.
 
 ## Limits
 
-YAML, Swagger 2, remote refs, callbacks/webhooks, response/schema exploration and
+For offline response/schema inspection, open the route studio's
+[response explorer](../route_studio/responses.html) through a local static HTTP
+server. Paste sanitized OpenAPI JSON, select an operation, status and media type.
+It displays nested field breadcrumbs, required declarations, enums, examples,
+local references and explicit unsupported/cyclic-reference messages. It does
+not send requests, fetch external references, validate responses or generate
+schema-derived samples. This separate browser inspection tool does not change
+the CLI request importer's scope below. Module loading requires HTTP serving;
+no build or installed dependency is required.
+
+### Compare two response contracts
+
+In the same response explorer, load the **Before** document in the first input
+and the **After** document in the second. The comparison has its own operation,
+status and media selectors; the original single-document explorer still works.
+Options are the union of declarations from both loaded documents. Selectors
+match the exact HTTP method/path pair, status key and media string, never the
+operation ID, a similarly named route, a wildcard status or a default response.
+If a selected declaration is missing on either side, the result identifies
+`missing-operation`, `missing-status` or `missing-media` and does not substitute
+another contract. Responses without content have no media to compare.
+
+The **Before → After differences** result lists added/removed declared fields
+and changes to required, declared type/nullable and enum values. Breadcrumbs
+preserve nested properties and array items. Local object references resolve
+independently within each document, using the same escaping and depth limits as
+inspection. Enums are compared as sets; JSON object key order, enum order and
+type-array member order are ignored. Array order inside an enum value remains
+significant. An absent nullable flag and false are treated alike. Descriptions,
+titles, supplied examples and defaults are annotations outside this comparison.
+All numeric enum values, including numbers nested inside enum arrays/objects,
+make the comparison indeterminate. JSON parsing can round large integers and
+decimals, underflow to zero or overflow to nonfinite values; this bounded tool
+does not retain lossless numeric tokens. Even ordinary integer enum values are
+conservatively excluded. Numeric schema type declarations remain comparable.
+
+This is a conservative declaration comparison, not a schema validator or a
+compatible/breaking-change verdict. Any unresolved/recursive reference,
+reference sibling, invalid/missing schema, traversal truncation or unsupported
+schema declaration makes the selected comparison **indeterminate**. This
+includes composition (`allOf`, `oneOf`, `anyOf`), conditionals, additional
+properties, dynamic refs, format/validation constraints and required entries
+without property schemas. Partial traversal never produces a definitive added,
+removed or unchanged field conclusion. Schema fields supported for comparison
+are type, properties, required, items, enum and nullable, plus the annotations
+listed above. This bounded check does not establish dialect compatibility or
+full OpenAPI validity. Unavailable or unresolved media examples do not block
+schema comparison; their warnings remain in the single-document explorer.
+
+The existing 4 MiB/2,000-operation input and 500-node/24-level/16-reference limits
+apply to each document. Each enum has a further 10,000-value/node and 24-level
+comparison bound. A result with no differences explicitly refers only to the
+inspected field/required/type/enum declarations. Editing either input immediately
+clears the comparison and disables its selectors; reload that input to compare
+again. Failed loads clear stale results. All data stays in page memory and is
+lost on refresh; the page uses no endpoint calls or browser storage. Use public
+or sanitized documents, since values are displayed without general redaction.
+
+Focused regression: `node --test route_studio/responses.test.mjs`. Tests import
+the production module and bind its actual HTML control IDs through a minimal
+DOM adapter. They cover both load orders, selection changes, missing declarations,
+failed/edited input recovery, nested differences, conservative bounds and
+text-only rendering. They do not qualify graphical layout, accessibility,
+browser module serving, installed-host integration or provider compatibility.
+
+The CLI excludes YAML, Swagger 2, remote refs, callbacks/webhooks, response/schema exploration and
 schema-derived sample generation are not included. `$ref` siblings are ignored;
 pointer traversal supports objects, not array indexes or percent decoding.
 Server-variable expansion, multipart/form bodies, cookies and complex parameter

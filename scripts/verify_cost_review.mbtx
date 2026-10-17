@@ -1,0 +1,281 @@
+///|
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/fs",
+  "moonbitlang/async@0.19.4/process",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+fn field(value : Json, key : String) -> Json raise {
+  guard value is Object(fields) && fields.get(key) is Some(value) else {
+    fail("Missing " + key)
+  }
+  value
+}
+
+///|
+priv struct Runner {
+  bin : String
+  output : String
+  calls : Array[Json]
+}
+
+///|
+async fn Runner::call(
+  self : Runner,
+  name : String,
+  args : Array[String],
+  fails? : Bool = false,
+) -> String {
+  let (status, out, err) = @process.collect_output(
+    self.bin + "/" + name + "/" + name + ".exe",
+    args,
+  )
+  let prefix = self.output + "/" + (self.calls.length() + 1).to_string()
+  @fs.write_file(prefix + ".stdout", out, create_mode=@fs.CreateNew)
+  @fs.write_file(prefix + ".stderr", err, create_mode=@fs.CreateNew)
+  self.calls.push({
+    "program": name.to_json(),
+    "args": args.to_json(),
+    "exit": status.to_json(),
+    "expectedFailure": fails.to_json(),
+  })
+  @fs.write_file(
+    self.output + "/commands.json",
+    self.calls.to_json().stringify(indent=2),
+    create_mode=@fs.CreateOrTruncate,
+  )
+  assert_eq(status != 0, fails, msg=out.text() + err.text())
+  if fails {
+    assert_eq(out.text(), "")
+  }
+  out.text()
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  guard args.length() == 4 else {
+    fail("verify_cost_review BIN_CMD_DIR EXAMPLES_USAGE_DIR NEW_OUTPUT_DIR")
+  }
+  let runner : Runner = {
+    bin: @fs.realpath(args[1]),
+    output: args[3],
+    calls: [],
+  }
+  let examples = @fs.realpath(args[2])
+  assert_true(runner.output.has_prefix("/"))
+  assert_false(@fs.exists(runner.output), msg="Choose a new output directory")
+  @fs.mkdir(runner.output)
+  let originals : Map[String, String] = Map([])
+  for name in ["cost-review.csv", "openai-costs.json"] {
+    let content = @fs.read_file(examples + "/" + name).text()
+    originals[name] = content
+    @fs.write_file(
+      runner.output + "/" + name,
+      content,
+      create_mode=@fs.CreateNew,
+    )
+  }
+  let common = [
+    "--costs",
+    runner.output + "/openai-costs.json",
+    "--provider",
+    "fixture-route",
+    "--app",
+    "editor",
+    "--project",
+    "fixture-project",
+    "--line-item",
+    "text",
+    "--scope",
+    "Synthetic editor text activity for fixture-project; saved corresponding captures",
+  ]
+  let input = ["--file", runner.output + "/cost-review.csv"] + common
+  let output = runner.call("review_costs", input)
+  @fs.write_file(
+    runner.output + "/review.json",
+    output,
+    create_mode=@fs.CreateNew,
+  )
+  let result = @json.parse(output)
+  assert_eq(field(result, "localSelectedRows"), Json::number(4))
+  assert_eq(field(result, "localImportedRows"), Json::number(6))
+  assert_eq(field(result, "providerSelectedResults"), Json::number(4))
+  assert_eq(field(result, "pairedDays"), Json::number(2))
+  assert_eq(field(result, "pairedReportedMinusEstimatedUsd"), Json::number(0.5))
+  assert_eq(runner.call("main", ["usage", "review-costs"] + input), output)
+  assert_eq(runner.call("review_costs", input), output)
+  let report = runner.call("review_costs", input + ["--report"])
+  assert_true(
+    report.contains("unknown-local-estimates") &&
+    report.contains("no-provider-bucket"),
+  )
+  @fs.write_file(
+    runner.output + "/report.txt",
+    report,
+    create_mode=@fs.CreateNew,
+  )
+  let csv = runner.call("review_costs", input + ["--csv"])
+  assert_true(csv.contains("scopeVerified") && csv.contains("0.5"))
+  @fs.write_file(runner.output + "/review.csv", csv, create_mode=@fs.CreateNew)
+  let edited = originals["cost-review.csv"].replace_all(
+    old=",100,1.5,",
+    new=",100,2,",
+  )
+  @fs.write_file(
+    runner.output + "/edited-usage.csv",
+    edited,
+    create_mode=@fs.CreateNew,
+  )
+  let rerun = runner.call(
+    "review_costs",
+    ["--file", runner.output + "/edited-usage.csv"] + common,
+  )
+  assert_eq(
+    field(@json.parse(rerun), "pairedReportedMinusEstimatedUsd"),
+    Json::number(0),
+  )
+  @fs.write_file(
+    runner.output + "/edited-review.json",
+    rerun,
+    create_mode=@fs.CreateNew,
+  )
+  let partial = originals["openai-costs.json"].replace_all(
+    old="\"has_more\": false",
+    new="\"has_more\": true",
+  )
+  @fs.write_file(
+    runner.output + "/partial-costs.json",
+    partial,
+    create_mode=@fs.CreateNew,
+  )
+  let partial_args = input.map(value => {
+    if value == runner.output + "/openai-costs.json" {
+      runner.output + "/partial-costs.json"
+    } else {
+      value
+    }
+  })
+  let partial_review = runner.call("review_costs", partial_args)
+  assert_eq(field(@json.parse(partial_review), "pairedDays"), Json::number(0))
+  @fs.write_file(
+    runner.output + "/partial-review.json",
+    partial_review,
+    create_mode=@fs.CreateNew,
+  )
+  let bad = originals["openai-costs.json"].replace_all(
+    old="\"usd\"",
+    new="\"eur\"",
+  )
+  @fs.write_file(
+    runner.output + "/unsupported-currency.json",
+    bad,
+    create_mode=@fs.CreateNew,
+  )
+  ignore(
+    runner.call(
+      "review_costs",
+      input.map(value => {
+        if value == runner.output + "/openai-costs.json" {
+          runner.output + "/unsupported-currency.json"
+        } else {
+          value
+        }
+      }),
+      fails=true,
+    ),
+  )
+  ignore(runner.call("review_costs", input + ["--csv", "--report"], fails=true))
+  ignore(
+    runner.call(
+      "review_costs",
+      ["--file", runner.output + "/missing.csv"] + common,
+      fails=true,
+    ),
+  )
+  // Retained provenance must be rejected before the one-way CSV reader can
+  // discard it. Both real CLI entry points must enforce the same boundary.
+  for
+    (name, column, value) in [
+      (
+        "retained-hypothetical.csv", "usageEvidenceKind", "hypothetical-route-scenario",
+      ),
+      ("retained-coverage.csv", "sourceCoverageUnknown", "true"),
+    ] {
+    let fixture = "model,totalTokens,costUsd,provider,app,date," +
+      column +
+      "\nm,1,1,fixture-route,editor,2024-11-01," +
+      value +
+      "\n"
+    @fs.write_file(
+      runner.output + "/" + name,
+      fixture,
+      create_mode=@fs.CreateNew,
+    )
+    let boundary_args = ["--file", runner.output + "/" + name] + common
+    ignore(runner.call("review_costs", boundary_args, fails=true))
+    ignore(
+      runner.call("main", ["usage", "review-costs"] + boundary_args, fails=true),
+    )
+  }
+  let explicit_partial = "{\"partial\":true,\"data\":[{\"model\":\"m\",\"totalTokens\":1,\"costUsd\":1,\"provider\":\"fixture-route\",\"app\":\"editor\",\"date\":\"2024-11-01\"}]}"
+  @fs.write_file(
+    runner.output + "/explicit-partial.json",
+    explicit_partial,
+    create_mode=@fs.CreateNew,
+  )
+  let explicit_args = ["--file", runner.output + "/explicit-partial.json"] +
+    common
+  let explicit_result = runner.call("review_costs", explicit_args)
+  assert_eq(
+    field(@json.parse(explicit_result), "localSourcePartial"),
+    true.to_json(),
+  )
+  assert_eq(field(@json.parse(explicit_result), "pairedDays"), Json::number(0))
+  assert_eq(
+    runner.call("main", ["usage", "review-costs"] + explicit_args),
+    explicit_result,
+  )
+  @fs.write_file(
+    runner.output + "/explicit-partial-review.json",
+    explicit_result,
+    create_mode=@fs.CreateNew,
+  )
+  let malformed = "model,totalTokens,costUsd,provider,app,date\nm,1,1,fixture-route,editor,2024-11-01T00:00:00INVALIDZ\n"
+  @fs.write_file(
+    runner.output + "/malformed-timestamp.csv",
+    malformed,
+    create_mode=@fs.CreateNew,
+  )
+  let malformed_args = ["--file", runner.output + "/malformed-timestamp.csv"] +
+    common
+  ignore(runner.call("review_costs", malformed_args, fails=true))
+  ignore(
+    runner.call("main", ["usage", "review-costs"] + malformed_args, fails=true),
+  )
+  for name in ["cost-review.csv", "openai-costs.json"] {
+    assert_eq(@fs.read_file(examples + "/" + name).text(), originals[name])
+    assert_eq(@fs.read_file(runner.output + "/" + name).text(), originals[name])
+  }
+  @fs.write_file(
+    runner.output + "/RESULT.json",
+    Json::object({
+      "status": "pass",
+      "actualNativeCommands": runner.calls.length().to_json(),
+      "pairedDays": 2,
+      "pairedDifferenceUsd": 0.5,
+      "editedPairedDifferenceUsd": 0,
+      "partialPairedDays": 0,
+      "retainedProvenanceRejectedInBothEntryPoints": true,
+      "explicitPartialPreservedInBothEntryPoints": true,
+      "malformedTimestampRejectedInBothEntryPoints": true,
+      "inputBytesUnchanged": true,
+      "networkUsed": false,
+    }).stringify(indent=2),
+    create_mode=@fs.CreateNew,
+  )
+  println("Native Costs review journey passed")
+}

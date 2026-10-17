@@ -95,6 +95,7 @@ function bindingActions(row) {
   }
   if (binding.bound === true) {
     return `<div class="inline-actions">
+      <button type="button" class="button-secondary" data-binding-action="stage" data-app="${app}">Stage change</button>
       <button type="button" data-binding-action="bind" data-app="${app}">Apply Provider</button>
       <button type="button" class="button-secondary" data-binding-action="verify" data-app="${app}">Verify</button>
       <button type="button" class="danger-ghost" data-binding-action="unbind" data-app="${app}">Disconnect</button>
@@ -102,7 +103,8 @@ function bindingActions(row) {
   }
   const label = binding.bindingState === "stale" ? "Repair Connection" : "Connect App";
   return `<div class="inline-actions">
-    <button type="button" data-binding-action="bind" data-app="${app}">${label}</button>
+    <button type="button" class="button-secondary" data-binding-action="stage" data-app="${app}">Stage change</button>
+      <button type="button" data-binding-action="bind" data-app="${app}">${label}</button>
     <button type="button" class="button-secondary" data-binding-action="verify" data-app="${app}">Verify</button>
   </div>`;
 }
@@ -340,6 +342,7 @@ function renderBindingRows(rows) {
   text("framework-total", compact(connected));
   text("framework-detail", `${installed} installed app${installed === 1 ? "" : "s"}`);
   renderConnectionGraph(bindingRows);
+  renderBindingPlan();
   mergeReadinessState({ bindingCount: connected, installedAppCount: installed });
 }
 
@@ -429,6 +432,8 @@ function selectedBindingProvider(appType) {
 }
 
 async function bindApp(appType) {
+  if (bindingPlanBusy) throw new Error("Wait for the binding plan to finish");
+  if (bindingPlan.some(p => p.app.id === appType && p.status === "uncertain")) throw new Error("Reconcile the uncertain change before changing this app");
   const providerId = selectedBindingProvider(appType);
   if (!providerId) throw new Error("Choose a provider before connecting the app");
   text("binding-status", `Connecting ${providerTemplateFrameworkLabel(appType)}…`);
@@ -439,6 +444,8 @@ async function bindApp(appType) {
 }
 
 async function unbindApp(appType) {
+  if (bindingPlanBusy) throw new Error("Wait for the binding plan to finish");
+  if (bindingPlan.some(p => p.app.id === appType && p.status === "uncertain")) throw new Error("Reconcile the uncertain change before changing this app");
   text("binding-status", `Disconnecting ${providerTemplateFrameworkLabel(appType)}…`);
   const result = await deleteJson(endpoints.appBinding, { appType });
   if (result?.bound === true) throw new Error("The app still reports a MoonGate binding");
@@ -452,4 +459,121 @@ async function verifyBinding(appType) {
   text("binding-status", result.bound === true
     ? `${providerTemplateFrameworkLabel(appType)} connection verified`
     : `${providerTemplateFrameworkLabel(appType)} is not connected to MoonGate`);
+}
+
+// A local staged plan changes only existing app bindings after explicit Apply.
+// It is not an atomic backend transaction; each exact app is re-read before write.
+let bindingPlan = [];
+let bindingPlanBusy = false;
+function bindingPlanIdentity(row, providerId) {
+  const matches = row.providers.filter(p => firstString(p, ["id", "providerId"], "") === providerId);
+  if (row.warning || row.binding.installed !== true || row.binding.bindingMode === "manual" ||
+      matches.length !== 1 || matches[0].enabled === false || matches[0].builtIn === true) {
+    throw new Error("App or selected provider unavailable; refresh and review again");
+  }
+  const p = matches[0];
+  // Never copy credential fields into the plan or its visible preview.
+  return JSON.stringify({app: row.app.id, installed: row.binding.installed,
+    bound: row.binding.bound === true, mode: row.binding.bindingMode,
+    state: row.binding.bindingState, current: row.binding.currentProviderId || "",
+    provider: providerId, endpoint: p.baseUrl || "", format: p.apiFormat || "",
+    models: p.modelMapping || {}, enabled: p.enabled !== false});
+}
+function stageBindingChange(appType) {
+  if (bindingPlanBusy) throw new Error("Wait for the binding plan to finish");
+  const row = bindingRows.find(r => r.app.id === appType);
+  if (!row) throw new Error("Refresh the app list first");
+  const providerId = selectedBindingProvider(appType);
+  if (!providerId) throw new Error("Choose a provider first");
+  const existing = bindingPlan.find(p => p.app.id === appType);
+  if (existing?.status === "uncertain") throw new Error("Reconcile the uncertain change before replacing it");
+  const identity = bindingPlanIdentity(row, providerId);
+  if (row.binding.bound === true && row.binding.currentProviderId === providerId) {
+    throw new Error("This app already uses that provider");
+  }
+  bindingPlan = bindingPlan.filter(p => p.app.id !== appType);
+  bindingPlan.push({app: {...row.app}, providerId, before: row.binding.currentProviderId || "unbound",
+    identity, status: "staged", note: "Awaiting explicit Apply"});
+  renderBindingPlan();
+}
+function discardBindingPlan() {
+  if (bindingPlanBusy) return;
+  // Uncertain changes need a read before they may be staged again.
+  bindingPlan = bindingPlan.filter(p => p.status === "uncertain");
+  renderBindingPlan();
+}
+async function applyBindingPlan() {
+  if (bindingPlanBusy || bindingPlan.some(p => p.status === "uncertain")) return;
+  bindingPlanBusy = true;
+  renderBindingPlan();
+  try {
+    for (const change of bindingPlan) {
+      if (change.status !== "staged") continue;
+      const fresh = await loadBindingRow(change.app);
+      if (bindingPlanIdentity(fresh, change.providerId) !== change.identity) {
+        change.status = "stale"; change.note = "Configuration changed; refresh and stage again";
+        break;
+      }
+      change.status = "uncertain";
+      change.note = "Write attempted; read configuration before any retry";
+      renderBindingPlan();
+      try {
+        await postJson(endpoints.appBinding, {appType: change.app.id, providerId: change.providerId});
+        const verified = await loadBindingRow(change.app);
+        if (verified.warning || verified.binding.bound !== true || verified.binding.currentProviderId !== change.providerId) {
+          throw new Error("Binding did not verify");
+        }
+        change.status = "applied"; change.note = "Configuration verified; provider availability not tested";
+      } catch (_) { break; }
+    }
+  } catch (_) {
+    const pending = bindingPlan.find(p => p.status === "staged");
+    if (pending) { pending.status = "stale"; pending.note = "Could not recheck configuration; refresh and stage again"; }
+  } finally {
+    bindingPlanBusy = false;
+    renderBindingPlan();
+  }
+}
+async function reconcileBindingPlan() {
+  if (bindingPlanBusy) return;
+  bindingPlanBusy = true;
+  renderBindingPlan();
+  try {
+    for (const change of bindingPlan.filter(p => p.status === "uncertain")) {
+      const fresh = await loadBindingRow(change.app);
+      if (fresh.warning) continue;
+      if (fresh.binding.bound === true && fresh.binding.currentProviderId === change.providerId) {
+        change.status = "applied"; change.note = "Read-back verified configuration; no second write";
+      } else {
+        change.status = "stale"; change.note = "Read-back differs; refresh and explicitly stage a new change";
+      }
+    }
+  } finally { bindingPlanBusy = false; renderBindingPlan(); }
+}
+function renderBindingPlan() {
+  let panel = $("binding-change-plan");
+  if (!panel) {
+    const table = $("binding-rows")?.closest?.("table");
+    if (!table) return;
+    panel = document.createElement("section");
+    panel.id = "binding-change-plan";
+    panel.className = "panel";
+    table.insertAdjacentElement("afterend", panel);
+  }
+  panel.innerHTML = `<h3>Staged app connections</h3><p>Choose providers above and Stage change. Apply writes each app configuration in order, stopping at the first problem. No automatic rollback or provider request.</p>`;
+  for (const c of bindingPlan) {
+    const row = document.createElement("p");
+    row.textContent = `${c.app.label}: ${c.before} → ${c.providerId} · ${c.status} · ${c.note}`;
+    panel.appendChild(row);
+  }
+  for (const [label, action, enabled] of [
+    ["Apply staged changes", applyBindingPlan, bindingPlan.some(p => p.status === "staged") && !bindingPlan.some(p => p.status === "uncertain")],
+    ["Reconcile uncertain changes", reconcileBindingPlan, bindingPlan.some(p => p.status === "uncertain")],
+    ["Discard reviewed plan", discardBindingPlan, bindingPlan.length > 0],
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button"; button.textContent = label; button.disabled = bindingPlanBusy || !enabled;
+    button.onclick = () => Promise.resolve(action()).catch(showError);
+    panel.appendChild(button);
+  }
 }

@@ -1,0 +1,269 @@
+///|
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/fs",
+  "moonbitlang/async@0.19.4/io",
+  "moonbitlang/async@0.19.4/process",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+///|
+fn field(value : Json, key : String) -> Json raise {
+  guard value is Object(fields) && fields.get(key) is Some(value) else {
+    fail("Missing " + key)
+  }
+  value
+}
+
+///|
+async fn save(path : String, value : &@io.Data) -> Unit {
+  @fs.write_file(path, value, create_mode=@fs.CreateOrTruncate)
+}
+
+///|
+struct Runner {
+  bin : String
+  workspace : String
+  calls : Array[Json]
+}
+
+///|
+async fn Runner::run(
+  self : Runner,
+  name : String,
+  args : Array[String],
+  fails? : Bool = false,
+) -> String {
+  let (status, stdout, stderr) = @process.collect_output(
+    self.bin + "/" + name + "/" + name + ".exe",
+    args,
+  )
+  let index = (self.calls.length() + 1).to_string()
+  save(self.workspace + "/" + index + ".stdout", stdout)
+  save(self.workspace + "/" + index + ".stderr", stderr)
+  self.calls.push({
+    "program": name.to_json(),
+    "arguments": args.to_json(),
+    "exit": status.to_json(),
+    "expectedFailure": fails.to_json(),
+  })
+  save(
+    self.workspace + "/commands.json",
+    self.calls.to_json().stringify(indent=2),
+  )
+  assert_eq(status != 0, fails, msg=name + "\n" + stdout.text() + stderr.text())
+  if fails {
+    assert_eq(
+      stdout.text(),
+      "",
+      msg="Failed input must not emit partial artifacts",
+    )
+  }
+  assert_false(stdout.text().contains("PRIVATE_FIXTURE"))
+  assert_false(stderr.text().contains("PRIVATE_FIXTURE"))
+  stdout.text()
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  guard args.length() == 4 else {
+    fail(
+      "Usage: verify_responses_capture.mbtx BIN_CMD_DIR SYNTHETIC_EXAMPLES_DIR NEW_WORKSPACE",
+    )
+  }
+  let runner : Runner = {
+    bin: @fs.realpath(args[1]),
+    workspace: args[3],
+    calls: [],
+  }
+  assert_true(runner.workspace.has_prefix("/"))
+  assert_false(@fs.exists(runner.workspace), msg="Use a new owned workspace")
+  @fs.mkdir(runner.workspace)
+  let examples = @fs.realpath(args[2])
+  let originals : Map[String, String] = Map([])
+  let inputs : Array[String] = []
+  for
+    name in [
+      "response-completed.json", "response-completed.sse", "response-incomplete.sse",
+      "response-interrupted.sse", "response-failed.json",
+    ] {
+    let path = examples + "/" + name
+    originals[path] = @fs.read_file(path).text()
+    inputs.push("--file")
+    inputs.push(path)
+  }
+  let imported = runner.run("import_response_capture", inputs)
+  let result = @json.parse(imported)
+  assert_eq(field(result, "schema"), "moongate.usage-file.v1".to_json())
+  assert_eq(field(result, "total"), (3).to_json())
+  assert_eq(field(result, "sourceTotal"), (5).to_json())
+  assert_eq(field(field(result, "summary"), "tokens"), (44).to_json())
+  assert_eq(field(field(result, "summary"), "missingCostCount"), (3).to_json())
+  assert_eq(field(result, "sourceCoverageUnknown"), true.to_json())
+  let details = field(result, "responseCaptureImport")
+  assert_eq(field(field(details, "stateCounts"), "incomplete"), (1).to_json())
+  assert_eq(field(field(details, "stateCounts"), "interrupted"), (1).to_json())
+  assert_eq(field(field(details, "stateCounts"), "failed"), (1).to_json())
+  assert_eq(runner.run("import_response_capture", inputs), imported)
+  save(runner.workspace + "/usage.json", imported)
+  let report = runner.run("import_response_capture", inputs + ["--report"])
+  assert_true(
+    report.contains("Recorded tokens with complete terminal usage: 44"),
+  )
+  save(runner.workspace + "/review.txt", report)
+  // Synthetic fixtures only: this legacy reopen companion takes text in argv.
+  let reopened = @json.parse(
+    runner.run("import_usage_csv", [imported, "--model", "fixture-small"]),
+  )
+  assert_eq(field(reopened, "total"), (2).to_json())
+  assert_eq(field(field(reopened, "summary"), "tokens"), (32).to_json())
+  assert_eq(field(reopened, "sourceCoverageUnknown"), true.to_json())
+  let dated = @json.parse(
+    runner.run("import_usage_csv", [
+      imported, "--start-day", "2026-10-10", "--end-day", "2026-10-10",
+    ]),
+  )
+  assert_eq(field(dated, "total"), (1).to_json())
+  assert_eq(field(field(dated, "summary"), "tokens"), (12).to_json())
+  let empty = @json.parse(
+    runner.run("import_usage_csv", [imported, "--model", "no-match"]),
+  )
+  assert_eq(field(empty, "total"), (0).to_json())
+  assert_eq(field(empty, "sourceCoverageUnknown"), true.to_json())
+  let csv = runner.run("export_usage_csv", [
+    "--file",
+    runner.workspace + "/usage.json",
+    "--view",
+    "model",
+  ])
+  assert_true(csv.contains("fixture-small") && csv.contains("fixture-large"))
+  save(runner.workspace + "/models.csv", csv)
+  let requests = runner.run("export_usage_csv", [
+    "--file",
+    runner.workspace + "/usage.json",
+    "--view",
+    "requests",
+  ])
+  save(runner.workspace + "/requests.csv", requests)
+  let labels = @json.parse(
+    runner.run("import_response_capture", [
+      "--file",
+      examples + "/response-completed.json",
+      "--app",
+      "saved-client",
+      "--provider",
+      "saved-route",
+    ]),
+  )
+  guard field(labels, "data") is Array(rows) else { fail("Rows") }
+  assert_eq(field(rows[0], "appType"), "saved-client".to_json())
+  assert_eq(field(rows[0], "providerId"), "saved-route".to_json())
+  ignore(
+    runner.run(
+      "import_response_capture",
+      [
+        "--file",
+        examples + "/response-completed.json",
+        "--file",
+        examples + "/response-completed.json",
+      ],
+      fails=true,
+    ),
+  )
+  ignore(
+    runner.run(
+      "import_response_capture",
+      ["--file", runner.workspace + "/missing.json"],
+      fails=true,
+    ),
+  )
+  save(
+    runner.workspace + "/duplicate.json",
+    originals[examples + "/response-completed.json"],
+  )
+  ignore(
+    runner.run(
+      "import_response_capture",
+      [
+        "--file",
+        examples + "/response-completed.json",
+        "--file",
+        runner.workspace + "/duplicate.json",
+      ],
+      fails=true,
+    ),
+  )
+  save(runner.workspace + "/malformed.json", "{PRIVATE_FIXTURE_BAD_JSON")
+  ignore(
+    runner.run(
+      "import_response_capture",
+      ["--file", runner.workspace + "/malformed.json"],
+      fails=true,
+    ),
+  )
+  let stream = originals[examples + "/response-completed.sse"]
+  save(
+    runner.workspace + "/late.sse",
+    stream +
+    "data: {\"type\":\"response.output_text.delta\",\"delta\":\"PRIVATE_FIXTURE_LATE\"}\n\n",
+  )
+  ignore(
+    runner.run(
+      "import_response_capture",
+      ["--file", runner.workspace + "/late.sse"],
+      fails=true,
+    ),
+  )
+  save(
+    runner.workspace + "/mismatch.sse",
+    stream.replace(old="\"status\":\"completed\"", new="\"status\":\"failed\""),
+  )
+  ignore(
+    runner.run(
+      "import_response_capture",
+      ["--file", runner.workspace + "/mismatch.sse"],
+      fails=true,
+    ),
+  )
+  // Remove only the fixture's trailing comment before cutting its final frame.
+  // Otherwise a harmless comment after the blank separator would hide framing.
+  let without_comment = stream
+    .strip_suffix(": end of saved capture\n")
+    .unwrap_or(stream[:])
+  save(
+    runner.workspace + "/unframed.sse",
+    without_comment.trim_end().to_owned() + "\n",
+  )
+  let unframed = @json.parse(
+    runner.run("import_response_capture", [
+      "--file",
+      runner.workspace + "/unframed.sse",
+    ]),
+  )
+  assert_eq(field(unframed, "total"), (0).to_json())
+  assert_eq(
+    field(
+      field(field(unframed, "responseCaptureImport"), "stateCounts"),
+      "interrupted",
+    ),
+    (1).to_json(),
+  )
+  for path, original in originals {
+    assert_eq(@fs.read_file(path).text(), original)
+  }
+  let receipt : Json = {
+    "status": "passed",
+    "nativeCalls": runner.calls.length().to_json(),
+    "sourceUnchanged": true,
+    "providerCalls": 0,
+    "usageRows": 3,
+    "knownTokens": 44,
+    "scope": "Offline synthetic saved Responses JSON/HTTP SSE, explicit incomplete consumption, interrupted/failed diagnostics, deterministic repeat, labels, reopen/filter/date, CSV, atomic errors and unchanged inputs only",
+  }
+  save(runner.workspace + "/RESULT.json", receipt.stringify(indent=2))
+  println(
+    "PASS: \{runner.calls.length()} native CLI calls; fixture bytes unchanged; no provider requests",
+  )
+}

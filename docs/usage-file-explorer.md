@@ -132,3 +132,11 @@ Use the offline [Chat Completions capture reader](chat-capture-import.md) to
 review a saved JSON response or SSE stream as one request, then open the emitted
 usage artifact for filters, groups and spreadsheet export. Missing usage and
 interrupted captures remain explicit, without contacting a provider.
+
+## OpenTelemetry GenAI traces
+
+Use `moongate usage import-otel --file traces.json` to convert a saved OTLP JSON or
+JSONL trace export into usage rows. Inspect service/model/provider groups here,
+or pass the original result to latency profiling and spreadsheet export. Missing
+token components and sampling coverage remain explicit. See
+[OpenTelemetry usage import](otel-usage-import.md) for the complete local workflow.

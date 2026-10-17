@@ -1,0 +1,34 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-13T00:00:00Z",
+  "__export_source": "synthetic-insomnia-v4-fixture",
+  "resources": [
+    {
+      "_id": "req_models", "_type": "request", "parentId": "fld_models",
+      "name": "List models", "method": "GET", "url": "https://example.invalid/v1/models?tag=base",
+      "parameters": [{ "name": "tag", "value": "local review" }, { "name": "ignored", "value": "DISABLED_DEMO", "disabled": true }],
+      "headers": [{ "name": "Accept", "value": "application/json" }, { "name": "Authorization", "value": "Bearer DEMO_ONLY_NOT_REAL" }],
+      "body": {}
+    },
+    {
+      "_id": "req_chat", "_type": "request", "parentId": "fld_chat",
+      "name": "Create completion", "method": "POST", "url": "https://example.invalid/v1/chat/completions",
+      "headers": [{ "name": "X-Review", "value": "offline" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"model\": \"fixture-small\",\n  \"messages\": [{\"role\": \"user\", \"content\": \"Hello fixture\"}],\n  \"stream\": false\n}" },
+      "authentication": { "type": "bearer", "token": "DEMO_ONLY_NOT_REAL" },
+      "preRequestScript": "throw new Error('SCRIPT_MUST_NEVER_RUN')"
+    },
+    { "_id": "wrk_models", "_type": "workspace", "parentId": null, "name": "Synthetic model API", "scope": "collection" },
+    { "_id": "fld_chat", "_type": "request_group", "parentId": "fld_models", "name": "Chat" },
+    { "_id": "fld_models", "_type": "request_group", "parentId": "wrk_models", "name": "Models", "environment": { "token": "DEMO_ONLY_NOT_REAL" } },
+    {
+      "_id": "req_template", "_type": "request", "parentId": "wrk_models",
+      "name": "Template requiring manual edits", "method": "GET", "url": "{{ _.base_url }}/health",
+      "headers": [], "body": {}
+    },
+    { "_id": "env_base", "_type": "environment", "parentId": "wrk_models", "name": "Base", "data": { "base_url": "https://example.invalid", "token": "DEMO_ONLY_NOT_REAL" } },
+    { "_id": "jar_demo", "_type": "cookie_jar", "parentId": "wrk_models", "cookies": [{ "name": "session", "value": "DEMO_ONLY_NOT_REAL" }] },
+    { "_id": "res_demo", "_type": "response", "parentId": "req_models", "body": "SAVED_RESPONSE_OMITTED" }
+  ]
+}

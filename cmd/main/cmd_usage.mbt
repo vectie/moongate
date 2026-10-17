@@ -1,39 +1,44 @@
 ///|
 fn usage_cli_commands() -> Array[CliCommandSpec] {
   [
-    { id: "import_chat_capture", patterns: ["usage import-chat"] },
-    { id: "export_usage_csv", patterns: ["usage export-csv"] },
-    { id: "import_ollama_capture", patterns: ["usage import-ollama"] },
-    { id: "price_usage_file", patterns: ["usage price"] },
-    { id: "profile_usage_latency", patterns: ["usage latency"] },
+    { id: "attribute_usage_file", patterns: ["usage attribute"], },
+    { id: "review_provider_costs", patterns: ["usage review-costs"], },
+    { id: "import_otel_usage", patterns: ["usage import-otel"], },
+    { id: "import_chat_capture", patterns: ["usage import-chat"], },
+    { id: "import_response_capture", patterns: ["usage import-responses"], },
+    { id: "export_usage_csv", patterns: ["usage export-csv"], },
+    { id: "import_ollama_capture", patterns: ["usage import-ollama"], },
+    { id: "price_usage_file", patterns: ["usage price"], },
+    { id: "reroute_usage_file", patterns: ["usage reroute"], },
+    { id: "profile_usage_latency", patterns: ["usage latency"], },
     { id: "import_batch_usage", patterns: ["usage import-batch"], },
-    { id: "merge_usage_files", patterns: ["usage merge"] },
-    { id: "compare_usage_files", patterns: ["usage compare"] },
+    { id: "merge_usage_files", patterns: ["usage merge"], },
+    { id: "compare_usage_files", patterns: ["usage compare"], },
     { id: "preview_usage_file", patterns: ["usage preview"], },
-    { id: "get_usage_summary", patterns: ["usage summary"] },
-    { id: "get_usage_summary_by_app", patterns: ["usage apps"] },
-    { id: "get_usage_trends", patterns: ["usage trends"] },
-    { id: "get_provider_stats", patterns: ["usage providers"] },
-    { id: "get_model_stats", patterns: ["usage models"] },
-    { id: "get_request_logs", patterns: ["usage logs"] },
-    { id: "get_request_detail", patterns: ["usage detail"] },
-    { id: "update_model_pricing", patterns: ["usage pricing set"] },
-    { id: "delete_model_pricing", patterns: ["usage pricing delete"] },
-    { id: "get_model_pricing", patterns: ["usage pricing"] },
-    { id: "check_provider_limits", patterns: ["usage limits"] },
-    { id: "sync_session_usage", patterns: ["usage sync"] },
-    { id: "get_usage_data_sources", patterns: ["usage sources"] },
-    { id: "query_provider_usage", patterns: ["usage provider-usage"] },
-    { id: "get_balance", patterns: ["usage balance"] },
-    { id: "get_subscription_quota", patterns: ["usage quota"] },
-    { id: "get_codex_oauth_quota", patterns: ["usage codex-oauth-quota"] },
-    { id: "get_codex_oauth_models", patterns: ["usage codex-oauth-models"] },
-    { id: "get_coding_plan_quota", patterns: ["usage coding-plan"] },
-    { id: "test_usage_script", patterns: ["usage test-script"] },
-    { id: "status", patterns: ["status"] },
-    { id: "health", patterns: ["health"] },
-    { id: "stats", patterns: ["stats"] },
-    { id: "metrics", patterns: ["metrics"] },
+    { id: "get_usage_summary", patterns: ["usage summary"], },
+    { id: "get_usage_summary_by_app", patterns: ["usage apps"], },
+    { id: "get_usage_trends", patterns: ["usage trends"], },
+    { id: "get_provider_stats", patterns: ["usage providers"], },
+    { id: "get_model_stats", patterns: ["usage models"], },
+    { id: "get_request_logs", patterns: ["usage logs"], },
+    { id: "get_request_detail", patterns: ["usage detail"], },
+    { id: "update_model_pricing", patterns: ["usage pricing set"], },
+    { id: "delete_model_pricing", patterns: ["usage pricing delete"], },
+    { id: "get_model_pricing", patterns: ["usage pricing"], },
+    { id: "check_provider_limits", patterns: ["usage limits"], },
+    { id: "sync_session_usage", patterns: ["usage sync"], },
+    { id: "get_usage_data_sources", patterns: ["usage sources"], },
+    { id: "query_provider_usage", patterns: ["usage provider-usage"], },
+    { id: "get_balance", patterns: ["usage balance"], },
+    { id: "get_subscription_quota", patterns: ["usage quota"], },
+    { id: "get_codex_oauth_quota", patterns: ["usage codex-oauth-quota"], },
+    { id: "get_codex_oauth_models", patterns: ["usage codex-oauth-models"], },
+    { id: "get_coding_plan_quota", patterns: ["usage coding-plan"], },
+    { id: "test_usage_script", patterns: ["usage test-script"], },
+    { id: "status", patterns: ["status"], },
+    { id: "health", patterns: ["health"], },
+    { id: "stats", patterns: ["stats"], },
+    { id: "metrics", patterns: ["metrics"], },
   ]
 }
 
@@ -76,10 +81,21 @@ async fn run_usage_cli_command(
   args : Array[String],
 ) -> Unit {
   match command_id {
+    "attribute_usage_file" => @usage_attribute_cli.run(args[3:].to_owned())
+    "review_provider_costs" =>
+      @costs_review_cli.run(args[3:].to_owned()) catch {
+        error => {
+          @io.Writer::write(@stdio.stderr, "Costs review failed: \{error}\n")
+          @os.exit(1)
+        }
+      }
+    "import_otel_usage" => @otel_usage_cli.run(args[3:].to_owned())
     "import_chat_capture" => @chat_capture_cli.run(args[3:].to_owned())
+    "import_response_capture" => @response_capture_cli.run(args[3:].to_owned())
     "export_usage_csv" => @usage_export_cli.run(args[3:].to_owned())
     "import_ollama_capture" => @ollama_capture_cli.run(args[3:].to_owned())
     "price_usage_file" => @usage_price_cli.run(args[3:].to_owned())
+    "reroute_usage_file" => @usage_reroute_cli.run(args[3:].to_owned())
     "profile_usage_latency" => @usage_latency_cli.run(args[3:].to_owned())
     "import_batch_usage" => @batch_usage_cli.run(args[3:].to_owned())
     "merge_usage_files" => @usage_merge_cli.run(args[3:].to_owned())
