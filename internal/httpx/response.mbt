@@ -85,3 +85,10 @@ pub async fn ResponseWriter::flush(self : ResponseWriter) -> Unit {
 pub async fn ResponseWriter::close(self : ResponseWriter) -> Unit {
   self.conn.end_response()
 }
+
+///|
+pub extend ResponseWriter with @moonbitlang/async/io.Writer::{
+  write_once,
+  write,
+  write_reader,
+}

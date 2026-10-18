@@ -76,3 +76,18 @@ pub fn Method::to_http(self : Method) -> @http.RequestMethod {
     Patch => Patch
   }
 }
+
+///|
+pub extend Method with Eq::{not_equal, equal}
+
+///|
+pub extend Method with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Method with Hash::{hash, hash_combine}
+
+///|
+pub extend Method with ToJson::{to_json}
+
+///|
+pub extend Method with Show::{to_string, output}

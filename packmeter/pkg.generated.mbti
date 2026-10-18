@@ -25,18 +25,33 @@ pub(all) struct MeteredCapability {
   kind : String
   id : String
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MeteredCapability::equal(Self, Self) -> Bool
+pub fn MeteredCapability::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn MeteredCapability::not_equal(Self, Self) -> Bool
+pub fn MeteredCapability::to_json(Self) -> Json
+pub fn MeteredCapability::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PackBudget {
   pack_id : String
   limit_micros : Int
   spent_micros : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PackBudget::equal(Self, Self) -> Bool
+pub fn PackBudget::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn PackBudget::not_equal(Self, Self) -> Bool
+pub fn PackBudget::to_json(Self) -> Json
+pub fn PackBudget::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PackMeteringScope {
   pack_id : String
   product_id : String
   capabilities : Array[MeteredCapability]
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PackMeteringScope::equal(Self, Self) -> Bool
+pub fn PackMeteringScope::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn PackMeteringScope::not_equal(Self, Self) -> Bool
+pub fn PackMeteringScope::to_json(Self) -> Json
+pub fn PackMeteringScope::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UsageAttribution {
   pack_id : String
@@ -49,6 +64,11 @@ pub(all) struct UsageAttribution {
   currency : String
   evidence_ref : String
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn UsageAttribution::equal(Self, Self) -> Bool
+pub fn UsageAttribution::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn UsageAttribution::not_equal(Self, Self) -> Bool
+pub fn UsageAttribution::to_json(Self) -> Json
+pub fn UsageAttribution::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

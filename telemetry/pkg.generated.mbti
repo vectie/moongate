@@ -29,6 +29,11 @@ pub(all) struct ActivePolicyObservationV1 {
   policy_id : String
   policy_revision : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn ActivePolicyObservationV1::equal(Self, Self) -> Bool
+pub fn ActivePolicyObservationV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn ActivePolicyObservationV1::not_equal(Self, Self) -> Bool
+pub fn ActivePolicyObservationV1::to_json(Self) -> Json
+pub fn ActivePolicyObservationV1::to_repr(Self) -> @debug.Repr
 
 pub(all) enum CircuitStateV1 {
   Closed
@@ -36,7 +41,12 @@ pub(all) enum CircuitStateV1 {
   HalfOpen
   Unsupported
 } derive(Eq, @debug.Debug)
+pub fn CircuitStateV1::equal(Self, Self) -> Bool
+pub fn CircuitStateV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn CircuitStateV1::id(Self) -> String
+pub fn CircuitStateV1::not_equal(Self, Self) -> Bool
+pub fn CircuitStateV1::to_json(Self) -> Json
+pub fn CircuitStateV1::to_repr(Self) -> @debug.Repr
 pub impl ToJson for CircuitStateV1
 pub impl @json.FromJson for CircuitStateV1
 
@@ -71,6 +81,11 @@ pub(all) struct MonitorSnapshotV1 {
   newest_evidence_age_ms : Int64?
   oldest_evidence_age_ms : Int64?
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn MonitorSnapshotV1::equal(Self, Self) -> Bool
+pub fn MonitorSnapshotV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn MonitorSnapshotV1::not_equal(Self, Self) -> Bool
+pub fn MonitorSnapshotV1::to_json(Self) -> Json
+pub fn MonitorSnapshotV1::to_repr(Self) -> @debug.Repr
 
 pub(all) struct NumericPercentileSnapshotV1 {
   sample_count : Int
@@ -78,6 +93,11 @@ pub(all) struct NumericPercentileSnapshotV1 {
   p95 : Int?
   p99 : Int?
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn NumericPercentileSnapshotV1::equal(Self, Self) -> Bool
+pub fn NumericPercentileSnapshotV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn NumericPercentileSnapshotV1::not_equal(Self, Self) -> Bool
+pub fn NumericPercentileSnapshotV1::to_json(Self) -> Json
+pub fn NumericPercentileSnapshotV1::to_repr(Self) -> @debug.Repr
 
 pub(all) struct PercentileSnapshotV1 {
   sample_count : Int
@@ -85,6 +105,11 @@ pub(all) struct PercentileSnapshotV1 {
   p95_ms : Int?
   p99_ms : Int?
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn PercentileSnapshotV1::equal(Self, Self) -> Bool
+pub fn PercentileSnapshotV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn PercentileSnapshotV1::not_equal(Self, Self) -> Bool
+pub fn PercentileSnapshotV1::to_json(Self) -> Json
+pub fn PercentileSnapshotV1::to_repr(Self) -> @debug.Repr
 
 pub(all) struct RequestTelemetryV1 {
   contract_id : String
@@ -129,11 +154,21 @@ pub(all) struct RequestTelemetryV1 {
   evidence_age_ms : Int64?
   cost_nano_usd : Int64
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn RequestTelemetryV1::equal(Self, Self) -> Bool
+pub fn RequestTelemetryV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RequestTelemetryV1::not_equal(Self, Self) -> Bool
+pub fn RequestTelemetryV1::to_json(Self) -> Json
+pub fn RequestTelemetryV1::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TerminalOutcomeCountV1 {
   outcome : TerminalOutcomeV1
   count : Int
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn TerminalOutcomeCountV1::equal(Self, Self) -> Bool
+pub fn TerminalOutcomeCountV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn TerminalOutcomeCountV1::not_equal(Self, Self) -> Bool
+pub fn TerminalOutcomeCountV1::to_json(Self) -> Json
+pub fn TerminalOutcomeCountV1::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TerminalOutcomeV1 {
   Success
@@ -144,7 +179,12 @@ pub(all) enum TerminalOutcomeV1 {
   UpstreamError
   Unknown
 } derive(Eq, @debug.Debug)
+pub fn TerminalOutcomeV1::equal(Self, Self) -> Bool
+pub fn TerminalOutcomeV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn TerminalOutcomeV1::id(Self) -> String
+pub fn TerminalOutcomeV1::not_equal(Self, Self) -> Bool
+pub fn TerminalOutcomeV1::to_json(Self) -> Json
+pub fn TerminalOutcomeV1::to_repr(Self) -> @debug.Repr
 pub impl ToJson for TerminalOutcomeV1
 pub impl @json.FromJson for TerminalOutcomeV1
 

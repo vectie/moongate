@@ -1593,7 +1593,7 @@ fn cli_query_pair(key : String, value : String) -> String {
 
 ///|
 fn cli_url_encode(value : String) -> String {
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for ch in value {
     match ch {
       'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>

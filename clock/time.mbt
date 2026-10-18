@@ -23,3 +23,6 @@ pub(open) trait Clock {
   fn now(self : Self) -> Timestamp
   fn now_str(self : Self) -> String
 }
+
+///|
+pub extend Epoch with Clock::{now, now_str}

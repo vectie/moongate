@@ -281,3 +281,85 @@ pub fn fail_closed_live_result(
     recorded_at_ms: now_ms,
   }
 }
+
+///|
+pub extend LiveBenchmarkStatusV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend LiveBenchmarkStatusV1 with Eq::{not_equal, equal}
+
+///|
+pub extend LiveBenchmarkStatusV1 with ToJson::{to_json}
+
+///|
+pub extend LiveBenchmarkStatusV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend LiveBenchmarkReasonV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend LiveBenchmarkReasonV1 with Eq::{not_equal, equal}
+
+///|
+pub extend LiveBenchmarkReasonV1 with ToJson::{to_json}
+
+///|
+pub extend LiveBenchmarkReasonV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend DeterministicWorkloadV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend DeterministicWorkloadV1 with Eq::{not_equal, equal}
+
+///|
+pub extend DeterministicWorkloadV1 with ToJson::{to_json}
+
+///|
+pub extend DeterministicWorkloadV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend BenchmarkReportV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend BenchmarkReportV1 with Eq::{not_equal, equal}
+
+///|
+pub extend BenchmarkReportV1 with ToJson::{to_json}
+
+///|
+pub extend BenchmarkReportV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend LiveBenchmarkRequestV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend LiveBenchmarkRequestV1 with Eq::{not_equal, equal}
+
+///|
+pub extend LiveBenchmarkRequestV1 with ToJson::{to_json}
+
+///|
+pub extend LiveBenchmarkRequestV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend LiveBenchmarkResultV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend LiveBenchmarkResultV1 with Eq::{not_equal, equal}
+
+///|
+pub extend LiveBenchmarkResultV1 with ToJson::{to_json}
+
+///|
+pub extend LiveBenchmarkResultV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}

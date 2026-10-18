@@ -89,3 +89,9 @@ extern "c" fn errno_EACCES() -> Int32 = "moonbit_moongate_errno_EACCES"
 
 ///|
 pub let eacces : Int32 = errno_EACCES()
+
+///|
+pub extend Errno with Show::{to_string, output}
+
+///|
+pub extend Errno with ToJson::{to_json}

@@ -67,3 +67,21 @@ fn CommonModels::common_model_name(self : CommonModels) -> String {
     Qwen3CoderPlus => "Qwen3CoderPlus"
   }
 }
+
+///|
+pub extend Model with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend Provider with Eq::{not_equal, equal}
+
+///|
+pub extend Provider with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend Type with Eq::{not_equal, equal}
+
+///|
+pub extend Type with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend CommonModels with @moonbitlang/core/debug.Debug::{to_repr}

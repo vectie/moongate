@@ -15,25 +15,25 @@ test "usage attribution stays product neutral" {
     provider_ports: [],
     policies: [],
   }
-  let scope = metering_scope(projection)
-  let usage = attribute(
+  let scope = @packmeter.metering_scope(projection)
+  let usage = @packmeter.attribute(
     scope, "app", "fixture.console", 1, "request", 250000, "CNY", "evidence/usage.json",
   )
   assert_eq(usage.pack_id, "fixture")
   assert_eq(usage.amount_micros, 250000)
-  let charged = charge(budget("fixture", 300000), usage)
+  let charged = @packmeter.charge(@packmeter.budget("fixture", 300000), usage)
   assert_eq(charged.spent_micros, 250000)
-  assert_eq(remaining(charged), 50000)
+  assert_eq(@packmeter.remaining(charged), 50000)
 }
 
 ///|
 test "hard budget stops excess attributed cost" {
-  let value : PackBudget = {
+  let value : @packmeter.PackBudget = {
     pack_id: "fixture",
     limit_micros: 100,
     spent_micros: 90,
   }
-  let usage : UsageAttribution = {
+  let usage : @packmeter.UsageAttribution = {
     pack_id: "fixture",
     product_id: "fixture",
     capability_kind: "tool",
@@ -45,7 +45,7 @@ test "hard budget stops excess attributed cost" {
     evidence_ref: "evidence/run.json",
   }
   let mut stopped = false
-  try charge(value, usage) |> ignore catch {
+  try @packmeter.charge(value, usage) |> ignore catch {
     _ => stopped = true
   }
   assert_true(stopped)

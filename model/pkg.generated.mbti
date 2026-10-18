@@ -14,6 +14,7 @@ pub fn open_router_model(api_key~ : String, name? : CommonModels) -> Model
 pub(all) enum CommonModels {
   Qwen3CoderPlus
 } derive(@debug.Debug)
+pub fn CommonModels::to_repr(Self) -> @debug.Repr
 
 pub struct Model {
   name : String
@@ -30,6 +31,7 @@ pub struct Model {
   refresh_token : String?
   id_token : String?
 } derive(@debug.Debug)
+pub fn Model::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Provider {
   OpenAI
@@ -40,10 +42,16 @@ pub(all) enum Provider {
   Kimi
   KimiCoding
 } derive(Eq, @debug.Debug)
+pub fn Provider::equal(Self, Self) -> Bool
+pub fn Provider::not_equal(Self, Self) -> Bool
+pub fn Provider::to_repr(Self) -> @debug.Repr
 
 pub(all) enum Type {
   SaaS(Provider)
 } derive(Eq, @debug.Debug)
+pub fn Type::equal(Self, Self) -> Bool
+pub fn Type::not_equal(Self, Self) -> Bool
+pub fn Type::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

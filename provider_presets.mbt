@@ -209,7 +209,7 @@ fn moon_ark_agent_plan_provider_form_json(
 
 ///|
 fn moon_provider_summary_slug(name : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let lower = name.to_lower()
   let mut last_dash = false
   for i in 0..<lower.length() {

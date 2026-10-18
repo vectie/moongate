@@ -90,28 +90,15 @@ async fn atomic_write_store_file(
   content : String,
 ) -> Unit raise Error {
   let temp_path = "\{path}.tmp-\{generate_request_log_id()}"
+  errdefer (@fs.remove(temp_path) catch { _ => () })
   @fs.write_file(
     temp_path,
     content,
     create_mode=CreateOrTruncate,
     permission=0o600,
     sync=Full,
-  ) catch {
-    error => {
-      @fs.remove(temp_path) catch {
-        _ => ()
-      }
-      raise error
-    }
-  }
-  @fs.rename(temp_path, path, replace=true) catch {
-    error => {
-      @fs.remove(temp_path) catch {
-        _ => ()
-      }
-      raise error
-    }
-  }
+  )
+  @fs.rename(temp_path, path, replace=true)
 }
 
 ///|

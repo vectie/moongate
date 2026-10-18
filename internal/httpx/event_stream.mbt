@@ -197,3 +197,9 @@ pub async fn[T : FromEvent] EventStreamReader::read(
   let event = self.read_event()
   event.map(T::from_event)
 }
+
+///|
+pub extend Event with ToJson::{to_json}
+
+///|
+pub extend Event with Show::{to_string, output}

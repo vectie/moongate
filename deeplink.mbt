@@ -505,7 +505,7 @@ fn moon_deeplink_primary_endpoint(endpoint : String) -> String {
 
 ///|
 fn moon_deeplink_generated_id(name : String) -> String {
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for ch in name {
     match ch {
       'A'..<='Z' => builder.write_char((ch.to_int() + 32).unsafe_to_char())

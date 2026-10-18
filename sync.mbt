@@ -448,7 +448,7 @@ fn moon_sync_remote_file_path(
 ///|
 fn moon_sync_sha256_hex(bytes : Bytes) -> String {
   let digest = @crypto.sha256(bytes)
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for i in 0..<digest.length() {
     let value = digest[i].to_int()
     builder.write_char(moon_sync_hex_digit(value / 16))
@@ -534,7 +534,7 @@ fn moon_sync_manifest_json(
 ///|
 fn moon_webdav_encode_path_segment(segment : String) -> String {
   let bytes = @encoding/utf8.encode(segment)
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for i in 0..<bytes.length() {
     let value = bytes[i].to_int()
     if moon_webdav_is_unreserved_path_byte(value) {

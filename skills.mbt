@@ -1323,7 +1323,7 @@ fn moon_relative_path(base_dir : String, path : String) -> String {
 ///|
 fn moon_skill_sha256_hex(bytes : Bytes) -> String {
   let digest = @crypto.sha256(bytes)
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for byte in digest {
     let value = byte.to_int()
     builder.write_char(moon_skill_hex_digit(value / 16))

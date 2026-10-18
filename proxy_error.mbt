@@ -327,7 +327,7 @@ fn moon_summarize_text_for_log(text : String, max_chars : Int32) -> String {
 
 ///|
 fn moon_collapse_ascii_whitespace(text : String) -> String {
-  let buffer = StringBuilder::new()
+  let buffer = StringBuilder()
   let mut in_whitespace = false
   let mut has_output = false
   for ch in text {

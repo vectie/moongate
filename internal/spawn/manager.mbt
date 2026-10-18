@@ -121,76 +121,84 @@ pub async fn Process::wait(self : Process) -> Int32 {
 
 ///|
 pub async fn Manager::start(self : Manager) -> Unit {
-  @async.with_task_group(group => {
-    async fn redirect_output(
-      redirect : RedirectOutput,
-    ) -> &@process.ProcessOutput? {
-      match redirect {
-        Capture(buffer) => {
-          let pipe = @process.read_from_process()
-          group.spawn_bg(() => {
-            let buf = FixedArray::make(1024, b'0')
-            while pipe.0.read(buf) is n && n > 0 {
-              buffer.write(
-                @encoding/utf8.decode_lossy(
-                  buf.unsafe_reinterpret_as_bytes()[0:n],
-                ),
-              )
-            }
-          })
-          Some(pipe.1)
+  let outcome = try
+    @async.with_task_group(group => {
+      async fn redirect_output(
+        redirect : RedirectOutput,
+      ) -> &@process.ProcessOutput? {
+        match redirect {
+          Capture(buffer) => {
+            let pipe = @process.read_from_process()
+            group.spawn_bg(() => {
+              let buf = FixedArray::make(1024, b'0')
+              while pipe.0.read(buf) is n && n > 0 {
+                buffer.write(
+                  @encoding/utf8.decode_lossy(
+                    buf.unsafe_reinterpret_as_bytes()[0:n],
+                  ),
+                )
+              }
+            })
+            Some(pipe.1)
+          }
+          Sink => {
+            let pipe = @process.read_from_process()
+            group.spawn_bg(() => {
+              let buf = FixedArray::make(1024, b'0')
+              while pipe.0.read(buf) is n && n > 0 {
+                // discard data
+              }
+            })
+            Some(pipe.1)
+          }
+          File(path) => Some(@process.redirect_to_file(path))
+          Inherit => None
         }
-        Sink => {
-          let pipe = @process.read_from_process()
-          group.spawn_bg(() => {
-            let buf = FixedArray::make(1024, b'0')
-            while pipe.0.read(buf) is n && n > 0 {
-              // discard data
-            }
-          })
-          Some(pipe.1)
-        }
-        File(path) => Some(@process.redirect_to_file(path))
-        Inherit => None
       }
-    }
 
-    while true {
-      let spawn = self.spawn.get()
-      try {
-        let pid = self.new_pid()
-        let refer_status = Ref(None)
-        let stderr = redirect_output(spawn.stderr)
-        let stdout = redirect_output(spawn.stdout)
-        let task = group.spawn(() => {
-          let status = @process.run(
-            spawn.command,
-            spawn.arguments,
-            stderr?,
-            stdout?,
-            cwd?=spawn.cwd.map(cwd => cwd),
-            extra_env?=spawn.env,
-          )
-          refer_status.val = Some(status)
-          status
-        })
-        let process = Process::{
-          pid,
-          status: refer_status,
-          task,
-          stdout: spawn.stdout,
-          stderr: spawn.stderr,
+      while true {
+        let spawn = self.spawn.get()
+        try {
+          let pid = self.new_pid()
+          let refer_status = Ref(None)
+          let stderr = redirect_output(spawn.stderr)
+          let stdout = redirect_output(spawn.stdout)
+          let task = group.spawn(() => {
+            let status = @process.run(
+              spawn.command,
+              spawn.arguments,
+              stderr?,
+              stdout?,
+              cwd?=spawn.cwd.map(cwd => cwd),
+              extra_env?=spawn.env,
+            )
+            refer_status.val = Some(status)
+            status
+          })
+          let process = Process::{
+            pid,
+            status: refer_status,
+            task,
+            stdout: spawn.stdout,
+            stderr: spawn.stderr,
+          }
+          self.process[pid] = process
+          process
+        } catch {
+          error => spawn.process.put(Err(error))
+        } noraise {
+          process => spawn.process.put(Ok(process))
         }
-        self.process[pid] = process
-        process
-      } catch {
-        error => spawn.process.put(Err(error))
-      } noraise {
-        process => spawn.process.put(Ok(process))
       }
-    }
-  }) catch {
-    error => {
+    })
+  catch {
+    error => Err(error)
+  } noraise {
+    value => Ok(value)
+  }
+  match outcome {
+    Ok(_) => ()
+    Err(error) => {
       self.process.clear()
       while self.spawn.try_get() is Some(spawn) {
         spawn.process.put(Err(error))
@@ -209,3 +217,15 @@ pub fn Manager::list(self : Manager) -> Array[Process] {
 pub fn Manager::get(self : Manager, pid : Pid) -> Process? {
   self.process.get(pid)
 }
+
+///|
+pub extend Pid with Hash::{hash, hash_combine}
+
+///|
+pub extend Pid with Eq::{not_equal, equal}
+
+///|
+pub extend Pid with ToJson::{to_json}
+
+///|
+pub extend Pid with Show::{to_string, output}

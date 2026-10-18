@@ -22,13 +22,17 @@ pub type Null
 
 #external
 pub type Pointer[_]
+#alias(op_get)
+pub fn[T : Load] Pointer::at(Self[T], Int) -> T
 pub fn[T, U] Pointer::cast(Self[T]) -> Self[U]
+pub fn[T] Pointer::equal(Self[T], Self[T]) -> Bool
 pub fn[T] Pointer::is_null(Self[T]) -> Bool
 pub fn[T : Load] Pointer::load(Self[T], offset? : Int) -> T
+pub fn[T] Pointer::not_equal(Self[T], Self[T]) -> Bool
 pub fn[T] Pointer::null() -> Self[T]
 pub fn Pointer::op_equal(Self[Unit], Self[Unit]) -> Bool
-pub fn[T : Load] Pointer::op_get(Self[T], Int) -> T
-pub fn[T : Store] Pointer::op_set(Self[T], Int, T) -> Unit
+#alias(op_set)
+pub fn[T : Store] Pointer::set(Self[T], Int, T) -> Unit
 pub fn[T : Store] Pointer::store(Self[T], offset? : Int, T) -> Unit
 pub impl[T] Eq for Pointer[T]
 

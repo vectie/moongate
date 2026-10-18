@@ -46,3 +46,9 @@ pub fn Header::add(self : Header, key : String, value : String) -> Unit {
     None => self.0[key] = value
   }
 }
+
+///|
+pub extend Header with ToJson::{to_json}
+
+///|
+pub extend Header with Show::{to_string, output}

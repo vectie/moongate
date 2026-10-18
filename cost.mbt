@@ -729,7 +729,7 @@ fn left_pad_zeroes(value : String, width : Int32) -> String {
   if value.length() >= width {
     return value
   }
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for _ in 0..<(width - value.length()) {
     builder.write_char('0')
   }

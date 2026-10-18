@@ -164,3 +164,12 @@ pub fn kill(pid : Int32, sig : Int32) -> Unit raise @errno.Errno {
     raise Errno(status)
   }
 }
+
+///|
+pub extend CompletedProcess with ToJson::{to_json}
+
+///|
+pub extend Failed with ToJson::{to_json}
+
+///|
+pub extend Failed with Show::{to_string, output}

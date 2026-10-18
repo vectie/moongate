@@ -16,6 +16,9 @@ pub(all) suberror MediaGatewayError {
   InvalidConfiguration
   InvalidResponse
 } derive(Eq, @debug.Debug)
+pub fn MediaGatewayError::equal(Self, Self) -> Bool
+pub fn MediaGatewayError::not_equal(Self, Self) -> Bool
+pub fn MediaGatewayError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct MediaGateway {

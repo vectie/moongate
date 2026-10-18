@@ -1164,7 +1164,7 @@ fn moon_form_pair(key : String, value : String) -> String {
 
 ///|
 fn moon_form_encode(value : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for c in value {
     match c {
       'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>

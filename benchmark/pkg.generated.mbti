@@ -42,6 +42,11 @@ pub(all) struct BenchmarkReportV1 {
   output_tokens_per_second_milli : Int
   cost_nano_usd : Int64
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn BenchmarkReportV1::equal(Self, Self) -> Bool
+pub fn BenchmarkReportV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn BenchmarkReportV1::not_equal(Self, Self) -> Bool
+pub fn BenchmarkReportV1::to_json(Self) -> Json
+pub fn BenchmarkReportV1::to_repr(Self) -> @debug.Repr
 
 pub(all) struct DeterministicWorkloadV1 {
   contract_id : String
@@ -53,12 +58,22 @@ pub(all) struct DeterministicWorkloadV1 {
   output_tokens : Int
   simulated_cost_nano_usd : Int64
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn DeterministicWorkloadV1::equal(Self, Self) -> Bool
+pub fn DeterministicWorkloadV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn DeterministicWorkloadV1::not_equal(Self, Self) -> Bool
+pub fn DeterministicWorkloadV1::to_json(Self) -> Json
+pub fn DeterministicWorkloadV1::to_repr(Self) -> @debug.Repr
 
 pub(all) enum LiveBenchmarkReasonV1 {
   AuthorityDecisionRequired
   AuthorityVerificationUnavailable
 } derive(Eq, @debug.Debug)
+pub fn LiveBenchmarkReasonV1::equal(Self, Self) -> Bool
+pub fn LiveBenchmarkReasonV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn LiveBenchmarkReasonV1::id(Self) -> String
+pub fn LiveBenchmarkReasonV1::not_equal(Self, Self) -> Bool
+pub fn LiveBenchmarkReasonV1::to_json(Self) -> Json
+pub fn LiveBenchmarkReasonV1::to_repr(Self) -> @debug.Repr
 pub impl ToJson for LiveBenchmarkReasonV1
 pub impl @json.FromJson for LiveBenchmarkReasonV1
 
@@ -77,6 +92,11 @@ pub(all) struct LiveBenchmarkRequestV1 {
   cancellation_id : String
   authority_decision_id : String?
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LiveBenchmarkRequestV1::equal(Self, Self) -> Bool
+pub fn LiveBenchmarkRequestV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn LiveBenchmarkRequestV1::not_equal(Self, Self) -> Bool
+pub fn LiveBenchmarkRequestV1::to_json(Self) -> Json
+pub fn LiveBenchmarkRequestV1::to_repr(Self) -> @debug.Repr
 
 pub(all) struct LiveBenchmarkResultV1 {
   contract_id : String
@@ -91,12 +111,22 @@ pub(all) struct LiveBenchmarkResultV1 {
   adapter_id : String?
   recorded_at_ms : Int64
 } derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+pub fn LiveBenchmarkResultV1::equal(Self, Self) -> Bool
+pub fn LiveBenchmarkResultV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn LiveBenchmarkResultV1::not_equal(Self, Self) -> Bool
+pub fn LiveBenchmarkResultV1::to_json(Self) -> Json
+pub fn LiveBenchmarkResultV1::to_repr(Self) -> @debug.Repr
 
 pub(all) enum LiveBenchmarkStatusV1 {
   Denied
   Unavailable
 } derive(Eq, @debug.Debug)
+pub fn LiveBenchmarkStatusV1::equal(Self, Self) -> Bool
+pub fn LiveBenchmarkStatusV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn LiveBenchmarkStatusV1::id(Self) -> String
+pub fn LiveBenchmarkStatusV1::not_equal(Self, Self) -> Bool
+pub fn LiveBenchmarkStatusV1::to_json(Self) -> Json
+pub fn LiveBenchmarkStatusV1::to_repr(Self) -> @debug.Repr
 pub impl ToJson for LiveBenchmarkStatusV1
 pub impl @json.FromJson for LiveBenchmarkStatusV1
 

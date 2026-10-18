@@ -2061,7 +2061,7 @@ fn ProviderRouter::route_stats_json(self : ProviderRouter) -> Json {
 
 ///|
 fn provider_router_prometheus_metrics(router : ProviderRouter) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   provider_router_metric_header(
     out, "gauge", "moongate_provider_configured", "Configured provider route entries.",
   )
@@ -2354,7 +2354,7 @@ fn provider_router_key_labels(key : String) -> String {
 
 ///|
 fn prometheus_label_escape(value : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for c in value {
     match c {
       '"' => out.write_string("\\\"")

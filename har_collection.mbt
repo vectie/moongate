@@ -78,9 +78,9 @@ pub fn moongate_har_collection_json(
         label + ": expected an absolute HTTP(S) URL without whitespace",
       )
     }
-    let without_fragment = original_url.split("#").collect()[0].to_string()
+    let without_fragment = original_url.split("#").collect()[0].to_owned()
     let url_parts = without_fragment.split("?").collect()
-    let base = url_parts[0].to_string()
+    let base = url_parts[0].to_owned()
     let authority_parts = base.split("/").collect()
     if authority_parts.length() < 3 ||
       authority_parts[2].is_empty() ||
@@ -91,17 +91,17 @@ pub fn moongate_har_collection_json(
     let mut url = base
     if url_parts.length() > 1 {
       // Preserve exact query order, repeated parameters and percent encoding.
-      let query = url_parts[1:].map(p => p.to_string()).join("?")
+      let query = url_parts[1:].map(p => p.to_owned()).join("?")
       let pairs : Array[String] = []
       for part in query.split("&") {
-        let name = part.split("=").collect()[0].to_string()
+        let name = part.split("=").collect()[0].to_owned()
         // Encoded names cannot be classified safely without decoding. Replace
         // their values as well rather than guessing whether they contain auth.
         if gate_har_sensitive(name) || name.contains("%") {
           pairs.push(name + "=REPLACE_ME")
           warnings.push("Query value withheld: " + name)
         } else {
-          pairs.push(part.to_string())
+          pairs.push(part.to_owned())
         }
       }
       url += "?" + pairs.join("&")

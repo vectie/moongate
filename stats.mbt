@@ -2033,7 +2033,7 @@ fn TrafficStats::success_rate(self : TrafficStats) -> Double {
 
 ///|
 fn TrafficStats::prometheus_metrics(self : TrafficStats) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   prometheus_counter(out, "moongate_requests_total", self.total_requests)
   prometheus_counter(
     out,

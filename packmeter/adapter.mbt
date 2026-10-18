@@ -115,3 +115,51 @@ pub fn attribute(
     evidence_ref,
   }
 }
+
+///|
+pub extend MeteredCapability with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend MeteredCapability with Eq::{not_equal, equal}
+
+///|
+pub extend MeteredCapability with ToJson::{to_json}
+
+///|
+pub extend MeteredCapability with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend PackMeteringScope with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend PackMeteringScope with Eq::{not_equal, equal}
+
+///|
+pub extend PackMeteringScope with ToJson::{to_json}
+
+///|
+pub extend PackMeteringScope with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend UsageAttribution with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend UsageAttribution with Eq::{not_equal, equal}
+
+///|
+pub extend UsageAttribution with ToJson::{to_json}
+
+///|
+pub extend UsageAttribution with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend PackBudget with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend PackBudget with Eq::{not_equal, equal}
+
+///|
+pub extend PackBudget with ToJson::{to_json}
+
+///|
+pub extend PackBudget with @moonbitlang/core/json.FromJson::{from_json}

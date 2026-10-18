@@ -63,7 +63,7 @@ fn short_value_hash(value : Json?) -> String {
 ///|
 fn short_sha256_hex(bytes : Bytes) -> String {
   let digest = @crypto.sha256(bytes)
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for i in 0..<8 {
     let value = digest[i].to_int()
     builder.write_char(moon_json_hex_digit(value / 16))

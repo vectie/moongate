@@ -186,7 +186,7 @@ let hex_table : Bytes = b"0123456789abcdef"
 
 ///|
 pub fn Uuid::to_string(self : Uuid) -> String {
-  let builder = StringBuilder::new(size_hint=36)
+  let builder = StringBuilder(size_hint=36)
   let mut hi = self.hi
   for _ in 0..<8 {
     builder.write_char(hex_table[(hi >> 60).to_int()].to_char())
@@ -296,3 +296,39 @@ pub fn Uuid::version(self : Uuid) -> Version? {
     _ => None
   }
 }
+
+///|
+pub extend Uuid with Eq::{not_equal, equal}
+
+///|
+pub extend Uuid with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
+pub extend Uuid with Hash::{hash, hash_combine}
+
+///|
+pub extend Uuid with ToJson::{to_json}
+
+///|
+pub extend Uuid with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend ParseError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend ParseError with ToJson::{to_json}
+
+///|
+pub extend Uuid with Show::{output}
+
+///|
+pub extend Variant with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend Variant with ToJson::{to_json}
+
+///|
+pub extend Version with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend Version with ToJson::{to_json}

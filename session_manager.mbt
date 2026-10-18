@@ -509,7 +509,7 @@ fn moon_session_escape_osascript(value : String) -> String {
 
 ///|
 fn moon_session_url_query_encode(value : String) -> String {
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   for ch in value {
     match ch {
       'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>

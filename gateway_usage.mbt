@@ -1381,7 +1381,7 @@ fn usage_query_value(path : StringView, key : String) -> String? {
 
 ///|
 fn usage_url_decode(value : StringView) -> String {
-  let builder = StringBuilder::new()
+  let builder = StringBuilder()
   let chars = value.to_array()
   let mut i = 0
   while i < chars.length() {

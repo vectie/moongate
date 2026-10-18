@@ -213,3 +213,111 @@ pub(all) struct MonitorSnapshotV1 {
   newest_evidence_age_ms : Int64?
   oldest_evidence_age_ms : Int64?
 } derive(Debug, Eq, ToJson, FromJson)
+
+///|
+pub extend TerminalOutcomeV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend TerminalOutcomeV1 with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalOutcomeV1 with ToJson::{to_json}
+
+///|
+pub extend TerminalOutcomeV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend CircuitStateV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend CircuitStateV1 with Eq::{not_equal, equal}
+
+///|
+pub extend CircuitStateV1 with ToJson::{to_json}
+
+///|
+pub extend CircuitStateV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend RequestTelemetryV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RequestTelemetryV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RequestTelemetryV1 with ToJson::{to_json}
+
+///|
+pub extend RequestTelemetryV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend TerminalOutcomeCountV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend TerminalOutcomeCountV1 with Eq::{not_equal, equal}
+
+///|
+pub extend TerminalOutcomeCountV1 with ToJson::{to_json}
+
+///|
+pub extend TerminalOutcomeCountV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend PercentileSnapshotV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend PercentileSnapshotV1 with Eq::{not_equal, equal}
+
+///|
+pub extend PercentileSnapshotV1 with ToJson::{to_json}
+
+///|
+pub extend PercentileSnapshotV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend NumericPercentileSnapshotV1 with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
+pub extend NumericPercentileSnapshotV1 with Eq::{not_equal, equal}
+
+///|
+pub extend NumericPercentileSnapshotV1 with ToJson::{to_json}
+
+///|
+pub extend NumericPercentileSnapshotV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend ActivePolicyObservationV1 with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
+pub extend ActivePolicyObservationV1 with Eq::{not_equal, equal}
+
+///|
+pub extend ActivePolicyObservationV1 with ToJson::{to_json}
+
+///|
+pub extend ActivePolicyObservationV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend MonitorSnapshotV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend MonitorSnapshotV1 with Eq::{not_equal, equal}
+
+///|
+pub extend MonitorSnapshotV1 with ToJson::{to_json}
+
+///|
+pub extend MonitorSnapshotV1 with @moonbitlang/core/json.FromJson::{from_json}

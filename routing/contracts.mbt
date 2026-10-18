@@ -384,3 +384,149 @@ pub fn default_priority_policy(
     configured_at_ms,
   }
 }
+
+///|
+pub extend RoutingMode with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RoutingMode with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingMode with ToJson::{to_json}
+
+///|
+pub extend RoutingMode with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend RoutingDecisionReasonV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RoutingDecisionReasonV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingDecisionReasonV1 with ToJson::{to_json}
+
+///|
+pub extend RoutingDecisionReasonV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend RoutingActivationActionV1 with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
+pub extend RoutingActivationActionV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingActivationActionV1 with ToJson::{to_json}
+
+///|
+pub extend RoutingActivationActionV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend RoutingActivationScopeV1 with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
+pub extend RoutingActivationScopeV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingActivationScopeV1 with ToJson::{to_json}
+
+///|
+pub extend RoutingActivationScopeV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}
+
+///|
+pub extend RoutingPolicyV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RoutingPolicyV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingPolicyV1 with ToJson::{to_json}
+
+///|
+pub extend RoutingPolicyV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend ProviderCandidateV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend ProviderCandidateV1 with Eq::{not_equal, equal}
+
+///|
+pub extend ProviderCandidateV1 with ToJson::{to_json}
+
+///|
+pub extend ProviderCandidateV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend CandidateReviewV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend CandidateReviewV1 with Eq::{not_equal, equal}
+
+///|
+pub extend CandidateReviewV1 with ToJson::{to_json}
+
+///|
+pub extend CandidateReviewV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend SmoothWeightV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend SmoothWeightV1 with Eq::{not_equal, equal}
+
+///|
+pub extend SmoothWeightV1 with ToJson::{to_json}
+
+///|
+pub extend SmoothWeightV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend SmoothStateV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend SmoothStateV1 with Eq::{not_equal, equal}
+
+///|
+pub extend SmoothStateV1 with ToJson::{to_json}
+
+///|
+pub extend SmoothStateV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend RoutingDecisionV1 with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RoutingDecisionV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingDecisionV1 with ToJson::{to_json}
+
+///|
+pub extend RoutingDecisionV1 with @moonbitlang/core/json.FromJson::{from_json}
+
+///|
+pub extend RoutingPolicyActivationReceiptV1 with @moonbitlang/core/debug.Debug::{
+  to_repr,
+}
+
+///|
+pub extend RoutingPolicyActivationReceiptV1 with Eq::{not_equal, equal}
+
+///|
+pub extend RoutingPolicyActivationReceiptV1 with ToJson::{to_json}
+
+///|
+pub extend RoutingPolicyActivationReceiptV1 with @moonbitlang/core/json.FromJson::{
+  from_json,
+}

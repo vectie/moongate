@@ -236,3 +236,9 @@ pub async fn MediaGateway::handle(
     }
   }
 }
+
+///|
+pub extend MediaGatewayError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend MediaGatewayError with Eq::{not_equal, equal}

@@ -140,7 +140,7 @@ fn PlannerHarnessAggregate::record(
 fn PlannerHarnessAggregate::prometheus_metrics(
   self : PlannerHarnessAggregate,
 ) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   prometheus_counter(out, "moongate_planner_rounds_total", self.rounds)
   prometheus_counter(out, "moongate_planner_tool_calls_total", self.tool_calls)
   prometheus_counter(

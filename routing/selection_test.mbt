@@ -6,7 +6,7 @@ fn candidate(
   inflight~ : Int32 = 0,
   limit~ : Int32 = 0,
   healthy~ : Bool = true,
-) -> ProviderCandidateV1 {
+) -> @routing.ProviderCandidateV1 {
   {
     provider_id: id,
     priority,
@@ -36,7 +36,7 @@ fn candidate(
 
 ///|
 test "smooth weighted round robin is deterministic and smooth" {
-  let policy = policy(
+  let policy = @routing.policy(
     policy_id="codex.balance",
     app_type="codex",
     revision=1,
@@ -45,9 +45,9 @@ test "smooth weighted round robin is deterministic and smooth" {
   )
   let candidates = [candidate("a", 0, weight=3), candidate("b", 1, weight=1)]
   let selected : Array[String] = []
-  let mut state = empty_smooth_state()
+  let mut state = @routing.empty_smooth_state()
   for _ in 0..<8 {
-    let (decision, next) = select(
+    let (decision, next) = @routing.select(
       policy,
       candidates,
       state,
@@ -60,9 +60,9 @@ test "smooth weighted round robin is deterministic and smooth" {
   assert_eq(selected.filter(fn(provider_id) { provider_id == "a" }).length(), 6)
   assert_eq(selected.filter(fn(provider_id) { provider_id == "b" }).length(), 2)
   let replayed : Array[String] = []
-  let mut replay_state = empty_smooth_state()
+  let mut replay_state = @routing.empty_smooth_state()
   for _ in 0..<8 {
-    let (decision, next) = select(
+    let (decision, next) = @routing.select(
       policy,
       candidates,
       replay_state,
@@ -77,21 +77,21 @@ test "smooth weighted round robin is deterministic and smooth" {
 
 ///|
 test "least inflight rejects saturated and unhealthy candidates" {
-  let policy = policy(
+  let policy = @routing.policy(
     policy_id="codex.capacity",
     app_type="codex",
     revision=1,
     mode=LeastInflight,
     configured_at_ms=1,
   )
-  let (decision, _) = select(
+  let (decision, _) = @routing.select(
     policy,
     [
       candidate("busy", 0, inflight=2, limit=2),
       candidate("unhealthy", 1, healthy=false),
       candidate("ready", 2, inflight=1, limit=4),
     ],
-    empty_smooth_state(),
+    @routing.empty_smooth_state(),
     shadow=false,
     decided_at_ms=1L,
   )
@@ -102,7 +102,7 @@ test "least inflight rejects saturated and unhealthy candidates" {
 
 ///|
 test "session sticky preserves an eligible binding and replaces an exhausted one" {
-  let policy = policy(
+  let policy = @routing.policy(
     policy_id="codex.session",
     app_type="codex",
     revision=1,
@@ -110,10 +110,10 @@ test "session sticky preserves an eligible binding and replaces an exhausted one
     configured_at_ms=1,
   )
   let candidates = [candidate("a", 0), candidate("b", 1)]
-  let (sticky, _) = select(
+  let (sticky, _) = @routing.select(
     policy,
     candidates,
-    empty_smooth_state(),
+    @routing.empty_smooth_state(),
     shadow=false,
     decided_at_ms=1L,
     sticky_provider_id=Some("b"),
@@ -121,10 +121,10 @@ test "session sticky preserves an eligible binding and replaces an exhausted one
   )
   assert_eq(sticky.selected_provider_id, Some("b"))
   let saturated = [candidate("a", 0), candidate("b", 1, inflight=1, limit=1)]
-  let (replaced, _) = select(
+  let (replaced, _) = @routing.select(
     policy,
     saturated,
-    empty_smooth_state(),
+    @routing.empty_smooth_state(),
     shadow=false,
     decided_at_ms=1L,
     sticky_provider_id=Some("b"),
@@ -135,28 +135,30 @@ test "session sticky preserves an eligible binding and replaces an exhausted one
 
 ///|
 test "routing decision vocabularies are canonical and fail closed" {
-  json_inspect(RoutingMode::SessionSticky, content="session-sticky")
+  json_inspect(@routing.RoutingMode::SessionSticky, content="session-sticky")
   json_inspect(
-    RoutingActivationScopeV1::BoundedCanary,
+    @routing.RoutingActivationScopeV1::BoundedCanary,
     content="bounded-canary",
   )
-  json_inspect(RoutingActivationActionV1::Activate, content="activate")
+  json_inspect(@routing.RoutingActivationActionV1::Activate, content="activate")
   try {
-    let _ : RoutingMode = @json.from_json(Json::string("random"))
+    let _ : @routing.RoutingMode = @json.from_json(Json::string("random"))
   } catch {
     _ => ()
   } noraise {
     _ => fail("expected an unknown routing mode to fail decoding")
   }
   try {
-    let _ : RoutingActivationActionV1 = @json.from_json(Json::string("replace"))
+    let _ : @routing.RoutingActivationActionV1 = @json.from_json(
+      Json::string("replace"),
+    )
   } catch {
     _ => ()
   } noraise {
     _ => fail("expected an unknown routing action to fail decoding")
   }
   try {
-    let _ : RoutingActivationScopeV1 = @json.from_json(
+    let _ : @routing.RoutingActivationScopeV1 = @json.from_json(
       Json::string("all-traffic"),
     )
   } catch {

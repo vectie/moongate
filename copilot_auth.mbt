@@ -114,7 +114,7 @@ fn copilot_json_bool(obj : Map[String, Json], key : String) -> Bool? {
 
 ///|
 fn copilot_url_encode(s : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for c in s {
     match c {
       'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>

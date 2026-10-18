@@ -1726,17 +1726,8 @@ test "provider stats use moongate session provider fallback names" {
 fn[T] with_test_timezone(zone : String, f : () -> T raise) -> T raise {
   let old_tz = @os.getenv("TZ") catch { _ => None }
   @os.setenv("TZ", zone, overwrite=true)
-  try f() catch {
-    error => {
-      restore_test_timezone(old_tz)
-      raise error
-    }
-  } noraise {
-    value => {
-      restore_test_timezone(old_tz)
-      value
-    }
-  }
+  defer restore_test_timezone(old_tz)
+  f()
 }
 
 ///|

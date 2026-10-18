@@ -18,6 +18,9 @@ pub async fn spawn(StringView, Array[StringView], stdin? : String, timeout? : In
 pub suberror Failed {
   Failed(CompletedProcess)
 } derive(ToJson)
+pub fn Failed::output(Self, &Logger) -> Unit
+pub fn Failed::to_json(Self) -> Json
+pub fn Failed::to_string(Self) -> String
 pub impl Show for Failed
 
 pub suberror TimedOut {
@@ -39,6 +42,7 @@ pub struct CompletedProcess {
   timeout : Int?
 } derive(ToJson)
 pub fn CompletedProcess::check(Self) -> Unit raise Failed
+pub fn CompletedProcess::to_json(Self) -> Json
 
 pub struct Manager {
   mut id : Int
@@ -54,6 +58,13 @@ pub async fn Manager::start(Self) -> Unit
 pub async fn Manager::wait(Self, Pid) -> Int
 
 type Pid derive(Eq, Hash)
+pub fn Pid::equal(Self, Self) -> Bool
+pub fn Pid::hash(Self) -> Int
+pub fn Pid::hash_combine(Self, Hasher) -> Unit
+pub fn Pid::not_equal(Self, Self) -> Bool
+pub fn Pid::output(Self, &Logger) -> Unit
+pub fn Pid::to_json(Self) -> Json
+pub fn Pid::to_string(Self) -> String
 pub impl Show for Pid
 pub impl ToJson for Pid
 

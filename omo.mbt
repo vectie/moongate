@@ -108,7 +108,7 @@ fn moon_omo_local_file_data_json(
 ///|
 fn moon_omo_strip_jsonc_comments(input : String) -> String {
   let chars = input.to_array()
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let mut i = 0
   let mut in_string = false
   let mut escaped = false

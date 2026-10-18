@@ -127,7 +127,7 @@ pub fn build_authorize_url(
 
 ///|
 fn url_encode(s : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for c in s {
     match c {
       'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>
@@ -277,7 +277,7 @@ pub async fn poll_device_flow(
 
 ///|
 fn url_decode(s : StringView) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let chars = s.to_array()
   let mut i = 0
   while i < chars.length() {
@@ -462,3 +462,9 @@ async fn open_browser(url : String) -> Unit raise Error {
   }
   ()
 }
+
+///|
+pub extend TokenResponse with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend DeviceCodeFlow with ToJson::{to_json}
