@@ -4,9 +4,9 @@
 pub fn attribute_usage_file_json(
   content : String,
   scope~ : String,
-  plan? : String = "",
-  workload? : String = "",
-  unassigned? : Bool = false,
+  plan~ : String = "",
+  workload~ : String = "",
+  unassigned~ : Bool = false,
 ) -> Result[Json, String] {
   let result = attribution_review(
     content,
@@ -37,15 +37,14 @@ fn attribution_review(
   }
   let input = attribution_parse(content)
   guard input is Object(source) &&
-    source.get("schema") == Some("moongate.usage-file.v1".to_json()) &&
+    source.get("schema") == Some(Json("moongate.usage-file.v1")) &&
     source.get("data") is Some(Array(raw)) else {
     fail("First import or preview usage as moongate.usage-file.v1 JSON")
   }
   if source.contains("usageEvidenceKind") {
     fail("Hypothetical route scenarios are not recorded usage for attribution")
   }
-  if source.get("usageMergeScope") is Some(existing) &&
-    existing != scope.to_json() {
+  if source.get("usageMergeScope") is Some(existing) && existing != Json(scope) {
     fail("Scope differs from the saved usage merge namespace")
   }
   if raw.length() > 10000 {
@@ -99,8 +98,8 @@ fn attribution_review(
   let assignments : Map[String, String] = Map([])
   if source.get("workloadReview") is Some(saved) {
     guard saved is Object(review) &&
-      review.get("schema") == Some("moongate.workload-review.v1".to_json()) &&
-      review.get("scope") == Some(scope.to_json()) &&
+      review.get("schema") == Some(Json("moongate.workload-review.v1")) &&
+      review.get("scope") == Some(Json(scope)) &&
       review.get("assignments") is Some(Array(stored)) else {
       fail("Saved workload review is invalid or belongs to a different scope")
     }
@@ -138,23 +137,23 @@ fn attribution_review(
     let id = usage_file_text(row, "requestId")
     assignments
     .get(id)
-    .map(label => { "requestId": id.to_json(), "workload": label.to_json() })
+    .map(label => { "requestId": Json(id), "workload": Json(label) })
   })
   let selected_rows = selected.map(row => {
     guard row is Object(fields) else { abort("normalized row") }
     let copy = fields.copy()
     let label = assignments.get(usage_file_text(row, "requestId"))
     copy["workload"] = match label {
-      Some(label) => label.to_json()
+      Some(label) => Json(label)
       None => Json::null()
     }
-    copy["assigned"] = (label is Some(_)).to_json()
+    copy["assigned"] = Json(label is Some(_))
     Json::object(copy)
   })
   let view_summary = usage_file_summary(selected)
   let lines = [
     "MoonGate workload attribution (operator labels; estimated USD)",
-    "Scope: " + scope.to_json().stringify(),
+    "Scope: " + Json(scope).stringify(),
     "All saved rows: \{rows.length()}; assigned: \{assignments.length()}; unassigned: \{rows.length() - assignments.length()}; edits applied: \{applied}",
     "Filter: " +
     (if unassigned {
@@ -162,13 +161,13 @@ fn attribution_review(
     } else if workload.is_empty() {
       "all"
     } else {
-      workload.to_json().stringify()
+      Json(workload).stringify()
     }),
     usage_file_summary_line("SELECTED", view_summary),
     "All workload groups:",
   ]
   for group in groups {
-    let label = if compare_field(group, "assigned") == false.to_json() {
+    let label = if compare_field(group, "assigned") == Json(false) {
       "[unassigned]"
     } else {
       compare_field(group, "workload").stringify()
@@ -184,24 +183,24 @@ fn attribution_review(
   lines.push(
     "Filtering changes only the view; every usage row and assignment remains in saved JSON.",
   )
-  if preview["partial"] == true.to_json() {
+  if preview["partial"] == Json(true) {
     lines.push(
       "PARTIAL SOURCE: absent requests are not attributed or included in totals.",
     )
   }
   preview["workloadReview"] = {
     "schema": "moongate.workload-review.v1",
-    "scope": scope.to_json(),
-    "assignments": saved.to_json(),
-    "groups": groups.to_json(),
-    "editsApplied": applied.to_json(),
+    "scope": Json(scope),
+    "assignments": Json(saved),
+    "groups": Json(groups),
+    "editsApplied": Json(applied),
     "view": {
-      "workload": workload.to_json(),
-      "unassignedOnly": unassigned.to_json(),
-      "data": selected_rows.to_json(),
+      "workload": Json(workload),
+      "unassignedOnly": Json(unassigned),
+      "data": Json(selected_rows),
       "summary": view_summary,
     },
-    "report": (lines.join("\n") + "\n").to_json(),
+    "report": Json(lines.join("\n") + "\n"),
   }
   let result = Json::object(preview)
   if @encoding/utf8.encode(result.stringify(indent=2)).length() >
@@ -232,8 +231,8 @@ fn attribution_groups(
     guard usage_file_summary(buckets[label]) is Object(summary) else {
       abort("summary")
     }
-    summary["workload"] = label.to_json()
-    summary["assigned"] = true.to_json()
+    summary["workload"] = Json(label)
+    summary["assigned"] = Json(true)
     Json::object(summary)
   })
   if !unassigned.is_empty() {
@@ -241,7 +240,7 @@ fn attribution_groups(
       abort("summary")
     }
     summary["workload"] = Json::null()
-    summary["assigned"] = false.to_json()
+    summary["assigned"] = Json(false)
     groups.push(Json::object(summary))
   }
   groups

@@ -1,15 +1,15 @@
 ///|
-const TREND_HOUR_SECONDS : Int = 60 * 60
+const TREND_HOUR_SECONDS : Int32 = 60 * 60
 
 ///|
-const TREND_DAY_SECONDS : Int = 24 * 60 * 60
+const TREND_DAY_SECONDS : Int32 = 24 * 60 * 60
 
 ///|
 fn TrafficStats::usage_trends_json(
   self : TrafficStats,
-  start_ts? : Int? = None,
-  end_ts? : Int? = None,
-  app_type? : String? = None,
+  start_ts~ : Int32? = None,
+  end_ts~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   let normalized = normalize_trend_range(start_ts, end_ts)
   if normalized.duration <= TREND_DAY_SECONDS {
@@ -29,21 +29,21 @@ fn TrafficStats::usage_trends_json(
 
 ///|
 priv struct TrendRange {
-  start_ts : Int
-  end_ts : Int
-  duration : Int
+  start_ts : Int32
+  end_ts : Int32
+  duration : Int32
 }
 
 ///|
 priv struct DailyStatsAccumulator {
   date : String
-  mut request_count : Int
+  mut request_count : Int32
   mut total_cost_nano : Int64
-  mut total_tokens : Int
-  mut total_input_tokens : Int
-  mut total_output_tokens : Int
-  mut total_cache_creation_tokens : Int
-  mut total_cache_read_tokens : Int
+  mut total_tokens : Int32
+  mut total_input_tokens : Int32
+  mut total_output_tokens : Int32
+  mut total_cache_creation_tokens : Int32
+  mut total_cache_read_tokens : Int32
 }
 
 ///|
@@ -92,7 +92,7 @@ fn DailyStatsAccumulator::add_rollup(
 
 ///|
 fn DailyStatsAccumulator::to_json(self : DailyStatsAccumulator) -> Json {
-  {
+  Json({
     "date": Json::string(self.date),
     "requestCount": Json::number(self.request_count.to_double()),
     "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
@@ -105,11 +105,11 @@ fn DailyStatsAccumulator::to_json(self : DailyStatsAccumulator) -> Json {
     "totalCacheReadTokens": Json::number(
       self.total_cache_read_tokens.to_double(),
     ),
-  }.to_json()
+  })
 }
 
 ///|
-fn normalize_trend_range(start_ts : Int?, end_ts : Int?) -> TrendRange {
+fn normalize_trend_range(start_ts : Int32?, end_ts : Int32?) -> TrendRange {
   let end_ts = end_ts.unwrap_or(trend_now_seconds())
   let mut start_ts = start_ts.unwrap_or(end_ts - TREND_DAY_SECONDS)
   if start_ts >= end_ts {
@@ -119,15 +119,15 @@ fn normalize_trend_range(start_ts : Int?, end_ts : Int?) -> TrendRange {
 }
 
 ///|
-fn trend_now_seconds() -> Int {
+fn trend_now_seconds() -> Int32 {
   @os.unix_seconds()
 }
 
 ///|
 fn TrafficStats::hourly_usage_trends_json(
   self : TrafficStats,
-  start_ts : Int,
-  end_ts : Int,
+  start_ts : Int32,
+  end_ts : Int32,
   app_type : String?,
 ) -> Json {
   let bucket_count = trend_bucket_count(end_ts - start_ts, TREND_HOUR_SECONDS)
@@ -159,12 +159,12 @@ fn TrafficStats::hourly_usage_trends_json(
 ///|
 fn TrafficStats::daily_usage_trends_json(
   self : TrafficStats,
-  start_ts : Int,
-  end_ts : Int,
+  start_ts : Int32,
+  end_ts : Int32,
   app_type : String?,
 ) -> Json {
   let buckets : Array[DailyStatsAccumulator] = []
-  let bucket_indices : Map[String, Int] = Map([], capacity=0)
+  let bucket_indices : Map[String, Int32] = Map([], capacity=0)
   let end_day_start = trend_local_day_start_ts(end_ts)
   let mut bucket_start = trend_local_day_start_ts(start_ts)
   while bucket_start <= end_day_start {
@@ -214,8 +214,8 @@ fn TrafficStats::daily_usage_trends_json(
 ///|
 fn request_log_matches_trend(
   log : RequestLog,
-  start_ts : Int,
-  end_ts : Int,
+  start_ts : Int32,
+  end_ts : Int32,
   app_type : String?,
 ) -> Bool {
   log.created_at >= start_ts &&
@@ -224,12 +224,12 @@ fn request_log_matches_trend(
 }
 
 ///|
-fn trend_bucket_count(duration : Int, bucket_seconds : Int) -> Int {
+fn trend_bucket_count(duration : Int32, bucket_seconds : Int32) -> Int32 {
   max_int((max_int(duration, 1) + bucket_seconds - 1) / bucket_seconds, 1)
 }
 
 ///|
-fn floor_div_int(value : Int, divisor : Int) -> Int {
+fn floor_div_int(value : Int32, divisor : Int32) -> Int32 {
   if value >= 0 {
     value / divisor
   } else {
@@ -238,21 +238,21 @@ fn floor_div_int(value : Int, divisor : Int) -> Int {
 }
 
 ///|
-fn trend_local_day_start_ts(timestamp : Int) -> Int {
+fn trend_local_day_start_ts(timestamp : Int32) -> Int32 {
   @os.local_day_start_seconds(timestamp)
 }
 
 ///|
-fn trend_local_next_day_start_ts(timestamp : Int) -> Int {
+fn trend_local_next_day_start_ts(timestamp : Int32) -> Int32 {
   @os.local_next_day_start_seconds(timestamp)
 }
 
 ///|
-fn trend_local_day_key(timestamp : Int) -> String {
+fn trend_local_day_key(timestamp : Int32) -> String {
   @os.local_date_key(timestamp.to_int64())
 }
 
 ///|
-fn trend_timestamp_rfc3339(timestamp : Int) -> String {
+fn trend_timestamp_rfc3339(timestamp : Int32) -> String {
   @os.local_rfc3339(timestamp.to_int64())
 }

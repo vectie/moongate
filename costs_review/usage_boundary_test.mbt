@@ -6,7 +6,7 @@ fn boundary_costs() -> String {
 }
 
 ///|
-fn boundary_row(date? : Json = "2024-11-01") -> Json {
+fn boundary_row(date~ : Json = "2024-11-01") -> Json {
   {
     "model": "m",
     "totalTokens": 1,
@@ -56,12 +56,12 @@ test "JSON single array and JSONL records cannot erase row-level evidence metada
       "filteredRows", "partialSource", "sourceCoverageUnknown", "partial",
     ] {
     guard boundary_row() is Object(fields) else { fail("row") }
-    fields[name] = true.to_json()
+    fields[name] = Json(true)
     let marked = Json::object(fields)
     for
       source in [
         marked.stringify(),
-        [marked].to_json().stringify(),
+        Json([marked]).stringify(),
         boundary_row().stringify() + "\n" + marked.stringify(),
       ] {
       assert_true(boundary_review(source) is Err(_), msg=name)
@@ -73,16 +73,16 @@ test "JSON single array and JSONL records cannot erase row-level evidence metada
 test "envelope partial flags remain conservative and malformed flag types reject" {
   for name in ["partial", "partialSource", "sourceCoverageUnknown"] {
     let fields : Map[String, Json] = {
-      "data": [boundary_row()].to_json(),
-      "partial": false.to_json(),
+      "data": Json([boundary_row()]),
+      "partial": Json(false),
     }
-    fields[name] = true.to_json()
+    fields[name] = Json(true)
     guard boundary_review(Json::object(fields).stringify()) is Ok(result) else {
       fail("explicit partial")
     }
-    assert_eq(boundary_field(result, "localSourcePartial"), true.to_json())
+    assert_eq(boundary_field(result, "localSourcePartial"), Json(true))
     assert_eq(boundary_field(result, "pairedDays"), Json::number(0))
-    for invalid in [Json::null(), "true".to_json(), Json::number(1)] {
+    for invalid in [Json::null(), Json("true"), Json::number(1)] {
       fields[name] = invalid
       assert_true(boundary_review(Json::object(fields).stringify()) is Err(_))
     }
@@ -93,20 +93,20 @@ test "envelope partial flags remain conservative and malformed flag types reject
 test "envelope row counts cannot silently shrink retained coverage" {
   for name in ["sourceTotal", "total", "importedRows"] {
     let fields : Map[String, Json] = {
-      "data": [boundary_row()].to_json(),
-      "partial": false.to_json(),
+      "data": Json([boundary_row()]),
+      "partial": Json(false),
     }
     fields[name] = Json::number(2)
     guard boundary_review(Json::object(fields).stringify()) is Ok(result) else {
       fail("larger source count")
     }
-    assert_eq(boundary_field(result, "localSourcePartial"), true.to_json())
+    assert_eq(boundary_field(result, "localSourcePartial"), Json(true))
     assert_eq(boundary_field(result, "pairedDays"), Json::number(0))
     for
       invalid in [
         Json::number(0),
         Json::number(1.5),
-        "2".to_json(),
+        Json("2"),
         Json::number(-1),
       ] {
       fields[name] = invalid
@@ -115,8 +115,8 @@ test "envelope row counts cannot silently shrink retained coverage" {
   }
   for count in [0, 2] {
     let source : Json = {
-      "data": [boundary_row()].to_json(),
-      "filteredRows": count.to_json(),
+      "data": Json([boundary_row()]),
+      "filteredRows": Json(count),
     }
     assert_true(boundary_review(source.stringify()) is Err(_))
   }
@@ -125,7 +125,7 @@ test "envelope row counts cannot silently shrink retained coverage" {
 ///|
 test "hypothetical envelope markers reject even without their usual companions" {
   for name in ["usageEvidenceKind", "usageScenarioName", "usagePricing"] {
-    let fields : Map[String, Json] = { "data": [boundary_row()].to_json() }
+    let fields : Map[String, Json] = { "data": Json([boundary_row()]) }
     fields[name] = Json::null()
     assert_true(boundary_review(Json::object(fields).stringify()) is Err(_))
   }
@@ -137,11 +137,11 @@ test "complete dates offsets fractions and numeric timestamps are preserved on s
     date in [
       "2024-11-01", "2024-11-01T00:00:00Z", "2024-11-01T00:00:00.123456789Z", "2024-11-02T00:30:00.5+01:00",
     ] {
-    let row = boundary_row(date=date.to_json())
+    let row = boundary_row(date=Json(date))
     for
       source in [
         row.stringify(),
-        [row].to_json().stringify(),
+        Json([row]).stringify(),
         row.stringify() + "\n" + row.stringify(),
         "model,totalTokens,costUsd,provider,date\nm,1,1,fixture-route," + date,
       ] {
@@ -152,7 +152,7 @@ test "complete dates offsets fractions and numeric timestamps are preserved on s
       assert_eq(boundary_field(result, "pairedDays"), Json::number(1))
     }
   }
-  guard boundary_review(boundary_row(date=1730419200.5.to_json()).stringify())
+  guard boundary_review(boundary_row(date=Json(1730419200.5)).stringify())
     is Ok(result) else {
     fail("numeric epoch")
   }
@@ -167,12 +167,12 @@ test "invalid nonempty timestamps reject in CSV JSON arrays envelopes and JSONL"
       "2024-11-01T00:00:00.1234567890Z", "2024-11-01T00:00:00x+01:00", "2024-11-01T00:00:00+24:00",
       "2024-11-01T00:00:00+00:60", "2024-11-01T00:00:00", "2024-02-30", "2024-11-01T99:00:00Z",
     ] {
-    let row = boundary_row(date=date.to_json())
-    let envelope : Json = { "data": [row].to_json() }
+    let row = boundary_row(date=Json(date))
+    let envelope : Json = { "data": Json([row]) }
     for
       source in [
         row.stringify(),
-        [row].to_json().stringify(),
+        Json([row]).stringify(),
         envelope.stringify(),
         boundary_row().stringify() + "\n" + row.stringify(),
         "model,totalTokens,costUsd,provider,date\nm,1,1,fixture-route," + date,
@@ -186,14 +186,14 @@ test "invalid nonempty timestamps reject in CSV JSON arrays envelopes and JSONL"
 test "timestamp alias precedence is checked before normalizer chooses a day" {
   for key in ["createdAt", "created_at", "timestamp", "date"] {
     guard boundary_row() is Object(fields) else { fail("row") }
-    fields[key] = "2024-11-01T00:00:00INVALIDZ".to_json()
+    fields[key] = Json("2024-11-01T00:00:00INVALIDZ")
     assert_true(boundary_review(Json::object(fields).stringify()) is Err(_))
   }
 }
 
 ///|
 test "missing and empty dates remain undated while ordinary complete metadata remains usable" {
-  for date in [Json::null(), "".to_json()] {
+  for date in [Json::null(), Json("")] {
     guard boundary_review(boundary_row(date~).stringify()) is Ok(result) else {
       fail("undated")
     }
@@ -201,7 +201,7 @@ test "missing and empty dates remain undated while ordinary complete metadata re
     assert_eq(boundary_field(result, "pairedDays"), Json::number(0))
   }
   let source : Json = {
-    "data": [boundary_row()].to_json(),
+    "data": Json([boundary_row()]),
     "partial": false,
     "sourceCoverageUnknown": false,
     "sourceTotal": 1,
@@ -217,7 +217,7 @@ test "missing and empty dates remain undated while ordinary complete metadata re
 ///|
 test "unsupported transcript wrappers cannot bypass usage evidence validation" {
   let wrapped : Json = {
-    "messages": [boundary_row(date="2024-11-01T00:00:00INVALIDZ")].to_json(),
+    "messages": Json([boundary_row(date="2024-11-01T00:00:00INVALIDZ")]),
   }
   assert_true(boundary_review(wrapped.stringify()) is Err(_))
   let malformed : Json = { "model": "m", "totalTokens": 1, "data": false }

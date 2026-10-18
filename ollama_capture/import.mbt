@@ -3,8 +3,8 @@
 /// chunks belong to that one capture, never to separate request records.
 pub fn import_ollama_captures_json(
   captures : Array[(String, String)],
-  app? : String = "ollama-capture",
-  provider? : String = "ollama-export",
+  app~ : String = "ollama-capture",
+  provider~ : String = "ollama-export",
 ) -> Result[Json, String] {
   if captures.is_empty() || captures.length() > 100 {
     return Err("Supply between 1 and 100 captures, one request/stream per file")
@@ -15,7 +15,7 @@ pub fn import_ollama_captures_json(
   let names : Map[String, Bool] = Map([])
   let rows : Array[Json] = []
   let outcomes : Array[Json] = []
-  let counts : Map[String, Int] = {
+  let counts : Map[String, Int32] = {
     "completed": 0,
     "errored": 0,
     "incomplete": 0,
@@ -65,12 +65,12 @@ pub fn import_ollama_captures_json(
         return Err("Capture tokens exceed the safe-number sum limit")
       }
       tokens += i + o
-      total = (i + o).to_json()
+      total = Json(i + o)
       rows.push({
         "requestId": "",
-        "model": parsed.model.to_json(),
-        "appType": app.to_json(),
-        "providerId": provider.to_json(),
+        "model": Json(parsed.model),
+        "appType": Json(app),
+        "providerId": Json(provider),
         "inputTokens": input,
         "outputTokens": output,
         "totalTokens": total,
@@ -79,26 +79,26 @@ pub fn import_ollama_captures_json(
       })
     }
     outcomes.push({
-      "capture": (index + 1).to_json(),
-      "sourceName": name.to_json(),
-      "responseObjectCount": parsed.chunk_count.to_json(),
-      "state": parsed.state.to_json(),
-      "apiShape": parsed.shape.to_json(),
+      "capture": Json(index + 1),
+      "sourceName": Json(name),
+      "responseObjectCount": Json(parsed.chunk_count),
+      "state": Json(parsed.state),
+      "apiShape": Json(parsed.shape),
       "model": if parsed.model.is_empty() {
         Json::null()
       } else {
-        parsed.model.to_json()
+        Json(parsed.model)
       },
       "terminalLine": parsed.terminal_line,
-      "usageState": usage_state.to_json(),
+      "usageState": Json(usage_state),
       "doneReason": parsed.reason,
-      "terminalMetrics": parsed.metrics.to_json(),
+      "terminalMetrics": Json(parsed.metrics),
       "totalTokens": total,
     })
   }
   let envelope : Json = {
-    "data": rows.to_json(),
-    "sourceTotal": captures.length().to_json(),
+    "data": Json(rows),
+    "sourceTotal": Json(captures.length()),
     // A set of files has no authority to assert whole-interval coverage.
     "sourceCoverageUnknown": true,
   }
@@ -121,7 +121,7 @@ pub fn import_ollama_captures_json(
     guard outcome is Object(fields) else {
       return Err("Internal outcome failure")
     }
-    if fields.get("usageState") == Some("complete".to_json()) {
+    if fields.get("usageState") == Some(Json("complete")) {
       guard normalized[row_index] is Object(row) else {
         return Err("Internal row failure")
       }
@@ -144,7 +144,7 @@ pub fn import_ollama_captures_json(
   let report = [
     "MoonGate saved Ollama capture review",
     "Supplied capture files: \{captures.length()}; response objects: \{chunks}; complete usage rows: \{rows.length()}",
-    "States: " + counts.to_json().stringify(),
+    "States: " + Json(counts).stringify(),
     "Recorded tokens from complete terminal usage: \{tokens}; all costs unknown; source coverage unverified.",
   ]
   for outcome in outcomes {
@@ -155,17 +155,17 @@ pub fn import_ollama_captures_json(
   }
   preview["ollamaCaptureImport"] = {
     "schema": "moongate.ollama-capture-import.v1",
-    "sourceCaptureCount": captures.length().to_json(),
-    "responseObjectCount": chunks.to_json(),
-    "importedUsageCount": rows.length().to_json(),
-    "stateCounts": counts.to_json(),
+    "sourceCaptureCount": Json(captures.length()),
+    "responseObjectCount": Json(chunks),
+    "importedUsageCount": Json(rows.length()),
+    "stateCounts": Json(counts),
     "durationUnit": "nanoseconds",
     "coverage": "unverified",
     "costSource": "unavailable",
-    "outcomes": outcomes.to_json(),
-    "caveats": caveats.to_json(),
+    "outcomes": Json(outcomes),
+    "caveats": Json(caveats),
   }
-  preview["report"] = (report.join("\n") + "\n").to_json()
+  preview["report"] = Json(report.join("\n") + "\n")
   let result = Json::object(preview)
   if @encoding/utf8.encode(result.stringify(indent=2)).length() + 1 >
     4 * 1024 * 1024 {

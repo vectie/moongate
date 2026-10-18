@@ -11,7 +11,7 @@ priv struct Spawn {
 
 ///|
 pub struct Manager {
-  mut id : Int
+  mut id : Int32
   cwd : String
   process : Map[Pid, Process]
   priv spawn : @aqueue.Queue[Spawn]
@@ -30,11 +30,11 @@ fn Manager::new_pid(self : Manager) -> Pid {
 }
 
 ///|
-struct Pid(Int) derive(Hash, Eq)
+struct Pid(Int32) derive(Hash, Eq)
 
 ///|
 pub impl ToJson for Pid with fn to_json(self : Pid) -> Json {
-  self.0.to_json()
+  Json(self.0)
 }
 
 ///|
@@ -45,14 +45,14 @@ pub impl Show for Pid with fn output(self : Pid, logger : &Logger) -> Unit {
 ///|
 pub struct Process {
   pid : Pid
-  priv status : Ref[Int?]
-  priv task : @async.Task[Int]
+  priv status : Ref[Int32?]
+  priv task : @async.Task[Int32]
   stdout : RedirectOutput
   stderr : RedirectOutput
 }
 
 ///|
-pub fn Process::status(self : Process) -> Int? {
+pub fn Process::status(self : Process) -> Int32? {
   self.status.val
 }
 
@@ -91,8 +91,8 @@ pub async fn Manager::spawn(
   self : Manager,
   command : String,
   arguments : Array[String],
-  stderr? : RedirectOutput = Inherit,
-  stdout? : RedirectOutput = Inherit,
+  stderr~ : RedirectOutput = Inherit,
+  stdout~ : RedirectOutput = Inherit,
   cwd? : String,
   env? : Map[String, String],
 ) -> Process {
@@ -110,12 +110,12 @@ pub async fn Manager::spawn(
 }
 
 ///|
-pub async fn Manager::wait(self : Manager, pid : Pid) -> Int {
+pub async fn Manager::wait(self : Manager, pid : Pid) -> Int32 {
   self.process[pid].task.wait()
 }
 
 ///|
-pub async fn Process::wait(self : Process) -> Int {
+pub async fn Process::wait(self : Process) -> Int32 {
   self.task.wait()
 }
 

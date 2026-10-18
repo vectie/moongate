@@ -1,5 +1,5 @@
 ///|
-fn ascii_lex_compare(left : String, right : String) -> Int {
+fn ascii_lex_compare(left : String, right : String) -> Int32 {
   let limit = if left.length() < right.length() {
     left.length()
   } else {
@@ -24,13 +24,13 @@ fn ascii_lex_compare(left : String, right : String) -> Int {
 ///|
 fn moon_models_endpoint_response_json(
   active_catalog : Json?,
-  fallback_model? : String = "",
+  fallback_model~ : String = "",
 ) -> Json {
   match active_catalog {
     Some(catalog) if moon_model_catalog_has_models(catalog) => catalog
     _ =>
       if fallback_model.trim().is_empty() {
-        { "models": Json::array([]) }.to_json()
+        Json({ "models": Json::array([]) })
       } else {
         @codex_config.model_catalog_json(fallback_model)
       }

@@ -88,7 +88,7 @@ fn moon_omo_local_file_data_json(
       other[key] = value
     }
   }
-  {
+  Json({
     "agents": obj.get("agents").unwrap_or(Json::null()),
     "categories": if slim {
       Json::null()
@@ -102,7 +102,7 @@ fn moon_omo_local_file_data_json(
     },
     "filePath": Json::string(path),
     "lastModified": last_modified,
-  }.to_json()
+  })
 }
 
 ///|

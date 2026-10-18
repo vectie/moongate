@@ -3,22 +3,22 @@ const SESSION_REQUEST_ID_PREFIX : String = "session:"
 
 ///|
 pub struct TokenUsage {
-  input_tokens : Int
-  output_tokens : Int
-  cache_read_tokens : Int
-  cache_creation_tokens : Int
+  input_tokens : Int32
+  output_tokens : Int32
+  cache_read_tokens : Int32
+  cache_creation_tokens : Int32
   model : String?
   message_id : String?
 }
 
 ///|
 pub fn TokenUsage::new(
-  input_tokens~ : Int,
-  output_tokens~ : Int,
-  cache_read_tokens? : Int = 0,
-  cache_creation_tokens? : Int = 0,
-  model? : String? = None,
-  message_id? : String? = None,
+  input_tokens~ : Int32,
+  output_tokens~ : Int32,
+  cache_read_tokens~ : Int32 = 0,
+  cache_creation_tokens~ : Int32 = 0,
+  model~ : String? = None,
+  message_id~ : String? = None,
 ) -> TokenUsage {
   {
     input_tokens,
@@ -84,7 +84,7 @@ fn TokenUsage::dedup_request_id(
 }
 
 ///|
-pub fn TokenUsage::anthropic_input_tokens(self : TokenUsage) -> Int {
+pub fn TokenUsage::anthropic_input_tokens(self : TokenUsage) -> Int32 {
   max_int(
     self.input_tokens - self.cache_read_tokens - self.cache_creation_tokens,
     0,
@@ -368,7 +368,7 @@ fn token_usage_from_gemini_stream_chunks(chunks : Array[Json]) -> TokenUsage? {
 }
 
 ///|
-fn json_int(obj : Map[String, Json], key : String) -> Int? {
+fn json_int(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(n, ..)) =>
       if n < 0.0 || n.trunc() != n {
@@ -381,7 +381,7 @@ fn json_int(obj : Map[String, Json], key : String) -> Int? {
 }
 
 ///|
-fn json_int_or_zero(obj : Map[String, Json], key : String) -> Int {
+fn json_int_or_zero(obj : Map[String, Json], key : String) -> Int32 {
   match json_int(obj, key) {
     Some(n) => n
     None => 0
@@ -397,7 +397,7 @@ fn json_string(obj : Map[String, Json], key : String) -> String? {
 }
 
 ///|
-fn max_int(a : Int, b : Int) -> Int {
+fn max_int(a : Int32, b : Int32) -> Int32 {
   if a > b {
     a
   } else {

@@ -3,10 +3,10 @@ async fn write_capability_fixture(
   root : String,
   product_id : String,
   operation_id : String,
-  include_catalog_operation? : Bool = true,
-  authority? : String = "WorkspaceMutation",
-  claim_ceiling? : String = "digital-artifact",
-  review_required? : Bool = true,
+  include_catalog_operation~ : Bool = true,
+  authority~ : String = "WorkspaceMutation",
+  claim_ceiling~ : String = "digital-artifact",
+  review_required~ : Bool = true,
 ) -> (String, String, String) {
   let pack_root = @pathx.join(root, "packs/\{product_id}")
   let schema_root = @pathx.join(pack_root, "schemas")
@@ -124,7 +124,7 @@ async fn assert_exact_catalog_operation_resolves(
   operation_id : String,
   authority : String,
   claim_ceiling : String,
-  review_required? : Bool = true,
+  review_required~ : Bool = true,
 ) -> Unit {
   @fsx.with_temporary_directory("moongate-capability-exact-XXXXXX", root => {
     let (pack_root, _, catalog_path) = write_capability_fixture(

@@ -34,7 +34,7 @@ pub fn default_host() -> String {
 }
 
 ///|
-pub fn default_port() -> Int {
+pub fn default_port() -> Int32 {
   15721
 }
 
@@ -48,7 +48,7 @@ pub fn ai_session_receipt(
   session_id : String,
   model : String,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Json {
   {
     "contract_id": "moonsuite.ai-session.v1",
@@ -77,16 +77,16 @@ pub fn normalize_host(host : String) -> String {
 }
 
 ///|
-pub fn base_url(host : String, port : Int) -> String {
+pub fn base_url(host : String, port : Int32) -> String {
   "http://\{normalize_host(host)}:\{port}"
 }
 
 ///|
-pub fn openai_base_url(host : String, port : Int) -> String {
+pub fn openai_base_url(host : String, port : Int32) -> String {
   "\{base_url(host, port)}/v1"
 }
 
 ///|
-pub fn claude_desktop_base_url(host : String, port : Int) -> String {
+pub fn claude_desktop_base_url(host : String, port : Int32) -> String {
   "\{base_url(host, port)}/claude-desktop/v1"
 }

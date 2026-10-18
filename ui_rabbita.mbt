@@ -1,6 +1,6 @@
 ///|
 fn moongate_rabbita_shell_view(
-  api_base? : String = "http://127.0.0.1:15721",
+  api_base~ : String = "http://127.0.0.1:15721",
 ) -> @html.Html {
   @html.fragment([
     @html.link(rel="stylesheet", href="/assets/moongate.css"),
@@ -129,7 +129,7 @@ fn moongate_rabbita_nav_group(label : String) -> @html.Html {
 fn moongate_rabbita_nav_link(
   page : String,
   label : String,
-  active? : Bool = false,
+  active~ : Bool = false,
 ) -> @html.Html {
   @html.a(
     href="#\{page}",

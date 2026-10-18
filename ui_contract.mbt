@@ -36,9 +36,9 @@ fn moongate_framework_app_json(
   id : String,
   label : String,
   mode : String,
-  desktop? : Bool = false,
-  provider_app_type? : String? = None,
-  priority? : Int = 100,
+  desktop~ : Bool = false,
+  provider_app_type~ : String? = None,
+  priority~ : Int32 = 100,
 ) -> Json {
   let app = {
     "id": Json::string(id),

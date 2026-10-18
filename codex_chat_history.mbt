@@ -1,5 +1,5 @@
 ///|
-const MAX_CODEX_CHAT_HISTORY_RESPONSES : Int = 512
+const MAX_CODEX_CHAT_HISTORY_RESPONSES : Int32 = 512
 
 ///|
 priv struct CachedCodexChatResponse {
@@ -20,7 +20,7 @@ priv struct CodexChatLookup {
 
 ///|
 priv struct CodexChatHistoryStore {
-  max_responses : Int
+  max_responses : Int32
   responses : Map[String, CachedCodexChatResponse]
   response_order : Array[String]
   call_index : Map[String, Array[String]]
@@ -28,7 +28,7 @@ priv struct CodexChatHistoryStore {
 
 ///|
 fn CodexChatHistoryStore::new(
-  max_responses? : Int = MAX_CODEX_CHAT_HISTORY_RESPONSES,
+  max_responses~ : Int32 = MAX_CODEX_CHAT_HISTORY_RESPONSES,
 ) -> CodexChatHistoryStore {
   {
     max_responses: if max_responses < 1 {
@@ -46,7 +46,7 @@ fn CodexChatHistoryStore::new(
 fn CodexChatHistoryStore::record_response(
   self : CodexChatHistoryStore,
   response : Json,
-) -> Int {
+) -> Int32 {
   guard response is Object(obj) else { return 0 }
   guard json_string_from_map(obj, "id") is Some(response_id) &&
     !response_id.trim().is_empty() else {
@@ -83,7 +83,7 @@ fn CodexChatHistoryStore::record_call_item(
 fn CodexChatHistoryStore::record_stream_events(
   self : CodexChatHistoryStore,
   events : Array[Json],
-) -> Int {
+) -> Int32 {
   let mut response_id : String? = None
   let mut recorded = 0
   for event in events {
@@ -130,7 +130,7 @@ fn CodexChatHistoryStore::enriched_request(
 fn CodexChatHistoryStore::enrich_request_in_place(
   self : CodexChatHistoryStore,
   request : Json,
-) -> Int {
+) -> Int32 {
   guard request is Object(obj) else { return 0 }
   let previous_response_id = match
     json_string_from_map(obj, "previous_response_id") {
@@ -246,7 +246,7 @@ fn CodexChatHistoryStore::insert_calls(
   self : CodexChatHistoryStore,
   response_id : String,
   calls : Array[(String, Json)],
-) -> Int {
+) -> Int32 {
   if self.responses.get(response_id) is None {
     self.response_order.push(response_id)
   }

@@ -5,7 +5,7 @@ fn WorkspaceService::register_routes(
   config : ConfigService,
   logger : @pino.Logger,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Unit {
   router.add_handler(Get, "/", (_, w) => {
     self.handle_dashboard_page(w, host, port)

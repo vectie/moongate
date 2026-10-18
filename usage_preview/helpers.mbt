@@ -13,7 +13,7 @@ fn moon_json_get(value : Json, key : String) -> Json? {
 }
 
 ///|
-fn parse_fixed_int(text : String, start : Int, end : Int) -> Int? {
+fn parse_fixed_int(text : String, start : Int32, end : Int32) -> Int32? {
   if text.length() < end {
     return None
   }

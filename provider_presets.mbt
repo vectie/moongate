@@ -139,7 +139,7 @@ fn moon_provider_preset_form_json(app_type : String, name : String) -> Json? {
   match (app_type, name) {
     ("codex", "OpenAI Official") =>
       Some(
-        {
+        Json({
           "templateLabel": Json::string("Codex OAuth"),
           "appType": Json::string("codex"),
           "id": Json::string("codex-oauth"),
@@ -147,8 +147,8 @@ fn moon_provider_preset_form_json(app_type : String, name : String) -> Json? {
           "providerType": Json::string("codex_oauth"),
           "apiFormat": Json::string("openai"),
           "enabled": Json::boolean(true),
-          "modelMapping": { "defaultModel": Json::string("gpt-5.6-sol") }.to_json(),
-        }.to_json(),
+          "modelMapping": Json({ "defaultModel": Json::string("gpt-5.6-sol") }),
+        }),
       )
     ("codex", "火山Agentplan") =>
       Some(moon_ark_agent_plan_provider_form_json("codex", "openai"))
@@ -170,7 +170,7 @@ fn moon_ark_agent_plan_provider_form_json(
     mapping["haikuModel"] = Json::string("kimi-k3")
     mapping["opusModel"] = Json::string("kimi-k3")
   }
-  {
+  Json({
     "templateLabel": Json::string(
       if anthropic {
         "Ark Agent Plan / Kimi K3 / Anthropic Messages"
@@ -204,7 +204,7 @@ fn moon_ark_agent_plan_provider_form_json(
     "apiFormat": Json::string(api_format),
     "enabled": Json::boolean(true),
     "modelMapping": Json::object(mapping),
-  }.to_json()
+  })
 }
 
 ///|
@@ -254,12 +254,12 @@ fn moon_unity2_base_preset(
 fn moon_unity2_claude_preset_json(app_type : String) -> Json {
   let obj = moon_unity2_base_preset(
     app_type,
-    {
-      "env": {
+    Json({
+      "env": Json({
         "ANTHROPIC_BASE_URL": Json::string("https://api.unity2.ai"),
         "ANTHROPIC_AUTH_TOKEN": Json::string(""),
-      }.to_json(),
-    }.to_json(),
+      }),
+    }),
   )
   Json::object(obj)
 }
@@ -276,26 +276,26 @@ fn moon_unity2_claude_desktop_preset_json() -> Json {
 
 ///|
 fn moon_unity2_claude_desktop_routes_json() -> Json {
-  {
-    "claude-sonnet-4-6": {
+  Json({
+    "claude-sonnet-4-6": Json({
       "model": Json::string("claude-sonnet-4-6"),
       "supports1m": Json::boolean(true),
-    }.to_json(),
-    "claude-opus-4-8": {
+    }),
+    "claude-opus-4-8": Json({
       "model": Json::string("claude-opus-4-8"),
       "supports1m": Json::boolean(true),
-    }.to_json(),
-    "claude-haiku-4-5": {
+    }),
+    "claude-haiku-4-5": Json({
       "model": Json::string("claude-haiku-4-5"),
       "supports1m": Json::boolean(true),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
 }
 
 ///|
 fn moon_unity2_codex_preset_json() -> Json {
   let obj = moon_unity2_base_preset("codex", Json::object({}))
-  obj["auth"] = { "OPENAI_API_KEY": Json::string("") }.to_json()
+  obj["auth"] = Json({ "OPENAI_API_KEY": Json::string("") })
   obj["config"] = Json::string(
     "model_provider = \"custom\"\nmodel = \"gpt-5.5\"\nmodel_reasoning_effort = \"high\"\ndisable_response_storage = true\n\n[model_providers.custom]\nname = \"unity2\"\nbase_url = \"https://api.unity2.ai\"\nwire_api = \"responses\"\nrequires_openai_auth = true",
   )
@@ -309,12 +309,12 @@ fn moon_unity2_codex_preset_json() -> Json {
 fn moon_unity2_gemini_preset_json() -> Json {
   let obj = moon_unity2_base_preset(
     "gemini",
-    {
-      "env": {
+    Json({
+      "env": Json({
         "GOOGLE_GEMINI_BASE_URL": Json::string("https://api.unity2.ai"),
         "GEMINI_MODEL": Json::string("gemini-3.1-pro"),
-      }.to_json(),
-    }.to_json(),
+      }),
+    }),
   )
   obj["baseURL"] = Json::string("https://api.unity2.ai")
   obj["model"] = Json::string("gemini-3.1-pro")
@@ -326,16 +326,16 @@ fn moon_unity2_gemini_preset_json() -> Json {
 fn moon_unity2_opencode_preset_json() -> Json {
   let obj = moon_unity2_base_preset(
     "opencode",
-    {
+    Json({
       "npm": Json::string("@ai-sdk/openai-compatible"),
       "name": Json::string("Unity2.ai"),
-      "options": {
+      "options": Json({
         "baseURL": Json::string("https://api.unity2.ai/v1"),
         "apiKey": Json::string(""),
         "setCacheKey": Json::boolean(true),
-      }.to_json(),
-      "models": { "gpt-5.5": { "name": Json::string("GPT-5.5") }.to_json() }.to_json(),
-    }.to_json(),
+      }),
+      "models": Json({ "gpt-5.5": Json({ "name": Json::string("GPT-5.5") }) }),
+    }),
   )
   obj["templateValues"] = moon_api_key_template_values_json()
   Json::object(obj)
@@ -345,27 +345,30 @@ fn moon_unity2_opencode_preset_json() -> Json {
 fn moon_unity2_openclaw_preset_json() -> Json {
   let obj = moon_unity2_base_preset(
     "openclaw",
-    {
+    Json({
       "baseUrl": Json::string("https://api.unity2.ai/v1"),
       "apiKey": Json::string(""),
       "api": Json::string("openai-completions"),
       "models": Json::array([
-        {
+        Json({
           "id": Json::string("gpt-5.5"),
           "name": Json::string("GPT-5.5"),
           "contextWindow": Json::number(400000.0),
-          "cost": { "input": Json::number(5.0), "output": Json::number(15.0) }.to_json(),
-        }.to_json(),
+          "cost": Json({
+            "input": Json::number(5.0),
+            "output": Json::number(15.0),
+          }),
+        }),
       ]),
-    }.to_json(),
+    }),
   )
   obj["templateValues"] = moon_api_key_template_values_json()
-  obj["suggestedDefaults"] = {
-    "model": { "primary": Json::string("unity2/gpt-5.5") }.to_json(),
-    "modelCatalog": {
-      "unity2/gpt-5.5": { "alias": Json::string("GPT-5.5") }.to_json(),
-    }.to_json(),
-  }.to_json()
+  obj["suggestedDefaults"] = Json({
+    "model": Json({ "primary": Json::string("unity2/gpt-5.5") }),
+    "modelCatalog": Json({
+      "unity2/gpt-5.5": Json({ "alias": Json::string("GPT-5.5") }),
+    }),
+  })
   Json::object(obj)
 }
 
@@ -373,36 +376,36 @@ fn moon_unity2_openclaw_preset_json() -> Json {
 fn moon_unity2_hermes_preset_json() -> Json {
   let obj = moon_unity2_base_preset(
     "hermes",
-    {
+    Json({
       "name": Json::string("unity2"),
       "baseUrl": Json::string("https://api.unity2.ai/v1"),
       "apiKey": Json::string(""),
       "apiMode": Json::string("chat_completions"),
       "models": Json::array([
-        {
+        Json({
           "id": Json::string("gpt-5.5"),
           "name": Json::string("GPT-5.5"),
           "context_length": Json::number(400000.0),
-        }.to_json(),
+        }),
       ]),
-    }.to_json(),
+    }),
   )
-  obj["suggestedDefaults"] = {
-    "model": {
+  obj["suggestedDefaults"] = Json({
+    "model": Json({
       "default": Json::string("gpt-5.5"),
       "provider": Json::string("unity2"),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   Json::object(obj)
 }
 
 ///|
 fn moon_api_key_template_values_json() -> Json {
-  {
-    "apiKey": {
+  Json({
+    "apiKey": Json({
       "label": Json::string("API Key"),
       "placeholder": Json::string(""),
       "editorValue": Json::string(""),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
 }

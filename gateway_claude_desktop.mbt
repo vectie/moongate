@@ -25,7 +25,7 @@ fn moon_scan_local_proxies_json() -> Json {
 async fn ProxyService::handle_claude_desktop_provider_status(
   self : ProxyService,
   host : String,
-  port : Int,
+  port : Int32,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   let status = @claude_desktop.status()
@@ -37,14 +37,14 @@ fn ProxyService::claude_desktop_status_json(
   self : ProxyService,
   status : @claude_desktop.ClaudeDesktopStatus,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Json {
   let provider = self.current_claude_desktop_provider()
   let mode = match provider {
     Some(provider) => provider.claude_desktop_mode_for_status()
     None => None
   }
-  {
+  Json({
     "supported": Json::boolean(true),
     "configured": Json::boolean(status.configured),
     "appliedId": provider_route_optional_string_json(status.applied_id),
@@ -61,7 +61,7 @@ fn ProxyService::claude_desktop_status_json(
       claude_desktop_missing_route_mappings(mode, provider),
     ),
     "gatewayTokenConfigured": Json::boolean(status.token_configured),
-  }.to_json()
+  })
 }
 
 ///|
@@ -89,7 +89,7 @@ fn ProxyService::claude_desktop_expected_base_url(
   mode : String?,
   provider : ProviderRouteTarget?,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> String? {
   ignore(self)
   match mode {
@@ -159,11 +159,11 @@ fn claude_desktop_default_route_json(
   route_id : String,
   env_key : String,
 ) -> Json {
-  {
+  Json({
     "routeId": Json::string(route_id),
     "envKey": Json::string(env_key),
     "supports1m": Json::boolean(true),
-  }.to_json()
+  })
 }
 
 ///|

@@ -16,7 +16,7 @@ fn gate_oas_text(value : Json, key : String) -> String {
 fn gate_oas_resolve(
   root : Json,
   value : Json,
-  depth : Int,
+  depth : Int32,
 ) -> Result[Json, String] {
   let reference = gate_oas_text(value, "$ref")
   if reference.is_empty() {
@@ -62,7 +62,7 @@ fn gate_oas_variable(location : String, name : String) -> String {
   let builder = StringBuilder()
   builder.write_string(location + "_")
   for c in name {
-    if c is ('a'..='z' | 'A'..='Z' | '0'..='9' | '_') {
+    if c is ('a'..<='z' | 'A'..<='Z' | '0'..<='9' | '_') {
       builder.write_char(c)
     } else {
       builder.write_char('_')
@@ -106,8 +106,8 @@ fn gate_oas_example(root : Json, value : Json) -> Result[Json?, String] {
 /// provider registration, credential reads, or request execution occurs here.
 pub fn moongate_openapi_collection_json(
   content : String,
-  tag? : String = "",
-  operation? : String = "",
+  tag~ : String = "",
+  operation~ : String = "",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("OpenAPI file exceeds 4 MiB")
@@ -217,11 +217,11 @@ pub fn moongate_openapi_collection_json(
           }
         }
         normalized.push({
-          "name": name.to_json(),
-          "in": location.to_json(),
+          "name": Json(name),
+          "in": Json(location),
           "required": gate_oas_field(parameter, "required"),
           "example": example,
-          "variable": variable.to_json(),
+          "variable": Json(variable),
         })
         if example != Json::null() {
           declarations.push(
@@ -326,26 +326,26 @@ pub fn moongate_openapi_collection_json(
         body_text
       sections.push(section)
       operations.push({
-        "operationId": id.to_json(),
-        "method": verb.to_upper().to_json(),
-        "path": path.to_json(),
+        "operationId": Json(id),
+        "method": Json(verb.to_upper()),
+        "path": Json(path),
         "summary": gate_oas_field(op, "summary"),
-        "tags": tags.to_json(),
-        "server": server.to_json(),
-        "parameters": normalized.to_json(),
+        "tags": Json(tags),
+        "server": Json(server),
+        "parameters": Json(normalized),
         "bodyExample": body,
         "security": security,
-        "warnings": warnings.to_json(),
+        "warnings": Json(warnings),
       })
     }
   }
   Ok({
     "schema": "moongate.openapi-collection.v1",
     "title": gate_oas_field(gate_oas_field(root, "info"), "title"),
-    "openapi": version.to_json(),
-    "sourceOperations": total.to_json(),
-    "selectedOperations": operations.length().to_json(),
-    "operations": operations.to_json(),
-    "http": (sections.join("\n\n") + "\n").to_json(),
+    "openapi": Json(version),
+    "sourceOperations": Json(total),
+    "selectedOperations": Json(operations.length()),
+    "operations": Json(operations),
+    "http": Json(sections.join("\n\n") + "\n"),
   })
 }

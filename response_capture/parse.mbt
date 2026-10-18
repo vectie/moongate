@@ -6,7 +6,7 @@ priv struct ResponseCapture {
   state : String
   status : String
   terminal : Bool
-  objects : Int
+  objects : Int32
   terminal_line : Json
   created : Json
   usage : Map[String, Json]
@@ -19,7 +19,7 @@ fn capture_count(value : Json, label : String) -> Json raise {
     Null => Json::null()
     Number(_, repr=Some(text)) =>
       match @exact_json.exact_count(text) {
-        Some(n) => n.to_json()
+        Some(n) => Json(n)
         None => fail("\{label}: expected an exact nonnegative safe integer")
       }
     _ => fail("\{label}: expected a JSON integer or null")
@@ -161,7 +161,7 @@ fn parse_response_capture(content : String) -> ResponseCapture raise {
       }
       response
     }
-    if response.get("object") != Some("response".to_json()) {
+    if response.get("object") != Some(Json("response")) {
       fail("Line \{line}: expected object type response")
     }
     guard response.get("id") is Some(String(current_id)) &&
@@ -219,13 +219,15 @@ fn parse_response_capture(content : String) -> ResponseCapture raise {
         match details.get("reason") {
           None | Some(Null) => Json::null()
           Some(String(reason)) =>
-            (if ["max_output_tokens", "content_filter", "steered"].contains(
-                reason,
-              ) {
-              reason
-            } else {
-              "unrecognized"
-            }).to_json()
+            Json(
+              if ["max_output_tokens", "content_filter", "steered"].contains(
+                  reason,
+                ) {
+                reason
+              } else {
+                "unrecognized"
+              },
+            )
           _ => fail("Line \{line}: incomplete reason must be a string or null")
         }
       _ => fail("Line \{line}: incomplete_details must be an object or null")
@@ -234,7 +236,7 @@ fn parse_response_capture(content : String) -> ResponseCapture raise {
       closed = true
       terminal = event.framed
       if terminal {
-        terminal_line = line.to_json()
+        terminal_line = Json(line)
       }
     }
   }

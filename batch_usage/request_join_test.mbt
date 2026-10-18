@@ -1,15 +1,15 @@
 ///|
 fn request(
   id : String,
-  model? : String = "requested-alias",
-  endpoint? : String = "/v1/chat/completions",
+  model~ : String = "requested-alias",
+  endpoint~ : String = "/v1/chat/completions",
 ) -> Json {
   {
-    "custom_id": id.to_json(),
+    "custom_id": Json(id),
     "method": "POST",
-    "url": endpoint.to_json(),
+    "url": Json(endpoint),
     "body": {
-      "model": model.to_json(),
+      "model": Json(model),
       "messages": [
         { "role": "user", "content": "REQUEST_PRIVATE_MARKER\n你好" },
       ],

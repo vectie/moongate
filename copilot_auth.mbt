@@ -47,8 +47,8 @@ priv struct CopilotDeviceCodeResponse {
   device_code : String
   user_code : String
   verification_uri : String
-  expires_in : Int
-  interval : Int
+  expires_in : Int32
+  interval : Int32
 } derive(ToJson)
 
 ///|
@@ -74,7 +74,7 @@ fn copilot_json_string(obj : Map[String, Json], key : String) -> String? {
 }
 
 ///|
-fn copilot_json_int(obj : Map[String, Json], key : String) -> Int? {
+fn copilot_json_int(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.to_int())
     Some(String(value)) =>
@@ -117,7 +117,7 @@ fn copilot_url_encode(s : String) -> String {
   let buf = StringBuilder::new()
   for c in s {
     match c {
-      'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' =>
+      'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>
         buf.write_char(c)
       _ => {
         let bytes = @encoding/utf8.encode(c.to_string())
@@ -125,7 +125,7 @@ fn copilot_url_encode(s : String) -> String {
           let hex = b.to_int()
           let high = (hex >> 4) & 0xF
           let low = hex & 0xF
-          let hex_char = fn(n : Int) -> Char {
+          let hex_char = fn(n : Int32) -> Char {
             if n < 10 {
               ('0'.to_int() + n).unsafe_to_char()
             } else {
@@ -221,7 +221,7 @@ fn copilot_account_id(domain : String, user_id : String) -> String {
 
 ///|
 fn copilot_account_json(credentials : CopilotCredentials) -> Json {
-  {
+  Json({
     "id": Json::string(credentials.account_id),
     "provider": Json::string("github_copilot"),
     "login": Json::string(credentials.login),
@@ -232,7 +232,7 @@ fn copilot_account_json(credentials : CopilotCredentials) -> Json {
     "authenticated_at": Json::number(credentials.authenticated_at.to_double()),
     "is_default": Json::boolean(true),
     "github_domain": Json::string(credentials.github_domain),
-  }.to_json()
+  })
 }
 
 ///|
@@ -241,7 +241,7 @@ fn copilot_auth_status_json(credentials : CopilotCredentials?) -> Json {
     Some(credentials) => [copilot_account_json(credentials)]
     None => []
   }
-  {
+  Json({
     "provider": Json::string("github_copilot"),
     "accounts": Json::array(accounts),
     "default_account_id": match credentials {
@@ -259,7 +259,7 @@ fn copilot_auth_status_json(credentials : CopilotCredentials?) -> Json {
         Json::number(credentials.copilot_token_expires_at.to_double())
       None => Json::null()
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -346,7 +346,7 @@ pub async fn copilot_start_device_flow(
         "User-Agent": COPILOT_USER_AGENT,
       },
     )
-    guard response.code is (200..=299) else {
+    guard response.code is (200..<=299) else {
       return Err(
         "GitHub device code request failed: \{response.code} - \{data.text()}",
       )
@@ -382,7 +382,7 @@ async fn copilot_poll_github_token(
         "User-Agent": COPILOT_USER_AGENT,
       },
     )
-    guard response.code is (200..=299) else {
+    guard response.code is (200..<=299) else {
       return Err("GitHub token poll failed: \{response.code} - \{data.text()}")
     }
     guard data.json() is Object(obj) else {
@@ -422,7 +422,7 @@ async fn copilot_fetch_user(
         "User-Agent": COPILOT_USER_AGENT,
       },
     )
-    guard response.code is (200..=299) else {
+    guard response.code is (200..<=299) else {
       return Err(
         "GitHub user request failed: \{response.code} - \{data.text()}",
       )
@@ -464,7 +464,7 @@ async fn copilot_fetch_copilot_token(
         "Copilot-Integration-Id": COPILOT_INTEGRATION_ID,
       },
     )
-    guard response.code is (200..=299) else {
+    guard response.code is (200..<=299) else {
       return Err(
         "Copilot token request failed: \{response.code} - \{data.text()}",
       )
@@ -638,7 +638,7 @@ pub async fn copilot_get_models(account_id : String?) -> Result[Json, String] {
       "\{copilot_api_base(credentials.github_domain)}/models",
       headers=copilot_headers(credentials),
     )
-    guard response.code is (200..=299) else {
+    guard response.code is (200..<=299) else {
       return Err(
         "Copilot models request failed: \{response.code} - \{data.text()}",
       )
@@ -654,7 +654,7 @@ pub async fn copilot_get_models(account_id : String?) -> Result[Json, String] {
       )
       if enabled {
         models.push(
-          {
+          Json({
             "id": Json::string(
               copilot_json_string(model_obj, "id").unwrap_or(""),
             ),
@@ -665,7 +665,7 @@ pub async fn copilot_get_models(account_id : String?) -> Result[Json, String] {
               copilot_json_string(model_obj, "vendor").unwrap_or(""),
             ),
             "model_picker_enabled": Json::boolean(enabled),
-          }.to_json(),
+          }),
         )
       }
     }
@@ -693,7 +693,7 @@ pub async fn copilot_get_usage(account_id : String?) -> Result[Json, String] {
         "x-github-api-version": COPILOT_API_VERSION,
       },
     )
-    guard response.code is (200..=299) else {
+    guard response.code is (200..<=299) else {
       return Err(
         "Copilot usage request failed: \{response.code} - \{data.text()}",
       )

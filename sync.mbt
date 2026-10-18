@@ -19,12 +19,12 @@ fn moon_sync_protocol_format() -> String {
 }
 
 ///|
-fn moon_sync_protocol_version() -> Int {
+fn moon_sync_protocol_version() -> Int32 {
   2
 }
 
 ///|
-fn moon_sync_db_compat_version() -> Int {
+fn moon_sync_db_compat_version() -> Int32 {
   6
 }
 
@@ -44,20 +44,20 @@ fn moon_sync_remote_manifest() -> String {
 }
 
 ///|
-fn moon_webdav_default_timeout_ms() -> Int {
+fn moon_webdav_default_timeout_ms() -> Int32 {
   30000
 }
 
 ///|
-fn moon_webdav_transfer_timeout_ms() -> Int {
+fn moon_webdav_transfer_timeout_ms() -> Int32 {
   300000
 }
 
 ///|
 priv struct MoonSyncManifestInfo {
   format : String
-  version : Int
-  db_compat_version : Int?
+  version : Int32
+  db_compat_version : Int32?
   device_name : String
   created_at : String
   snapshot_id : String
@@ -68,7 +68,7 @@ priv struct MoonSyncManifestInfo {
 ///|
 priv struct MoonSyncArtifactMeta {
   sha256 : String
-  size : Int
+  size : Int32
 }
 
 ///|
@@ -94,7 +94,7 @@ priv struct MoonS3RemoteSnapshot {
 
 ///|
 priv struct MoonWebDavTextResponse {
-  code : Int
+  code : Int32
   body : String
 }
 
@@ -162,7 +162,7 @@ fn moon_webdav_sync_settings_json(
   }
   let remote_root = moon_sync_json_string(obj, "remoteRoot")
   let profile = moon_sync_json_string(obj, "profile")
-  {
+  Json({
     "enabled": Json::boolean(moon_sync_json_bool(obj, "enabled")),
     "autoSync": Json::boolean(moon_sync_json_bool(obj, "autoSync")),
     "baseUrl": Json::string(moon_sync_json_string(obj, "baseUrl")),
@@ -187,12 +187,12 @@ fn moon_webdav_sync_settings_json(
       },
     ),
     "status": moon_sync_status_json(obj, existing),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_webdav_sync_empty_settings_json() -> Json {
-  {
+  Json({
     "enabled": Json::boolean(false),
     "autoSync": Json::boolean(false),
     "baseUrl": Json::string(""),
@@ -201,7 +201,7 @@ fn moon_webdav_sync_empty_settings_json() -> Json {
     "remoteRoot": Json::string(moon_sync_default_remote_root()),
     "profile": Json::string(moon_sync_default_profile()),
     "status": moon_sync_default_status_json(),
-  }.to_json()
+  })
 }
 
 ///|
@@ -235,7 +235,7 @@ fn moon_s3_sync_settings_json(
   }
   let remote_root = moon_sync_json_string(obj, "remoteRoot")
   let profile = moon_sync_json_string(obj, "profile")
-  {
+  Json({
     "enabled": Json::boolean(moon_sync_json_bool(obj, "enabled")),
     "autoSync": Json::boolean(moon_sync_json_bool(obj, "autoSync")),
     "region": Json::string(moon_sync_json_string(obj, "region")),
@@ -262,12 +262,12 @@ fn moon_s3_sync_settings_json(
       },
     ),
     "status": moon_sync_status_json(obj, existing),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_s3_sync_empty_settings_json() -> Json {
-  {
+  Json({
     "enabled": Json::boolean(false),
     "autoSync": Json::boolean(false),
     "region": Json::string(""),
@@ -278,7 +278,7 @@ fn moon_s3_sync_empty_settings_json() -> Json {
     "remoteRoot": Json::string(moon_sync_default_remote_root()),
     "profile": Json::string(moon_sync_default_profile()),
     "status": moon_sync_default_status_json(),
-  }.to_json()
+  })
 }
 
 ///|
@@ -458,7 +458,7 @@ fn moon_sync_sha256_hex(bytes : Bytes) -> String {
 }
 
 ///|
-fn moon_sync_hex_digit(value : Int) -> Char {
+fn moon_sync_hex_digit(value : Int32) -> Char {
   if value < 10 {
     ('0'.to_int() + value).unsafe_to_char()
   } else {
@@ -502,10 +502,10 @@ fn moon_sync_artifact_meta(bytes : Bytes) -> MoonSyncArtifactMeta {
 
 ///|
 fn moon_sync_artifact_meta_json(meta : MoonSyncArtifactMeta) -> Json {
-  {
+  Json({
     "sha256": Json::string(meta.sha256),
     "size": Json::number(meta.size.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -520,7 +520,7 @@ fn moon_sync_manifest_json(
     guard artifacts.get(key) is Some(meta) else { continue }
     artifact_json[key] = moon_sync_artifact_meta_json(meta)
   }
-  {
+  Json({
     "format": Json::string(moon_sync_protocol_format()),
     "version": Json::number(moon_sync_protocol_version().to_double()),
     "dbCompatVersion": Json::number(moon_sync_db_compat_version().to_double()),
@@ -528,7 +528,7 @@ fn moon_sync_manifest_json(
     "createdAt": Json::string(@os.unix_seconds().to_string()),
     "artifacts": Json::object(artifact_json),
     "snapshotId": Json::string(snapshot_id),
-  }.to_json()
+  })
 }
 
 ///|
@@ -549,7 +549,7 @@ fn moon_webdav_encode_path_segment(segment : String) -> String {
 }
 
 ///|
-fn moon_webdav_is_unreserved_path_byte(value : Int) -> Bool {
+fn moon_webdav_is_unreserved_path_byte(value : Int32) -> Bool {
   (value >= 'A'.to_int() && value <= 'Z'.to_int()) ||
   (value >= 'a'.to_int() && value <= 'z'.to_int()) ||
   (value >= '0'.to_int() && value <= '9'.to_int()) ||
@@ -560,7 +560,7 @@ fn moon_webdav_is_unreserved_path_byte(value : Int) -> Bool {
 }
 
 ///|
-fn moon_webdav_hex_digit(value : Int) -> Char {
+fn moon_webdav_hex_digit(value : Int32) -> Char {
   if value < 10 {
     ('0'.to_int() + value).unsafe_to_char()
   } else {
@@ -592,7 +592,7 @@ fn moon_webdav_remote_file_url(
 ///|
 fn moon_webdav_remote_dir_url(
   settings : Json,
-  depth : Int,
+  depth : Int32,
 ) -> Result[String, String] {
   let remote_segments = match
     moon_webdav_remote_dir_segments_from_settings(settings) {
@@ -759,7 +759,7 @@ fn moon_s3_object_url(settings : Json, key : String) -> Result[String, String] {
 ///|
 fn moon_s3_curl_common_args(
   settings : Json,
-  timeout_ms : Int,
+  timeout_ms : Int32,
 ) -> Result[Array[String], String] {
   guard settings is Object(obj) else {
     return Err("S3 sync is not configured.")
@@ -885,7 +885,7 @@ fn moon_webdav_curl_status_request(
   settings : Json,
   webdav_method : String,
   url : String,
-  depth_zero? : Bool = false,
+  depth_zero~ : Bool = false,
 ) -> Result[MoonWebDavCurlRequest, String] {
   guard settings is Object(obj) else {
     return Err("WebDAV sync is not configured.")
@@ -980,7 +980,7 @@ fn moon_webdav_curl_get_request(
 async fn moon_webdav_run_status_request(
   request : MoonWebDavCurlRequest,
   operation : String,
-) -> Result[Int, String] {
+) -> Result[Int32, String] {
   let result = @spawn.spawn(
     request.program,
     request.args.map(fn(arg) { arg[:] }),
@@ -1012,7 +1012,7 @@ async fn moon_webdav_run_status_request(
 async fn moon_s3_run_status_request(
   request : MoonWebDavCurlRequest,
   operation : String,
-) -> Result[Int, String] {
+) -> Result[Int32, String] {
   let result = @spawn.spawn(
     request.program,
     request.args.map(fn(arg) { arg[:] }),
@@ -1041,27 +1041,27 @@ async fn moon_s3_run_status_request(
 }
 
 ///|
-fn moon_webdav_status_ok_for_propfind(status : Int) -> Bool {
+fn moon_webdav_status_ok_for_propfind(status : Int32) -> Bool {
   (status >= 200 && status <= 299) || status == 207
 }
 
 ///|
-fn moon_webdav_status_ok_for_mkcol(status : Int) -> Bool {
+fn moon_webdav_status_ok_for_mkcol(status : Int32) -> Bool {
   status >= 200 && status <= 299
 }
 
 ///|
-fn moon_webdav_status_needs_propfind_verify(status : Int) -> Bool {
+fn moon_webdav_status_needs_propfind_verify(status : Int32) -> Bool {
   status == 405 || status == 409 || (status >= 300 && status <= 399)
 }
 
 ///|
-fn moon_webdav_status_ok_for_transfer(status : Int) -> Bool {
+fn moon_webdav_status_ok_for_transfer(status : Int32) -> Bool {
   status >= 200 && status <= 299
 }
 
 ///|
-fn moon_s3_status_ok(status : Int) -> Bool {
+fn moon_s3_status_ok(status : Int32) -> Bool {
   status >= 200 && status <= 299
 }
 
@@ -1135,10 +1135,10 @@ async fn moon_webdav_sync_test_connection_json(
     return Err("WebDAV MKCOL failed: HTTP \{status}")
   }
   Ok(
-    {
+    Json({
       "success": Json::boolean(true),
       "message": Json::string("WebDAV connection ok"),
-    }.to_json(),
+    }),
   )
 }
 
@@ -1160,10 +1160,10 @@ async fn moon_s3_sync_test_connection_json(
   }
   if moon_s3_status_ok(status) {
     Ok(
-      {
+      Json({
         "success": Json::boolean(true),
         "message": Json::string("S3 connection ok"),
-      }.to_json(),
+      }),
     )
   } else {
     Err("S3 HEAD bucket failed: HTTP \{status}")
@@ -1175,7 +1175,7 @@ async fn ConfigService::moon_sync_build_local_snapshot(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
 ) -> MoonLocalSyncSnapshot {
   let db_sql = @encoding/utf8.encode(
     self.moon_export_snapshot_json(proxy, host~, port~).stringify(indent=2) +
@@ -1209,7 +1209,7 @@ fn moon_sync_success_status_json_with_etag(
   manifest_hash : String,
   etag : String?,
 ) -> Json {
-  {
+  Json({
     "lastSyncAt": Json::number(@os.unix_seconds().to_double()),
     "lastError": Json::null(),
     "lastErrorSource": Json::null(),
@@ -1219,7 +1219,7 @@ fn moon_sync_success_status_json_with_etag(
       Some(value) => Json::string(value)
       None => Json::null()
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -1294,7 +1294,7 @@ async fn moon_webdav_get_file(
   url : String,
   output_path : String,
   artifact_name : String,
-) -> Result[Int, String] {
+) -> Result[Int32, String] {
   let request = match moon_webdav_curl_get_request(settings, url, output_path) {
     Ok(request) => request
     Err(error) => return Err(error)
@@ -1341,7 +1341,7 @@ async fn moon_s3_get_file(
   output_path : String,
   artifact_name : String,
   header_path? : String,
-) -> Result[Int, String] {
+) -> Result[Int32, String] {
   let request = match
     moon_s3_curl_get_request(settings, url, output_path, header_path?) {
     Ok(request) => request
@@ -1409,7 +1409,7 @@ async fn ConfigService::moon_webdav_sync_upload_json(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   settings : Json,
 ) -> Result[Json, String] {
   match moon_webdav_sync_test_connection_json(settings) {
@@ -1487,7 +1487,7 @@ async fn ConfigService::moon_webdav_sync_upload_json(
     Err(error) => return Err(error)
   }
   self.moon_persist_webdav_sync_success(settings, snapshot.manifest_hash)
-  Ok({ "status": Json::string("uploaded") }.to_json())
+  Ok(Json({ "status": Json::string("uploaded") }))
 }
 
 ///|
@@ -1495,7 +1495,7 @@ async fn ConfigService::moon_s3_sync_upload_json(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   settings : Json,
 ) -> Result[Json, String] {
   match moon_s3_sync_test_connection_json(settings) {
@@ -1591,7 +1591,7 @@ async fn ConfigService::moon_s3_sync_upload_json(
     Err(error) => return Err(error)
   }
   self.moon_persist_s3_sync_success(settings, snapshot.manifest_hash, etag)
-  Ok({ "status": Json::string("uploaded") }.to_json())
+  Ok(Json({ "status": Json::string("uploaded") }))
 }
 
 ///|
@@ -1642,7 +1642,7 @@ async fn moon_webdav_sync_fetch_remote_info_json(
   if current.code != 404 {
     return Err("WebDAV GET failed: HTTP \{current.code}")
   }
-  Ok({ "empty": Json::boolean(true) }.to_json())
+  Ok(Json({ "empty": Json::boolean(true) }))
 }
 
 ///|
@@ -1707,7 +1707,7 @@ async fn moon_s3_sync_fetch_remote_info_json(
   settings : Json,
 ) -> Result[Json, String] {
   match moon_s3_fetch_manifest_snapshot(settings) {
-    None => Ok({ "empty": Json::boolean(true) }.to_json())
+    None => Ok(Json({ "empty": Json::boolean(true) }))
     Some(Err(error)) => Err(error)
     Some(Ok(remote)) => {
       let remote_path = match moon_s3_remote_dir_display(settings) {
@@ -1721,7 +1721,7 @@ async fn moon_s3_sync_fetch_remote_info_json(
         None => Json::null()
       }
       Ok(
-        {
+        Json({
           "deviceName": Json::string(remote.manifest.device_name),
           "createdAt": Json::string(remote.manifest.created_at),
           "snapshotId": Json::string(remote.manifest.snapshot_id),
@@ -1732,7 +1732,7 @@ async fn moon_s3_sync_fetch_remote_info_json(
           "artifacts": Json::array(remote.manifest.artifacts.map(Json::string)),
           "layout": Json::string("current"),
           "remotePath": Json::string(remote_path),
-        }.to_json(),
+        }),
       )
     }
   }
@@ -1952,7 +1952,7 @@ async fn ConfigService::moon_webdav_sync_download_json(
   }
   self.moon_persist_webdav_sync_success(settings, manifest_hash)
   guard settings is Object(obj) else {
-    return Ok({ "status": Json::string("downloaded") }.to_json())
+    return Ok(Json({ "status": Json::string("downloaded") }))
   }
   let remote_root = json_string_from_map(obj, "remoteRoot").unwrap_or(
     moon_sync_default_remote_root(),
@@ -1961,13 +1961,13 @@ async fn ConfigService::moon_webdav_sync_download_json(
     moon_sync_default_profile(),
   )
   Ok(
-    {
+    Json({
       "status": Json::string("downloaded"),
       "sourceLayout": Json::string("current"),
       "sourcePath": Json::string(
         moon_sync_remote_dir_display(remote_root, profile),
       ),
-    }.to_json(),
+    }),
   )
 }
 
@@ -2036,11 +2036,11 @@ async fn ConfigService::moon_s3_sync_download_json(
     Err(_) => ""
   }
   Ok(
-    {
+    Json({
       "status": Json::string("downloaded"),
       "sourceLayout": Json::string("current"),
       "sourcePath": Json::string(remote_path),
-    }.to_json(),
+    }),
   )
 }
 
@@ -2130,7 +2130,7 @@ fn moon_sync_remote_info_json(
     Some(value) => Json::number(value.to_double())
     None => Json::null()
   }
-  {
+  Json({
     "deviceName": Json::string(manifest.device_name),
     "createdAt": Json::string(manifest.created_at),
     "snapshotId": Json::string(manifest.snapshot_id),
@@ -2143,5 +2143,5 @@ fn moon_sync_remote_info_json(
     "remotePath": Json::string(
       moon_sync_remote_dir_display(remote_root, profile),
     ),
-  }.to_json()
+  })
 }

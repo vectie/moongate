@@ -1,6 +1,6 @@
 ///|
 fn moon_default_copilot_optimizer_config_json() -> Json {
-  {
+  Json({
     "enabled": Json::boolean(true),
     "requestClassification": Json::boolean(true),
     "toolResultMerging": Json::boolean(true),
@@ -10,7 +10,7 @@ fn moon_default_copilot_optimizer_config_json() -> Json {
     "warmupDowngrade": Json::boolean(true),
     "warmupModel": Json::string("gpt-5-mini"),
     "stripThinking": Json::boolean(true),
-  }.to_json()
+  })
 }
 
 ///|

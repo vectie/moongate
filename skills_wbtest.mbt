@@ -11,12 +11,12 @@ async test "moongate skill repos install toggle backup and restore" {
   assert_true(default_repos.length() >= 4)
 
   let added = moon_add_skill_repo_json(
-    {
+    Json({
       "owner": Json::string("vectie"),
       "name": Json::string("moongate-skills"),
       "branch": Json::string("main"),
       "enabled": Json::boolean(true),
-    }.to_json(),
+    }),
     path~,
   )
   assert_eq(added, Json::boolean(true))
@@ -26,7 +26,7 @@ async test "moongate skill repos install toggle backup and restore" {
   assert_true(next_repos.length() == default_repos.length() + 1)
 
   let installed = moon_install_skill_unified_json(
-    {
+    Json({
       "key": Json::string("vectie/moongate-skills:moongate-usage"),
       "name": Json::string("MoonGate Usage"),
       "description": Json::string("MoonGate skill"),
@@ -34,7 +34,7 @@ async test "moongate skill repos install toggle backup and restore" {
       "repoOwner": Json::string("vectie"),
       "repoName": Json::string("moongate-skills"),
       "repoBranch": Json::string("main"),
-    }.to_json(),
+    }),
     "codex",
     state_path=path,
   )
@@ -136,23 +136,23 @@ async test "moongate skill storage migration moves installed directories" {
     @fsx.write_to_file(@pathx.join(skipped_dest_dir, "SKILL.md"), "# Existing")
     ignore(
       moon_skill_state_save(
-        {
+        Json({
           "installed": Json::array([
-            {
+            Json({
               "id": Json::string("local:moongate-usage"),
               "directory": Json::string("moongate-usage"),
               "name": Json::string("MoonGate Usage"),
-            }.to_json(),
-            {
+            }),
+            Json({
               "id": Json::string("local:already-there"),
               "directory": Json::string("already-there"),
               "name": Json::string("Already There"),
-            }.to_json(),
+            }),
           ]),
           "repos": Json::array([]),
           "backups": Json::array([]),
           "skillStorageLocation": Json::string("moongate"),
-        }.to_json(),
+        }),
         path=state_path,
       ),
     )
@@ -220,18 +220,18 @@ async test "moongate install skills from zip source scans and copies skill dirs"
     @fsx.write_to_file(@pathx.join(conflict_skill, "SKILL.md"), "# Existing")
     ignore(
       moon_skill_state_save(
-        {
+        Json({
           "installed": Json::array([
-            {
+            Json({
               "id": Json::string("local:already-there"),
               "directory": Json::string("already-there"),
               "name": Json::string("Already There"),
-            }.to_json(),
+            }),
           ]),
           "repos": Json::array([]),
           "backups": Json::array([]),
           "skillStorageLocation": Json::string("unified"),
-        }.to_json(),
+        }),
         path=state_path,
       ),
     )

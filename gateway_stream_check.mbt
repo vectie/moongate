@@ -1,8 +1,8 @@
 ///|
 priv struct StreamCheckConfig {
-  timeout_secs : Int
-  max_retries : Int
-  degraded_threshold_ms : Int
+  timeout_secs : Int32
+  max_retries : Int32
+  degraded_threshold_ms : Int32
   claude_model : String
   codex_model : String
   gemini_model : String
@@ -24,7 +24,7 @@ fn StreamCheckConfig::default() -> StreamCheckConfig {
 
 ///|
 fn StreamCheckConfig::to_json(self : StreamCheckConfig) -> Json {
-  {
+  Json({
     "timeoutSecs": Json::number(self.timeout_secs.to_double()),
     "maxRetries": Json::number(self.max_retries.to_double()),
     "degradedThresholdMs": Json::number(self.degraded_threshold_ms.to_double()),
@@ -32,7 +32,7 @@ fn StreamCheckConfig::to_json(self : StreamCheckConfig) -> Json {
     "codexModel": Json::string(self.codex_model),
     "geminiModel": Json::string(self.gemini_model),
     "testPrompt": Json::string(self.test_prompt),
-  }.to_json()
+  })
 }
 
 ///|
@@ -40,7 +40,7 @@ fn stream_check_int_request(
   path : StringView,
   obj : Map[String, Json]?,
   camel_key : String,
-) -> Int? {
+) -> Int32? {
   match obj {
     Some(obj) => {
       let field = obj.get(camel_key)

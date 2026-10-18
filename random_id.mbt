@@ -1,5 +1,5 @@
 ///|
-let moongate_random_id_fallback_counter : Ref[Int] = Ref(0)
+let moongate_random_id_fallback_counter : Ref[Int32] = Ref(0)
 
 ///|
 fn moongate_random_id() -> String {

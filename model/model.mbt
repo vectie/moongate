@@ -6,7 +6,7 @@ pub struct Model {
   model_type : Type
   api_key : String
   base_url : String
-  safe_zone_tokens : Int
+  safe_zone_tokens : Int32
   supports_anthropic_prompt_caching : Bool
   supports_apply_patch : Bool
   access_token : String?
@@ -34,7 +34,7 @@ pub(all) enum Type {
 ///|
 pub fn open_router_model(
   api_key~ : String,
-  name? : CommonModels = Qwen3CoderPlus,
+  name~ : CommonModels = Qwen3CoderPlus,
 ) -> Model {
   let model_name = match name {
     Qwen3CoderPlus => "qwen/qwen3-coder-plus"

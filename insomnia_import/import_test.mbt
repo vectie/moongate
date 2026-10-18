@@ -13,7 +13,7 @@ fn fixture(items : Array[Json]) -> String {
     "__export_format": 4,
     "__export_date": "2026-10-13T00:00:00Z",
     "__export_source": "synthetic-v4",
-    "resources": items.to_json(),
+    "resources": Json(items),
   }
   root.stringify()
 }
@@ -29,7 +29,7 @@ fn workspace() -> Json {
 }
 
 ///|
-fn request(extra? : Json = Json::null()) -> Json {
+fn request(extra~ : Json = Json::null()) -> Json {
   let value : Map[String, Json] = {
     "_id": "req_one",
     "_type": "request",
@@ -406,10 +406,7 @@ test "bounded document resources and folder depth" {
   rejects("not JSON")
   let items : Array[Json] = [workspace()]
   for i in 0..<2000 {
-    items.push({
-      "_id": ("env_" + i.to_string()).to_json(),
-      "_type": "environment",
-    })
+    items.push({ "_id": Json("env_" + i.to_string()), "_type": "environment" })
   }
   rejects(fixture(items))
   let nested : Array[Json] = [workspace()]
@@ -417,14 +414,14 @@ test "bounded document resources and folder depth" {
   for i in 0..<33 {
     let id = "fld_" + i.to_string()
     nested.push({
-      "_id": id.to_json(),
+      "_id": Json(id),
       "_type": "request_group",
-      "parentId": parent.to_json(),
+      "parentId": Json(parent),
       "name": "Folder",
     })
     parent = id
   }
-  nested.push(request(extra={ "parentId": parent.to_json() }))
+  nested.push(request(extra={ "parentId": Json(parent) }))
   rejects(fixture(nested))
 }
 
@@ -467,15 +464,15 @@ test "32 folder boundary accepts and 33 empty folders reject" {
   for i in 0..<32 {
     let id = "fld_" + i.to_string()
     nested.push({
-      "_id": id.to_json(),
+      "_id": Json(id),
       "_type": "request_group",
-      "parentId": parent.to_json(),
+      "parentId": Json(parent),
       "name": "Folder",
     })
     parent = id
   }
   let with_request = nested.copy()
-  with_request.push(request(extra={ "parentId": parent.to_json() }))
+  with_request.push(request(extra={ "parentId": Json(parent) }))
   assert_eq(
     field(
       @insomnia_import.import_collection(fixture(with_request)),
@@ -486,7 +483,7 @@ test "32 folder boundary accepts and 33 empty folders reject" {
   nested.push({
     "_id": "fld_33",
     "_type": "request_group",
-    "parentId": parent.to_json(),
+    "parentId": Json(parent),
     "name": "Too deep",
   })
   rejects(fixture(nested))
@@ -522,13 +519,13 @@ test "derived output bound prevents repeated long labels from expanding without 
       "_id": "fld_long",
       "_type": "request_group",
       "parentId": "wrk_one",
-      "name": "x".repeat(65536).to_json(),
+      "name": Json("x".repeat(65536)),
     },
   ]
   for i in 0..<60 {
     items.push(
       request(extra={
-        "_id": ("req_" + i.to_string()).to_json(),
+        "_id": Json("req_" + i.to_string()),
         "parentId": "fld_long",
       }),
     )

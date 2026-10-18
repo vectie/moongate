@@ -4,7 +4,7 @@ async test "usage file normalizes aliases, unknown cost and filtered roundtrip" 
   guard moongate_preview_usage_file_json(source) is Ok(Object(result)) else {
     fail("preview")
   }
-  assert_eq(result["partial"], true.to_json())
+  assert_eq(result["partial"], Json(true))
   assert_eq(result["sourceTotal"], Json::number(12))
   guard result["summary"] is Object(summary) else { fail("summary") }
   assert_eq(summary["requests"], Json::number(3))
@@ -32,7 +32,7 @@ async test "usage file normalizes aliases, unknown cost and filtered roundtrip" 
   }
   assert_eq(reopened["data"], filtered["data"])
   assert_eq(reopened["summary"], filtered["summary"])
-  assert_eq(reopened["partial"], true.to_json())
+  assert_eq(reopened["partial"], Json(true))
   assert_eq(reopened["sourceTotal"], Json::number(12))
   guard moongate_preview_usage_file_json(source, app="absent")
     is Ok(Object(empty)) else {
@@ -45,7 +45,7 @@ async test "usage file normalizes aliases, unknown cost and filtered roundtrip" 
     is Ok(Object(lines)) else {
     fail("jsonl")
   }
-  assert_eq(lines["partial"], false.to_json())
+  assert_eq(lines["partial"], Json(false))
   assert_eq(lines["summary"], result["summary"])
   assert_true(moongate_preview_usage_file_json("not json") is Err(_))
   assert_true(

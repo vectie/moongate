@@ -39,7 +39,7 @@ test "reviewer CSV explicit unknown coverage blocks difference" {
     ) {
     Err(_) => ()
     Ok(result) => {
-      assert_eq(reviewer_get(result, "localSourcePartial"), true.to_json())
+      assert_eq(reviewer_get(result, "localSourcePartial"), Json(true))
       assert_eq(reviewer_get(result, "pairedDays"), Json::number(0))
     }
   }
@@ -58,7 +58,7 @@ test "reviewer explicit partial envelope blocks difference" {
     ) {
     Err(_) => ()
     Ok(result) => {
-      assert_eq(reviewer_get(result, "localSourcePartial"), true.to_json())
+      assert_eq(reviewer_get(result, "localSourcePartial"), Json(true))
       assert_eq(reviewer_get(result, "pairedDays"), Json::number(0))
     }
   }
@@ -115,7 +115,7 @@ test "reviewer exact midnight belongs exclusively to following UTC day" {
   guard reviewer_get(result, "days") is Array(days) else { fail("days") }
   assert_eq(days.length(), 2)
   assert_eq(reviewer_get(days[0], "localRequests"), Json::number(0))
-  assert_eq(reviewer_get(days[1], "providerBucketPresent"), false.to_json())
+  assert_eq(reviewer_get(days[1], "providerBucketPresent"), Json(false))
 }
 
 ///|
@@ -134,12 +134,9 @@ test "reviewer negative provider total remains a signed reported amount" {
     is Ok(result) else {
     fail("Expected signed USD")
   }
-  assert_eq(reviewer_get(result, "pairedProviderReportedUsd"), (-2.5).to_json())
-  assert_eq(
-    reviewer_get(result, "pairedReportedMinusEstimatedUsd"),
-    (-3.5).to_json(),
-  )
-  assert_eq(reviewer_get(result, "scopeVerified"), false.to_json())
+  assert_eq(reviewer_get(result, "pairedProviderReportedUsd"), Json(-2.5))
+  assert_eq(reviewer_get(result, "pairedReportedMinusEstimatedUsd"), Json(-3.5))
+  assert_eq(reviewer_get(result, "scopeVerified"), Json(false))
 }
 
 ///|

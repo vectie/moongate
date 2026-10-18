@@ -77,7 +77,7 @@ async fn OpenClawService::handle_set_openclaw_agents_defaults(
     Some(defaults) => Some(defaults)
     None =>
       match openclaw_default_model_from_request(r.path, body) {
-        Some(model) => Some({ "model": model }.to_json())
+        Some(model) => Some(Json({ "model": model }))
         None => None
       }
   }
@@ -224,7 +224,7 @@ async fn OpenClawService::handle_launch_hermes_dashboard(
 
 ///|
 fn openclaw_default_tools_json() -> Json {
-  { "allow": Json::array([]), "deny": Json::array([]) }.to_json()
+  Json({ "allow": Json::array([]), "deny": Json::array([]) })
 }
 
 ///|
@@ -282,12 +282,12 @@ fn openclaw_default_model_from_request(
     return None
   }
   Some(
-    {
+    Json({
       "primary": Json::string(primary.trim().to_owned()),
       "fallbacks": split_csv_json(
         proxy_string_request(path, body, "fallbacks").unwrap_or(""),
       ),
-    }.to_json(),
+    }),
   )
 }
 
@@ -344,16 +344,16 @@ fn hermes_memory_kind_from_request(path : StringView, body : Json?) -> String? {
 
 ///|
 fn hermes_memory_limits_json(enabled : Map[String, Bool]) -> Json {
-  {
+  Json({
     "memory": Json::number(2200.0),
     "user": Json::number(1375.0),
     "memoryEnabled": Json::boolean(enabled.get("memory").unwrap_or(true)),
     "userEnabled": Json::boolean(enabled.get("user").unwrap_or(true)),
-  }.to_json()
+  })
 }
 
 ///|
-fn hermes_web_port_from_request(path : StringView) -> Int {
+fn hermes_web_port_from_request(path : StringView) -> Int32 {
   match usage_query_int(path, "port") {
     Some(port) if port > 0 && port <= 65535 => return port
     _ => ()
@@ -386,12 +386,12 @@ fn hermes_web_ui_path(path : String) -> String {
 }
 
 ///|
-fn hermes_web_ui_target_url(port : Int, path : String) -> String {
+fn hermes_web_ui_target_url(port : Int32, path : String) -> String {
   "http://127.0.0.1:\{port}\{hermes_web_ui_path(path)}"
 }
 
 ///|
-fn hermes_web_ui_probe_url(port : Int) -> String {
+fn hermes_web_ui_probe_url(port : Int32) -> String {
   "http://127.0.0.1:\{port}/api/status"
 }
 
@@ -416,7 +416,7 @@ async fn launch_hermes_dashboard_standalone() -> Result[Json, String] {
 }
 
 ///|
-async fn hermes_web_ui_is_live(port : Int) -> Bool {
+async fn hermes_web_ui_is_live(port : Int32) -> Bool {
   if !@net.localhost_port_open(port, timeout_ms=1200) {
     return false
   }

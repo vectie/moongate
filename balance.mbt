@@ -34,7 +34,7 @@ fn moon_balance_error(message : String) -> UsageResult {
 }
 
 ///|
-fn moon_balance_auth_error(status_code : Int) -> UsageResult {
+fn moon_balance_auth_error(status_code : Int32) -> UsageResult {
   UsageResult::new(
     false,
     data=Some([
@@ -87,7 +87,7 @@ async fn moon_balance_fetch_json(
   if response.code == 401 || response.code == 403 {
     return Err(moon_balance_auth_error(response.code))
   }
-  if !(response.code is (200..=299)) {
+  if !(response.code is (200..<=299)) {
     return Err(moon_balance_error("API error (HTTP \{response.code}): \{body}"))
   }
   try @json.parse(body) catch {

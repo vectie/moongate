@@ -1,5 +1,5 @@
 ///|
-fn moon_upstream_status_retryable(status_code : Int) -> Bool {
+fn moon_upstream_status_retryable(status_code : Int32) -> Bool {
   match status_code {
     400 | 405 | 406 | 413 | 414 | 415 | 422 | 501 => false
     _ => true
@@ -212,13 +212,13 @@ fn pricing_model_source_is_valid(value : String) -> Bool {
 ///|
 fn ProxyService::server_info_json(
   self : ProxyService,
-  started_at_ms : Int,
+  started_at_ms : Int32,
 ) -> Json {
-  {
+  Json({
     "address": Json::string(self.proxy_listen_address),
     "port": Json::number(self.proxy_listen_port.to_double()),
     "started_at": Json::string(started_at_ms.to_string()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -226,8 +226,8 @@ fn ProxyService::status_json(
   self : ProxyService,
   usage : UsageService,
   host : String,
-  port : Int,
-  uptime_seconds : Int,
+  port : Int32,
+  uptime_seconds : Int32,
 ) -> Json {
   usage.status_json(host, port, uptime_seconds, running=self.proxy_enabled)
 }
@@ -238,8 +238,8 @@ async fn ProxyService::handle_proxy_status(
   w : @httpx.ResponseWriter,
   usage : UsageService,
   host : String,
-  port : Int,
-  uptime_seconds : Int,
+  port : Int32,
+  uptime_seconds : Int32,
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
@@ -253,7 +253,7 @@ async fn ProxyService::handle_proxy_status(
 async fn ProxyService::handle_proxy_start_server(
   self : ProxyService,
   w : @httpx.ResponseWriter,
-  started_at_ms : Int,
+  started_at_ms : Int32,
 ) -> Unit {
   self.proxy_enabled = true
   if !self.persist_proxy_store_or_error(w) {
@@ -305,12 +305,12 @@ async fn ProxyService::handle_proxy_running(
 
 ///|
 fn ProxyService::global_config_json(self : ProxyService) -> Json {
-  {
+  Json({
     "proxyEnabled": Json::boolean(self.proxy_enabled),
     "listenAddress": Json::string(self.proxy_listen_address),
     "listenPort": Json::number(self.proxy_listen_port.to_double()),
     "enableLogging": Json::boolean(self.proxy_enable_logging),
-  }.to_json()
+  })
 }
 
 ///|
@@ -398,13 +398,13 @@ async fn ProxyService::handle_get_upstream_proxy_status(
 ) -> Unit {
   write_usage_json(
     w,
-    {
+    Json({
       "enabled": Json::boolean(self.upstream_proxy_url is Some(_)),
       "proxyUrl": match self.upstream_proxy_url {
         Some(url) => Json::string(url)
         None => Json::null()
       },
-    }.to_json(),
+    }),
   )
 }
 
@@ -446,7 +446,7 @@ fn moon_stop_proxy_takeover_error() -> String {
 }
 
 ///|
-fn moon_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int {
+fn moon_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int32 {
   match app_type {
     "claude" => 90
     _ => 60
@@ -454,7 +454,7 @@ fn moon_proxy_streaming_first_byte_timeout_default(app_type : String) -> Int {
 }
 
 ///|
-fn moon_proxy_streaming_idle_timeout_default(app_type : String) -> Int {
+fn moon_proxy_streaming_idle_timeout_default(app_type : String) -> Int32 {
   match app_type {
     "claude" => 180
     _ => 120
@@ -462,7 +462,7 @@ fn moon_proxy_streaming_idle_timeout_default(app_type : String) -> Int {
 }
 
 ///|
-fn moon_proxy_non_streaming_timeout_default(_app_type : String) -> Int {
+fn moon_proxy_non_streaming_timeout_default(_app_type : String) -> Int32 {
   600
 }
 
@@ -480,7 +480,7 @@ fn upstream_proxy_url_is_valid(url : String) -> Bool {
 }
 
 ///|
-fn moon_local_proxy_ports() -> Array[(Int, String, Bool)] {
+fn moon_local_proxy_ports() -> Array[(Int32, String, Bool)] {
   [
     (7890, "http", true),
     (7891, "socks5", false),
@@ -494,17 +494,17 @@ fn moon_local_proxy_ports() -> Array[(Int, String, Bool)] {
 }
 
 ///|
-fn moon_detected_proxy_json(port : Int, proxy_type : String) -> Json {
-  {
+fn moon_detected_proxy_json(port : Int32, proxy_type : String) -> Json {
+  Json({
     "url": Json::string("\{proxy_type}://127.0.0.1:\{port}"),
     "proxyType": Json::string(proxy_type),
     "port": Json::number(port.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_detected_proxy_entries_json(
-  port : Int,
+  port : Int32,
   primary_type : String,
   is_mixed : Bool,
 ) -> Array[Json] {
@@ -520,24 +520,24 @@ fn moon_detected_proxy_entries_json(
 fn proxy_test_result_json(url : String) -> Json {
   let trimmed = url.trim().to_owned()
   if trimmed.is_empty() {
-    return {
+    return Json({
       "success": Json::boolean(false),
       "latencyMs": Json::number(0.0),
       "error": Json::string("Proxy URL is empty"),
-    }.to_json()
+    })
   }
   if !upstream_proxy_url_is_valid(trimmed) {
-    return {
+    return Json({
       "success": Json::boolean(false),
       "latencyMs": Json::number(0.0),
       "error": Json::string("Invalid proxy URL"),
-    }.to_json()
+    })
   }
-  {
+  Json({
     "success": Json::boolean(true),
     "latencyMs": Json::number(0.0),
     "error": Json::null(),
-  }.to_json()
+  })
 }
 
 ///|
@@ -574,7 +574,7 @@ fn ProxyService::app_config_json(
   let non_streaming_timeout = self.proxy_non_streaming_timeout
     .get(app_type)
     .unwrap_or(moon_proxy_non_streaming_timeout_default(app_type))
-  {
+  Json({
     "appType": Json::string(app_type),
     "enabled": Json::boolean(enabled),
     "autoFailoverEnabled": Json::boolean(auto_failover_enabled),
@@ -593,7 +593,7 @@ fn ProxyService::app_config_json(
     "circuitTimeoutSeconds": Json::number(circuit.timeout_seconds.to_double()),
     "circuitErrorRateThreshold": Json::number(circuit.error_rate_threshold),
     "circuitMinRequests": Json::number(circuit.min_requests.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1126,13 +1126,13 @@ async fn ProxyService::handle_proxy_switch_provider(
 
 ///|
 fn ProxyService::takeover_status_json(self : ProxyService) -> Json {
-  {
+  Json({
     "claude": Json::boolean(self.takeover_for_app("claude")),
     "codex": Json::boolean(self.takeover_for_app("codex")),
     "gemini": Json::boolean(self.takeover_for_app("gemini")),
     "opencode": Json::boolean(self.takeover_for_app("opencode")),
     "openclaw": Json::boolean(self.takeover_for_app("openclaw")),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1236,7 +1236,7 @@ async fn proxy_json_body(r : @httpx.RequestReader) -> Json? {
 }
 
 ///|
-fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int?) -> Int {
+fn provider_endpoint_sanitize_timeout_secs(timeout_secs : Int32?) -> Int32 {
   let secs = timeout_secs.unwrap_or(MOONGATE_ENDPOINT_DEFAULT_TIMEOUT_SECS)
   if secs < MOONGATE_ENDPOINT_MIN_TIMEOUT_SECS {
     MOONGATE_ENDPOINT_MIN_TIMEOUT_SECS
@@ -1284,7 +1284,7 @@ fn proxy_string_request(
 }
 
 ///|
-fn proxy_int_request(path : StringView, config : Json?, key : String) -> Int? {
+fn proxy_int_request(path : StringView, config : Json?, key : String) -> Int32? {
   match usage_query_value(path, key) {
     Some(value) =>
       try @string.parse_int(value, base=10) catch {
@@ -1336,7 +1336,7 @@ fn proxy_json_bool(obj : Map[String, Json], key : String) -> Bool? {
 }
 
 ///|
-fn proxy_json_int(obj : Map[String, Json], key : String) -> Int? {
+fn proxy_json_int(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.trunc().to_int())
     Some(String(value)) =>
@@ -1516,7 +1516,7 @@ fn model_pricing_from_store_json(obj : Map[String, Json]) -> ModelPricing? {
 
 ///|
 fn model_pricing_store_json(pricing : ModelPricing, deleted~ : Bool) -> Json {
-  {
+  Json({
     "modelId": Json::string(pricing.model_id),
     "displayName": Json::string(pricing.display_name),
     "inputCostPerMillion": Json::string(pricing.input_cost_per_million),
@@ -1526,7 +1526,7 @@ fn model_pricing_store_json(pricing : ModelPricing, deleted~ : Bool) -> Json {
       pricing.cache_creation_cost_per_million,
     ),
     "deleted": Json::boolean(deleted),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1552,7 +1552,7 @@ fn claude_desktop_proxy_request_json_for_upstream(
 
 ///|
 fn moon_media_retry_should_trigger(
-  status_code : Int,
+  status_code : Int32,
   response_body : String,
   request_body : Json,
 ) -> Bool {
@@ -1566,7 +1566,7 @@ fn moon_media_retry_should_trigger(
 
 ///|
 fn moon_media_retry_should_trigger_with_config(
-  status_code : Int,
+  status_code : Int32,
   response_body : String,
   request_body : Json,
   config : RectifierConfig,

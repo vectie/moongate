@@ -58,7 +58,7 @@ pub fn MoonGateClient::route_messages_url(self : MoonGateClient) -> String {
 ///|
 pub fn MoonGateClient::usage_logs_url(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> String {
   moongate_client_url_with_query(self.base_url, "/usage/logs", query)
 }
@@ -66,7 +66,7 @@ pub fn MoonGateClient::usage_logs_url(
 ///|
 pub fn MoonGateClient::usage_summary_url(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> String {
   moongate_client_url_with_query(self.base_url, "/usage/summary", query)
 }
@@ -74,7 +74,7 @@ pub fn MoonGateClient::usage_summary_url(
 ///|
 pub fn MoonGateClient::usage_summary_by_app_url(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> String {
   moongate_client_url_with_query(self.base_url, "/usage/summary/by-app", query)
 }
@@ -82,7 +82,7 @@ pub fn MoonGateClient::usage_summary_by_app_url(
 ///|
 pub fn MoonGateClient::usage_trends_url(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> String {
   moongate_client_url_with_query(self.base_url, "/usage/trends", query)
 }
@@ -138,7 +138,7 @@ pub fn MoonGateClient::usage_provider_usage_url(
 ///|
 pub fn MoonGateClient::usage_provider_stats_url(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> String {
   moongate_client_url_with_query(self.base_url, "/usage/provider-stats", query)
 }
@@ -146,7 +146,7 @@ pub fn MoonGateClient::usage_provider_stats_url(
 ///|
 pub fn MoonGateClient::usage_model_stats_url(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> String {
   moongate_client_url_with_query(self.base_url, "/usage/model-stats", query)
 }
@@ -174,7 +174,7 @@ pub fn MoonGateClient::usage_delete_model_pricing_url(
 ///|
 pub fn MoonGateClient::usage_sync_session_url(
   self : MoonGateClient,
-  query? : MoonGateSessionSyncQuery? = None,
+  query~ : MoonGateSessionSyncQuery? = None,
 ) -> String {
   moongate_client_url_with_session_sync_query(
     self.base_url,
@@ -353,10 +353,10 @@ pub fn MoonGateClient::proxy_stop_with_restore_url(
 ///|
 pub fn MoonGateClient::proxy_update_global_config_url(
   self : MoonGateClient,
-  proxy_enabled? : String? = None,
-  listen_address? : String? = None,
-  listen_port? : String? = None,
-  enable_logging? : String? = None,
+  proxy_enabled~ : String? = None,
+  listen_address~ : String? = None,
+  listen_port~ : String? = None,
+  enable_logging~ : String? = None,
 ) -> String {
   self.endpoint(
     moongate_client_path_with_optional_pairs("/proxy/global-config", [
@@ -392,17 +392,17 @@ pub fn MoonGateClient::proxy_test_url_url(
 pub fn MoonGateClient::proxy_update_app_config_url(
   self : MoonGateClient,
   app_type : String,
-  enabled? : String? = None,
-  auto_failover_enabled? : String? = None,
-  max_retries? : String? = None,
-  streaming_first_byte_timeout? : String? = None,
-  streaming_idle_timeout? : String? = None,
-  non_streaming_timeout? : String? = None,
-  failure_threshold? : String? = None,
-  success_threshold? : String? = None,
-  timeout_seconds? : String? = None,
-  error_rate_threshold? : String? = None,
-  min_requests? : String? = None,
+  enabled~ : String? = None,
+  auto_failover_enabled~ : String? = None,
+  max_retries~ : String? = None,
+  streaming_first_byte_timeout~ : String? = None,
+  streaming_idle_timeout~ : String? = None,
+  non_streaming_timeout~ : String? = None,
+  failure_threshold~ : String? = None,
+  success_threshold~ : String? = None,
+  timeout_seconds~ : String? = None,
+  error_rate_threshold~ : String? = None,
+  min_requests~ : String? = None,
 ) -> String {
   self.endpoint(
     moongate_client_path_with_optional_pairs("/proxy/app-config", [

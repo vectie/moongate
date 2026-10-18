@@ -30,14 +30,14 @@ priv struct UsageData {
 
 ///|
 fn UsageData::new(
-  plan_name? : String? = None,
-  extra? : String? = None,
-  is_valid? : Bool? = None,
-  invalid_message? : String? = None,
-  total? : Double? = None,
-  used? : Double? = None,
-  remaining? : Double? = None,
-  unit? : String? = None,
+  plan_name~ : String? = None,
+  extra~ : String? = None,
+  is_valid~ : Bool? = None,
+  invalid_message~ : String? = None,
+  total~ : Double? = None,
+  used~ : Double? = None,
+  remaining~ : Double? = None,
+  unit~ : String? = None,
 ) -> UsageData {
   { plan_name, extra, is_valid, invalid_message, total, used, remaining, unit, }
 }
@@ -157,8 +157,8 @@ priv struct UsageResult {
 ///|
 fn UsageResult::new(
   success : Bool,
-  data? : Array[UsageData]? = None,
-  error? : String? = None,
+  data~ : Array[UsageData]? = None,
+  error~ : String? = None,
 ) -> UsageResult {
   { success, data, error, }
 }
@@ -220,13 +220,13 @@ priv struct SubscriptionQuota {
 ///|
 fn SubscriptionQuota::new(
   tool : String,
-  credential_status? : CredentialStatus = Valid,
-  credential_message? : String? = None,
-  success? : Bool = true,
-  tiers? : Array[Json] = [],
-  extra_usage? : Json? = None,
-  error? : String? = None,
-  queried_at? : Int64? = None,
+  credential_status~ : CredentialStatus = Valid,
+  credential_message~ : String? = None,
+  success~ : Bool = true,
+  tiers~ : Array[Json] = [],
+  extra_usage~ : Json? = None,
+  error~ : String? = None,
+  queried_at~ : Int64? = None,
 ) -> SubscriptionQuota {
   {
     tool,
@@ -336,7 +336,7 @@ fn UsageCache::resolve_subscription(
   self : UsageCache,
   key : String,
   fresh : SubscriptionQuota,
-  now_ms? : Int64 = moon_quota_now_millis(),
+  now_ms~ : Int64 = moon_quota_now_millis(),
 ) -> SubscriptionQuota {
   if fresh.success || !fresh.is_transient_failure() {
     self.put_subscription(key, fresh)

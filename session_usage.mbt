@@ -2,20 +2,20 @@
 const CLAUDE_SESSION_REQUEST_ID_PREFIX : String = "session:"
 
 ///|
-const SESSION_PROXY_DEDUP_WINDOW_SECONDS : Int = 600
+const SESSION_PROXY_DEDUP_WINDOW_SECONDS : Int32 = 600
 
 ///|
 priv struct SessionSyncResult {
-  mut imported : Int
-  mut skipped : Int
-  mut files_scanned : Int
+  mut imported : Int32
+  mut skipped : Int32
+  mut files_scanned : Int32
   errors : Array[String]
 }
 
 ///|
 priv struct SessionFileSyncState {
   last_modified : Int64
-  last_line_offset : Int
+  last_line_offset : Int32
 }
 
 ///|
@@ -30,16 +30,16 @@ priv struct ParsedClaudeSessionUsage {
 
 ///|
 priv struct CumulativeSessionTokens {
-  input : Int
-  cached_input : Int
-  output : Int
+  input : Int32
+  cached_input : Int32
+  output : Int32
 }
 
 ///|
 priv struct DeltaSessionTokens {
-  input : Int
-  cached_input : Int
-  output : Int
+  input : Int32
+  cached_input : Int32
+  output : Int32
 }
 
 ///|
@@ -47,24 +47,24 @@ priv struct CodexFileParseState {
   mut session_id : String?
   mut current_model : String
   mut prev_total : CumulativeSessionTokens?
-  mut event_index : Int
+  mut event_index : Int32
 }
 
 ///|
 priv struct GeminiSessionTokens {
-  input : Int
-  output : Int
-  cached : Int
-  thoughts : Int
+  input : Int32
+  output : Int32
+  cached : Int32
+  thoughts : Int32
 }
 
 ///|
 priv struct OpenCodeMessageData {
-  input_tokens : Int
-  output_tokens : Int
-  reasoning_tokens : Int
-  cache_read_tokens : Int
-  cache_write_tokens : Int
+  input_tokens : Int32
+  output_tokens : Int32
+  reasoning_tokens : Int32
+  cache_read_tokens : Int32
+  cache_write_tokens : Int32
   cost_usd : String
   model_id : String
   timestamp_ms : Int64
@@ -77,18 +77,18 @@ fn SessionSyncResult::new() -> SessionSyncResult {
 
 ///|
 fn SessionSyncResult::to_json(self : SessionSyncResult) -> Json {
-  {
+  Json({
     "imported": Json::number(self.imported.to_double()),
     "skipped": Json::number(self.skipped.to_double()),
     "filesScanned": Json::number(self.files_scanned.to_double()),
     "errors": Json::array(self.errors.map(fn(error) { Json::string(error) })),
-  }.to_json()
+  })
 }
 
 ///|
 fn SessionFileSyncState::new(
   last_modified~ : Int64,
-  last_line_offset~ : Int,
+  last_line_offset~ : Int32,
 ) -> SessionFileSyncState {
   { last_modified, last_line_offset, }
 }
@@ -163,11 +163,11 @@ pub fn default_opencode_db_path() -> String {
 ///|
 async fn TrafficStats::sync_session_logs(
   self : TrafficStats,
-  claude_projects_dir? : String = default_claude_projects_dir(),
-  codex_dir? : String = default_codex_config_dir(),
-  gemini_dir? : String = default_gemini_dir(),
-  opencode_db_path? : String = default_opencode_db_path(),
-  opencode_export_path? : String = default_opencode_export_path(),
+  claude_projects_dir~ : String = default_claude_projects_dir(),
+  codex_dir~ : String = default_codex_config_dir(),
+  gemini_dir~ : String = default_gemini_dir(),
+  opencode_db_path~ : String = default_opencode_db_path(),
+  opencode_export_path~ : String = default_opencode_export_path(),
 ) -> SessionSyncResult {
   let result = self.sync_claude_session_logs(projects_dir=claude_projects_dir)
   let codex_result = self.sync_codex_session_logs(codex_dir~)
@@ -223,7 +223,7 @@ fn TrafficStats::ingest_opencode_message_json(
 ///|
 async fn TrafficStats::sync_opencode_session_database(
   self : TrafficStats,
-  db_path? : String = default_opencode_db_path(),
+  db_path~ : String = default_opencode_db_path(),
 ) -> SessionSyncResult {
   let result = SessionSyncResult::new()
   if !@fsx.exists_as_file(db_path) {
@@ -395,7 +395,7 @@ fn TrafficStats::ingest_opencode_database_rows_json(
 ///|
 async fn TrafficStats::sync_opencode_session_export(
   self : TrafficStats,
-  export_path? : String = default_opencode_export_path(),
+  export_path~ : String = default_opencode_export_path(),
 ) -> SessionSyncResult {
   let result = SessionSyncResult::new()
   if !@fsx.exists_as_file(export_path) {
@@ -520,7 +520,7 @@ fn TrafficStats::ingest_opencode_session_export_jsonl(
 ///|
 async fn TrafficStats::sync_claude_session_logs(
   self : TrafficStats,
-  projects_dir? : String = default_claude_projects_dir(),
+  projects_dir~ : String = default_claude_projects_dir(),
 ) -> SessionSyncResult {
   let result = SessionSyncResult::new()
   if !@fsx.exists(projects_dir) {
@@ -671,7 +671,7 @@ async fn collect_claude_jsonl_files(projects_dir : String) -> Array[String] {
 ///|
 async fn TrafficStats::sync_codex_session_logs(
   self : TrafficStats,
-  codex_dir? : String = default_codex_config_dir(),
+  codex_dir~ : String = default_codex_config_dir(),
 ) -> SessionSyncResult {
   let result = SessionSyncResult::new()
   let files = collect_codex_session_files(codex_dir)
@@ -806,7 +806,7 @@ fn TrafficStats::ingest_codex_session_jsonl(
 ///|
 async fn TrafficStats::sync_gemini_session_logs(
   self : TrafficStats,
-  gemini_dir? : String = default_gemini_dir(),
+  gemini_dir~ : String = default_gemini_dir(),
 ) -> SessionSyncResult {
   let result = SessionSyncResult::new()
   let files = collect_gemini_session_files(gemini_dir)
@@ -928,8 +928,8 @@ async fn collect_codex_session_files(codex_dir : String) -> Array[String] {
 async fn collect_jsonl_recursive_limited(
   dir : String,
   files : Array[String],
-  depth~ : Int,
-  max_depth~ : Int,
+  depth~ : Int32,
+  max_depth~ : Int32,
 ) -> Unit {
   let entries = @fsx.list_directory(dir) catch { _ => return }
   for entry in entries {
@@ -1157,7 +1157,7 @@ fn GeminiSessionTokens::is_zero(self : GeminiSessionTokens) -> Bool {
 ///|
 fn parse_opencode_message_data(
   root : Map[String, Json],
-  require_completed? : Bool = false,
+  require_completed~ : Bool = false,
 ) -> OpenCodeMessageData? {
   if session_map_string(root, "role") != Some("assistant") {
     return None
@@ -1505,8 +1505,8 @@ fn TrafficStats::should_skip_session_insert(
   app_type~ : String,
   model~ : String,
   usage~ : TokenUsage,
-  created_at~ : Int,
-  allow_missing_cache_creation? : Bool = false,
+  created_at~ : Int32,
+  allow_missing_cache_creation~ : Bool = false,
 ) -> Bool {
   for log in self.request_logs {
     if log.request_id == request_id {
@@ -1533,7 +1533,7 @@ fn TrafficStats::should_skip_session_insert(
 }
 
 ///|
-fn opencode_timestamp_seconds(timestamp_ms : Int64) -> Int {
+fn opencode_timestamp_seconds(timestamp_ms : Int64) -> Int32 {
   if timestamp_ms > 0L {
     (timestamp_ms / 1000L).to_int()
   } else {
@@ -1542,7 +1542,7 @@ fn opencode_timestamp_seconds(timestamp_ms : Int64) -> Int {
 }
 
 ///|
-fn session_timestamp_seconds(timestamp : String?) -> Int {
+fn session_timestamp_seconds(timestamp : String?) -> Int32 {
   match timestamp {
     Some(value) =>
       parse_session_timestamp_seconds(value).unwrap_or(@os.unix_seconds())
@@ -1551,7 +1551,7 @@ fn session_timestamp_seconds(timestamp : String?) -> Int {
 }
 
 ///|
-fn parse_session_timestamp_seconds(timestamp : String) -> Int? {
+fn parse_session_timestamp_seconds(timestamp : String) -> Int32? {
   if timestamp.length() < 19 {
     return None
   }
@@ -1567,7 +1567,7 @@ fn parse_session_timestamp_seconds(timestamp : String) -> Int? {
 }
 
 ///|
-fn parse_fixed_int(text : String, start : Int, end : Int) -> Int? {
+fn parse_fixed_int(text : String, start : Int32, end : Int32) -> Int32? {
   if text.length() < end {
     return None
   }
@@ -1579,7 +1579,7 @@ fn parse_fixed_int(text : String, start : Int, end : Int) -> Int? {
 }
 
 ///|
-fn parse_timestamp_offset_seconds(timestamp : String) -> Int? {
+fn parse_timestamp_offset_seconds(timestamp : String) -> Int32? {
   if timestamp.length() <= 19 {
     return Some(0)
   }
@@ -1611,7 +1611,7 @@ fn parse_timestamp_offset_seconds(timestamp : String) -> Int? {
 }
 
 ///|
-fn days_from_civil(year : Int, month : Int, day : Int) -> Int {
+fn days_from_civil(year : Int32, month : Int32, day : Int32) -> Int32 {
   let mut y = year
   let m = month
   let year_shift = if m <= 2 { 1 } else { 0 }
@@ -1682,7 +1682,7 @@ fn session_models_match(log_model : String, session_model : String) -> Bool {
 }
 
 ///|
-fn session_abs_int(value : Int) -> Int {
+fn session_abs_int(value : Int32) -> Int32 {
   if value < 0 {
     -value
   } else {
@@ -1691,7 +1691,7 @@ fn session_abs_int(value : Int) -> Int {
 }
 
 ///|
-fn session_min_int(a : Int, b : Int) -> Int {
+fn session_min_int(a : Int32, b : Int32) -> Int32 {
   if a < b {
     a
   } else {

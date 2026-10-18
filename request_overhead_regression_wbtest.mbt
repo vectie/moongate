@@ -12,21 +12,21 @@ fn TrafficStats::usage_store_json(self : TrafficStats) -> Json {
   let session_sync : Array[Json] = []
   for file_path, state in self.session_sync_state {
     session_sync.push(
-      {
+      Json({
         "filePath": Json::string(file_path),
         "lastModified": Json::number(state.last_modified.to_double()),
         "lastLineOffset": Json::number(state.last_line_offset.to_double()),
-      }.to_json(),
+      }),
     )
   }
-  {
+  Json({
     "schemaVersion": Json::number(
       MOONGATE_USAGE_STORE_SCHEMA_VERSION.to_double(),
     ),
     "requestLogs": Json::array(request_logs),
     "dailyRollups": Json::array(daily_rollups),
     "sessionSync": Json::array(session_sync),
-  }.to_json()
+  })
 }
 
 ///|

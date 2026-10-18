@@ -2,7 +2,7 @@
 fn Gateway::register_suite_routes(
   self : Gateway,
   router : @httpx.Router,
-  bound_port : Int,
+  bound_port : Int32,
 ) -> Unit {
   router.add_handler(Get, "/suite/manifest", (_, w) => {
     self.handle_suite_manifest(w, bound_port)
@@ -34,7 +34,7 @@ fn Gateway::register_suite_routes(
 async fn Gateway::handle_suite_manifest(
   self : Gateway,
   w : @httpx.ResponseWriter,
-  bound_port : Int,
+  bound_port : Int32,
 ) -> Unit {
   write_usage_json(
     w,
@@ -50,7 +50,7 @@ async fn Gateway::handle_suite_manifest(
 async fn Gateway::handle_suite_status(
   self : Gateway,
   w : @httpx.ResponseWriter,
-  bound_port : Int,
+  bound_port : Int32,
 ) -> Unit {
   write_usage_json(
     w,
@@ -141,7 +141,7 @@ async fn Gateway::handle_suite_write_status(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
-  bound_port : Int,
+  bound_port : Int32,
 ) -> Unit {
   let body = proxy_json_body(r)
   let path = proxy_string_request(r.path, body, "path").unwrap_or(
@@ -169,7 +169,7 @@ async fn Gateway::handle_suite_write_status(
 async fn Gateway::handle_suite_moonclaw_providers(
   self : Gateway,
   w : @httpx.ResponseWriter,
-  bound_port : Int,
+  bound_port : Int32,
 ) -> Unit {
   write_usage_json(
     w,
@@ -186,7 +186,7 @@ async fn Gateway::handle_suite_write_moonclaw_providers(
   self : Gateway,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
-  bound_port : Int,
+  bound_port : Int32,
 ) -> Unit {
   let body = proxy_json_body(r)
   let path = proxy_string_request(r.path, body, "path").unwrap_or(
@@ -208,5 +208,5 @@ async fn Gateway::handle_suite_write_moonclaw_providers(
 
 ///|
 fn suite_write_result_json(path : String) -> Json {
-  { "success": Json::boolean(true), "path": Json::string(path) }.to_json()
+  Json({ "success": Json::boolean(true), "path": Json::string(path) })
 }

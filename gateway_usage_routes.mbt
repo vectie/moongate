@@ -5,8 +5,8 @@ fn UsageService::register_status_routes(
   auth : AuthService,
   provider_router : ProviderRouter,
   host : String,
-  port : Int,
-  uptime_seconds : Int,
+  port : Int32,
+  uptime_seconds : Int32,
 ) -> Unit {
   router.add_handler(Get, "/health", (_, w) => {
     self.handle_health(w, auth.credentials_loaded())

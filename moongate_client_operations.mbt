@@ -46,7 +46,7 @@ pub async fn MoonGateClient::model_catalog(
 ///|
 pub async fn MoonGateClient::usage_logs(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[Json, String] {
   self.get_json_path(moongate_client_path_with_query("/usage/logs", query))
 }
@@ -54,7 +54,7 @@ pub async fn MoonGateClient::usage_logs(
 ///|
 pub async fn MoonGateClient::usage_summary(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[Json, String] {
   self.get_json_path(moongate_client_path_with_query("/usage/summary", query))
 }
@@ -62,7 +62,7 @@ pub async fn MoonGateClient::usage_summary(
 ///|
 pub async fn MoonGateClient::usage_summary_typed(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[MoonGateUsageSummary, String] {
   match self.usage_summary(query~) {
     Ok(json) => MoonGateUsageSummary::from_json(json)
@@ -73,7 +73,7 @@ pub async fn MoonGateClient::usage_summary_typed(
 ///|
 pub async fn MoonGateClient::usage_summary_by_app(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[Json, String] {
   self.get_json_path(
     moongate_client_path_with_query("/usage/summary/by-app", query),
@@ -83,7 +83,7 @@ pub async fn MoonGateClient::usage_summary_by_app(
 ///|
 pub async fn MoonGateClient::usage_trends(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[Json, String] {
   self.get_json_path(moongate_client_path_with_query("/usage/trends", query))
 }
@@ -135,7 +135,7 @@ pub async fn MoonGateClient::usage_provider_usage(
 ///|
 pub async fn MoonGateClient::usage_provider_stats(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[Json, String] {
   self.get_json_path(
     moongate_client_path_with_query("/usage/provider-stats", query),
@@ -145,7 +145,7 @@ pub async fn MoonGateClient::usage_provider_stats(
 ///|
 pub async fn MoonGateClient::usage_model_stats(
   self : MoonGateClient,
-  query? : MoonGateUsageQuery? = None,
+  query~ : MoonGateUsageQuery? = None,
 ) -> Result[Json, String] {
   self.get_json_path(
     moongate_client_path_with_query("/usage/model-stats", query),
@@ -187,7 +187,7 @@ pub async fn MoonGateClient::usage_delete_model_pricing(
 ///|
 pub async fn MoonGateClient::usage_sync_session(
   self : MoonGateClient,
-  query? : MoonGateSessionSyncQuery? = None,
+  query~ : MoonGateSessionSyncQuery? = None,
 ) -> Result[Json, String] {
   self.post_json_path(
     moongate_client_session_sync_path_with_query("/usage/sync-session", query),
@@ -379,10 +379,10 @@ pub async fn MoonGateClient::proxy_stop_with_restore(
 ///|
 pub async fn MoonGateClient::proxy_update_global_config(
   self : MoonGateClient,
-  proxy_enabled? : String? = None,
-  listen_address? : String? = None,
-  listen_port? : String? = None,
-  enable_logging? : String? = None,
+  proxy_enabled~ : String? = None,
+  listen_address~ : String? = None,
+  listen_port~ : String? = None,
+  enable_logging~ : String? = None,
 ) -> Result[Json, String] {
   self.post_json_path(
     moongate_client_path_with_optional_pairs("/proxy/global-config", [
@@ -421,17 +421,17 @@ pub async fn MoonGateClient::proxy_test_url(
 pub async fn MoonGateClient::proxy_update_app_config(
   self : MoonGateClient,
   app_type : String,
-  enabled? : String? = None,
-  auto_failover_enabled? : String? = None,
-  max_retries? : String? = None,
-  streaming_first_byte_timeout? : String? = None,
-  streaming_idle_timeout? : String? = None,
-  non_streaming_timeout? : String? = None,
-  failure_threshold? : String? = None,
-  success_threshold? : String? = None,
-  timeout_seconds? : String? = None,
-  error_rate_threshold? : String? = None,
-  min_requests? : String? = None,
+  enabled~ : String? = None,
+  auto_failover_enabled~ : String? = None,
+  max_retries~ : String? = None,
+  streaming_first_byte_timeout~ : String? = None,
+  streaming_idle_timeout~ : String? = None,
+  non_streaming_timeout~ : String? = None,
+  failure_threshold~ : String? = None,
+  success_threshold~ : String? = None,
+  timeout_seconds~ : String? = None,
+  error_rate_threshold~ : String? = None,
+  min_requests~ : String? = None,
 ) -> Result[Json, String] {
   self.post_json_path(
     moongate_client_path_with_optional_pairs("/proxy/app-config", [

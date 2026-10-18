@@ -1,14 +1,14 @@
 ///|
 fn postman_test_source(
   items : Array[Json],
-  extra? : Json = Json::null(),
+  extra~ : Json = Json::null(),
 ) -> String {
   let source : Map[String, Json] = {
     "info": {
       "name": "Synthetic Model API",
       "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     },
-    "item": items.to_json(),
+    "item": Json(items),
   }
   if extra is Object(fields) {
     for key, value in fields {

@@ -2,12 +2,12 @@
 fn TrafficStats::operations_monitor_snapshot(
   self : TrafficStats,
   provider_router : ProviderRouter,
-  observed_at_ms? : Int64 = moongate_epoch_ms(),
+  observed_at_ms~ : Int64 = moongate_epoch_ms(),
 ) -> @telemetry.MonitorSnapshotV1 {
-  let latency_samples : Array[Int] = []
-  let first_token_samples : Array[Int] = []
-  let throughput_samples : Array[Int] = []
-  let terminal_outcome_count_map : Map[String, Int] = Map([], capacity=0)
+  let latency_samples : Array[Int32] = []
+  let first_token_samples : Array[Int32] = []
+  let throughput_samples : Array[Int32] = []
+  let terminal_outcome_count_map : Map[String, Int32] = Map([], capacity=0)
   let mut recent_cost_nano = 0L
   let mut recent_input_tokens = 0
   let mut recent_output_tokens = 0
@@ -133,9 +133,9 @@ fn request_log_terminal_outcome(
 
 ///|
 fn TrafficStats::operations_prometheus_metrics(self : TrafficStats) -> String {
-  let out = StringBuilder::new()
-  let latency_samples : Array[Int] = []
-  let first_token_samples : Array[Int] = []
+  let out = StringBuilder()
+  let latency_samples : Array[Int32] = []
+  let first_token_samples : Array[Int32] = []
   let mut recent_cost_nano = 0L
   for log in self.request_logs {
     if log.latency_ms >= 0 {

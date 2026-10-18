@@ -572,11 +572,11 @@ fn moon_parse_gemini_file_json(content : String) -> MoonTokenCredentials {
 
 ///|
 fn moon_token_credentials(
-  token? : String? = None,
-  refresh_token? : String? = None,
-  account_id? : String? = None,
+  token~ : String? = None,
+  refresh_token~ : String? = None,
+  account_id~ : String? = None,
   status~ : CredentialStatus,
-  message? : String? = None,
+  message~ : String? = None,
 ) -> MoonTokenCredentials {
   { token, refresh_token, account_id, status, message, }
 }
@@ -615,7 +615,7 @@ fn moon_codex_token_stale(last_refresh : String) -> Bool {
 }
 
 ///|
-fn moon_parse_rfc3339_date_prefix_seconds(value : String) -> Int? {
+fn moon_parse_rfc3339_date_prefix_seconds(value : String) -> Int32? {
   parse_session_timestamp_seconds(value)
 }
 
@@ -670,14 +670,12 @@ async fn moon_query_gemini_quota(token : String) -> SubscriptionQuota {
   }
   let load_result = moon_fetch_json_post(
     "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
-    {
+    Json({
       "metadata": Json::object({
         "ideType": "GEMINI_CLI",
         "pluginType": "GEMINI",
       }),
-    }
-    .to_json()
-    .stringify(),
+    }).stringify(),
     headers,
     expired_message="Authentication failed. Please re-login with Gemini CLI.",
     network_label=Some("loadCodeAssist"),
@@ -719,7 +717,7 @@ async fn moon_refresh_gemini_token(refresh_token : String) -> String? {
   ) catch {
     _ => return None
   }
-  if !(response.code is (200..=299)) {
+  if !(response.code is (200..<=299)) {
     return None
   }
   match data.json() {
@@ -768,7 +766,7 @@ priv struct MoonQuotaFetchError {
 async fn moon_fetch_json_get(
   url : String,
   headers : Map[String, String],
-  expired_message? : String = "Authentication failed. Please re-login.",
+  expired_message~ : String = "Authentication failed. Please re-login.",
 ) -> Result[Json, MoonQuotaFetchError] {
   let target = match models_url_target(url) {
     Ok(target) => target
@@ -787,8 +785,8 @@ async fn moon_fetch_json_post(
   url : String,
   body : String,
   headers : Map[String, String],
-  expired_message? : String = "Authentication failed.",
-  network_label? : String? = None,
+  expired_message~ : String = "Authentication failed.",
+  network_label~ : String? = None,
 ) -> Result[Json, MoonQuotaFetchError] {
   let target = match models_url_target(url) {
     Ok(target) => target
@@ -816,9 +814,9 @@ async fn moon_fetch_json_post(
 ///|
 async fn moon_read_quota_json_response(
   client : @http.Client,
-  code : Int,
+  code : Int32,
   expired_message : String,
-  network_label? : String? = None,
+  network_label~ : String? = None,
 ) -> Result[Json, MoonQuotaFetchError] {
   let body = client.read_all().text()
   if code == 401 || code == 403 {
@@ -827,7 +825,7 @@ async fn moon_read_quota_json_response(
       message: "\{expired_message} (HTTP \{code})",
     })
   }
-  if !(code is (200..=299)) {
+  if !(code is (200..<=299)) {
     let prefix = match network_label {
       Some("loadCodeAssist") => "loadCodeAssist failed"
       Some("retrieveUserQuota") => "retrieveUserQuota failed"
@@ -1106,9 +1104,9 @@ fn moon_gemini_category_tier(name : String, row : Map[String, Json]) -> Json {
 fn moon_quota_tier_json(
   name : String,
   utilization : Double,
-  resets_at? : String? = None,
-  used_value_usd? : Double? = None,
-  max_value_usd? : Double? = None,
+  resets_at~ : String? = None,
+  used_value_usd~ : Double? = None,
+  max_value_usd~ : Double? = None,
 ) -> Json {
   let obj : Map[String, Json] = {
     "name": Json::string(name),
@@ -1169,7 +1167,7 @@ fn moon_form_encode(value : String) -> String {
   let buf = StringBuilder::new()
   for c in value {
     match c {
-      'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' =>
+      'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>
         buf.write_char(c)
       _ => {
         let bytes = @encoding/utf8.encode(c.to_string())
@@ -1188,7 +1186,7 @@ fn moon_form_encode(value : String) -> String {
 }
 
 ///|
-fn moon_hex_char(n : Int) -> Char {
+fn moon_hex_char(n : Int32) -> Char {
   if n < 10 {
     ('0'.to_int() + n).unsafe_to_char()
   } else {

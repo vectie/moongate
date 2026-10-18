@@ -154,7 +154,7 @@ fn moon_network_host_syntax_valid(host : String) -> Bool {
 }
 
 ///|
-fn moon_network_url_authority_end(rest : StringView) -> Int {
+fn moon_network_url_authority_end(rest : StringView) -> Int32 {
   let mut end = rest.length()
   for delimiter in ["/", "?", "#"] {
     match rest.find(delimiter) {
@@ -169,7 +169,7 @@ fn moon_network_url_authority_end(rest : StringView) -> Int {
 fn moon_parse_network_url(
   url : String,
   schemes : ArrayView[String],
-  allow_credentials? : Bool = false,
+  allow_credentials~ : Bool = false,
 ) -> Result[MoonNetworkUrlTarget, String] {
   if url.is_empty() ||
     url.length() > 16_384 ||

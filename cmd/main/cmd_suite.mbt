@@ -59,13 +59,11 @@ async fn run_suite_cli_command(
 fn print_suite_constitution(args : Array[String]) -> Unit {
   let checked_at = parse_string_arg(args, "--checked-at").unwrap_or("cli")
   println(
-    {
+    Json({
       "contractId": Json::string("moonsuite.constitution-suite-report.v1"),
       "registry": @moongate.constitutional_registry_json(),
       "selfCheck": @moongate.constitutional_registry_self_check(checked_at),
-    }
-    .to_json()
-    .stringify(indent=2),
+    }).stringify(indent=2),
   )
 }
 
@@ -73,14 +71,12 @@ fn print_suite_constitution(args : Array[String]) -> Unit {
 fn print_suite_constitution_negative(args : Array[String]) -> Unit {
   let checked_at = parse_string_arg(args, "--checked-at").unwrap_or("cli")
   println(
-    {
+    Json({
       "physicalOverclaim": @moongate.constitutional_negative_probe(checked_at).to_json(),
       "simulationPhysicalAuthority": @moongate.constitutional_simulation_authority_probe(
         checked_at,
       ).to_json(),
-    }
-    .to_json()
-    .stringify(indent=2),
+    }).stringify(indent=2),
   )
 }
 

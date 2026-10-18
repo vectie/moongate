@@ -99,9 +99,9 @@ pub fn moongate_moonflow_adapter_capability_json() -> Json {
 
 ///|
 pub fn moongate_suite_manifest_json(
-  host? : String = @suite.default_host(),
-  port? : Int = @suite.default_port(),
-  model? : String = @suite.default_model(),
+  host~ : String = @suite.default_host(),
+  port~ : Int32 = @suite.default_port(),
+  model~ : String = @suite.default_model(),
 ) -> Json {
   let manifest = {
     "contract": Json::string(@suite.manifest_contract()),
@@ -173,11 +173,11 @@ pub fn moongate_suite_manifest_json(
 
 ///|
 pub fn moongate_suite_status_json(
-  host? : String = @suite.default_host(),
-  port? : Int = @suite.default_port(),
-  model? : String = @suite.default_model(),
-  status? : String = "configured",
-  ready? : Bool = true,
+  host~ : String = @suite.default_host(),
+  port~ : Int32 = @suite.default_port(),
+  model~ : String = @suite.default_model(),
+  status~ : String = "configured",
+  ready~ : Bool = true,
 ) -> Json {
   let status_json = {
     "contract": Json::string(@suite.status_contract()),
@@ -194,8 +194,8 @@ pub fn moongate_suite_status_json(
 
 ///|
 pub async fn moongate_suite_drift_report_json(
-  suite_root? : String = ".",
-  global_tmp_root? : String = "/tmp",
+  suite_root~ : String = ".",
+  global_tmp_root~ : String = "/tmp",
 ) -> Json {
   let root = moongate_normalize_suite_root(suite_root)
   let global_tmp = moongate_trim_root(global_tmp_root)
@@ -643,12 +643,12 @@ fn moongate_suite_drift_finding_json(
 
 ///|
 pub async fn write_moongate_suite_status(
-  path? : String = default_moongate_suite_status_path(),
-  host? : String = @suite.default_host(),
-  port? : Int = @suite.default_port(),
-  model? : String = @suite.default_model(),
-  status? : String = "configured",
-  ready? : Bool = true,
+  path~ : String = default_moongate_suite_status_path(),
+  host~ : String = @suite.default_host(),
+  port~ : Int32 = @suite.default_port(),
+  model~ : String = @suite.default_model(),
+  status~ : String = "configured",
+  ready~ : Bool = true,
 ) -> String {
   let dir = @pathx.dirname(path)
   @fsx.make_directory(dir, recursive=true, exists_ok=true)
@@ -711,7 +711,10 @@ fn moongate_suite_capabilities_json() -> Json {
 }
 
 ///|
-fn moongate_suite_shared_fields(host : String, port : Int) -> Map[String, Json] {
+fn moongate_suite_shared_fields(
+  host : String,
+  port : Int32,
+) -> Map[String, Json] {
   let base_url = moongate_base_url(host, port)
   {
     "healthUrl": Json::string("\{base_url}/health"),
@@ -772,17 +775,17 @@ fn moongate_merge_suite_fields(
 }
 
 ///|
-fn moongate_base_url(host : String, port : Int) -> String {
+fn moongate_base_url(host : String, port : Int32) -> String {
   @suite.base_url(host, port)
 }
 
 ///|
-fn moongate_openai_base_url(host : String, port : Int) -> String {
+fn moongate_openai_base_url(host : String, port : Int32) -> String {
   @suite.openai_base_url(host, port)
 }
 
 ///|
-fn moongate_claude_desktop_base_url(host : String, port : Int) -> String {
+fn moongate_claude_desktop_base_url(host : String, port : Int32) -> String {
   @suite.claude_desktop_base_url(host, port)
 }
 
@@ -791,7 +794,7 @@ fn suite_app_json(
   id : String,
   role : String,
   usage : String,
-  priority? : Int = 100,
+  priority~ : Int32 = 100,
 ) -> Json {
   Json::object({
     "id": Json::string(id),
@@ -804,7 +807,7 @@ fn suite_app_json(
 ///|
 fn moongate_suite_agent_clients_json(
   host : String,
-  port : Int,
+  port : Int32,
   model : String,
 ) -> Json {
   let base_url = moongate_base_url(host, port)
@@ -890,7 +893,7 @@ fn suite_agent_client_json(
 ///|
 fn moongate_suite_integrations_json(
   host : String,
-  port : Int,
+  port : Int32,
   model : String,
 ) -> Json {
   let base_url = moongate_base_url(host, port)
@@ -1074,9 +1077,9 @@ fn moonclaw_providers_file_json(
 
 ///|
 pub fn moongate_moonclaw_providers_file_json(
-  host? : String = @suite.default_host(),
-  port? : Int = @suite.default_port(),
-  model? : String = @suite.default_model(),
+  host~ : String = @suite.default_host(),
+  port~ : Int32 = @suite.default_port(),
+  model~ : String = @suite.default_model(),
 ) -> Json {
   moonclaw_providers_file_json(
     "\{moongate_base_url(host, port)}/openclaw/v1",
@@ -1086,10 +1089,10 @@ pub fn moongate_moonclaw_providers_file_json(
 
 ///|
 pub async fn write_moongate_moonclaw_providers_file(
-  path? : String = default_moongate_moonclaw_providers_file_path(),
-  host? : String = @suite.default_host(),
-  port? : Int = @suite.default_port(),
-  model? : String = @suite.default_model(),
+  path~ : String = default_moongate_moonclaw_providers_file_path(),
+  host~ : String = @suite.default_host(),
+  port~ : Int32 = @suite.default_port(),
+  model~ : String = @suite.default_model(),
 ) -> String {
   let dir = @pathx.dirname(path)
   @fsx.make_directory(dir, recursive=true, exists_ok=true)
@@ -1152,7 +1155,7 @@ fn moongate_suite_capabilities() -> Array[String] {
 }
 
 ///|
-fn moongate_suite_commands_json(port : Int, model : String) -> Json {
+fn moongate_suite_commands_json(port : Int32, model : String) -> Json {
   let moonclaw_providers_write_command = "moongate suite write-moonclaw-providers --path \{moongate_moonclaw_providers_file()}"
   let codex_install_command = if model.trim().is_empty() {
     "moongate codex install --port \{port} --model <model>"
@@ -1242,23 +1245,24 @@ fn moongate_suite_routes() -> Array[String] {
     "GET /usage/codex-oauth-quota", "GET /usage/codex-oauth-models", "GET /usage/coding-plan-quota",
     "POST /usage/test-script", "POST /usage/planner-metrics", "POST /proxy/stream-check/provider",
     "POST /proxy/stream-check/all", "GET /proxy/stream-check/config", "POST /proxy/stream-check/config",
-    "GET /providers/presets", "GET /providers/models", "GET /v1/models", "GET /claude-desktop/v1/models",
-    "POST /v1/messages", "POST /claude-desktop/v1/messages", "POST /v1/responses",
-    "POST /v1/responses/compact", "POST /v1/chat/completions", "POST /openclaw/v1/chat/completions",
-    "POST /openclaw/v1/responses", "GET /openclaw/v1/models", "POST /paiwork/v1/chat/completions",
-    "GET /paiwork/v1/models", "GET /auth/status", "GET /auth/accounts", "POST /auth/login",
-    "POST /auth/poll", "DELETE /auth/account", "POST /auth/default-account", "POST /auth/logout",
-    "GET /copilot/status", "GET /copilot/accounts", "GET /copilot/authenticated",
-    "POST /copilot/device-flow", "POST /copilot/poll-auth", "POST /copilot/poll-account",
-    "POST /copilot/logout", "DELETE /copilot/account", "POST /copilot/default-account",
-    "GET /copilot/token", "GET /copilot/models", "GET /copilot/usage", "POST /runtime/open-external",
-    "POST /runtime/clipboard/text", "POST /runtime/updates/check", "POST /runtime/tray-menu/update",
-    "GET /runtime/portable-mode", "GET /tools/versions", "POST /tools/lifecycle-action",
-    "GET /tools/probe", "POST /runtime/window-theme", "POST /runtime/lightweight-mode/enter",
-    "POST /runtime/lightweight-mode/exit", "GET /runtime/lightweight-mode", "POST /files/dialogs/save",
-    "POST /config/files/export", "POST /config/files/import", "POST /backups/db",
-    "GET /backups/db", "POST /backups/db/restore", "POST /backups/db/rename", "DELETE /backups/db/delete",
-    "GET /deeplinks/parse", "POST /deeplinks/merge", "POST /deeplinks/import", "POST /sync/webdav/test",
+    "GET /providers/presets", "GET /providers/models", "POST /providers/validate-connection",
+    "GET /v1/models", "GET /claude-desktop/v1/models", "POST /v1/messages", "POST /claude-desktop/v1/messages",
+    "POST /v1/responses", "POST /v1/responses/compact", "POST /v1/chat/completions",
+    "POST /openclaw/v1/chat/completions", "POST /openclaw/v1/responses", "GET /openclaw/v1/models",
+    "POST /paiwork/v1/chat/completions", "GET /paiwork/v1/models", "GET /auth/status",
+    "GET /auth/accounts", "POST /auth/login", "POST /auth/poll", "DELETE /auth/account",
+    "POST /auth/default-account", "POST /auth/logout", "GET /copilot/status", "GET /copilot/accounts",
+    "GET /copilot/authenticated", "POST /copilot/device-flow", "POST /copilot/poll-auth",
+    "POST /copilot/poll-account", "POST /copilot/logout", "DELETE /copilot/account",
+    "POST /copilot/default-account", "GET /copilot/token", "GET /copilot/models",
+    "GET /copilot/usage", "POST /runtime/open-external", "POST /runtime/clipboard/text",
+    "POST /runtime/updates/check", "POST /runtime/tray-menu/update", "GET /runtime/portable-mode",
+    "GET /tools/versions", "POST /tools/lifecycle-action", "GET /tools/probe", "POST /runtime/window-theme",
+    "POST /runtime/lightweight-mode/enter", "POST /runtime/lightweight-mode/exit",
+    "GET /runtime/lightweight-mode", "POST /files/dialogs/save", "POST /config/files/export",
+    "POST /config/files/import", "POST /backups/db", "GET /backups/db", "POST /backups/db/restore",
+    "POST /backups/db/rename", "DELETE /backups/db/delete", "GET /deeplinks/parse",
+    "POST /deeplinks/merge", "POST /deeplinks/import", "POST /sync/webdav/test",
     "POST /sync/webdav/upload", "POST /sync/webdav/download", "POST /sync/webdav/settings",
     "GET /sync/webdav/remote-info", "POST /sync/s3/test", "POST /sync/s3/upload",
     "POST /sync/s3/download", "POST /sync/s3/settings", "GET /sync/s3/remote-info",

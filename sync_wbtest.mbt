@@ -1,13 +1,13 @@
 ///|
 test "moongate webdav sync settings normalize and preserve password" {
-  let existing = {
+  let existing = Json({
     "enabled": Json::boolean(true),
     "baseUrl": Json::string("https://dav.example.com"),
     "username": Json::string("alice"),
     "password": Json::string("secret"),
-    "status": { "lastError": Json::string("previous") }.to_json(),
-  }.to_json()
-  let incoming = {
+    "status": Json({ "lastError": Json::string("previous") }),
+  })
+  let incoming = Json({
     "enabled": Json::boolean(true),
     "autoSync": Json::boolean(true),
     "baseUrl": Json::string(" https://dav.example.com/root "),
@@ -15,7 +15,7 @@ test "moongate webdav sync settings normalize and preserve password" {
     "password": Json::string(""),
     "remoteRoot": Json::string(""),
     "profile": Json::string(""),
-  }.to_json()
+  })
   guard moon_webdav_sync_settings_json(incoming, Some(existing), true)
     is Object(obj) else {
     fail("expected webdav settings object")
@@ -37,14 +37,14 @@ test "moongate webdav sync settings normalize and preserve password" {
 
 ///|
 test "moongate webdav sync settings ignore snake case compatibility keys" {
-  let incoming = {
+  let incoming = Json({
     "enabled": Json::boolean(true),
     "auto_sync": Json::boolean(true),
     "base_url": Json::string("https://legacy.example/root"),
     "username": Json::string("alice"),
     "password": Json::string("secret"),
     "remote_root": Json::string("legacy-root"),
-  }.to_json()
+  })
   guard moon_webdav_sync_settings_json(incoming, None, false) is Object(obj) else {
     fail("expected webdav settings object")
   }
@@ -58,7 +58,7 @@ test "moongate webdav sync settings ignore snake case compatibility keys" {
 
 ///|
 test "moongate sync settings request uses direct body only" {
-  let canonical = { "baseUrl": Json::string("https://dav.example.com") }.to_json()
+  let canonical = Json({ "baseUrl": Json::string("https://dav.example.com") })
   guard moon_sync_settings_request("", Some(canonical)) is Some(Object(obj)) else {
     fail("expected settings object")
   }
@@ -66,18 +66,18 @@ test "moongate sync settings request uses direct body only" {
     json_string_from_map(obj, "baseUrl"),
     Some("https://dav.example.com"),
   )
-  let config_wrapper = {
-    "config": { "baseUrl": Json::string("https://legacy.example") }.to_json(),
-  }.to_json()
+  let config_wrapper = Json({
+    "config": Json({ "baseUrl": Json::string("https://legacy.example") }),
+  })
   guard moon_sync_settings_request("", Some(config_wrapper))
     is Some(Object(obj)) else {
     fail("expected direct body object")
   }
   assert_eq(json_string_from_map(obj, "baseUrl"), None)
   assert_true(obj.get("config") is Some(_))
-  let settings_wrapper = {
-    "settings": { "baseUrl": Json::string("https://wrapped.example") }.to_json(),
-  }.to_json()
+  let settings_wrapper = Json({
+    "settings": Json({ "baseUrl": Json::string("https://wrapped.example") }),
+  })
   guard moon_sync_settings_request("", Some(settings_wrapper))
     is Some(Object(wrapped)) else {
     fail("expected wrapper as direct object")
@@ -90,17 +90,17 @@ test "moongate sync settings request uses direct body only" {
 test "moongate webdav sync validation and guard messages match moongate" {
   assert_eq(
     moon_validate_webdav_sync_settings(
-      { "username": Json::string("alice") }.to_json(),
+      Json({ "username": Json::string("alice") }),
     ),
     Some("WebDAV URL is required."),
   )
-  let settings = {
-    "webdavSync": {
+  let settings = Json({
+    "webdavSync": Json({
       "enabled": Json::boolean(false),
       "baseUrl": Json::string("https://dav.example.com"),
       "username": Json::string("alice"),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   assert_eq(
     moon_webdav_sync_required_error(settings),
     Some("WebDAV sync is disabled."),
@@ -113,11 +113,11 @@ test "moongate webdav sync validation and guard messages match moongate" {
 
 ///|
 test "moongate s3 sync settings normalize and preserve secret" {
-  let existing = {
+  let existing = Json({
     "secretAccessKey": Json::string("SECRET"),
-    "status": { "lastRemoteEtag": Json::string("etag-1") }.to_json(),
-  }.to_json()
-  let incoming = {
+    "status": Json({ "lastRemoteEtag": Json::string("etag-1") }),
+  })
+  let incoming = Json({
     "enabled": Json::boolean(true),
     "autoSync": Json::boolean(true),
     "region": Json::string(" us-east-1 "),
@@ -126,7 +126,7 @@ test "moongate s3 sync settings normalize and preserve secret" {
     "secretAccessKey": Json::string(""),
     "endpoint": Json::string(" https://s3.example.com "),
     "remoteRoot": Json::string(""),
-  }.to_json()
+  })
   guard moon_s3_sync_settings_json(incoming, Some(existing), true)
     is Object(obj) else {
     fail("expected s3 settings object")
@@ -149,7 +149,7 @@ test "moongate s3 sync settings normalize and preserve secret" {
 
 ///|
 test "moongate s3 sync settings ignore snake case compatibility keys" {
-  let incoming = {
+  let incoming = Json({
     "enabled": Json::boolean(true),
     "auto_sync": Json::boolean(true),
     "region": Json::string("us-east-1"),
@@ -157,7 +157,7 @@ test "moongate s3 sync settings ignore snake case compatibility keys" {
     "access_key_id": Json::string("AKID"),
     "secret_access_key": Json::string("SECRET"),
     "remote_root": Json::string("legacy-root"),
-  }.to_json()
+  })
   guard moon_s3_sync_settings_json(incoming, None, false) is Object(obj) else {
     fail("expected s3 settings object")
   }
@@ -174,29 +174,29 @@ test "moongate s3 sync settings ignore snake case compatibility keys" {
 test "moongate s3 sync validation and guard messages match moongate" {
   assert_eq(
     moon_validate_s3_sync_settings(
-      { "region": Json::string("us-east-1") }.to_json(),
+      Json({ "region": Json::string("us-east-1") }),
     ),
     Some("S3 bucket is required."),
   )
   assert_eq(
     moon_validate_s3_sync_settings(
-      {
+      Json({
         "bucket": Json::string("moongate"),
         "region": Json::string("us-east-1"),
         "accessKeyId": Json::string("AKID"),
-      }.to_json(),
+      }),
     ),
     Some("S3 Secret Access Key is required."),
   )
-  let settings = {
-    "s3Sync": {
+  let settings = Json({
+    "s3Sync": Json({
       "enabled": Json::boolean(false),
       "bucket": Json::string("moongate"),
       "region": Json::string("us-east-1"),
       "accessKeyId": Json::string("AKID"),
       "secretAccessKey": Json::string("SECRET"),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   assert_eq(moon_s3_sync_required_error(settings), Some("S3 sync is disabled."))
   assert_eq(
     moon_s3_sync_required_error(Json::object({})),
@@ -207,7 +207,7 @@ test "moongate s3 sync validation and guard messages match moongate" {
 ///|
 test "moongate s3 object urls and keys match moongate transport layout" {
   let aws = moon_s3_sync_settings_json(
-    {
+    Json({
       "enabled": Json::boolean(true),
       "region": Json::string("us-west-2"),
       "bucket": Json::string("moongate"),
@@ -215,7 +215,7 @@ test "moongate s3 object urls and keys match moongate transport layout" {
       "secretAccessKey": Json::string("SECRET"),
       "remoteRoot": Json::string("moongate-sync"),
       "profile": Json::string("default"),
-    }.to_json(),
+    }),
     None,
     false,
   )
@@ -238,7 +238,7 @@ test "moongate s3 object urls and keys match moongate transport layout" {
     ),
   )
   let custom = moon_s3_sync_settings_json(
-    {
+    Json({
       "enabled": Json::boolean(true),
       "region": Json::string("us-east-1"),
       "bucket": Json::string("moongate"),
@@ -247,7 +247,7 @@ test "moongate s3 object urls and keys match moongate transport layout" {
       "endpoint": Json::string("http://minio.local:9000/"),
       "remoteRoot": Json::string("moongate team"),
       "profile": Json::string("team/default"),
-    }.to_json(),
+    }),
     None,
     false,
   )
@@ -262,13 +262,13 @@ test "moongate s3 object urls and keys match moongate transport layout" {
 ///|
 test "moongate s3 curl requests use sigv4 and moongate transfer timeouts" {
   let settings = moon_s3_sync_settings_json(
-    {
+    Json({
       "enabled": Json::boolean(true),
       "region": Json::string("us-east-1"),
       "bucket": Json::string("moongate"),
       "accessKeyId": Json::string("AKID"),
       "secretAccessKey": Json::string("SECRET"),
-    }.to_json(),
+    }),
     None,
     false,
   )
@@ -359,7 +359,7 @@ test "moongate sync protocol paths use moongate v2 db layout" {
 ///|
 test "moongate webdav remote manifest url encodes path segments like moongate" {
   let settings = moon_webdav_sync_settings_json(
-    {
+    Json({
       "enabled": Json::boolean(true),
       "baseUrl": Json::string(
         "https://dav.example.com/remote.php/dav/files/demo/",
@@ -368,7 +368,7 @@ test "moongate webdav remote manifest url encodes path segments like moongate" {
       "password": Json::string("secret"),
       "remoteRoot": Json::string("moongate team-sync"),
       "profile": Json::string("default profile"),
-    }.to_json(),
+    }),
     None,
     false,
   )
@@ -395,14 +395,14 @@ test "moongate webdav basic auth header matches rfc7617" {
 ///|
 test "moongate webdav connection command matches moongate methods" {
   let settings = moon_webdav_sync_settings_json(
-    {
+    Json({
       "enabled": Json::boolean(true),
       "baseUrl": Json::string("https://dav.example.com/root/"),
       "username": Json::string("alice"),
       "password": Json::string("secret"),
       "remoteRoot": Json::string("moongate-sync"),
       "profile": Json::string("default"),
-    }.to_json(),
+    }),
     None,
     false,
   )
@@ -469,24 +469,27 @@ test "moongate sync sha256 and snapshot id match sync protocol" {
 
 ///|
 test "moongate sync manifest compatibility requires current db version" {
-  let manifest_json = {
+  let manifest_json = Json({
     "format": Json::string(moon_sync_protocol_format()),
     "version": Json::number(moon_sync_protocol_version().to_double()),
     "dbCompatVersion": Json::number(moon_sync_db_compat_version().to_double()),
     "deviceName": Json::string("My MacBook"),
     "createdAt": Json::string("2026-02-12T00:00:00Z"),
     "snapshotId": Json::string("snap-1"),
-    "artifacts": {
-      "skills.zip": { "sha256": Json::string("def"), "size": Json::number(2) }.to_json(),
-      "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
-    }.to_json(),
-  }.to_json()
+    "artifacts": Json({
+      "skills.zip": Json({
+        "sha256": Json::string("def"),
+        "size": Json::number(2),
+      }),
+      "db.sql": Json({ "sha256": Json::string("abc"), "size": Json::number(1) }),
+    }),
+  })
   let manifest = moon_sync_manifest_info_from_json(manifest_json).unwrap()
   assert_eq(manifest.artifacts, ["db.sql", "skills.zip"])
   assert_true(moon_sync_validate_manifest_compat(manifest) is Ok(_))
   assert_true(
     moon_sync_manifest_info_from_json(
-      {
+      Json({
         "format": Json::string(moon_sync_protocol_format()),
         "version": Json::number(moon_sync_protocol_version().to_double()),
         "dbCompatVersion": Json::number(
@@ -495,28 +498,34 @@ test "moongate sync manifest compatibility requires current db version" {
         "device_name": Json::string("Legacy Mac"),
         "created_at": Json::string("2026-02-12T00:00:00Z"),
         "snapshot_id": Json::string("snap-legacy"),
-        "artifacts": {
-          "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
-        }.to_json(),
-      }.to_json(),
+        "artifacts": Json({
+          "db.sql": Json({
+            "sha256": Json::string("abc"),
+            "size": Json::number(1),
+          }),
+        }),
+      }),
     )
     is Err(_),
   )
   let missing_db_manifest = moon_sync_manifest_info_from_json(
-    {
+    Json({
       "format": Json::string(moon_sync_protocol_format()),
       "version": Json::number(moon_sync_protocol_version().to_double()),
       "deviceName": Json::string("Incomplete Mac"),
       "createdAt": Json::string("2026-02-12T00:00:00Z"),
       "snapshotId": Json::string("snap-missing-db"),
-      "artifacts": {
-        "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
-      }.to_json(),
-    }.to_json(),
+      "artifacts": Json({
+        "db.sql": Json({
+          "sha256": Json::string("abc"),
+          "size": Json::number(1),
+        }),
+      }),
+    }),
   ).unwrap()
   assert_true(moon_sync_validate_manifest_compat(missing_db_manifest) is Err(_))
   let newer_manifest = moon_sync_manifest_info_from_json(
-    {
+    Json({
       "format": Json::string(moon_sync_protocol_format()),
       "version": Json::number(moon_sync_protocol_version().to_double()),
       "dbCompatVersion": Json::number(
@@ -525,10 +534,13 @@ test "moongate sync manifest compatibility requires current db version" {
       "deviceName": Json::string("Future Mac"),
       "createdAt": Json::string("2026-02-12T00:00:00Z"),
       "snapshotId": Json::string("snap-newer"),
-      "artifacts": {
-        "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
-      }.to_json(),
-    }.to_json(),
+      "artifacts": Json({
+        "db.sql": Json({
+          "sha256": Json::string("abc"),
+          "size": Json::number(1),
+        }),
+      }),
+    }),
   ).unwrap()
   assert_true(moon_sync_validate_manifest_compat(newer_manifest) is Err(_))
 }
@@ -536,14 +548,14 @@ test "moongate sync manifest compatibility requires current db version" {
 ///|
 test "moongate webdav remote info maps manifest body" {
   let settings = moon_webdav_sync_settings_json(
-    {
+    Json({
       "enabled": Json::boolean(true),
       "baseUrl": Json::string("https://dav.example.com"),
       "username": Json::string("alice"),
       "password": Json::string("secret"),
       "remoteRoot": Json::string("moongate-sync"),
       "profile": Json::string("default"),
-    }.to_json(),
+    }),
     None,
     false,
   )
@@ -576,18 +588,24 @@ test "moongate webdav remote info maps manifest body" {
 ///|
 test "moongate sync remote info response mirrors moongate fetch remote info shape" {
   let manifest = moon_sync_manifest_info_from_json(
-    {
+    Json({
       "format": Json::string(moon_sync_protocol_format()),
       "version": Json::number(moon_sync_protocol_version().to_double()),
       "dbCompatVersion": Json::number(moon_sync_db_compat_version().to_double()),
       "deviceName": Json::string("My MacBook"),
       "createdAt": Json::string("2026-02-12T00:00:00Z"),
       "snapshotId": Json::string("snap-1"),
-      "artifacts": {
-        "skills.zip": { "sha256": Json::string("def"), "size": Json::number(2) }.to_json(),
-        "db.sql": { "sha256": Json::string("abc"), "size": Json::number(1) }.to_json(),
-      }.to_json(),
-    }.to_json(),
+      "artifacts": Json({
+        "skills.zip": Json({
+          "sha256": Json::string("def"),
+          "size": Json::number(2),
+        }),
+        "db.sql": Json({
+          "sha256": Json::string("abc"),
+          "size": Json::number(1),
+        }),
+      }),
+    }),
   ).unwrap()
   guard moon_sync_remote_info_json(manifest, "moongate-sync", "default")
     is Object(obj) else {

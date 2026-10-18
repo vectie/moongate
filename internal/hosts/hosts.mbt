@@ -35,7 +35,7 @@ pub async fn check_permission() -> Bool {
 
 ///|
 /// Generates the hosts entry.
-fn generate_reroute_entry(_port : Int) -> String {
+fn generate_reroute_entry(_port : Int32) -> String {
   "127.0.0.1 \{ANTHROPIC_HOST} \{REROUTE_COMMENT}\n"
 }
 
@@ -53,7 +53,7 @@ pub async fn is_reroute_installed() -> Bool {
 
 ///|
 /// Installs the hosts reroute.
-pub async fn install_reroute(port : Int) -> Result[Unit, String] {
+pub async fn install_reroute(port : Int32) -> Result[Unit, String] {
   let hosts_path = get_hosts_path()
 
   // 检查权限
@@ -117,7 +117,7 @@ async fn flush_dns() -> Unit {
 
 ///|
 /// 安装并刷新 DNS
-pub async fn install_and_flush(port : Int) -> Result[Unit, String] {
+pub async fn install_and_flush(port : Int32) -> Result[Unit, String] {
   let result = install_reroute(port)
   match result {
     Ok(_) => {

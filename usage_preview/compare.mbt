@@ -4,15 +4,15 @@
 pub fn compare_usage_files_json(
   before : String,
   after : String,
-  before_name? : String = "Before",
-  after_name? : String = "After",
-  app? : String = "",
-  provider? : String = "",
-  model? : String = "",
-  before_start_day? : String = "",
-  before_end_day? : String = "",
-  after_start_day? : String = "",
-  after_end_day? : String = "",
+  before_name~ : String = "Before",
+  after_name~ : String = "After",
+  app~ : String = "",
+  provider~ : String = "",
+  model~ : String = "",
+  before_start_day~ : String = "",
+  before_end_day~ : String = "",
+  after_start_day~ : String = "",
+  after_end_day~ : String = "",
 ) -> Result[Json, String] {
   let read = (content, name, start_day, end_day) => {
     moongate_preview_usage_file_json(
@@ -65,8 +65,8 @@ pub fn compare_usage_files_json(
       }
     }
   }
-  let partial = compare_field(before, "partial") == true.to_json() ||
-    compare_field(after, "partial") == true.to_json()
+  let partial = compare_field(before, "partial") == Json(true) ||
+    compare_field(after, "partial") == Json(true)
   let summary = compare_summary(
     compare_field(before, "summary"),
     compare_field(after, "summary"),
@@ -120,16 +120,16 @@ pub fn compare_usage_files_json(
     "before": before_meta,
     "after": after_meta,
     "filters": {
-      "app": app.to_json(),
-      "provider": provider.to_json(),
-      "model": model.to_json(),
+      "app": Json(app),
+      "provider": Json(provider),
+      "model": Json(model),
     },
     "summary": summary,
-    "byModel": by_model.to_json(),
-    "byApp": by_app.to_json(),
-    "byProvider": by_provider.to_json(),
-    "caveats": caveats.to_json(),
-    "report": (lines.join("\n") + "\n").to_json(),
+    "byModel": Json(by_model),
+    "byApp": Json(by_app),
+    "byProvider": Json(by_provider),
+    "caveats": Json(caveats),
+    "report": Json(lines.join("\n") + "\n"),
   })
 }
 
@@ -162,17 +162,17 @@ fn compare_source(preview : Json, start_day : String, end_day : String) -> Json 
     "importedRows": compare_field(preview, "importedRows"),
     "selectedRows": compare_field(preview, "total"),
     "partial": compare_field(preview, "partial"),
-    "startDay": start_day.to_json(),
-    "endDay": end_day.to_json(),
+    "startDay": Json(start_day),
+    "endDay": Json(end_day),
     "observedFirstDay": if days.is_empty() {
       Json::null()
     } else {
-      days[0].to_json()
+      Json(days[0])
     },
     "observedLastDay": if days.is_empty() {
       Json::null()
     } else {
-      days[days.length() - 1].to_json()
+      Json(days[days.length() - 1])
     },
     "summary": compare_field(preview, "summary"),
   }
@@ -185,7 +185,7 @@ fn compare_summary(before : Json, after : Json, partial : Bool) -> Json {
     key in [
       "requests", "tokens", "knownEstimatedUsd", "missingCostCount", "undatedCount",
     ] {
-    delta[key] = (compare_number(after, key) - compare_number(before, key)).to_json()
+    delta[key] = Json(compare_number(after, key) - compare_number(before, key))
   }
   let percentages : Map[String, Json] = Map([])
   for key in ["requests", "tokens"] {
@@ -193,7 +193,7 @@ fn compare_summary(before : Json, after : Json, partial : Bool) -> Json {
     percentages[key] = if base == 0.0 {
       Json::null()
     } else {
-      ((compare_number(after, key) - base) / base * 100.0).to_json()
+      Json((compare_number(after, key) - base) / base * 100.0)
     }
   }
   let complete = !partial &&
@@ -209,7 +209,7 @@ fn compare_summary(before : Json, after : Json, partial : Bool) -> Json {
     } else {
       Json::null()
     },
-    "estimatedUsdDeltaAvailable": complete.to_json(),
+    "estimatedUsdDeltaAvailable": Json(complete),
   }
 }
 
@@ -248,14 +248,16 @@ fn compare_groups(
       partial,
     )
     guard summary is Object(fields) else { abort("comparison summary") }
-    fields["key"] = key.to_json()
-    fields["status"] = (if before is None {
-      "added"
-    } else if after is None {
-      "removed"
-    } else {
-      "present"
-    }).to_json()
+    fields["key"] = Json(key)
+    fields["status"] = Json(
+      if before is None {
+        "added"
+      } else if after is None {
+        "removed"
+      } else {
+        "present"
+      },
+    )
     Json::object(fields)
   })
 }

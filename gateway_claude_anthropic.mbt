@@ -155,7 +155,7 @@ fn ProxyService::upstream_claude_model(
   request_model : String,
   provider : ProviderRouteTarget?,
   default_model~ : String,
-  app_type? : String = "claude",
+  app_type~ : String = "claude",
 ) -> String {
   match provider {
     Some(provider) =>
@@ -329,7 +329,7 @@ async fn ProxyService::forward_non_streaming_claude_compatible_request(
           }
         }
       }
-      if !(response_code is (200..=299)) {
+      if !(response_code is (200..<=299)) {
         match moon_rectifier_retry_body(final_response_body, upstream_body) {
           Some(rectifier_retry) => {
             logger.info(
@@ -362,7 +362,7 @@ async fn ProxyService::forward_non_streaming_claude_compatible_request(
           None => ()
         }
       }
-      if response_code is (200..=299) {
+      if response_code is (200..<=299) {
         let parsed = match
           parse_claude_compatible_non_stream_body_with_diagnostics(
             api_format, final_response_body, final_response_headers,
@@ -843,7 +843,7 @@ priv struct OpenAIChatSseState {
   mut saw_choice : Bool
   mut saw_done : Bool
   mut error_seen : Bool
-  tool_calls : Map[Int, OpenAIChatSseToolCall]
+  tool_calls : Map[Int32, OpenAIChatSseToolCall]
 }
 
 ///|
@@ -1047,7 +1047,7 @@ fn OpenAIChatSseState::push_chat_sse_delta(
 ///|
 fn OpenAIChatSseState::push_chat_sse_tool_call(
   self : OpenAIChatSseState,
-  index : Int,
+  index : Int32,
   call : Map[String, Json],
 ) -> Unit {
   let state = match self.tool_calls.get(index) {
@@ -1895,7 +1895,7 @@ async fn ProxyService::forward_successful_claude_compatible_stream(
     )
   } else if api_format == "openai_responses" {
     let reader = CodexStreamReader::new(client, request_model)
-    let mut first_token_ms : Int? = None
+    let mut first_token_ms : Int32? = None
     while reader.read() is Some(event) {
       first_token_ms = usage.first_stream_event_ms(first_token_ms)
       w.write("event: \{event.event_type}\n")
@@ -2019,7 +2019,7 @@ async fn ProxyService::handle_streaming_request(
   w.write_header(@status.Ok)
   let reader = CodexStreamReader::new(client, request.model)
   usage.record_provider_result(self, true)
-  let mut first_token_ms : Int? = None
+  let mut first_token_ms : Int32? = None
   while reader.read() is Some(event) {
     first_token_ms = usage.first_stream_event_ms(first_token_ms)
     w.write("event: \{event.event_type}\n")

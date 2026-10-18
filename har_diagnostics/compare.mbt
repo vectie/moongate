@@ -3,8 +3,8 @@
 pub fn compare_captures_json(
   baseline : String,
   candidate : String,
-  request_method? : String = "",
-  origin? : String = "",
+  request_method~ : String = "",
+  origin~ : String = "",
 ) -> Result[Json, String] {
   try compare_captures(baseline, candidate, request_method~, origin~) catch {
     error => Err(error.to_string())
@@ -29,7 +29,7 @@ fn compare_buckets(rows : Array[Json]) -> Map[String, Array[Json]] {
 ///|
 fn difference(baseline : Json, candidate : Json) -> Json {
   match (number(baseline), number(candidate)) {
-    (Some(a), Some(b)) => (b - a).to_json()
+    (Some(a), Some(b)) => Json(b - a)
     _ => Json::null()
   }
 }
@@ -45,11 +45,11 @@ fn compare_summary(rows : Array[Json]) -> Json {
       }
     })
     .length()
-  result["recordedHttpResponseCount"] = known.to_json()
+  result["recordedHttpResponseCount"] = Json(known)
   result["httpErrorPercent"] = if known == 0 {
     Json::null()
   } else {
-    (number(result["httpErrorCount"]).unwrap() * 100.0 / known.to_double()).to_json()
+    Json(number(result["httpErrorCount"]).unwrap() * 100.0 / known.to_double())
   }
   Json::object(result)
 }
@@ -135,9 +135,9 @@ fn compare_captures(
     }
     let parts = key.split("\n").collect()
     groups.push({
-      "origin": parts[0].to_owned().to_json(),
-      "method": parts[1].to_owned().to_json(),
-      "presence": presence.to_json(),
+      "origin": Json(parts[0].to_owned()),
+      "method": Json(parts[1].to_owned()),
+      "presence": Json(presence),
       "baseline": asummary,
       "candidate": bsummary,
       "candidateMinusBaseline": summary_delta(asummary, bsummary),
@@ -170,14 +170,14 @@ fn compare_captures(
     "filters": field(a, "filters"),
     "baselineCaptureEntries": field(a, "captureEntries"),
     "candidateCaptureEntries": field(b, "captureEntries"),
-    "baselineSelectedEntries": a_rows.length().to_json(),
-    "candidateSelectedEntries": b_rows.length().to_json(),
-    "matchedGroupCount": matched.to_json(),
-    "baselineOnlyGroupCount": baseline_only.to_json(),
-    "candidateOnlyGroupCount": candidate_only.to_json(),
-    "groups": groups.to_json(),
-    "caveats": caveats.to_json(),
-    "report": (lines.join("\n") + "\n").to_json(),
+    "baselineSelectedEntries": Json(a_rows.length()),
+    "candidateSelectedEntries": Json(b_rows.length()),
+    "matchedGroupCount": Json(matched),
+    "baselineOnlyGroupCount": Json(baseline_only),
+    "candidateOnlyGroupCount": Json(candidate_only),
+    "groups": Json(groups),
+    "caveats": Json(caveats),
+    "report": Json(lines.join("\n") + "\n"),
   }
   if @encoding/utf8.encode(result.stringify(indent=2)).length() >
     4 * 1024 * 1024 - 1 {

@@ -1669,14 +1669,14 @@ test "suite status liveness overrides a stale running descriptor" {
   assert_eq(closed_fields["manifest"], saved_fields["manifest"])
   let live = suite_status_after_health(
     saved,
-    Ok({ "status": Json::string("healthy") }.to_json()),
+    Ok(Json({ "status": Json::string("healthy") })),
   )
   guard live is Object(live_fields) else { fail("expected live object") }
   assert_eq(live_fields["status"], Json::string("running"))
   assert_eq(live_fields["ready"], Json::boolean(true))
   let degraded = suite_status_after_health(
     saved,
-    Ok({ "status": Json::string("degraded") }.to_json()),
+    Ok(Json({ "status": Json::string("degraded") })),
   )
   guard degraded is Object(degraded_fields) else {
     fail("expected degraded object")

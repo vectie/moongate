@@ -67,9 +67,9 @@ fn parse_anthropic_result(record : Json) -> Result[AnthropicResult, String] {
           "end_turn", "max_tokens", "stop_sequence", "tool_use", "pause_turn", "refusal",
           "model_context_window_exceeded",
         ].contains(reason) {
-        reason.to_json()
+        Json(reason)
       } else {
-        "unrecognized".to_json()
+        Json("unrecognized")
       }
     _ => return Err("message.stop_reason must be a string or null")
   }
@@ -103,7 +103,7 @@ fn parse_anthropic_result(record : Json) -> Result[AnthropicResult, String] {
       if n > 9007199254740991.0 - total {
         return Err("Combined token components exceed the safe-number limit")
       }
-      counts[target] = n.to_json()
+      counts[target] = Json(n)
       total += n
       if source == "output_tokens" {
         output = n
@@ -119,7 +119,7 @@ fn parse_anthropic_result(record : Json) -> Result[AnthropicResult, String] {
   Ok({
     id,
     result_type: kind,
-    model: model.to_json(),
+    model: Json(model),
     stop_reason,
     counts,
     usage_state: state,

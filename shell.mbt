@@ -221,28 +221,28 @@ async fn moon_probe_tool_installations_json(
 
 ///|
 fn MoonToolInstallation::to_json(self : MoonToolInstallation) -> Json {
-  {
+  Json({
     "path": Json::string(self.path),
     "real": Json::string(self.real),
     "version": optional_string_json(self.version),
     "runnable": Json::boolean(self.runnable),
     "source": Json::string(self.source),
     "is_path_default": Json::boolean(self.is_path_default),
-  }.to_json()
+  })
 }
 
 ///|
 fn MoonToolInstallationReport::to_json(
   self : MoonToolInstallationReport,
 ) -> Json {
-  {
+  Json({
     "tool": Json::string(self.tool),
     "installs": Json::array(self.installs.map(fn(item) { item.to_json() })),
     "is_conflict": Json::boolean(self.is_conflict),
     "needs_confirmation": Json::boolean(self.needs_confirmation),
     "command": Json::string(self.command),
     "anchored": Json::boolean(self.anchored),
-  }.to_json()
+  })
 }
 
 ///|
@@ -566,9 +566,9 @@ fn moon_quote_path_if_needed(path : String) -> String {
 }
 
 ///|
-fn moon_last_lines(text : String, n : Int) -> String {
+fn moon_last_lines(text : String, n : Int32) -> String {
   let lines = text.split("\n").map(fn(line) { line.to_owned() })
-  let start = if lines.length() > n { lines.length() - n } else { 0 }
+  let start = if lines.count() > n { lines.count() - n } else { 0 }
   lines[start:].join("\n")
 }
 
@@ -591,7 +591,7 @@ fn moon_tool_version_json(
   error : String?,
   installed_but_broken : Bool,
 ) -> Json {
-  {
+  Json({
     "name": Json::string(name),
     "version": match version {
       Some(value) => Json::string(value)
@@ -608,5 +608,5 @@ fn moon_tool_version_json(
     "installed_but_broken": Json::boolean(installed_but_broken),
     "env_type": Json::string("macos"),
     "wsl_distro": Json::null(),
-  }.to_json()
+  })
 }

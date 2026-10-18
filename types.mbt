@@ -1,7 +1,7 @@
 ///|
 priv struct AnthropicRequest {
   model : String
-  max_tokens : Int
+  max_tokens : Int32
   messages : Array[AnthropicMessage]
   system : String?
   tools : Array[AnthropicTool]?
@@ -20,7 +20,7 @@ impl FromJson for AnthropicRequest with fn from_json(
     Some(String(s)) => s
     _ => raise JsonDecodeError((path, "AnthropicRequest: missing 'model'"))
   }
-  let max_tokens : Int = match obj.get("max_tokens") {
+  let max_tokens : Int32 = match obj.get("max_tokens") {
     Some(Number(n, ..)) => n.trunc().to_int()
     _ => 4096
   }
@@ -172,10 +172,10 @@ priv struct AnthropicResponseBlock {
 
 ///|
 priv struct AnthropicUsage {
-  input_tokens : Int
-  output_tokens : Int
-  cache_read_input_tokens : Int?
-  cache_creation_input_tokens : Int?
+  input_tokens : Int32
+  output_tokens : Int32
+  cache_read_input_tokens : Int32?
+  cache_creation_input_tokens : Int32?
 }
 
 ///|

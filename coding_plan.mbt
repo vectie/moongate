@@ -59,9 +59,9 @@ fn moon_detect_coding_plan_provider(
 async fn moon_get_coding_plan_quota(
   base_url : String,
   api_key : String,
-  coding_plan_provider? : String? = None,
-  team_organization_id? : String? = None,
-  team_project_id? : String? = None,
+  coding_plan_provider~ : String? = None,
+  team_organization_id~ : String? = None,
+  team_project_id~ : String? = None,
 ) -> SubscriptionQuota {
   if coding_plan_provider.unwrap_or("").trim().to_lower() == "zhipu_team" {
     let organization_id = team_organization_id.unwrap_or("").trim().to_owned()
@@ -99,7 +99,7 @@ fn moon_coding_plan_error(message : String) -> SubscriptionQuota {
 }
 
 ///|
-fn moon_coding_plan_auth_error(status_code : Int) -> SubscriptionQuota {
+fn moon_coding_plan_auth_error(status_code : Int32) -> SubscriptionQuota {
   SubscriptionQuota::new(
     MOONGATE_CODING_PLAN_TOOL,
     credential_status=Expired,
@@ -230,7 +230,7 @@ fn moon_zhipu_team_quota_request(
   api_key : String,
   organization_id : String,
   project_id : String,
-  quota_url? : String = "https://open.bigmodel.cn/api/monitor/usage/quota/limit",
+  quota_url~ : String = "https://open.bigmodel.cn/api/monitor/usage/quota/limit",
 ) -> MoonCodingPlanHttpRequest {
   {
     url: "\{quota_url}?type=2",
@@ -600,7 +600,7 @@ fn moon_extract_reset_time(value : Json?) -> String? {
 }
 
 ///|
-fn moon_status_code_from_message(message : String) -> Int {
+fn moon_status_code_from_message(message : String) -> Int32 {
   if message.contains("HTTP 401") {
     401
   } else if message.contains("HTTP 403") {

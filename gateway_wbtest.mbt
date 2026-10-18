@@ -158,7 +158,7 @@ test "usage script request accepts raw moongate script output" {
   assert_true(
     usage_result_from_request(
       "/usage/test-script",
-      Some({ "script_code": Json::string("{\"success\":true}") }.to_json()),
+      Some(Json({ "script_code": Json::string("{\"success\":true}") })),
     )
     is None,
   )
@@ -214,18 +214,18 @@ async test "usage script github copilot template uses standalone native query" {
 ///|
 test "github copilot usage conversion mirrors moongate premium row" {
   let result = moon_copilot_usage_result_from_json(
-    {
+    Json({
       "copilot_plan": Json::string("Individual"),
       "quota_reset_date": Json::string("2026-07-01"),
-      "quota_snapshots": {
-        "premium_interactions": {
+      "quota_snapshots": Json({
+        "premium_interactions": Json({
           "entitlement": Json::number(300.0),
           "remaining": Json::number(125.0),
           "percent_remaining": Json::number(41.6),
           "unlimited": Json::boolean(false),
-        }.to_json(),
-      }.to_json(),
-    }.to_json(),
+        }),
+      }),
+    }),
   )
   assert_true(result.success)
   guard result.data is Some(rows) else { fail("expected rows") }
@@ -243,7 +243,7 @@ test "github copilot usage conversion mirrors moongate premium row" {
 test "github copilot usage conversion reports malformed response" {
   let empty : Map[String, Json] = Map([])
   assert_eq(
-    moon_copilot_usage_result_from_json(empty.to_json()).to_json(),
+    moon_copilot_usage_result_from_json(Json(empty)).to_json(),
     UsageResult::new(
       false,
       error=Some("Failed to parse Copilot usage response"),
@@ -359,7 +359,7 @@ test "token plan quota usage conversion mirrors moongate rows" {
   assert_eq(extra_obj["planLabel"], Json::string("ZenMux·PRO"))
   assert_eq(
     rows[1].extra,
-    Some({ "resetsAt": Json::string("week-reset") }.to_json().stringify()),
+    Some(Json({ "resetsAt": Json::string("week-reset") }).stringify()),
   )
 }
 
@@ -396,7 +396,7 @@ test "pick directory parser accepts defaultPath payload key" {
   assert_eq(
     proxy_string_request(
       "/files/directories/pick",
-      Some({ "defaultPath": Json::string("/tmp/moongate") }.to_json()),
+      Some(Json({ "defaultPath": Json::string("/tmp/moongate") })),
       "defaultPath",
     ),
     Some("/tmp/moongate"),
@@ -421,13 +421,13 @@ test "pick directory parser accepts defaultPath payload key" {
 
 ///|
 test "moongate read command parsers accept canonical json payload keys" {
-  let app_body = Some({ "appType": Json::string("codex") }.to_json())
-  let app_type_body = Some({ "appType": Json::string("gemini") }.to_json())
+  let app_body = Some(Json({ "appType": Json::string("codex") }))
+  let app_type_body = Some(Json({ "appType": Json::string("gemini") }))
   let provider_body = Some(
-    {
+    Json({
       "appType": Json::string("codex"),
       "providerId": Json::string("codex-oauth"),
-    }.to_json(),
+    }),
   )
   assert_eq(
     moon_config_app_from_request("/config/dir", app_body),
@@ -458,21 +458,21 @@ test "moongate read command parsers accept canonical json payload keys" {
   assert_eq(
     provider_app_from_request(
       "/providers",
-      Some({ "app": Json::string("codex") }.to_json()),
+      Some(Json({ "app": Json::string("codex") })),
     ),
     None,
   )
   assert_eq(
     provider_route_provider_id_from_request(
       "/providers/endpoints/list",
-      Some({ "provider_id": Json::string("codex-oauth") }.to_json()),
+      Some(Json({ "provider_id": Json::string("codex-oauth") })),
     ),
     None,
   )
   assert_eq(
     proxy_string_request(
       "/mcp/validate",
-      Some({ "command": Json::string("node") }.to_json()),
+      Some(Json({ "command": Json::string("node") })),
       "command",
     ),
     Some("node"),
@@ -480,14 +480,14 @@ test "moongate read command parsers accept canonical json payload keys" {
   assert_eq(
     hermes_memory_kind_from_request(
       "/hermes/memory",
-      Some({ "kind": Json::string("user") }.to_json()),
+      Some(Json({ "kind": Json::string("user") })),
     ),
     Some("user"),
   )
   assert_eq(
     hermes_memory_kind_from_request(
       "/hermes/memory",
-      Some({ "memory_kind": Json::string("user") }.to_json()),
+      Some(Json({ "memory_kind": Json::string("user") })),
     ),
     None,
   )
@@ -496,11 +496,11 @@ test "moongate read command parsers accept canonical json payload keys" {
 ///|
 test "proxy failover command parsers accept canonical json payload keys" {
   let body = Some(
-    {
+    Json({
       "appType": Json::string(" codex "),
       "providerId": Json::string("codex-oauth"),
       "enabled": Json::boolean(true),
-    }.to_json(),
+    }),
   )
   guard proxy_provider_query_from_request("/proxy/reset-circuit-breaker", body)
     is Some(query) else {
@@ -515,14 +515,14 @@ test "proxy failover command parsers accept canonical json payload keys" {
   assert_eq(
     proxy_app_type_from_request(
       "/proxy/failover-queue",
-      Some({ "appType": Json::string(" gemini ") }.to_json()),
+      Some(Json({ "appType": Json::string(" gemini ") })),
     ),
     Some("gemini"),
   )
   assert_eq(
     proxy_app_type_from_request(
       "/proxy/failover-queue",
-      Some({ "app": Json::string("gemini") }.to_json()),
+      Some(Json({ "app": Json::string("gemini") })),
     ),
     None,
   )
@@ -530,10 +530,10 @@ test "proxy failover command parsers accept canonical json payload keys" {
     proxy_provider_query_from_request(
       "/proxy/reset-circuit-breaker",
       Some(
-        {
+        Json({
           "app_type": Json::string("codex"),
           "provider_id": Json::string("codex-oauth"),
-        }.to_json(),
+        }),
       ),
     )
     is None,
@@ -552,10 +552,10 @@ test "proxy failover command parsers accept canonical json payload keys" {
     proxy_bool_request(
       "/proxy/stream-check/all",
       Some(
-        {
+        Json({
           "appType": Json::string("claude"),
           "proxyTargetsOnly": Json::boolean(true),
-        }.to_json(),
+        }),
       ),
       "proxyTargetsOnly",
     ),
@@ -602,7 +602,7 @@ test "moongate settings defaults mirror desktop command payloads" {
 ///|
 test "auth and copilot request helpers accept only moongate canonical keys" {
   let canonical = Some(
-    {
+    Json({
       "accountId": Json::string("ghe:42"),
       "authProvider": Json::string("github_copilot"),
       "githubDomain": Json::string("ghe.example.com"),
@@ -610,7 +610,7 @@ test "auth and copilot request helpers accept only moongate canonical keys" {
       "userCode": Json::string("user-1"),
       "warmupModel": Json::string("gpt-5-mini"),
       "stripThinking": Json::boolean(false),
-    }.to_json(),
+    }),
   )
   assert_eq(
     copilot_account_id_request("/copilot/token", canonical),
@@ -639,7 +639,7 @@ test "auth and copilot request helpers accept only moongate canonical keys" {
   assert_eq(proxy_json_bool(configured_obj, "stripThinking"), Some(false))
 
   let legacy = Some(
-    {
+    Json({
       "account_id": Json::string("legacy-account"),
       "auth_provider": Json::string("github_copilot"),
       "github_domain": Json::string("legacy.example.com"),
@@ -647,7 +647,7 @@ test "auth and copilot request helpers accept only moongate canonical keys" {
       "user_code": Json::string("legacy-user"),
       "warmup_model": Json::string("legacy-model"),
       "strip_thinking": Json::boolean(false),
-    }.to_json(),
+    }),
   )
   assert_eq(copilot_account_id_request("/copilot/token", legacy), None)
   assert_eq(copilot_github_domain_request("/copilot/device-flow", legacy), None)
@@ -672,33 +672,33 @@ test "auth and copilot request helpers accept only moongate canonical keys" {
 
 ///|
 test "moongate save settings merge preserves omitted sync secrets" {
-  let existing = {
-    "webdavSync": {
+  let existing = Json({
+    "webdavSync": Json({
       "baseUrl": Json::string("https://dav.example.com"),
       "username": Json::string("alice"),
       "password": Json::string("secret"),
-    }.to_json(),
-    "s3Sync": {
+    }),
+    "s3Sync": Json({
       "bucket": Json::string("bucket"),
       "secretAccessKey": Json::string("s3-secret"),
-    }.to_json(),
-    "localMigrations": {
-      "codexProviderTemplateV1": {
+    }),
+    "localMigrations": Json({
+      "codexProviderTemplateV1": Json({
         "completedAt": Json::string("2026-01-01T00:00:00Z"),
-      }.to_json(),
-    }.to_json(),
-  }.to_json()
-  let incoming = {
-    "webdavSync": {
+      }),
+    }),
+  })
+  let incoming = Json({
+    "webdavSync": Json({
       "baseUrl": Json::string("https://dav.example.com"),
       "username": Json::string("alice"),
       "password": Json::string(""),
-    }.to_json(),
-    "s3Sync": {
+    }),
+    "s3Sync": Json({
       "bucket": Json::string("bucket"),
       "secretAccessKey": Json::string(""),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   guard moon_merge_settings_for_save(incoming, existing) is Object(merged) else {
     fail("expected merged settings")
   }
@@ -719,7 +719,7 @@ async test "moongate settings persist refresh interval and preserve defaults" {
   let path = @pathx.join(dir, "config.json")
   let saved = ConfigService::new()
   saved.save_settings_store(
-    { "usageDashboardRefreshIntervalMs": Json::number(10000) }.to_json(),
+    Json({ "usageDashboardRefreshIntervalMs": Json::number(10000) }),
     path~,
   )
 
@@ -837,12 +837,12 @@ test "provider command helpers parse moongate sort and endpoint test payloads" {
   let body_updates = provider_sort_updates_from_request(
     "/providers/sort-order",
     Some(
-      {
+      Json({
         "updates": Json::array([
-          { "id": Json::string("b"), "sortIndex": Json::number(0.0) }.to_json(),
-          { "id": Json::string("a"), "sortIndex": Json::number(1.0) }.to_json(),
+          Json({ "id": Json::string("b"), "sortIndex": Json::number(0.0) }),
+          Json({ "id": Json::string("a"), "sortIndex": Json::number(1.0) }),
         ]),
-      }.to_json(),
+      }),
     ),
   )
   assert_eq(body_updates.length(), 2)
@@ -958,7 +958,7 @@ test "universal provider helper builds moongate provider shape from query args" 
   guard universal_provider_from_request(
       "/providers/universal",
       Some(
-        { "id": Json::string("direct"), "name": Json::string("Direct") }.to_json(),
+        Json({ "id": Json::string("direct"), "name": Json::string("Direct") }),
       ),
     )
     is Some(direct_provider) else {
@@ -968,9 +968,7 @@ test "universal provider helper builds moongate provider shape from query args" 
   assert_true(
     universal_provider_from_request(
       "/providers/universal",
-      Some(
-        { "provider": { "id": Json::string("wrapped") }.to_json() }.to_json(),
-      ),
+      Some(Json({ "provider": Json({ "id": Json::string("wrapped") }) })),
     )
     is None,
   )
@@ -981,21 +979,23 @@ test "provider target parses moongate claude desktop route metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("desktop-provider"),
           "name": Json::string("Desktop Provider"),
           "notes": Json::string("Pinned fallback"),
-          "modelMapping": { "sonnetModel": Json::string("mapping-fallback") }.to_json(),
+          "modelMapping": Json({
+            "sonnetModel": Json::string("mapping-fallback"),
+          }),
           "claudeDesktopMode": Json::string("proxy"),
-          "claudeDesktopModelRoutes": {
-            "claude-sonnet-4-6": {
+          "claudeDesktopModelRoutes": Json({
+            "claude-sonnet-4-6": Json({
               "model": Json::string("deepseek-v4-flash [1M]"),
               "labelOverride": Json::string("DeepSeek V4 Flash"),
               "supports1m": Json::boolean(true),
-            }.to_json(),
+            }),
             "claude-opus-4-8": Json::string("upstream-opus"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
       "claude-desktop",
     )
@@ -1028,15 +1028,15 @@ test "provider target ignores retired provider request aliases" {
   guard provider_target_from_request(
       "/providers?id=legacy&category=official&websiteUrl=https%3A%2F%2Flegacy.example&is_full_url=true&fullUrl=true",
       Some(
-        {
-          "settings_config": {
+        Json({
+          "settings_config": Json({
             "apiKey": Json::string("sk-legacy"),
             "baseUrl": Json::string("https://legacy.example/v1"),
-          }.to_json(),
-          "model_mapping": { "sonnetModel": Json::string("legacy-sonnet") }.to_json(),
+          }),
+          "model_mapping": Json({ "sonnetModel": Json::string("legacy-sonnet") }),
           "claude_desktop_mode": Json::string("direct"),
           "limit_daily_usd": Json::string("1.00"),
-        }.to_json(),
+        }),
       ),
       "codex",
     )
@@ -1060,12 +1060,12 @@ test "provider target preserves provider limit metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("limited-provider"),
           "name": Json::string("Limited Provider"),
           "limitDailyUsd": Json::string("0.10"),
           "limitMonthlyUsd": Json::string("3.5"),
-        }.to_json(),
+        }),
       ),
       "codex",
     )
@@ -1088,10 +1088,10 @@ test "gateway syncs provider limit metadata into usage limits" {
     provider_id="limited-provider",
     provider_name="Limited Provider",
     settings_config=Some(
-      {
+      Json({
         "limitDailyUsd": Json::string("0.10"),
         "limitMonthlyUsd": Json::string("0.30"),
-      }.to_json(),
+      }),
     ),
   )
   gateway.proxy.provider_router.upsert_provider(provider)
@@ -1284,11 +1284,13 @@ test "gateway update provider preserves fields hidden by provider editor" {
       model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
       origin="builtin",
       settings_config=Some(
-        {
+        Json({
           "apiKey": Json::string("nested-secret-key"),
           "apiFormat": Json::string("anthropic"),
-          "meta": { "testConfig": { "enabled": Json::boolean(true) }.to_json() }.to_json(),
-        }.to_json(),
+          "meta": Json({
+            "testConfig": Json({ "enabled": Json::boolean(true) }),
+          }),
+        }),
       ),
     ),
   )
@@ -1304,10 +1306,10 @@ test "gateway update provider preserves fields hidden by provider editor" {
         api_format=Some("anthropic"),
         base_url=Some("https://api.example.com"),
         settings_config=Some(
-          {
+          Json({
             "apiFormat": Json::string("anthropic"),
             "codexFastMode": Json::boolean(false),
-          }.to_json(),
+          }),
         ),
       ),
       Some("hidden-fields"),
@@ -1378,7 +1380,7 @@ test "codex compatible responses apply provider model mapping" {
   )
   guard session.codex_provider_outbound_request(
       Some(provider),
-      { "model": Json::string("gpt-5.6-sol"), "input": Json::string("ok") }.to_json(),
+      Json({ "model": Json::string("gpt-5.6-sol"), "input": Json::string("ok") }),
     )
     is Object(outbound) else {
     fail("expected codex provider request")
@@ -1391,18 +1393,18 @@ test "provider target does not derive runtime fields from stored settings" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("stored-settings"),
-          "settingsConfig": {
+          "settingsConfig": Json({
             "apiFormat": Json::string("openai_chat"),
             "baseUrl": Json::string("https://settings.example/v1"),
             "apiKey": Json::string("sk-settings"),
-            "options": {
+            "options": Json({
               "baseURL": Json::string("https://opencode.example/v1"),
               "apiKey": Json::string("sk-opencode"),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            }),
+          }),
+        }),
       ),
       "opencode",
     )
@@ -1422,13 +1424,13 @@ test "provider target does not derive runtime fields from stored settings" {
   guard provider_target_from_request(
       "/providers?baseUrl=https%3A%2F%2Fexplicit.example%2Fv1&apiKey=sk-explicit&apiFormat=openai_chat",
       Some(
-        {
+        Json({
           "id": Json::string("explicit-provider"),
-          "settingsConfig": {
+          "settingsConfig": Json({
             "baseUrl": Json::string("https://settings.example/v1"),
             "apiKey": Json::string("sk-settings"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
       "codex",
     )
@@ -1444,7 +1446,7 @@ test "provider target does not derive runtime fields from stored settings" {
 test "provider target resolves provider type from explicit fields" {
   guard provider_target_from_request(
       "/providers?baseUrl=https%3A%2F%2Fopenrouter.ai%2Fapi%2Fv1&apiKey=sk-or",
-      Some({ "id": Json::string("openrouter-explicit") }.to_json()),
+      Some(Json({ "id": Json::string("openrouter-explicit") })),
       "claude",
     )
     is Some(openrouter) else {
@@ -1455,10 +1457,10 @@ test "provider target resolves provider type from explicit fields" {
   guard provider_target_from_request(
       "/providers?baseUrl=https%3A%2F%2Fproxy.example&apiKey=bearer-token",
       Some(
-        {
+        Json({
           "id": Json::string("bearer-settings"),
-          "settingsConfig": { "authMode": Json::string("bearer_only") }.to_json(),
-        }.to_json(),
+          "settingsConfig": Json({ "authMode": Json::string("bearer_only") }),
+        }),
       ),
       "claude",
     )
@@ -1468,7 +1470,7 @@ test "provider target resolves provider type from explicit fields" {
   assert_eq(bearer.provider_type, None)
   guard provider_target_from_request(
       "/providers?apiKey=ya29.access-token",
-      Some({ "id": Json::string("gemini-oauth") }.to_json()),
+      Some(Json({ "id": Json::string("gemini-oauth") })),
       "gemini",
     )
     is Some(gemini) else {
@@ -1478,17 +1480,17 @@ test "provider target resolves provider type from explicit fields" {
   guard provider_target_from_request(
       "/providers?apiFormat=gemini_native&apiKey=ya29.claude-gemini",
       Some(
-        {
+        Json({
           "id": Json::string("claude-gemini"),
-          "settingsConfig": {
-            "env": {
+          "settingsConfig": Json({
+            "env": Json({
               "ANTHROPIC_BASE_URL": Json::string(
                 "https://generativelanguage.googleapis.com",
               ),
               "GEMINI_API_KEY": Json::string("ya29.claude-gemini"),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            }),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1501,18 +1503,18 @@ test "provider target resolves provider type from explicit fields" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("claude-gemini-legacy-format"),
-          "settingsConfig": {
+          "settingsConfig": Json({
             "api_format": Json::string("gemini_native"),
-            "env": {
+            "env": Json({
               "ANTHROPIC_BASE_URL": Json::string(
                 "https://generativelanguage.googleapis.com",
               ),
               "GEMINI_API_KEY": Json::string("ya29.legacy"),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            }),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1524,17 +1526,17 @@ test "provider target resolves provider type from explicit fields" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("managed-meta"),
-          "settingsConfig": {
-            "meta": {
-              "authBinding": {
+          "settingsConfig": Json({
+            "meta": Json({
+              "authBinding": Json({
                 "source": Json::string("managedAccount"),
                 "authProvider": Json::string("github-copilot"),
-              }.to_json(),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+              }),
+            }),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1549,15 +1551,15 @@ test "provider target requires explicit moongate api format" {
   guard provider_target_from_request(
       "/providers?apiFormat=openai_chat",
       Some(
-        {
+        Json({
           "id": Json::string("openrouter-explicit-format"),
-          "settingsConfig": {
+          "settingsConfig": Json({
             "apiFormat": Json::string("openai_chat"),
-            "env": {
+            "env": Json({
               "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            }),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1569,14 +1571,14 @@ test "provider target requires explicit moongate api format" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("openrouter-missing-format"),
-          "settingsConfig": {
-            "env": {
+          "settingsConfig": Json({
+            "env": Json({
               "ANTHROPIC_BASE_URL": Json::string("https://proxy.example"),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            }),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1591,25 +1593,25 @@ test "provider target stores sibling meta without deriving runtime fields" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("codex-oauth-meta"),
           "name": Json::string("Codex OAuth Meta"),
-          "settingsConfig": {
-            "env": {
+          "settingsConfig": Json({
+            "env": Json({
               "ANTHROPIC_BASE_URL": Json::string(
                 "https://chatgpt.com/backend-api/codex",
               ),
               "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
-            }.to_json(),
-          }.to_json(),
-          "meta": {
+            }),
+          }),
+          "meta": Json({
             "providerType": Json::string("codex-oauth"),
             "apiFormat": Json::string("openai_responses"),
             "promptCacheKey": Json::string("stable-cache-key"),
             "codexFastMode": Json::boolean(false),
             "customUserAgent": Json::string("  codex_cli_rs/1.2.3  "),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1631,22 +1633,22 @@ test "provider target defaults missing moongate codex fast mode to false" {
   guard provider_target_from_request(
       "/providers?providerType=codex-oauth&apiFormat=openai_responses",
       Some(
-        {
+        Json({
           "id": Json::string("codex-oauth-default"),
           "name": Json::string("Codex OAuth Default"),
-          "settingsConfig": {
-            "env": {
+          "settingsConfig": Json({
+            "env": Json({
               "ANTHROPIC_BASE_URL": Json::string(
                 "https://chatgpt.com/backend-api/codex",
               ),
               "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
-            }.to_json(),
-          }.to_json(),
-          "meta": {
+            }),
+          }),
+          "meta": Json({
             "providerType": Json::string("codex-oauth"),
             "apiFormat": Json::string("openai_responses"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1663,11 +1665,13 @@ test "provider target keeps moongate custom user agent metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("ua-provider"),
           "name": Json::string("UA Provider"),
-          "meta": { "customUserAgent": Json::string("  claude-cli/2.1.161  ") }.to_json(),
-        }.to_json(),
+          "meta": Json({
+            "customUserAgent": Json::string("  claude-cli/2.1.161  "),
+          }),
+        }),
       ),
       "claude",
     )
@@ -1688,13 +1692,13 @@ test "official provider ignores moongate custom user agent metadata" {
   guard provider_target_from_request(
       "/providers",
       Some(
-        {
+        Json({
           "id": Json::string("official-ua-provider"),
           "name": Json::string("Official UA Provider"),
           "providerType": Json::string("official"),
           "customUserAgent": Json::string("claude-cli/2.1.161"),
-          "meta": { "customUserAgent": Json::string("codex_cli_rs/0.99") }.to_json(),
-        }.to_json(),
+          "meta": Json({ "customUserAgent": Json::string("codex_cli_rs/0.99") }),
+        }),
       ),
       "codex",
     )
@@ -1769,18 +1773,18 @@ test "usage query helpers parse moongate request log parameters" {
 
 ///|
 test "usage request log helpers parse moongate structured body filters" {
-  let body = {
-    "filters": {
+  let body = Json({
+    "filters": Json({
       "appType": Json::string("codex"),
       "providerName": Json::string("Codex OAuth"),
       "model": Json::string("gpt-5"),
       "statusCode": Json::number(200.0),
       "startDate": Json::number(10.0),
       "endDate": Json::number(20.0),
-    }.to_json(),
+    }),
     "page": Json::number(2.0),
     "pageSize": Json::number(25.0),
-  }.to_json()
+  })
   let filters = usage_request_log_filters_from_request(
     "/usage/logs",
     Some(body),
@@ -1800,15 +1804,15 @@ test "usage request log helpers parse moongate structured body filters" {
 
 ///|
 test "usage request log helpers let query override moongate body filters" {
-  let body = {
-    "filters": {
+  let body = Json({
+    "filters": Json({
       "appType": Json::string("claude"),
       "providerName": Json::string("Anthropic"),
       "statusCode": Json::number(500.0),
-    }.to_json(),
+    }),
     "page": Json::number(9.0),
     "pageSize": Json::number(99.0),
-  }.to_json()
+  })
   let path = "/usage/logs?appType=codex&providerName=OAuth&statusCode=200&page=1&pageSize=10"
   let filters = usage_request_log_filters_from_request(path, Some(body))
   assert_eq(filters.app_type, Some("codex"))
@@ -1820,14 +1824,14 @@ test "usage request log helpers let query override moongate body filters" {
 
 ///|
 test "usage aggregate helpers parse moongate structured command args" {
-  let body = {
+  let body = Json({
     "startDate": Json::number(100.0),
     "endDate": Json::number(200.0),
     "appType": Json::string("codex"),
     "providerId": Json::string("codex-oauth"),
     "dailyLimitUsd": Json::string("1.25"),
     "monthlyLimitUsd": Json::number(9.5),
-  }.to_json()
+  })
   let path = "/usage/summary"
   assert_eq(usage_int_from_request(path, Some(body), "startDate"), Some(100))
   assert_eq(usage_int_from_request(path, Some(body), "endDate"), Some(200))
@@ -1850,7 +1854,7 @@ test "usage aggregate helpers parse moongate structured command args" {
   assert_eq(
     usage_string_from_request(
       path,
-      Some({ "provider_id": Json::string("legacy") }.to_json()),
+      Some(Json({ "provider_id": Json::string("legacy") })),
       "providerId",
     ),
     None,
@@ -1859,11 +1863,11 @@ test "usage aggregate helpers parse moongate structured command args" {
 
 ///|
 test "usage aggregate helpers prefer query params over moongate body args" {
-  let body = {
+  let body = Json({
     "startDate": Json::number(100.0),
     "endDate": Json::number(200.0),
     "appType": Json::string("claude"),
-  }.to_json()
+  })
   let path = "/usage/provider-stats?startDate=10&endDate=20&appType=codex"
   assert_eq(usage_int_from_request(path, Some(body), "startDate"), Some(10))
   assert_eq(usage_int_from_request(path, Some(body), "endDate"), Some(20))
@@ -2063,7 +2067,7 @@ test "suite config helpers mirror moongate openclaw hermes shapes" {
   json_inspect(
     suite_object_request(
       "/openclaw/model-catalog",
-      Some({ "fast": { "alias": "f" } }.to_json()),
+      Some(Json({ "fast": { "alias": "f" } })),
       "catalog",
     ).unwrap(),
     content={ "fast": { "alias": "f" } },
@@ -2071,7 +2075,7 @@ test "suite config helpers mirror moongate openclaw hermes shapes" {
   assert_true(
     suite_object_request(
       "/openclaw/model-catalog",
-      Some({ "catalog": { "fast": { "alias": "f" } } }.to_json()),
+      Some(Json({ "catalog": { "fast": { "alias": "f" } } })),
       "catalog",
     )
     is None,
@@ -2080,10 +2084,10 @@ test "suite config helpers mirror moongate openclaw hermes shapes" {
     openclaw_default_model_from_request(
       "/openclaw/default-model",
       Some(
-        {
+        Json({
           "primary": Json::string("gpt-5"),
           "fallbacks": Json::array([Json::string("sonnet")]),
-        }.to_json(),
+        }),
       ),
     ).unwrap(),
     content={ "primary": "gpt-5", "fallbacks": ["sonnet"] },
@@ -2091,21 +2095,21 @@ test "suite config helpers mirror moongate openclaw hermes shapes" {
   assert_true(
     openclaw_default_model_from_request(
       "/openclaw/default-model",
-      Some({ "model": { "primary": "gpt-5" } }.to_json()),
+      Some(Json({ "model": { "primary": "gpt-5" } })),
     )
     is None,
   )
   json_inspect(
     openclaw_env_from_request(
       "/openclaw/env",
-      Some({ "OPENAI_API_KEY": "sk-new" }.to_json()),
+      Some(Json({ "OPENAI_API_KEY": "sk-new" })),
     ).unwrap(),
     content={ "OPENAI_API_KEY": "sk-new" },
   )
   assert_true(
     openclaw_env_from_request(
       "/openclaw/env",
-      Some({ "env": { "OPENAI_API_KEY": "sk-old" } }.to_json()),
+      Some(Json({ "env": { "OPENAI_API_KEY": "sk-old" } })),
     )
     is None,
   )
@@ -2141,7 +2145,7 @@ test "suite config helpers mirror moongate openclaw hermes shapes" {
   assert_eq(
     proxy_string_request(
       "/hermes/web-ui",
-      Some({ "path": Json::string("/config") }.to_json()),
+      Some(Json({ "path": Json::string("/config") })),
       "path",
     ),
     Some("/config"),
@@ -2163,19 +2167,19 @@ test "suite config helpers mirror moongate openclaw hermes shapes" {
 
 ///|
 test "openclaw health scanner reports current moongate warning rules" {
-  let config = {
-    "tools": { "profile": Json::string("dangerous") }.to_json(),
-    "agents": {
-      "defaults": {
+  let config = Json({
+    "tools": Json({ "profile": Json::string("dangerous") }),
+    "agents": Json({
+      "defaults": Json({
         "timeout": Json::number(30.0),
         "timeoutSeconds": Json::number(30.0),
-      }.to_json(),
-    }.to_json(),
-    "env": {
+      }),
+    }),
+    "env": Json({
       "vars": Json::string("{\"OPENAI_API_KEY\":\"sk\"}"),
       "shellEnv": Json::array([]),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   json_inspect(openclaw_config_health_from_json(config), content=[
     {
       "code": "invalid_tools_profile",
@@ -2197,14 +2201,16 @@ test "openclaw health scanner reports current moongate warning rules" {
 
 ///|
 test "openclaw health scanner accepts supported profiles and object env" {
-  let config = {
-    "tools": { "profile": Json::string("coding") }.to_json(),
-    "agents": { "defaults": { "timeoutSeconds": Json::number(30.0) }.to_json() }.to_json(),
-    "env": {
-      "vars": { "OPENAI_API_KEY": Json::string("sk") }.to_json(),
-      "shellEnv": { "PATH": Json::string("/usr/bin") }.to_json(),
-    }.to_json(),
-  }.to_json()
+  let config = Json({
+    "tools": Json({ "profile": Json::string("coding") }),
+    "agents": Json({
+      "defaults": Json({ "timeoutSeconds": Json::number(30.0) }),
+    }),
+    "env": Json({
+      "vars": Json({ "OPENAI_API_KEY": Json::string("sk") }),
+      "shellEnv": Json({ "PATH": Json::string("/usr/bin") }),
+    }),
+  })
   assert_eq(openclaw_config_health_from_json(config), Json::array([]))
 }
 
@@ -2833,7 +2839,7 @@ async test "provider config endpoints are owned by proxy service" {
   assert_true(
     codex_openai_source
     .split("let use_chat_bridge = provider.codex_uses_chat_completions()")
-    .length() >=
+    .count() >=
     5,
   )
   for
@@ -3335,18 +3341,18 @@ async test "stream check provider test config overrides global config like moong
       provider_id="codex-provider-test",
       provider_name="Codex Provider Test",
       settings_config=Some(
-        {
-          "meta": {
-            "testConfig": {
+        Json({
+          "meta": Json({
+            "testConfig": Json({
               "enabled": Json::boolean(true),
               "testModel": Json::string("provider-model@medium"),
               "timeoutSecs": Json::number(12.0),
               "maxRetries": Json::number(5.0),
               "degradedThresholdMs": Json::number(1234.0),
               "testPrompt": Json::string("provider prompt"),
-            }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            }),
+          }),
+        }),
       ),
     ),
   )
@@ -3408,11 +3414,11 @@ test "provider stream check result updates visible provider health" {
   }
   gateway.proxy.record_stream_check_provider_health(
     provider,
-    {
+    Json({
       "networkRequestPerformed": Json::boolean(true),
       "success": Json::boolean(true),
       "message": Json::string("Live request succeeded"),
-    }.to_json(),
+    }),
   )
   assert_eq(
     gateway.proxy.provider_router.provider_health_status("codex-oauth", "codex"),
@@ -3420,11 +3426,11 @@ test "provider stream check result updates visible provider health" {
   )
   gateway.proxy.record_stream_check_provider_health(
     provider,
-    {
+    Json({
       "networkRequestPerformed": Json::boolean(true),
       "success": Json::boolean(false),
       "message": Json::string("HTTP 401"),
-    }.to_json(),
+    }),
   )
   assert_eq(
     gateway.proxy.provider_router.provider_health_status("codex-oauth", "codex"),
@@ -3468,14 +3474,14 @@ test "stream check all provider ids follow moongate proxy target filter" {
 ///|
 test "proxy config request parsers accept canonical moongate fields" {
   let config = Some(
-    {
+    Json({
       "proxyEnabled": Json::boolean(false),
       "listenAddress": Json::string("127.0.0.10"),
       "listenPort": Json::number(17010.0),
       "enableLogging": Json::string("off"),
       "maxRetries": Json::string("6"),
       "errorRateThreshold": Json::number(0.35),
-    }.to_json(),
+    }),
   )
   assert_eq(
     proxy_bool_request("/proxy/global-config", config, "proxyEnabled"),
@@ -3520,10 +3526,10 @@ test "proxy config request parsers accept canonical moongate fields" {
     proxy_app_type_from_request(
       "/set_pricing_model_source_test_hook",
       Some(
-        {
+        Json({
           "appType": Json::string(" claude "),
           "value": Json::string("request"),
-        }.to_json(),
+        }),
       ),
     ),
     Some("claude"),
@@ -3539,7 +3545,10 @@ test "proxy config request parsers accept canonical moongate fields" {
     proxy_app_type_from_request(
       "/proxy/takeover-status",
       Some(
-        { "appType": Json::string(" gemini "), "enabled": Json::boolean(true) }.to_json(),
+        Json({
+          "appType": Json::string(" gemini "),
+          "enabled": Json::boolean(true),
+        }),
       ),
     ),
     Some("gemini"),
@@ -4029,14 +4038,14 @@ test "usage pricing helpers parse and validate moongate pricing query" {
 
 ///|
 test "usage pricing helpers parse moongate structured body update" {
-  let body = {
+  let body = Json({
     "modelId": Json::string("body-model"),
     "displayName": Json::string("Body Model"),
     "inputCost": Json::number(1.25),
     "outputCost": Json::string("2"),
     "cacheReadCost": Json::string("0.10"),
     "cacheCreationCost": Json::number(0.0),
-  }.to_json()
+  })
   guard usage_pricing_from_request("/usage/model-pricing", Some(body))
     is Some(pricing) else {
     fail("expected body pricing")
@@ -4051,14 +4060,14 @@ test "usage pricing helpers parse moongate structured body update" {
 
 ///|
 test "usage pricing helpers prefer query over body args" {
-  let body = {
+  let body = Json({
     "modelId": Json::string("body-model"),
     "displayName": Json::string("Body Model"),
     "inputCost": Json::string("1"),
     "outputCost": Json::string("2"),
     "cacheReadCost": Json::string("3"),
     "cacheCreationCost": Json::string("4"),
-  }.to_json()
+  })
   let path = "/usage/model-pricing?modelId=query-model&displayName=Query%20Model&inputCost=5&outputCost=6&cacheReadCost=7&cacheCreationCost=8"
   guard usage_pricing_from_request(path, Some(body)) is Some(pricing) else {
     fail("expected query pricing")
@@ -4073,13 +4082,13 @@ test "usage pricing helpers prefer query over body args" {
 
 ///|
 test "usage pricing validation mirrors moongate required field messages" {
-  let body = {
+  let body = Json({
     "displayName": Json::string("Body Model"),
     "inputCost": Json::string("1"),
     "outputCost": Json::string("2"),
     "cacheReadCost": Json::string("3"),
     "cacheCreationCost": Json::string("4"),
-  }.to_json()
+  })
   assert_eq(
     usage_pricing_validation_error_from_request(
       "/usage/model-pricing",
@@ -4087,13 +4096,13 @@ test "usage pricing validation mirrors moongate required field messages" {
     ),
     Some("Model ID is required"),
   )
-  let missing_display = {
+  let missing_display = Json({
     "modelId": Json::string("body-model"),
     "inputCost": Json::string("1"),
     "outputCost": Json::string("2"),
     "cacheReadCost": Json::string("3"),
     "cacheCreationCost": Json::string("4"),
-  }.to_json()
+  })
   assert_eq(
     usage_pricing_validation_error_from_request(
       "/usage/model-pricing",
@@ -4142,7 +4151,7 @@ test "usage request detail id accepts moongate request detail query" {
 
 ///|
 test "usage request detail id accepts moongate structured body" {
-  let body = { "requestId": Json::string("session:body/1") }.to_json()
+  let body = Json({ "requestId": Json::string("session:body/1") })
   assert_eq(
     usage_request_detail_id_from_request("/usage/request-detail", Some(body)),
     "session:body/1",
@@ -4150,7 +4159,7 @@ test "usage request detail id accepts moongate structured body" {
   assert_eq(
     usage_request_detail_id_from_request(
       "/usage/request-detail",
-      Some({ "request_id": Json::string("req_body_2") }.to_json()),
+      Some(Json({ "request_id": Json::string("req_body_2") })),
     ),
     "/usage/request-detail",
   )
@@ -4158,7 +4167,7 @@ test "usage request detail id accepts moongate structured body" {
 
 ///|
 test "usage model id helpers accept body and query precedence" {
-  let body = { "modelId": Json::string("body-model") }.to_json()
+  let body = Json({ "modelId": Json::string("body-model") })
   assert_eq(
     usage_string_from_request("/usage/model-pricing", Some(body), "modelId"),
     Some("body-model"),
@@ -4174,7 +4183,7 @@ test "usage model id helpers accept body and query precedence" {
   assert_eq(
     usage_string_from_request(
       "/usage/model-pricing?model_id=legacy-query",
-      Some({ "model_id": Json::string("legacy-body") }.to_json()),
+      Some(Json({ "model_id": Json::string("legacy-body") })),
       "modelId",
     ),
     None,
@@ -5220,7 +5229,7 @@ test "proxy service repairs unsafe moongate claude desktop route ids" {
 
 ///|
 fn mimo_anthropic_claude_desktop_provider(
-  api_format? : String? = Some("anthropic"),
+  api_format~ : String? = Some("anthropic"),
 ) -> ProviderRouteTarget {
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(model="mimo-v2.5-pro"),
@@ -5434,11 +5443,11 @@ test "claude desktop status reports direct provider base url" {
       provider_name="Direct",
       claude_desktop_mode=Some("direct"),
       settings_config=Some(
-        {
-          "env": {
+        Json({
+          "env": Json({
             "ANTHROPIC_BASE_URL": Json::string("https://direct.example/v1"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
     ),
   )
@@ -8671,16 +8680,16 @@ test "moongate model image support only accepts canonical field" {
     provider_id="catalog-canonical",
     provider_name="Catalog Canonical",
     settings_config=Some(
-      {
-        "modelCatalog": {
+      Json({
+        "modelCatalog": Json({
           "models": [
-            {
+            Json({
               "id": Json::string("catalog-model"),
               "supportsImage": Json::boolean(false),
-            }.to_json(),
+            }),
           ],
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ),
   )
   assert_true(
@@ -8693,16 +8702,16 @@ test "moongate model image support only accepts canonical field" {
     provider_id="catalog-snake",
     provider_name="Catalog Snake",
     settings_config=Some(
-      {
-        "modelCatalog": {
+      Json({
+        "modelCatalog": Json({
           "models": [
-            {
+            Json({
               "id": Json::string("catalog-model"),
               "supports_image": Json::boolean(false),
-            }.to_json(),
+            }),
           ],
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ),
   )
   assert_true(
@@ -8715,16 +8724,16 @@ test "moongate model image support only accepts canonical field" {
     provider_id="catalog-vision",
     provider_name="Catalog Vision",
     settings_config=Some(
-      {
-        "modelCatalog": {
+      Json({
+        "modelCatalog": Json({
           "models": [
-            {
+            Json({
               "id": Json::string("catalog-model"),
               "vision": Json::boolean(false),
-            }.to_json(),
+            }),
           ],
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ),
   )
   assert_true(
@@ -9886,11 +9895,11 @@ test "moongate env helpers preserve conflicts and known keys" {
   assert_eq(moon_env_conflict_keys("codex")[0], "OPENAI_API_KEY")
   assert_eq(moon_env_conflict_keys("hermes")[1], "HERMES_WEB_PORT")
   assert_eq(moon_env_conflict_keys("unknown")[0], "ANTHROPIC_API_KEY")
-  let conflict = {
+  let conflict = Json({
     "varName": Json::string("ANTHROPIC_API_KEY"),
     "varValue": Json::string("sk-test"),
-  }.to_json()
-  let body = { "conflicts": Json::array([conflict]) }.to_json()
+  })
+  let body = Json({ "conflicts": Json::array([conflict]) })
   let conflicts = moon_env_conflicts_from_body(Some(body))
   assert_eq(conflicts.length(), 1)
   assert_eq(conflicts[0], conflict)
@@ -9945,11 +9954,11 @@ async test "moongate env helpers scan delete and restore file conflicts" {
     assert_false(deleted.contains("OPENAI_API_KEY"))
     assert_true(deleted.contains("OPENAI_BASE_URL"))
     let backup_path = @pathx.join(tmpdir, "backup.json")
-    let backup = {
+    let backup = Json({
       "backupPath": Json::string(backup_path),
       "timestamp": Json::string("test"),
       "conflicts": Json::array([file_conflicts[0]]),
-    }.to_json()
+    })
     @fsx.write_to_file(backup_path, backup.stringify(indent=2) + "\n")
     match moon_restore_env_backup_json(Some(backup_path)) {
       Ok(_) => ()
@@ -9962,12 +9971,12 @@ async test "moongate env helpers scan delete and restore file conflicts" {
 
 ///|
 async test "moongate env conflict helpers reject retired snake case keys" {
-  let conflict = {
+  let conflict = Json({
     "source_type": Json::string("system"),
     "var_name": Json::string("OPENAI_API_KEY"),
     "var_value": Json::string("sk-legacy"),
     "source_path": Json::string("/tmp/.zshrc:1"),
-  }.to_json()
+  })
   assert_true(moon_delete_single_env_conflict(conflict) is Err(_))
   assert_true(moon_restore_single_env_conflict(conflict) is Err(_))
 }
@@ -9994,10 +10003,10 @@ test "moongate config request helpers ignore retired snake case aliases" {
 
 ///|
 test "moongate mcp helpers preserve server apps and config shape" {
-  let spec = {
+  let spec = Json({
     "name": Json::string("Filesystem"),
     "command": Json::string("npx"),
-  }.to_json()
+  })
   let server = moon_mcp_server_from_spec("filesystem", spec, "codex")
   guard server is Object(obj) else { fail("expected server object") }
   assert_eq(obj["id"], Json::string("filesystem"))
@@ -10020,11 +10029,11 @@ test "moongate mcp helpers preserve server apps and config shape" {
 
 ///|
 test "moongate mcp request parser accepts canonical server JSON" {
-  let body = {
+  let body = Json({
     "id": Json::string("shell"),
     "name": Json::string("Shell"),
-    "server": { "command": Json::string("sh") }.to_json(),
-  }.to_json()
+    "server": Json({ "command": Json::string("sh") }),
+  })
   guard moon_mcp_server_from_request(
       "/mcp/servers?appType=codex",
       Some(body),
@@ -10041,18 +10050,18 @@ test "moongate mcp request parser accepts canonical server JSON" {
     moon_mcp_server_from_request(
       "/mcp/servers?appType=codex",
       Some(
-        {
-          "server": {
+        Json({
+          "server": Json({
             "id": Json::string("wrapped"),
-            "server": { "command": Json::string("sh") }.to_json(),
-          }.to_json(),
-        }.to_json(),
+            "server": Json({ "command": Json::string("sh") }),
+          }),
+        }),
       ),
       "codex",
     )
     is None,
   )
-  let id_only = { "id": Json::string("id-only") }.to_json()
+  let id_only = Json({ "id": Json::string("id-only") })
   guard moon_mcp_server_from_request(
       "/mcp/servers?appType=codex",
       Some(id_only),
@@ -10076,12 +10085,12 @@ test "moongate mcp request parser accepts canonical server JSON" {
 ///|
 test "moongate mcp import helpers merge app configs" {
   let servers : Map[String, Json] = Map([])
-  let claude_root = {
-    "mcpServers": {
-      "filesystem": { "command": Json::string("npx") }.to_json(),
-      "bad": { "type": Json::string("stdio") }.to_json(),
-    }.to_json(),
-  }.to_json()
+  let claude_root = Json({
+    "mcpServers": Json({
+      "filesystem": Json({ "command": Json::string("npx") }),
+      "bad": Json({ "type": Json::string("stdio") }),
+    }),
+  })
   assert_eq(moon_import_mcp_from_root_json(servers, "claude", claude_root), 1)
   guard servers.get("filesystem") is Some(filesystem) else {
     fail("expected imported filesystem server")
@@ -10101,11 +10110,11 @@ test "moongate mcp import helpers merge app configs" {
 ///|
 test "moongate mcp import normalizes gemini httpUrl specs" {
   let servers : Map[String, Json] = Map([])
-  let gemini_root = {
-    "mcpServers": {
-      "web": { "httpUrl": Json::string("https://mcp.example") }.to_json(),
-    }.to_json(),
-  }.to_json()
+  let gemini_root = Json({
+    "mcpServers": Json({
+      "web": Json({ "httpUrl": Json::string("https://mcp.example") }),
+    }),
+  })
   assert_eq(moon_import_mcp_from_root_json(servers, "gemini", gemini_root), 1)
   guard servers.get("web") is Some(Object(web)) else {
     fail("expected imported web server")
@@ -10189,12 +10198,12 @@ test "moongate prompt helpers keep app-scoped prompt records" {
   guard moon_prompt_from_request(
       "/prompts?appType=codex",
       Some(
-        {
+        Json({
           "id": Json::string("review"),
           "name": Json::string("Review"),
           "content": Json::string("Check this"),
           "description": Json::string("Code review"),
-        }.to_json(),
+        }),
       ),
     )
     is Some((app, id, prompt)) else {
@@ -10210,12 +10219,12 @@ test "moongate prompt helpers keep app-scoped prompt records" {
     moon_prompt_from_request(
       "/prompts?appType=codex",
       Some(
-        {
-          "prompt": {
+        Json({
+          "prompt": Json({
             "id": Json::string("wrapped"),
             "name": Json::string("Wrapped"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
     )
     is None,
@@ -10231,7 +10240,7 @@ test "moongate prompt helpers keep app-scoped prompt records" {
   prompts[moon_prompt_store_key(app, id)] = prompt
   prompts[moon_prompt_store_key("claude", "review")] = moon_normalize_prompt(
     "review",
-    { "content": Json::string("Claude") }.to_json(),
+    Json({ "content": Json::string("Claude") }),
   )
   guard moon_prompts_object_for_app(prompts, "codex") is Object(codex) else {
     fail("expected codex prompts")
@@ -10258,7 +10267,7 @@ async test "moongate prompt file helpers import and read prompt files" {
     let prompt_path = @pathx.join(tmpdir, "AGENTS.md")
     let content = "# Codex prompt\n\nUse MoonBit."
     @fsx.write_to_file(prompt_path, content)
-    let body = { "filePath": Json::string(prompt_path) }.to_json()
+    let body = Json({ "filePath": Json::string(prompt_path) })
     guard moon_prompt_file_path_from_request(
         "/prompts/import-file?appType=codex",
         Some(body),
@@ -10315,24 +10324,24 @@ async test "moongate prompt enable writes prompt file and disables app siblings"
     let prompts : Map[String, Json] = Map([])
     prompts[moon_prompt_store_key("codex", "first")] = moon_normalize_prompt(
       "first",
-      {
+      Json({
         "content": Json::string("first content"),
         "enabled": Json::boolean(true),
-      }.to_json(),
+      }),
     )
     prompts[moon_prompt_store_key("codex", "second")] = moon_normalize_prompt(
       "second",
-      {
+      Json({
         "content": Json::string("second content"),
         "enabled": Json::boolean(false),
-      }.to_json(),
+      }),
     )
     prompts[moon_prompt_store_key("claude", "first")] = moon_normalize_prompt(
       "first",
-      {
+      Json({
         "content": Json::string("claude content"),
         "enabled": Json::boolean(true),
-      }.to_json(),
+      }),
     )
     match moon_enable_prompt_json(prompts, "codex", "second", prompt_path) {
       Ok(_) => ()
@@ -10497,14 +10506,14 @@ test "moongate suggested claude desktop routes derive from provider env" {
     provider_id="desktop-routes",
     provider_name="Desktop Routes",
     settings_config=Some(
-      {
-        "env": {
+      Json({
+        "env": Json({
           "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("MiniMax-M2[1M]"),
           "ANTHROPIC_DEFAULT_OPUS_MODEL": Json::string("MiniMax-M2"),
           "ANTHROPIC_DEFAULT_HAIKU_MODEL": Json::string("GLM-4-Flash"),
           "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": Json::string("GLM Flash"),
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ),
   )
   guard suggested_claude_desktop_routes(provider) is Some(routes) else {
@@ -10533,9 +10542,11 @@ test "moongate suggested claude desktop routes keep copilot 1m default false" {
     provider_name="Copilot Routes",
     provider_type=Some("github_copilot"),
     settings_config=Some(
-      {
-        "env": { "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("gpt-5-codex") }.to_json(),
-      }.to_json(),
+      Json({
+        "env": Json({
+          "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("gpt-5-codex"),
+        }),
+      }),
     ),
   )
   guard suggested_claude_desktop_routes(provider) is Some(routes) else {
@@ -10556,7 +10567,7 @@ test "moongate suggested claude desktop routes fallback to anthropic model" {
     provider_id="fallback-routes",
     provider_name="Fallback Routes",
     settings_config=Some(
-      { "env": { "ANTHROPIC_MODEL": Json::string("kimi-k2") }.to_json() }.to_json(),
+      Json({ "env": Json({ "ANTHROPIC_MODEL": Json::string("kimi-k2") }) }),
     ),
   )
   guard suggested_claude_desktop_routes(provider) is Some(routes) else {
@@ -10581,13 +10592,13 @@ test "moongate imports missing claude providers into claude desktop namespace" {
       provider_type=Some("anthropic"),
       base_url=Some("https://example.test"),
       settings_config=Some(
-        {
-          "env": {
+        Json({
+          "env": Json({
             "ANTHROPIC_BASE_URL": Json::string("https://example.test"),
             "ANTHROPIC_AUTH_TOKEN": Json::string("sk-ant"),
             "ANTHROPIC_MODEL": Json::string("claude-sonnet-4-6"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
     ),
   )
@@ -10604,10 +10615,10 @@ test "moongate imports missing claude providers into claude desktop namespace" {
 
 ///|
 fn moon_direct_compatible_claude_desktop_provider(
-  provider_type? : String? = Some("anthropic"),
-  api_format? : String? = Some("anthropic"),
-  is_full_url? : Bool = false,
-  token? : String? = Some("sk-ant"),
+  provider_type~ : String? = Some("anthropic"),
+  api_format~ : String? = Some("anthropic"),
+  is_full_url~ : Bool = false,
+  token~ : String? = Some("sk-ant"),
 ) -> ProviderRouteTarget {
   let routes : Map[String, ClaudeDesktopModelRoute] = {
     "claude-sonnet-4-6": ClaudeDesktopModelRoute::new(model="claude-sonnet-4-6"),
@@ -10626,7 +10637,7 @@ fn moon_direct_compatible_claude_desktop_provider(
     provider_type~,
     api_format~,
     is_full_url~,
-    settings_config=Some({ "env": Json::object(env) }.to_json()),
+    settings_config=Some(Json({ "env": Json::object(env) })),
     claude_desktop_model_routes=routes,
   )
 }
@@ -10668,7 +10679,7 @@ test "moongate import skips claude providers without direct or proxy compatibili
       app_type="claude",
       provider_id="incomplete",
       provider_name="Incomplete",
-      settings_config=Some({ "env": empty_env.to_json() }.to_json()),
+      settings_config=Some(Json({ "env": Json(empty_env) })),
     ),
   )
   assert_eq(gateway.proxy.import_claude_desktop_providers(), 0)
@@ -10687,11 +10698,11 @@ test "moongate import derives claude desktop routes from claude provider env" {
       provider_id="env-routes",
       provider_name="Env Routes",
       settings_config=Some(
-        {
-          "env": {
+        Json({
+          "env": Json({
             "ANTHROPIC_DEFAULT_SONNET_MODEL": Json::string("kimi-k2[1M]"),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
     ),
   )
@@ -10716,7 +10727,7 @@ test "moongate skill repo request accepts query and json body shapes" {
   let empty_body : Map[String, Json] = Map([])
   guard moon_skill_repo_request_json(
       "/skills/repos?owner=vectie&name=moongate-skills&branch=main&enabled=true",
-      Some(empty_body.to_json()),
+      Some(Json(empty_body)),
     )
     is Some(Object(query_repo)) else {
     fail("expected query repo")
@@ -10729,11 +10740,11 @@ test "moongate skill repo request accepts query and json body shapes" {
   guard moon_skill_repo_request_json(
       "/skills/repos",
       Some(
-        {
+        Json({
           "owner": Json::string("anthropics"),
           "name": Json::string("skills"),
           "enabled": Json::boolean(false),
-        }.to_json(),
+        }),
       ),
     )
     is Some(Object(body_repo)) else {

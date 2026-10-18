@@ -2,12 +2,12 @@
 /// Stateless usage-file preview; see the dependency-light usage_preview package.
 pub fn moongate_preview_usage_file_json(
   content : String,
-  source_name? : String = "Pasted usage",
-  app? : String = "",
-  provider? : String = "",
-  model? : String = "",
-  start_day? : String = "",
-  end_day? : String = "",
+  source_name~ : String = "Pasted usage",
+  app~ : String = "",
+  provider~ : String = "",
+  model~ : String = "",
+  start_day~ : String = "",
+  end_day~ : String = "",
 ) -> Result[Json, String] {
   @usage_preview.moongate_preview_usage_file_json(
     content, source_name~, app~, provider~, model~, start_day~, end_day~,

@@ -5,7 +5,7 @@ async fn ConfigService::handle_get_claude_mcp_status(
 ) -> Unit {
   write_usage_json(
     w,
-    {
+    Json({
       "userConfigPath": Json::string(
         @pathx.join(moon_home_dir(), ".claude.json"),
       ),
@@ -13,7 +13,7 @@ async fn ConfigService::handle_get_claude_mcp_status(
         @fsx.exists_as_file(@pathx.join(moon_home_dir(), ".claude.json")),
       ),
       "serverCount": Json::number(self.mcp_servers.length().to_double()),
-    }.to_json(),
+    }),
   )
 }
 
@@ -203,7 +203,7 @@ async fn ConfigService::handle_enable_prompt(
 }
 
 ///|
-fn moon_mcp_apps_json(app : String, enabled? : Bool = true) -> Json {
+fn moon_mcp_apps_json(app : String, enabled~ : Bool = true) -> Json {
   let apps = {
     "claude": Json::boolean(false),
     "claude-desktop": Json::boolean(false),
@@ -387,7 +387,7 @@ fn moon_import_mcp_servers_map(
   servers : Map[String, Json],
   app : String,
   mcp_servers : Map[String, Json],
-) -> Int {
+) -> Int32 {
   let mut changed = 0
   for id in mcp_servers.keys() {
     guard mcp_servers.get(id) is Some(spec) else { continue }
@@ -415,7 +415,7 @@ fn moon_import_mcp_from_root_json(
   servers : Map[String, Json],
   app : String,
   root : Json,
-) -> Int {
+) -> Int32 {
   guard root is Object(obj) else { return 0 }
   guard obj.get("mcpServers") is Some(Object(mcp_servers)) else { return 0 }
   moon_import_mcp_servers_map(servers, app, mcp_servers)
@@ -425,7 +425,7 @@ fn moon_import_mcp_from_root_json(
 fn moon_import_mcp_from_codex_toml_text(
   servers : Map[String, Json],
   content : String,
-) -> Int {
+) -> Int32 {
   let raw_specs : Map[String, Json] = Map([])
   let mut current_id : String? = None
   let mut current_table = ""
@@ -733,7 +733,7 @@ fn moon_clean_blank_lines(lines : Array[String]) -> String {
 }
 
 ///|
-async fn moon_import_mcp_from_apps_count(servers : Map[String, Json]) -> Int {
+async fn moon_import_mcp_from_apps_count(servers : Map[String, Json]) -> Int32 {
   let mut total = 0
   total += moon_import_mcp_from_file(
     servers,

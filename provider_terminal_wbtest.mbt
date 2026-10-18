@@ -7,11 +7,11 @@ test "moongate provider terminal env uses canonical provider fields" {
     base_url=Some("https://api.example.test/v1"),
     api_key=Some("sk-test"),
     settings_config=Some(
-      {
+      Json({
         "auth": Json::string("sk-auth"),
         "api_key": Json::string("sk-gemini-app-native"),
         "env": Json::object({ "EXTRA_FLAG": Json::string("1") }),
-      }.to_json(),
+      }),
     ),
   )
   let env = moon_provider_terminal_env(provider, "codex")
@@ -48,11 +48,11 @@ test "moongate import default config accepts clean live provider settings" {
       provider_id="clean",
       provider_name="Clean",
       settings_config=Some(
-        {
+        Json({
           "env": Json::object({
             "ANTHROPIC_AUTH_TOKEN": Json::string("real-token"),
           }),
-        }.to_json(),
+        }),
       ),
     ),
   )
@@ -72,25 +72,25 @@ test "moongate import default config rejects takeover placeholder residue" {
       provider_id="polluted",
       provider_name="Polluted",
       settings_config=Some(
-        {
-          "auth": {
+        Json({
+          "auth": Json({
             "env": Json::object({
               "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
             }),
-          }.to_json(),
-        }.to_json(),
+          }),
+        }),
       ),
     ),
   )
   router.set_current_provider("claude", "polluted")
   assert_true(
     moon_settings_has_proxy_managed_placeholder(
-      {
+      Json({
         "nested": Json::array([
           Json::string("real-token"),
           Json::object({ "token": Json::string("PROXY_MANAGED") }),
         ]),
-      }.to_json(),
+      }),
     ),
   )
   match moon_import_default_config_json(router, "claude") {

@@ -1,7 +1,7 @@
 ///|
 priv struct CaptureEvent {
   payload : String
-  line : Int
+  line : Int32
   framed : Bool
 }
 
@@ -11,7 +11,7 @@ priv struct ChatCapture {
   model : String
   format : String
   state : String
-  objects : Int
+  objects : Int32
   terminal_line : Json
   created : Json
   usage : Map[String, Json]
@@ -24,7 +24,7 @@ fn capture_count(value : Json, label : String) -> Json raise {
     Null => Json::null()
     Number(_, repr=Some(text)) =>
       match @exact_json.exact_count(text) {
-        Some(n) => n.to_json()
+        Some(n) => Json(n)
         None => fail("\{label}: expected an exact nonnegative safe integer")
       }
     _ => fail("\{label}: expected a JSON integer or null")
@@ -95,7 +95,7 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
   let mut errored = false
   let mut usage_seen = false
   let usage : Map[String, Json] = Map([])
-  let choices : Map[Int, String?] = Map([])
+  let choices : Map[Int32, String?] = Map([])
   for event in events {
     let line = event.line
     if done {
@@ -103,7 +103,7 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
     }
     if event.payload == "[DONE]" && format == "sse" {
       done = event.framed
-      terminal_line = if done { line.to_json() } else { Json::null() }
+      terminal_line = if done { Json(line) } else { Json::null() }
       // An unframed marker at EOF is incomplete, never completion evidence.
       continue
     }
@@ -130,7 +130,7 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
         fail("Line \{line}: expected an error object")
       }
       errored = true
-      terminal_line = line.to_json()
+      terminal_line = Json(line)
       continue
     }
     let expected = if format == "json" {
@@ -138,7 +138,7 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
     } else {
       "chat.completion.chunk"
     }
-    if fields.get("object") != Some(expected.to_json()) {
+    if fields.get("object") != Some(Json(expected)) {
       fail("Line \{line}: unsupported response object type")
     }
     guard fields.get("id") is Some(String(current_id)) &&
@@ -168,7 +168,7 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
     guard fields.get("choices") is Some(Array(current_choices)) else {
       fail("Line \{line}: choices must be an array")
     }
-    let indices : Map[Int, Bool] = Map([])
+    let indices : Map[Int32, Bool] = Map([])
     for choice in current_choices {
       guard choice is Object(c) else {
         fail("Line \{line}: expected a choice object")
@@ -231,7 +231,7 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
       _ => fail("Line \{line}: usage must be an object or null")
     }
     if format == "json" {
-      terminal_line = line.to_json()
+      terminal_line = Json(line)
     }
   }
   let finished = !choices.is_empty() &&
@@ -248,9 +248,9 @@ fn parse_chat_capture(content : String) -> ChatCapture raise {
   let indexes = choices.keys().collect()
   indexes.sort()
   let finishes : Array[Json] = indexes.map(index => {
-    "index": index.to_json(),
+    "index": Json(index),
     "finishReason": match choices[index] {
-      Some(reason) => reason.to_json()
+      Some(reason) => Json(reason)
       None => Json::null()
     },
   })

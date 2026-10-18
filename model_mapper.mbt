@@ -11,10 +11,10 @@ priv struct ModelMapping {
 
 ///|
 fn ModelMapping::new(
-  haiku_model? : String? = None,
-  sonnet_model? : String? = None,
-  opus_model? : String? = None,
-  default_model? : String? = None,
+  haiku_model~ : String? = None,
+  sonnet_model~ : String? = None,
+  opus_model~ : String? = None,
+  default_model~ : String? = None,
 ) -> ModelMapping {
   {
     haiku_model: clean_model_mapping_value(haiku_model),
@@ -61,12 +61,12 @@ fn ModelMapping::map_model(
 
 ///|
 fn ModelMapping::to_json(self : ModelMapping) -> Json {
-  {
+  Json({
     "haikuModel": optional_model_mapping_string_json(self.haiku_model),
     "sonnetModel": optional_model_mapping_string_json(self.sonnet_model),
     "opusModel": optional_model_mapping_string_json(self.opus_model),
     "defaultModel": optional_model_mapping_string_json(self.default_model),
-  }.to_json()
+  })
 }
 
 ///|
@@ -442,7 +442,7 @@ fn copilot_detect_family(id : String) -> String? {
 }
 
 ///|
-fn copilot_extract_major_minor(id : String) -> (Int, Int)? {
+fn copilot_extract_major_minor(id : String) -> (Int32, Int32)? {
   let lower = id.to_lower()
   guard copilot_detect_family(lower) is Some(family) else { return None }
   guard lower.find(family) is Some(index) else { return None }

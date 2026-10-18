@@ -3,13 +3,13 @@
 /// are apostrophe-prefixed and CSV-quoted to keep labels inert in spreadsheets.
 pub fn export_usage_csv(
   content : String,
-  source_name? : String = "Pasted usage",
-  view? : String = "requests",
-  app? : String = "",
-  provider? : String = "",
-  model? : String = "",
-  start_day? : String = "",
-  end_day? : String = "",
+  source_name~ : String = "Pasted usage",
+  view~ : String = "requests",
+  app~ : String = "",
+  provider~ : String = "",
+  model~ : String = "",
+  start_day~ : String = "",
+  end_day~ : String = "",
 ) -> Result[String, String] {
   if !["requests", "summary", "model", "provider", "app", "day"].contains(view) {
     return Err("View must be requests, summary, model, provider, app or day")
@@ -33,7 +33,7 @@ pub fn export_usage_csv(
     preview["importedRows"],
     preview["total"],
     preview["partial"],
-    preview.get("sourceCoverageUnknown").unwrap_or(false.to_json()),
+    preview.get("sourceCoverageUnknown").unwrap_or(Json(false)),
   ]
   let columns = if view == "requests" {
     [
@@ -84,7 +84,7 @@ pub fn export_usage_csv(
     }
     let cells = columns.map(key => {
       let value = if view == "summary" && key == "key" {
-        "TOTAL".to_json()
+        Json("TOTAL")
       } else {
         moon_json_get(row, key).unwrap_or(Json::null())
       }

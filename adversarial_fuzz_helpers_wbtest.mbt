@@ -13,7 +13,7 @@ fn AdversarialFuzzer::new(seed : Int64) -> AdversarialFuzzer {
 }
 
 ///|
-fn AdversarialFuzzer::next(self : AdversarialFuzzer, bound : Int) -> Int {
+fn AdversarialFuzzer::next(self : AdversarialFuzzer, bound : Int32) -> Int32 {
   if bound <= 0 {
     abort("adversarial fuzz bound must be positive")
   }
@@ -24,9 +24,9 @@ fn AdversarialFuzzer::next(self : AdversarialFuzzer, bound : Int) -> Int {
 ///|
 fn AdversarialFuzzer::ascii(
   self : AdversarialFuzzer,
-  min_length : Int,
-  max_length : Int,
-  alphabet? : String = "abcdefghijklmnopqrstuvwxyz0123456789-._~",
+  min_length : Int32,
+  max_length : Int32,
+  alphabet~ : String = "abcdefghijklmnopqrstuvwxyz0123456789-._~",
 ) -> String {
   let length = min_length + self.next(max_length - min_length + 1)
   let builder = StringBuilder(size_hint=length)
@@ -39,14 +39,14 @@ fn AdversarialFuzzer::ascii(
 ///|
 fn adversarial_ascii_insert(
   base : String,
-  index : Int,
+  index : Int32,
   value : String,
 ) -> String {
   "\{base[:index].to_owned()}\{value}\{base[index:].to_owned()}"
 }
 
 ///|
-fn AdversarialFuzzer::json(self : AdversarialFuzzer, depth : Int) -> Json {
+fn AdversarialFuzzer::json(self : AdversarialFuzzer, depth : Int32) -> Json {
   let kind = if depth <= 0 { self.next(4) } else { self.next(6) }
   match kind {
     0 => Json::null()

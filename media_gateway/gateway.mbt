@@ -71,7 +71,7 @@ fn single(headers : Map[String, String], key : String) -> String? {
 }
 
 ///|
-async fn limited(reader : &@io.Reader, limit : Int) -> Bytes {
+async fn limited(reader : &@io.Reader, limit : Int32) -> Bytes {
   let result = Buffer()
   let mut count = 0
   while reader.read_some(max_len=8192) is Some(bytes) {
@@ -90,7 +90,7 @@ pub async fn unavailable(writer : @httpx.ResponseWriter) -> Unit {
 }
 
 ///|
-async fn error_reply(writer : @httpx.ResponseWriter, code : Int) -> Unit {
+async fn error_reply(writer : @httpx.ResponseWriter, code : Int32) -> Unit {
   writer.header().set("content-type", "application/json")
   writer.header().set("cache-control", "no-store")
   writer.write_header(code)
@@ -99,7 +99,7 @@ async fn error_reply(writer : @httpx.ResponseWriter, code : Int) -> Unit {
 }
 
 ///|
-fn bounded_error(code : Int) -> Json {
+fn bounded_error(code : Int32) -> Json {
   let (name, message) = match code {
     400 | 415 | 422 =>
       (

@@ -14,8 +14,8 @@ fn pricing_rate_card(content : String) -> Result[Json, String] {
       )
     }
   }
-  guard card.get("schema") == Some("moongate.usage-rate-card.v1".to_json()) &&
-    card.get("currency") == Some("USD".to_json()) &&
+  guard card.get("schema") == Some(Json("moongate.usage-rate-card.v1")) &&
+    card.get("currency") == Some(Json("USD")) &&
     card.get("name") is Some(String(name)) &&
     !name.trim().is_empty() &&
     card.get("rates") is Some(Array(rates)) else {

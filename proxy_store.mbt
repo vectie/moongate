@@ -9,7 +9,7 @@ fn moon_proxy_store_path() -> String {
 ///|
 async fn ProxyService::save_proxy_store(
   self : ProxyService,
-  path? : String = moon_proxy_store_path(),
+  path~ : String = moon_proxy_store_path(),
 ) -> Unit raise Error {
   let parent = @pathx.dirname(path)
   if !parent.is_empty() && parent != "." {
@@ -24,7 +24,7 @@ async fn ProxyService::save_proxy_store(
 ///|
 async fn ProxyService::load_proxy_store(
   self : ProxyService,
-  path? : String = moon_proxy_store_path(),
+  path~ : String = moon_proxy_store_path(),
 ) -> Unit raise Error {
   if !@fsx.exists_as_file(path) {
     return

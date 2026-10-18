@@ -39,10 +39,10 @@ pub fn ClaudeDesktopStatus::new(
   profile_path~ : String,
   meta_path~ : String,
   config_library_path~ : String,
-  applied_id? : String? = None,
-  actual_base_url? : String? = None,
-  stale_raw_models? : Bool = false,
-  token_configured? : Bool = false,
+  applied_id~ : String? = None,
+  actual_base_url~ : String? = None,
+  stale_raw_models~ : Bool = false,
+  token_configured~ : Bool = false,
 ) -> ClaudeDesktopStatus {
   {
     configured,
@@ -101,8 +101,8 @@ async fn resolve_gateway_token(token : String?) -> String {
 ///|
 pub async fn install_proxy_profile(
   host : String,
-  port : Int,
-  token? : String? = None,
+  port : Int32,
+  token~ : String? = None,
 ) -> Result[ClaudeDesktopInstall, String] {
   install_proxy_profile_at_paths(claude_desktop_paths(), host, port, token~)
 }
@@ -111,8 +111,8 @@ pub async fn install_proxy_profile(
 async fn install_proxy_profile_at_paths(
   paths : ClaudeDesktopPaths,
   host : String,
-  port : Int,
-  token? : String? = None,
+  port : Int32,
+  token~ : String? = None,
 ) -> Result[ClaudeDesktopInstall, String] {
   let base_url = local_gateway_base_url(host, port)
   let snapshots = snapshot_files([
@@ -196,7 +196,7 @@ pub async fn status() -> ClaudeDesktopStatus {
 }
 
 ///|
-pub fn local_gateway_base_url(host : String, port : Int) -> String {
+pub fn local_gateway_base_url(host : String, port : Int32) -> String {
   let connect_host = match host {
     "0.0.0.0" => "127.0.0.1"
     "::" => "::1"
@@ -240,7 +240,7 @@ async fn write_gateway_token(token : String) -> Unit {
 
 ///|
 fn generate_gateway_token() -> String {
-  let randomer = @rand.chacha8() catch { _ => @random.Rand::new() }
+  let randomer = @rand.chacha8() catch { _ => Rand() }
   "moongate-\{@uuid.generator(randomer).v4()}"
 }
 

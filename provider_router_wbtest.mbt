@@ -478,11 +478,11 @@ test "public provider json redacts nested settings credentials" {
     provider_id="settings-key",
     provider_name="Settings Key",
     settings_config=Some(
-      {
+      Json({
         "apiKey": Json::string("nested-secret"),
         "baseUrl": Json::string("https://example.com/v1"),
-        "meta": { "token": Json::string("nested-token") }.to_json(),
-      }.to_json(),
+        "meta": Json({ "token": Json::string("nested-token") }),
+      }),
     ),
   )
   guard target.to_moon_provider_json(false) is Object(public) else {
@@ -562,7 +562,7 @@ test "provider router exposes moongate failover queue and available providers" {
       provider_id="a",
       provider_name="Provider A",
       provider_type=Some("codex"),
-      settings_config=Some({ "model": Json::string("gpt-5") }.to_json()),
+      settings_config=Some(Json({ "model": Json::string("gpt-5") })),
       notes=Some("Primary provider"),
     ),
   )
@@ -1037,10 +1037,10 @@ test "provider router mirrors moongate live settings and sort updates" {
       provider_id="a",
       provider_name="Provider A",
       settings_config=Some(
-        {
+        Json({
           "apiKey": Json::string("sk-a"),
           "baseUrl": Json::string("https://a.example.com/v1"),
-        }.to_json(),
+        }),
       ),
     ),
   )
@@ -1125,12 +1125,12 @@ test "provider router live sync skips takeover-polluted current provider" {
       provider_id="polluted",
       provider_name="Polluted",
       settings_config=Some(
-        {
+        Json({
           "env": Json::object({
             "ANTHROPIC_BASE_URL": Json::string("http://127.0.0.1:15721"),
             "ANTHROPIC_AUTH_TOKEN": Json::string("PROXY_MANAGED"),
           }),
-        }.to_json(),
+        }),
       ),
     ),
   )
@@ -1145,24 +1145,24 @@ test "provider router syncs universal providers into app providers" {
   let router = ProviderRouter::new()
   assert_true(
     router.upsert_universal_provider(
-      {
+      Json({
         "id": Json::string("u1"),
         "name": Json::string("Universal One"),
         "providerType": Json::string("openai-compatible"),
-        "apps": {
+        "apps": Json({
           "claude": Json::boolean(true),
           "codex": Json::boolean(true),
           "gemini": Json::boolean(false),
-        }.to_json(),
+        }),
         "baseUrl": Json::string("https://api.example.com/v1"),
         "apiKey": Json::string("sk-u1"),
-        "models": {
-          "codex": {
+        "models": Json({
+          "codex": Json({
             "model": Json::string("gpt-5"),
             "reasoningEffort": Json::string("medium"),
-          }.to_json(),
-        }.to_json(),
-      }.to_json(),
+          }),
+        }),
+      }),
     ),
   )
   guard router.universal_provider_json("u1") is Object(universal) else {

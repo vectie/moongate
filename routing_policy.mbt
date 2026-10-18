@@ -21,7 +21,7 @@ fn routing_session_key_digest(raw_session_key : String) -> String {
 }
 
 ///|
-fn routing_session_canary_slot(session_key : String) -> Int {
+fn routing_session_canary_slot(session_key : String) -> Int32 {
   let digest = @crypto.sha256(@encoding/utf8.encode(session_key))
   (digest[0].to_int() * 256 + digest[1].to_int()) % 10_000
 }
@@ -30,7 +30,7 @@ fn routing_session_canary_slot(session_key : String) -> Int {
 fn ProviderRouter::routing_policy_uses_canary(
   self : ProviderRouter,
   policy : @routing.RoutingPolicyV1,
-  session_key? : String? = None,
+  session_key~ : String? = None,
 ) -> Bool {
   let slot = match session_key {
     Some(value) => routing_session_canary_slot(value)
@@ -50,14 +50,14 @@ fn ProviderRouter::provider_inflight_count(
   self : ProviderRouter,
   app_type : String,
   provider_id : String,
-) -> Int {
+) -> Int32 {
   self.provider_inflight
   .get(provider_routing_key(app_type, provider_id))
   .unwrap_or(0)
 }
 
 ///|
-fn ProviderRouter::total_inflight(self : ProviderRouter) -> Int {
+fn ProviderRouter::total_inflight(self : ProviderRouter) -> Int32 {
   let mut total = 0
   for count in self.provider_inflight.values() {
     total += count
@@ -110,7 +110,7 @@ fn ProviderRouter::provider_concurrency_limit(
   self : ProviderRouter,
   app_type : String,
   provider_id : String,
-) -> Int {
+) -> Int32 {
   match self.active_routing_policies.get(app_type) {
     Some(policy) => policy.concurrency_limits.get(provider_id).unwrap_or(0)
     None => 0
@@ -146,7 +146,7 @@ fn ProviderRouter::routing_pool_ids(
 fn ProviderRouter::routing_candidates(
   self : ProviderRouter,
   policy : @routing.RoutingPolicyV1,
-  now_ms : Int,
+  now_ms : Int32,
 ) -> Array[@routing.ProviderCandidateV1] {
   let candidates : Array[@routing.ProviderCandidateV1] = []
   let provider_ids = self.routing_pool_ids(policy.app_type)
@@ -270,8 +270,8 @@ fn ProviderRouter::ordered_providers_for_decision(
 fn ProviderRouter::select_with_routing_policy(
   self : ProviderRouter,
   policy : @routing.RoutingPolicyV1,
-  now_ms : Int,
-  session_key? : String? = None,
+  now_ms : Int32,
+  session_key~ : String? = None,
 ) -> ProviderSelection {
   let state = self.routing_smooth_states
     .get(policy.app_type)
@@ -330,7 +330,7 @@ fn ProviderRouter::provider_chain_after_activation(
   self : ProviderRouter,
   app_type : String,
   active_provider_id : String?,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> ProviderSelection {
   guard active_provider_id is Some(active_provider_id) else {
     return self.select_providers(app_type, now_ms~)
@@ -365,8 +365,8 @@ fn ProviderRouter::provider_chain_after_activation(
 fn ProviderRouter::observe_shadow_routing(
   self : ProviderRouter,
   app_type : String,
-  now_ms : Int,
-  session_key? : String? = None,
+  now_ms : Int32,
+  session_key~ : String? = None,
 ) -> Unit {
   guard self.routing_policy_drafts.get(app_type) is Some(policy) else { return }
   if self.active_routing_policies.get(app_type) == Some(policy) {
@@ -405,14 +405,14 @@ fn ProviderRouter::configure_routing_policy(
   app_type~ : String,
   policy_id~ : String,
   mode~ : @routing.RoutingMode,
-  weights~ : Map[String, Int],
-  concurrency_limits~ : Map[String, Int],
-  minimum_shadow_decisions? : Int = 20,
-  minimum_shadow_window_ms? : Int64 = 300_000L,
-  canary_traffic_basis_points? : Int = 500,
-  rollback_error_rate_milli? : Int = 100,
-  rollback_p95_latency_ms? : Int = 30_000,
-  rollback_minimum_requests? : Int = 20,
+  weights~ : Map[String, Int32],
+  concurrency_limits~ : Map[String, Int32],
+  minimum_shadow_decisions~ : Int32 = 20,
+  minimum_shadow_window_ms~ : Int64 = 300_000L,
+  canary_traffic_basis_points~ : Int32 = 500,
+  rollback_error_rate_milli~ : Int32 = 100,
+  rollback_p95_latency_ms~ : Int32 = 30_000,
+  rollback_minimum_requests~ : Int32 = 20,
   configured_at_ms~ : Int64,
 ) -> Result[@routing.RoutingPolicyV1, String] {
   let revision = self.routing_policy_drafts
@@ -458,7 +458,7 @@ fn ProviderRouter::configure_routing_policy(
 fn ProviderRouter::activate_routing_policy(
   self : ProviderRouter,
   app_type~ : String,
-  expected_revision~ : Int,
+  expected_revision~ : Int32,
   actor_principal~ : @capability.PrincipalRefV1,
   authority_decision~ : @capability.AuthorityDecisionRefV1,
   authority_checked_at~ : String,
@@ -616,7 +616,7 @@ fn ProviderRouter::routing_policy_state_json(
       receipts.push(receipt.to_json())
     }
   }
-  {
+  Json({
     "contractId": Json::string(@routing.routing_policy_contract_v1()),
     "appType": Json::string(app_type),
     "draft": routing_optional_policy_json(
@@ -638,11 +638,13 @@ fn ProviderRouter::routing_policy_state_json(
       self.routing_last_active_decisions.get(app_type),
     ),
     "activationReceipts": Json::array(receipts),
-  }.to_json()
+  })
 }
 
 ///|
-fn ProviderRouter::circuit_state_counts(self : ProviderRouter) -> (Int, Int) {
+fn ProviderRouter::circuit_state_counts(
+  self : ProviderRouter,
+) -> (Int32, Int32) {
   let mut open_count = 0
   let mut half_open_count = 0
   for breaker in self.circuit_breakers.values() {

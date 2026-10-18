@@ -1,8 +1,8 @@
 ///|
 fn RuntimeService::uptime_seconds(
   _self : RuntimeService,
-  started_at_ms : Int,
-) -> Int {
+  started_at_ms : Int32,
+) -> Int32 {
   let elapsed = @async.now().to_int() - started_at_ms
   if elapsed < 0 {
     0

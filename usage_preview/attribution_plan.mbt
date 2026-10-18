@@ -68,11 +68,11 @@ fn attribution_apply_plan(
   scope : String,
   ids : Map[String, Bool],
   assignments : Map[String, String],
-) -> Int raise {
+) -> Int32 raise {
   guard attribution_parse(content) is Object(plan) &&
     plan.length() == 3 &&
-    plan.get("schema") == Some("moongate.workload-plan.v1".to_json()) &&
-    plan.get("scope") == Some(scope.to_json()) &&
+    plan.get("schema") == Some(Json("moongate.workload-plan.v1")) &&
+    plan.get("scope") == Some(Json(scope)) &&
     plan.get("changes") is Some(Array(changes)) else {
     fail(
       "Plan requires schema moongate.workload-plan.v1, matching scope and changes only",
@@ -105,7 +105,7 @@ fn attribution_apply_plan(
     }
     seen[id] = true
     let previous = match assignments.get(id) {
-      Some(label) => label.to_json()
+      Some(label) => Json(label)
       None => Json::null()
     }
     if expected != previous {

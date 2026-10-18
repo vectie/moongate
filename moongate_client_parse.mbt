@@ -180,7 +180,7 @@ fn moongate_json_double_field(obj : Map[String, Json], key : String) -> Double? 
 }
 
 ///|
-fn moongate_json_int_field(obj : Map[String, Json], key : String) -> Int? {
+fn moongate_json_int_field(obj : Map[String, Json], key : String) -> Int32? {
   match moongate_json_double_field(obj, key) {
     Some(value) => Some(value.trunc().to_int())
     None => None

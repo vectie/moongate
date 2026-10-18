@@ -1,9 +1,9 @@
 ///|
 pub fn MoonGateClient::from_suite_status(
   status : Json,
-  api_key? : String? = None,
-  control_token? : String? = None,
-  user_agent? : String? = None,
+  api_key~ : String? = None,
+  control_token~ : String? = None,
+  user_agent~ : String? = None,
 ) -> MoonGateClient? {
   match moongate_base_url_from_suite_status(status) {
     Some(base_url) =>
@@ -16,10 +16,10 @@ pub fn MoonGateClient::from_suite_status(
 
 ///|
 pub async fn MoonGateClient::discover(
-  path? : String = default_moongate_suite_status_path(),
-  api_key? : String? = None,
-  control_token? : String? = None,
-  user_agent? : String? = None,
+  path~ : String = default_moongate_suite_status_path(),
+  api_key~ : String? = None,
+  control_token~ : String? = None,
+  user_agent~ : String? = None,
 ) -> MoonGateClient {
   let content = @fsx.read_file(path) catch { _ => "" }
   if !content.is_empty() {

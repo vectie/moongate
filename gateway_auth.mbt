@@ -47,7 +47,7 @@ async fn AuthService::codex_client(
   self : AuthService,
   creds : @codex.Credentials,
   accept~ : String,
-  session_id? : String? = None,
+  session_id~ : String? = None,
 ) -> @http.Client {
   let _ = self
   Client(

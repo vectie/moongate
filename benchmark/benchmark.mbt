@@ -105,10 +105,10 @@ pub(all) struct DeterministicWorkloadV1 {
   contract_id : String
   workload_id : String
   workload_version : String
-  concurrency : Int
-  latency_samples_ms : Array[Int]
-  first_token_samples_ms : Array[Int]
-  output_tokens : Int
+  concurrency : Int32
+  latency_samples_ms : Array[Int32]
+  first_token_samples_ms : Array[Int32]
+  output_tokens : Int32
   simulated_cost_nano_usd : Int64
 } derive(Debug, Eq, ToJson, FromJson)
 
@@ -120,12 +120,12 @@ pub(all) struct BenchmarkReportV1 {
   mode : String
   claim_ceiling : String
   live_provider : Bool
-  concurrency : Int
-  request_count : Int
+  concurrency : Int32
+  request_count : Int32
   latency : @telemetry.PercentileSnapshotV1
   first_token : @telemetry.PercentileSnapshotV1
-  output_tokens : Int
-  output_tokens_per_second_milli : Int
+  output_tokens : Int32
+  output_tokens_per_second_milli : Int32
   cost_nano_usd : Int64
 } derive(Debug, Eq, ToJson, FromJson)
 
@@ -136,10 +136,10 @@ pub(all) struct LiveBenchmarkRequestV1 {
   provider_id : String
   model : String
   workload_id : String
-  max_requests : Int
-  max_concurrency : Int
-  max_input_tokens : Int
-  max_output_tokens : Int
+  max_requests : Int32
+  max_concurrency : Int32
+  max_input_tokens : Int32
+  max_output_tokens : Int32
   max_cost_nano_usd : Int64
   deadline_ms : Int64
   cancellation_id : String

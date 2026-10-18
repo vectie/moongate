@@ -3,7 +3,7 @@ fn moongate_security_handler(
   next : @httpx.Handler,
   control : ControlPlaneAuth,
   configured_host : String,
-  port : Int,
+  port : Int32,
 ) -> @httpx.Handler {
   (r, w) => {
     if !moongate_request_authority_allowed(r.headers, configured_host, port) {
@@ -36,7 +36,7 @@ fn moongate_security_handler(
 fn moongate_control_bootstrap_allowed(
   headers : Map[String, String],
   configured_host : String,
-  port : Int,
+  port : Int32,
 ) -> Bool {
   match headers.get("origin") {
     Some(origin) => {
@@ -141,7 +141,7 @@ fn moongate_safe_static_path(path : String) -> Bool {
 fn moongate_request_authority_allowed(
   headers : Map[String, String],
   configured_host : String,
-  port : Int,
+  port : Int32,
 ) -> Bool {
   guard headers.get("host") is Some(host_header) else { return false }
   guard moongate_parse_authority(host_header) is Some(authority) else {
@@ -160,8 +160,8 @@ fn moongate_request_authority_allowed(
 ///|
 fn moongate_request_port_allowed(
   host : String,
-  actual : Int?,
-  expected : Int,
+  actual : Int32?,
+  expected : Int32,
 ) -> Bool {
   moongate_port_allowed(actual, expected) ||
   (actual is None && moongate_loopback_host(host))
@@ -176,11 +176,11 @@ fn moongate_loopback_host(host : String) -> Bool {
 ///|
 priv struct MoongateAuthority {
   host : String
-  port : Int?
+  port : Int32?
 }
 
 ///|
-fn moongate_parse_port(value : StringView) -> Int? {
+fn moongate_parse_port(value : StringView) -> Int32? {
   if value.is_empty() {
     return None
   }
@@ -260,7 +260,7 @@ fn moongate_parse_authority(authority : String) -> MoongateAuthority? {
 fn moongate_origin_allowed(
   origin : String,
   configured_host : String,
-  port : Int,
+  port : Int32,
 ) -> Bool {
   let value = origin.trim()
   if value != origin || value.is_empty() || value == "null" {
@@ -287,7 +287,7 @@ fn moongate_host_allowed(host : String, configured_host : String) -> Bool {
 }
 
 ///|
-fn moongate_port_allowed(actual : Int?, expected : Int) -> Bool {
+fn moongate_port_allowed(actual : Int32?, expected : Int32) -> Bool {
   match actual {
     Some(port) => port == expected
     None => expected == 80 || expected == 443
@@ -317,7 +317,7 @@ async fn moongate_write_control_auth_error(w : @httpx.ResponseWriter) -> Unit {
 ///|
 async fn moongate_write_json_error(
   w : @httpx.ResponseWriter,
-  status_code : Int,
+  status_code : Int32,
   code : String,
   message : String,
 ) -> Unit {
@@ -325,11 +325,12 @@ async fn moongate_write_json_error(
   w.header().set("Cache-Control", "no-store")
   w.write_header(status_code)
   w.write(
-    {
-      "error": { "code": Json::string(code), "message": Json::string(message) }.to_json(),
-    }
-    .to_json()
-    .stringify(),
+    Json({
+      "error": Json({
+        "code": Json::string(code),
+        "message": Json::string(message),
+      }),
+    }).stringify(),
   )
   w.flush()
 }

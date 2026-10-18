@@ -10,17 +10,17 @@ fn get(value : Json, key : String) -> Json raise {
 fn bucket(start : Int64, results : Array[Json]) -> Json {
   {
     "object": "bucket",
-    "start_time": start.to_double().to_json(),
-    "end_time": (start + 86400L).to_double().to_json(),
-    "results": results.to_json(),
+    "start_time": Json(start.to_double()),
+    "end_time": Json((start + 86400L).to_double()),
+    "results": Json(results),
   }
 }
 
 ///|
 fn amount(
   value : Json,
-  project? : Json = "fixture-project",
-  line_item? : Json = "text",
+  project~ : Json = "fixture-project",
+  line_item~ : Json = "text",
 ) -> Json {
   {
     "object": "organization.costs.result",
@@ -31,11 +31,11 @@ fn amount(
 }
 
 ///|
-fn page(buckets : Array[Json], more? : Bool = false) -> String {
+fn page(buckets : Array[Json], more~ : Bool = false) -> String {
   Json::object({
     "object": "page",
-    "data": buckets.to_json(),
-    "has_more": more.to_json(),
+    "data": Json(buckets),
+    "has_more": Json(more),
     "next_page": Json::null(),
   }).stringify()
 }
@@ -58,7 +58,7 @@ fn review(usage : String, costs : String) -> Json raise {
 fn day(result : Json, date : String) -> Json raise {
   guard get(result, "days") is Array(days) else { fail("days") }
   for day in days {
-    if get(day, "day") == date.to_json() {
+    if get(day, "day") == Json(date) {
       return day
     }
   }
@@ -66,7 +66,7 @@ fn day(result : Json, date : String) -> Json raise {
 }
 
 ///|
-fn usage(cost : String, date? : String = "2024-11-01") -> String {
+fn usage(cost : String, date~ : String = "2024-11-01") -> String {
   "model,totalTokens,costUsd,provider,date\nm,10," +
   cost +
   ",fixture-route," +
@@ -82,14 +82,14 @@ test "corresponding daily review sums grouped costs and preserves credits and ze
   ])
   let result = review(capture, costs)
   assert_eq(get(result, "pairedDays"), Json::number(2))
-  assert_eq(get(result, "pairedLocalEstimatedUsd"), 1.5.to_json())
+  assert_eq(get(result, "pairedLocalEstimatedUsd"), Json(1.5))
   assert_eq(get(result, "pairedProviderReportedUsd"), Json::number(2))
-  assert_eq(get(result, "pairedReportedMinusEstimatedUsd"), 0.5.to_json())
+  assert_eq(get(result, "pairedReportedMinusEstimatedUsd"), Json(0.5))
   assert_eq(
     get(day(result, "2024-11-02"), "reportedMinusEstimatedUsd"),
     Json::number(0),
   )
-  assert_eq(get(result, "scopeVerified"), false.to_json())
+  assert_eq(get(result, "scopeVerified"), Json(false))
 }
 
 ///|
@@ -128,10 +128,7 @@ test "empty provider bucket and absent local day are unavailable instead of zero
     usage("1"),
     page([bucket(1730419200L, []), bucket(1730505600L, [amount(2)])]),
   )
-  assert_eq(
-    get(day(result, "2024-11-01"), "providerBucketPresent"),
-    true.to_json(),
-  )
+  assert_eq(get(day(result, "2024-11-01"), "providerBucketPresent"), Json(true))
   assert_eq(
     get(day(result, "2024-11-01"), "providerKnownReportedUsd"),
     Json::null(),
@@ -151,11 +148,11 @@ test "usage outside available provider buckets remains visible" {
   )
   assert_eq(
     get(day(result, "2024-11-02"), "providerBucketPresent"),
-    false.to_json(),
+    Json(false),
   )
   assert_eq(
     get(day(result, "2024-11-02"), "differenceBlockers"),
-    ["no-provider-bucket"].to_json(),
+    Json(["no-provider-bucket"]),
   )
 }
 
@@ -166,11 +163,11 @@ test "partial local capture and unconsumed provider page suppress differences" {
     capture,
     page([bucket(1730419200L, [amount(2)])], more=true),
   )
-  assert_eq(get(result, "localSourcePartial"), true.to_json())
-  assert_eq(get(result, "providerHasMore"), true.to_json())
+  assert_eq(get(result, "localSourcePartial"), Json(true))
+  assert_eq(get(result, "providerHasMore"), Json(true))
   assert_eq(
     get(day(result, "2024-11-01"), "differenceBlockers"),
-    ["partial-local-source", "provider-page-has-more"].to_json(),
+    Json(["partial-local-source", "provider-page-has-more"]),
   )
 }
 
@@ -179,7 +176,7 @@ test "unknown source coverage and undated rows cannot disappear from comparison"
   let capture = "{\"data\":[{\"model\":\"m\",\"totalTokens\":10,\"costUsd\":1,\"providerId\":\"fixture-route\"}],\"sourceCoverageUnknown\":true}"
   let result = review(capture, page([bucket(1730419200L, [amount(2)])]))
   assert_eq(get(result, "localUndatedRows"), Json::number(1))
-  assert_eq(get(result, "localSourcePartial"), true.to_json())
+  assert_eq(get(result, "localSourcePartial"), Json(true))
   assert_eq(get(result, "pairedDays"), Json::number(0))
 }
 
@@ -214,7 +211,7 @@ test "exact app provider project and line item filters compose and disclose coun
 
 ///|
 test "missing grouping labels block requested filter rather than invent a project" {
-  for label in [Json::null(), "".to_json(), Json::number(3)] {
+  for label in [Json::null(), Json(""), Json::number(3)] {
     let costs = page([bucket(1730419200L, [amount(2, project=label)])])
     assert_true(
       @costs_review.review_openai_costs_json(
@@ -311,12 +308,7 @@ test "duplicate days and malformed provider record schemas reject atomically" {
 
 ///|
 test "unsupported currencies numeric strings and unsafe amounts reject" {
-  for
-    bad in [
-      "2".to_json(),
-      1000000000001.0.to_json(),
-      (-1000000000001.0).to_json(),
-    ] {
+  for bad in [Json("2"), Json(1000000000001.0), Json(-1000000000001.0)] {
     assert_true(
       @costs_review.review_openai_costs_json(
         usage("1"),

@@ -17,7 +17,7 @@ priv struct ProviderTemplateTarget {
   id : String
   label : String
   provider_app_type : String
-  priority : Int
+  priority : Int32
 }
 
 ///|
@@ -294,7 +294,7 @@ fn ProviderTemplateSeed::preset_json(
   self : ProviderTemplateSeed,
   target : ProviderTemplateTarget,
 ) -> Json {
-  let form = {
+  let form = Json({
     "templateLabel": Json::string("\{self.name} / \{self.default_model}"),
     "appType": Json::string(target.provider_app_type),
     "id": Json::string(self.id),
@@ -304,8 +304,8 @@ fn ProviderTemplateSeed::preset_json(
     "apiFormat": Json::string(self.api_format),
     "enabled": Json::boolean(true),
     "modelMapping": self.model_mapping_json(target.provider_app_type),
-  }.to_json()
-  {
+  })
+  Json({
     "appType": Json::string(target.id),
     "providerAppType": Json::string(target.provider_app_type),
     "targetAppLabel": Json::string(target.label),
@@ -318,7 +318,7 @@ fn ProviderTemplateSeed::preset_json(
     "isOfficial": Json::boolean(self.category == "official"),
     "icon": Json::string(self.icon),
     "form": form,
-  }.to_json()
+  })
 }
 
 ///|

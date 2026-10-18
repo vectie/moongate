@@ -66,15 +66,15 @@ test "JSON and framed HTTP SSE yield standard usage artifacts and reopen" {
       ),
     ),
   ])
-  assert_eq(field(result, "schema"), "moongate.usage-file.v1".to_json())
-  assert_eq(field(field(result, "summary"), "tokens"), (17).to_json())
-  assert_eq(field(field(result, "summary"), "missingCostCount"), (2).to_json())
-  assert_eq(field(result, "sourceCoverageUnknown"), true.to_json())
+  assert_eq(field(result, "schema"), Json("moongate.usage-file.v1"))
+  assert_eq(field(field(result, "summary"), "tokens"), Json(17))
+  assert_eq(field(field(result, "summary"), "missingCostCount"), Json(2))
+  assert_eq(field(result, "sourceCoverageUnknown"), Json(true))
   guard field(result, "data") is Array(rows) else { fail("rows") }
   assert_eq(rows.length(), 2)
-  assert_eq(field(rows[0], "requestId"), "resp-1".to_json())
-  assert_eq(field(rows[0], "captureIndex"), (1).to_json())
-  assert_eq(field(rows[0], "date"), "2026-10-09".to_json())
+  assert_eq(field(rows[0], "requestId"), Json("resp-1"))
+  assert_eq(field(rows[0], "captureIndex"), Json(1))
+  assert_eq(field(rows[0], "date"), Json("2026-10-09"))
   assert_eq(field(rows[0], "totalCostUsd"), Json::null())
   assert_false(result.stringify().contains("PRIVATE_"))
   assert_false(result.stringify().contains("cached_tokens"))
@@ -88,8 +88,8 @@ test "JSON and framed HTTP SSE yield standard usage artifacts and reopen" {
     is Ok(reopened) else {
     fail("reopen")
   }
-  assert_eq(field(reopened, "total"), (2).to_json())
-  assert_eq(field(field(reopened, "summary"), "tokens"), (17).to_json())
+  assert_eq(field(reopened, "total"), Json(2))
+  assert_eq(field(field(reopened, "summary"), "tokens"), Json(17))
 }
 
 ///|
@@ -109,14 +109,14 @@ test "terminal incomplete failed and cancelled consumption is separate from answ
     ("failed", event("response.failed", response("f", "failed", usage))),
     ("cancelled", response("c", "cancelled", usage)),
   ])
-  assert_eq(field(result, "total"), (3).to_json())
-  assert_eq(field(field(result, "summary"), "tokens"), (15).to_json())
+  assert_eq(field(result, "total"), Json(3))
+  assert_eq(field(field(result, "summary"), "tokens"), Json(15))
   let values = outcomes(result)
-  assert_eq(field(values[0], "state"), "incomplete".to_json())
-  assert_eq(field(values[0], "terminal"), true.to_json())
-  assert_eq(field(values[0], "incompleteReason"), "max_output_tokens".to_json())
-  assert_eq(field(values[1], "state"), "failed".to_json())
-  assert_eq(field(values[2], "state"), "cancelled".to_json())
+  assert_eq(field(values[0], "state"), Json("incomplete"))
+  assert_eq(field(values[0], "terminal"), Json(true))
+  assert_eq(field(values[0], "incompleteReason"), Json("max_output_tokens"))
+  assert_eq(field(values[1], "state"), Json("failed"))
+  assert_eq(field(values[2], "state"), Json("cancelled"))
 }
 
 ///|
@@ -140,22 +140,19 @@ test "unknown interrupted missing partial zero and empty remain distinct" {
     ("queued", response("q", "queued", usage)),
     ("error", "data: {\"type\":\"error\",\"message\":\"PRIVATE_ERROR\"}\n\n"),
   ])
-  assert_eq(field(result, "total"), (1).to_json())
-  assert_eq(field(result, "sourceTotal"), (8).to_json())
+  assert_eq(field(result, "total"), Json(1))
+  assert_eq(field(result, "sourceTotal"), Json(8))
   let values = outcomes(result)
-  assert_eq(field(values[0], "usageState"), "missing".to_json())
-  assert_eq(field(values[1], "usageState"), "incomplete".to_json())
-  assert_eq(field(values[2], "state"), "interrupted".to_json())
-  assert_eq(field(values[2], "usageState"), "unavailable".to_json())
-  assert_eq(
-    field(field(values[2], "observedUsage"), "total_tokens"),
-    (3).to_json(),
-  )
-  assert_eq(field(values[3], "state"), "unknown".to_json())
-  assert_eq(field(values[4], "state"), "empty".to_json())
-  assert_eq(field(values[6], "responseStatus"), "queued".to_json())
-  assert_eq(field(values[7], "state"), "errored".to_json())
-  assert_eq(field(values[7], "terminal"), false.to_json())
+  assert_eq(field(values[0], "usageState"), Json("missing"))
+  assert_eq(field(values[1], "usageState"), Json("incomplete"))
+  assert_eq(field(values[2], "state"), Json("interrupted"))
+  assert_eq(field(values[2], "usageState"), Json("unavailable"))
+  assert_eq(field(field(values[2], "observedUsage"), "total_tokens"), Json(3))
+  assert_eq(field(values[3], "state"), Json("unknown"))
+  assert_eq(field(values[4], "state"), Json("empty"))
+  assert_eq(field(values[6], "responseStatus"), Json("queued"))
+  assert_eq(field(values[7], "state"), Json("errored"))
+  assert_eq(field(values[7], "terminal"), Json(false))
   assert_false(result.stringify().contains("PRIVATE_"))
 }
 
@@ -173,8 +170,8 @@ test "earlier usage never fills in missing final usage" {
       event("response.completed", response("r", "completed", "null")),
     ),
   ])
-  assert_eq(field(result, "total"), (0).to_json())
-  assert_eq(field(outcomes(result)[0], "usageState"), "missing".to_json())
+  assert_eq(field(result, "total"), Json(0))
+  assert_eq(field(outcomes(result)[0], "usageState"), Json("missing"))
 }
 
 ///|
@@ -185,20 +182,20 @@ test "CRLF multiline metadata and unframed terminal handling" {
   let framed = "id: ignored\nretry: 1000\n: ping\n" +
     event("response.completed", body)
   let result = imported([("s", framed.split("\n").collect().join("\r\n"))])
-  assert_eq(field(result, "total"), (1).to_json())
+  assert_eq(field(result, "total"), Json(1))
   let partial = imported([
     (
       "s",
       event("response.completed", body).strip_suffix("\n").unwrap().to_owned(),
     ),
   ])
-  assert_eq(field(partial, "total"), (0).to_json())
-  assert_eq(field(outcomes(partial)[0], "state"), "interrupted".to_json())
+  assert_eq(field(partial, "total"), Json(0))
+  assert_eq(field(outcomes(partial)[0], "state"), Json("interrupted"))
   let multiline = "data: {\"type\":\"response.completed\",\n" +
     "data: \"response\":" +
     body +
     "}\n\n"
-  assert_eq(field(imported([("s", multiline)]), "total"), (1).to_json())
+  assert_eq(field(imported([("s", multiline)]), "total"), Json(1))
 }
 
 ///|
@@ -268,7 +265,7 @@ test "optional sequence numbers must increase without requiring contiguous cover
   )
   assert_eq(
     field(outcomes(imported([("s", start + end)]))[0], "state"),
-    "completed".to_json(),
+    Json("completed"),
   )
   for
     bad in [
@@ -305,7 +302,7 @@ test "exact counts reject unsafe fractions strings mismatches and combined overf
       ),
     ),
   ])
-  assert_eq(field(field(exact, "summary"), "tokens"), (12).to_json())
+  assert_eq(field(field(exact, "summary"), "tokens"), Json(12))
   let maximum = "{\"input_tokens\":9007199254740991,\"output_tokens\":0,\"total_tokens\":9007199254740991}"
   assert_true(
     @response_capture.import_response_captures_json([

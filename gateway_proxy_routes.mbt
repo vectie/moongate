@@ -101,9 +101,9 @@ fn ProxyService::register_management_routes(
   auth : AuthService,
   usage : UsageService,
   host : String,
-  port : Int,
-  started_at_ms : Int,
-  uptime_seconds : Int,
+  port : Int32,
+  started_at_ms : Int32,
+  uptime_seconds : Int32,
   stream_check_config : StreamCheckConfig,
 ) -> Unit {
   router.add_handler(Get, "/proxy/status", (_, w) => {
@@ -231,6 +231,9 @@ fn ProxyService::register_management_routes(
   })
   router.add_handler(Get, "/providers/models", (r, w) => {
     self.handle_saved_provider_models(r, w)
+  })
+  router.add_handler(Post, "/providers/validate-connection", (r, w) => {
+    self.handle_validate_provider_connection(r, w)
   })
   router.add_handler(Get, "/providers/current", (r, w) => {
     self.handle_get_current_provider(r, w)

@@ -1,20 +1,20 @@
 ///|
 test "moongate subscription claude parser preserves known and unknown tiers" {
   guard moon_parse_claude_quota(
-      {
-        "five_hour": {
+      Json({
+        "five_hour": Json({
           "utilization": Json::number(25.0),
           "resets_at": Json::string("2026-01-01T00:00:00Z"),
-        }.to_json(),
-        "new_window": { "utilization": Json::number(50.0) }.to_json(),
-        "extra_usage": {
+        }),
+        "new_window": Json({ "utilization": Json::number(50.0) }),
+        "extra_usage": Json({
           "is_enabled": Json::boolean(true),
           "monthly_limit": Json::number(100.0),
           "used_credits": Json::number(20.0),
           "utilization": Json::number(20.0),
           "currency": Json::string("USD"),
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ).to_json()
     is Object(quota) else {
     fail("expected quota object")
@@ -26,25 +26,28 @@ test "moongate subscription claude parser preserves known and unknown tiers" {
   assert_eq(tiers.length(), 2)
   assert_eq(
     tiers[0],
-    {
+    Json({
       "name": Json::string("five_hour"),
       "utilization": Json::number(25.0),
       "resetsAt": Json::string("2026-01-01T00:00:00Z"),
-    }.to_json(),
+    }),
   )
   assert_eq(
     tiers[1],
-    { "name": Json::string("new_window"), "utilization": Json::number(50.0) }.to_json(),
+    Json({
+      "name": Json::string("new_window"),
+      "utilization": Json::number(50.0),
+    }),
   )
   assert_eq(
     quota["extraUsage"],
-    {
+    Json({
       "isEnabled": Json::boolean(true),
       "monthlyLimit": Json::number(100.0),
       "usedCredits": Json::number(20.0),
       "utilization": Json::number(20.0),
       "currency": Json::string("USD"),
-    }.to_json(),
+    }),
   )
   assert_true(quota.get("queriedAt") is Some(_))
 }
@@ -52,19 +55,19 @@ test "moongate subscription claude parser preserves known and unknown tiers" {
 ///|
 test "moongate subscription codex parser maps wham windows to tier names" {
   guard moon_parse_codex_quota(
-      {
-        "rate_limit": {
-          "primary_window": {
+      Json({
+        "rate_limit": Json({
+          "primary_window": Json({
             "used_percent": Json::number(12.5),
             "limit_window_seconds": Json::number(18000.0),
             "reset_at": Json::number(3600.0),
-          }.to_json(),
-          "secondary_window": {
+          }),
+          "secondary_window": Json({
             "used_percent": Json::number(75.0),
             "limit_window_seconds": Json::number(604800.0),
-          }.to_json(),
-        }.to_json(),
-      }.to_json(),
+          }),
+        }),
+      }),
       "codex",
     ).to_json()
     is Object(quota) else {
@@ -84,27 +87,27 @@ test "moongate subscription codex parser maps wham windows to tier names" {
 ///|
 test "moongate subscription gemini parser groups buckets by model family" {
   guard moon_parse_gemini_quota(
-      {
+      Json({
         "buckets": Json::array([
-          {
+          Json({
             "modelId": Json::string("gemini-3-pro"),
             "remainingFraction": Json::number(0.8),
             "resetTime": Json::string("pro-reset"),
-          }.to_json(),
-          {
+          }),
+          Json({
             "modelId": Json::string("gemini-2.5-flash"),
             "remainingFraction": Json::number(0.2),
-          }.to_json(),
-          {
+          }),
+          Json({
             "modelId": Json::string("gemini-2.5-flash-lite"),
             "remainingFraction": Json::number(0.6),
-          }.to_json(),
-          {
+          }),
+          Json({
             "modelId": Json::string("gemini-2.0-flash"),
             "remainingFraction": Json::number(0.5),
-          }.to_json(),
+          }),
         ]),
-      }.to_json(),
+      }),
     ).to_json()
     is Object(quota) else {
     fail("expected quota object")

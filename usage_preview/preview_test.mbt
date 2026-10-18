@@ -31,7 +31,7 @@ test "existing JSON envelope behavior and partial provenance survive extraction"
     is Ok(Object(result)) else {
     fail("JSON preview")
   }
-  assert_eq(result["partial"], true.to_json())
+  assert_eq(result["partial"], Json(true))
   assert_eq(result["sourceTotal"], Json::number(12))
   guard result["summary"] is Object(summary) else { fail("summary") }
   assert_eq(summary["tokens"], Json::number(2950))
@@ -68,10 +68,10 @@ test "CSV blanks zero total tokens timezone filters and unknown dates" {
   assert_eq(first["outputTokens"], Json::number(0))
   assert_eq(first["totalTokens"], Json::number(0))
   assert_eq(first["totalCostUsd"], Json::number(0))
-  assert_eq(first["date"], "2026-10-08".to_json())
+  assert_eq(first["date"], Json("2026-10-08"))
   assert_eq(second["totalTokens"], Json::number(5))
   assert_eq(second["totalCostUsd"], Json::null())
-  assert_eq(second["date"], "".to_json())
+  assert_eq(second["date"], Json(""))
   guard @usage_preview.moongate_preview_usage_file_json(
       csv,
       start_day="2026-10-08",

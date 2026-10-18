@@ -3,10 +3,10 @@
 /// Output keeps original one-based entry numbers and an explicit metadata allowlist.
 pub fn inspect_capture_json(
   content : String,
-  request_method? : String = "",
-  status? : String = "",
-  origin? : String = "",
-  entry? : Int = 0,
+  request_method~ : String = "",
+  status~ : String = "",
+  origin~ : String = "",
+  entry~ : Int32 = 0,
 ) -> Result[Json, String] {
   try
     inspect_capture(content, request_method~, status~, origin~, entry~)
@@ -23,7 +23,7 @@ fn inspect_capture(
   request_method~ : String,
   status~ : String,
   origin~ : String,
-  entry~ : Int,
+  entry~ : Int32,
 ) -> Json raise {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     fail("HAR file exceeds 4 MiB")
@@ -93,14 +93,14 @@ fn inspect_capture(
   }
   let selected : Array[Json] = []
   for row in normalized {
-    if (entry == 0 || field(row, "entry") == entry.to_json()) &&
+    if (entry == 0 || field(row, "entry") == Json(entry)) &&
       (request_method.is_empty() || text(row, "method") == request_method) &&
       (origin_filter.is_empty() || text(row, "origin") == origin_filter) &&
       status_matches(field(row, "status"), status) {
       guard row is Object(obj) else { fail("Expected normalized entry") }
       obj["startOffsetMs"] = match
         (first_start, number(field(row, "startedAtUnixMs"))) {
-        (Some(first), Some(start)) => (start - first).to_json()
+        (Some(first), Some(start)) => Json(start - first)
         _ => Json::null()
       }
       selected.push(Json::object(obj))
@@ -110,13 +110,13 @@ fn inspect_capture(
   let by_origin = groups(selected, "origin")
   let by_outcome = groups(selected, "outcome")
   let filters : Json = {
-    "method": request_method.to_json(),
-    "status": status.to_json(),
-    "origin": origin_filter.to_json(),
+    "method": Json(request_method),
+    "status": Json(status),
+    "origin": Json(origin_filter),
     "entry": if entry == 0 {
       Json::null()
     } else {
-      entry.to_json()
+      Json(entry)
     },
   }
   let caveats = [
@@ -152,17 +152,17 @@ fn inspect_capture(
     "schema": "moongate.har-diagnostics.v1",
     "timingUnit": "milliseconds",
     "percentileMethod": "nearest-rank",
-    "captureEntries": entries.length().to_json(),
-    "selectedEntries": selected.length().to_json(),
+    "captureEntries": Json(entries.length()),
+    "selectedEntries": Json(selected.length()),
     "captureStartUnixMs": optional_number(first_start),
     "coverage": "capture-only; completeness unverified",
     "filters": filters,
     "summary": summary,
-    "byOrigin": by_origin.to_json(),
-    "byOutcome": by_outcome.to_json(),
-    "entries": selected.to_json(),
-    "caveats": caveats.to_json(),
-    "report": (lines.join("\n") + "\n").to_json(),
+    "byOrigin": Json(by_origin),
+    "byOutcome": Json(by_outcome),
+    "entries": Json(selected),
+    "caveats": Json(caveats),
+    "report": Json(lines.join("\n") + "\n"),
   }
   if @encoding/utf8.encode(result.stringify(indent=2)).length() >
     4 * 1024 * 1024 - 1 {
@@ -205,7 +205,7 @@ fn summarize(rows : Array[Json]) -> Json {
     if field(row, "status") == Json::null() {
       unknown_status += 1
     }
-    if field(row, "status") == (0).to_json() {
+    if field(row, "status") == Json(0) {
       no_response += 1
     }
     if number(field(row, "status")) is Some(n) && n >= 400.0 {
@@ -216,21 +216,21 @@ fn summarize(rows : Array[Json]) -> Json {
     }
   }
   samples.sort()
-  let percentile = (p : Int) => {
+  let percentile = (p : Int32) => {
     if samples.is_empty() {
       Json::null()
     } else {
-      samples[(samples.length() * p + 99) / 100 - 1].to_json()
+      Json(samples[(samples.length() * p + 99) / 100 - 1])
     }
   }
   {
-    "entries": rows.length().to_json(),
-    "httpErrorCount": http_errors.to_json(),
-    "noHttpResponseCount": no_response.to_json(),
-    "unknownStatusCount": unknown_status.to_json(),
-    "missingStartCount": missing_start.to_json(),
-    "elapsedSampleCount": samples.length().to_json(),
-    "missingElapsedCount": (rows.length() - samples.length()).to_json(),
+    "entries": Json(rows.length()),
+    "httpErrorCount": Json(http_errors),
+    "noHttpResponseCount": Json(no_response),
+    "unknownStatusCount": Json(unknown_status),
+    "missingStartCount": Json(missing_start),
+    "elapsedSampleCount": Json(samples.length()),
+    "missingElapsedCount": Json(rows.length() - samples.length()),
     "p50ElapsedMs": percentile(50),
     "p95ElapsedMs": percentile(95),
     "maxElapsedMs": percentile(100),
@@ -253,7 +253,7 @@ fn groups(rows : Array[Json], key : String) -> Array[Json] {
     guard summarize(buckets[name]) is Object(summary) else {
       abort("Expected summary")
     }
-    summary["key"] = name.to_json()
+    summary["key"] = Json(name)
     Json::object(summary)
   })
 }

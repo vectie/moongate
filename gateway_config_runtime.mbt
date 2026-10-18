@@ -69,7 +69,7 @@ async fn ConfigService::handle_webdav_sync_operation(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   w : @httpx.ResponseWriter,
   operation : String,
 ) -> Unit {
@@ -144,7 +144,7 @@ async fn ConfigService::handle_s3_sync_operation(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   w : @httpx.ResponseWriter,
   operation : String,
 ) -> Unit {
@@ -249,13 +249,13 @@ async fn ConfigService::handle_get_claude_plugin_status(
 ) -> Unit {
   write_usage_json(
     w,
-    {
+    Json({
       "exists": Json::boolean(
         self.claude_plugin_config is Some(_) ||
         @fsx.exists_as_file(moon_claude_plugin_config_path()),
       ),
       "path": Json::string(moon_claude_plugin_config_path()),
-    }.to_json(),
+    }),
   )
 }
 

@@ -30,21 +30,21 @@ test "moongate coding plan detects supported providers" {
 ///|
 test "moongate coding plan parses kimi five hour and weekly tiers" {
   guard moon_parse_kimi_coding_plan(
-      {
+      Json({
         "limits": Json::array([
-          {
-            "detail": {
+          Json({
+            "detail": Json({
               "limit": Json::number(100.0),
               "remaining": Json::number(75.0),
               "resetTime": Json::string("2026-01-01T00:00:00Z"),
-            }.to_json(),
-          }.to_json(),
+            }),
+          }),
         ]),
-        "usage": {
+        "usage": Json({
           "limit": Json::number(1000.0),
           "remaining": Json::number(250.0),
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ).to_json()
     is Object(quota) else {
     fail("expected quota object")
@@ -63,23 +63,26 @@ test "moongate coding plan parses kimi five hour and weekly tiers" {
 ///|
 test "moongate coding plan parses zhipu token windows by unit" {
   let tiers = moon_parse_zhipu_token_tiers(
-    {
+    Json({
       "limits": Json::array([
-        {
+        Json({
           "type": Json::string("TOKENS_LIMIT"),
           "unit": Json::number(6.0),
           "percentage": Json::number(53.0),
           "nextResetTime": Json::number(2000000000000.0),
-        }.to_json(),
-        {
+        }),
+        Json({
           "type": Json::string("TOKENS_LIMIT"),
           "unit": Json::number(3.0),
           "percentage": Json::number(44.0),
           "nextResetTime": Json::number(1000000000000.0),
-        }.to_json(),
-        { "type": Json::string("TIME_LIMIT"), "percentage": Json::number(7.0) }.to_json(),
+        }),
+        Json({
+          "type": Json::string("TIME_LIMIT"),
+          "percentage": Json::number(7.0),
+        }),
       ]),
-    }.to_json(),
+    }),
   )
   assert_eq(tiers.length(), 2)
   guard tiers[0] is Object(first) else { fail("expected first tier") }
@@ -133,20 +136,20 @@ async test "moongate zhipu team quota rejects incomplete credentials before netw
 ///|
 test "moongate coding plan parses minimax general model only" {
   let tiers = moon_parse_minimax_tiers(
-    {
+    Json({
       "model_remains": Json::array([
-        {
+        Json({
           "model_name": Json::string("video"),
           "current_interval_remaining_percent": Json::number(1.0),
-        }.to_json(),
-        {
+        }),
+        Json({
           "model_name": Json::string("general"),
           "current_interval_remaining_percent": Json::number(80.0),
           "current_weekly_status": Json::number(1.0),
           "current_weekly_remaining_percent": Json::number(60.0),
-        }.to_json(),
+        }),
       ]),
-    }.to_json(),
+    }),
   )
   assert_eq(tiers.length(), 2)
   guard tiers[0] is Object(five_hour) else { fail("expected five hour tier") }
@@ -160,23 +163,23 @@ test "moongate coding plan parses minimax general model only" {
 ///|
 test "moongate coding plan parses zenmux value tiers and plan message" {
   guard moon_parse_zenmux_coding_plan(
-      {
+      Json({
         "success": Json::boolean(true),
-        "data": {
-          "quota_5_hour": {
+        "data": Json({
+          "quota_5_hour": Json({
             "usage_percentage": Json::number(0.25),
             "resets_at": Json::string("five-reset"),
             "used_value_usd": Json::number(1.5),
             "max_value_usd": Json::number(6.0),
-          }.to_json(),
-          "quota_7_day": {
+          }),
+          "quota_7_day": Json({
             "usage_percentage": Json::number(0.75),
             "resets_at": Json::string("week-reset"),
-          }.to_json(),
-          "plan": { "tier": Json::string("Pro") }.to_json(),
+          }),
+          "plan": Json({ "tier": Json::string("Pro") }),
           "account_status": Json::string("active"),
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ).to_json()
     is Object(quota) else {
     fail("expected quota object")

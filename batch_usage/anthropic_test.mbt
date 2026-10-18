@@ -2,10 +2,10 @@
 fn anthropic_result(
   id : String,
   usage : Json,
-  stop? : String = "end_turn",
+  stop~ : String = "end_turn",
 ) -> Json {
   {
-    "custom_id": id.to_json(),
+    "custom_id": Json(id),
     "headers": { "x-api-key": "PRIVATE_HEADER" },
     "result": {
       "type": "succeeded",
@@ -14,7 +14,7 @@ fn anthropic_result(
         "type": "message",
         "role": "assistant",
         "model": "fixture-small",
-        "stop_reason": stop.to_json(),
+        "stop_reason": Json(stop),
         "content": [{ "type": "text", "text": "PRIVATE_BODY" }],
         "created_at": 1234567890,
         "totalCostUsd": 999,

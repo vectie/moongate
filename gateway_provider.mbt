@@ -87,7 +87,7 @@ fn ProxyService::activate_provider(
   self : ProxyService,
   usage : UsageRequest,
   app_type : String,
-  session_key? : String? = None,
+  session_key~ : String? = None,
 ) -> ProviderRouteTarget? {
   usage.sync_provider_quota_eligibility(self.provider_router, app_type)
   let selected = self.provider_router.select_providers(app_type, session_key~)
@@ -137,7 +137,7 @@ fn ProxyService::activate_provider_target(
   usage : UsageRequest,
   app_type : String,
   provider : ProviderRouteTarget,
-  bypass_circuit_breaker? : Bool = false,
+  bypass_circuit_breaker~ : Bool = false,
 ) -> Bool {
   let allow = if bypass_circuit_breaker {
     self.provider_router.allow_provider_request_without_circuit(
@@ -166,7 +166,7 @@ fn ProxyService::activate_next_provider_after_upstream_status(
   app_type : String,
   providers : Array[ProviderRouteTarget],
   attempted_provider_ids : Array[String],
-  status_code : Int,
+  status_code : Int32,
 ) -> ProviderRouteTarget? {
   guard usage.provider_request_context() is Some(context) else { return None }
   if !attempted_provider_ids.contains(context.provider_id) {
@@ -195,7 +195,7 @@ fn ProxyService::activate_next_provider_after_upstream_status(
 }
 
 ///|
-fn provider_selection_error_status(error : ProviderSelectionError) -> Int {
+fn provider_selection_error_status(error : ProviderSelectionError) -> Int32 {
   match error {
     NoProvidersConfigured
     | AllProvidersCircuitOpen
@@ -236,16 +236,16 @@ fn provider_selection_error_json(
   error : ProviderSelectionError,
   app_type : String,
 ) -> Json {
-  {
-    "error": {
+  Json({
+    "error": Json({
       "message": Json::string(provider_selection_error_message(error, app_type)),
       "type": Json::string("proxy_error"),
       "code": Json::string(provider_selection_error_code(error)),
       "param": Json::null(),
       "app_type": Json::string(app_type),
       "selection_error": Json::string(error.to_string()),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
 }
 
 ///|
@@ -435,7 +435,7 @@ async fn ProxyService::forward_gemini_get(
     }
     Ok((response, data)) => {
       let response_body = data.text()
-      if response.code is (200..=299) {
+      if response.code is (200..<=299) {
         usage.record_success_usage_with_provider(
           self,
           TokenUsage::empty(),
@@ -482,7 +482,7 @@ async fn ProxyService::forward_gemini_post(
     }
     Ok((response, data)) => {
       let response_body = data.text()
-      if response.code is (200..=299) {
+      if response.code is (200..<=299) {
         let parsed = @json.parse(response_body) catch { _ => Json::null() }
         let usage_record = token_usage_or_response_model(
           token_usage_from_gemini_response(parsed),
@@ -595,7 +595,7 @@ async fn ProxyService::post_claude_compatible_provider_json(
   request : Json,
   api_format : String,
   anthropic_beta : String?,
-  copilot_headers? : Map[String, String] = {},
+  copilot_headers~ : Map[String, String] = {},
 ) -> Result[(@http.Response, String), String] {
   let _ = self
   let base_url = provider.base_url.unwrap()
@@ -628,11 +628,11 @@ async fn ProxyService::post_claude_compatible_provider_json(
 fn claude_compatible_provider_headers(
   api_key : String,
   api_format : String,
-  anthropic_beta? : String? = None,
-  accept? : String = "application/json",
-  custom_user_agent? : String? = None,
-  provider_type? : String? = None,
-  extra_headers? : Map[String, String] = {},
+  anthropic_beta~ : String? = None,
+  accept~ : String = "application/json",
+  custom_user_agent~ : String? = None,
+  provider_type~ : String? = None,
+  extra_headers~ : Map[String, String] = {},
 ) -> Map[String, String] {
   let headers : Map[String, String] = {
     "Content-Type": "application/json",
@@ -1233,7 +1233,7 @@ async fn ProxyService::handle_switch_provider(
   if !self.persist_provider_store_or_error(w) {
     return
   }
-  write_usage_json(w, { "warnings": Json::array([]) }.to_json())
+  write_usage_json(w, Json({ "warnings": Json::array([]) }))
 }
 
 ///|
@@ -1324,7 +1324,7 @@ fn ProxyService::ensure_official_claude_desktop_provider(
 }
 
 ///|
-fn ProxyService::import_claude_desktop_providers(self : ProxyService) -> Int {
+fn ProxyService::import_claude_desktop_providers(self : ProxyService) -> Int32 {
   ignore(self.ensure_official_claude_desktop_provider())
   let mut imported = 0
   guard self.provider_router.providers.get("claude") is Some(claude_providers) else {
@@ -1430,10 +1430,10 @@ async fn ProxyService::handle_sync_current_providers_live(
   guard self.persist_provider_store_or_error(w) else { return }
   write_usage_json(
     w,
-    {
+    Json({
       "success": Json::boolean(true),
       "message": Json::string("Live configuration synchronized"),
-    }.to_json(),
+    }),
   )
 }
 
@@ -1707,7 +1707,7 @@ fn ProxyService::record_stream_check_provider_health(
   self : ProxyService,
   provider : ProviderRouteTarget,
   result : Json,
-  draft? : Bool = false,
+  draft~ : Bool = false,
 ) -> Unit {
   // A draft result cannot certify or invalidate the stored configuration.
   if draft {
@@ -1857,19 +1857,19 @@ fn stream_check_request_body(
 ) -> Json {
   match api_format {
     "openai_chat" =>
-      {
+      Json({
         "model": Json::string(model),
         "messages": [{ "role": "user", "content": prompt }],
         "max_tokens": Json::number(8.0),
         "stream": Json::boolean(false),
-      }.to_json()
+      })
     "anthropic" =>
-      {
+      Json({
         "model": Json::string(model),
         "max_tokens": Json::number(8.0),
         "messages": [{ "role": "user", "content": prompt }],
         "stream": Json::boolean(false),
-      }.to_json()
+      })
     "gemini_native" =>
       {
         "contents": Json::array([
@@ -1886,7 +1886,7 @@ fn stream_check_request_body(
       }
       |> Json::object
     _ =>
-      {
+      Json({
         "model": Json::string(model),
         "instructions": Json::string(
           "Reply briefly to this connectivity check.",
@@ -1900,7 +1900,7 @@ fn stream_check_request_body(
         "store": Json::boolean(false),
         "stream": Json::boolean(false),
         "max_output_tokens": Json::number(8.0),
-      }.to_json()
+      })
   }
 }
 
@@ -1911,7 +1911,7 @@ async fn ProxyService::stream_check_live_request(
   provider : ProviderRouteTarget,
   model : String,
   prompt : String,
-) -> Result[(Int, String), String] {
+) -> Result[(Int32, String), String] {
   let api_format = stream_check_api_format(provider)
   let request = stream_check_request_body(api_format, model, prompt)
   if provider.provider_type == Some("codex_oauth") {
@@ -2305,11 +2305,11 @@ fn universal_provider_apps_from_request(
     "claude,codex,gemini",
   )
   let enabled = universal_provider_enabled_apps(apps_value)
-  {
+  Json({
     "claude": Json::boolean(enabled.contains("claude")),
     "codex": Json::boolean(enabled.contains("codex")),
     "gemini": Json::boolean(enabled.contains("gemini")),
-  }.to_json()
+  })
 }
 
 ///|
@@ -2335,7 +2335,7 @@ fn universal_provider_models_from_request(
 ) -> Json {
   let models : Map[String, Json] = Map([])
   match provider_string_from_request(path, body, "claudeModel") {
-    Some(model) => models["claude"] = { "model": Json::string(model) }.to_json()
+    Some(model) => models["claude"] = Json({ "model": Json::string(model) })
     None => ()
   }
   let codex : Map[String, Json] = Map([])
@@ -2351,7 +2351,7 @@ fn universal_provider_models_from_request(
     models["codex"] = Json::object(codex)
   }
   match provider_string_from_request(path, body, "geminiModel") {
-    Some(model) => models["gemini"] = { "model": Json::string(model) }.to_json()
+    Some(model) => models["gemini"] = Json({ "model": Json::string(model) })
     None => ()
   }
   Json::object(models)
@@ -2664,7 +2664,7 @@ fn provider_endpoint_validation_results_json(urls : Array[String]) -> Json {
 fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
   let trimmed = raw_url.trim().to_owned()
   if trimmed.is_empty() {
-    return {
+    return Json({
       "url": Json::string(raw_url),
       "valid": Json::boolean(false),
       "probePerformed": Json::boolean(false),
@@ -2674,10 +2674,10 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
       "message": Json::string(
         "URL validation failed; no network probe was performed",
       ),
-    }.to_json()
+    })
   }
   if !(trimmed.has_prefix("http://") || trimmed.has_prefix("https://")) {
-    return {
+    return Json({
       "url": Json::string(trimmed),
       "valid": Json::boolean(false),
       "probePerformed": Json::boolean(false),
@@ -2687,10 +2687,10 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
       "message": Json::string(
         "URL validation failed; no network probe was performed",
       ),
-    }.to_json()
+    })
   }
   if moon_endpoint_url_missing_host(trimmed) {
-    return {
+    return Json({
       "url": Json::string(trimmed),
       "valid": Json::boolean(false),
       "probePerformed": Json::boolean(false),
@@ -2700,9 +2700,9 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
       "message": Json::string(
         "URL validation failed; no network probe was performed",
       ),
-    }.to_json()
+    })
   }
-  {
+  Json({
     "url": Json::string(trimmed),
     "valid": Json::boolean(true),
     "probePerformed": Json::boolean(false),
@@ -2712,14 +2712,14 @@ fn provider_endpoint_validation_result_json(raw_url : String) -> Json {
     "message": Json::string(
       "URL syntax is valid; no network probe was performed",
     ),
-  }.to_json()
+  })
 }
 
 ///|
 fn ProxyService::selected_provider_chain(
   self : ProxyService,
   app_type : String,
-  active_provider_id? : String? = None,
+  active_provider_id~ : String? = None,
 ) -> Array[ProviderRouteTarget] {
   let selection = self.provider_router.provider_chain_after_activation(
     app_type, active_provider_id,
@@ -2771,7 +2771,7 @@ async fn write_chat_provider_codex_stream_data(
   data : String,
   state : ChatToCodexResponsesStreamState,
   stream_events : Array[Json],
-) -> (Bool, Int) {
+) -> (Bool, Int32) {
   let (done, _, events) = openai_chat_stream_data_to_codex_response_events(
     data, state,
   )

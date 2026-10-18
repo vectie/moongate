@@ -178,7 +178,7 @@ pub fn Router::new() -> Router {
               "Allow",
               routes
               .keys()
-              .iterator()
+              .iter()
               .map(method_ => method_.to_string())
               .join(", "),
             )

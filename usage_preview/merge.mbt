@@ -21,7 +21,7 @@ pub fn merge_usage_files_json(
   let rows : Array[Json] = []
   let sources : Array[Json] = []
   let occurrences : Array[Json] = []
-  let seen : Map[String, (Json, Int, Int)] = Map([])
+  let seen : Map[String, (Json, Int32, Int32)] = Map([])
   let mut imported = 0
   let mut unknown_coverage = false
   let mut tokens = 0.0
@@ -53,14 +53,14 @@ pub fn merge_usage_files_json(
     if imported > 10000 {
       return Err("Usage merge is limited to 10,000 combined input rows")
     }
-    let partial = compare_field(preview, "partial") == true.to_json()
+    let partial = compare_field(preview, "partial") == Json(true)
     unknown_coverage = unknown_coverage || partial
     sources.push({
-      "sourceIndex": (source_index + 1).to_json(),
-      "sourceName": name.to_json(),
-      "importedRows": normalized.length().to_json(),
+      "sourceIndex": Json(source_index + 1),
+      "sourceName": Json(name),
+      "importedRows": Json(normalized.length()),
       "sourceTotal": compare_field(preview, "sourceTotal"),
-      "partial": partial.to_json(),
+      "partial": Json(partial),
     })
     for row_index, row in normalized {
       guard raw[row_index] is Object(obj) &&
@@ -78,9 +78,9 @@ pub fn merge_usage_files_json(
         )
       }
       occurrences.push({
-        "requestId": id.to_json(),
-        "sourceIndex": (source_index + 1).to_json(),
-        "row": (row_index + 1).to_json(),
+        "requestId": Json(id),
+        "sourceIndex": Json(source_index + 1),
+        "row": Json(row_index + 1),
       })
       match seen.get(id) {
         Some((previous, previous_source, previous_row)) =>
@@ -91,7 +91,7 @@ pub fn merge_usage_files_json(
             ].filter(key => {
               compare_field(previous, key) != compare_field(row, key)
             })
-            let quoted_id = id.to_json().stringify()
+            let quoted_id = Json(id).stringify()
             return Err(
               "Conflicting requestId \{quoted_id}: source \{previous_source} row \{previous_row} versus source \{source_index + 1} row \{row_index + 1}; differing normalized fields: \{fields.join(", ")}; no files merged",
             )
@@ -118,10 +118,10 @@ pub fn merge_usage_files_json(
     }
   }
   let envelope : Map[String, Json] = {
-    "data": rows.to_json(),
-    "sourceTotal": rows.length().to_json(),
-    "sourceCoverageUnknown": unknown_coverage.to_json(),
-    "usageMergeScope": scope.to_json(),
+    "data": Json(rows),
+    "sourceTotal": Json(rows.length()),
+    "sourceCoverageUnknown": Json(unknown_coverage),
+    "usageMergeScope": Json(scope),
   }
   let result = match
     moongate_preview_usage_file_json(
@@ -142,18 +142,18 @@ pub fn merge_usage_files_json(
   ]
   result["usageMerge"] = {
     "schema": "moongate.usage-merge.v1",
-    "scope": scope.to_json(),
+    "scope": Json(scope),
     "identity": "exact-requestId-within-scope",
-    "inputRows": imported.to_json(),
-    "uniqueRows": rows.length().to_json(),
-    "duplicateRows": duplicates.to_json(),
-    "sources": sources.to_json(),
-    "occurrences": occurrences.to_json(),
-    "caveats": caveats.to_json(),
+    "inputRows": Json(imported),
+    "uniqueRows": Json(rows.length()),
+    "duplicateRows": Json(duplicates),
+    "sources": Json(sources),
+    "occurrences": Json(occurrences),
+    "caveats": Json(caveats),
   }
   let lines = [
     "MoonGate overlapping usage export merge",
-    "Scope: " + scope.to_json().stringify(),
+    "Scope: " + Json(scope).stringify(),
     "\{files.length()} sources; \{imported} input rows; \{rows.length()} unique requests; \{duplicates} identical duplicate rows omitted",
   ]
   for source in sources {
@@ -174,7 +174,7 @@ pub fn merge_usage_files_json(
   for caveat in caveats {
     lines.push("- " + caveat)
   }
-  result["report"] = (lines.join("\n") + "\n").to_json()
+  result["report"] = Json(lines.join("\n") + "\n")
   // Make every successful artifact reopenable within the explorer's same bound.
   if @encoding/utf8.encode(Json::object(result).stringify(indent=2)).length() >
     4 * 1024 * 1024 - 1 {

@@ -386,41 +386,41 @@ test "moongate client discovers from suite status manifest" {
 
 ///|
 test "moongate client requires suite status and manifest contracts" {
-  let root_base = { "base_url": Json::string("http://127.0.0.1:4199/") }.to_json()
+  let root_base = Json({ "base_url": Json::string("http://127.0.0.1:4199/") })
   assert_true(MoonGateClient::from_suite_status(root_base) is None)
-  let health_only = {
+  let health_only = Json({
     "health_url": Json::string("http://127.0.0.1:4299/health"),
-  }.to_json()
+  })
   assert_true(MoonGateClient::from_suite_status(health_only) is None)
-  let manifest_only = {
-    "manifest": { "base_url": Json::string("http://127.0.0.1:4199") }.to_json(),
-  }.to_json()
+  let manifest_only = Json({
+    "manifest": Json({ "base_url": Json::string("http://127.0.0.1:4199") }),
+  })
   assert_true(MoonGateClient::from_suite_status(manifest_only) is None)
-  let snake_case_manifest = {
+  let snake_case_manifest = Json({
     "contract": Json::string(@suite.status_contract()),
     "service": Json::string("moongate"),
-    "manifest": {
+    "manifest": Json({
       "contract": Json::string(@suite.manifest_contract()),
       "service": Json::string("moongate"),
       "base_url": Json::string("http://127.0.0.1:4199"),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   assert_true(MoonGateClient::from_suite_status(snake_case_manifest) is None)
-  let wrong_status_contract = {
+  let wrong_status_contract = Json({
     "contract": Json::string("moon.suite.status.v1"),
     "service": Json::string("moongate"),
     "manifest": moongate_suite_manifest_json(port=4199),
-  }.to_json()
+  })
   assert_true(MoonGateClient::from_suite_status(wrong_status_contract) is None)
-  let wrong_manifest_contract = {
+  let wrong_manifest_contract = Json({
     "contract": Json::string(@suite.status_contract()),
     "service": Json::string("moongate"),
-    "manifest": {
+    "manifest": Json({
       "contract": Json::string("moon.suite.service.v0"),
       "service": Json::string("moongate"),
       "baseUrl": Json::string("http://127.0.0.1:4199"),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
   assert_true(
     MoonGateClient::from_suite_status(wrong_manifest_contract) is None,
   )
@@ -466,15 +466,15 @@ test "moongate client parses typed agent clients from suite status" {
 test "moongate client rejects malformed agent client contracts" {
   assert_true(
     moongate_agent_clients_from_manifest(
-      { "agentClients": Json::array([]) }.to_json(),
+      Json({ "agentClients": Json::array([]) }),
     )
     is Err(_),
   )
-  let wrong_status_contract = {
+  let wrong_status_contract = Json({
     "contract": Json::string("moon.suite.status.v1"),
     "service": Json::string("moongate"),
     "manifest": moongate_suite_manifest_json(port=18081),
-  }.to_json()
+  })
   assert_true(
     moongate_agent_clients_from_suite_status(wrong_status_contract) is Err(_),
   )
@@ -483,12 +483,12 @@ test "moongate client rejects malformed agent client contracts" {
     fail("expected manifest object")
   }
   manifest_obj["agentClients"] = Json::array([
-    {
+    Json({
       "appType": Json::string("codex"),
       "protocol": Json::string("openai-compatible"),
       "baseUrl": Json::string("http://127.0.0.1:18081/v1"),
       "primaryRoute": Json::string("POST /v1/chat/completions"),
-    }.to_json(),
+    }),
   ])
   assert_true(
     moongate_agent_clients_from_manifest(Json::object(manifest_obj)) is Err(_),
@@ -510,7 +510,7 @@ fn moongate_client_agent_client_by_id(
 
 ///|
 test "moongate client parses typed models from suite response shapes" {
-  let catalog = {
+  let catalog = Json({
     "models": [
       {
         "slug": Json::string("gpt-5"),
@@ -519,7 +519,7 @@ test "moongate client parses typed models from suite response shapes" {
       },
       { "id": Json::string("moon/local") },
     ],
-  }.to_json()
+  })
   guard moongate_models_from_json(catalog) is Ok(models) else {
     fail("expected parsed models")
   }
@@ -541,7 +541,7 @@ test "moongate client rejects malformed typed model entries" {
 
 ///|
 test "moongate client parses typed usage summary" {
-  let summary = {
+  let summary = Json({
     "totalRequests": Json::number(3.0),
     "totalCost": Json::string("0.000300"),
     "totalInputTokens": Json::number(100.0),
@@ -551,7 +551,7 @@ test "moongate client parses typed usage summary" {
     "successRate": Json::number(66.7),
     "realTotalTokens": Json::number(127.0),
     "cacheHitRate": Json::number(12.5),
-  }.to_json()
+  })
   guard MoonGateUsageSummary::from_json(summary) is Ok(parsed) else {
     fail("expected parsed usage summary")
   }

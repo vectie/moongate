@@ -16,11 +16,11 @@ fn CircuitState::to_string(self : CircuitState) -> String {
 
 ///|
 priv struct CircuitBreakerConfig {
-  failure_threshold : Int
-  success_threshold : Int
-  timeout_seconds : Int
+  failure_threshold : Int32
+  success_threshold : Int32
+  timeout_seconds : Int32
   error_rate_threshold : Double
-  min_requests : Int
+  min_requests : Int32
 }
 
 ///|
@@ -35,7 +35,7 @@ fn CircuitBreakerConfig::default() -> CircuitBreakerConfig {
 }
 
 ///|
-fn moon_proxy_max_retries_default(app_type : String) -> Int {
+fn moon_proxy_max_retries_default(app_type : String) -> Int32 {
   match app_type {
     "claude" => 6
     "gemini" => 5
@@ -67,32 +67,32 @@ priv struct AllowResult {
 ///|
 priv struct CircuitBreakerStats {
   state : CircuitState
-  consecutive_failures : Int
-  consecutive_successes : Int
-  total_requests : Int
-  failed_requests : Int
+  consecutive_failures : Int32
+  consecutive_successes : Int32
+  total_requests : Int32
+  failed_requests : Int32
 }
 
 ///|
 fn CircuitBreakerStats::to_json(self : CircuitBreakerStats) -> Json {
-  {
+  Json({
     "state": Json::string(self.state.to_string()),
     "consecutiveFailures": Json::number(self.consecutive_failures.to_double()),
     "consecutiveSuccesses": Json::number(self.consecutive_successes.to_double()),
     "totalRequests": Json::number(self.total_requests.to_double()),
     "failedRequests": Json::number(self.failed_requests.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
 fn CircuitBreakerConfig::to_json(self : CircuitBreakerConfig) -> Json {
-  {
+  Json({
     "failureThreshold": Json::number(self.failure_threshold.to_double()),
     "successThreshold": Json::number(self.success_threshold.to_double()),
     "timeoutSeconds": Json::number(self.timeout_seconds.to_double()),
     "errorRateThreshold": Json::number(self.error_rate_threshold),
     "minRequests": Json::number(self.min_requests.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -139,7 +139,7 @@ fn circuit_breaker_config_from_json(json : Json) -> CircuitBreakerConfig? {
 }
 
 ///|
-fn circuit_config_int_json(obj : Map[String, Json], key : String) -> Int? {
+fn circuit_config_int_json(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(n, ..)) => Some(n.trunc().to_int())
     _ => None
@@ -171,18 +171,18 @@ fn circuit_breaker_config_is_valid(config : CircuitBreakerConfig) -> Bool {
 ///|
 priv struct CircuitBreaker {
   mut state : CircuitState
-  mut consecutive_failures : Int
-  mut consecutive_successes : Int
-  mut total_requests : Int
-  mut failed_requests : Int
-  mut last_opened_at_ms : Int?
+  mut consecutive_failures : Int32
+  mut consecutive_successes : Int32
+  mut total_requests : Int32
+  mut failed_requests : Int32
+  mut last_opened_at_ms : Int32?
   mut config : CircuitBreakerConfig
-  mut half_open_requests : Int
+  mut half_open_requests : Int32
 }
 
 ///|
 fn CircuitBreaker::new(
-  config? : CircuitBreakerConfig = CircuitBreakerConfig::default(),
+  config~ : CircuitBreakerConfig = CircuitBreakerConfig::default(),
 ) -> CircuitBreaker {
   {
     state: Closed,
@@ -207,7 +207,7 @@ fn CircuitBreaker::update_config(
 ///|
 fn CircuitBreaker::is_available(
   self : CircuitBreaker,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> Bool {
   match self.state {
     Closed | HalfOpen => true
@@ -224,7 +224,7 @@ fn CircuitBreaker::is_available(
 ///|
 fn CircuitBreaker::allow_request(
   self : CircuitBreaker,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> AllowResult {
   match self.state {
     Closed => { allowed: true, used_half_open_permit: false, }
@@ -266,7 +266,7 @@ fn CircuitBreaker::record_success(
 fn CircuitBreaker::record_failure(
   self : CircuitBreaker,
   used_half_open_permit : Bool,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> Unit {
   let state = self.state
   if used_half_open_permit {
@@ -318,7 +318,7 @@ fn CircuitBreaker::get_stats(self : CircuitBreaker) -> CircuitBreakerStats {
 ///|
 fn CircuitBreaker::open_timeout_elapsed(
   self : CircuitBreaker,
-  now_ms : Int,
+  now_ms : Int32,
 ) -> Bool {
   match self.last_opened_at_ms {
     Some(opened_at_ms) =>
@@ -340,7 +340,7 @@ fn CircuitBreaker::allow_half_open_probe(self : CircuitBreaker) -> AllowResult {
 ///|
 fn CircuitBreaker::transition_to_open(
   self : CircuitBreaker,
-  now_ms : Int,
+  now_ms : Int32,
 ) -> Unit {
   self.state = Open
   self.last_opened_at_ms = Some(now_ms)
@@ -402,8 +402,8 @@ priv struct ClaudeDesktopModelRoute {
 ///|
 fn ClaudeDesktopModelRoute::new(
   model~ : String,
-  label_override? : String? = None,
-  supports_1m? : Bool? = None,
+  label_override~ : String? = None,
+  supports_1m~ : Bool? = None,
 ) -> ClaudeDesktopModelRoute {
   { model, label_override, supports_1m, }
 }
@@ -427,25 +427,25 @@ fn ProviderRouteTarget::new(
   app_type~ : String,
   provider_id~ : String,
   provider_name~ : String,
-  enabled? : Bool = true,
-  provider_type? : String? = None,
-  api_format? : String? = None,
-  claude_desktop_mode? : String? = None,
-  prompt_cache_key? : String? = None,
-  codex_fast_mode? : Bool = false,
-  base_url? : String? = None,
-  api_key? : String? = None,
-  is_full_url? : Bool = false,
-  model_mapping? : ModelMapping? = None,
-  claude_desktop_model_routes? : Map[String, ClaudeDesktopModelRoute] = Map(
+  enabled~ : Bool = true,
+  provider_type~ : String? = None,
+  api_format~ : String? = None,
+  claude_desktop_mode~ : String? = None,
+  prompt_cache_key~ : String? = None,
+  codex_fast_mode~ : Bool = false,
+  base_url~ : String? = None,
+  api_key~ : String? = None,
+  is_full_url~ : Bool = false,
+  model_mapping~ : ModelMapping? = None,
+  claude_desktop_model_routes~ : Map[String, ClaudeDesktopModelRoute] = Map(
     [],
     capacity=0,
   ),
-  settings_config? : Json? = None,
-  notes? : String? = None,
-  origin? : String = "user",
-  clear_api_key? : Bool = false,
-  clear_model_mapping? : Bool = false,
+  settings_config~ : Json? = None,
+  notes~ : String? = None,
+  origin~ : String = "user",
+  clear_api_key~ : Bool = false,
+  clear_model_mapping~ : Bool = false,
 ) -> ProviderRouteTarget {
   {
     app_type,
@@ -508,13 +508,13 @@ fn ProviderRouteTarget::to_json(self : ProviderRouteTarget) -> Json {
 fn ProviderRouteTarget::to_moon_provider_json(
   self : ProviderRouteTarget,
   in_failover_queue : Bool,
-  sort_index? : Int? = None,
-  is_current? : Bool = false,
-  health_status? : String = "unknown",
-  include_secrets? : Bool = false,
+  sort_index~ : Int32? = None,
+  is_current~ : Bool = false,
+  health_status~ : String = "unknown",
+  include_secrets~ : Bool = false,
 ) -> Json {
   let empty_settings : Map[String, Json] = Map([])
-  let settings = self.settings_config.unwrap_or(empty_settings.to_json())
+  let settings = self.settings_config.unwrap_or(Json(empty_settings))
   let obj : Map[String, Json] = {
     "id": Json::string(self.provider_id),
     "name": Json::string(self.provider_name),
@@ -684,18 +684,18 @@ priv struct ProviderSelection {
 ///|
 priv struct CustomEndpoint {
   url : String
-  added_at : Int
-  last_used : Int?
+  added_at : Int32
+  last_used : Int32?
 }
 
 ///|
 priv struct ProviderSortUpdate {
   id : String
-  sort_index : Int
+  sort_index : Int32
 }
 
 ///|
-fn CustomEndpoint::new(url : String, added_at : Int) -> CustomEndpoint {
+fn CustomEndpoint::new(url : String, added_at : Int32) -> CustomEndpoint {
   { url, added_at, last_used: None, }
 }
 
@@ -714,7 +714,7 @@ fn CustomEndpoint::to_json(self : CustomEndpoint) -> Json {
 ///|
 priv struct ProviderHealthState {
   is_healthy : Bool
-  consecutive_failures : Int
+  consecutive_failures : Int32
   last_success_at : String?
   last_failure_at : String?
   last_error : String?
@@ -736,7 +736,7 @@ fn ProviderHealthState::new_default(updated_at : String) -> ProviderHealthState 
 ///|
 fn ProviderHealthState::new_healthy(
   updated_at : String,
-  last_failure_at? : String? = None,
+  last_failure_at~ : String? = None,
 ) -> ProviderHealthState {
   {
     is_healthy: true,
@@ -775,11 +775,11 @@ priv struct ProviderRouter {
   providers : Map[String, Map[String, ProviderRouteTarget]]
   current_provider_ids : Map[String, String]
   universal_providers : Map[String, Json]
-  provider_sort_indices : Map[String, Map[String, Int]]
+  provider_sort_indices : Map[String, Map[String, Int32]]
   custom_endpoints : Map[String, Map[String, Map[String, CustomEndpoint]]]
   failover_queues : Map[String, Array[String]]
   auto_failover_enabled : Map[String, Bool]
-  max_retries : Map[String, Int]
+  max_retries : Map[String, Int32]
   circuit_breakers : Map[String, CircuitBreaker]
   provider_health : Map[String, ProviderHealthState]
   provider_health_observed_at_ms : Map[String, Int64]
@@ -790,13 +790,13 @@ priv struct ProviderRouter {
   routing_smooth_states : Map[String, @routing.SmoothStateV1]
   routing_shadow_smooth_states : Map[String, @routing.SmoothStateV1]
   routing_session_bindings : Map[String, String]
-  routing_shadow_counts : Map[String, Int]
+  routing_shadow_counts : Map[String, Int32]
   routing_shadow_first_observed_at_ms : Map[String, Int64]
-  routing_canary_counters : Map[String, Int]
+  routing_canary_counters : Map[String, Int32]
   routing_last_shadow_decisions : Map[String, @routing.RoutingDecisionV1]
   routing_last_active_decisions : Map[String, @routing.RoutingDecisionV1]
   routing_activation_receipts : Array[@routing.RoutingPolicyActivationReceiptV1]
-  provider_inflight : Map[String, Int]
+  provider_inflight : Map[String, Int32]
   provider_quota_exhausted : Map[String, Bool]
   provider_quota_evidence_supported : Map[String, Bool]
   mut circuit_config : CircuitBreakerConfig
@@ -804,7 +804,7 @@ priv struct ProviderRouter {
 
 ///|
 fn ProviderRouter::new(
-  circuit_config? : CircuitBreakerConfig = CircuitBreakerConfig::default(),
+  circuit_config~ : CircuitBreakerConfig = CircuitBreakerConfig::default(),
 ) -> ProviderRouter {
   {
     providers: Map([], capacity=0),
@@ -952,7 +952,7 @@ fn ProviderRouter::set_auto_failover_from_command(
 fn ProviderRouter::set_max_retries(
   self : ProviderRouter,
   app_type : String,
-  max_retries : Int,
+  max_retries : Int32,
 ) -> Unit {
   self.max_retries.set(app_type, max_int(max_retries, 0))
 }
@@ -961,7 +961,7 @@ fn ProviderRouter::set_max_retries(
 fn ProviderRouter::max_attempts_for_app(
   self : ProviderRouter,
   app_type : String,
-) -> Int {
+) -> Int32 {
   if self.auto_failover_enabled.get(app_type).unwrap_or(false) {
     self.max_retries_for_app(app_type) + 1
   } else {
@@ -1012,7 +1012,7 @@ fn ProviderRouter::current_provider_for_moon_command(
 fn ProviderRouter::providers_moon_json(
   self : ProviderRouter,
   app_type : String,
-  include_secrets? : Bool = false,
+  include_secrets~ : Bool = false,
 ) -> Json {
   let queue = self.failover_queues.get(app_type).unwrap_or([])
   let obj : Map[String, Json] = Map([])
@@ -1069,10 +1069,10 @@ fn ProviderRouter::provider_health_status(
 ///|
 fn provider_moon_sort_compare(
   left : ProviderRouteTarget,
-  left_sort_index : Int?,
+  left_sort_index : Int32?,
   right : ProviderRouteTarget,
-  right_sort_index : Int?,
-) -> Int {
+  right_sort_index : Int32?,
+) -> Int32 {
   match (left_sort_index, right_sort_index) {
     (Some(left_index), Some(right_index)) if left_index != right_index =>
       left_index.compare(right_index)
@@ -1094,7 +1094,7 @@ fn ProviderRouter::provider_sort_index(
   self : ProviderRouter,
   app_type : String,
   provider_id : String,
-) -> Int? {
+) -> Int32? {
   guard self.provider_sort_indices.get(app_type) is Some(app_sort_indices) else {
     return None
   }
@@ -1247,7 +1247,7 @@ fn ProviderRouter::live_provider_json(
 fn ProviderRouter::import_live_providers(
   self : ProviderRouter,
   app_type : String,
-) -> Int {
+) -> Int32 {
   self.stream_check_provider_ids(app_type, false).length()
 }
 
@@ -1522,7 +1522,7 @@ fn ProviderRouter::add_custom_endpoint(
   app_type : String,
   provider_id : String,
   url : String,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> Bool {
   guard normalize_custom_endpoint_url(url) is Some(normalized) else {
     return false
@@ -1564,7 +1564,7 @@ fn ProviderRouter::update_endpoint_last_used(
   app_type : String,
   provider_id : String,
   url : String,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> Unit {
   guard normalize_custom_endpoint_url(url) is Some(normalized) else { return }
   guard self.custom_endpoints.get(app_type) is Some(app_endpoints) else {
@@ -1604,7 +1604,7 @@ fn ProviderRouter::auto_failover_enabled_for_app(
 fn ProviderRouter::max_retries_for_app(
   self : ProviderRouter,
   app_type : String,
-) -> Int {
+) -> Int32 {
   self.max_retries
   .get(app_type)
   .unwrap_or(moon_proxy_max_retries_default(app_type))
@@ -1678,7 +1678,7 @@ fn ProviderRouter::failover_queue_json(
     if provider.notes is Some(notes) {
       row["providerNotes"] = Json::string(notes)
     }
-    rows.push(row.to_json())
+    rows.push(Json(row))
   }
   Json::array(rows)
 }
@@ -1737,8 +1737,8 @@ fn ProviderRouter::stream_check_provider_ids(
 fn ProviderRouter::select_providers(
   self : ProviderRouter,
   app_type : String,
-  now_ms? : Int = @async.now().to_int(),
-  session_key? : String? = None,
+  now_ms~ : Int32 = @async.now().to_int(),
+  session_key~ : String? = None,
 ) -> ProviderSelection {
   let baseline = if self.auto_failover_enabled.get(app_type).unwrap_or(false) {
     self.select_failover_queue(app_type, now_ms)
@@ -1759,7 +1759,7 @@ fn ProviderRouter::allow_provider_request(
   self : ProviderRouter,
   provider_id : String,
   app_type : String,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> AllowResult {
   if self.provider_at_capacity(app_type, provider_id) {
     return { allowed: false, used_half_open_permit: false, }
@@ -1791,7 +1791,7 @@ fn ProviderRouter::record_result(
   app_type : String,
   used_half_open_permit : Bool,
   success : Bool,
-  now_ms? : Int = @async.now().to_int(),
+  now_ms~ : Int32 = @async.now().to_int(),
 ) -> Unit {
   self.decrement_provider_inflight(app_type, provider_id)
   let breaker = self.breaker_for(app_type, provider_id)
@@ -1942,7 +1942,7 @@ fn ProviderRouter::provider_health_json(
     Some(stats) if stats.state == Open => Json::string("circuit_open")
     _ => provider_health_optional_string_json(health.last_error)
   }
-  {
+  Json({
     "provider_id": Json::string(provider_id),
     "app_type": Json::string(app_type),
     "status": Json::string(self.provider_health_status(provider_id, app_type)),
@@ -1958,7 +1958,7 @@ fn ProviderRouter::provider_health_json(
     ),
     "last_error": last_error,
     "updated_at": Json::string(health.updated_at),
-  }.to_json()
+  })
 }
 
 ///|
@@ -2050,7 +2050,10 @@ fn ProviderRouter::route_stats_json(self : ProviderRouter) -> Json {
   for key in self.circuit_breakers.keys() {
     guard self.circuit_breakers.get(key) is Some(breaker) else { continue }
     rows.push(
-      { "key": Json::string(key), "circuit": breaker.get_stats().to_json() }.to_json(),
+      Json({
+        "key": Json::string(key),
+        "circuit": breaker.get_stats().to_json(),
+      }),
     )
   }
   Json::array(rows)
@@ -2258,7 +2261,7 @@ fn ProviderRouter::select_current_provider(
 fn ProviderRouter::select_failover_queue(
   self : ProviderRouter,
   app_type : String,
-  now_ms : Int,
+  now_ms : Int32,
 ) -> ProviderSelection {
   let queue = self.ordered_failover_queue(app_type)
   let providers : Array[ProviderRouteTarget] = []
@@ -2385,7 +2388,7 @@ fn provider_router_metric_sample(
 }
 
 ///|
-fn failover_queue_index(queue : Array[String]?, provider_id : String) -> Int? {
+fn failover_queue_index(queue : Array[String]?, provider_id : String) -> Int32? {
   match queue {
     Some(queue) => {
       for i in 0..<queue.length() {

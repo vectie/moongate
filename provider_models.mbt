@@ -55,7 +55,7 @@ pub async fn fetch_codex_oauth_models_with_token(
     err => return Err("Request failed: \{err}")
   }
   let body = client.read_all().text()
-  if response.code is (200..=299) {
+  if response.code is (200..<=299) {
     parse_codex_oauth_models_response_body(body)
   } else {
     Err("HTTP \{response.code}: \{truncate_model_fetch_error_body(body)}")
@@ -91,7 +91,7 @@ pub async fn fetch_models(
       err => return Err("Request failed: \{err}")
     }
     let body = client.read_all().text()
-    if response.code is (200..=299) {
+    if response.code is (200..<=299) {
       match parse_models_response_body(body) {
         Ok(models) => return Ok(models)
         Err(err) => return Err(err)

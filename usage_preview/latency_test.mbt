@@ -12,17 +12,17 @@ test "latency nearest rank unknown zero partial and redaction" {
   assert_eq(summary["p95Ms"], Json::number(100))
   assert_eq(summary["p99Ms"], Json::number(100))
   guard result["source"] is Object(source) else { fail("source") }
-  assert_eq(source["partial"], true.to_json())
+  assert_eq(source["partial"], Json(true))
   assert_true(!Json::object(result).stringify().contains("DO_NOT_EXPORT"))
   guard result["slowest"] is Array(rows) && rows[0] is Object(first) else {
     fail("slowest")
   }
-  assert_eq(first["requestId"], "d".to_json())
+  assert_eq(first["requestId"], Json("d"))
   assert_eq(first["sourceRow"], Json::number(4))
   guard result["byModel"] is Array(groups) && groups[0] is Object(large) else {
     fail("groups")
   }
-  assert_eq(large["key"], "large".to_json())
+  assert_eq(large["key"], Json("large"))
   assert_eq(large["p50Ms"], Json::null())
 }
 
@@ -45,7 +45,7 @@ test "latency CSV and all exact filters with UTC boundaries" {
   guard result["slowest"] is Array(rows) && rows[0] is Object(first) else {
     fail("rows")
   }
-  assert_eq(first["requestId"], "x".to_json())
+  assert_eq(first["requestId"], Json("x"))
   assert_eq(first["latencyMs"], Json::number(10))
   guard @usage_preview.profile_usage_latency_json(input, app="A")
     is Ok(Object(empty)) else {
@@ -65,10 +65,10 @@ test "latency stable ties retain original source row and cap slowest at twenty" 
       "model": "m",
       "totalTokens": 1,
       "latencyMs": 10,
-      "sourceRow": (99 - i).to_json(),
+      "sourceRow": Json(99 - i),
     })
   }
-  guard @usage_preview.profile_usage_latency_json(rows.to_json().stringify())
+  guard @usage_preview.profile_usage_latency_json(Json(rows).stringify())
     is Ok(Object(result)) else {
     fail("profile")
   }
@@ -76,7 +76,7 @@ test "latency stable ties retain original source row and cap slowest at twenty" 
   assert_eq(slowest.length(), 20)
   for i, row in slowest {
     guard row is Object(obj) else { fail("object") }
-    assert_eq(obj["sourceRow"], (i + 1).to_json())
+    assert_eq(obj["sourceRow"], Json(i + 1))
   }
   guard result["summary"] is Object(summary) else { fail("summary") }
   assert_eq(summary["sampleCount"], Json::number(25))
@@ -155,9 +155,9 @@ test "latency JSONL and reopened previews expose missing telemetry honestly" {
 test "latency nearest rank over one hundred samples and bounded rows" {
   let rows : Array[Json] = []
   for i in 1..<101 {
-    rows.push({ "model": "m", "totalTokens": 0, "latencyMs": i.to_json() })
+    rows.push({ "model": "m", "totalTokens": 0, "latencyMs": Json(i) })
   }
-  guard @usage_preview.profile_usage_latency_json(rows.to_json().stringify())
+  guard @usage_preview.profile_usage_latency_json(Json(rows).stringify())
     is Ok(Object(result)) &&
     result["summary"] is Object(summary) else {
     fail("profile")
@@ -171,7 +171,7 @@ test "latency nearest rank over one hundred samples and bounded rows" {
     oversized.push({ "model": "m", "totalTokens": 0 })
   }
   assert_true(
-    @usage_preview.profile_usage_latency_json(oversized.to_json().stringify())
+    @usage_preview.profile_usage_latency_json(Json(oversized).stringify())
     is Err(_),
   )
 }

@@ -4,9 +4,7 @@ test "HAR limits reject oversized entry counts and byte input" {
   for _ in 0..<2001 {
     entries.push(Json::null())
   }
-  let source : Json = {
-    "log": { "version": "1.2", "entries": entries.to_json() },
-  }
+  let source : Json = { "log": { "version": "1.2", "entries": Json(entries) } }
   assert_true(moongate_har_collection_json(source.stringify()) is Err(_))
   let chunks : Array[String] = []
   for _ in 0..<1025 {

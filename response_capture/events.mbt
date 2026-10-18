@@ -2,7 +2,7 @@
 priv struct CaptureEvent {
   payload : String
   kind : String
-  line : Int
+  line : Int32
   framed : Bool
 }
 

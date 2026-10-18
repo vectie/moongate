@@ -11,9 +11,9 @@ pub let moon_fwd_single_provider_failed : String = "FWD-003"
 pub enum MoonProxyError {
   AlreadyRunning
   NotRunning
-  UpstreamError(status~ : Int, body~ : String?)
+  UpstreamError(status~ : Int32, body~ : String?)
   Timeout(String)
-  StreamIdleTimeout(Int)
+  StreamIdleTimeout(Int32)
   ForwardFailed(String)
   NoAvailableProvider
   AllProvidersCircuitOpenError
@@ -31,7 +31,7 @@ pub enum MoonProxyError {
 ///|
 /// Classifies provider failures without leaking domain or credential details.
 /// The value is safe to expose as a local MoonGate diagnostic header.
-fn moon_provider_error_class(status_code : Int, body : String) -> String {
+fn moon_provider_error_class(status_code : Int32, body : String) -> String {
   let normalized = body.to_lower()
   if normalized.contains("serveroverloaded") ||
     normalized.contains("server overloaded") {
@@ -66,7 +66,7 @@ fn moon_provider_error_class(status_code : Int, body : String) -> String {
 /// provider-specific secret headers are deliberately excluded.
 fn moon_forward_upstream_failure_headers(
   upstream : Map[String, String],
-  status_code : Int,
+  status_code : Int32,
   body : String,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -128,7 +128,7 @@ pub fn MoonProxyError::to_string(self : MoonProxyError) -> String {
 }
 
 ///|
-pub fn moon_map_proxy_error_to_status(error : MoonProxyError) -> Int {
+pub fn moon_map_proxy_error_to_status(error : MoonProxyError) -> Int32 {
   match error {
     AlreadyRunning => @status.Conflict
     NotRunning => @status.ServiceUnavailable
@@ -195,8 +195,8 @@ fn moon_proxy_error_diagnostic_variants() -> Array[MoonProxyError] {
 ///|
 fn moon_build_retryable_failure_log(
   provider_name : String,
-  attempted_providers : Int,
-  total_providers : Int,
+  attempted_providers : Int32,
+  total_providers : Int32,
   error : MoonProxyError,
 ) -> (String, String) {
   let error_summary = moon_summarize_proxy_error(error)
@@ -215,8 +215,8 @@ fn moon_build_retryable_failure_log(
 
 ///|
 fn moon_build_terminal_failure_log(
-  attempted_providers : Int,
-  total_providers : Int,
+  attempted_providers : Int32,
+  total_providers : Int32,
   last_error : MoonProxyError?,
 ) -> (String, String)? {
   if total_providers <= 1 {
@@ -316,7 +316,7 @@ fn moon_json_error_message(body : Json) -> String? {
 }
 
 ///|
-fn moon_summarize_text_for_log(text : String, max_chars : Int) -> String {
+fn moon_summarize_text_for_log(text : String, max_chars : Int32) -> String {
   let normalized = moon_collapse_ascii_whitespace(text).trim()
   if normalized.length() <= max_chars {
     normalized.to_owned()

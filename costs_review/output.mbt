@@ -62,9 +62,9 @@ pub fn export_openai_costs_review_csv(
   costs : String,
   provider~ : String,
   scope~ : String,
-  app? : String = "",
-  project? : String = "",
-  line_item? : String = "",
+  app~ : String = "",
+  project~ : String = "",
+  line_item~ : String = "",
 ) -> Result[String, String] {
   let result = match
     review_openai_costs_json(
@@ -111,7 +111,7 @@ fn csv_cell(value : Json) -> String {
   match value {
     Null => ""
     String(value) => "\"'" + value.replace_all(old="\"", new="\"\"") + "\""
-    Array(_) => csv_cell(value.stringify().to_json())
+    Array(_) => csv_cell(Json(value.stringify()))
     _ => value.stringify()
   }
 }

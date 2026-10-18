@@ -1,7 +1,7 @@
 ///|
 priv struct ExactJsonReader {
   chars : Array[Char]
-  mut position : Int
+  mut position : Int32
 }
 
 ///|
@@ -113,7 +113,7 @@ fn parse_exact_json(text : String) -> Json raise {
 fn exact_integer(spelling : String) -> Int64? {
   let chars = spelling.iter().collect()
   let negative = chars[0] == '-'
-  let digits : Array[Int] = []
+  let digits : Array[Int32] = []
   let mut fraction = 0
   let mut point = false
   let mut cursor = if negative { 1 } else { 0 }

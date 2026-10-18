@@ -16,25 +16,25 @@ priv struct RequestLog {
   model : String
   request_model : String?
   pricing_model : String?
-  input_tokens : Int
-  output_tokens : Int
-  cache_read_tokens : Int
-  cache_creation_tokens : Int
+  input_tokens : Int32
+  output_tokens : Int32
+  cache_read_tokens : Int32
+  cache_creation_tokens : Int32
   input_cost_usd : String
   output_cost_usd : String
   cache_read_cost_usd : String
   cache_creation_cost_usd : String
   total_cost_usd : String
   is_streaming : Bool
-  latency_ms : Int
-  first_token_ms : Int?
-  duration_ms : Int?
-  status_code : Int
+  latency_ms : Int32
+  first_token_ms : Int32?
+  duration_ms : Int32?
+  status_code : Int32
   error_message : String?
   session_id : String?
   provider_type : String?
   cost_multiplier : String
-  created_at : Int
+  created_at : Int32
   data_source : String
 }
 
@@ -48,14 +48,14 @@ priv struct UsageDailyRollup {
   model : String
   request_model : String?
   pricing_model : String?
-  mut request_count : Int
-  mut success_count : Int
-  mut input_tokens : Int
-  mut output_tokens : Int
-  mut cache_read_tokens : Int
-  mut cache_creation_tokens : Int
+  mut request_count : Int32
+  mut success_count : Int32
+  mut input_tokens : Int32
+  mut output_tokens : Int32
+  mut cache_read_tokens : Int32
+  mut cache_creation_tokens : Int32
   mut total_cost_nano : Int64
-  mut avg_latency_ms : Int
+  mut avg_latency_ms : Int32
 }
 
 ///|
@@ -102,7 +102,7 @@ fn UsageDailyRollup::add_log(self : UsageDailyRollup, log : RequestLog) -> Unit 
 
 ///|
 fn UsageDailyRollup::to_json(self : UsageDailyRollup) -> Json {
-  {
+  Json({
     "date": Json::string(self.date),
     "app_type": Json::string(self.app_type),
     "provider_id": Json::string(self.provider_id),
@@ -123,7 +123,7 @@ fn UsageDailyRollup::to_json(self : UsageDailyRollup) -> Json {
       format_nano_usd_fixed_6(self.total_cost_nano),
     ),
     "avg_latency_ms": Json::number(self.avg_latency_ms.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -133,25 +133,25 @@ fn RequestLog::new(
   app_type~ : String,
   model~ : String,
   usage~ : TokenUsage,
-  status_code~ : Int,
-  latency_ms? : Int = 0,
-  first_token_ms? : Int? = None,
-  duration_ms? : Int? = None,
-  error_message? : String? = None,
-  session_id? : String? = None,
-  provider_name? : String? = None,
-  provider_type? : String? = None,
-  request_model? : String? = None,
-  pricing_model? : String? = None,
-  input_cost_usd? : String = "0",
-  output_cost_usd? : String = "0",
-  cache_read_cost_usd? : String = "0",
-  cache_creation_cost_usd? : String = "0",
-  total_cost_usd? : String = "0",
-  is_streaming? : Bool = false,
-  cost_multiplier? : String = "1.0",
-  created_at? : Int = @os.unix_seconds(),
-  data_source? : String = "proxy",
+  status_code~ : Int32,
+  latency_ms~ : Int32 = 0,
+  first_token_ms~ : Int32? = None,
+  duration_ms~ : Int32? = None,
+  error_message~ : String? = None,
+  session_id~ : String? = None,
+  provider_name~ : String? = None,
+  provider_type~ : String? = None,
+  request_model~ : String? = None,
+  pricing_model~ : String? = None,
+  input_cost_usd~ : String = "0",
+  output_cost_usd~ : String = "0",
+  cache_read_cost_usd~ : String = "0",
+  cache_creation_cost_usd~ : String = "0",
+  total_cost_usd~ : String = "0",
+  is_streaming~ : Bool = false,
+  cost_multiplier~ : String = "1.0",
+  created_at~ : Int32 = @os.unix_seconds(),
+  data_source~ : String = "proxy",
 ) -> RequestLog {
   {
     cached_store_json: None,
@@ -187,7 +187,7 @@ fn RequestLog::new(
 
 ///|
 fn RequestLog::to_json(self : RequestLog) -> Json {
-  {
+  Json({
     "request_id": Json::string(self.request_id),
     "provider_id": Json::string(self.provider_id),
     "provider_name": optional_string_json(self.provider_name),
@@ -217,36 +217,36 @@ fn RequestLog::to_json(self : RequestLog) -> Json {
     "provider_type": optional_string_json(self.provider_type),
     "created_at": Json::number(self.created_at.to_double()),
     "data_source": Json::string(self.data_source),
-  }.to_json()
+  })
 }
 
 ///|
 priv struct TrafficStats {
-  mut active_connections : Int
-  mut total_requests : Int
-  mut message_requests : Int
-  mut streaming_requests : Int
-  mut non_streaming_requests : Int
-  mut successful_responses : Int
-  mut failed_responses : Int
-  mut unauthorized_responses : Int
-  mut bad_requests : Int
-  mut upstream_errors : Int
-  mut input_tokens : Int
-  mut output_tokens : Int
-  mut cache_read_tokens : Int
-  mut cache_creation_tokens : Int
-  mut request_bytes : Int
-  mut response_bytes : Int
+  mut active_connections : Int32
+  mut total_requests : Int32
+  mut message_requests : Int32
+  mut streaming_requests : Int32
+  mut non_streaming_requests : Int32
+  mut successful_responses : Int32
+  mut failed_responses : Int32
+  mut unauthorized_responses : Int32
+  mut bad_requests : Int32
+  mut upstream_errors : Int32
+  mut input_tokens : Int32
+  mut output_tokens : Int32
+  mut cache_read_tokens : Int32
+  mut cache_creation_tokens : Int32
+  mut request_bytes : Int32
+  mut response_bytes : Int32
   mut current_provider : String?
   mut current_provider_id : String?
-  mut failover_count : Int
+  mut failover_count : Int32
   active_targets : Map[String, ActiveTarget]
   provider_limits : Map[String, ProviderLimitConfig]
   mut session_sync_state : Map[String, SessionFileSyncState]
   mut storage_dir : String?
   mut storage_healthy : Bool
-  mut storage_failure_count : Int
+  mut storage_failure_count : Int32
   mut storage_last_error : String?
   mut storage_last_success_at : String?
   mut last_request_at : String?
@@ -266,7 +266,7 @@ priv struct ActiveTarget {
 ///|
 priv struct UsageRequestContext {
   request_id : String
-  started_at_ms : Int
+  started_at_ms : Int32
   mut app_type : String?
   mut model : String?
   mut outbound_model : String?
@@ -282,7 +282,7 @@ priv struct UsageRequestContext {
 }
 
 ///|
-fn UsageRequestContext::new(started_at_ms : Int) -> UsageRequestContext {
+fn UsageRequestContext::new(started_at_ms : Int32) -> UsageRequestContext {
   {
     request_id: generate_request_log_id(),
     started_at_ms,
@@ -362,9 +362,9 @@ fn UsageRequestContext::set_active_target(
   app_type : String,
   provider_id : String,
   provider_name : String,
-  used_half_open_permit? : Bool = false,
-  cost_multiplier? : String = "1.0",
-  pricing_model_source? : String = "response",
+  used_half_open_permit~ : Bool = false,
+  cost_multiplier~ : String = "1.0",
+  pricing_model_source~ : String = "response",
 ) -> Unit {
   self.app_type = Some(app_type)
   self.provider_id = Some(provider_id)
@@ -377,7 +377,7 @@ fn UsageRequestContext::set_active_target(
 ///|
 fn TrafficStats::begin_request(
   self : TrafficStats,
-  request_bytes : Int,
+  request_bytes : Int32,
 ) -> UsageRequestContext {
   let now = @async.now()
   self.total_requests += 1
@@ -394,9 +394,9 @@ fn UsageRequestContext::set_request_context(
   self : UsageRequestContext,
   app_type : String,
   model : String,
-  outbound_model? : String? = None,
-  session_id? : String? = None,
-  provider_type? : String? = None,
+  outbound_model~ : String? = None,
+  session_id~ : String? = None,
+  provider_type~ : String? = None,
 ) -> Unit {
   self.app_type = Some(app_type)
   self.model = Some(model)
@@ -457,7 +457,7 @@ fn TrafficStats::record_unauthorized(
 fn TrafficStats::record_upstream_error(
   self : TrafficStats,
   context : UsageRequestContext,
-  response_bytes : Int,
+  response_bytes : Int32,
 ) -> Unit {
   self.record_upstream_error_status(context, response_bytes, 502)
 }
@@ -466,8 +466,8 @@ fn TrafficStats::record_upstream_error(
 fn TrafficStats::record_upstream_error_status(
   self : TrafficStats,
   context : UsageRequestContext,
-  response_bytes : Int,
-  status_code : Int,
+  response_bytes : Int32,
+  status_code : Int32,
 ) -> Unit {
   self.upstream_errors += 1
   self.failed_responses += 1
@@ -502,9 +502,9 @@ fn TrafficStats::record_internal_error(
 fn TrafficStats::record_success(
   self : TrafficStats,
   context : UsageRequestContext,
-  input_tokens : Int,
-  output_tokens : Int,
-  response_bytes : Int,
+  input_tokens : Int32,
+  output_tokens : Int32,
+  response_bytes : Int32,
 ) -> Unit {
   self.successful_responses += 1
   self.input_tokens += input_tokens
@@ -525,7 +525,7 @@ fn TrafficStats::record_success_usage(
   self : TrafficStats,
   context : UsageRequestContext,
   usage : TokenUsage,
-  response_bytes : Int,
+  response_bytes : Int32,
 ) -> Unit {
   self.record_success_usage_with_pricing(
     context,
@@ -540,7 +540,7 @@ fn TrafficStats::record_success_usage(
 fn TrafficStats::record_success_without_usage_log(
   self : TrafficStats,
   context : UsageRequestContext,
-  response_bytes : Int,
+  response_bytes : Int32,
 ) -> Unit {
   self.successful_responses += 1
   self.response_bytes += response_bytes
@@ -553,10 +553,10 @@ fn TrafficStats::record_success_usage_with_pricing(
   self : TrafficStats,
   context : UsageRequestContext,
   usage : TokenUsage,
-  response_bytes : Int,
+  response_bytes : Int32,
   pricing_overrides : Array[ModelPricing],
   deleted_model_ids : Map[String, Bool],
-  first_token_ms? : Int? = None,
+  first_token_ms~ : Int32? = None,
 ) -> Unit {
   self.successful_responses += 1
   self.input_tokens += usage.input_tokens
@@ -581,12 +581,12 @@ fn TrafficStats::record_success_usage_with_pricing(
 fn TrafficStats::record_completed_request(
   self : TrafficStats,
   context : UsageRequestContext,
-  status_code : Int,
+  status_code : Int32,
   usage : TokenUsage,
   error_message : String?,
-  pricing_overrides? : Array[ModelPricing] = [],
-  deleted_model_ids? : Map[String, Bool] = Map([], capacity=0),
-  first_token_ms? : Int? = None,
+  pricing_overrides~ : Array[ModelPricing] = [],
+  deleted_model_ids~ : Map[String, Bool] = Map([], capacity=0),
+  first_token_ms~ : Int32? = None,
 ) -> Unit {
   if context.completed {
     return
@@ -711,8 +711,8 @@ fn TrafficStats::rollup_request_log(
 ///|
 fn TrafficStats::rollup_request_logs_before(
   self : TrafficStats,
-  cutoff_ts : Int,
-) -> Int {
+  cutoff_ts : Int32,
+) -> Int32 {
   let retained : Array[RequestLog] = []
   let mut deleted = 0
   for log in self.request_logs {
@@ -733,9 +733,9 @@ fn TrafficStats::rollup_request_logs_before(
 ///|
 fn TrafficStats::rollup_and_prune(
   self : TrafficStats,
-  retain_days? : Int = USAGE_ROLLUP_RETAIN_DAYS,
-  now_ts? : Int = trend_now_seconds(),
-) -> Int {
+  retain_days~ : Int32 = USAGE_ROLLUP_RETAIN_DAYS,
+  now_ts~ : Int32 = trend_now_seconds(),
+) -> Int32 {
   self.rollup_request_logs_before(usage_rollup_cutoff_ts(now_ts, retain_days))
 }
 
@@ -745,7 +745,7 @@ fn TrafficStats::backfill_missing_usage_costs_for_model(
   model_id : String,
   pricing_overrides : Array[ModelPricing],
   deleted_model_ids : Map[String, Bool],
-) -> Int {
+) -> Int32 {
   let mut updated = 0
   for i in 0..<self.request_logs.length() {
     let log = self.request_logs[i]
@@ -811,7 +811,7 @@ fn TrafficStats::backfill_missing_usage_costs(
   self : TrafficStats,
   pricing_overrides : Array[ModelPricing],
   deleted_model_ids : Map[String, Bool],
-) -> Int {
+) -> Int32 {
   let mut updated = 0
   for i in 0..<self.request_logs.length() {
     let log = self.request_logs[i]
@@ -910,7 +910,7 @@ fn is_placeholder_pricing_model(model_id : String) -> Bool {
 ///|
 fn TrafficStats::request_logs_json(
   self : TrafficStats,
-  limit? : Int = 100,
+  limit~ : Int32 = 100,
 ) -> Json {
   let effective_logs : Array[RequestLog] = []
   for log in self.request_logs {
@@ -931,9 +931,9 @@ fn TrafficStats::request_logs_json(
 ///|
 fn TrafficStats::usage_logs_json(
   self : TrafficStats,
-  limit? : Int = 100,
+  limit~ : Int32 = 100,
 ) -> Json {
-  {
+  Json({
     "data": self.request_logs_json(limit~),
     "total": Json::number(self.effective_request_log_count().to_double()),
     "limit": Json::number((if limit < 0 { 0 } else { limit }).to_double()),
@@ -945,7 +945,7 @@ fn TrafficStats::usage_logs_json(
       },
     ),
     "table": Json::string("proxy_request_logs"),
-  }.to_json()
+  })
 }
 
 ///|
@@ -953,19 +953,19 @@ priv struct RequestLogFilters {
   app_type : String?
   provider_name : String?
   model : String?
-  status_code : Int?
-  start_date : Int?
-  end_date : Int?
+  status_code : Int32?
+  start_date : Int32?
+  end_date : Int32?
 }
 
 ///|
 fn RequestLogFilters::new(
-  app_type? : String? = None,
-  provider_name? : String? = None,
-  model? : String? = None,
-  status_code? : Int? = None,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
+  app_type~ : String? = None,
+  provider_name~ : String? = None,
+  model~ : String? = None,
+  status_code~ : Int32? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
 ) -> RequestLogFilters {
   { app_type, provider_name, model, status_code, start_date, end_date, }
 }
@@ -974,10 +974,10 @@ fn RequestLogFilters::new(
 fn TrafficStats::usage_logs_paginated_json(
   self : TrafficStats,
   filters : RequestLogFilters,
-  page? : Int = 0,
-  page_size? : Int = 20,
-  pricing_overrides? : Array[ModelPricing] = [],
-  deleted_model_ids? : Map[String, Bool] = Map([], capacity=0),
+  page~ : Int32 = 0,
+  page_size~ : Int32 = 20,
+  pricing_overrides~ : Array[ModelPricing] = [],
+  deleted_model_ids~ : Map[String, Bool] = Map([], capacity=0),
 ) -> Json {
   let _updated = self.backfill_missing_usage_costs(
     pricing_overrides, deleted_model_ids,
@@ -1008,18 +1008,18 @@ fn TrafficStats::usage_logs_paginated_json(
       data.push(rows[i].to_moon_request_log_detail_json())
     }
   }
-  {
+  Json({
     "data": Json::array(data),
     "total": Json::number(total.to_double()),
     "page": Json::number(page.to_double()),
     "pageSize": Json::number(page_size.to_double()),
-  }.to_json()
+  })
 }
 
 ///|
 fn TrafficStats::usage_summary_json(
   self : TrafficStats,
-  app_type? : String? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.usage_summary_filtered_json(app_type~)
 }
@@ -1027,9 +1027,9 @@ fn TrafficStats::usage_summary_json(
 ///|
 fn TrafficStats::usage_summary_filtered_json(
   self : TrafficStats,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
-  app_type? : String? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   let acc = UsageSummaryAccumulator::new()
   for log in self.request_logs {
@@ -1056,8 +1056,8 @@ fn TrafficStats::usage_summary_by_app_json(self : TrafficStats) -> Json {
 ///|
 fn TrafficStats::usage_summary_by_app_filtered_json(
   self : TrafficStats,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
 ) -> Json {
   let summaries : Map[String, UsageSummaryAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
@@ -1100,10 +1100,10 @@ fn TrafficStats::usage_summary_by_app_filtered_json(
   })
   Json::array(
     rows.map(fn(row) {
-      {
+      Json({
         "appType": Json::string(row.app_type),
         "summary": row.summary.to_json(),
-      }.to_json()
+      })
     }),
   )
 }
@@ -1111,7 +1111,7 @@ fn TrafficStats::usage_summary_by_app_filtered_json(
 ///|
 fn TrafficStats::provider_stats_json(
   self : TrafficStats,
-  app_type? : String? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.provider_stats_filtered_json(app_type~)
 }
@@ -1119,9 +1119,9 @@ fn TrafficStats::provider_stats_json(
 ///|
 fn TrafficStats::provider_stats_filtered_json(
   self : TrafficStats,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
-  app_type? : String? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   let stats : Map[String, ProviderStatsAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
@@ -1166,7 +1166,7 @@ fn TrafficStats::provider_stats_filtered_json(
 ///|
 fn TrafficStats::model_stats_json(
   self : TrafficStats,
-  app_type? : String? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.model_stats_filtered_json(app_type~)
 }
@@ -1174,9 +1174,9 @@ fn TrafficStats::model_stats_json(
 ///|
 fn TrafficStats::model_stats_filtered_json(
   self : TrafficStats,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
-  app_type? : String? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   let stats : Map[String, ModelStatsAccumulator] = Map([], capacity=0)
   for log in self.request_logs {
@@ -1285,19 +1285,19 @@ fn TrafficStats::request_detail_json_with_pricing(
 
 ///|
 priv struct UsageSummaryAccumulator {
-  mut total_requests : Int
-  mut success_count : Int
-  mut total_input_tokens : Int
-  mut total_output_tokens : Int
-  mut total_cache_creation_tokens : Int
-  mut total_cache_read_tokens : Int
+  mut total_requests : Int32
+  mut success_count : Int32
+  mut total_input_tokens : Int32
+  mut total_output_tokens : Int32
+  mut total_cache_creation_tokens : Int32
+  mut total_cache_read_tokens : Int32
   mut total_cost_nano : Int64
 }
 
 ///|
 priv struct UsageSummaryByAppRow {
   app_type : String
-  real_total_tokens : Int
+  real_total_tokens : Int32
   summary : UsageSummaryAccumulator
 }
 
@@ -1305,25 +1305,25 @@ priv struct UsageSummaryByAppRow {
 priv struct ProviderStatsAccumulator {
   provider_id : String
   provider_name : String
-  mut request_count : Int
-  mut success_count : Int
-  mut total_tokens : Int
+  mut request_count : Int32
+  mut success_count : Int32
+  mut total_tokens : Int32
   mut total_cost_nano : Int64
-  mut total_latency_ms : Int
+  mut total_latency_ms : Int32
 }
 
 ///|
 priv struct ModelStatsAccumulator {
   model : String
-  mut request_count : Int
-  mut total_tokens : Int
+  mut request_count : Int32
+  mut total_tokens : Int32
   mut total_cost_nano : Int64
 }
 
 ///|
 priv struct DataSourceStatsAccumulator {
   data_source : String
-  mut request_count : Int
+  mut request_count : Int32
   mut total_cost_nano : Int64
 }
 
@@ -1373,7 +1373,7 @@ fn UsageSummaryAccumulator::add_rollup(
 ///|
 fn UsageSummaryAccumulator::real_total_tokens(
   self : UsageSummaryAccumulator,
-) -> Int {
+) -> Int32 {
   self.total_input_tokens +
   self.total_output_tokens +
   self.total_cache_creation_tokens +
@@ -1407,7 +1407,7 @@ fn UsageSummaryAccumulator::cache_hit_rate(
 
 ///|
 fn UsageSummaryAccumulator::to_json(self : UsageSummaryAccumulator) -> Json {
-  {
+  Json({
     "totalRequests": Json::number(self.total_requests.to_double()),
     "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
     "totalInputTokens": Json::number(self.total_input_tokens.to_double()),
@@ -1421,7 +1421,7 @@ fn UsageSummaryAccumulator::to_json(self : UsageSummaryAccumulator) -> Json {
     "successRate": Json::number(self.success_rate()),
     "realTotalTokens": Json::number(self.real_total_tokens().to_double()),
     "cacheHitRate": Json::number(self.cache_hit_rate()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1492,7 +1492,7 @@ fn ProviderStatsAccumulator::success_rate(
 ///|
 fn ProviderStatsAccumulator::avg_latency_ms(
   self : ProviderStatsAccumulator,
-) -> Int {
+) -> Int32 {
   if self.request_count == 0 {
     0
   } else {
@@ -1502,7 +1502,7 @@ fn ProviderStatsAccumulator::avg_latency_ms(
 
 ///|
 fn ProviderStatsAccumulator::to_json(self : ProviderStatsAccumulator) -> Json {
-  {
+  Json({
     "providerId": Json::string(self.provider_id),
     "providerName": Json::string(self.provider_name),
     "requestCount": Json::number(self.request_count.to_double()),
@@ -1510,7 +1510,7 @@ fn ProviderStatsAccumulator::to_json(self : ProviderStatsAccumulator) -> Json {
     "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
     "successRate": Json::number(self.success_rate()),
     "avgLatencyMs": Json::number(self.avg_latency_ms().to_double()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1553,13 +1553,13 @@ fn ModelStatsAccumulator::avg_cost_per_request(
 
 ///|
 fn ModelStatsAccumulator::to_json(self : ModelStatsAccumulator) -> Json {
-  {
+  Json({
     "model": Json::string(self.model),
     "requestCount": Json::number(self.request_count.to_double()),
     "totalTokens": Json::number(self.total_tokens.to_double()),
     "totalCost": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
     "avgCostPerRequest": Json::string(self.avg_cost_per_request()),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1591,11 +1591,11 @@ fn DataSourceStatsAccumulator::add_rollup(
 fn DataSourceStatsAccumulator::to_json(
   self : DataSourceStatsAccumulator,
 ) -> Json {
-  {
+  Json({
     "dataSource": Json::string(self.data_source),
     "requestCount": Json::number(self.request_count.to_double()),
     "totalCostUsd": Json::string(format_nano_usd_fixed_6(self.total_cost_nano)),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1609,8 +1609,8 @@ fn request_log_matches_app(log : RequestLog, app_type : String?) -> Bool {
 ///|
 fn request_log_matches_usage_aggregate(
   log : RequestLog,
-  start_date : Int?,
-  end_date : Int?,
+  start_date : Int32?,
+  end_date : Int32?,
   app_type : String?,
 ) -> Bool {
   if !request_log_matches_app(log, app_type) {
@@ -1630,8 +1630,8 @@ fn request_log_matches_usage_aggregate(
 ///|
 fn usage_daily_rollup_matches_aggregate(
   rollup : UsageDailyRollup,
-  start_date : Int?,
-  end_date : Int?,
+  start_date : Int32?,
+  end_date : Int32?,
   app_type : String?,
 ) -> Bool {
   if !request_app_type_matches(rollup.app_type, app_type) {
@@ -1660,7 +1660,7 @@ fn request_app_type_matches(value : String, app_type : String?) -> Bool {
 }
 
 ///|
-fn rollup_start_date_bound(start_date : Int?) -> String? {
+fn rollup_start_date_bound(start_date : Int32?) -> String? {
   match start_date {
     Some(start) =>
       if start == trend_local_day_start_ts(start) {
@@ -1673,7 +1673,7 @@ fn rollup_start_date_bound(start_date : Int?) -> String? {
 }
 
 ///|
-fn rollup_end_date_bound(end_date : Int?) -> String? {
+fn rollup_end_date_bound(end_date : Int32?) -> String? {
   match end_date {
     Some(end) =>
       if trend_local_next_day_start_ts(end) - end <= 60 {
@@ -1686,7 +1686,7 @@ fn rollup_end_date_bound(end_date : Int?) -> String? {
 }
 
 ///|
-fn rollup_date_bounds_empty(start_date : Int?, end_date : Int?) -> Bool {
+fn rollup_date_bounds_empty(start_date : Int32?, end_date : Int32?) -> Bool {
   match (rollup_start_date_bound(start_date), rollup_end_date_bound(end_date)) {
     (Some(start), Some(end)) => start > end
     _ => false
@@ -1694,7 +1694,7 @@ fn rollup_date_bounds_empty(start_date : Int?, end_date : Int?) -> Bool {
 }
 
 ///|
-fn usage_rollup_cutoff_ts(now_ts : Int, retain_days : Int) -> Int {
+fn usage_rollup_cutoff_ts(now_ts : Int32, retain_days : Int32) -> Int32 {
   let safe_retain_days = max_int(retain_days, 0)
   let target_ts = now_ts - safe_retain_days * TREND_DAY_SECONDS
   trend_local_next_day_start_ts(target_ts)
@@ -1752,7 +1752,7 @@ fn request_log_provider_name_matches_moon_filter(
 }
 
 ///|
-fn request_log_min_int(left : Int, right : Int) -> Int {
+fn request_log_min_int(left : Int32, right : Int32) -> Int32 {
   if left < right {
     left
   } else {
@@ -1816,7 +1816,7 @@ fn request_log_provider_name(log : RequestLog) -> String {
 }
 
 ///|
-fn TrafficStats::effective_request_log_count(self : TrafficStats) -> Int {
+fn TrafficStats::effective_request_log_count(self : TrafficStats) -> Int32 {
   let mut count = 0
   for log in self.request_logs {
     if self.request_log_is_effective(log) {
@@ -1900,7 +1900,7 @@ fn request_log_is_success(log : RequestLog) -> Bool {
 }
 
 ///|
-fn request_log_fresh_input_tokens(log : RequestLog) -> Int {
+fn request_log_fresh_input_tokens(log : RequestLog) -> Int32 {
   if (log.app_type == "codex" || log.app_type == "gemini") &&
     log.input_tokens >= log.cache_read_tokens {
     log.input_tokens - log.cache_read_tokens
@@ -1910,7 +1910,7 @@ fn request_log_fresh_input_tokens(log : RequestLog) -> Int {
 }
 
 ///|
-fn usage_daily_rollup_fresh_input_tokens(rollup : UsageDailyRollup) -> Int {
+fn usage_daily_rollup_fresh_input_tokens(rollup : UsageDailyRollup) -> Int32 {
   if (rollup.app_type == "codex" || rollup.app_type == "gemini") &&
     rollup.input_tokens >= rollup.cache_read_tokens {
     rollup.input_tokens - rollup.cache_read_tokens
@@ -1920,7 +1920,7 @@ fn usage_daily_rollup_fresh_input_tokens(rollup : UsageDailyRollup) -> Int {
 }
 
 ///|
-fn usage_daily_rollup_total_tokens(rollup : UsageDailyRollup) -> Int {
+fn usage_daily_rollup_total_tokens(rollup : UsageDailyRollup) -> Int32 {
   usage_daily_rollup_fresh_input_tokens(rollup) + rollup.output_tokens
 }
 
@@ -1964,11 +1964,11 @@ fn optional_key_part(value : String?) -> String {
 
 ///|
 fn rollup_weighted_average_latency(
-  old_avg : Int,
-  old_count : Int,
-  new_avg : Int,
-  new_count : Int,
-) -> Int {
+  old_avg : Int32,
+  old_count : Int32,
+  new_avg : Int32,
+  new_count : Int32,
+) -> Int32 {
   let count = old_count + new_count
   if count <= 0 {
     0
@@ -2013,7 +2013,7 @@ fn optional_string_json(value : String?) -> Json {
 }
 
 ///|
-fn optional_int_json(value : Int?) -> Json {
+fn optional_int_json(value : Int32?) -> Json {
   match value {
     Some(v) => Json::number(v.to_double())
     None => Json::null()
@@ -2121,7 +2121,7 @@ fn TrafficStats::prometheus_metrics(self : TrafficStats) -> String {
 }
 
 ///|
-fn TrafficStats::recent_avg_latency_ms(self : TrafficStats) -> Int {
+fn TrafficStats::recent_avg_latency_ms(self : TrafficStats) -> Int32 {
   let mut total = 0
   let mut count = 0
   for log in self.request_logs {
@@ -2138,12 +2138,16 @@ fn TrafficStats::recent_avg_latency_ms(self : TrafficStats) -> Int {
 }
 
 ///|
-fn prometheus_counter(out : StringBuilder, name : String, value : Int) -> Unit {
+fn prometheus_counter(
+  out : StringBuilder,
+  name : String,
+  value : Int32,
+) -> Unit {
   prometheus_metric(out, "counter", name, value.to_double())
 }
 
 ///|
-fn prometheus_gauge(out : StringBuilder, name : String, value : Int) -> Unit {
+fn prometheus_gauge(out : StringBuilder, name : String, value : Int32) -> Unit {
   prometheus_metric(out, "gauge", name, value.to_double())
 }
 
@@ -2169,7 +2173,7 @@ fn prometheus_metric(
 
 ///|
 fn TrafficStats::to_json(self : TrafficStats) -> Json {
-  {
+  Json({
     "active_connections": Json::number(self.active_connections.to_double()),
     "total_requests": Json::number(self.total_requests.to_double()),
     "message_requests": Json::number(self.message_requests.to_double()),
@@ -2200,17 +2204,17 @@ fn TrafficStats::to_json(self : TrafficStats) -> Json {
     "recent_request_log_count": Json::number(
       self.request_logs.length().to_double(),
     ),
-  }.to_json()
+  })
 }
 
 ///|
 fn TrafficStats::status_json(
   self : TrafficStats,
   address : String,
-  port : Int,
-  uptime_seconds : Int,
-  running? : Bool = true,
-  provider_routes? : Json? = None,
+  port : Int32,
+  uptime_seconds : Int32,
+  running~ : Bool = true,
+  provider_routes~ : Json? = None,
 ) -> Json {
   let status : Map[String, Json] = {
     "running": Json::boolean(running),
@@ -2233,27 +2237,27 @@ fn TrafficStats::status_json(
   if provider_routes is Some(routes) {
     status["provider_routes"] = routes
   }
-  status.to_json()
+  Json(status)
 }
 
 ///|
 fn TrafficStats::storage_health_json(self : TrafficStats) -> Json {
-  {
+  Json({
     "enabled": Json::boolean(self.storage_dir is Some(_)),
     "healthy": Json::boolean(self.storage_healthy),
     "failure_count": Json::number(self.storage_failure_count.to_double()),
     "last_error": optional_string_json(self.storage_last_error),
     "last_success_at": optional_string_json(self.storage_last_success_at),
-  }.to_json()
+  })
 }
 
 ///|
 fn active_target_json(target : ActiveTarget) -> Json {
-  {
+  Json({
     "app_type": Json::string(target.app_type),
     "provider_id": Json::string(target.provider_id),
     "provider_name": Json::string(target.provider_name),
-  }.to_json()
+  })
 }
 
 ///|

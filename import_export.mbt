@@ -84,9 +84,9 @@ async fn ConfigService::moon_export_snapshot_json(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
 ) -> Json {
-  {
+  Json({
     "format": Json::string("moongate.config.v1"),
     "exportedAt": Json::number(@os.unix_seconds().to_double()),
     "settings": self.app_settings,
@@ -94,12 +94,12 @@ async fn ConfigService::moon_export_snapshot_json(
     "proxy": proxy.moon_export_proxy_json(),
     "providers": proxy.moon_export_providers_json(),
     "suite": moongate_suite_manifest_json(host~, port~),
-  }.to_json()
+  })
 }
 
 ///|
 fn ProxyService::moon_export_proxy_json(self : ProxyService) -> Json {
-  {
+  Json({
     "globalConfig": self.global_config_json(),
     "takeoverStatus": self.takeover_status_json(),
     "appConfigs": self.moon_export_proxy_app_configs_json(),
@@ -113,7 +113,7 @@ fn ProxyService::moon_export_proxy_json(self : ProxyService) -> Json {
       Some(url) => Json::string(url)
       None => Json::null()
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -130,7 +130,7 @@ fn ProxyService::moon_export_proxy_app_configs_json(
 ///|
 fn ProxyService::moon_export_providers_json(
   self : ProxyService,
-  include_secrets? : Bool = true,
+  include_secrets~ : Bool = true,
 ) -> Json {
   let obj : Map[String, Json] = Map([], capacity=0)
   for app in moon_suite_app_types() {
@@ -167,23 +167,23 @@ async fn ConfigService::moon_export_config_to_file_json(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   file_path : String,
 ) -> Json {
   let snapshot = self.moon_export_snapshot_json(proxy, host~, port~)
   @fsx.write_to_file(file_path, snapshot.stringify(indent=2) + "\n") catch {
     error =>
-      return {
+      return Json({
         "success": Json::boolean(false),
         "message": Json::string("Export failed: \{error}"),
         "filePath": Json::string(file_path),
-      }.to_json()
+      })
   }
-  {
+  Json({
     "success": Json::boolean(true),
     "message": Json::string("Configuration exported successfully"),
     "filePath": Json::string(file_path),
-  }.to_json()
+  })
 }
 
 ///|
@@ -191,55 +191,55 @@ async fn ConfigService::moon_import_config_from_file_json(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   file_path : String,
 ) -> Json {
   let content = @fsx.read_file(file_path) catch {
     error =>
-      return {
+      return Json({
         "success": Json::boolean(false),
         "message": Json::string("Import failed: \{error}"),
         "filePath": Json::string(file_path),
-      }.to_json()
+      })
   }
   let parsed = @json.parse(content) catch {
     error =>
-      return {
+      return Json({
         "success": Json::boolean(false),
         "message": Json::string("Import failed: \{error}"),
         "filePath": Json::string(file_path),
-      }.to_json()
+      })
   }
   guard parsed is Object(snapshot) else {
-    return {
+    return Json({
       "success": Json::boolean(false),
       "message": Json::string(
         "Import failed: configuration root must be an object",
       ),
       "filePath": Json::string(file_path),
-    }.to_json()
+    })
   }
   match snapshot.get("format") {
     Some(String("moongate.config.v1")) | None => ()
     _ =>
-      return {
+      return Json({
         "success": Json::boolean(false),
         "message": Json::string(
           "Import failed: unsupported configuration format",
         ),
         "filePath": Json::string(file_path),
-      }.to_json()
+      })
   }
   match snapshot.get("providers") {
     Some(providers) =>
       match proxy.moon_apply_import_providers(providers, validate_only=true) {
         Ok(_) => ()
         Err(message) =>
-          return {
+          return Json({
             "success": Json::boolean(false),
             "message": Json::string("Import failed: \{message}"),
             "filePath": Json::string(file_path),
-          }.to_json()
+          })
       }
     None => ()
   }
@@ -248,13 +248,13 @@ async fn ConfigService::moon_import_config_from_file_json(
   self.save_settings_store(self.app_settings)
   proxy.save_provider_store()
   proxy.save_proxy_store()
-  {
+  Json({
     "success": Json::boolean(true),
     "message": Json::string("Configuration imported successfully"),
     "filePath": Json::string(file_path),
     "backupId": backup_id,
     "warning": Json::null(),
-  }.to_json()
+  })
 }
 
 ///|
@@ -395,7 +395,7 @@ async fn ConfigService::moon_create_db_backup_json(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
 ) -> Json {
   moon_ensure_db_backup_dir()
   let filename = moon_new_backup_filename()
@@ -517,7 +517,7 @@ async fn moon_delete_db_backup_json(filename : String) -> Result[Json, String] {
 ///|
 priv struct MoonDbBackupEntry {
   filename : String
-  size_bytes : Int
+  size_bytes : Int32
   created_at : Int64
 }
 
@@ -528,9 +528,9 @@ fn moon_sort_db_backup_entries(rows : Array[MoonDbBackupEntry]) -> Unit {
 
 ///|
 fn MoonDbBackupEntry::to_json(self : MoonDbBackupEntry) -> Json {
-  {
+  Json({
     "filename": Json::string(self.filename),
     "sizeBytes": Json::number(self.size_bytes.to_double()),
     "createdAt": Json::string(self.created_at.to_string()),
-  }.to_json()
+  })
 }

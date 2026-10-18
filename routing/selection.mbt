@@ -92,7 +92,7 @@ fn eligible_candidates(
 }
 
 ///|
-fn smooth_current(state : SmoothStateV1, provider_id : String) -> Int {
+fn smooth_current(state : SmoothStateV1, provider_id : String) -> Int32 {
   for entry in state.entries {
     if entry.provider_id == provider_id {
       return entry.current_weight
@@ -173,8 +173,8 @@ pub fn select(
   candidates : Array[ProviderCandidateV1],
   smooth_state : SmoothStateV1,
   shadow~ : Bool,
-  sticky_provider_id? : String? = None,
-  session_key_present? : Bool = false,
+  sticky_provider_id~ : String? = None,
+  session_key_present~ : Bool = false,
   decided_at_ms~ : Int64,
 ) -> (RoutingDecisionV1, SmoothStateV1) raise {
   if policy.contract_id != routing_policy_contract_v1() {

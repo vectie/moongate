@@ -20,7 +20,7 @@ fn comparison_group(value : Json, field : String, key : String) -> Json raise {
     fail("Missing group array")
   }
   for row in rows {
-    if comparison_get(row, "key") == key.to_json() {
+    if comparison_get(row, "key") == Json(key) {
       return row
     }
   }
@@ -38,38 +38,38 @@ test "comparison CSV versus JSON computes observed deltas and added removed grou
   assert_eq(comparison_get(delta, "tokens"), Json::number(50))
   assert_eq(comparison_get(summary, "estimatedUsdDelta"), Json::number(1.5))
   let removed = comparison_group(result, "byModel", "old")
-  assert_eq(comparison_get(removed, "status"), "removed".to_json())
+  assert_eq(comparison_get(removed, "status"), Json("removed"))
   assert_eq(
     comparison_get(comparison_get(removed, "delta"), "tokens"),
     Json::number(-100),
   )
   assert_eq(
     comparison_get(comparison_group(result, "byModel", "new"), "status"),
-    "added".to_json(),
+    Json("added"),
   )
   assert_eq(
     comparison_get(comparison_group(result, "byModel", "keep"), "status"),
-    "present".to_json(),
+    Json("present"),
   )
   assert_eq(
     comparison_get(comparison_group(result, "byProvider", "two"), "status"),
-    "added".to_json(),
+    Json("added"),
   )
   assert_eq(
     comparison_get(comparison_group(result, "byApp", "claude"), "status"),
-    "added".to_json(),
+    Json("added"),
   )
   guard comparison_get(result, "byModel") is Array(groups) else {
     fail("groups")
   }
   assert_eq(groups.map(group => comparison_get(group, "key")), [
-    "keep".to_json(),
-    "new".to_json(),
-    "old".to_json(),
+    Json("keep"),
+    Json("new"),
+    Json("old"),
   ])
   assert_eq(
     comparison_get(comparison_get(result, "before"), "observedFirstDay"),
-    "2026-10-01".to_json(),
+    Json("2026-10-01"),
   )
 }
 
@@ -80,10 +80,7 @@ test "comparison leaves unavailable cost delta null but preserves recorded diffe
   )
   let summary = comparison_get(result, "summary")
   assert_eq(comparison_get(summary, "estimatedUsdDelta"), Json::null())
-  assert_eq(
-    comparison_get(summary, "estimatedUsdDeltaAvailable"),
-    false.to_json(),
-  )
+  assert_eq(comparison_get(summary, "estimatedUsdDeltaAvailable"), Json(false))
   assert_eq(
     comparison_get(comparison_get(summary, "delta"), "knownEstimatedUsd"),
     Json::number(-1),
@@ -114,7 +111,7 @@ test "comparison partial provenance prevents totals claiming complete cost diffe
   let result = comparison(source, "model,totalTokens,costUsd\nm,200,0")
   assert_eq(
     comparison_get(comparison_get(result, "before"), "partial"),
-    true.to_json(),
+    Json(true),
   )
   assert_eq(
     comparison_get(comparison_get(result, "before"), "sourceTotal"),
@@ -196,7 +193,7 @@ test "comparison independent UTC windows and shared filters expose selected cove
   )
   assert_eq(
     comparison_get(comparison_get(result, "after"), "startDay"),
-    "2026-10-08".to_json(),
+    Json("2026-10-08"),
   )
   let unfiltered = comparison(source, source)
   assert_eq(

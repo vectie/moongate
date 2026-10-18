@@ -65,7 +65,7 @@ fn count_attribute(attrs : Map[String, Json], key : String) -> Double? raise {
 }
 
 ///|
-fn span_id(value : Json, length : Int) -> String raise {
+fn span_id(value : Json, length : Int32) -> String raise {
   guard value is String(text) &&
     text.length() == length &&
     text
@@ -104,7 +104,7 @@ fn timestamp(value : Json) -> UInt64? raise {
 ///|
 fn count_json(value : Double?) -> Json {
   match value {
-    Some(value) => value.to_json()
+    Some(value) => Json(value)
     None => Json::null()
   }
 }
@@ -112,7 +112,7 @@ fn count_json(value : Double?) -> Json {
 ///|
 fn text_json(value : String?) -> Json {
   match value {
-    Some(value) => value.to_json()
+    Some(value) => Json(value)
     None => Json::null()
   }
 }

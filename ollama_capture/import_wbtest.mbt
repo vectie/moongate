@@ -19,7 +19,7 @@ fn read(captures : Array[(String, String)]) -> Json raise {
 }
 
 ///|
-fn outcome(result : Json, index : Int) -> Json {
+fn outcome(result : Json, index : Int32) -> Json {
   array(field(field(result, "ollamaCaptureImport"), "outcomes"))[index]
 }
 
@@ -65,25 +65,25 @@ test "stream chunks collapse into one observed terminal usage row" {
       } : Json).stringify() +
     "\r\n"
   let result = read([("stream.ndjson", source)])
-  assert_eq(field(result, "total"), (1).to_json())
-  assert_eq(field(field(result, "summary"), "tokens"), (14).to_json())
-  assert_eq(field(field(result, "summary"), "missingCostCount"), (1).to_json())
+  assert_eq(field(result, "total"), Json(1))
+  assert_eq(field(field(result, "summary"), "tokens"), Json(14))
+  assert_eq(field(field(result, "summary"), "missingCostCount"), Json(1))
   let row = array(field(result, "data"))[0]
-  assert_eq(field(row, "inputTokens"), (10).to_json())
-  assert_eq(field(row, "date"), "2026-10-09".to_json())
-  assert_eq(field(row, "captureIndex"), (1).to_json())
-  assert_eq(field(row, "requestId"), "".to_json())
+  assert_eq(field(row, "inputTokens"), Json(10))
+  assert_eq(field(row, "date"), Json("2026-10-09"))
+  assert_eq(field(row, "captureIndex"), Json(1))
+  assert_eq(field(row, "requestId"), Json(""))
   let evidence = outcome(result, 0)
-  assert_eq(field(evidence, "terminalLine"), (3).to_json())
-  assert_eq(field(evidence, "responseObjectCount"), (2).to_json())
-  assert_eq(field(evidence, "usageState"), "complete".to_json())
+  assert_eq(field(evidence, "terminalLine"), Json(3))
+  assert_eq(field(evidence, "responseObjectCount"), Json(2))
+  assert_eq(field(evidence, "usageState"), Json("complete"))
   assert_eq(
     field(field(evidence, "terminalMetrics"), "total_duration"),
-    (2000000000).to_json(),
+    Json(2000000000),
   )
   assert_eq(
     field(field(evidence, "terminalMetrics"), "prompt_eval_cached_count"),
-    (7).to_json(),
+    Json(7),
   )
   assert_true(!result.stringify().contains("PRIVATE_"))
 }
@@ -104,10 +104,10 @@ test "pretty chat captures and explicit zero are supported" {
     "created_at": "unparseable",
   }
   let result = read([("chat.json", source.stringify(indent=2))])
-  assert_eq(field(outcome(result, 0), "apiShape"), "chat".to_json())
-  assert_eq(field(outcome(result, 0), "terminalLine"), (1).to_json())
-  assert_eq(field(field(result, "summary"), "tokens"), (0).to_json())
-  assert_eq(field(field(result, "summary"), "undatedCount"), (1).to_json())
+  assert_eq(field(outcome(result, 0), "apiShape"), Json("chat"))
+  assert_eq(field(outcome(result, 0), "terminalLine"), Json(1))
+  assert_eq(field(field(result, "summary"), "tokens"), Json(0))
+  assert_eq(field(field(result, "summary"), "undatedCount"), Json(1))
   assert_eq(
     field(array(field(result, "data"))[0], "totalCostUsd"),
     Json::null(),
@@ -132,36 +132,33 @@ test "empty interrupted errored missing and incomplete usage stay distinct" {
     ),
     ("error", ({ "error": "SECRET_ERROR" } : Json).stringify()),
     ("missing", completed(Json::null(), Json::null())),
-    ("partial", completed((7).to_json(), Json::null())),
-    ("zero", completed((0).to_json(), (0).to_json())),
+    ("partial", completed(Json(7), Json::null())),
+    ("zero", completed(Json(0), Json(0))),
   ])
-  assert_eq(field(result, "sourceTotal"), (6).to_json())
-  assert_eq(field(result, "total"), (1).to_json())
-  assert_eq(field(result, "partial"), true.to_json())
-  assert_eq(field(outcome(result, 0), "state"), "empty".to_json())
-  assert_eq(field(outcome(result, 1), "state"), "incomplete".to_json())
-  assert_eq(field(outcome(result, 1), "usageState"), "unavailable".to_json())
+  assert_eq(field(result, "sourceTotal"), Json(6))
+  assert_eq(field(result, "total"), Json(1))
+  assert_eq(field(result, "partial"), Json(true))
+  assert_eq(field(outcome(result, 0), "state"), Json("empty"))
+  assert_eq(field(outcome(result, 1), "state"), Json("incomplete"))
+  assert_eq(field(outcome(result, 1), "usageState"), Json("unavailable"))
   assert_eq(
     field(outcome(result, 1), "terminalMetrics"),
-    ({} : Map[String, Json]).to_json(),
+    Json(({} : Map[String, Json])),
   )
-  assert_eq(field(outcome(result, 2), "state"), "errored".to_json())
-  assert_eq(field(outcome(result, 3), "usageState"), "missing".to_json())
-  assert_eq(field(outcome(result, 4), "usageState"), "incomplete".to_json())
+  assert_eq(field(outcome(result, 2), "state"), Json("errored"))
+  assert_eq(field(outcome(result, 3), "usageState"), Json("missing"))
+  assert_eq(field(outcome(result, 4), "usageState"), Json("incomplete"))
   assert_eq(
     field(field(outcome(result, 4), "terminalMetrics"), "prompt_eval_count"),
-    (7).to_json(),
+    Json(7),
   )
-  assert_eq(
-    field(array(field(result, "data"))[0], "captureIndex"),
-    (6).to_json(),
-  )
+  assert_eq(field(array(field(result, "data"))[0], "captureIndex"), Json(6))
   assert_true(!result.stringify().contains("SECRET_ERROR"))
 }
 
 ///|
 test "post-terminal data and concatenated requests reject whole import" {
-  let done = completed((1).to_json(), (2).to_json())
+  let done = completed(Json(1), Json(2))
   let error = ({ "error": "bad" } : Json).stringify()
   for source in [done + "\n" + done, error + "\n" + done, done + "\n" + error] {
     assert_true(import_ollama_captures_json([("one", source)]) is Err(_))
@@ -229,21 +226,21 @@ test "exact decimal metrics reject rounded fractions and underflow" {
       "one", "{\"model\":\"m\",\"response\":\"\",\"done\":true,\"prompt_eval_count\":1.20e2,\"eval_count\":0}",
     ),
   ])
-  assert_eq(field(field(result, "summary"), "tokens"), (120).to_json())
+  assert_eq(field(field(result, "summary"), "tokens"), Json(120))
 }
 
 ///|
 test "row and aggregate token sums remain exact safe integers" {
   assert_true(
     import_ollama_captures_json([
-      ("one", completed(9007199254740991.0.to_json(), (1).to_json())),
+      ("one", completed(Json(9007199254740991.0), Json(1))),
     ])
     is Err(_),
   )
   assert_true(
     import_ollama_captures_json([
-      ("one", completed(9007199254740991.0.to_json(), (0).to_json())),
-      ("two", completed((1).to_json(), (0).to_json())),
+      ("one", completed(Json(9007199254740991.0), Json(0))),
+      ("two", completed(Json(1), Json(0))),
     ])
     is Err(_),
   )
@@ -258,13 +255,13 @@ test "unknown stop reasons do not echo arbitrary content" {
     "done_reason": "SECRET_STOP",
   }
   let result = read([("one", value.stringify())])
-  assert_eq(field(outcome(result, 0), "doneReason"), "unrecognized".to_json())
+  assert_eq(field(outcome(result, 0), "doneReason"), Json("unrecognized"))
   assert_true(!result.stringify().contains("SECRET_STOP"))
 }
 
 ///|
 test "reopen export keeps unknown coverage and exact filters" {
-  let result = read([("one", completed((2).to_json(), (3).to_json()))])
+  let result = read([("one", completed(Json(2), Json(3)))])
   let reopen = match
     @usage_preview.moongate_preview_usage_file_json(
       result.stringify(),
@@ -273,9 +270,9 @@ test "reopen export keeps unknown coverage and exact filters" {
     Ok(value) => value
     Err(error) => fail(error)
   }
-  assert_eq(field(reopen, "sourceCoverageUnknown"), true.to_json())
-  assert_eq(field(reopen, "total"), (1).to_json())
-  assert_eq(field(field(reopen, "summary"), "tokens"), (5).to_json())
+  assert_eq(field(reopen, "sourceCoverageUnknown"), Json(true))
+  assert_eq(field(reopen, "total"), Json(1))
+  assert_eq(field(field(reopen, "summary"), "tokens"), Json(5))
   let no_match = match
     @usage_preview.moongate_preview_usage_file_json(
       result.stringify(),
@@ -284,8 +281,8 @@ test "reopen export keeps unknown coverage and exact filters" {
     Ok(value) => value
     Err(error) => fail(error)
   }
-  assert_eq(field(no_match, "total"), (0).to_json())
-  assert_eq(field(no_match, "sourceTotal"), (1).to_json())
+  assert_eq(field(no_match, "total"), Json(0))
+  assert_eq(field(no_match, "sourceTotal"), Json(1))
 }
 
 ///|
@@ -330,14 +327,14 @@ test "error after streamed output remains one errored capture" {
     "\n" +
     ({ "error": "SECRET_UPSTREAM" } : Json).stringify()
   let result = read([("a", source)])
-  assert_eq(field(outcome(result, 0), "state"), "errored".to_json())
-  assert_eq(field(outcome(result, 0), "terminalLine"), (2).to_json())
-  assert_eq(field(result, "total"), (0).to_json())
+  assert_eq(field(outcome(result, 0), "state"), Json("errored"))
+  assert_eq(field(outcome(result, 0), "terminalLine"), Json(2))
+  assert_eq(field(result, "total"), Json(0))
   assert_true(!result.stringify().contains("SECRET_"))
 }
 
 ///|
 test "single terminal capture preserves leading blank line position" {
-  let result = read([("a", " \n\n" + completed((1).to_json(), (2).to_json()))])
-  assert_eq(field(outcome(result, 0), "terminalLine"), (3).to_json())
+  let result = read([("a", " \n\n" + completed(Json(1), Json(2)))])
+  assert_eq(field(outcome(result, 0), "terminalLine"), Json(3))
 }

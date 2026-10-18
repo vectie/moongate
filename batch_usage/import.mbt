@@ -6,9 +6,9 @@
 /// and response context; missing results are never treated as zero usage.
 pub fn import_batch_usage_json(
   content : String,
-  source_name? : String = "Batch results",
-  app? : String = "openai-batch",
-  provider? : String = "openai-export",
+  source_name~ : String = "Batch results",
+  app~ : String = "openai-batch",
+  provider~ : String = "openai-export",
   requests? : String,
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
@@ -70,19 +70,19 @@ pub fn import_batch_usage_json(
         )
       }
       tokens += total
-      row["appType"] = app.to_json()
-      row["providerId"] = provider.to_json()
+      row["appType"] = Json(app)
+      row["providerId"] = Json(provider)
       rows.push(Json::object(row))
     }
     let outcome : Map[String, Json] = {
-      "line": (index + 1).to_json(),
-      "customId": parsed.custom_id.to_json(),
-      "outcome": parsed.reason.to_json(),
+      "line": Json(index + 1),
+      "customId": Json(parsed.custom_id),
+      "outcome": Json(parsed.reason),
       "httpStatus": parsed.http_status,
       "responseState": if parsed.response_state.is_empty() {
         Json::null()
       } else {
-        parsed.response_state.to_json()
+        Json(parsed.response_state)
       },
     }
     if requests is Some(_) {
@@ -96,11 +96,11 @@ pub fn import_batch_usage_json(
         Map([])
       }
       outcome["responseModel"] = match body.get("model") {
-        Some(String(model)) => model.to_json()
+        Some(String(model)) => Json(model)
         _ => Json::null()
       }
       outcome["responseObject"] = match body.get("object") {
-        Some(String(kind)) => kind.to_json()
+        Some(String(kind)) => Json(kind)
         _ => Json::null()
       }
     }
@@ -116,8 +116,8 @@ pub fn import_batch_usage_json(
   }
   let source_rows = outcomes.length()
   let envelope : Json = {
-    "data": rows.to_json(),
-    "sourceTotal": (source_rows + missing_results).to_json(),
+    "data": Json(rows),
+    "sourceTotal": Json(source_rows + missing_results),
   }
   let preview = match
     @usage_preview.moongate_preview_usage_file_json(
@@ -149,16 +149,16 @@ pub fn import_batch_usage_json(
   let batch_import : Map[String, Json] = {
     "schema": "moongate.batch-import.v1",
     "sourceFormat": "openai-batch-jsonl",
-    "sourceResultCount": source_rows.to_json(),
-    "importedUsageCount": rows.length().to_json(),
-    "batchErrorCount": batch_errors.to_json(),
-    "httpErrorCount": http_errors.to_json(),
-    "missingUsageCount": missing_usage.to_json(),
-    "nonCompletedResponseCount": noncompleted.to_json(),
+    "sourceResultCount": Json(source_rows),
+    "importedUsageCount": Json(rows.length()),
+    "batchErrorCount": Json(batch_errors),
+    "httpErrorCount": Json(http_errors),
+    "missingUsageCount": Json(missing_usage),
+    "nonCompletedResponseCount": Json(noncompleted),
     "batchCompleteness": "unverified",
     "costSource": "unavailable",
-    "outcomes": outcomes.to_json(),
-    "caveat": caveat.to_json(),
+    "outcomes": Json(outcomes),
+    "caveat": Json(caveat),
   }
   if request_join is Some(Object(joined)) {
     batch_import["requestJoin"] = Json::object(joined)
@@ -171,6 +171,6 @@ pub fn import_batch_usage_json(
     report += "sourceTotal is the union of supplied request and result IDs; unexpected-result usage remains included. Retain this JSON for joined diagnostics.\n"
   }
   preview["batchImport"] = Json::object(batch_import)
-  preview["report"] = report.to_json()
+  preview["report"] = Json(report)
   Ok(Json::object(preview))
 }

@@ -14,7 +14,7 @@ const MOONGATE_MODEL_PRICING_FILE : String = "model_pricing.jsonl"
 const MOONGATE_USAGE_STORE_FILE : String = "usage_store_v1.json"
 
 ///|
-const MOONGATE_USAGE_STORE_SCHEMA_VERSION : Int = 1
+const MOONGATE_USAGE_STORE_SCHEMA_VERSION : Int32 = 1
 
 ///|
 pub fn default_moongate_stats_dir() -> String {
@@ -24,7 +24,7 @@ pub fn default_moongate_stats_dir() -> String {
 ///|
 async fn TrafficStats::enable_persistent_store(
   self : TrafficStats,
-  storage_dir? : String = default_moongate_stats_dir(),
+  storage_dir~ : String = default_moongate_stats_dir(),
 ) -> Unit {
   self.storage_dir = Some(storage_dir)
   @fsx.make_directory(storage_dir, recursive=true, exists_ok=true) catch {
@@ -35,7 +35,7 @@ async fn TrafficStats::enable_persistent_store(
 ///|
 async fn TrafficStats::load_persistent_store(
   self : TrafficStats,
-  storage_dir? : String = default_moongate_stats_dir(),
+  storage_dir~ : String = default_moongate_stats_dir(),
 ) -> Unit {
   self.enable_persistent_store(storage_dir~)
   if self.load_usage_snapshot_from_store() {
@@ -466,7 +466,7 @@ fn store_json_string_or_default(
 }
 
 ///|
-fn store_json_optional_int(obj : Map[String, Json], key : String) -> Int? {
+fn store_json_optional_int(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(n, ..)) => Some(n.trunc().to_int())
     _ => None
@@ -474,7 +474,7 @@ fn store_json_optional_int(obj : Map[String, Json], key : String) -> Int? {
 }
 
 ///|
-fn store_json_int_or_zero(obj : Map[String, Json], key : String) -> Int {
+fn store_json_int_or_zero(obj : Map[String, Json], key : String) -> Int32 {
   store_json_int_or_default(obj, key, 0)
 }
 
@@ -482,8 +482,8 @@ fn store_json_int_or_zero(obj : Map[String, Json], key : String) -> Int {
 fn store_json_int_or_default(
   obj : Map[String, Json],
   key : String,
-  default : Int,
-) -> Int {
+  default : Int32,
+) -> Int32 {
   store_json_optional_int(obj, key).unwrap_or(default)
 }
 

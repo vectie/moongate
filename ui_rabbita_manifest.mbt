@@ -1,7 +1,7 @@
 ///|
 #warnings("-alert_unstable")
 pub fn moongate_rabbita_document_html(
-  api_base? : String = "http://127.0.0.1:15721",
+  api_base~ : String = "http://127.0.0.1:15721",
 ) -> String {
   @rabbita.render_to_string(
     @rabbita.static_cell(
@@ -91,7 +91,7 @@ pub fn moongate_rabbita_shell_dom_ids() -> Array[String] {
 ///|
 #warnings("-alert_unstable")
 pub fn moongate_rabbita_shell_html(
-  api_base? : String = "http://127.0.0.1:15721",
+  api_base~ : String = "http://127.0.0.1:15721",
 ) -> String {
   @rabbita.render_to_string(
     @rabbita.static_cell(moongate_rabbita_shell_view(api_base~)),
@@ -100,7 +100,7 @@ pub fn moongate_rabbita_shell_html(
 
 ///|
 pub fn moongate_rabbita_lepusa_manifest_json(
-  api_base? : String = "http://127.0.0.1:15721",
+  api_base~ : String = "http://127.0.0.1:15721",
 ) -> Json {
   Json::object({
     "identifier": Json::string("dev.vectie.moongate.rabbita"),
@@ -143,13 +143,13 @@ pub fn moongate_rabbita_lepusa_manifest_json(
 
 ///|
 pub fn moongate_rabbita_lepusa_manifest(
-  api_base? : String = "http://127.0.0.1:15721",
+  api_base~ : String = "http://127.0.0.1:15721",
 ) -> String {
   moongate_rabbita_lepusa_manifest_json(api_base~).stringify(indent=2)
 }
 
 ///|
-pub fn moongate_lepusa_manifest_json(port? : Int = 15721) -> Json {
+pub fn moongate_lepusa_manifest_json(port~ : Int32 = 15721) -> Json {
   Json::object({
     "identifier": Json::string("dev.vectie.moongate"),
     "productName": Json::string("MoonGate"),
@@ -211,6 +211,6 @@ pub fn moongate_lepusa_manifest_json(port? : Int = 15721) -> Json {
 }
 
 ///|
-pub fn moongate_lepusa_manifest(port? : Int = 15721) -> String {
+pub fn moongate_lepusa_manifest(port~ : Int32 = 15721) -> String {
   moongate_lepusa_manifest_json(port~).stringify(indent=2)
 }

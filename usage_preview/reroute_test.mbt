@@ -14,7 +14,7 @@ fn reroute_plan() -> String {
 }
 
 ///|
-fn reroute_ok(content : String, plan? : String = reroute_plan()) -> Json raise {
+fn reroute_ok(content : String, plan~ : String = reroute_plan()) -> Json raise {
   match @usage_preview.reroute_usage_file_json(content, plan) {
     Ok(value) => value
     Err(error) => fail(error)
@@ -36,7 +36,7 @@ test "route rehearsal preserves workload pairs comparable costs and exposes miss
       ("originalMissingCostCount", 1),
       ("pairedCount", 2),
     ] {
-    assert_eq(reroute_field(review, key), expected.to_json())
+    assert_eq(reroute_field(review, key), Json(expected))
   }
   assert_eq(
     reroute_field(review, "originalKnownEstimatedUsd"),
@@ -50,17 +50,17 @@ test "route rehearsal preserves workload pairs comparable costs and exposes miss
     reroute_field(review, "pairedScenarioEstimatedUsd"),
     Json::number(4),
   )
-  assert_eq(reroute_field(review, "pairedDeltaUsd"), (-8).to_json())
+  assert_eq(reroute_field(review, "pairedDeltaUsd"), Json(-8))
   let summary = reroute_field(output, "summary")
   assert_eq(reroute_field(summary, "tokens"), Json::number(2550150))
   assert_eq(reroute_field(summary, "knownEstimatedUsd"), Json::number(6))
   assert_eq(reroute_field(summary, "missingCostCount"), Json::number(2))
   assert_eq(reroute_field(output, "sourceTotal"), Json::number(9))
-  assert_eq(reroute_field(output, "partial"), true.to_json())
+  assert_eq(reroute_field(output, "partial"), Json(true))
   guard reroute_field(output, "data") is Array(rows) else { fail("data") }
-  assert_eq(reroute_field(rows[0], "providerId"), "new".to_json())
-  assert_eq(reroute_field(rows[2], "model"), "small".to_json())
-  assert_eq(reroute_field(rows[3], "providerId"), "other".to_json())
+  assert_eq(reroute_field(rows[0], "providerId"), Json("new"))
+  assert_eq(reroute_field(rows[2], "model"), Json("small"))
+  assert_eq(reroute_field(rows[3], "providerId"), Json("other"))
   assert_eq(reroute_field(rows[3], "totalCostUsd"), Json::null())
   assert_false(output.stringify().contains("PRIVATE_FIXTURE"))
   assert_eq(reroute_ok(content), output)
@@ -77,7 +77,7 @@ test "scenario label survives filtered reopen CSV and repricing while recorded m
   }
   assert_eq(
     reroute_field(reopened, "usageEvidenceKind"),
-    "hypothetical-route-scenario".to_json(),
+    Json("hypothetical-route-scenario"),
   )
   assert_eq(reroute_field(reopened, "total"), Json::number(1))
   guard reroute_field(reopened, "report") is String(report) else {
@@ -96,7 +96,7 @@ test "scenario label survives filtered reopen CSV and repricing while recorded m
   }
   assert_eq(
     reroute_field(priced, "usageEvidenceKind"),
-    "hypothetical-route-scenario".to_json(),
+    Json("hypothetical-route-scenario"),
   )
   assert_true(
     @usage_preview.merge_usage_files_json(
@@ -167,7 +167,7 @@ test "empty input unmapped plans and unused mappings are explicit" {
   let empty = reroute_ok("[]")
   assert_eq(reroute_field(empty, "total"), Json::number(0))
   let review = reroute_field(empty, "usageRouteScenario")
-  assert_eq(reroute_field(review, "unusedMappingIndices"), [1].to_json())
+  assert_eq(reroute_field(review, "unusedMappingIndices"), Json([1]))
   assert_eq(reroute_field(review, "pairedOriginalEstimatedUsd"), Json::null())
   let no_routes = "{\"schema\":\"moongate.usage-route-plan.v1\",\"name\":\"No mappings\",\"currency\":\"USD\",\"routes\":[]}"
   let output = reroute_ok(
@@ -289,7 +289,7 @@ test "many source routes may share one numeric target rate and size limits rejec
     @usage_preview.reroute_usage_file_json("[]", Json::object(plan).stringify())
     is Ok(_),
   )
-  plan["routes"] = Array::make(1001, routes[0]).to_json()
+  plan["routes"] = Json(Array::make(1001, routes[0]))
   assert_true(
     @usage_preview.reroute_usage_file_json("[]", Json::object(plan).stringify())
     is Err(_),
@@ -308,7 +308,7 @@ test "many source routes may share one numeric target rate and size limits rejec
       "model": "big",
       "inputTokens": 0,
       "outputTokens": 0,
-      "appType": "x".repeat(1500000).to_json(),
+      "appType": Json("x".repeat(1500000)),
     },
   ]
   assert_true(

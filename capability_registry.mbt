@@ -163,7 +163,7 @@ fn capability_finding(
   operation_id : String,
   path : String,
   message : String,
-  evidence_refs? : Array[String] = [],
+  evidence_refs~ : Array[String] = [],
 ) -> Json {
   let fields = {
     "code": Json::string(code),
@@ -252,7 +252,7 @@ fn capability_normalize_authority(value : String) -> String {
 }
 
 ///|
-fn capability_authority_rank(value : String) -> Int {
+fn capability_authority_rank(value : String) -> Int32 {
   match capability_normalize_authority(value) {
     "observe" => 0
     "cognitive-maintenance" => 1
@@ -265,7 +265,7 @@ fn capability_authority_rank(value : String) -> Int {
 }
 
 ///|
-fn capability_claim_rank(value : String) -> Int {
+fn capability_claim_rank(value : String) -> Int32 {
   match value.trim().to_lower() {
     "observation" => 0
     "research-evidence" => 1
@@ -1800,8 +1800,8 @@ async fn capability_product_projection(
 /// claim ceiling, service publication, service health, and endpoint evidence
 /// all agree.
 pub async fn moongate_capability_projection_json(
-  suite_root? : String = ".",
-  registry_path? : String = "",
+  suite_root~ : String = ".",
+  registry_path~ : String = "",
 ) -> Json {
   let root = moongate_normalize_suite_root(suite_root)
   let path = if registry_path.trim().is_empty() {
@@ -1848,7 +1848,7 @@ pub async fn moongate_capability_projection_json(
     }
     _ => []
   }
-  let counts : Map[String, Int] = Map([])
+  let counts : Map[String, Int32] = Map([])
   for row in inventory_rows {
     match row {
       Object(fields) => {
@@ -1986,9 +1986,9 @@ pub fn moongate_capability_resolution_json(
   projection : Json,
   product_id : String,
   operation_id : String,
-  requested_authority? : String = "",
-  input_schema_id? : String = "",
-  output_schema_id? : String = "",
+  requested_authority~ : String = "",
+  input_schema_id~ : String = "",
+  output_schema_id~ : String = "",
 ) -> Json {
   let reasons : Array[Json] = []
   let mut matched_product : Json? = None

@@ -4,9 +4,9 @@
 pub fn export_workload_csv(
   content : String,
   scope~ : String,
-  view? : String = "groups",
-  workload? : String = "",
-  unassigned? : Bool = false,
+  view~ : String = "groups",
+  workload~ : String = "",
+  unassigned~ : Bool = false,
 ) -> Result[String, String] {
   if !["groups", "requests"].contains(view) {
     return Err("CSV view must be groups or requests")
@@ -47,12 +47,12 @@ pub fn export_workload_csv(
     let cells = columns.map(key => usage_export_cell(compare_field(row, key)))
     for
       value in [
-        scope.to_json(),
+        Json(scope),
         compare_field(output, "sourceTotal"),
         compare_field(output, "total"),
         compare_field(output, "partial"),
-        (compare_field(output, "sourceCoverageUnknown") == true.to_json()).to_json(),
-        "operator-authored-unverified".to_json(),
+        Json(compare_field(output, "sourceCoverageUnknown") == Json(true)),
+        Json("operator-authored-unverified"),
       ] {
       cells.push(usage_export_cell(value))
     }

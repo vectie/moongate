@@ -15,9 +15,9 @@ fn attribution_plan_fixture() -> String {
 ///|
 fn attribution_ok(
   content : String,
-  plan? : String = "",
-  workload? : String = "",
-  unassigned? : Bool = false,
+  plan~ : String = "",
+  workload~ : String = "",
+  unassigned~ : Bool = false,
 ) -> Json raise {
   match
     @usage_preview.attribute_usage_file_json(
@@ -57,23 +57,23 @@ test "workload labels create useful groups without editing usage or hiding unass
     attribution_field(result, "summary"),
     attribution_field(plain, "summary"),
   )
-  assert_eq(attribution_field(result, "sourceTotal"), (8).to_json())
-  assert_eq(attribution_field(result, "sourceCoverageUnknown"), true.to_json())
-  assert_eq(attribution_field(result, "partial"), true.to_json())
+  assert_eq(attribution_field(result, "sourceTotal"), Json(8))
+  assert_eq(attribution_field(result, "sourceCoverageUnknown"), Json(true))
+  assert_eq(attribution_field(result, "partial"), Json(true))
   let review = attribution_field(result, "workloadReview")
-  assert_eq(attribution_field(review, "editsApplied"), (3).to_json())
+  assert_eq(attribution_field(review, "editsApplied"), Json(3))
   guard attribution_field(review, "groups") is Array(groups) else {
     fail("groups")
   }
   assert_eq(groups.length(), 3)
-  assert_eq(attribution_field(groups[0], "workload"), "Research".to_json())
-  assert_eq(attribution_field(groups[0], "tokens"), (35).to_json())
-  assert_eq(attribution_field(groups[0], "knownEstimatedUsd"), 0.25.to_json())
-  assert_eq(attribution_field(groups[0], "missingCostCount"), (1).to_json())
-  assert_eq(attribution_field(groups[1], "workload"), "Unassigned".to_json())
-  assert_eq(attribution_field(groups[1], "assigned"), true.to_json())
+  assert_eq(attribution_field(groups[0], "workload"), Json("Research"))
+  assert_eq(attribution_field(groups[0], "tokens"), Json(35))
+  assert_eq(attribution_field(groups[0], "knownEstimatedUsd"), Json(0.25))
+  assert_eq(attribution_field(groups[0], "missingCostCount"), Json(1))
+  assert_eq(attribution_field(groups[1], "workload"), Json("Unassigned"))
+  assert_eq(attribution_field(groups[1], "assigned"), Json(true))
   assert_eq(attribution_field(groups[2], "workload"), Json::null())
-  assert_eq(attribution_field(groups[2], "assigned"), false.to_json())
+  assert_eq(attribution_field(groups[2], "assigned"), Json(false))
   assert_false(result.stringify().contains("PRIVATE_FIXTURE"))
   assert_eq(result, attribution_ok(input, plan=attribution_plan_fixture()))
 }
@@ -89,13 +89,13 @@ test "filtered saved views retain every row and can be reopened reassigned and c
     fail("selected")
   }
   assert_eq(selected.length(), 2)
-  assert_eq(attribution_field(first, "total"), (4).to_json())
+  assert_eq(attribution_field(first, "total"), Json(4))
   let reopen = attribution_ok(first.stringify(), unassigned=true)
   guard attribution_field(attribution_view(reopen), "data") is Array(pending) else {
     fail("pending")
   }
   assert_eq(pending.length(), 1)
-  assert_eq(attribution_field(pending[0], "requestId"), "d".to_json())
+  assert_eq(attribution_field(pending[0], "requestId"), Json("d"))
   let edits =
     #|{"schema":"moongate.workload-plan.v1","scope":"fixture-run","changes":[{"requestId":"a","expectedWorkload":"Research","workload":"Support"},{"requestId":"b","expectedWorkload":"Research","workload":null}]}
   let revised = attribution_ok(
@@ -112,7 +112,7 @@ test "filtered saved views retain every row and can be reopened reassigned and c
       attribution_field(attribution_view(revised), "summary"),
       "tokens",
     ),
-    (12).to_json(),
+    Json(12),
   )
   let cleared = attribution_ok(revised.stringify(), unassigned=true)
   assert_eq(
@@ -120,7 +120,7 @@ test "filtered saved views retain every row and can be reopened reassigned and c
       attribution_field(attribution_view(cleared), "summary"),
       "requests",
     ),
-    (2).to_json(),
+    Json(2),
   )
   let empty = attribution_ok(revised.stringify(), workload="Absent")
   assert_eq(
@@ -128,7 +128,7 @@ test "filtered saved views retain every row and can be reopened reassigned and c
       attribution_field(attribution_view(empty), "summary"),
       "requests",
     ),
-    (0).to_json(),
+    Json(0),
   )
 }
 
@@ -227,7 +227,9 @@ test "duplicate decoded JSON keys and broken saved references fail without revea
     attribution_field(first, "workloadReview") is Object(review) else {
     fail("review")
   }
-  review["assignments"] = [{ "requestId": "missing", "workload": "Research" }].to_json()
+  review["assignments"] = Json([
+    { "requestId": "missing", "workload": "Research" },
+  ])
   fields["workloadReview"] = Json::object(review)
   assert_true(
     @usage_preview.attribute_usage_file_json(
@@ -256,7 +258,7 @@ test "reopen ignores cached summaries and projections and recomputes workload to
     attribution_field(first, "workloadReview") is Object(review) else {
     fail("review")
   }
-  review["groups"] = ["fabricated"].to_json()
+  review["groups"] = Json(["fabricated"])
   review["view"] = { "data": [], "summary": { "tokens": 9999999 } }
   review["report"] = "FABRICATED"
   fields["workloadReview"] = Json::object(review)
@@ -264,7 +266,7 @@ test "reopen ignores cached summaries and projections and recomputes workload to
   let result = attribution_ok(Json::object(fields).stringify())
   assert_eq(
     attribution_field(attribution_field(result, "summary"), "tokens"),
-    (40).to_json(),
+    Json(40),
   )
   assert_false(result.stringify().contains("FABRICATED"))
 }
@@ -323,7 +325,7 @@ test "empty usage explicit zero and all-unassigned reviews remain usable" {
       attribution_field(attribution_view(result), "summary"),
       "requests",
     ),
-    (4).to_json(),
+    Json(4),
   )
   assert_true(
     @usage_preview.attribute_usage_file_json(attribution_fixture(), scope=" ")

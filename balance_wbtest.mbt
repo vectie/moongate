@@ -29,23 +29,23 @@ test "moongate balance provider detection mirrors native command" {
 test "moongate balance deterministic errors match UsageResult shape" {
   assert_eq(
     moon_balance_error("Unknown balance provider").to_json(),
-    {
+    Json({
       "success": Json::boolean(false),
       "error": Json::string("Unknown balance provider"),
-    }.to_json(),
+    }),
   )
   assert_eq(
     moon_balance_auth_error(401).to_json(),
-    {
+    Json({
       "success": Json::boolean(false),
       "data": Json::array([
-        {
+        Json({
           "isValid": Json::boolean(false),
           "invalidMessage": Json::string("Authentication failed (HTTP 401)"),
-        }.to_json(),
+        }),
       ]),
       "error": Json::string("Authentication failed (HTTP 401)"),
-    }.to_json(),
+    }),
   )
 }
 
@@ -53,41 +53,41 @@ test "moongate balance deterministic errors match UsageResult shape" {
 test "moongate balance parsers keep provider-specific fields" {
   assert_eq(
     moon_parse_openrouter_balance(
-      {
-        "data": {
+      Json({
+        "data": Json({
           "total_credits": Json::number(10.0),
           "total_usage": Json::number(3.25),
-        }.to_json(),
-      }.to_json(),
+        }),
+      }),
     ).to_json(),
-    {
+    Json({
       "success": Json::boolean(true),
       "data": Json::array([
-        {
+        Json({
           "planName": Json::string("OpenRouter"),
           "isValid": Json::boolean(true),
           "total": Json::number(10.0),
           "used": Json::number(3.25),
           "remaining": Json::number(6.75),
           "unit": Json::string("USD"),
-        }.to_json(),
+        }),
       ]),
-    }.to_json(),
+    }),
   )
   assert_eq(
     moon_parse_novita_balance(
-      { "availableBalance": Json::string("12500") }.to_json(),
+      Json({ "availableBalance": Json::string("12500") }),
     ).to_json(),
-    {
+    Json({
       "success": Json::boolean(true),
       "data": Json::array([
-        {
+        Json({
           "planName": Json::string("Novita AI"),
           "isValid": Json::boolean(true),
           "remaining": Json::number(1.25),
           "unit": Json::string("USD"),
-        }.to_json(),
+        }),
       ]),
-    }.to_json(),
+    }),
   )
 }

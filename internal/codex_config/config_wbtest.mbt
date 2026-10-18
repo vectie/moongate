@@ -214,7 +214,7 @@ test "codex model catalog uses moongate modelCatalog models and context" {
   assert_eq(first["support_verbosity"], Json::boolean(false))
   assert_eq(
     first["truncation_policy"],
-    { "mode": Json::string("tokens"), "limit": Json::number(10000.0) }.to_json(),
+    Json({ "mode": Json::string("tokens"), "limit": Json::number(10000.0) }),
   )
   assert_true(first["availability_nux"] is Null)
   assert_true(first["model_messages"] is Object(_))

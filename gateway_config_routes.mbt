@@ -4,7 +4,7 @@ fn ConfigService::register_routes(
   router : @httpx.Router,
   proxy : ProxyService,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Unit {
   router.add_handler(Get, "/config/claude/status", (_, w) => {
     self.handle_get_config_status(w, "claude")

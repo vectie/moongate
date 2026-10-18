@@ -1,7 +1,7 @@
 ///|
 priv struct LegacyStateMigration {
-  mut copied : Int
-  mut identical : Int
+  mut copied : Int32
+  mut identical : Int32
   conflicts : Array[String]
   errors : Array[String]
 }
@@ -17,7 +17,7 @@ fn migration_string_array(values : Array[String]) -> Json {
 }
 
 ///|
-fn migration_file_permission(relative_path : String) -> Int {
+fn migration_file_permission(relative_path : String) -> Int32 {
   let lower = relative_path.to_lower()
   if lower.contains("auth") ||
     lower.contains("token") ||

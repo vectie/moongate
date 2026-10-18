@@ -1,9 +1,9 @@
 ///|
 priv struct ReportedDay {
   day : String
-  results : Int
-  missing : Int
-  known : Int
+  results : Int32
+  missing : Int32
+  known : Int32
   total : Double
 }
 
@@ -33,19 +33,19 @@ fn cost_page(
   content : String,
   project : String,
   line_item : String,
-) -> Result[(Array[ReportedDay], Bool, Int), String] {
+) -> Result[(Array[ReportedDay], Bool, Int32), String] {
   let root = @exact_json.parse_with_number_text(content[:]) catch {
     _ => return Err("Costs file must be one saved JSON page")
   }
   guard text(root, "object") == "page" &&
     field(root, "data") is Array(buckets) &&
     (
-      field(root, "has_more") == false.to_json() ||
-      field(root, "has_more") == true.to_json()
+      field(root, "has_more") == Json(false) ||
+      field(root, "has_more") == Json(true)
     ) else {
     return Err("Expected Costs page object, data array and boolean has_more")
   }
-  let has_more = field(root, "has_more") == true.to_json()
+  let has_more = field(root, "has_more") == Json(true)
   if buckets.length() > 180 {
     return Err("Costs page exceeds 180 buckets")
   }

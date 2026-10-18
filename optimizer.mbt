@@ -149,7 +149,7 @@ fn apply_moon_copilot_optimizer_for_provider(
   provider : ProviderRouteTarget?,
   config_json : Json,
   has_anthropic_beta : Bool,
-  client_session_id? : String? = None,
+  client_session_id~ : String? = None,
 ) -> CopilotOptimizationResult {
   let config = moon_copilot_optimizer_runtime_config(config_json)
   if !config.enabled || !moon_copilot_optimizer_provider_enabled(provider) {
@@ -884,7 +884,7 @@ fn append_moon_anthropic_beta(obj : Map[String, Json], beta : String) -> Unit {
 }
 
 ///|
-fn json_int_from_map(obj : Map[String, Json], key : String) -> Int? {
+fn json_int_from_map(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(n, ..)) => Some(n.trunc().to_int())
     _ => None
@@ -924,7 +924,7 @@ fn moon_cache_control(cache_ttl : String) -> Json {
 }
 
 ///|
-fn count_moon_cache_breakpoints(body : Json) -> Int {
+fn count_moon_cache_breakpoints(body : Json) -> Int32 {
   guard body is Object(obj) else { return 0 }
   let mut count = 0
   match obj.get("tools") {

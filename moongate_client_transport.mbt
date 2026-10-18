@@ -108,7 +108,7 @@ async fn MoonGateClient::request_text_path(
     _ => return Err("Unsupported moongate client method: \{http_method}")
   }
   let response_body = client.read_all().text()
-  if response.code is (200..=299) {
+  if response.code is (200..<=299) {
     Ok(response_body)
   } else {
     Err(
@@ -121,7 +121,7 @@ async fn MoonGateClient::request_text_path(
 fn MoonGateClient::headers(
   self : MoonGateClient,
   http_method : String,
-  resolved_control_token? : String? = None,
+  resolved_control_token~ : String? = None,
 ) -> Map[String, String] {
   let headers : Map[String, String] = { "Accept": "application/json" }
   match self.api_key {

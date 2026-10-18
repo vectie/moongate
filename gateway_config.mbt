@@ -55,7 +55,7 @@ fn moon_app_config_path() -> String {
 
 ///|
 fn moon_default_app_settings_json() -> Json {
-  {
+  Json({
     "showInTray": Json::boolean(true),
     "minimizeToTrayOnClose": Json::boolean(true),
     "useAppWindowControls": Json::boolean(false),
@@ -69,33 +69,33 @@ fn moon_default_app_settings_json() -> Json {
     "preserveCodexOfficialAuthOnSwitch": Json::boolean(false),
     "skillSyncMethod": Json::string("auto"),
     "skillStorageLocation": Json::string("unified"),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_default_rectifier_config_json() -> Json {
-  {
+  Json({
     "enabled": Json::boolean(true),
     "requestThinkingSignature": Json::boolean(true),
     "requestThinkingBudget": Json::boolean(true),
     "requestMediaFallback": Json::boolean(true),
     "requestMediaHeuristic": Json::boolean(true),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_default_optimizer_config_json() -> Json {
-  {
+  Json({
     "enabled": Json::boolean(false),
     "thinkingOptimizer": Json::boolean(true),
     "cacheInjection": Json::boolean(true),
     "cacheTtl": Json::string("1h"),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_default_log_config_json() -> Json {
-  { "enabled": Json::boolean(true), "level": Json::string("info") }.to_json()
+  Json({ "enabled": Json::boolean(true), "level": Json::string("info") })
 }
 
 ///|
@@ -104,7 +104,7 @@ fn moon_claude_plugin_config_path() -> String {
 }
 
 ///|
-fn moon_search_snippet(content : String, first_pos : Int) -> String {
+fn moon_search_snippet(content : String, first_pos : Int32) -> String {
   let start = if first_pos > 50 { first_pos - 50 } else { 0 }
   let end = if first_pos + 70 < content.length() {
     first_pos + 70
@@ -317,7 +317,7 @@ fn ConfigService::save_settings_json(
 ///|
 async fn ConfigService::load_settings_store(
   self : ConfigService,
-  path? : String = moon_app_config_path(),
+  path~ : String = moon_app_config_path(),
 ) -> Unit {
   if !@fsx.exists_as_file(path) {
     return
@@ -331,7 +331,7 @@ async fn ConfigService::load_settings_store(
 async fn ConfigService::save_settings_store(
   self : ConfigService,
   settings : Json,
-  path? : String = moon_app_config_path(),
+  path~ : String = moon_app_config_path(),
 ) -> Unit raise Error {
   let next = moon_merge_settings_for_save(settings, self.app_settings)
   let parent = @pathx.dirname(path)
@@ -424,10 +424,10 @@ async fn moon_config_status_json(app : String) -> Json {
       moon_config_dir(normalized)
     _ => moon_config_file_path(normalized)
   }
-  {
+  Json({
     "exists": Json::boolean(moon_config_exists(normalized)),
     "path": Json::string(path),
-  }.to_json()
+  })
 }
 
 ///|
@@ -465,7 +465,7 @@ fn moon_env_shell_config_paths() -> Array[String] {
 fn moon_env_backup_json(body : Json?) -> Json {
   let conflicts = moon_env_conflicts_from_body(body)
   let timestamp = @async.now().to_int().to_string()
-  {
+  Json({
     "backupPath": Json::string(
       @pathx.join(
         @pathx.join(moon_app_config_dir(), "backups"),
@@ -474,7 +474,7 @@ fn moon_env_backup_json(body : Json?) -> Json {
     ),
     "timestamp": Json::string(timestamp),
     "conflicts": Json::array(conflicts),
-  }.to_json()
+  })
 }
 
 ///|
@@ -792,7 +792,7 @@ async fn ConfigService::handle_export_config_to_file(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -812,7 +812,7 @@ async fn ConfigService::handle_import_config_from_file(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
@@ -832,7 +832,7 @@ async fn ConfigService::handle_create_db_backup(
   self : ConfigService,
   proxy : ProxyService,
   host~ : String,
-  port~ : Int,
+  port~ : Int32,
   w : @httpx.ResponseWriter,
 ) -> Unit {
   write_usage_json(w, self.moon_create_db_backup_json(proxy, host~, port~))
@@ -947,7 +947,7 @@ async fn ConfigService::handle_webdav_sync_save_settings(
         "webdavSync",
         normalized,
       )
-      write_usage_json(w, { "success": Json::boolean(true) }.to_json())
+      write_usage_json(w, Json({ "success": Json::boolean(true) }))
     }
   }
 }
@@ -976,7 +976,7 @@ async fn ConfigService::handle_s3_sync_save_settings(
         "s3Sync",
         normalized,
       )
-      write_usage_json(w, { "success": Json::boolean(true) }.to_json())
+      write_usage_json(w, Json({ "success": Json::boolean(true) }))
     }
   }
 }
@@ -1233,10 +1233,10 @@ async fn ConfigService::handle_get_mcp_config(
   let app = moon_config_app_from_request(r.path, body).unwrap_or("claude")
   write_usage_json(
     w,
-    {
+    Json({
       "configPath": Json::string(moon_app_config_path()),
       "servers": moon_mcp_servers_object_for_app(self.mcp_servers, Some(app)),
-    }.to_json(),
+    }),
   )
 }
 
@@ -1455,11 +1455,11 @@ async fn ConfigService::handle_save_stream_check_config(
 ///|
 fn OpenClawService::openclaw_config_health_json(self : OpenClawService) -> Json {
   let defaults = self.openclaw_agents_defaults.unwrap_or(Json::object({}))
-  let config = {
+  let config = Json({
     "tools": self.openclaw_tools,
-    "agents": { "defaults": defaults }.to_json(),
+    "agents": Json({ "defaults": defaults }),
     "env": self.openclaw_env,
-  }.to_json()
+  })
   openclaw_config_health_from_json(config)
 }
 
@@ -1532,7 +1532,7 @@ async fn ConfigService::handle_fetch_models_for_config(
 }
 
 ///|
-fn body_snippet(body : String, max_chars : Int) -> String {
+fn body_snippet(body : String, max_chars : Int32) -> String {
   let mut snippet = ""
   let limit = if body.length() < max_chars { body.length() } else { max_chars }
   for i in 0..<limit {

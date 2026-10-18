@@ -25,8 +25,8 @@ fn gate_har_line_safe(value : String) -> Bool {
 /// secret scrubber. Responses, browser cookies and timing records are not copied.
 pub fn moongate_har_collection_json(
   content : String,
-  request_method? : String = "",
-  url_contains? : String = "",
+  request_method~ : String = "",
+  url_contains~ : String = "",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("HAR file exceeds 4 MiB")
@@ -188,19 +188,19 @@ pub fn moongate_har_collection_json(
       body
     sections.push(section)
     requests.push({
-      "entry": (index + 1).to_json(),
-      "method": verb.to_json(),
-      "url": url.to_json(),
-      "headers": headers.to_json(),
-      "body": body.to_json(),
-      "warnings": warnings.to_json(),
+      "entry": Json(index + 1),
+      "method": Json(verb),
+      "url": Json(url),
+      "headers": Json(headers),
+      "body": Json(body),
+      "warnings": Json(warnings),
     })
   }
   Ok({
     "schema": "moongate.har-collection.v1",
-    "sourceEntries": entries.length().to_json(),
-    "selectedRequests": requests.length().to_json(),
-    "requests": requests.to_json(),
-    "http": (sections.join("\n\n") + "\n").to_json(),
+    "sourceEntries": Json(entries.length()),
+    "selectedRequests": Json(requests.length()),
+    "requests": Json(requests),
+    "http": Json(sections.join("\n\n") + "\n"),
   })
 }

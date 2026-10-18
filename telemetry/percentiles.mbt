@@ -1,5 +1,5 @@
 ///|
-pub fn percentile_snapshot(samples : Array[Int]) -> PercentileSnapshotV1 {
+pub fn percentile_snapshot(samples : Array[Int32]) -> PercentileSnapshotV1 {
   let ordered = samples.copy()
   ordered.sort()
   {
@@ -12,7 +12,7 @@ pub fn percentile_snapshot(samples : Array[Int]) -> PercentileSnapshotV1 {
 
 ///|
 pub fn numeric_percentile_snapshot(
-  samples : Array[Int],
+  samples : Array[Int32],
 ) -> NumericPercentileSnapshotV1 {
   let ordered = samples.copy()
   ordered.sort()
@@ -25,7 +25,7 @@ pub fn numeric_percentile_snapshot(
 }
 
 ///|
-fn nearest_rank(ordered : Array[Int], percentile : Int) -> Int? {
+fn nearest_rank(ordered : Array[Int32], percentile : Int32) -> Int32? {
   if ordered.is_empty() {
     return None
   }
@@ -43,33 +43,33 @@ fn nearest_rank(ordered : Array[Int], percentile : Int) -> Int? {
 ///|
 pub fn monitor_snapshot(
   observed_at_ms~ : Int64,
-  latency_samples_ms~ : Array[Int],
-  first_token_samples_ms~ : Array[Int],
-  permit_wait_samples_ms? : Array[Int] = [],
-  throughput_samples_milli? : Array[Int] = [],
-  terminal_outcome_counts? : Array[TerminalOutcomeCountV1] = [],
-  recent_input_tokens? : Int = 0,
-  recent_output_tokens? : Int = 0,
-  inflight_requests~ : Int,
-  queue_depth? : Int = 0,
-  queue_supported? : Bool = false,
-  permit_supported? : Bool = false,
-  quota_configured_count? : Int = 0,
-  quota_exceeded_count? : Int = 0,
-  quota_headroom_nano_usd? : Int64? = None,
-  quota_headroom_supported? : Bool = false,
-  budget_headroom_nano_usd? : Int64? = None,
-  budget_headroom_supported? : Bool = false,
-  recent_cost_nano_usd? : Int64 = 0L,
-  circuit_open_count? : Int = 0,
-  circuit_half_open_count? : Int = 0,
-  failover_count? : Int = 0,
-  active_policies? : Array[ActivePolicyObservationV1] = [],
-  storage_healthy? : Bool = true,
-  storage_failure_count? : Int = 0,
-  evidence_fresh? : Bool = false,
-  newest_evidence_age_ms? : Int64? = None,
-  oldest_evidence_age_ms? : Int64? = None,
+  latency_samples_ms~ : Array[Int32],
+  first_token_samples_ms~ : Array[Int32],
+  permit_wait_samples_ms~ : Array[Int32] = [],
+  throughput_samples_milli~ : Array[Int32] = [],
+  terminal_outcome_counts~ : Array[TerminalOutcomeCountV1] = [],
+  recent_input_tokens~ : Int32 = 0,
+  recent_output_tokens~ : Int32 = 0,
+  inflight_requests~ : Int32,
+  queue_depth~ : Int32 = 0,
+  queue_supported~ : Bool = false,
+  permit_supported~ : Bool = false,
+  quota_configured_count~ : Int32 = 0,
+  quota_exceeded_count~ : Int32 = 0,
+  quota_headroom_nano_usd~ : Int64? = None,
+  quota_headroom_supported~ : Bool = false,
+  budget_headroom_nano_usd~ : Int64? = None,
+  budget_headroom_supported~ : Bool = false,
+  recent_cost_nano_usd~ : Int64 = 0L,
+  circuit_open_count~ : Int32 = 0,
+  circuit_half_open_count~ : Int32 = 0,
+  failover_count~ : Int32 = 0,
+  active_policies~ : Array[ActivePolicyObservationV1] = [],
+  storage_healthy~ : Bool = true,
+  storage_failure_count~ : Int32 = 0,
+  evidence_fresh~ : Bool = false,
+  newest_evidence_age_ms~ : Int64? = None,
+  oldest_evidence_age_ms~ : Int64? = None,
 ) -> MonitorSnapshotV1 {
   {
     contract_id: monitor_snapshot_contract_v1(),

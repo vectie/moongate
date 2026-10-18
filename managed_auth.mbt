@@ -31,9 +31,9 @@ fn managed_auth_account_login(credentials : @codex.Credentials) -> String {
 fn managed_auth_account_json(
   provider : String,
   credentials : @codex.Credentials,
-  is_default? : Bool = true,
+  is_default~ : Bool = true,
 ) -> Json {
-  {
+  Json({
     "id": Json::string(credentials.accountId),
     "provider": Json::string(provider),
     "login": Json::string(managed_auth_account_login(credentials)),
@@ -47,7 +47,7 @@ fn managed_auth_account_json(
         "github.com"
       },
     ),
-  }.to_json()
+  })
 }
 
 ///|
@@ -61,7 +61,7 @@ fn managed_auth_status_json(
       [managed_auth_account_json(provider, credentials, is_default=true)]
     None => []
   }
-  {
+  Json({
     "provider": Json::string(provider),
     "authenticated": Json::boolean(credentials is Some(_)),
     "default_account_id": match credentials {
@@ -73,7 +73,7 @@ fn managed_auth_status_json(
       None => Json::null()
     },
     "accounts": Json::array(accounts),
-  }.to_json()
+  })
 }
 
 ///|
@@ -171,7 +171,7 @@ pub async fn managed_auth_set_default_account(
 ///|
 pub async fn managed_auth_start_login(
   provider : String,
-  github_domain? : String? = None,
+  github_domain~ : String? = None,
 ) -> Result[Json, String] {
   if !managed_auth_provider_supported(provider) {
     return Err(managed_auth_provider_error(provider))
@@ -189,7 +189,7 @@ pub async fn managed_auth_poll_for_account(
   provider : String,
   device_code : String,
   user_code : String?,
-  github_domain? : String? = None,
+  github_domain~ : String? = None,
 ) -> Result[Json?, String] {
   if !managed_auth_provider_supported(provider) {
     return Err(managed_auth_provider_error(provider))

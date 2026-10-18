@@ -22,20 +22,20 @@ priv struct ProxyService {
   gemini_shadow : GeminiShadowStore
   mut proxy_enabled : Bool
   mut proxy_listen_address : String
-  mut proxy_listen_port : Int
+  mut proxy_listen_port : Int32
   mut proxy_enable_logging : Bool
   proxy_takeover_enabled : Map[String, Bool]
   proxy_app_enabled : Map[String, Bool]
-  proxy_streaming_first_byte_timeout : Map[String, Int]
-  proxy_streaming_idle_timeout : Map[String, Int]
-  proxy_non_streaming_timeout : Map[String, Int]
+  proxy_streaming_first_byte_timeout : Map[String, Int32]
+  proxy_streaming_idle_timeout : Map[String, Int32]
+  proxy_non_streaming_timeout : Map[String, Int32]
   proxy_default_cost_multipliers : Map[String, String]
   proxy_pricing_model_sources : Map[String, String]
   mut upstream_proxy_url : String?
 }
 
 ///|
-fn ProxyService::new(host : String, port : Int) -> ProxyService {
+fn ProxyService::new(host : String, port : Int32) -> ProxyService {
   {
     provider_router: moongate_default_provider_router(),
     gemini_shadow: GeminiShadowStore::new(),

@@ -41,10 +41,10 @@ priv struct MoonSessionTerminalLaunch {
 }
 
 ///|
-let moon_session_title_max_chars : Int = 80
+let moon_session_title_max_chars : Int32 = 80
 
 ///|
-let moon_session_read_cap : Int = 256 * 1024
+let moon_session_read_cap : Int32 = 256 * 1024
 
 ///|
 async fn moon_list_sessions_json() -> Json {
@@ -512,7 +512,7 @@ fn moon_session_url_query_encode(value : String) -> String {
   let builder = StringBuilder::new()
   for ch in value {
     match ch {
-      'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' =>
+      'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>
         builder.write_char(ch)
       _ => {
         let bytes = @encoding/utf8.encode(ch.to_string())
@@ -529,7 +529,7 @@ fn moon_session_url_query_encode(value : String) -> String {
 }
 
 ///|
-fn moon_session_hex_digit(n : Int) -> Char {
+fn moon_session_hex_digit(n : Int32) -> Char {
   if n < 10 {
     ('0'.to_int() + n).unsafe_to_char()
   } else {
@@ -946,7 +946,7 @@ fn moon_hermes_sqlite_rows_to_sessions(
 async fn moon_collect_session_files(
   root : String,
   files : Array[String],
-  max_depth~ : Int,
+  max_depth~ : Int32,
 ) -> Unit {
   moon_collect_session_files_at(root, files, depth=0, max_depth~)
 }
@@ -955,8 +955,8 @@ async fn moon_collect_session_files(
 async fn moon_collect_session_files_at(
   dir : String,
   files : Array[String],
-  depth~ : Int,
-  max_depth~ : Int,
+  depth~ : Int32,
+  max_depth~ : Int32,
 ) -> Unit {
   if depth > max_depth || !@fsx.exists(dir) {
     return
@@ -1693,7 +1693,7 @@ fn moon_parse_hermes_sqlite_source(source : String) -> MoonSqliteSessionSource? 
 }
 
 ///|
-fn moon_last_index_of(value : String, needle : String) -> Int {
+fn moon_last_index_of(value : String, needle : String) -> Int32 {
   let mut offset = 0
   let mut last = -1
   while offset < value.length() {
@@ -1735,7 +1735,7 @@ async fn moon_sqlite_count_session(
   table : String,
   id_column : String,
   session_id : String,
-) -> Result[Int, String] {
+) -> Result[Int32, String] {
   let rows = match
     moon_sqlite_json_rows(
       db_path,
@@ -1982,7 +1982,7 @@ fn moon_nonempty_lines_from_content(content : String) -> Array[String] {
 }
 
 ///|
-fn moon_head_lines(lines : Array[String], count : Int) -> Array[String] {
+fn moon_head_lines(lines : Array[String], count : Int32) -> Array[String] {
   let result = []
   let limit = if lines.length() < count { lines.length() } else { count }
   for i in 0..<limit {
@@ -1992,7 +1992,7 @@ fn moon_head_lines(lines : Array[String], count : Int) -> Array[String] {
 }
 
 ///|
-fn moon_tail_lines(lines : Array[String], count : Int) -> Array[String] {
+fn moon_tail_lines(lines : Array[String], count : Int32) -> Array[String] {
   let result = []
   let start = if lines.length() > count { lines.length() - count } else { 0 }
   for i in start..<lines.length() {
@@ -2161,7 +2161,7 @@ fn moon_extract_json_text_item(item : Json) -> String? {
 }
 
 ///|
-fn moon_truncate_summary(text : String, max_chars : Int) -> String {
+fn moon_truncate_summary(text : String, max_chars : Int32) -> String {
   let trimmed = text.trim()
   if trimmed.length() <= max_chars {
     trimmed.to_owned()

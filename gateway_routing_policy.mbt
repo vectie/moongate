@@ -1,6 +1,6 @@
 ///|
-fn routing_int_map_from_body(body : Json?, key : String) -> Map[String, Int]? {
-  let values : Map[String, Int] = Map([])
+fn routing_int_map_from_body(body : Json?, key : String) -> Map[String, Int32]? {
+  let values : Map[String, Int32] = Map([])
   guard body is Some(Object(obj)) else { return Some(values) }
   guard obj.get(key) is Some(value) else { return Some(values) }
   guard value is Object(entries) else { return None }
@@ -137,11 +137,11 @@ async fn ProxyService::handle_configure_routing_policy(
       }
       write_usage_json(
         w,
-        {
+        Json({
           "status": Json::string("shadow-only"),
           "policy": policy.to_json(),
           "activationAllowed": Json::boolean(false),
-        }.to_json(),
+        }),
       )
     }
   }

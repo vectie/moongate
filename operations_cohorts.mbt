@@ -9,23 +9,23 @@ const COHORT_SNAPSHOT_BYTE_LIMIT = 262144
 priv struct RetainedCohort {
   provider_id : String
   request_model : String
-  mut total : Int
-  mut status_2xx : Int
-  mut status_4xx : Int
-  mut status_5xx : Int
-  mut status_other : Int
-  mut successful : Int
-  mut streaming_successful : Int
-  mut invalid_latency : Int
-  mut missing_first_event : Int
-  mut invalid_first_event : Int
-  mut first_event_invalid_elapsed : Int
-  mut oldest : Int?
-  mut newest : Int?
-  latency : Array[Int]
-  first_event : Array[Int]
-  response_models : Map[String, Int]
-  mut missing_response_model : Int
+  mut total : Int32
+  mut status_2xx : Int32
+  mut status_4xx : Int32
+  mut status_5xx : Int32
+  mut status_other : Int32
+  mut successful : Int32
+  mut streaming_successful : Int32
+  mut invalid_latency : Int32
+  mut missing_first_event : Int32
+  mut invalid_first_event : Int32
+  mut first_event_invalid_elapsed : Int32
+  mut oldest : Int32?
+  mut newest : Int32?
+  latency : Array[Int32]
+  first_event : Array[Int32]
+  response_models : Map[String, Int32]
+  mut missing_response_model : Int32
 }
 
 ///|
@@ -57,7 +57,7 @@ fn RetainedCohort::new(
 }
 
 ///|
-fn cohort_utc(seconds : Int) -> String {
+fn cohort_utc(seconds : Int32) -> String {
   let value = @time.unix(seconds.to_int64()).to_plain_date_time().to_string() catch {
       _ => return "unavailable"
     }
@@ -65,10 +65,10 @@ fn cohort_utc(seconds : Int) -> String {
 }
 
 ///|
-fn cohort_percentiles(samples : Array[Int]) -> Json {
+fn cohort_percentiles(samples : Array[Int32]) -> Json {
   let summary = @telemetry.percentile_snapshot(samples)
   {
-    "sample_count": summary.sample_count.to_json(),
+    "sample_count": Json(summary.sample_count),
     "p50_ms": optional_int_json(summary.p50_ms),
     "p95_ms": optional_int_json(summary.p95_ms),
     "p99_ms": optional_int_json(summary.p99_ms),
@@ -130,33 +130,35 @@ fn RetainedCohort::snapshot(self : RetainedCohort) -> Json {
   let models = self.response_models.keys().collect()
   models.sort()
   {
-    "provider_id": self.provider_id.to_json(),
-    "request_model": self.request_model.to_json(),
-    "total": self.total.to_json(),
-    "status_2xx": self.status_2xx.to_json(),
-    "status_4xx": self.status_4xx.to_json(),
-    "status_5xx": self.status_5xx.to_json(),
-    "status_other": self.status_other.to_json(),
-    "successful": self.successful.to_json(),
-    "unsuccessful_excluded": (self.total - self.successful).to_json(),
+    "provider_id": Json(self.provider_id),
+    "request_model": Json(self.request_model),
+    "total": Json(self.total),
+    "status_2xx": Json(self.status_2xx),
+    "status_4xx": Json(self.status_4xx),
+    "status_5xx": Json(self.status_5xx),
+    "status_other": Json(self.status_other),
+    "successful": Json(self.successful),
+    "unsuccessful_excluded": Json(self.total - self.successful),
     "latency": cohort_percentiles(self.latency),
-    "invalid_latency_excluded": self.invalid_latency.to_json(),
-    "streaming_successful": self.streaming_successful.to_json(),
+    "invalid_latency_excluded": Json(self.invalid_latency),
+    "streaming_successful": Json(self.streaming_successful),
     "first_event": cohort_percentiles(self.first_event),
-    "missing_first_event_excluded": self.missing_first_event.to_json(),
-    "invalid_first_event_excluded": self.invalid_first_event.to_json(),
-    "first_event_invalid_elapsed_excluded": self.first_event_invalid_elapsed.to_json(),
+    "missing_first_event_excluded": Json(self.missing_first_event),
+    "invalid_first_event_excluded": Json(self.invalid_first_event),
+    "first_event_invalid_elapsed_excluded": Json(
+      self.first_event_invalid_elapsed,
+    ),
     "oldest_utc": optional_string_json(self.oldest.map(cohort_utc)),
     "newest_utc": optional_string_json(self.newest.map(cohort_utc)),
-    "small_sample": (self.latency.length() < 20).to_json(),
-    "first_event_small_sample": (self.first_event.length() < 20).to_json(),
-    "successful_response_model_mix": models
-    .map(model => {
-      "model": model.to_json(),
-      "count": self.response_models[model].to_json(),
-    })
-    .to_json(),
-    "missing_successful_response_model": self.missing_response_model.to_json(),
+    "small_sample": Json(self.latency.length() < 20),
+    "first_event_small_sample": Json(self.first_event.length() < 20),
+    "successful_response_model_mix": Json(
+      models.map(model => {
+        "model": Json(model),
+        "count": Json(self.response_models[model]),
+      }),
+    ),
+    "missing_successful_response_model": Json(self.missing_response_model),
   }
 }
 
@@ -168,7 +170,7 @@ fn TrafficStats::retained_cohort_snapshot(
   app_type : String,
   streaming : String,
   period : String,
-  end_seconds : Int,
+  end_seconds : Int32,
   captured_at_ms : Int64,
 ) -> Result[String, String] {
   if app_type.is_empty() ||
@@ -200,8 +202,8 @@ fn TrafficStats::retained_cohort_snapshot(
   let mut invalid_timestamp = 0
   let mut unclassified_model = 0
   let mut unclassified_provider = 0
-  let mut oldest : Int? = None
-  let mut newest : Int? = None
+  let mut oldest : Int32? = None
+  let mut newest : Int32? = None
   for log in self.request_logs {
     if log.app_type != app_type ||
       (streaming == "streaming" && !log.is_streaming) ||
@@ -261,31 +263,31 @@ fn TrafficStats::retained_cohort_snapshot(
   }
   let snapshot : Json = {
     "schema": "moongate.retained-cohorts.v1",
-    "app_type": app_type.to_json(),
-    "streaming": streaming.to_json(),
-    "period": period.to_json(),
-    "start_seconds": start_seconds.to_json(),
-    "end_seconds": end_seconds.to_json(),
+    "app_type": Json(app_type),
+    "streaming": Json(streaming),
+    "period": Json(period),
+    "start_seconds": Json(start_seconds),
+    "end_seconds": Json(end_seconds),
     "start_utc": if period == "all" {
       Json::null()
     } else {
-      cohort_utc(start_seconds).to_json()
+      Json(cohort_utc(start_seconds))
     },
-    "end_utc_exclusive": cohort_utc(end_seconds).to_json(),
+    "end_utc_exclusive": Json(cohort_utc(end_seconds)),
     "captured_at_ms": Json::number(captured_at_ms.to_double()),
-    "captured_at_utc": cohort_utc((captured_at_ms / 1000L).to_int()).to_json(),
-    "retained_rows": self.request_logs.length().to_json(),
-    "proxy_interval_rows": matching.to_json(),
-    "imported_excluded": imported.to_json(),
-    "outside_interval_excluded": outside.to_json(),
-    "invalid_timestamp_excluded": invalid_timestamp.to_json(),
-    "missing_request_model_unclassified": unclassified_model.to_json(),
-    "missing_provider_id_unclassified": unclassified_provider.to_json(),
+    "captured_at_utc": Json(cohort_utc((captured_at_ms / 1000L).to_int())),
+    "retained_rows": Json(self.request_logs.length()),
+    "proxy_interval_rows": Json(matching),
+    "imported_excluded": Json(imported),
+    "outside_interval_excluded": Json(outside),
+    "invalid_timestamp_excluded": Json(invalid_timestamp),
+    "missing_request_model_unclassified": Json(unclassified_model),
+    "missing_provider_id_unclassified": Json(unclassified_provider),
     "oldest_utc": optional_string_json(oldest.map(cohort_utc)),
     "newest_utc": optional_string_json(newest.map(cohort_utc)),
-    "row_limit": COHORT_SNAPSHOT_ROW_LIMIT.to_json(),
-    "response_byte_limit": COHORT_SNAPSHOT_BYTE_LIMIT.to_json(),
-    "cohorts": cohorts.to_json(),
+    "row_limit": Json(COHORT_SNAPSHOT_ROW_LIMIT),
+    "response_byte_limit": Json(COHORT_SNAPSHOT_BYTE_LIMIT),
+    "cohorts": Json(cohorts),
   }
   let encoded = snapshot.stringify()
   if @encoding/utf8.encode(encoded).length() > COHORT_SNAPSHOT_BYTE_LIMIT {

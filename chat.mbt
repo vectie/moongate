@@ -1232,7 +1232,7 @@ fn codex_response_to_openai_chat_completion(
 }
 
 ///|
-fn openai_chat_role_chunk(id : String, model : String, created : Int) -> Json {
+fn openai_chat_role_chunk(id : String, model : String, created : Int32) -> Json {
   Json::object({
     "id": Json::string(id),
     "object": Json::string("chat.completion.chunk"),
@@ -1253,7 +1253,7 @@ fn codex_stream_event_to_openai_chat_chunk(
   data : String,
   id : String,
   model : String,
-  created : Int,
+  created : Int32,
 ) -> Json? {
   let parsed = @json.parse(data) catch { _ => return None }
   guard parsed is Object(obj) else { return None }
@@ -1302,7 +1302,7 @@ fn codex_stream_event_to_openai_chat_chunk(
 
 ///|
 priv struct ChatToCodexResponsesToolState {
-  mut output_index : Int?
+  mut output_index : Int32?
   mut item_id : String
   mut call_id : String
   mut name : String
@@ -1317,14 +1317,14 @@ priv struct ChatToCodexResponsesStreamState {
   mut completed : Bool
   mut response_id : String
   mut model : String
-  mut created_at : Int
-  mut next_output_index : Int
-  mut text_output_index : Int?
+  mut created_at : Int32
+  mut next_output_index : Int32
+  mut text_output_index : Int32?
   mut text_item_id : String
   text : StringBuilder
   mut text_added : Bool
   mut text_done : Bool
-  tool_states : Map[Int, ChatToCodexResponsesToolState]
+  tool_states : Map[Int32, ChatToCodexResponsesToolState]
   output_items : Array[Json]
   mut latest_usage : Json?
   mut finish_reason : String?
@@ -1723,7 +1723,7 @@ fn ChatToCodexResponsesStreamState::finish_tools(
 ///|
 fn ChatToCodexResponsesStreamState::next_output_index(
   self : ChatToCodexResponsesStreamState,
-) -> Int {
+) -> Int32 {
   let index = self.next_output_index
   self.next_output_index += 1
   index
@@ -1777,7 +1777,7 @@ fn codex_response_status_from_chat_finish_reason(reason : String?) -> String {
 fn openai_chat_delta_chunk(
   id : String,
   model : String,
-  created : Int,
+  created : Int32,
   delta : Map[String, Json],
   finish_reason : Json,
 ) -> Json {

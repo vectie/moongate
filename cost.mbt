@@ -28,7 +28,7 @@ pub fn calculate_cost_for_app(
   app_type : String,
   usage : TokenUsage,
   pricing : ModelPricing,
-  cost_multiplier? : String = "1.0",
+  cost_multiplier~ : String = "1.0",
 ) -> CostBreakdown {
   let input_includes_cache_read = app_type == "codex" || app_type == "gemini"
   let billable_input_tokens = if input_includes_cache_read {
@@ -166,7 +166,7 @@ fn model_pricing_is_deleted(
 
 ///|
 fn ModelPricing::to_json(self : ModelPricing) -> Json {
-  {
+  Json({
     "modelId": Json::string(self.model_id),
     "displayName": Json::string(self.display_name),
     "inputCostPerMillion": Json::string(self.input_cost_per_million),
@@ -175,7 +175,7 @@ fn ModelPricing::to_json(self : ModelPricing) -> Json {
     "cacheCreationCostPerMillion": Json::string(
       self.cache_creation_cost_per_million,
     ),
-  }.to_json()
+  })
 }
 
 ///|
@@ -616,7 +616,10 @@ fn should_try_pricing_prefix_match(model_id : String) -> Bool {
 }
 
 ///|
-fn calculate_token_cost_nano(tokens : Int, rate_per_million : String) -> Int64 {
+fn calculate_token_cost_nano(
+  tokens : Int32,
+  rate_per_million : String,
+) -> Int64 {
   divide_rounded(
     tokens.to_int64() * parse_decimal_scaled(rate_per_million, DECIMAL_SCALE),
     1000L,
@@ -722,7 +725,7 @@ fn format_nano_usd_fixed_6(nano : Int64) -> String {
 }
 
 ///|
-fn left_pad_zeroes(value : String, width : Int) -> String {
+fn left_pad_zeroes(value : String, width : Int32) -> String {
   if value.length() >= width {
     return value
   }
@@ -758,7 +761,7 @@ fn is_ascii_digits(value : String) -> Bool {
 }
 
 ///|
-fn count_char(value : String, target : Char) -> Int {
+fn count_char(value : String, target : Char) -> Int32 {
   let mut count = 0
   for ch in value {
     if ch == target {

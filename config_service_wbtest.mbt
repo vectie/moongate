@@ -10,10 +10,10 @@ test "config service owns settings and config blob mutations" {
     @pathx.join(expected_app_config_dir, "config.json"),
   )
   config.save_settings_json(
-    {
+    Json({
       "launchOnStartup": Json::boolean(true),
       "skipClaudeOnboarding": Json::boolean(true),
-    }.to_json(),
+    }),
   )
   guard config.settings_json() is Object(settings) else {
     fail("expected settings")

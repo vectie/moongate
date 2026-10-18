@@ -3,38 +3,38 @@
 /// tool names, or session identifiers. Detailed round records stay on the
 /// MoonClaw side of the boundary.
 priv struct PlannerHarnessAggregate {
-  mut rounds : Int
-  mut tool_calls : Int
-  mut prompt_tokens : Int
-  mut completion_tokens : Int
-  mut cache_read_tokens : Int
-  mut cache_write_tokens : Int
-  mut fresh_input_tokens : Int
-  mut total_tokens : Int
-  mut configured_request_chars : Int
-  mut effective_request_chars : Int
-  mut projection_saved_chars : Int
-  mut request_message_count : Int
-  mut request_message_chars : Int
-  mut system_prompt_chars : Int
-  mut tool_schema_chars : Int
-  mut tool_count : Int
-  mut cache_read_ratio_ppm : Int
-  mut compacted_rounds : Int
-  mut planner_latency_ms : Int
-  mut model_retries : Int
-  mut selected_rounds : Int
-  mut no_tool_call_rounds : Int
-  mut responses_rounds : Int
-  mut chat_completion_rounds : Int
-  mut chat_fallback_rounds : Int
+  mut rounds : Int32
+  mut tool_calls : Int32
+  mut prompt_tokens : Int32
+  mut completion_tokens : Int32
+  mut cache_read_tokens : Int32
+  mut cache_write_tokens : Int32
+  mut fresh_input_tokens : Int32
+  mut total_tokens : Int32
+  mut configured_request_chars : Int32
+  mut effective_request_chars : Int32
+  mut projection_saved_chars : Int32
+  mut request_message_count : Int32
+  mut request_message_chars : Int32
+  mut system_prompt_chars : Int32
+  mut tool_schema_chars : Int32
+  mut tool_count : Int32
+  mut cache_read_ratio_ppm : Int32
+  mut compacted_rounds : Int32
+  mut planner_latency_ms : Int32
+  mut model_retries : Int32
+  mut selected_rounds : Int32
+  mut no_tool_call_rounds : Int32
+  mut responses_rounds : Int32
+  mut chat_completion_rounds : Int32
+  mut chat_fallback_rounds : Int32
 }
 
 ///|
 /// Planner observations cross a local HTTP boundary and are not authority.
 /// Bound every additive sample so malformed telemetry cannot overflow or
 /// permanently poison process-lifetime counters in one request.
-const PLANNER_HARNESS_METRIC_SAMPLE_MAX : Int = 1_000_000_000
+const PLANNER_HARNESS_METRIC_SAMPLE_MAX : Int32 = 1_000_000_000
 
 ///|
 fn PlannerHarnessAggregate::new() -> PlannerHarnessAggregate {
@@ -68,7 +68,7 @@ fn PlannerHarnessAggregate::new() -> PlannerHarnessAggregate {
 }
 
 ///|
-fn planner_metric_int(payload : Map[String, Json], key : String) -> Int {
+fn planner_metric_int(payload : Map[String, Json], key : String) -> Int32 {
   json_int(payload, key)
   .unwrap_or(0)
   .max(0)

@@ -1,5 +1,5 @@
 ///|
-fn charge_output(value : Json, budget : Ref[Int]) -> Unit raise {
+fn charge_output(value : Json, budget : Ref[Int32]) -> Unit raise {
   let size = @utf8.encode(value.stringify()).length()
   guard size <= 8 * 1024 * 1024 - budget.val else {
     fail("Derived collection exceeds 8 MiB")
@@ -13,9 +13,9 @@ fn charge_output(value : Json, budget : Ref[Int]) -> Unit raise {
 /// original export: this derived artifact intentionally omits unsupported data.
 pub fn import_collection(
   content : String,
-  workspace_id? : String = "",
-  folder_id? : String = "",
-  request_id? : String = "",
+  workspace_id~ : String = "",
+  folder_id~ : String = "",
+  request_id~ : String = "",
 ) -> Json raise {
   let (root, items, nodes) = resources(content)
   for
@@ -34,7 +34,7 @@ pub fn import_collection(
   let inventory : Array[Json] = []
   let requests : Array[Json] = []
   let budget = Ref(0)
-  let omitted : Map[String, Int] = Map([])
+  let omitted : Map[String, Int32] = Map([])
   let sections : Array[String] = [
     "# MoonGate offline Insomnia v4 request collection", "# Review before manually sending. No URLs fetched, requests sent, scripts run or file references read.",
     "# Keep the original export separately; this derived collection is incomplete and is not a secret scrubber.",
@@ -55,9 +55,9 @@ pub fn import_collection(
     let name = text(item, "name")
     if kind == "workspace" {
       let entry : Json = {
-        "id": id.to_json(),
-        "type": kind.to_json(),
-        "name": name.to_json(),
+        "id": Json(id),
+        "type": Json(kind),
+        "name": Json(name),
       }
       charge_output(entry, budget)
       inventory.push(entry)
@@ -65,13 +65,13 @@ pub fn import_collection(
     }
     let place = position(item, nodes)
     let entry : Json = {
-      "id": id.to_json(),
-      "type": kind.to_json(),
-      "name": name.to_json(),
-      "workspaceId": place.workspace.to_json(),
-      "folderIds": place.folders.to_json(),
-      "folderPath": place.path.to_json(),
-      "resourceIndex": (index + 1).to_json(),
+      "id": Json(id),
+      "type": Json(kind),
+      "name": Json(name),
+      "workspaceId": Json(place.workspace),
+      "folderIds": Json(place.folders),
+      "folderPath": Json(place.path),
+      "resourceIndex": Json(index + 1),
     }
     charge_output(entry, budget)
     inventory.push(entry)
@@ -166,21 +166,21 @@ pub fn import_collection(
       headers.join("\n") +
       "\n\n" +
       body
-    charge_output(section.to_json(), budget)
+    charge_output(Json(section), budget)
     sections.push(section)
     let request : Json = {
-      "sourceResourceId": id.to_json(),
-      "sourceResourceIndex": (index + 1).to_json(),
-      "workspaceId": place.workspace.to_json(),
-      "folderIds": place.folders.to_json(),
-      "folderPath": place.path.to_json(),
-      "name": name.to_json(),
-      "method": verb.to_json(),
-      "url": url.to_json(),
-      "headers": headers.to_json(),
-      "body": body.to_json(),
-      "variables": declarations.to_json(),
-      "warnings": warnings.to_json(),
+      "sourceResourceId": Json(id),
+      "sourceResourceIndex": Json(index + 1),
+      "workspaceId": Json(place.workspace),
+      "folderIds": Json(place.folders),
+      "folderPath": Json(place.path),
+      "name": Json(name),
+      "method": Json(verb),
+      "url": Json(url),
+      "headers": Json(headers),
+      "body": Json(body),
+      "variables": Json(declarations),
+      "warnings": Json(warnings),
     }
     charge_output(request, budget)
     requests.push(request)
@@ -197,20 +197,20 @@ pub fn import_collection(
     "schema": "moongate.insomnia-collection.v1",
     "sourceFormat": "Insomnia JSON v4",
     "originalPreservation": "Caller retains original export unchanged; output is a derived subset, not a backup.",
-    "sourceExportDate": optional_text(root, "__export_date").to_json(),
-    "sourceExportTool": optional_text(root, "__export_source").to_json(),
-    "sourceResources": items.length().to_json(),
-    "sourceRequests": source_requests.to_json(),
-    "selectedRequests": requests.length().to_json(),
-    "inventory": inventory.to_json(),
-    "omittedResourceTypes": omitted.to_json(),
-    "requests": requests.to_json(),
+    "sourceExportDate": Json(optional_text(root, "__export_date")),
+    "sourceExportTool": Json(optional_text(root, "__export_source")),
+    "sourceResources": Json(items.length()),
+    "sourceRequests": Json(source_requests),
+    "selectedRequests": Json(requests.length()),
+    "inventory": Json(inventory),
+    "omittedResourceTypes": Json(omitted),
+    "requests": Json(requests),
     "selection": {
-      "workspaceId": workspace_id.to_json(),
-      "folderId": folder_id.to_json(),
-      "requestId": request_id.to_json(),
+      "workspaceId": Json(workspace_id),
+      "folderId": Json(folder_id),
+      "requestId": Json(request_id),
     },
-    "http": (sections.join("\n\n") + "\n").to_json(),
+    "http": Json(sections.join("\n\n") + "\n"),
   }
   guard @utf8.encode(result.stringify()).length() <= 8 * 1024 * 1024 else {
     fail("Derived collection exceeds 8 MiB")

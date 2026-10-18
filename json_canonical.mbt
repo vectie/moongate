@@ -73,7 +73,7 @@ fn short_sha256_hex(bytes : Bytes) -> String {
 }
 
 ///|
-fn moon_json_hex_digit(value : Int) -> Char {
+fn moon_json_hex_digit(value : Int32) -> Char {
   if value < 10 {
     ('0'.to_int() + value).unsafe_to_char()
   } else {

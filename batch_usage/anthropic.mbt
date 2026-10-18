@@ -4,9 +4,9 @@
 /// Payloads are omitted and the JSON reopens in the existing Usage File Explorer.
 pub fn import_anthropic_batch_usage_json(
   content : String,
-  source_name? : String = "Anthropic Batch results",
-  app? : String = "anthropic-batch",
-  provider? : String = "anthropic-export",
+  source_name~ : String = "Anthropic Batch results",
+  app~ : String = "anthropic-batch",
+  provider~ : String = "anthropic-export",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("Anthropic Batch results exceed the combined 4 MiB UTF-8 limit")
@@ -17,7 +17,7 @@ pub fn import_anthropic_batch_usage_json(
   let rows : Array[Json] = []
   let outcomes : Array[Json] = []
   let seen : Map[String, Bool] = Map([])
-  let result_counts : Map[String, Int] = {
+  let result_counts : Map[String, Int32] = {
     "succeeded": 0,
     "errored": 0,
     "canceled": 0,
@@ -74,33 +74,33 @@ pub fn import_anthropic_batch_usage_json(
       read += r
       output += o
       rows.push({
-        "requestId": parsed.id.to_json(),
+        "requestId": Json(parsed.id),
         "model": parsed.model,
-        "appType": app.to_json(),
-        "providerId": provider.to_json(),
-        "inputTokens": parsed.input.unwrap().to_json(),
-        "outputTokens": parsed.output.unwrap().to_json(),
-        "totalTokens": total.to_json(),
+        "appType": Json(app),
+        "providerId": Json(provider),
+        "inputTokens": Json(parsed.input.unwrap()),
+        "outputTokens": Json(parsed.output.unwrap()),
+        "totalTokens": Json(total),
         "totalCostUsd": Json::null(),
       })
     }
     outcomes.push({
-      "line": (index + 1).to_json(),
-      "customId": parsed.id.to_json(),
-      "resultType": parsed.result_type.to_json(),
-      "usageState": parsed.usage_state.to_json(),
+      "line": Json(index + 1),
+      "customId": Json(parsed.id),
+      "resultType": Json(parsed.result_type),
+      "usageState": Json(parsed.usage_state),
       "model": parsed.model,
       "stopReason": parsed.stop_reason,
-      "components": parsed.counts.to_json(),
+      "components": Json(parsed.counts),
       "totalTokens": match parsed.total {
-        Some(n) => n.to_json()
+        Some(n) => Json(n)
         None => Json::null()
       },
     })
   }
   let envelope : Json = {
-    "data": rows.to_json(),
-    "sourceTotal": outcomes.length().to_json(),
+    "data": Json(rows),
+    "sourceTotal": Json(outcomes.length()),
   }
   let preview = match
     @usage_preview.moongate_preview_usage_file_json(
@@ -134,24 +134,24 @@ pub fn import_anthropic_batch_usage_json(
   preview["anthropicBatchImport"] = {
     "schema": "moongate.anthropic-batch-import.v1",
     "sourceFormat": "anthropic-message-batches-jsonl",
-    "sourceResultCount": outcomes.length().to_json(),
-    "importedUsageCount": rows.length().to_json(),
-    "resultCounts": result_counts.to_json(),
-    "missingUsageCount": missing.to_json(),
-    "incompleteUsageCount": incomplete.to_json(),
+    "sourceResultCount": Json(outcomes.length()),
+    "importedUsageCount": Json(rows.length()),
+    "resultCounts": Json(result_counts),
+    "missingUsageCount": Json(missing),
+    "incompleteUsageCount": Json(incomplete),
     "batchCompleteness": "unverified",
     "costSource": "unavailable",
     "dateSource": "unavailable",
     "completeRowComponents": {
-      "uncachedInputTokens": uncached.to_json(),
-      "cacheCreationInputTokens": creation.to_json(),
-      "cacheReadInputTokens": read.to_json(),
-      "outputTokens": output.to_json(),
+      "uncachedInputTokens": Json(uncached),
+      "cacheCreationInputTokens": Json(creation),
+      "cacheReadInputTokens": Json(read),
+      "outputTokens": Json(output),
     },
-    "outcomes": outcomes.to_json(),
-    "caveat": caveat.to_json(),
+    "outcomes": Json(outcomes),
+    "caveat": Json(caveat),
   }
-  preview["report"] = report.to_json()
+  preview["report"] = Json(report)
   let result = Json::object(preview)
   if @encoding/utf8.encode(result.stringify(indent=2)).length() + 1 >
     4 * 1024 * 1024 {

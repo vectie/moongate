@@ -8,18 +8,18 @@ fn get(value : Json, key : String) -> Json {
 
 ///|
 fn attribute(key : String, value : Json) -> Json {
-  { "key": key.to_json(), "value": value }
+  { "key": Json(key), "value": value }
 }
 
 ///|
 fn span(
-  id? : String = "abcdef1234567890",
-  input? : Json = { "intValue": "100" },
-  output? : Json = { "intValue": "20" },
+  id~ : String = "abcdef1234567890",
+  input~ : Json = { "intValue": "100" },
+  output~ : Json = { "intValue": "20" },
 ) -> Json {
   {
     "traceId": "1234567890abcdef1234567890abcdef",
-    "spanId": id.to_json(),
+    "spanId": Json(id),
     "kind": 3,
     "name": "PRIVATE_SPAN_NAME",
     "startTimeUnixNano": "1791849599999999999",
@@ -53,11 +53,7 @@ fn omit_attribute(value : Json, key : String) -> Json {
   guard get(value, "attributes") is Array(attrs) else {
     abort("fixture attributes")
   }
-  set(
-    value,
-    "attributes",
-    attrs.filter(a => get(a, "key") != key.to_json()).to_json(),
-  )
+  set(value, "attributes", Json(attrs.filter(a => get(a, "key") != Json(key))))
 }
 
 ///|
@@ -82,7 +78,7 @@ fn export_spans(spans : Array[Json]) -> Json {
           ],
         },
         "scopeSpans": [
-          { "scope": { "name": "PRIVATE_SCOPE" }, "spans": spans.to_json() },
+          { "scope": { "name": "PRIVATE_SCOPE" }, "spans": Json(spans) },
         ],
       },
     ],
@@ -411,7 +407,7 @@ test "OTLP byte span count and expanded output limits bound each import" {
   )
   let huge = "x".repeat(1800000)
   let data = replace_attribute(span(), "gen_ai.response.model", {
-    "stringValue": huge.to_json(),
+    "stringValue": Json(huge),
   })
   reject(export_spans([data]).stringify(), "output exceeds")
 }

@@ -57,7 +57,7 @@ fn parse_result(record : Json) -> Result[ParsedResult, String] {
     return Ok({
       custom_id,
       reason: "http_error",
-      http_status: status.to_json(),
+      http_status: Json(status),
       response_state: "",
       row: None,
     })
@@ -92,7 +92,7 @@ fn parse_result(record : Json) -> Result[ParsedResult, String] {
     return Ok({
       custom_id,
       reason: "missing_usage",
-      http_status: status.to_json(),
+      http_status: Json(status),
       response_state,
       row: None,
     })
@@ -126,18 +126,18 @@ fn parse_result(record : Json) -> Result[ParsedResult, String] {
   // Timestamp interpretation is shared with the existing preview normalizer.
   // No batch submission/download timestamp is substituted for a missing value.
   let row : Json = {
-    "requestId": custom_id.to_json(),
-    "model": model.to_json(),
-    "inputTokens": input.to_json(),
-    "outputTokens": output.to_json(),
-    "totalTokens": total.to_json(),
+    "requestId": Json(custom_id),
+    "model": Json(model),
+    "inputTokens": Json(input),
+    "outputTokens": Json(output),
+    "totalTokens": Json(total),
     "createdAt": created,
     "totalCostUsd": Json::null(),
   }
   Ok({
     custom_id,
     reason: "imported",
-    http_status: status.to_json(),
+    http_status: Json(status),
     response_state,
     row: Some(row),
   })

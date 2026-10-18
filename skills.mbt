@@ -36,16 +36,16 @@ fn moon_skill_repo_json(
   branch : String,
   enabled : Bool,
 ) -> Json {
-  {
+  Json({
     "owner": Json::string(owner),
     "name": Json::string(name),
     "branch": Json::string(branch),
     "enabled": Json::boolean(enabled),
-  }.to_json()
+  })
 }
 
 ///|
-fn moon_skill_apps_json(app? : String? = None) -> Json {
+fn moon_skill_apps_json(app~ : String? = None) -> Json {
   let apps : Map[String, Json] = Map([], capacity=0)
   for name in moon_skill_supported_apps() {
     apps[name] = Json::boolean(false)
@@ -64,17 +64,17 @@ fn moon_skill_apps_json(app? : String? = None) -> Json {
 
 ///|
 fn moon_skill_state_default_json() -> Json {
-  {
+  Json({
     "installed": Json::array([]),
     "repos": Json::array(moon_skill_default_repos_json()),
     "backups": Json::array([]),
     "skillStorageLocation": Json::string("unified"),
-  }.to_json()
+  })
 }
 
 ///|
 async fn moon_skill_state_load(
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Json {
   let content = @fs.read_file(path).text() catch {
     _ => return moon_skill_state_default_json()
@@ -101,7 +101,7 @@ async fn moon_skill_state_load(
 ///|
 async fn moon_skill_state_save(
   state : Json,
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Bool {
   moon_skill_make_directory(@pathx.dirname(path).to_owned()) catch {
     _ => return false
@@ -137,7 +137,7 @@ async fn moon_skill_make_directory(path : String) -> Unit {
 
 ///|
 async fn moon_get_skill_repos_json(
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Json {
   guard moon_skill_state_load(path~) is Object(obj) else {
     return Json::array(moon_skill_default_repos_json())
@@ -150,7 +150,7 @@ async fn moon_get_skill_repos_json(
 
 ///|
 async fn moon_get_installed_skills_json(
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Json {
   guard moon_skill_state_load(path~) is Object(obj) else {
     return Json::array([])
@@ -163,7 +163,7 @@ async fn moon_get_installed_skills_json(
 
 ///|
 async fn moon_get_skill_backups_json(
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Json {
   guard moon_skill_state_load(path~) is Object(obj) else {
     return Json::array([])
@@ -177,7 +177,7 @@ async fn moon_get_skill_backups_json(
 ///|
 async fn moon_add_skill_repo_json(
   repo : Json,
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Json {
   guard moon_skill_repo_from_json(repo) is Some(normalized) else {
     return Json::boolean(false)
@@ -214,7 +214,7 @@ async fn moon_add_skill_repo_json(
 async fn moon_remove_skill_repo_json(
   owner : String,
   name : String,
-  path? : String = moon_skill_state_path(),
+  path~ : String = moon_skill_state_path(),
 ) -> Json {
   let state = moon_skill_state_load(path~)
   guard state is Object(obj) else { return Json::boolean(false) }
@@ -267,7 +267,7 @@ fn moon_skill_repo_from_json(json : Json) -> Json? {
 fn moon_skill_json_from_discoverable(
   skill : Json,
   current_app : String,
-  installed_at? : Int = @os.unix_seconds(),
+  installed_at~ : Int32 = @os.unix_seconds(),
 ) -> Json? {
   guard skill is Object(obj) else { return None }
   let directory = moon_skill_install_name(
@@ -332,9 +332,9 @@ fn moon_installed_skill_json(
   repo_branch~ : String?,
   readme_url~ : String?,
   apps~ : Json,
-  installed_at~ : Int,
+  installed_at~ : Int32,
   content_hash~ : String?,
-  updated_at~ : Int,
+  updated_at~ : Int32,
 ) -> Json {
   let obj : Map[String, Json] = {
     "id": Json::string(id),
@@ -369,7 +369,7 @@ fn moon_installed_skill_json(
 async fn moon_install_skill_unified_json(
   skill : Json,
   current_app : String,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   guard moon_skill_json_from_discoverable(skill, current_app) is Some(installed) else {
     return Json::null()
@@ -380,7 +380,7 @@ async fn moon_install_skill_unified_json(
 ///|
 async fn moon_upsert_installed_skill_json(
   installed : Json,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let state = moon_skill_state_load(path=state_path)
   guard state is Object(obj) else { return installed }
@@ -466,7 +466,7 @@ async fn moon_toggle_skill_app_json(
   id : String,
   app : String,
   enabled : Bool,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let normalized = moon_normalize_app_type(app)
   if !moon_skill_supported_apps().contains(normalized) {
@@ -520,7 +520,7 @@ fn moon_skill_apps_with_enabled(
 ///|
 async fn moon_uninstall_skill_unified_json(
   id : String,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let state = moon_skill_state_load(path=state_path)
   guard state is Object(obj) else { return Json::null() }
@@ -552,12 +552,12 @@ async fn moon_uninstall_skill_unified_json(
     None => None
   }
   ignore(moon_skill_state_save(Json::object(obj), path=state_path))
-  {
+  Json({
     "backupPath": match backup_path {
       Some(path) => Json::string(path)
       None => Json::null()
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -568,12 +568,12 @@ fn moon_skill_backup_entry_json(skill : Json) -> Json {
     _ => "skill"
   }
   let backup_id = "\{directory}-\{now}"
-  {
+  Json({
     "backupId": Json::string(backup_id),
     "backupPath": Json::string(@pathx.join(moon_skill_backup_dir(), backup_id)),
     "createdAt": Json::number(now.to_double()),
     "skill": skill,
-  }.to_json()
+  })
 }
 
 ///|
@@ -594,7 +594,7 @@ fn moon_skill_prepend_backup(existing : Json?, entry : Json) -> Json {
 ///|
 async fn moon_delete_skill_backup_json(
   backup_id : String,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let state = moon_skill_state_load(path=state_path)
   guard state is Object(obj) else { return Json::boolean(false) }
@@ -622,7 +622,7 @@ async fn moon_delete_skill_backup_json(
 async fn moon_restore_skill_backup_json(
   backup_id : String,
   current_app : String,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let backups = moon_get_skill_backups_json(path=state_path)
   guard backups is Array(items) else { return Json::null() }
@@ -654,7 +654,7 @@ fn moon_check_skill_updates_json() -> Json {
 ///|
 async fn moon_update_skill_json(
   id : String,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let installed = moon_get_installed_skills_json(path=state_path)
   guard installed is Array(items) else { return Json::null() }
@@ -672,9 +672,9 @@ async fn moon_update_skill_json(
 ///|
 async fn moon_migrate_skill_storage_json(
   target : String,
-  state_path? : String = moon_skill_state_path(),
-  moongate_dir? : String = moon_moongate_skills_dir(),
-  unified_dir? : String = moon_unified_skills_dir(),
+  state_path~ : String = moon_skill_state_path(),
+  moongate_dir~ : String = moon_moongate_skills_dir(),
+  unified_dir~ : String = moon_unified_skills_dir(),
 ) -> Json {
   guard moon_normalize_skill_storage_location(target) is Some(target_location) else {
     return moon_skill_migration_result_json(0, 0, [
@@ -839,22 +839,22 @@ async fn moon_copy_skill_directory(
 
 ///|
 fn moon_skill_migration_result_json(
-  migrated_count : Int,
-  skipped_count : Int,
+  migrated_count : Int32,
+  skipped_count : Int32,
   errors : Array[Json],
 ) -> Json {
-  {
+  Json({
     "migratedCount": Json::number(migrated_count.to_double()),
     "skippedCount": Json::number(skipped_count.to_double()),
     "errors": Json::array(errors),
-  }.to_json()
+  })
 }
 
 ///|
 fn moon_search_skills_sh_json(
   query : String,
-  limit : Int,
-  offset : Int,
+  limit : Int32,
+  offset : Int32,
 ) -> Json {
   ignore(offset)
   let skills : Array[Json] = []
@@ -868,7 +868,7 @@ fn moon_search_skills_sh_json(
       let name = store_json_string_or_default(repo_obj, "name", "")
       let branch = store_json_string_or_default(repo_obj, "branch", "main")
       skills.push(
-        {
+        Json({
           "key": Json::string("\{owner}/\{name}:skills"),
           "name": Json::string("\{name} skills"),
           "directory": Json::string("skills"),
@@ -879,20 +879,20 @@ fn moon_search_skills_sh_json(
           "readmeUrl": Json::string(
             "https://github.com/\{owner}/\{name}/tree/\{branch}",
           ),
-        }.to_json(),
+        }),
       )
     }
   }
-  {
+  Json({
     "skills": Json::array(skills),
     "totalCount": Json::number(skills.length().to_double()),
     "query": Json::string(query),
-  }.to_json()
+  })
 }
 
 ///|
 async fn moon_discover_available_skills_json(
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let repos = moon_get_skill_repos_json(path=state_path)
   guard repos is Array(items) else { return Json::array([]) }
@@ -909,7 +909,7 @@ async fn moon_discover_available_skills_json(
       continue
     }
     skills.push(
-      {
+      Json({
         "key": Json::string("\{owner}/\{name}:skills"),
         "name": Json::string("\{name} skills"),
         "description": Json::string("Discovered from \{owner}/\{name}"),
@@ -920,7 +920,7 @@ async fn moon_discover_available_skills_json(
         "readmeUrl": Json::string(
           "https://github.com/\{owner}/\{name}/tree/\{branch}",
         ),
-      }.to_json(),
+      }),
     )
   }
   Json::array(skills)
@@ -928,7 +928,7 @@ async fn moon_discover_available_skills_json(
 
 ///|
 async fn moon_get_skills_json(
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let installed = moon_get_installed_skills_json(path=state_path)
   let installed_dirs : Array[String] = []
@@ -945,7 +945,7 @@ async fn moon_get_skills_json(
     guard item is Object(obj) else { continue }
     let directory = store_json_string_or_default(obj, "directory", "")
     result.push(
-      {
+      Json({
         "key": Json::string(store_json_string_or_default(obj, "key", directory)),
         "name": Json::string(
           store_json_string_or_default(obj, "name", directory),
@@ -959,7 +959,7 @@ async fn moon_get_skills_json(
         "repoOwner": obj.get("repoOwner").unwrap_or(Json::null()),
         "repoName": obj.get("repoName").unwrap_or(Json::null()),
         "repoBranch": obj.get("repoBranch").unwrap_or(Json::null()),
-      }.to_json(),
+      }),
     )
   }
   Json::array(result)
@@ -983,7 +983,7 @@ async fn moon_scan_unmanaged_skills_json() -> Json {
       }
       let (skill_name, description) = moon_skill_metadata_from_file(skill_file)
       result.push(
-        {
+        Json({
           "directory": Json::string(entry_name),
           "name": Json::string(skill_name.unwrap_or(entry_name)),
           "description": match description {
@@ -992,7 +992,7 @@ async fn moon_scan_unmanaged_skills_json() -> Json {
           },
           "foundIn": Json::array([Json::string(app)]),
           "path": Json::string(entry_path),
-        }.to_json(),
+        }),
       )
     }
   }
@@ -1002,7 +1002,7 @@ async fn moon_scan_unmanaged_skills_json() -> Json {
 ///|
 async fn moon_import_skills_from_apps_json(
   imports : Json,
-  state_path? : String = moon_skill_state_path(),
+  state_path~ : String = moon_skill_state_path(),
 ) -> Json {
   let imported : Array[Json] = []
   guard imports is Array(items) else { return Json::array(imported) }
@@ -1041,10 +1041,10 @@ async fn moon_import_skills_from_apps_json(
 async fn moon_install_skills_from_zip_json(
   file_path : String,
   current_app : String,
-  state_path? : String = moon_skill_state_path(),
-  moongate_dir? : String = moon_moongate_skills_dir(),
-  unified_dir? : String = moon_unified_skills_dir(),
-  app_dir? : String = moon_app_skills_dir(current_app),
+  state_path~ : String = moon_skill_state_path(),
+  moongate_dir~ : String = moon_moongate_skills_dir(),
+  unified_dir~ : String = moon_unified_skills_dir(),
+  app_dir~ : String = moon_app_skills_dir(current_app),
 ) -> Json {
   if !@fs.exists(file_path) {
     return Json::array([])
@@ -1081,11 +1081,11 @@ async fn moon_install_skills_from_zip_json(
 async fn moon_install_skills_from_extracted_dir_json(
   root_dir : String,
   current_app : String,
-  state_path? : String = moon_skill_state_path(),
-  moongate_dir? : String = moon_moongate_skills_dir(),
-  unified_dir? : String = moon_unified_skills_dir(),
-  app_dir? : String = moon_app_skills_dir(current_app),
-  source_name? : String = @pathx.basename(root_dir).to_owned(),
+  state_path~ : String = moon_skill_state_path(),
+  moongate_dir~ : String = moon_moongate_skills_dir(),
+  unified_dir~ : String = moon_unified_skills_dir(),
+  app_dir~ : String = moon_app_skills_dir(current_app),
+  source_name~ : String = @pathx.basename(root_dir).to_owned(),
 ) -> Json {
   let skill_dirs = moon_scan_skill_dirs_in_dir(root_dir)
   if skill_dirs.is_empty() {
@@ -1175,7 +1175,7 @@ async fn moon_scan_skill_dirs_in_dir(root_dir : String) -> Array[String] {
 async fn moon_scan_skill_dirs_recursive(
   dir : String,
   result : Array[String],
-  depth~ : Int,
+  depth~ : Int32,
 ) -> Unit {
   if depth > 16 || !moon_path_is_directory(dir) {
     return
@@ -1286,7 +1286,7 @@ async fn moon_collect_skill_hash_files(
   base_dir : String,
   current_dir : String,
   files : Array[String],
-  depth~ : Int,
+  depth~ : Int32,
 ) -> Unit {
   if depth > 16 {
     return
@@ -1333,7 +1333,7 @@ fn moon_skill_sha256_hex(bytes : Bytes) -> String {
 }
 
 ///|
-fn moon_skill_hex_digit(n : Int) -> Char {
+fn moon_skill_hex_digit(n : Int32) -> Char {
   if n < 10 {
     ('0'.to_int() + n).unsafe_to_char()
   } else {

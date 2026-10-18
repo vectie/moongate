@@ -1,10 +1,10 @@
 ///|
 pub struct Gateway {
   priv host : String
-  priv port : Int
+  priv port : Int32
   priv model : String
   priv logger : @pino.Logger
-  priv started_at_ms : Int
+  priv started_at_ms : Int32
   /// Auth
   priv auth : AuthService
   /// Proxy routing and circuit breakers
@@ -29,9 +29,9 @@ pub struct Gateway {
 
 ///|
 pub fn Gateway::new(
-  port~ : Int,
-  host? : String = @suite.default_host(),
-  model? : String = @suite.default_model(),
+  port~ : Int32,
+  host~ : String = @suite.default_host(),
+  model~ : String = @suite.default_model(),
 ) -> Gateway {
   let logger = @pino.logger("moongate", @pino.Transport::console())
   {
@@ -59,12 +59,15 @@ pub fn Gateway::host(self : Gateway) -> String {
 }
 
 ///|
-pub fn Gateway::port(self : Gateway) -> Int {
+pub fn Gateway::port(self : Gateway) -> Int32 {
   self.port
 }
 
 ///|
-fn moon_first_stream_event_ms(current : Int?, started_at_ms : Int?) -> Int? {
+fn moon_first_stream_event_ms(
+  current : Int32?,
+  started_at_ms : Int32?,
+) -> Int32? {
   match current {
     Some(_) => current
     None =>
@@ -238,7 +241,7 @@ fn codex_compatible_chat_completions_endpoint(endpoint : String) -> String {
 fn claude_transform_endpoint(
   api_format : String,
   is_stream : Bool,
-  request_path? : StringView = "/v1/messages",
+  request_path~ : StringView = "/v1/messages",
 ) -> String {
   let request_path_only = match request_path.find("?") {
     Some(index) => request_path[:index]
@@ -637,7 +640,7 @@ fn moon_home_dir() -> String {
 }
 
 ///|
-fn moon_ascii_digit_at(value : String, index : Int) -> Bool {
+fn moon_ascii_digit_at(value : String, index : Int32) -> Bool {
   let ch = value[index]
   ch >= '0' && ch <= '9'
 }
@@ -659,7 +662,7 @@ async fn moon_open_directory_result_json(path : String) -> Result[Json, String] 
 }
 
 ///|
-fn moon_preview(content : String, limit : Int) -> String {
+fn moon_preview(content : String, limit : Int32) -> String {
   if content.length() <= limit {
     content
   } else {
@@ -671,14 +674,14 @@ fn moon_preview(content : String, limit : Int) -> String {
 fn moon_count_case_insensitive_matches(
   haystack : String,
   needle : String,
-) -> (Int, Int?) {
+) -> (Int32, Int32?) {
   let lower = haystack.to_lower()
   let query = needle.to_lower()
   if query.is_empty() {
     return (0, None)
   }
   let mut count = 0
-  let mut first : Int? = None
+  let mut first : Int32? = None
   let mut offset = 0
   while offset <= lower.length() {
     match lower[offset:].find(query) {
@@ -768,12 +771,12 @@ async fn moon_push_shell_env_conflicts(
     }
     if moon_env_name_matches_keywords(var_name, keywords) {
       conflicts.push(
-        {
+        Json({
           "varName": Json::string(var_name),
           "varValue": Json::string(moon_trim_env_value_quotes(var_value)),
           "sourceType": Json::string("file"),
           "sourcePath": Json::string("\{file_path}:\{line_number}"),
-        }.to_json(),
+        }),
       )
     }
   }
@@ -1134,7 +1137,7 @@ fn moon_endpoint_url_missing_host(url : String) -> Bool {
 }
 
 ///|
-fn endpoint_url_host_start(url : String) -> Int? {
+fn endpoint_url_host_start(url : String) -> Int32? {
   if url.has_prefix("http://") {
     Some(7)
   } else if url.has_prefix("https://") {
@@ -1183,7 +1186,7 @@ fn parse_non_negative_decimal_to_double(value : String) -> Double? {
 
 ///|
 fn claude_desktop_model_list_json(
-  provider? : ProviderRouteTarget? = None,
+  provider~ : ProviderRouteTarget? = None,
 ) -> Json {
   let routes = match provider {
     Some(provider) => provider.resolved_claude_desktop_model_routes()
@@ -1197,12 +1200,12 @@ fn claude_desktop_model_list_json(
     claude_desktop_model_json("claude-opus-4-8", supports_1m=true),
     claude_desktop_model_json("claude-haiku-4-5", supports_1m=true),
   ]
-  {
+  Json({
     "data": Json::array(data),
     "has_more": Json::boolean(false),
     "first_id": Json::string("claude-sonnet-4-6"),
     "last_id": Json::string("claude-haiku-4-5"),
-  }.to_json()
+  })
 }
 
 ///|
@@ -1225,19 +1228,19 @@ fn claude_desktop_route_model_list_json(
       None => Json::null()
     }
   }
-  {
+  Json({
     "data": Json::array(data),
     "has_more": Json::boolean(false),
     "first_id": first_id,
     "last_id": last_id,
-  }.to_json()
+  })
 }
 
 ///|
 fn claude_desktop_model_json(
   id : String,
-  label_override? : String? = None,
-  supports_1m? : Bool = true,
+  label_override~ : String? = None,
+  supports_1m~ : Bool = true,
 ) -> Json {
   let obj : Map[String, Json] = {
     "type": Json::string("model"),

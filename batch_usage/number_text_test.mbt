@@ -1,9 +1,9 @@
 ///|
 fn raw_result(
   input : String,
-  output? : String = "0",
-  total? : String = "null",
-  status? : String = "200",
+  output~ : String = "0",
+  total~ : String = "null",
+  status~ : String = "200",
 ) -> String {
   "{\"custom_id\":\"precision\",\"response\":{\"status_code\":\{status},\"body\":{\"object\":\"chat.completion\",\"model\":\"m\",\"usage\":{\"prompt_tokens\":\{input},\"completion_tokens\":\{output},\"total_tokens\":\{total}}}}}"
 }

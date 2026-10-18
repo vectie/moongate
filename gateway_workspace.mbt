@@ -64,13 +64,13 @@ fn moon_file_mtime(path : String) -> Int64 {
 async fn moon_daily_memory_info_json(path : String, filename : String) -> Json {
   let content = @fsx.read_file(path) catch { _ => "" }
   let modified_at = moon_file_mtime(path)
-  {
+  Json({
     "filename": Json::string(filename),
     "date": Json::string(moon_daily_memory_date(filename)),
     "sizeBytes": Json::number(content.length().to_double()),
     "modifiedAt": Json::number(modified_at.to_double()),
     "preview": Json::string(moon_preview(content, 200)),
-  }.to_json()
+  })
 }
 
 ///|
@@ -139,14 +139,14 @@ async fn moon_search_daily_memory_files_json(query : String) -> Json {
     }
     let modified_at = moon_file_mtime(entry.path)
     filenames.push(entry.name)
-    rows_by_filename[entry.name] = {
+    rows_by_filename[entry.name] = Json({
       "filename": Json::string(entry.name),
       "date": Json::string(date),
       "sizeBytes": Json::number(content.length().to_double()),
       "modifiedAt": Json::number(modified_at.to_double()),
       "snippet": Json::string(snippet),
       "matchCount": Json::number((content_count + date_count).to_double()),
-    }.to_json()
+    })
   }
   filenames.sort()
   let mut index = filenames.length() - 1
@@ -171,12 +171,12 @@ async fn moon_env_conflicts_json_with_shell_files(
     match getenv_or_none(key) {
       Some(value) if !value.trim().is_empty() =>
         conflicts.push(
-          {
+          Json({
             "varName": Json::string(key),
             "varValue": Json::string(value),
             "sourceType": Json::string("system"),
             "sourcePath": Json::string("Process Environment"),
-          }.to_json(),
+          }),
         )
       _ => ()
     }
@@ -203,7 +203,7 @@ fn moon_env_source_file_path(source_path : String) -> String {
 async fn moon_import_mcp_from_codex_file(
   servers : Map[String, Json],
   file_path : String,
-) -> Int {
+) -> Int32 {
   if !(@fsx.exists_as_file(file_path) catch { _ => false }) {
     return 0
   }
@@ -216,7 +216,7 @@ async fn moon_import_mcp_from_file(
   servers : Map[String, Json],
   app : String,
   file_path : String,
-) -> Int {
+) -> Int32 {
   if !(@fsx.exists_as_file(file_path) catch { _ => false }) {
     return 0
   }
@@ -268,7 +268,7 @@ async fn moon_import_prompt_from_file_json(
   let timestamp = @async.now().to_int()
   let timestamp_text = timestamp.to_string()
   let id = "imported-\{timestamp_text}"
-  let prompt = {
+  let prompt = Json({
     "id": Json::string(id),
     "name": Json::string(
       "导入的提示词 \{@os.local_rfc3339(timestamp.to_int64())}",
@@ -278,7 +278,7 @@ async fn moon_import_prompt_from_file_json(
     "enabled": Json::boolean(false),
     "createdAt": Json::string(timestamp_text),
     "updatedAt": Json::string(timestamp_text),
-  }.to_json()
+  })
   prompts[moon_prompt_store_key(app, id)] = prompt
   Ok(Json::string(id))
 }
@@ -601,7 +601,7 @@ async fn WorkspaceService::handle_dashboard_page(
   self : WorkspaceService,
   w : @httpx.ResponseWriter,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Unit {
   ignore(self)
   w.header().set("Content-Type", "text/html; charset=utf-8")

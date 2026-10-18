@@ -112,7 +112,7 @@ fn generate_message_id() -> String {
 }
 
 ///|
-fn generate_gemini_synth_tool_call_id(position : Int) -> String {
+fn generate_gemini_synth_tool_call_id(position : Int32) -> String {
   "gemini_synth_\{position}"
 }
 
@@ -281,7 +281,7 @@ fn push_sse_json_event(events : Array[Json], data : String) -> Bool {
 async fn write_codex_response_sse_event(
   w : @httpx.ResponseWriter,
   event : Json,
-) -> Int {
+) -> Int32 {
   let event_type = match event {
     Object(obj) => json_string_from_map(obj, "type").unwrap_or("")
     _ => ""
@@ -301,16 +301,16 @@ priv struct ResponsesStreamState {
   mut model : String
   mut has_sent_message_start : Bool
   mut has_tool_use : Bool
-  mut next_content_index : Int
-  mut current_text_index : Int?
-  mut current_thinking_index : Int?
-  mut fallback_open_index : Int?
-  mut last_tool_index : Int?
-  open_indices : Array[Int]
-  index_by_key : Map[String, Int]
-  tool_index_by_item_id : Map[String, Int]
-  tool_name_by_index : Map[Int, String]
-  tool_args_by_index : Map[Int, String]
+  mut next_content_index : Int32
+  mut current_text_index : Int32?
+  mut current_thinking_index : Int32?
+  mut fallback_open_index : Int32?
+  mut last_tool_index : Int32?
+  open_indices : Array[Int32]
+  index_by_key : Map[String, Int32]
+  tool_index_by_item_id : Map[String, Int32]
+  tool_name_by_index : Map[Int32, String]
+  tool_args_by_index : Map[Int32, String]
 }
 
 ///|
@@ -544,7 +544,7 @@ fn ResponsesStreamState::finish_function_call_arguments(
 fn ResponsesStreamState::tool_index_from_event(
   self : ResponsesStreamState,
   obj : Map[String, Json],
-) -> Int {
+) -> Int32 {
   match json_string_from_map(obj, "item_id") {
     Some(item_id) =>
       match self.tool_index_by_item_id.get(item_id) {
@@ -581,7 +581,7 @@ fn ResponsesStreamState::tool_index_from_event(
 ///|
 fn ResponsesStreamState::ensure_tool_block(
   self : ResponsesStreamState,
-  index : Int,
+  index : Int32,
   obj : Map[String, Json],
   events : Array[StreamEvent],
 ) -> Unit {
@@ -614,7 +614,7 @@ fn ResponsesStreamState::ensure_text_block(
   self : ResponsesStreamState,
   obj : Map[String, Json],
   events : Array[StreamEvent],
-) -> Int {
+) -> Int32 {
   self.ensure_message_start(events)
   match self.current_text_index {
     Some(index) => index
@@ -635,7 +635,7 @@ fn ResponsesStreamState::ensure_thinking_block(
   self : ResponsesStreamState,
   obj : Map[String, Json],
   events : Array[StreamEvent],
-) -> Int {
+) -> Int32 {
   self.ensure_message_start(events)
   match self.current_thinking_index {
     Some(index) => index
@@ -655,7 +655,7 @@ fn ResponsesStreamState::ensure_thinking_block(
 fn ResponsesStreamState::resolve_content_index(
   self : ResponsesStreamState,
   obj : Map[String, Json],
-) -> Int {
+) -> Int32 {
   match responses_stream_content_part_key(obj) {
     Some(key) =>
       match self.index_by_key.get(key) {
@@ -758,7 +758,7 @@ fn ResponsesStreamState::close_thinking_block_from_event(
 fn ResponsesStreamState::content_index_from_event(
   self : ResponsesStreamState,
   obj : Map[String, Json],
-) -> Int? {
+) -> Int32? {
   match responses_stream_content_part_key(obj) {
     Some(key) =>
       match self.index_by_key.get(key) {
@@ -772,7 +772,7 @@ fn ResponsesStreamState::content_index_from_event(
 ///|
 fn ResponsesStreamState::clear_fallback_if_index(
   self : ResponsesStreamState,
-  index : Int,
+  index : Int32,
 ) -> Unit {
   if self.fallback_open_index == Some(index) {
     self.fallback_open_index = None
@@ -783,7 +783,7 @@ fn ResponsesStreamState::clear_fallback_if_index(
 fn ResponsesStreamState::close_open_block(
   self : ResponsesStreamState,
   events : Array[StreamEvent],
-  index : Int,
+  index : Int32,
 ) -> Unit {
   for position in 0..<self.open_indices.length() {
     if self.open_indices[position] == index {
@@ -890,14 +890,14 @@ fn convert_stream_event(
       let event_data : Map[String, Json] = {
         "type": Json::string("content_block_delta"),
         "index": Json::number(0.0),
-        "delta": {
+        "delta": Json({
           "type": Json::string("text_delta"),
           "text": Json::string(delta),
-        }.to_json(),
+        }),
       }
       Some({
         event_type: "content_block_delta",
-        data: event_data.to_json().stringify(),
+        data: Json(event_data).stringify(),
       })
     }
     "response.output_item.done" => {
@@ -931,16 +931,16 @@ fn convert_stream_event(
           let event_data : Map[String, Json] = {
             "type": Json::string("content_block_start"),
             "index": Json::number(1.0),
-            "content_block": {
+            "content_block": Json({
               "type": Json::string("tool_use"),
               "id": Json::string(call_id),
               "name": Json::string(name),
               "input": args_json,
-            }.to_json(),
+            }),
           }
           return Some({
             event_type: "content_block_start",
-            data: event_data.to_json().stringify(),
+            data: Json(event_data).stringify(),
           })
         }
       }
@@ -968,10 +968,10 @@ fn responses_stream_completed_event(
   )
   let event_data : Map[String, Json] = {
     "type": Json::string("message_delta"),
-    "delta": { "stop_reason": stop_reason, "stop_sequence": Json::null() }.to_json(),
+    "delta": Json({ "stop_reason": stop_reason, "stop_sequence": Json::null() }),
     "usage": usage,
   }
-  { event_type: "message_delta", data: event_data.to_json().stringify(), }
+  { event_type: "message_delta", data: Json(event_data).stringify(), }
 }
 
 ///|

@@ -2,11 +2,11 @@
 fn transform_claude_request_for_api_format(
   body : Json,
   api_format : String,
-  session_id? : String? = None,
-  explicit_prompt_cache_key? : String? = None,
-  is_codex_oauth? : Bool = false,
-  codex_fast_mode? : Bool = false,
-  gemini_shadow_turns? : Array[GeminiAssistantTurn] = [],
+  session_id~ : String? = None,
+  explicit_prompt_cache_key~ : String? = None,
+  is_codex_oauth~ : Bool = false,
+  codex_fast_mode~ : Bool = false,
+  gemini_shadow_turns~ : Array[GeminiAssistantTurn] = [],
 ) -> Json {
   match api_format {
     "openai_chat" =>
@@ -40,16 +40,16 @@ priv struct GeminiAssistantTurn {
 
 ///|
 priv struct GeminiShadowStore {
-  max_sessions : Int
-  max_turns_per_session : Int
+  max_sessions : Int32
+  max_turns_per_session : Int32
   sessions : Map[String, Array[GeminiAssistantTurn]]
   session_order : Array[String]
 }
 
 ///|
 fn GeminiShadowStore::with_limits(
-  max_sessions : Int,
-  max_turns_per_session : Int,
+  max_sessions : Int32,
+  max_turns_per_session : Int32,
 ) -> GeminiShadowStore {
   {
     max_sessions: if max_sessions < 1 {
@@ -240,7 +240,7 @@ fn anthropic_messages_to_gemini_contents(
   )
   let shadow_start_index = total_assistant_messages -
     effective_shadow_turns.length()
-  let used_shadow_indices : Map[Int, Bool] = Map([], capacity=0)
+  let used_shadow_indices : Map[Int32, Bool] = Map([], capacity=0)
   let mut assistant_seen_index = 0
   for message in source_messages {
     guard message is Object(message_obj) else { continue }
@@ -450,7 +450,7 @@ fn gemini_tool_result_name(
 }
 
 ///|
-fn count_assistant_messages(messages : Array[Json]) -> Int {
+fn count_assistant_messages(messages : Array[Json]) -> Int32 {
   let mut count = 0
   for message in messages {
     guard message is Object(message_obj) else { continue }
@@ -464,7 +464,7 @@ fn count_assistant_messages(messages : Array[Json]) -> Int {
 ///|
 fn latest_gemini_shadow_turns(
   shadow_turns : Array[GeminiAssistantTurn],
-  total_assistant_messages : Int,
+  total_assistant_messages : Int32,
 ) -> Array[GeminiAssistantTurn] {
   if total_assistant_messages <= 0 {
     return []
@@ -576,8 +576,8 @@ fn merge_thought_signatures_from_shadow(
 fn find_matching_shadow_turn_for_assistant_message(
   content : Json?,
   shadow_turns : Array[GeminiAssistantTurn],
-  used_shadow_indices : Map[Int, Bool],
-) -> Int? {
+  used_shadow_indices : Map[Int32, Bool],
+) -> Int32? {
   let (tool_use_ids, tool_use_names) = extract_assistant_tool_use_keys(content)
   if tool_use_ids.is_empty() && tool_use_names.is_empty() {
     return None
@@ -771,7 +771,7 @@ fn extract_gemini_tool_call_meta(
 }
 
 ///|
-fn generate_gemini_shadow_synth_tool_call_id(position : Int) -> String {
+fn generate_gemini_shadow_synth_tool_call_id(position : Int32) -> String {
   "gemini_synth_\{position}"
 }
 

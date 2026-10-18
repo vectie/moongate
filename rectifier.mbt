@@ -11,16 +11,16 @@ priv struct RectifierConfig {
 priv struct ThinkingRectifyResult {
   mut body : Json
   mut applied : Bool
-  mut removed_thinking_blocks : Int
-  mut removed_redacted_thinking_blocks : Int
-  mut removed_signature_fields : Int
+  mut removed_thinking_blocks : Int32
+  mut removed_redacted_thinking_blocks : Int32
+  mut removed_signature_fields : Int32
 }
 
 ///|
 priv struct BudgetRectifySnapshot {
-  max_tokens : Int?
+  max_tokens : Int32?
   thinking_type : String?
-  thinking_budget_tokens : Int?
+  thinking_budget_tokens : Int32?
 }
 
 ///|
@@ -39,13 +39,13 @@ priv struct MoonRectifierRetry {
 }
 
 ///|
-const MAX_THINKING_BUDGET : Int = 32000
+const MAX_THINKING_BUDGET : Int32 = 32000
 
 ///|
-const MAX_TOKENS_VALUE : Int = 64000
+const MAX_TOKENS_VALUE : Int32 = 64000
 
 ///|
-const MIN_MAX_TOKENS_FOR_BUDGET : Int = MAX_THINKING_BUDGET + 1
+const MIN_MAX_TOKENS_FOR_BUDGET : Int32 = MAX_THINKING_BUDGET + 1
 
 ///|
 fn default_rectifier_config() -> RectifierConfig {
@@ -357,7 +357,7 @@ fn budget_rectifier_summary(result : BudgetRectifyResult) -> String {
 }
 
 ///|
-fn option_int_for_log(value : Int?) -> String {
+fn option_int_for_log(value : Int32?) -> String {
   match value {
     Some(value) => value.to_string()
     None => "none"

@@ -257,14 +257,14 @@ pub fn constitutional_product_boundaries() -> Array[@pipeline.ProductBoundary] {
 
 ///|
 pub fn constitutional_registry_json() -> Json {
-  {
+  Json({
     "contractId": Json::string("moonsuite.product-boundary-registry.v1"),
     "policyOwner": Json::string("moongate"),
     "validatorContractId": Json::string(
       @pipeline.ContractKind::ConstitutionConformance.id(),
     ),
-    "products": constitutional_product_boundaries().to_json(),
-  }.to_json()
+    "products": Json(constitutional_product_boundaries()),
+  })
 }
 
 ///|
@@ -306,13 +306,13 @@ pub fn constitutional_registry_self_check(checked_at : String) -> Json {
     }
     reports.push(report)
   }
-  {
+  Json({
     "contractId": Json::string("moonsuite.constitution-registry-self-check.v1"),
     "accepted": Json::boolean(accepted),
     "productCount": Json::number(registry.length().to_double()),
-    "reports": reports.to_json(),
+    "reports": Json(reports),
     "checkedAt": Json::string(checked_at),
-  }.to_json()
+  })
 }
 
 ///|

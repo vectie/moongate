@@ -67,10 +67,10 @@ test "priced CSV reopens in existing explorer with partial coverage and source i
     is Ok(Object(again)) else {
     fail("partial")
   }
-  assert_eq(again["partial"], true.to_json())
+  assert_eq(again["partial"], Json(true))
   assert_eq(again["sourceTotal"], Json::number(9))
-  assert_eq(again["sourceCoverageUnknown"], true.to_json())
-  assert_eq(again["usageMergeScope"], "fixture".to_json())
+  assert_eq(again["sourceCoverageUnknown"], Json(true))
+  assert_eq(again["usageMergeScope"], Json("fixture"))
 }
 
 ///|

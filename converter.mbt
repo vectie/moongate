@@ -210,12 +210,12 @@ fn build_codex_request(
 ) -> Json {
   let json : Map[String, Json] = {
     "model": Json::string(model),
-    "input": input.messages.to_json(),
-    "stream": stream.to_json(),
+    "input": Json(input.messages),
+    "stream": Json(stream),
     "store": Json::boolean(false),
   }
   if input.tools is Some(tools) && !tools.is_empty() {
-    json["tools"] = tools.to_json()
+    json["tools"] = Json(tools)
   }
   Json::object(json)
 }
@@ -226,10 +226,10 @@ fn build_anthropic_response(
   model : String,
   content : String,
   tool_calls : Array[ToolCallInfo],
-  input_tokens : Int,
-  output_tokens : Int,
-  cache_read_input_tokens? : Int = 0,
-  cache_creation_input_tokens? : Int = 0,
+  input_tokens : Int32,
+  output_tokens : Int32,
+  cache_read_input_tokens~ : Int32 = 0,
+  cache_creation_input_tokens~ : Int32 = 0,
 ) -> AnthropicResponse {
   let response_blocks : Array[AnthropicResponseBlock] = []
   if !content.is_empty() {
@@ -278,7 +278,7 @@ fn build_anthropic_response(
 }
 
 ///|
-fn optional_positive_int(value : Int) -> Int? {
+fn optional_positive_int(value : Int32) -> Int32? {
   if value > 0 {
     Some(value)
   } else {

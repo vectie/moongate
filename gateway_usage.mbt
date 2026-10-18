@@ -8,7 +8,7 @@ fn UsageService::health_json(
   self : UsageService,
   credentials_loaded : Bool,
 ) -> Json {
-  {
+  Json({
     "status": Json::string(
       if self.stats.storage_healthy {
         "healthy"
@@ -20,13 +20,13 @@ fn UsageService::health_json(
     "credentials_loaded": Json::boolean(credentials_loaded),
     "stats": self.stats_json(),
     "storage": self.stats.storage_health_json(),
-  }.to_json()
+  })
 }
 
 ///|
 fn UsageService::metrics_text(
   self : UsageService,
-  provider_metrics? : String = "",
+  provider_metrics~ : String = "",
 ) -> String {
   if provider_metrics.is_empty() {
     "\{self.stats.prometheus_metrics()}\n\{self.stats.operations_prometheus_metrics()}"
@@ -49,7 +49,7 @@ async fn UsageService::handle_planner_metrics(
     return
   }
   if self.stats.record_planner_metrics(body) {
-    write_usage_json(w, { "accepted": Json::boolean(true) }.to_json())
+    write_usage_json(w, Json({ "accepted": Json::boolean(true) }))
   } else {
     write_usage_bad_request(w, "invalid_planner_metrics_contract")
   }
@@ -59,10 +59,10 @@ async fn UsageService::handle_planner_metrics(
 fn UsageService::status_json(
   self : UsageService,
   address : String,
-  port : Int,
-  uptime_seconds : Int,
-  running? : Bool = true,
-  provider_routes? : Json? = None,
+  port : Int32,
+  uptime_seconds : Int32,
+  running~ : Bool = true,
+  provider_routes~ : Json? = None,
 ) -> Json {
   self.stats.status_json(
     address,
@@ -82,7 +82,7 @@ priv struct UsageRequest {
 ///|
 fn UsageService::begin_request(
   self : UsageService,
-  request_bytes : Int,
+  request_bytes : Int32,
 ) -> UsageRequest {
   { service: self, context: self.stats.begin_request(request_bytes), }
 }
@@ -90,8 +90,8 @@ fn UsageService::begin_request(
 ///|
 fn UsageRequest::first_stream_event_ms(
   self : UsageRequest,
-  current : Int?,
-) -> Int? {
+  current : Int32?,
+) -> Int32? {
   moon_first_stream_event_ms(current, Some(self.context.started_at_ms))
 }
 
@@ -118,9 +118,9 @@ fn UsageRequest::activate_provider_target(
   app_type : String,
   provider_id : String,
   provider_name : String,
-  used_half_open_permit? : Bool = false,
-  cost_multiplier? : String = "1.0",
-  pricing_model_source? : String = "response",
+  used_half_open_permit~ : Bool = false,
+  cost_multiplier~ : String = "1.0",
+  pricing_model_source~ : String = "response",
 ) -> Unit {
   self.context.set_active_target(
     app_type,
@@ -206,8 +206,8 @@ fn UsageService::set_provider_limits(
   self : UsageService,
   provider_id : String,
   app_type : String,
-  daily_limit_usd? : String? = None,
-  monthly_limit_usd? : String? = None,
+  daily_limit_usd~ : String? = None,
+  monthly_limit_usd~ : String? = None,
 ) -> Unit {
   self.stats.set_provider_limits(
     provider_id,
@@ -243,7 +243,7 @@ fn UsageService::model_pricing_json(self : UsageService) -> Json {
 async fn UsageService::upsert_model_pricing(
   self : UsageService,
   pricing : ModelPricing,
-) -> Int {
+) -> Int32 {
   self.pricing_overrides.set(pricing.model_id, pricing)
   self.pricing_deleted_model_ids.set(pricing.model_id, false)
   let backfilled = self.stats.backfill_missing_usage_costs_for_model(
@@ -316,9 +316,7 @@ async fn UsageService::save_model_pricing_store(self : UsageService) -> Unit {
       continue
     }
     lines.push(
-      { "modelId": Json::string(model_id), "deleted": Json::boolean(true) }
-      .to_json()
-      .stringify(),
+      Json({ "modelId": Json::string(model_id), "deleted": Json::boolean(true) }).stringify(),
     )
   }
   @fsx.write_to_file(
@@ -386,9 +384,9 @@ fn UsageRequest::record_request_context(
   self : UsageRequest,
   app_type : String,
   model : String,
-  outbound_model? : String? = None,
-  session_id? : String? = None,
-  provider_type? : String? = None,
+  outbound_model~ : String? = None,
+  session_id~ : String? = None,
+  provider_type~ : String? = None,
 ) -> Unit {
   self.context.set_request_context(
     app_type,
@@ -451,7 +449,7 @@ async fn UsageRequest::record_success_usage_with_provider(
   self : UsageRequest,
   proxy : ProxyService,
   usage : TokenUsage,
-  response_bytes : Int,
+  response_bytes : Int32,
 ) -> Unit {
   self.record_provider_result(proxy, true)
   self.record_success_usage(
@@ -466,10 +464,10 @@ async fn UsageRequest::record_success_stream_usage_with_provider(
   self : UsageRequest,
   proxy : ProxyService,
   usage : TokenUsage?,
-  response_bytes : Int,
-  record_provider? : Bool = true,
-  first_token_ms? : Int? = None,
-  skip_empty_usage? : Bool = false,
+  response_bytes : Int32,
+  record_provider~ : Bool = true,
+  first_token_ms~ : Int32? = None,
+  skip_empty_usage~ : Bool = false,
 ) -> Unit {
   if record_provider {
     self.record_provider_result(proxy, true)
@@ -487,7 +485,7 @@ async fn UsageRequest::record_success_stream_usage_with_provider(
 async fn UsageRequest::record_success_usage(
   self : UsageRequest,
   usage : TokenUsage,
-  response_bytes : Int,
+  response_bytes : Int32,
   pricing_overrides : Array[ModelPricing],
 ) -> Unit {
   self.service.stats.record_success_usage_with_pricing(
@@ -504,10 +502,10 @@ async fn UsageRequest::record_success_usage(
 async fn UsageRequest::record_success_stream_usage(
   self : UsageRequest,
   usage : TokenUsage?,
-  response_bytes : Int,
+  response_bytes : Int32,
   pricing_overrides : Array[ModelPricing],
-  first_token_ms? : Int? = None,
-  skip_empty_usage? : Bool = false,
+  first_token_ms~ : Int32? = None,
+  skip_empty_usage~ : Bool = false,
 ) -> Unit {
   if skip_empty_usage {
     match usage {
@@ -566,8 +564,8 @@ async fn UsageRequest::record_unauthorized_with_provider(
 ///|
 async fn UsageRequest::record_upstream_error_status(
   self : UsageRequest,
-  response_bytes : Int,
-  status_code : Int,
+  response_bytes : Int32,
+  status_code : Int32,
 ) -> Unit {
   self.service.stats.record_upstream_error_status(
     self.context,
@@ -581,8 +579,8 @@ async fn UsageRequest::record_upstream_error_status(
 async fn UsageRequest::record_upstream_error_status_with_provider(
   self : UsageRequest,
   proxy : ProxyService,
-  response_bytes : Int,
-  status_code : Int,
+  response_bytes : Int32,
+  status_code : Int32,
 ) -> Unit {
   if moon_upstream_status_retryable(status_code) {
     self.record_provider_result(proxy, false)
@@ -633,8 +631,8 @@ async fn UsageRequest::record_internal_error_with_provider(
 async fn UsageService::load_and_reconcile_persistent_store(
   self : UsageService,
   pricing_overrides : Array[ModelPricing],
-  storage_dir? : String = default_moongate_stats_dir(),
-) -> (Int, Int) {
+  storage_dir~ : String = default_moongate_stats_dir(),
+) -> (Int32, Int32) {
   self.stats.load_persistent_store(storage_dir~)
   let backfilled = self.stats.backfill_missing_usage_costs(
     pricing_overrides,
@@ -651,8 +649,8 @@ async fn UsageService::load_and_reconcile_persistent_store(
 async fn UsageService::usage_logs_json(
   self : UsageService,
   filters : RequestLogFilters,
-  page : Int,
-  page_size : Int,
+  page : Int32,
+  page_size : Int32,
   pricing_overrides : Array[ModelPricing],
 ) -> Json {
   let backfilled = self.stats.backfill_missing_usage_costs(
@@ -674,9 +672,9 @@ async fn UsageService::usage_logs_json(
 ///|
 fn UsageService::summary_json(
   self : UsageService,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
-  app_type? : String? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.stats.usage_summary_filtered_json(start_date~, end_date~, app_type~)
 }
@@ -684,8 +682,8 @@ fn UsageService::summary_json(
 ///|
 fn UsageService::summary_by_app_json(
   self : UsageService,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
 ) -> Json {
   self.stats.usage_summary_by_app_filtered_json(start_date~, end_date~)
 }
@@ -693,9 +691,9 @@ fn UsageService::summary_by_app_json(
 ///|
 fn UsageService::trends_json(
   self : UsageService,
-  start_ts? : Int? = None,
-  end_ts? : Int? = None,
-  app_type? : String? = None,
+  start_ts~ : Int32? = None,
+  end_ts~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.stats.usage_trends_json(start_ts~, end_ts~, app_type~)
 }
@@ -705,8 +703,8 @@ fn UsageService::provider_limit_status_json(
   self : UsageService,
   provider_id : String,
   app_type : String,
-  daily_limit_usd? : String? = None,
-  monthly_limit_usd? : String? = None,
+  daily_limit_usd~ : String? = None,
+  monthly_limit_usd~ : String? = None,
 ) -> Json {
   self.stats.provider_limit_status_json(
     provider_id,
@@ -719,9 +717,9 @@ fn UsageService::provider_limit_status_json(
 ///|
 fn UsageService::provider_stats_json(
   self : UsageService,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
-  app_type? : String? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.stats.provider_stats_filtered_json(start_date~, end_date~, app_type~)
 }
@@ -729,9 +727,9 @@ fn UsageService::provider_stats_json(
 ///|
 fn UsageService::model_stats_json(
   self : UsageService,
-  start_date? : Int? = None,
-  end_date? : Int? = None,
-  app_type? : String? = None,
+  start_date~ : Int32? = None,
+  end_date~ : Int32? = None,
+  app_type~ : String? = None,
 ) -> Json {
   self.stats.model_stats_filtered_json(start_date~, end_date~, app_type~)
 }
@@ -810,9 +808,9 @@ async fn UsageService::handle_status(
   self : UsageService,
   w : @httpx.ResponseWriter,
   address : String,
-  port : Int,
-  uptime_seconds : Int,
-  provider_routes? : Json? = None,
+  port : Int32,
+  uptime_seconds : Int32,
+  provider_routes~ : Json? = None,
 ) -> Unit {
   write_usage_json(
     w,
@@ -824,7 +822,7 @@ async fn UsageService::handle_status(
 async fn UsageService::handle_metrics(
   self : UsageService,
   w : @httpx.ResponseWriter,
-  provider_metrics? : String = "",
+  provider_metrics~ : String = "",
 ) -> Unit {
   w.header().set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
   w.write_header(@status.Ok)
@@ -1219,7 +1217,7 @@ async fn write_usage_bad_request(
 ) -> Unit {
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.BadRequest)
-  w.write({ "error": Json::string(error) }.to_json().stringify(indent=2))
+  w.write(Json({ "error": Json::string(error) }).stringify(indent=2))
   w.flush()
 }
 
@@ -1322,7 +1320,7 @@ fn usage_int_from_request(
   path : StringView,
   body : Json?,
   key : String,
-) -> Int? {
+) -> Int32? {
   match usage_query_value(path, key) {
     Some(value) =>
       try @string.parse_int(value, base=10) catch {
@@ -1349,7 +1347,7 @@ fn usage_int_from_request(
 }
 
 ///|
-fn usage_query_int(path : StringView, key : String) -> Int? {
+fn usage_query_int(path : StringView, key : String) -> Int32? {
   match usage_query_value(path, key) {
     Some(value) =>
       try @string.parse_int(value, base=10) catch {
@@ -1409,11 +1407,11 @@ fn usage_url_decode(value : StringView) -> String {
 }
 
 ///|
-fn usage_hex_value(ch : Char) -> Int? {
+fn usage_hex_value(ch : Char) -> Int32? {
   match ch {
-    '0'..='9' => Some(ch.to_int() - '0'.to_int())
-    'A'..='F' => Some(ch.to_int() - 'A'.to_int() + 10)
-    'a'..='f' => Some(ch.to_int() - 'a'.to_int() + 10)
+    '0'..<='9' => Some(ch.to_int() - '0'.to_int())
+    'A'..<='F' => Some(ch.to_int() - 'A'.to_int() + 10)
+    'a'..<='f' => Some(ch.to_int() - 'a'.to_int() + 10)
     _ => None
   }
 }

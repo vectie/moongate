@@ -182,9 +182,9 @@ fn prepare_usage_input(content : String) -> Result[(String, Bool), String] {
         }
         for name in ["partial", "partialSource", "sourceCoverageUnknown"] {
           if fields.get(name) is Some(value) {
-            if value == true.to_json() {
+            if value == Json(true) {
               partial = true
-            } else if value != false.to_json() {
+            } else if value != Json(false) {
               return Err("Usage envelope " + name + " must be boolean")
             }
           }

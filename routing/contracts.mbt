@@ -207,26 +207,26 @@ pub(all) struct RoutingPolicyV1 {
   contract_id : String
   policy_id : String
   app_type : String
-  revision : Int
+  revision : Int32
   mode : RoutingMode
-  weights : Map[String, Int]
-  concurrency_limits : Map[String, Int]
-  minimum_shadow_decisions : Int
+  weights : Map[String, Int32]
+  concurrency_limits : Map[String, Int32]
+  minimum_shadow_decisions : Int32
   minimum_shadow_window_ms : Int64
-  canary_traffic_basis_points : Int
-  rollback_error_rate_milli : Int
-  rollback_p95_latency_ms : Int
-  rollback_minimum_requests : Int
+  canary_traffic_basis_points : Int32
+  rollback_error_rate_milli : Int32
+  rollback_p95_latency_ms : Int32
+  rollback_minimum_requests : Int32
   configured_at_ms : Int64
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 pub(all) struct ProviderCandidateV1 {
   provider_id : String
-  priority : Int
-  weight : Int
-  inflight : Int
-  concurrency_limit : Int
+  priority : Int32
+  weight : Int32
+  inflight : Int32
+  concurrency_limit : Int32
   enabled : Bool
   compatible : Bool
   healthy : Bool
@@ -258,7 +258,7 @@ pub(all) struct CandidateReviewV1 {
 ///|
 pub(all) struct SmoothWeightV1 {
   provider_id : String
-  current_weight : Int
+  current_weight : Int32
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
@@ -270,7 +270,7 @@ pub(all) struct SmoothStateV1 {
 pub(all) struct RoutingDecisionV1 {
   contract_id : String
   policy_id : String
-  policy_revision : Int
+  policy_revision : Int32
   app_type : String
   mode : RoutingMode
   shadow : Bool
@@ -291,16 +291,16 @@ pub(all) struct RoutingPolicyActivationReceiptV1 {
   authority_decision_id : String
   authority_decision_digest : String
   policy_id : String
-  policy_revision : Int
+  policy_revision : Int32
   previous_policy_id : String?
-  previous_policy_revision : Int?
+  previous_policy_revision : Int32?
   activation_scope : RoutingActivationScopeV1
-  canary_traffic_basis_points : Int
-  minimum_shadow_decisions : Int
+  canary_traffic_basis_points : Int32
+  minimum_shadow_decisions : Int32
   minimum_shadow_window_ms : Int64
-  rollback_error_rate_milli : Int
-  rollback_p95_latency_ms : Int
-  rollback_minimum_requests : Int
+  rollback_error_rate_milli : Int32
+  rollback_p95_latency_ms : Int32
+  rollback_minimum_requests : Int32
   recorded_at_ms : Int64
 } derive(Debug, Eq, ToJson, FromJson)
 
@@ -308,16 +308,16 @@ pub(all) struct RoutingPolicyActivationReceiptV1 {
 pub fn policy(
   policy_id~ : String,
   app_type~ : String,
-  revision~ : Int,
+  revision~ : Int32,
   mode~ : RoutingMode,
-  weights? : Map[String, Int] = Map([], capacity=0),
-  concurrency_limits? : Map[String, Int] = Map([], capacity=0),
-  minimum_shadow_decisions? : Int = 20,
-  minimum_shadow_window_ms? : Int64 = 300_000L,
-  canary_traffic_basis_points? : Int = 500,
-  rollback_error_rate_milli? : Int = 100,
-  rollback_p95_latency_ms? : Int = 30_000,
-  rollback_minimum_requests? : Int = 20,
+  weights~ : Map[String, Int32] = Map([], capacity=0),
+  concurrency_limits~ : Map[String, Int32] = Map([], capacity=0),
+  minimum_shadow_decisions~ : Int32 = 20,
+  minimum_shadow_window_ms~ : Int64 = 300_000L,
+  canary_traffic_basis_points~ : Int32 = 500,
+  rollback_error_rate_milli~ : Int32 = 100,
+  rollback_p95_latency_ms~ : Int32 = 30_000,
+  rollback_minimum_requests~ : Int32 = 20,
   configured_at_ms~ : Int64,
 ) -> RoutingPolicyV1 raise {
   if policy_id.trim().is_empty() || app_type.trim().is_empty() || revision < 1 {

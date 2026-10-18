@@ -61,13 +61,13 @@ async test "spawn/failed" {
   @mock.run(t, _ => {
     let process = @spawn.spawn("sh", ["-c", "exit 42"])
     json_inspect(
-      (try process.check() catch {
-        error => Err(error)
-      } noraise {
-        value => Ok(value)
-      })
-      .to_json()
-      .transform(@json.Replacer::exclude(["elapsed"])),
+      Json(
+        try process.check() catch {
+          error => Err(error)
+        } noraise {
+          value => Ok(value)
+        },
+      ).transform(@json.Replacer::exclude(["elapsed"])),
       content={
         "Err": [
           "Failed",

@@ -10,8 +10,8 @@ pub struct MoonGateUsageQuery {
   provider_name : String?
   model : String?
   status_code : String?
-  page : Int?
-  page_size : Int?
+  page : Int32?
+  page_size : Int32?
 }
 
 ///|
@@ -38,8 +38,8 @@ pub fn MoonGateUsageQuery::new(
   provider_name~ : String?,
   model~ : String?,
   status_code~ : String?,
-  page~ : Int?,
-  page_size~ : Int?,
+  page~ : Int32?,
+  page_size~ : Int32?,
 ) -> MoonGateUsageQuery {
   {
     start_date,
@@ -95,12 +95,12 @@ pub fn MoonGateSessionSyncQuery::new(
 pub struct MoonGateModel {
   id : String
   owner : String?
-  context_window : Int?
+  context_window : Int32?
 }
 
 ///|
 pub struct MoonGateUsageSummary {
-  total_requests : Int
+  total_requests : Int32
   total_cost : String
   total_input_tokens : Int64
   total_output_tokens : Int64
@@ -132,10 +132,10 @@ pub struct MoonGateClient {
 
 ///|
 pub fn MoonGateClient::new(
-  base_url? : String = MOONGATE_DEFAULT_CLIENT_BASE_URL,
-  api_key? : String? = None,
-  control_token? : String? = None,
-  user_agent? : String? = None,
+  base_url~ : String = MOONGATE_DEFAULT_CLIENT_BASE_URL,
+  api_key~ : String? = None,
+  control_token~ : String? = None,
+  user_agent~ : String? = None,
 ) -> MoonGateClient {
   {
     base_url: moongate_client_normalize_base_url(base_url),
@@ -147,11 +147,11 @@ pub fn MoonGateClient::new(
 
 ///|
 pub fn MoonGateClient::from_host(
-  host? : String = @suite.default_host(),
-  port? : Int = @suite.default_port(),
-  api_key? : String? = None,
-  control_token? : String? = None,
-  user_agent? : String? = None,
+  host~ : String = @suite.default_host(),
+  port~ : Int32 = @suite.default_port(),
+  api_key~ : String? = None,
+  control_token~ : String? = None,
+  user_agent~ : String? = None,
 ) -> MoonGateClient {
   MoonGateClient::new(
     base_url=@suite.base_url(host, port),

@@ -508,8 +508,8 @@ fn moon_deeplink_generated_id(name : String) -> String {
   let builder = StringBuilder::new()
   for ch in name {
     match ch {
-      'A'..='Z' => builder.write_char((ch.to_int() + 32).unsafe_to_char())
-      'a'..='z' | '0'..='9' | '-' | '_' => builder.write_char(ch)
+      'A'..<='Z' => builder.write_char((ch.to_int() + 32).unsafe_to_char())
+      'a'..<='z' | '0'..<='9' | '-' | '_' => builder.write_char(ch)
       _ => ()
     }
   }

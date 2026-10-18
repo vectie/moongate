@@ -3,12 +3,12 @@
 /// discover providers, or calculate prices from the live pricing catalog.
 pub fn moongate_preview_usage_file_json(
   content : String,
-  source_name? : String = "Pasted usage",
-  app? : String = "",
-  provider? : String = "",
-  model? : String = "",
-  start_day? : String = "",
-  end_day? : String = "",
+  source_name~ : String = "Pasted usage",
+  app~ : String = "",
+  provider~ : String = "",
+  model~ : String = "",
+  start_day~ : String = "",
+  end_day~ : String = "",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("Usage file exceeds the 4 MiB limit")
@@ -38,7 +38,7 @@ pub fn moongate_preview_usage_file_json(
     Some(Object(obj)) if obj.get("data") is Some(Array(rows)) => {
       if obj.contains("usageEvidenceKind") {
         guard obj.get("usageEvidenceKind") ==
-          Some("hypothetical-route-scenario".to_json()) &&
+          Some(Json("hypothetical-route-scenario")) &&
           obj.get("usageScenarioName") is Some(String(name)) &&
           !name.trim().is_empty() else {
           return Err("Unsupported or incomplete hypothetical usage marker")
@@ -46,7 +46,7 @@ pub fn moongate_preview_usage_file_json(
         scenario_name = Some(name)
       }
       source_coverage_unknown = obj.get("sourceCoverageUnknown") ==
-        Some(true.to_json())
+        Some(Json(true))
       if obj.get("usageMergeScope") is Some(String(scope)) {
         merge_scope = Some(scope)
       }
@@ -135,34 +135,36 @@ pub fn moongate_preview_usage_file_json(
     "\n"
   let result : Map[String, Json] = {
     "schema": "moongate.usage-file.v1",
-    "sourceName": source_name.to_json(),
-    "data": rows.to_json(),
-    "total": rows.length().to_json(),
+    "sourceName": Json(source_name),
+    "data": Json(rows),
+    "total": Json(rows.length()),
     "page": 0,
-    "pageSize": rows.length().to_json(),
-    "sourceTotal": source_total.to_json(),
-    "importedRows": records.length().to_json(),
-    "partial": partial.to_json(),
+    "pageSize": Json(rows.length()),
+    "sourceTotal": Json(source_total),
+    "importedRows": Json(records.length()),
+    "partial": Json(partial),
     "summary": summary,
-    "groups": groups.to_json(),
-    "byApp": apps.to_json(),
-    "byProvider": providers.to_json(),
-    "days": days.to_json(),
-    "report": report.to_json(),
+    "groups": Json(groups),
+    "byApp": Json(apps),
+    "byProvider": Json(providers),
+    "days": Json(days),
+    "report": Json(report),
   }
   if source_coverage_unknown {
-    result["sourceCoverageUnknown"] = true.to_json()
+    result["sourceCoverageUnknown"] = Json(true)
   }
   if merge_scope is Some(scope) {
-    result["usageMergeScope"] = scope.to_json()
+    result["usageMergeScope"] = Json(scope)
   }
   if scenario_name is Some(name) {
-    result["usageEvidenceKind"] = "hypothetical-route-scenario".to_json()
-    result["usageScenarioName"] = name.to_json()
-    result["report"] = ("HYPOTHETICAL ROUTE SCENARIO: " +
-    name.to_json().stringify() +
-    "\nFixed recorded token counts; target quality, tokenization and runtime behavior are not predicted. No actual rerouting or savings established.\n" +
-    report).to_json()
+    result["usageEvidenceKind"] = Json("hypothetical-route-scenario")
+    result["usageScenarioName"] = Json(name)
+    result["report"] = Json(
+      "HYPOTHETICAL ROUTE SCENARIO: " +
+      Json(name).stringify() +
+      "\nFixed recorded token counts; target quality, tokenization and runtime behavior are not predicted. No actual rerouting or savings established.\n" +
+      report,
+    )
   }
   Ok(Json::object(result))
 }
@@ -249,7 +251,7 @@ fn usage_file_timestamp_day(value : String) -> String {
 }
 
 ///|
-fn usage_file_normalize(record : Json, index : Int) -> Result[Json, String] {
+fn usage_file_normalize(record : Json, index : Int32) -> Result[Json, String] {
   guard record is Object(obj) else { return Err("Expected a request object") }
   let model = usage_file_field(obj, ["model", "modelName", "model_name"])
   guard model is String(model) && !model.trim().is_empty() else {
@@ -298,30 +300,30 @@ fn usage_file_normalize(record : Json, index : Int) -> Result[Json, String] {
   let request_id = usage_file_field(obj, ["requestId", "request_id", "id"])
   Ok({
     "requestId": match request_id {
-      String(id) => id.to_json()
-      _ => "row-\{index + 1}".to_json()
+      String(id) => Json(id)
+      _ => Json("row-\{index + 1}")
     },
     "appType": match app {
-      String(app) => app.to_json()
+      String(app) => Json(app)
       _ => "Unknown"
     },
     "providerId": match provider {
-      String(provider) => provider.to_json()
+      String(provider) => Json(provider)
       _ => "Unknown"
     },
-    "model": model.to_json(),
-    "date": day.to_json(),
+    "model": Json(model),
+    "date": Json(day),
     "inputTokens": match input {
-      Some(n) => n.to_json()
+      Some(n) => Json(n)
       None => Json::null()
     },
     "outputTokens": match output {
-      Some(n) => n.to_json()
+      Some(n) => Json(n)
       None => Json::null()
     },
-    "totalTokens": total.to_json(),
+    "totalTokens": Json(total),
     "totalCostUsd": match cost {
-      Some(n) => n.to_json()
+      Some(n) => Json(n)
       None => Json::null()
     },
   })
@@ -346,11 +348,11 @@ fn usage_file_summary(rows : Array[Json]) -> Json {
     }
   }
   {
-    "requests": rows.length().to_json(),
-    "tokens": tokens.to_json(),
-    "knownEstimatedUsd": cost.to_json(),
-    "missingCostCount": missing.to_json(),
-    "undatedCount": undated.to_json(),
+    "requests": Json(rows.length()),
+    "tokens": Json(tokens),
+    "knownEstimatedUsd": Json(cost),
+    "missingCostCount": Json(missing),
+    "undatedCount": Json(undated),
   }
 }
 
@@ -371,7 +373,7 @@ fn usage_file_groups(rows : Array[Json], field : String) -> Array[Json] {
     guard usage_file_summary(buckets.get(key).unwrap()) is Object(summary) else {
       abort("summary")
     }
-    summary.set("key", key.to_json())
+    summary.set("key", Json(key))
     Json::object(summary)
   })
 }

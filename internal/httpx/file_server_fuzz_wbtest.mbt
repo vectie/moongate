@@ -9,7 +9,7 @@ fn FilePathFuzzer::new(seed : Int64) -> FilePathFuzzer {
 }
 
 ///|
-fn FilePathFuzzer::next(self : FilePathFuzzer, bound : Int) -> Int {
+fn FilePathFuzzer::next(self : FilePathFuzzer, bound : Int32) -> Int32 {
   self.state = self.state * 48_271L % 2_147_483_647L
   (self.state % bound.to_int64()).to_int()
 }

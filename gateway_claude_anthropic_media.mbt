@@ -18,10 +18,10 @@ priv struct PreparedUpstreamRequest {
 ///|
 fn prepare_upstream_request_body(
   body : Json,
-  provider? : ProviderRouteTarget? = None,
-  copilot_config_json? : Json? = None,
-  anthropic_beta? : String? = None,
-  session_id? : String? = None,
+  provider~ : ProviderRouteTarget? = None,
+  copilot_config_json~ : Json? = None,
+  anthropic_beta~ : String? = None,
+  session_id~ : String? = None,
 ) -> Json {
   prepare_upstream_request(
     body,
@@ -35,10 +35,10 @@ fn prepare_upstream_request_body(
 ///|
 fn prepare_upstream_request(
   body : Json,
-  provider? : ProviderRouteTarget? = None,
-  copilot_config_json? : Json? = None,
-  anthropic_beta? : String? = None,
-  session_id? : String? = None,
+  provider~ : ProviderRouteTarget? = None,
+  copilot_config_json~ : Json? = None,
+  anthropic_beta~ : String? = None,
+  session_id~ : String? = None,
 ) -> PreparedUpstreamRequest {
   let filtered = filter_private_params_for_upstream(body, None, [])
   let copilot_optimization = match copilot_config_json {
@@ -106,13 +106,13 @@ const UNSUPPORTED_IMAGE_MARKER = "[Unsupported Image]"
 ///|
 priv struct MediaReplacementResult {
   body : Json
-  count : Int
+  count : Int32
 }
 
 ///|
 fn replace_images_for_text_only_model(
   body : Json,
-  provider? : ProviderRouteTarget? = None,
+  provider~ : ProviderRouteTarget? = None,
 ) -> MediaReplacementResult {
   guard body is Object(obj) else { return { body, count: 0, } }
   let model = json_string_from_map(obj, "model").unwrap_or("")
@@ -385,7 +385,10 @@ fn responses_input_item_has_image_blocks(item : Json) -> Bool {
 }
 
 ///|
-fn is_unsupported_image_error_status(status_code : Int, body : String) -> Bool {
+fn is_unsupported_image_error_status(
+  status_code : Int32,
+  body : String,
+) -> Bool {
   match status_code {
     400 | 415 | 422 | 501 => ()
     _ => return false

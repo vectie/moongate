@@ -1,17 +1,17 @@
 ///|
 fn cohort_fixture_log(
-  i : Int,
-  created : Int,
-  provider? : String = "provider-A",
-  request_model? : String? = Some("request-moon"),
-  model? : String = "response-star",
-  status? : Int = 200,
-  latency? : Int = 100,
-  first? : Int? = Some(10),
-  streaming? : Bool = true,
-  source? : String = "proxy",
-  app? : String = "codex",
-  error? : String? = None,
+  i : Int32,
+  created : Int32,
+  provider~ : String = "provider-A",
+  request_model~ : String? = Some("request-moon"),
+  model~ : String = "response-star",
+  status~ : Int32 = 200,
+  latency~ : Int32 = 100,
+  first~ : Int32? = Some(10),
+  streaming~ : Bool = true,
+  source~ : String = "proxy",
+  app~ : String = "codex",
+  error~ : String? = None,
 ) -> RequestLog {
   RequestLog::new(
     request_id="private-request-\{i}",
@@ -34,7 +34,7 @@ fn cohort_fixture_log(
 }
 
 ///|
-fn cohort_fixture_stats(end : Int) -> TrafficStats {
+fn cohort_fixture_stats(end : Int32) -> TrafficStats {
   let stats = TrafficStats::new()
   for i in 1..<=20 {
     stats.record_request_log(
@@ -77,9 +77,9 @@ fn cohort_fixture_stats(end : Int) -> TrafficStats {
 ///|
 fn cohort_test_snapshot(
   stats : TrafficStats,
-  end : Int,
-  period? : String = "24h",
-  streaming? : String = "all",
+  end : Int32,
+  period~ : String = "24h",
+  streaming~ : String = "all",
 ) -> Map[String, Json] raise {
   guard stats.retained_cohort_snapshot(
       "codex",
@@ -102,23 +102,23 @@ test "cohort snapshot uses exact IDs and explicit models status buckets nearest 
   let end = 1791302400
   let stats = cohort_fixture_stats(end)
   let snapshot = cohort_test_snapshot(stats, end)
-  assert_eq(snapshot["retained_rows"], (34).to_json())
-  assert_eq(snapshot["proxy_interval_rows"], (30).to_json())
-  assert_eq(snapshot["imported_excluded"], (1).to_json())
-  assert_eq(snapshot["outside_interval_excluded"], (2).to_json())
-  assert_eq(snapshot["missing_request_model_unclassified"], (1).to_json())
+  assert_eq(snapshot["retained_rows"], Json(34))
+  assert_eq(snapshot["proxy_interval_rows"], Json(30))
+  assert_eq(snapshot["imported_excluded"], Json(1))
+  assert_eq(snapshot["outside_interval_excluded"], Json(2))
+  assert_eq(snapshot["missing_request_model_unclassified"], Json(1))
   guard snapshot["cohorts"] is Array(rows) else { fail("Missing cohorts") }
   assert_eq(rows.length(), 3)
   guard rows[1] is Object(row) else { fail("Missing exact cohort") }
-  assert_eq(row["provider_id"], "provider-A".to_json())
-  assert_eq(row["request_model"], "request-moon".to_json())
-  assert_eq(row["total"], (27).to_json())
-  assert_eq(row["status_2xx"], (24).to_json())
-  assert_eq(row["status_4xx"], (1).to_json())
-  assert_eq(row["status_5xx"], (1).to_json())
-  assert_eq(row["status_other"], (1).to_json())
-  assert_eq(row["successful"], (23).to_json())
-  assert_eq(row["unsuccessful_excluded"], (4).to_json())
+  assert_eq(row["provider_id"], Json("provider-A"))
+  assert_eq(row["request_model"], Json("request-moon"))
+  assert_eq(row["total"], Json(27))
+  assert_eq(row["status_2xx"], Json(24))
+  assert_eq(row["status_4xx"], Json(1))
+  assert_eq(row["status_5xx"], Json(1))
+  assert_eq(row["status_other"], Json(1))
+  assert_eq(row["successful"], Json(23))
+  assert_eq(row["unsuccessful_excluded"], Json(4))
   assert_eq(row["latency"], {
     "sample_count": 22,
     "p50_ms": 100,
@@ -131,15 +131,15 @@ test "cohort snapshot uses exact IDs and explicit models status buckets nearest 
     "p95_ms": 19,
     "p99_ms": 20,
   })
-  assert_eq(row["streaming_successful"], (23).to_json())
-  assert_eq(row["invalid_latency_excluded"], (1).to_json())
-  assert_eq(row["first_event_invalid_elapsed_excluded"], (1).to_json())
-  assert_eq(row["missing_first_event_excluded"], (1).to_json())
-  assert_eq(row["invalid_first_event_excluded"], (1).to_json())
+  assert_eq(row["streaming_successful"], Json(23))
+  assert_eq(row["invalid_latency_excluded"], Json(1))
+  assert_eq(row["first_event_invalid_elapsed_excluded"], Json(1))
+  assert_eq(row["missing_first_event_excluded"], Json(1))
+  assert_eq(row["invalid_first_event_excluded"], Json(1))
   assert_eq(row["successful_response_model_mix"], [
     { "model": "response-star", "count": 23 },
   ])
-  let encoded = snapshot.to_json().stringify()
+  let encoded = Json(snapshot).stringify()
   for
     secret in [
       "secret-raw-error", "secret-session", "private-request", "identical provider label",
@@ -149,15 +149,15 @@ test "cohort snapshot uses exact IDs and explicit models status buckets nearest 
   }
   assert_eq(
     cohort_test_snapshot(stats, end, streaming="streaming")["proxy_interval_rows"],
-    (29).to_json(),
+    Json(29),
   )
   assert_eq(
     cohort_test_snapshot(stats, end, streaming="non-streaming")["proxy_interval_rows"],
-    (1).to_json(),
+    Json(1),
   )
   assert_eq(
     cohort_test_snapshot(stats, end, period="all")["proxy_interval_rows"],
-    (31).to_json(),
+    Json(31),
   )
 }
 
@@ -172,25 +172,22 @@ test "cohort snapshot interval boundaries missing models invalid timings and emp
   stats.record_request_log(cohort_fixture_log(5, end - 30 * 86400 - 1))
   stats.record_request_log(cohort_fixture_log(6, end))
   stats.record_request_log(cohort_fixture_log(7, 0))
-  assert_eq(
-    cohort_test_snapshot(stats, end)["proxy_interval_rows"],
-    (1).to_json(),
-  )
+  assert_eq(cohort_test_snapshot(stats, end)["proxy_interval_rows"], Json(1))
   assert_eq(
     cohort_test_snapshot(stats, end, period="7d")["proxy_interval_rows"],
-    (3).to_json(),
+    Json(3),
   )
   assert_eq(
     cohort_test_snapshot(stats, end, period="30d")["proxy_interval_rows"],
-    (4).to_json(),
+    Json(4),
   )
   assert_eq(
     cohort_test_snapshot(stats, end, period="all")["proxy_interval_rows"],
-    (5).to_json(),
+    Json(5),
   )
   assert_eq(
     cohort_test_snapshot(stats, end)["invalid_timestamp_excluded"],
-    (1).to_json(),
+    Json(1),
   )
   guard cohort_test_snapshot(stats, end)["cohorts"]
     is Array([Object(zero_event)]) else {
@@ -223,15 +220,15 @@ test "cohort snapshot interval boundaries missing models invalid timings and emp
     "p95_ms": null,
     "p99_ms": null,
   })
-  assert_eq(row["invalid_latency_excluded"], (1).to_json())
-  assert_eq(row["invalid_first_event_excluded"], (1).to_json())
+  assert_eq(row["invalid_latency_excluded"], Json(1))
+  assert_eq(row["invalid_first_event_excluded"], Json(1))
   assert_eq(
     cohort_test_snapshot(invalid, end)["missing_request_model_unclassified"],
-    (1).to_json(),
+    Json(1),
   )
   assert_eq(
     cohort_test_snapshot(invalid, end)["missing_provider_id_unclassified"],
-    (1).to_json(),
+    Json(1),
   )
 }
 
@@ -307,8 +304,8 @@ async test "cohort snapshot is pure through eviction persistence and reload" {
     let store_before = stats.usage_store_json()
     let cached = stats.request_logs.map(log => log.cached_store_json)
     let snapshot = cohort_test_snapshot(stats, end)
-    assert_eq(snapshot["retained_rows"], (500).to_json())
-    assert_eq(snapshot["proxy_interval_rows"], (500).to_json())
+    assert_eq(snapshot["retained_rows"], Json(500))
+    assert_eq(snapshot["proxy_interval_rows"], Json(500))
     assert_eq(stats.request_logs.map(log => log.cached_store_json), cached)
     assert_eq(stats.usage_store_json(), store_before)
     assert_eq(@fsx.read_file(path), before)
@@ -396,10 +393,7 @@ async test "cohort comparison crosses authenticated native HTTP served assets an
           sort=true,
         )
         let expected = cohort_test_snapshot(fixture_stats, end)
-        let fixture : Json = {
-          "end": end.to_json(),
-          "expected": expected.to_json(),
-        }
+        let fixture : Json = { "end": Json(end), "expected": Json(expected) }
         @fsx.write_to_file(fixture_path, fixture.stringify())
         let result = @spawn.spawn(
           "node",

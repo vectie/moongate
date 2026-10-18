@@ -122,22 +122,22 @@ pub(all) struct RequestTelemetryV1 {
   connected_at_ms : Int64?
   first_token_at_ms : Int64?
   completed_at_ms : Int64?
-  connect_ms : Int?
-  latency_ms : Int
-  first_token_ms : Int?
-  completion_ms : Int?
+  connect_ms : Int32?
+  latency_ms : Int32
+  first_token_ms : Int32?
+  completion_ms : Int32?
   success : Bool
   terminal_outcome : TerminalOutcomeV1
   terminal_detail : String?
-  retry_count : Int
-  failover_count : Int
+  retry_count : Int32
+  failover_count : Int32
   failover_chain : Array[String]
-  input_tokens : Int
-  output_tokens : Int
-  output_tokens_per_second_milli : Int?
-  queue_depth_at_accept : Int?
+  input_tokens : Int32
+  output_tokens : Int32
+  output_tokens_per_second_milli : Int32?
+  queue_depth_at_accept : Int32?
   queue_supported : Bool
-  permit_wait_ms : Int?
+  permit_wait_ms : Int32?
   permit_supported : Bool
   quota_headroom_nano_usd : Int64?
   quota_supported : Bool
@@ -145,7 +145,7 @@ pub(all) struct RequestTelemetryV1 {
   budget_supported : Bool
   circuit_state : CircuitStateV1
   policy_id : String?
-  policy_revision : Int?
+  policy_revision : Int32?
   storage_healthy : Bool
   evidence_fresh : Bool
   evidence_age_ms : Int64?
@@ -155,30 +155,30 @@ pub(all) struct RequestTelemetryV1 {
 ///|
 pub(all) struct TerminalOutcomeCountV1 {
   outcome : TerminalOutcomeV1
-  count : Int
+  count : Int32
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 pub(all) struct PercentileSnapshotV1 {
-  sample_count : Int
-  p50_ms : Int?
-  p95_ms : Int?
-  p99_ms : Int?
+  sample_count : Int32
+  p50_ms : Int32?
+  p95_ms : Int32?
+  p99_ms : Int32?
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 pub(all) struct NumericPercentileSnapshotV1 {
-  sample_count : Int
-  p50 : Int?
-  p95 : Int?
-  p99 : Int?
+  sample_count : Int32
+  p50 : Int32?
+  p95 : Int32?
+  p99 : Int32?
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
 pub(all) struct ActivePolicyObservationV1 {
   app_type : String
   policy_id : String
-  policy_revision : Int
+  policy_revision : Int32
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
@@ -190,25 +190,25 @@ pub(all) struct MonitorSnapshotV1 {
   permit_wait : PercentileSnapshotV1
   throughput_tokens_per_second_milli : NumericPercentileSnapshotV1
   terminal_outcome_counts : Array[TerminalOutcomeCountV1]
-  recent_input_tokens : Int
-  recent_output_tokens : Int
-  inflight_requests : Int
-  queue_depth : Int
+  recent_input_tokens : Int32
+  recent_output_tokens : Int32
+  inflight_requests : Int32
+  queue_depth : Int32
   queue_supported : Bool
   permit_supported : Bool
-  quota_configured_count : Int
-  quota_exceeded_count : Int
+  quota_configured_count : Int32
+  quota_exceeded_count : Int32
   quota_headroom_nano_usd : Int64?
   quota_headroom_supported : Bool
   budget_headroom_nano_usd : Int64?
   budget_headroom_supported : Bool
   recent_cost_nano_usd : Int64
-  circuit_open_count : Int
-  circuit_half_open_count : Int
-  failover_count : Int
+  circuit_open_count : Int32
+  circuit_half_open_count : Int32
+  failover_count : Int32
   active_policies : Array[ActivePolicyObservationV1]
   storage_healthy : Bool
-  storage_failure_count : Int
+  storage_failure_count : Int32
   evidence_fresh : Bool
   newest_evidence_age_ms : Int64?
   oldest_evidence_age_ms : Int64?

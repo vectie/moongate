@@ -18,8 +18,8 @@ fn codex_forward_failed_error_json(
   endpoint : String,
   cause : String,
 ) -> Json {
-  {
-    "error": {
+  Json({
+    "error": Json({
       "message": Json::string(
         codex_forward_failed_error_message(
           provider.provider_name,
@@ -34,8 +34,8 @@ fn codex_forward_failed_error_json(
       "provider": Json::string(provider.provider_name),
       "model": Json::string(request_model),
       "endpoint": Json::string(endpoint),
-    }.to_json(),
-  }.to_json()
+    }),
+  })
 }
 
 ///|
@@ -71,8 +71,8 @@ async fn ProxyService::handle_codex_responses(
   model : String,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
-  compact? : Bool = false,
-  app_type? : String = "codex",
+  compact~ : Bool = false,
+  app_type~ : String = "codex",
 ) -> Unit {
   if app_type == "openclaw" &&
     !env_bool_default(["MOONGATE_OPENCLAW_RESPONSES_ENABLED"], false) {
@@ -151,7 +151,7 @@ async fn ProxyService::handle_chat_completions(
   model : String,
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
-  app_type? : String = "codex",
+  app_type~ : String = "codex",
 ) -> Unit {
   let body = r.body.read_all()
   let body_str = body.text()
@@ -597,7 +597,7 @@ async fn ProxyService::forward_streaming_chat_completion(
         }
         usage.record_provider_result(self, true)
         let mut response_bytes = 0
-        let mut first_token_ms : Int? = None
+        let mut first_token_ms : Int32? = None
         if first_line is [.. "data: ", .. rest] {
           let data = rest.trim().to_owned()
           if use_chat_bridge {
@@ -1059,7 +1059,7 @@ async fn ProxyService::forward_streaming_codex_response(
         w.write_header(@status.Ok)
         let mut response_bytes = 0
         let stream_events : Array[Json] = []
-        let mut first_token_ms : Int? = None
+        let mut first_token_ms : Int32? = None
         let chat_state = ChatToCodexResponsesStreamState::new_with_context(
           codex_request_model(request, model),
           codex_chat_tool_context_from_responses_request(outbound_request),
@@ -1152,7 +1152,7 @@ async fn ProxyService::forward_streaming_codex_response(
 ///|
 fn codex_backend_responses_endpoint(
   compact : Bool,
-  request_path? : StringView = "",
+  request_path~ : StringView = "",
 ) -> String {
   let base = if compact {
     "/backend-api/codex/responses/compact"

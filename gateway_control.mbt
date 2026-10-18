@@ -12,7 +12,7 @@ pub fn default_moongate_control_token_path() -> String {
 ///|
 async fn ControlPlaneAuth::initialize(
   self : ControlPlaneAuth,
-  path? : String = default_moongate_control_token_path(),
+  path~ : String = default_moongate_control_token_path(),
 ) -> Unit raise Error {
   let configured_token = @os.getenv("MOONGATE_CONTROL_TOKEN") catch {
     _ => None
@@ -71,6 +71,6 @@ async fn ControlPlaneAuth::write_bootstrap(
   w.header().set("Content-Type", "application/json")
   w.header().set("Cache-Control", "no-store")
   w.write_header(@status.Ok)
-  w.write({ "token": Json::string(token) }.to_json().stringify())
+  w.write(Json({ "token": Json::string(token) }).stringify())
   w.flush()
 }

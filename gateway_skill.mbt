@@ -67,7 +67,7 @@ async fn SkillService::handle_install_skill_unified(
             None
           } else {
             Some(
-              {
+              Json({
                 "key": Json::string("local:\{install_name}"),
                 "name": Json::string(
                   proxy_string_request(r.path, body, "name").unwrap_or(
@@ -80,7 +80,7 @@ async fn SkillService::handle_install_skill_unified(
                   ),
                 ),
                 "directory": Json::string(install_name),
-              }.to_json(),
+              }),
             )
           }
         }
@@ -290,7 +290,7 @@ fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
     return None
   }
   Some(
-    {
+    Json({
       "owner": Json::string(owner),
       "name": Json::string(name),
       "branch": Json::string(
@@ -299,7 +299,7 @@ fn moon_skill_repo_request_json(path : StringView, body : Json?) -> Json? {
       "enabled": Json::boolean(
         proxy_bool_request(path, body, "enabled").unwrap_or(true),
       ),
-    }.to_json(),
+    }),
   )
 }
 

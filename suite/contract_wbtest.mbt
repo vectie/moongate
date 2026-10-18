@@ -23,9 +23,7 @@ test "suite contract owns moongate identity and urls" {
 test "MoonGate session receipt separates product identity from technical service id" {
   let receipt = ai_session_receipt("session-1", "model-a", "127.0.0.1", 15721)
   guard receipt is Object(fields) else { fail("expected receipt object") }
-  assert_true(fields.get("product_name") == Some("MoonGate".to_json()))
-  assert_true(fields.get("technical_service_id") == Some("moongate".to_json()))
-  assert_true(
-    fields.get("physical_actions_authorized") == Some(false.to_json()),
-  )
+  assert_true(fields.get("product_name") == Some(Json("MoonGate")))
+  assert_true(fields.get("technical_service_id") == Some(Json("moongate")))
+  assert_true(fields.get("physical_actions_authorized") == Some(Json(false)))
 }

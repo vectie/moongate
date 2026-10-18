@@ -55,13 +55,13 @@ test "moongate deeplink parser accepts mcp and skill requests" {
 ///|
 test "moongate deeplink merge imports claude env config fields" {
   let encoded = "eyJlbnYiOnsiQU5USFJPUElDX0FVVEhfVE9LRU4iOiJzay1tb29uZ2F0ZSIsIkFOVEhST1BJQ19CQVNFX1VSTCI6Imh0dHBzOi8vYXBpLmFudGhyb3BpYy5jb20vdjEvIiwiQU5USFJPUElDX01PREVMIjoiY2xhdWRlLXNvbm5ldCJ9fQ=="
-  let request = {
+  let request = Json({
     "resource": Json::string("provider"),
     "appType": Json::string("claude"),
     "name": Json::string("Anthropic"),
     "config": Json::string(encoded),
     "configFormat": Json::string("json"),
-  }.to_json()
+  })
   guard moon_merge_deeplink_config_json(request) is Some(Object(merged)) else {
     fail("expected merged provider deeplink")
   }
@@ -75,13 +75,13 @@ test "moongate deeplink merge imports claude env config fields" {
 test "moongate deeplink merge ignores legacy provider config keys" {
   let encoded = "eyJhcGlfa2V5Ijoic2stbGVnYWN5IiwiYmFzZV91cmwiOiJodHRwczovL2xlZ2FjeS5leGFtcGxlL3YxIiwiYXBpS2V5Ijoic2stbmV3IiwiYmFzZVVybCI6Imh0dHBzOi8vbmV3LmV4YW1wbGUvdjEifQ=="
   guard moon_merge_deeplink_config_json(
-      {
+      Json({
         "resource": Json::string("provider"),
         "appType": Json::string("openclaw"),
         "name": Json::string("OpenClaw"),
         "config": Json::string(encoded),
         "configFormat": Json::string("json"),
-      }.to_json(),
+      }),
     )
     is Some(Object(merged)) else {
     fail("expected merged openclaw config")
@@ -89,13 +89,13 @@ test "moongate deeplink merge ignores legacy provider config keys" {
   assert_eq(merged["apiKey"], Json::string("sk-new"))
   assert_eq(merged["endpoint"], Json::string("https://new.example/v1"))
   guard moon_merge_deeplink_config_json(
-      {
+      Json({
         "resource": Json::string("provider"),
         "appType": Json::string("openclaw"),
         "name": Json::string("OpenClaw"),
         "config": Json::string(encoded),
         "config_format": Json::string("toml"),
-      }.to_json(),
+      }),
     )
     is Some(Object(legacy_format_ignored)) else {
     fail("expected legacy config_format to be ignored")

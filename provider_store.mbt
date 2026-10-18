@@ -9,7 +9,7 @@ fn moon_provider_store_path() -> String {
 ///|
 async fn ProxyService::save_provider_store(
   self : ProxyService,
-  path? : String = moon_provider_store_path(),
+  path~ : String = moon_provider_store_path(),
 ) -> Unit raise Error {
   let parent = @pathx.dirname(path)
   if !parent.is_empty() && parent != "." {
@@ -25,7 +25,7 @@ async fn ProxyService::save_provider_store(
 ///|
 async fn ProxyService::load_provider_store(
   self : ProxyService,
-  path? : String = moon_provider_store_path(),
+  path~ : String = moon_provider_store_path(),
 ) -> Unit raise Error {
   if !@fsx.exists_as_file(path) {
     return
@@ -77,14 +77,14 @@ fn ProviderRouter::all_custom_endpoints_json(self : ProviderRouter) -> Json {
 
 ///|
 fn ProviderHealthState::store_json(self : ProviderHealthState) -> Json {
-  {
+  Json({
     "isHealthy": Json::boolean(self.is_healthy),
     "consecutiveFailures": Json::number(self.consecutive_failures.to_double()),
     "lastSuccessAt": provider_health_optional_string_json(self.last_success_at),
     "lastFailureAt": provider_health_optional_string_json(self.last_failure_at),
     "lastError": provider_health_optional_string_json(self.last_error),
     "updatedAt": Json::string(self.updated_at),
-  }.to_json()
+  })
 }
 
 ///|
@@ -144,7 +144,7 @@ fn routing_smooth_map_store_json(
 }
 
 ///|
-fn routing_int_map_store_json(values : Map[String, Int]) -> Json {
+fn routing_int_map_store_json(values : Map[String, Int32]) -> Json {
   let obj : Map[String, Json] = Map([])
   for key, value in values {
     obj[key] = Json::number(value.to_double())
@@ -163,7 +163,7 @@ fn routing_int64_map_store_json(values : Map[String, Int64]) -> Json {
 
 ///|
 fn ProviderRouter::routing_policy_store_json(self : ProviderRouter) -> Json {
-  {
+  Json({
     "contractId": Json::string("moongate.routing-policy-store.v1"),
     "drafts": routing_policy_map_store_json(self.routing_policy_drafts),
     "active": routing_policy_map_store_json(self.active_routing_policies),
@@ -187,7 +187,7 @@ fn ProviderRouter::routing_policy_store_json(self : ProviderRouter) -> Json {
     "activationReceipts": Json::array(
       self.routing_activation_receipts.map(fn(receipt) { receipt.to_json() }),
     ),
-  }.to_json()
+  })
 }
 
 ///|
@@ -469,8 +469,8 @@ fn ProviderRouter::clear_imported_state(self : ProviderRouter) -> Unit {
 fn ProxyService::moon_apply_import_providers(
   self : ProxyService,
   providers_json : Json,
-  validate_only? : Bool = false,
-) -> Result[Int, String] {
+  validate_only~ : Bool = false,
+) -> Result[Int32, String] {
   guard providers_json is Object(root) else {
     return Err("providers must be an object")
   }

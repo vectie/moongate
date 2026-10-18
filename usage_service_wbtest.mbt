@@ -66,7 +66,7 @@ async test "usage service owns proxy status target and pricing state" {
       "127.0.0.1",
       4199,
       12,
-      provider_routes=Some({ "codex": Json::string("codex-oauth") }.to_json()),
+      provider_routes=Some(Json({ "codex": Json::string("codex-oauth") })),
     )
     is Object(status) else {
     fail("expected status object")

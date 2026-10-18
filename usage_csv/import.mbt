@@ -123,7 +123,7 @@ pub fn to_json(source : String) -> Json raise {
     let record : Map[String, Json] = Map([])
     for j, key in headers {
       if key != "" && !cells[j].is_empty() {
-        record[key] = cells[j].to_json()
+        record[key] = Json(cells[j])
       }
     }
     records.push(Json::object(record))

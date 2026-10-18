@@ -153,7 +153,7 @@ async fn moon_binding_moongate_provider_exists(root : String) -> Bool {
 async fn moon_binding_write_moondesk_provider(
   root : String,
   host : String,
-  port : Int,
+  port : Int32,
   model : String,
 ) -> Result[String, String] {
   let path = moon_binding_moondesk_provider_path(root)
@@ -225,10 +225,10 @@ async fn moon_binding_write_moondesk_service(
   }
   obj["kind"] = Json::string("moondesk-moonclaw-service.v1")
   obj["cwd"] = Json::string(cwd)
-  obj["daemon"] = {
+  obj["daemon"] = Json({
     "command": Json::string(command),
     "args": Json::array(args.map(value => Json::string(value))),
-  }.to_json()
+  })
   @fsx.make_directory(@pathx.dirname(path), recursive=true, exists_ok=true) catch {
     error => return Err("Could not prepare MoonDesk service folder: \{error}")
   }
@@ -308,22 +308,22 @@ async fn moon_binding_codex_installation_json() -> Json {
   let command_version = json_string_field(command_probe, "version")
   if command_version is Some(version) &&
     !json_bool_field(command_probe, "installed_but_broken").unwrap_or(false) {
-    return {
+    return Json({
       "installed": Json::boolean(true),
       "version": Json::string(version),
       "error": Json::null(),
-    }.to_json()
+    })
   }
   let home = moon_home_dir()
   for path in moon_binding_codex_bundled_executable_paths(home, "/Applications") {
     if @fsx.exists_as_file(path) {
       match moon_probe_tool_version_at(path) {
         Some(version) =>
-          return {
+          return Json({
             "installed": Json::boolean(true),
             "version": Json::string(version),
             "error": Json::null(),
-          }.to_json()
+          })
         None => ()
       }
     }
@@ -332,7 +332,7 @@ async fn moon_binding_codex_installation_json() -> Json {
       moon_binding_codex_app_bundle_paths(home, "/Applications"),
     ) ||
     moon_binding_any_path_exists(moon_binding_codex_state_paths(home))
-  {
+  Json({
     "installed": Json::boolean(installed),
     "version": Json::null(),
     "error": if installed {
@@ -343,7 +343,7 @@ async fn moon_binding_codex_installation_json() -> Json {
         None => Json::null()
       }
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -351,7 +351,7 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
   if app_type == "moonclaw" {
     let root = moon_binding_moondesk_workspace_root()
     let initialized = moon_binding_moonclaw_initialized(root)
-    return {
+    return Json({
       "installed": Json::boolean(initialized),
       "version": Json::null(),
       "error": if initialized {
@@ -359,7 +359,7 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
       } else {
         Json::string("Run `moonclaw onboard init` before binding MoonGate")
       },
-    }.to_json()
+    })
   }
   if app_type == "moondesk" {
     let home_app = @pathx.join(
@@ -370,11 +370,11 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
     let installed = @fsx.exists("/Applications/MoonDesk.app") ||
       @fsx.exists(home_app) ||
       @fsx.exists(workspace)
-    return {
+    return Json({
       "installed": Json::boolean(installed),
       "version": Json::null(),
       "error": Json::null(),
-    }.to_json()
+    })
   }
   if app_type == "claude-desktop" {
     let home_app = @pathx.join(
@@ -384,24 +384,24 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
     let installed = @fsx.exists("/Applications/Claude.app") ||
       @fsx.exists(home_app) ||
       moon_config_exists(app_type)
-    return {
+    return Json({
       "installed": Json::boolean(installed),
       "version": Json::null(),
       "error": Json::null(),
-    }.to_json()
+    })
   }
   if app_type == "codex" {
     return moon_binding_codex_installation_json()
   }
   guard moon_binding_app_command(app_type) is Some(command) else {
-    return {
+    return Json({
       "installed": Json::boolean(false),
       "version": Json::null(),
       "error": Json::string("Automatic app detection is unavailable"),
-    }.to_json()
+    })
   }
   let probe = moon_single_tool_version_json(command)
-  {
+  Json({
     "installed": Json::boolean(
       json_string_field(probe, "version") is Some(_) &&
       !json_bool_field(probe, "installed_but_broken").unwrap_or(false),
@@ -414,7 +414,7 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
       Some(error) => Json::string(error)
       None => Json::null()
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -437,7 +437,7 @@ fn ProviderRouteTarget::binding_model(
 }
 
 ///|
-fn moon_binding_codex_expected_url(host : String, port : Int) -> String {
+fn moon_binding_codex_expected_url(host : String, port : Int32) -> String {
   "http://\{host}:\{port}/v1"
 }
 
@@ -446,7 +446,7 @@ async fn ProxyService::app_binding_status_json(
   self : ProxyService,
   app_type : String,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Json {
   let installation = moon_binding_app_installation_json(app_type)
   let installed = json_bool_field(installation, "installed").unwrap_or(false)
@@ -518,7 +518,7 @@ async fn ProxyService::app_binding_status_json(
   } else {
     "not_bound"
   }
-  {
+  Json({
     "appType": Json::string(app_type),
     "installed": Json::boolean(installed),
     "version": match json_string_field(installation, "version") {
@@ -550,7 +550,7 @@ async fn ProxyService::app_binding_status_json(
       Some(provider) => Json::string(provider.provider_name)
       None => Json::null()
     },
-  }.to_json()
+  })
 }
 
 ///|
@@ -559,7 +559,7 @@ async fn ProxyService::handle_get_app_binding(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Unit {
   let body = proxy_json_body(r)
   guard provider_app_from_request(r.path, body) is Some(app_type) else {
@@ -576,7 +576,7 @@ async fn ProxyService::handle_bind_app(
   w : @httpx.ResponseWriter,
   usage : UsageService,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Unit {
   let body = proxy_json_body(r)
   guard provider_app_from_request(r.path, body) is Some(app_type) else {
@@ -682,7 +682,7 @@ async fn ProxyService::handle_unbind_app(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
   host : String,
-  port : Int,
+  port : Int32,
 ) -> Unit {
   let body = proxy_json_body(r)
   guard provider_app_from_request(r.path, body) is Some(app_type) else {

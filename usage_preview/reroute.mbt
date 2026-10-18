@@ -5,7 +5,7 @@
 pub fn reroute_usage_file_json(
   content : String,
   route_plan : String,
-  source_name? : String = "Local usage",
+  source_name~ : String = "Local usage",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 ||
     @encoding/utf8.encode(route_plan).length() >
@@ -34,13 +34,13 @@ pub fn reroute_usage_file_json(
   guard original["data"] is Array(rows) && plan["routes"] is Array(routes) else {
     return Err("Invalid normalized data")
   }
-  let mapping : Map[String, Map[String, (Int, Json)]] = Map([])
+  let mapping : Map[String, Map[String, (Int32, Json)]] = Map([])
   for index, route in routes {
     mapping.get_or_init(usage_file_text(route, "sourceProviderId"), () => {
       Map([])
     })[usage_file_text(route, "sourceModel")] = (index, route)
   }
-  let used : Map[Int, Bool] = Map([])
+  let used : Map[Int32, Bool] = Map([])
   let observations : Array[Json] = []
   let scenario_rows : Array[Json] = []
   let mut mapped = 0
@@ -101,7 +101,7 @@ pub fn reroute_usage_file_json(
       }
       Some((route_index, Object(route))) => {
         used[route_index] = true
-        mapping_index = (route_index + 1).to_json()
+        mapping_index = Json(route_index + 1)
         mapped += 1
         fields["providerId"] = route["targetProviderId"]
         fields["model"] = route["targetModel"]
@@ -120,7 +120,7 @@ pub fn reroute_usage_file_json(
             if !(cost >= 0.0 && cost <= 9007199254740991.0 - known) {
               return Err("Scenario estimated USD exceeds the safe-number limit")
             }
-            estimate = cost.to_json()
+            estimate = Json(cost)
             known += cost
             priced += 1
             if before is Number(value, ..) {
@@ -140,7 +140,7 @@ pub fn reroute_usage_file_json(
     }
     fields["totalCostUsd"] = estimate
     observations.push({
-      "sourceRow": (index + 1).to_json(),
+      "sourceRow": Json(index + 1),
       "requestId": fields["requestId"],
       "sourceProviderId": source_provider,
       "sourceModel": source_model,
@@ -155,14 +155,14 @@ pub fn reroute_usage_file_json(
         Json::null()
       },
       "mappingIndex": mapping_index,
-      "status": status.to_json(),
+      "status": Json(status),
       "originalEstimatedUsd": before,
       "scenarioEstimatedUsd": estimate,
     })
     scenario_rows.push(Json::object(fields))
   }
   let envelope : Map[String, Json] = {
-    "data": scenario_rows.to_json(),
+    "data": Json(scenario_rows),
     "sourceTotal": original["sourceTotal"],
     "usageEvidenceKind": "hypothetical-route-scenario",
     "usageScenarioName": plan["name"],
@@ -179,7 +179,7 @@ pub fn reroute_usage_file_json(
     Err(error) => return Err(error)
     _ => return Err("Cannot create scenario preview")
   }
-  let unused : Array[Int] = []
+  let unused : Array[Int32] = []
   for index in 0..<routes.length() {
     if !used.contains(index) {
       unused.push(index + 1)
@@ -196,48 +196,50 @@ pub fn reroute_usage_file_json(
   ]
   result["usageRouteScenario"] = {
     "schema": "moongate.usage-route-scenario.v1",
-    "sourceName": source_name.to_json(),
+    "sourceName": Json(source_name),
     "plan": Json::object(plan),
-    "mappedCount": mapped.to_json(),
-    "pricedCount": priced.to_json(),
-    "unmappedCount": unmapped.to_json(),
-    "missingTokenCount": missing_tokens.to_json(),
-    "unusedMappingIndices": unused.to_json(),
-    "originalKnownEstimatedUsd": recorded.to_json(),
-    "originalMissingCostCount": original_missing.to_json(),
-    "pairedCount": paired.to_json(),
+    "mappedCount": Json(mapped),
+    "pricedCount": Json(priced),
+    "unmappedCount": Json(unmapped),
+    "missingTokenCount": Json(missing_tokens),
+    "unusedMappingIndices": Json(unused),
+    "originalKnownEstimatedUsd": Json(recorded),
+    "originalMissingCostCount": Json(original_missing),
+    "pairedCount": Json(paired),
     "pairedOriginalEstimatedUsd": if paired == 0 {
       Json::null()
     } else {
-      paired_before.to_json()
+      Json(paired_before)
     },
     "pairedScenarioEstimatedUsd": if paired == 0 {
       Json::null()
     } else {
-      paired_after.to_json()
+      Json(paired_after)
     },
     "pairedDeltaUsd": if paired == 0 {
       Json::null()
     } else {
-      (paired_after - paired_before).to_json()
+      Json(paired_after - paired_before)
     },
-    "observations": observations.to_json(),
-    "caveats": caveats.to_json(),
+    "observations": Json(observations),
+    "caveats": Json(caveats),
   }
-  result["report"] = ([
-    "MoonGate hypothetical route rehearsal (USD)",
-    "Plan: " + plan["name"].stringify(),
-    "\{mapped} mapped; \{priced} priced; \{missing_tokens} missing directional counts; \{unmapped} unmapped; \{unused.length()} unused mappings.",
-    "Known scenario estimate: USD \{known}. Unknown estimates are excluded.",
-    if paired == 0 {
-      "Paired comparison unavailable: no rows have both estimates."
-    } else {
-      "Paired rows: \{paired}; original USD \{paired_before}; scenario USD \{paired_after}; difference USD \{paired_after - paired_before}."
-    },
-    usage_file_text(Json::object(result), "report"),
-    caveats.join("\n"),
-  ].join("\n") +
-  "\n").to_json()
+  result["report"] = Json(
+    [
+      "MoonGate hypothetical route rehearsal (USD)",
+      "Plan: " + plan["name"].stringify(),
+      "\{mapped} mapped; \{priced} priced; \{missing_tokens} missing directional counts; \{unmapped} unmapped; \{unused.length()} unused mappings.",
+      "Known scenario estimate: USD \{known}. Unknown estimates are excluded.",
+      if paired == 0 {
+        "Paired comparison unavailable: no rows have both estimates."
+      } else {
+        "Paired rows: \{paired}; original USD \{paired_before}; scenario USD \{paired_after}; difference USD \{paired_after - paired_before}."
+      },
+      usage_file_text(Json::object(result), "report"),
+      caveats.join("\n"),
+    ].join("\n") +
+    "\n",
+  )
   if @encoding/utf8.encode(Json::object(result).stringify(indent=2)).length() >
     4 * 1024 * 1024 - 1 {
     return Err("Route scenario exceeds 4 MiB; use a smaller input")

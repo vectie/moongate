@@ -6,7 +6,7 @@
 pub fn price_usage_file_json(
   content : String,
   rate_card : String,
-  source_name? : String = "Local usage",
+  source_name~ : String = "Local usage",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 ||
     @encoding/utf8.encode(rate_card).length() >
@@ -114,7 +114,7 @@ pub fn price_usage_file_json(
           "Scenario estimated USD exceeds the safe-number limit; no scenario produced",
         )
       }
-      estimate = cost.to_json()
+      estimate = Json(cost)
       known += cost
       priced += 1
       if previous is Number(prior, ..) {
@@ -124,16 +124,16 @@ pub fn price_usage_file_json(
       }
     }
     observations.push({
-      "sourceRow": (index + 1).to_json(),
+      "sourceRow": Json(index + 1),
       "requestId": obj["requestId"],
       "originalEstimatedUsd": previous,
       "scenarioEstimatedUsd": estimate,
-      "status": status.to_json(),
+      "status": Json(status),
     })
     obj["totalCostUsd"] = estimate
   }
   let envelope : Map[String, Json] = {
-    "data": rows.to_json(),
+    "data": Json(rows),
     "sourceTotal": preview["sourceTotal"],
   }
   for
@@ -153,7 +153,7 @@ pub fn price_usage_file_json(
     Ok(_) => return Err("Cannot construct priced usage export")
     Err(error) => return Err(error)
   }
-  result["sourceName"] = source_name.to_json()
+  result["sourceName"] = Json(source_name)
   let caveats = [
     "Hypothetical user-supplied USD rates, not provider prices, settled charges or a spending limit.",
     "Formula: inputTokens / 1000000 * inputUsdPerMillion + outputTokens / 1000000 * outputUsdPerMillion. No rounding to cents.",
@@ -166,47 +166,49 @@ pub fn price_usage_file_json(
     "schema": "moongate.usage-pricing.v1",
     "rateCard": Json::object(card),
     "costSource": "user-supplied-hypothetical-rate-card",
-    "pricedCount": priced.to_json(),
-    "missingRateCount": missing_rate.to_json(),
-    "missingTokenCount": missing_tokens.to_json(),
-    "missingProviderCount": missing_provider.to_json(),
-    "originalKnownEstimatedUsd": recorded.to_json(),
-    "originalMissingCostCount": missing_recorded.to_json(),
-    "pairedCount": paired_count.to_json(),
+    "pricedCount": Json(priced),
+    "missingRateCount": Json(missing_rate),
+    "missingTokenCount": Json(missing_tokens),
+    "missingProviderCount": Json(missing_provider),
+    "originalKnownEstimatedUsd": Json(recorded),
+    "originalMissingCostCount": Json(missing_recorded),
+    "pairedCount": Json(paired_count),
     "pairedOriginalEstimatedUsd": if paired_count == 0 {
       Json::null()
     } else {
-      paired_recorded.to_json()
+      Json(paired_recorded)
     },
     "pairedScenarioEstimatedUsd": if paired_count == 0 {
       Json::null()
     } else {
-      paired_scenario.to_json()
+      Json(paired_scenario)
     },
     "pairedDeltaUsd": if paired_count == 0 {
       Json::null()
     } else {
-      (paired_scenario - paired_recorded).to_json()
+      Json(paired_scenario - paired_recorded)
     },
-    "observations": observations.to_json(),
-    "caveats": caveats.to_json(),
+    "observations": Json(observations),
+    "caveats": Json(caveats),
   }
-  result["report"] = ([
-    "MoonGate hypothetical usage pricing (USD)",
-    "Source: " + source_name.to_json().stringify(),
-    "Rate card: " + card["name"].stringify(),
-    "\{priced} priced requests; \{missing_rate} missing rates; \{missing_tokens} missing directional counts; \{missing_provider} missing provider labels",
-    "Scenario known estimated USD: \{known}; unknown estimates are excluded, never zero.",
-    "Original known estimated USD: \{recorded}; \{missing_recorded} original costs unknown.",
-    if paired_count == 0 {
-      "Paired comparison: unavailable; no rows have both original and scenario estimates."
-    } else {
-      "Paired comparison: \{paired_count} rows; original USD \{paired_recorded}; scenario USD \{paired_scenario}; difference USD \{paired_scenario - paired_recorded}."
-    },
-    usage_file_text(Json::object(result), "report"),
-    caveats.join("\n"),
-  ].join("\n") +
-  "\n").to_json()
+  result["report"] = Json(
+    [
+      "MoonGate hypothetical usage pricing (USD)",
+      "Source: " + Json(source_name).stringify(),
+      "Rate card: " + card["name"].stringify(),
+      "\{priced} priced requests; \{missing_rate} missing rates; \{missing_tokens} missing directional counts; \{missing_provider} missing provider labels",
+      "Scenario known estimated USD: \{known}; unknown estimates are excluded, never zero.",
+      "Original known estimated USD: \{recorded}; \{missing_recorded} original costs unknown.",
+      if paired_count == 0 {
+        "Paired comparison: unavailable; no rows have both original and scenario estimates."
+      } else {
+        "Paired comparison: \{paired_count} rows; original USD \{paired_recorded}; scenario USD \{paired_scenario}; difference USD \{paired_scenario - paired_recorded}."
+      },
+      usage_file_text(Json::object(result), "report"),
+      caveats.join("\n"),
+    ].join("\n") +
+    "\n",
+  )
   if @encoding/utf8.encode(Json::object(result).stringify(indent=2)).length() >
     4 * 1024 * 1024 - 1 {
     return Err(

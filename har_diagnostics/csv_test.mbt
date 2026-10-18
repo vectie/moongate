@@ -1,8 +1,8 @@
 ///|
 fn csv(
   content : String,
-  status? : String = "",
-  entry? : Int = 0,
+  status~ : String = "",
+  entry~ : Int32 = 0,
 ) -> String raise {
   match @har_diagnostics.export_capture_csv(content, status~, entry~) {
     Ok(value) => value

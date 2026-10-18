@@ -3,10 +3,10 @@
 /// Empty numeric cells mean unknown, never zero. SSL is a subset of connect.
 pub fn export_capture_csv(
   content : String,
-  request_method? : String = "",
-  status? : String = "",
-  origin? : String = "",
-  entry? : Int = 0,
+  request_method~ : String = "",
+  status~ : String = "",
+  origin~ : String = "",
+  entry~ : Int32 = 0,
 ) -> Result[String, String] {
   match
     inspect_capture_json(content, request_method~, status~, origin~, entry~) {

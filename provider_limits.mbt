@@ -6,8 +6,8 @@ priv struct ProviderLimitConfig {
 
 ///|
 fn ProviderLimitConfig::new(
-  daily_limit_usd? : String? = None,
-  monthly_limit_usd? : String? = None,
+  daily_limit_usd~ : String? = None,
+  monthly_limit_usd~ : String? = None,
 ) -> ProviderLimitConfig {
   { daily_limit_usd, monthly_limit_usd, }
 }
@@ -17,8 +17,8 @@ fn TrafficStats::set_provider_limits(
   self : TrafficStats,
   provider_id : String,
   app_type : String,
-  daily_limit_usd? : String? = None,
-  monthly_limit_usd? : String? = None,
+  daily_limit_usd~ : String? = None,
+  monthly_limit_usd~ : String? = None,
 ) -> Unit {
   self.provider_limits.set(
     provider_limit_key(provider_id, app_type),
@@ -31,9 +31,9 @@ fn TrafficStats::provider_limit_status_json(
   self : TrafficStats,
   provider_id : String,
   app_type : String,
-  daily_limit_usd? : String? = None,
-  monthly_limit_usd? : String? = None,
-  now_ts? : Int? = None,
+  daily_limit_usd~ : String? = None,
+  monthly_limit_usd~ : String? = None,
+  now_ts~ : Int32? = None,
 ) -> Json {
   let configured = self.provider_limits.get(
     provider_limit_key(provider_id, app_type),
@@ -67,7 +67,7 @@ fn TrafficStats::provider_limit_status_json(
   let monthly_limit_nano = monthly_limit.map(fn(limit) {
     parse_decimal_scaled(limit, NANO_USD_SCALE)
   })
-  {
+  Json({
     "providerId": Json::string(provider_id),
     "dailyUsage": Json::string(format_nano_usd_fixed_6(daily_usage_nano)),
     "dailyLimit": optional_limit_json(daily_limit_nano),
@@ -79,7 +79,7 @@ fn TrafficStats::provider_limit_status_json(
     "monthlyExceeded": Json::boolean(
       limit_exceeded(monthly_usage_nano, monthly_limit_nano),
     ),
-  }.to_json()
+  })
 }
 
 ///|
@@ -87,7 +87,7 @@ fn TrafficStats::provider_limit_exceeded(
   self : TrafficStats,
   provider_id : String,
   app_type : String,
-  now_ts? : Int = trend_now_seconds(),
+  now_ts~ : Int32 = trend_now_seconds(),
 ) -> Bool {
   guard self.provider_limits.get(provider_limit_key(provider_id, app_type))
     is Some(config) else {
@@ -112,8 +112,8 @@ fn TrafficStats::provider_limit_exceeded(
 ///|
 fn TrafficStats::provider_limit_monitor_counts(
   self : TrafficStats,
-  now_ts? : Int = trend_now_seconds(),
-) -> (Int, Int) {
+  now_ts~ : Int32 = trend_now_seconds(),
+) -> (Int32, Int32) {
   let mut configured_count = 0
   let mut exceeded_count = 0
   for key, config in self.provider_limits {
@@ -141,7 +141,7 @@ fn TrafficStats::provider_daily_usage_nano(
   self : TrafficStats,
   provider_id : String,
   app_type : String,
-  now_ts : Int,
+  now_ts : Int32,
 ) -> Int64 {
   let today = trend_local_day_key(now_ts)
   let mut total = 0L
@@ -160,7 +160,7 @@ fn TrafficStats::provider_monthly_usage_nano(
   self : TrafficStats,
   provider_id : String,
   app_type : String,
-  now_ts : Int,
+  now_ts : Int32,
 ) -> Int64 {
   let month = trend_local_month_key(now_ts)
   let mut total = 0L
@@ -180,7 +180,7 @@ fn provider_limit_key(provider_id : String, app_type : String) -> String {
 }
 
 ///|
-fn trend_local_month_key(timestamp : Int) -> String {
+fn trend_local_month_key(timestamp : Int32) -> String {
   @os.local_month_key(timestamp.to_int64())
 }
 

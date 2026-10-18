@@ -36,8 +36,8 @@ fn gate_pm_items(
   variables : Map[String, Json],
   auth : Json,
   scripts : Bool,
-  depth : Int,
-  count : Ref[Int],
+  depth : Int32,
+  count : Ref[Int32],
   output : Array[GatePostmanItem],
 ) -> Result[Unit, String] {
   if depth > 32 {
@@ -109,7 +109,7 @@ priv struct GatePostmanTemplate {
 fn GatePostmanTemplate::render(
   self : GatePostmanTemplate,
   value : String,
-  query? : Bool = false,
+  query~ : Bool = false,
 ) -> String {
   let parts = value.split("{{").collect()
   let out = StringBuilder()
@@ -244,8 +244,8 @@ fn gate_pm_url(
 /// This is offline authoring: scripts, auth helpers and requests never execute.
 pub fn moongate_postman_collection_json(
   content : String,
-  folder? : String = "",
-  request_method? : String = "",
+  folder~ : String = "",
+  request_method~ : String = "",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("Postman file exceeds 4 MiB")
@@ -279,7 +279,7 @@ pub fn moongate_postman_collection_json(
   for index, entry in items {
     let raw_request = gate_oas_field(entry.item, "request")
     let request : Json = match raw_request {
-      String(url) => { "method": "GET", "url": url.to_json() }
+      String(url) => { "method": "GET", "url": Json(url) }
       _ => raw_request
     }
     let verb = gate_oas_text(request, "method").to_upper()
@@ -420,23 +420,23 @@ pub fn moongate_postman_collection_json(
       body,
     )
     requests.push({
-      "entry": (index + 1).to_json(),
-      "name": name.to_json(),
-      "folder": entry.folder.to_json(),
-      "method": verb.to_json(),
-      "url": url.to_json(),
-      "headers": headers.to_json(),
-      "body": body.to_json(),
-      "variables": template.declarations.to_json(),
-      "warnings": warnings.to_json(),
+      "entry": Json(index + 1),
+      "name": Json(name),
+      "folder": Json(entry.folder),
+      "method": Json(verb),
+      "url": Json(url),
+      "headers": Json(headers),
+      "body": Json(body),
+      "variables": Json(template.declarations),
+      "warnings": Json(warnings),
     })
   }
   Ok({
     "schema": "moongate.postman-collection.v1",
-    "name": gate_oas_text(gate_oas_field(root, "info"), "name").to_json(),
-    "sourceRequests": items.length().to_json(),
-    "selectedRequests": requests.length().to_json(),
-    "requests": requests.to_json(),
-    "http": (sections.join("\n\n") + "\n").to_json(),
+    "name": Json(gate_oas_text(gate_oas_field(root, "info"), "name")),
+    "sourceRequests": Json(items.length()),
+    "selectedRequests": Json(requests.length()),
+    "requests": Json(requests),
+    "http": Json(sections.join("\n\n") + "\n"),
   })
 }

@@ -4,7 +4,7 @@
 fn reconcile_requests(
   content : String,
   outcomes : Array[Json],
-) -> Result[(Json, Int), String] {
+) -> Result[(Json, Int32), String] {
   let results : Map[String, Map[String, Json]] = Map([])
   for outcome in outcomes {
     guard outcome is Object(obj) && field(obj, "customId") is String(id) else {
@@ -60,10 +60,10 @@ fn reconcile_requests(
     seen[id] = true
     let result = results.get(id)
     let row : Map[String, Json] = {
-      "customId": id.to_json(),
-      "requestLine": (index + 1).to_json(),
-      "requestEndpoint": endpoint.to_json(),
-      "requestedModel": model.to_json(),
+      "customId": Json(id),
+      "requestLine": Json(index + 1),
+      "requestEndpoint": Json(endpoint),
+      "requestedModel": Json(model),
       "match": if result is Some(_) {
         "matched"
       } else {
@@ -94,7 +94,7 @@ fn reconcile_requests(
     if !seen.contains(id) {
       unexpected += 1
       let row : Map[String, Json] = {
-        "customId": id.to_json(),
+        "customId": Json(id),
         "requestLine": Json::null(),
         "requestEndpoint": Json::null(),
         "requestedModel": Json::null(),
@@ -108,16 +108,16 @@ fn reconcile_requests(
     (
       {
         "schema": "moongate.batch-request-join.v1",
-        "requestCount": seen.length().to_json(),
-        "matchedResultCount": (seen.length() - missing).to_json(),
-        "missingResultCount": missing.to_json(),
-        "unexpectedResultCount": unexpected.to_json(),
+        "requestCount": Json(seen.length()),
+        "matchedResultCount": Json(seen.length() - missing),
+        "missingResultCount": Json(missing),
+        "unexpectedResultCount": Json(unexpected),
         "requestIdCoverage": if missing == 0 {
           "all-observed"
         } else {
           "missing-results"
         },
-        "outcomes": joined.to_json(),
+        "outcomes": Json(joined),
         "caveat": "Exact custom_id join against supplied local files only. Submission, endpoint/model equivalence and successful completion are unverified. Unexpected-result usage is included in totals; missing results do not imply zero usage or a safe retry.",
       },
       missing,

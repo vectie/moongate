@@ -5,8 +5,8 @@ fn usage_route_plan(content : String) -> Result[Json, String] {
     _ => return Err("Route plan must be valid JSON")
   }
   guard parsed is Object(plan) &&
-    plan.get("schema") == Some("moongate.usage-route-plan.v1".to_json()) &&
-    plan.get("currency") == Some("USD".to_json()) &&
+    plan.get("schema") == Some(Json("moongate.usage-route-plan.v1")) &&
+    plan.get("currency") == Some(Json("USD")) &&
     plan.get("name") is Some(String(name)) &&
     !name.trim().is_empty() &&
     plan.get("routes") is Some(Array(routes)) else {

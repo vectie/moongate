@@ -7,7 +7,7 @@ struct Header(Map[String, String])
 
 ///|
 pub impl ToJson for Header with fn to_json(self : Header) -> Json {
-  self.0.to_json()
+  Json(self.0)
 }
 
 ///|

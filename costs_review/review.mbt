@@ -9,9 +9,9 @@ pub fn review_openai_costs_json(
   costs : String,
   provider~ : String,
   scope~ : String,
-  app? : String = "",
-  project? : String = "",
-  line_item? : String = "",
+  app~ : String = "",
+  project~ : String = "",
+  line_item~ : String = "",
 ) -> Result[Json, String] {
   if provider.trim().is_empty() ||
     provider == "Unknown" ||
@@ -66,7 +66,7 @@ pub fn review_openai_costs_json(
   guard field(preview, "data") is Array(rows) else {
     return Err("Expected normalized usage rows")
   }
-  let partial = explicit_partial || field(preview, "partial") == true.to_json()
+  let partial = explicit_partial || field(preview, "partial") == Json(true)
   let locals : Map[String, Array[Json]] = Map([])
   let dates : Map[String, Bool] = Map([])
   let mut undated = 0
@@ -147,71 +147,71 @@ pub fn review_openai_costs_json(
         !valid_amount(paired_reported - paired_local) {
         return Err("Paired USD total or difference exceeds supported range")
       }
-      (reported_total - local_total).to_json()
+      Json(reported_total - local_total)
     } else {
       Json::null()
     }
     days.push({
-      "day": day.to_json(),
-      "localRequests": observations.length().to_json(),
-      "localKnownEstimateCount": local_known.to_json(),
-      "localMissingEstimateCount": (observations.length() - local_known).to_json(),
+      "day": Json(day),
+      "localRequests": Json(observations.length()),
+      "localKnownEstimateCount": Json(local_known),
+      "localMissingEstimateCount": Json(observations.length() - local_known),
       "localKnownEstimatedUsd": if local_known > 0 {
-        local_total.to_json()
+        Json(local_total)
       } else {
         Json::null()
       },
-      "providerBucketPresent": (cost is Some(_)).to_json(),
-      "providerResultCount": reported_count.to_json(),
-      "providerKnownAmountCount": reported_known.to_json(),
-      "providerMissingAmountCount": reported_missing.to_json(),
+      "providerBucketPresent": Json(cost is Some(_)),
+      "providerResultCount": Json(reported_count),
+      "providerKnownAmountCount": Json(reported_known),
+      "providerMissingAmountCount": Json(reported_missing),
       "providerKnownReportedUsd": if reported_known > 0 {
-        reported_total.to_json()
+        Json(reported_total)
       } else {
         Json::null()
       },
       "reportedMinusEstimatedUsd": difference,
-      "differenceBlockers": blockers.to_json(),
+      "differenceBlockers": Json(blockers),
     })
   }
   let result : Map[String, Json] = {
     "schema": "moongate.provider-cost-review.v1",
     "evidenceKind": "saved-provider-costs-versus-local-estimates",
     "currency": "USD",
-    "scopeAssertion": scope.to_json(),
+    "scopeAssertion": Json(scope),
     "scopeVerified": false,
-    "provider": provider.to_json(),
-    "app": app.to_json(),
-    "project": project.to_json(),
-    "lineItem": line_item.to_json(),
+    "provider": Json(provider),
+    "app": Json(app),
+    "project": Json(project),
+    "lineItem": Json(line_item),
     "localImportedRows": field(preview, "importedRows"),
-    "localSelectedRows": rows.length().to_json(),
-    "localSourcePartial": partial.to_json(),
-    "localUndatedRows": undated.to_json(),
-    "providerHasMore": has_more.to_json(),
-    "providerSourceResults": source_results.to_json(),
-    "providerSelectedResults": reported
-    .fold(init=0, (n, day) => n + day.results)
-    .to_json(),
-    "days": days.to_json(),
-    "pairedDays": paired.to_json(),
+    "localSelectedRows": Json(rows.length()),
+    "localSourcePartial": Json(partial),
+    "localUndatedRows": Json(undated),
+    "providerHasMore": Json(has_more),
+    "providerSourceResults": Json(source_results),
+    "providerSelectedResults": Json(
+      reported.fold(init=0, (n, day) => n + day.results),
+    ),
+    "days": Json(days),
+    "pairedDays": Json(paired),
     "pairedLocalEstimatedUsd": if paired > 0 {
-      paired_local.to_json()
+      Json(paired_local)
     } else {
       Json::null()
     },
     "pairedProviderReportedUsd": if paired > 0 {
-      paired_reported.to_json()
+      Json(paired_reported)
     } else {
       Json::null()
     },
     "pairedReportedMinusEstimatedUsd": if paired > 0 {
-      (paired_reported - paired_local).to_json()
+      Json(paired_reported - paired_local)
     } else {
       Json::null()
     },
   }
-  result["report"] = render_report(Json::object(result)).to_json()
+  result["report"] = Json(render_report(Json::object(result)))
   let output = Json::object(result)
   if @utf8.encode(output.stringify(indent=2)).length() > 4 * 1024 * 1024 - 1 {
     return Err("Cost review output exceeds 4 MiB")

@@ -266,7 +266,7 @@ fn usage_sync_query(args : Array[String]) -> @moongate.MoonGateSessionSyncQuery 
 }
 
 ///|
-fn parse_optional_int_arg(args : Array[String], name : String) -> Int? {
+fn parse_optional_int_arg(args : Array[String], name : String) -> Int32? {
   match parse_string_arg(args, name) {
     Some(value) => Some(@string.parse_int(value[:])) catch { _ => None }
     None => None

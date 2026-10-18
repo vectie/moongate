@@ -1,11 +1,11 @@
 ///|
 fn candidate(
   id : String,
-  priority : Int,
-  weight? : Int = 1,
-  inflight? : Int = 0,
-  limit? : Int = 0,
-  healthy? : Bool = true,
+  priority : Int32,
+  weight~ : Int32 = 1,
+  inflight~ : Int32 = 0,
+  limit~ : Int32 = 0,
+  healthy~ : Bool = true,
 ) -> ProviderCandidateV1 {
   {
     provider_id: id,

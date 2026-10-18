@@ -12,7 +12,7 @@
 /// ```
 pub fn import_otel_usage_json(
   content : String,
-  source_name? : String = "OpenTelemetry export",
+  source_name~ : String = "OpenTelemetry export",
 ) -> Result[Json, String] {
   if @utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("OTLP import exceeds the 4 MiB UTF-8 input limit")
@@ -95,7 +95,7 @@ fn build_import(
             if end < start {
               fail("Span end precedes its start")
             }
-            ((end - start).to_double() / 1000000.0).to_json()
+            Json((end - start).to_double() / 1000000.0)
           }
           _ => Json::null()
         }
@@ -135,11 +135,11 @@ fn build_import(
           "imported"
         }
         outcomes.push({
-          "sourceSpan": span_count.to_json(),
-          "requestId": id.to_json(),
+          "sourceSpan": Json(span_count),
+          "requestId": Json(id),
           "operation": text_json(operation),
-          "status": status_name.to_json(),
-          "usageState": state.to_json(),
+          "status": Json(status_name),
+          "usageState": Json(state),
           "requestedModel": text_json(requested),
           "responseModel": text_json(response),
           "modelSource": if response is Some(_) {
@@ -165,16 +165,16 @@ fn build_import(
         }
         token_total += total
         rows.push({
-          "requestId": id.to_json(),
-          "appType": service.unwrap_or("Unknown").to_json(),
-          "providerId": provider.unwrap_or("Unknown").to_json(),
-          "model": model.unwrap().to_json(),
+          "requestId": Json(id),
+          "appType": Json(service.unwrap_or("Unknown")),
+          "providerId": Json(provider.unwrap_or("Unknown")),
+          "model": Json(model.unwrap()),
           "inputTokens": count_json(input),
           "outputTokens": count_json(output),
-          "totalTokens": total.to_json(),
+          "totalTokens": Json(total),
           "totalCostUsd": Json::null(),
           "createdAt": match start {
-            Some(start) => (start / 1000000000UL).to_double().to_json()
+            Some(start) => Json((start / 1000000000UL).to_double())
             None => Json::null()
           },
         })
@@ -183,8 +183,8 @@ fn build_import(
     }
   }
   let input : Json = {
-    "data": rows.to_json(),
-    "sourceTotal": outcomes.length().to_json(),
+    "data": Json(rows),
+    "sourceTotal": Json(outcomes.length()),
     "sourceCoverageUnknown": true,
   }
   let preview = match
@@ -196,7 +196,7 @@ fn build_import(
     Ok(_) => fail("Internal usage preview failure")
     Err(error) => fail(error)
   }
-  preview["sourceName"] = source_name.to_json()
+  preview["sourceName"] = Json(source_name)
   // The normal explorer omits unsupported fields. Keep span duration in the
   // original import artifact so the existing latency reader can consume it.
   guard preview["data"] is Array(normalized) else {
@@ -210,29 +210,31 @@ fn build_import(
   preview["otelImport"] = {
     "schema": "moongate.otel-usage-import.v1",
     "sourceFormat": "otlp-json-traces",
-    "sourceSpanCount": span_count.to_json(),
-    "candidateSpanCount": outcomes.length().to_json(),
-    "skippedSpanCount": skipped.to_json(),
-    "importedUsageCount": rows.length().to_json(),
-    "incompleteUsageCount": missing_usage.to_json(),
-    "missingModelCount": missing_model.to_json(),
-    "errorSpanCount": error_spans.to_json(),
-    "outcomes": outcomes.to_json(),
-    "caveat": caveat.to_json(),
+    "sourceSpanCount": Json(span_count),
+    "candidateSpanCount": Json(outcomes.length()),
+    "skippedSpanCount": Json(skipped),
+    "importedUsageCount": Json(rows.length()),
+    "incompleteUsageCount": Json(missing_usage),
+    "missingModelCount": Json(missing_model),
+    "errorSpanCount": Json(error_spans),
+    "outcomes": Json(outcomes),
+    "caveat": Json(caveat),
   }
-  preview["report"] = ([
-    "MoonGate OpenTelemetry GenAI usage import",
-    "Source: " + source_name,
-    "Spans: \{span_count}; candidate client generations: \{outcomes.length()}; skipped: \{skipped}",
-    "Imported complete usage rows: \{rows.length()}; incomplete usage: \{missing_usage}; complete usage without model: \{missing_model}",
-    "Candidate spans marked error: \{error_spans}; recorded imported tokens: \{token_total}",
-    "Both input and output totals are required. Cache/reasoning subcounts are not added to their totals.",
-    "Costs remain unknown. Provider names are instrumentation labels, not authenticated route identities.",
-    caveat,
-    "Bodies, messages, events, status messages, span names and arbitrary attributes omitted. IDs, model/service/provider labels and source name remain; inspect before sharing.",
-    "Open this JSON in Usage File Explorer, latency profile, or spreadsheet export. Keep the original import for span outcomes and duration.",
-  ].join("\n") +
-  "\n").to_json()
+  preview["report"] = Json(
+    [
+      "MoonGate OpenTelemetry GenAI usage import",
+      "Source: " + source_name,
+      "Spans: \{span_count}; candidate client generations: \{outcomes.length()}; skipped: \{skipped}",
+      "Imported complete usage rows: \{rows.length()}; incomplete usage: \{missing_usage}; complete usage without model: \{missing_model}",
+      "Candidate spans marked error: \{error_spans}; recorded imported tokens: \{token_total}",
+      "Both input and output totals are required. Cache/reasoning subcounts are not added to their totals.",
+      "Costs remain unknown. Provider names are instrumentation labels, not authenticated route identities.",
+      caveat,
+      "Bodies, messages, events, status messages, span names and arbitrary attributes omitted. IDs, model/service/provider labels and source name remain; inspect before sharing.",
+      "Open this JSON in Usage File Explorer, latency profile, or spreadsheet export. Keep the original import for span outcomes and duration.",
+    ].join("\n") +
+    "\n",
+  )
   let result = Json::object(preview)
   if @utf8.encode(result.stringify(indent=2)).length() + 1 > 4 * 1024 * 1024 {
     fail(
@@ -268,7 +270,7 @@ fn parse_exports(content : String) -> Json raise {
       if documents == 0 {
         fail("Expected an OTLP JSON or JSONL trace export")
       }
-      { "resourceSpans": resources.to_json() }
+      { "resourceSpans": Json(resources) }
     }
   } noraise {
     value => value

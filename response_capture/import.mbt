@@ -4,8 +4,8 @@
 /// files, providers, credentials or persistent usage store.
 pub fn import_response_captures_json(
   captures : Array[(String, String)],
-  app? : String = "responses-capture",
-  provider? : String = "openai-compatible-export",
+  app~ : String = "responses-capture",
+  provider~ : String = "openai-compatible-export",
 ) -> Result[Json, String] {
   try import_captures(captures, app~, provider~) catch {
     error => Err("\{error}")
@@ -30,7 +30,7 @@ fn import_captures(
   let ids : Map[String, Bool] = Map([])
   let rows : Array[Json] = []
   let outcomes : Array[Json] = []
-  let counts : Map[String, Int] = {
+  let counts : Map[String, Int32] = {
     "completed": 0,
     "incomplete": 0,
     "failed": 0,
@@ -92,10 +92,10 @@ fn import_captures(
       }
       tokens += n
       rows.push({
-        "requestId": parsed.id.to_json(),
-        "model": parsed.model.to_json(),
-        "appType": app.to_json(),
-        "providerId": provider.to_json(),
+        "requestId": Json(parsed.id),
+        "model": Json(parsed.model),
+        "appType": Json(app),
+        "providerId": Json(provider),
         "inputTokens": input,
         "outputTokens": output,
         "totalTokens": total,
@@ -104,33 +104,33 @@ fn import_captures(
       })
     }
     outcomes.push({
-      "captureIndex": (index + 1).to_json(),
-      "sourceName": name.to_json(),
+      "captureIndex": Json(index + 1),
+      "sourceName": Json(name),
       "requestId": if parsed.id.is_empty() {
         Json::null()
       } else {
-        parsed.id.to_json()
+        Json(parsed.id)
       },
       "model": if parsed.model.is_empty() {
         Json::null()
       } else {
-        parsed.model.to_json()
+        Json(parsed.model)
       },
-      "format": parsed.format.to_json(),
+      "format": Json(parsed.format),
       "createdAt": parsed.created,
-      "state": parsed.state.to_json(),
-      "responseStatus": parsed.status.to_json(),
-      "terminal": parsed.terminal.to_json(),
-      "usageState": usage_state.to_json(),
-      "responseObjectCount": parsed.objects.to_json(),
+      "state": Json(parsed.state),
+      "responseStatus": Json(parsed.status),
+      "terminal": Json(parsed.terminal),
+      "usageState": Json(usage_state),
+      "responseObjectCount": Json(parsed.objects),
       "terminalLine": parsed.terminal_line,
       "incompleteReason": parsed.incomplete_reason,
-      "observedUsage": parsed.usage.to_json(),
+      "observedUsage": Json(parsed.usage),
     })
   }
   let envelope : Json = {
-    "data": rows.to_json(),
-    "sourceTotal": captures.length().to_json(),
+    "data": Json(rows),
+    "sourceTotal": Json(captures.length()),
     "sourceCoverageUnknown": true,
   }
   let preview = match
@@ -148,12 +148,12 @@ fn import_captures(
   let mut row_index = 0
   for outcome in outcomes {
     guard outcome is Object(fields) else { fail("Internal outcome failure") }
-    if fields.get("usageState") == Some("complete".to_json()) {
+    if fields.get("usageState") == Some(Json("complete")) {
       guard normalized[row_index] is Object(row) else {
         fail("Internal row failure")
       }
       row["captureIndex"] = fields["captureIndex"]
-      fields["date"] = if row["date"] == "".to_json() {
+      fields["date"] = if row["date"] == Json("") {
         Json::null()
       } else {
         row["date"]
@@ -176,7 +176,7 @@ fn import_captures(
   let report = [
     "MoonGate saved Responses capture review",
     "Capture files: \{captures.length()}; response objects/events: \{objects}; complete terminal usage rows: \{rows.length()}",
-    "States: " + counts.to_json().stringify(),
+    "States: " + Json(counts).stringify(),
     "Recorded tokens with complete terminal usage: \{tokens}; costs unknown; interval coverage unverified.",
   ]
   for outcome in outcomes {
@@ -187,16 +187,16 @@ fn import_captures(
   }
   preview["responseCaptureImport"] = {
     "schema": "moongate.response-capture-import.v1",
-    "sourceCaptureCount": captures.length().to_json(),
-    "responseObjectCount": objects.to_json(),
-    "importedUsageCount": rows.length().to_json(),
-    "stateCounts": counts.to_json(),
+    "sourceCaptureCount": Json(captures.length()),
+    "responseObjectCount": Json(objects),
+    "importedUsageCount": Json(rows.length()),
+    "stateCounts": Json(counts),
     "coverage": "unverified",
     "costSource": "unavailable",
-    "outcomes": outcomes.to_json(),
-    "caveats": caveats.to_json(),
+    "outcomes": Json(outcomes),
+    "caveats": Json(caveats),
   }
-  preview["report"] = (report.join("\n") + "\n").to_json()
+  preview["report"] = Json(report.join("\n") + "\n")
   let result = Json::object(preview)
   if @encoding/utf8.encode(result.stringify(indent=2)).length() + 1 >
     4 * 1024 * 1024 {

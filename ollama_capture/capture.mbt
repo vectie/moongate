@@ -3,7 +3,7 @@ priv struct Capture {
   model : String
   state : String
   shape : String
-  chunk_count : Int
+  chunk_count : Int32
   terminal_line : Json
   reason : Json
   created_at : Json
@@ -12,7 +12,7 @@ priv struct Capture {
 
 ///|
 fn parse_capture(content : String) -> Result[Capture, String] {
-  let objects : Array[(Int, Json)] = []
+  let objects : Array[(Int32, Json)] = []
   // A pretty-printed single JSON response is accepted as one object. Otherwise
   // each nonblank physical line must contain exactly one NDJSON object.
   let whole = try @exact_json.parse_with_number_text(content) catch {
@@ -73,7 +73,7 @@ fn parse_capture(content : String) -> Result[Capture, String] {
       }
       // The error message can contain private input; preserve only its presence.
       state = "errored"
-      terminal_line = line.to_json()
+      terminal_line = Json(line)
       continue
     }
     guard fields.get("model") is Some(String(current_model)) &&
@@ -113,7 +113,7 @@ fn parse_capture(content : String) -> Result[Capture, String] {
         Null => Json::null()
         Number(_, repr=Some(text)) =>
           match @exact_json.exact_count(text) {
-            Some(n) => n.to_json()
+            Some(n) => Json(n)
             None =>
               return Err(
                 "Line \{line}: \{key} must be an exact nonnegative integer up to 9007199254740991",
@@ -128,22 +128,22 @@ fn parse_capture(content : String) -> Result[Capture, String] {
       cached > input {
       return Err("Line \{line}: cached prompt count exceeds total prompt count")
     }
-    if fields.get("done") == Some(true.to_json()) {
+    if fields.get("done") == Some(Json(true)) {
       state = "completed"
-      terminal_line = line.to_json()
+      terminal_line = Json(line)
       metrics = current_metrics
       created_at = match fields.get("created_at") {
         None | Some(Null) => Json::null()
-        Some(String(value)) => value.to_json()
+        Some(String(value)) => Json(value)
         _ => return Err("Line \{line}: created_at must be a string or null")
       }
       reason = match fields.get("done_reason") {
         None | Some(Null) => Json::null()
         Some(String(value)) =>
           if ["stop", "length", "load", "unload"].contains(value) {
-            value.to_json()
+            Json(value)
           } else {
-            "unrecognized".to_json()
+            Json("unrecognized")
           }
         _ => return Err("Line \{line}: done_reason must be a string or null")
       }

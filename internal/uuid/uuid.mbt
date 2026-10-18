@@ -21,7 +21,7 @@ struct Uuid {
 
 ///|
 pub impl ToJson for Uuid with fn to_json(self : Uuid) -> Json {
-  self.to_string().to_json()
+  Json(self.to_string())
 }
 
 ///|
@@ -135,19 +135,19 @@ impl Show for ParseError with fn output(self : ParseError, logger : &Logger) -> 
 ///|
 pub fn parse(hex : StringView) -> Uuid raise ParseError {
   let mut view = hex.view()
-  fn parse_hex_octet(count : Int, value : UInt64) -> UInt64 raise ParseError {
+  fn parse_hex_octet(count : Int32, value : UInt64) -> UInt64 raise ParseError {
     let mut value = value
     for _ in 0..<(count * 2) {
       match view {
-        ['0'..='9' as c, .. rest] => {
+        ['0'..<='9' as c, .. rest] => {
           value = (value << 4) | (c.to_uint() - '0'.to_uint()).to_uint64()
           view = rest
         }
-        ['a'..='f' as c, .. rest] => {
+        ['a'..<='f' as c, .. rest] => {
           value = (value << 4) | (c.to_uint() - 'a'.to_uint() + 10).to_uint64()
           view = rest
         }
-        ['A'..='F' as c, .. rest] => {
+        ['A'..<='F' as c, .. rest] => {
           value = (value << 4) | (c.to_uint() - 'A'.to_uint() + 10).to_uint64()
           view = rest
         }

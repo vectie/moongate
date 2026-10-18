@@ -5,8 +5,8 @@ async fn ProxyService::forward_openai_chat_sse_as_anthropic(
   reader : &@io.Reader,
   events : Array[Json],
   w : @httpx.ResponseWriter,
-) -> Int? {
-  let mut first_token_ms : Int? = None
+) -> Int32? {
+  let mut first_token_ms : Int32? = None
   let state = OpenAIChatAnthropicStreamState::new()
   let mut finished = false
   while reader.read_until("\n") is Some(line) {
@@ -55,8 +55,8 @@ async fn ProxyService::forward_anthropic_sse_passthrough(
   reader : &@io.Reader,
   events : Array[Json],
   w : @httpx.ResponseWriter,
-) -> Int? {
-  let mut first_token_ms : Int? = None
+) -> Int32? {
+  let mut first_token_ms : Int32? = None
   while reader.read_until("\n") is Some(line) {
     if line is [.. "data: ", .. rest] {
       let data = rest.trim().to_owned()
@@ -83,8 +83,8 @@ async fn ProxyService::forward_gemini_native_sse_as_anthropic(
   provider_id : String,
   session_id : String?,
   w : @httpx.ResponseWriter,
-) -> Int? {
-  let mut first_token_ms : Int? = None
+) -> Int32? {
+  let mut first_token_ms : Int32? = None
   let state = GeminiNativeAnthropicStreamState::new()
   let mut finished = false
   while reader.read_until("\n") is Some(line) {
@@ -143,9 +143,9 @@ priv struct GeminiNativeAnthropicToolSnapshot {
 priv struct GeminiNativeAnthropicStreamState {
   mut message_id : String?
   mut model : String?
-  mut next_content_index : Int
+  mut next_content_index : Int32
   mut has_sent_message_start : Bool
-  mut text_block_index : Int?
+  mut text_block_index : Int32?
   mut text_block_open : Bool
   mut accumulated_text : String
   tool_snapshots : Array[GeminiNativeAnthropicToolSnapshot]
@@ -294,7 +294,7 @@ fn GeminiNativeAnthropicStreamState::message_start_event(
 fn GeminiNativeAnthropicStreamState::ensure_text_block(
   self : GeminiNativeAnthropicStreamState,
   events : Array[StreamEvent],
-) -> Int {
+) -> Int32 {
   let index = match self.text_block_index {
     Some(index) => index
     None => {
@@ -376,7 +376,7 @@ fn gemini_part_thought_signature(part_obj : Map[String, Json]) -> String? {
 ///|
 fn GeminiNativeAnthropicStreamState::tool_snapshot_for_position(
   self : GeminiNativeAnthropicStreamState,
-  position : Int,
+  position : Int32,
   incoming_id : String?,
 ) -> GeminiNativeAnthropicToolSnapshot {
   if incoming_id is Some(id) {
@@ -553,7 +553,7 @@ fn TokenUsage::as_anthropic_usage_json(self : TokenUsage) -> Json {
 
 ///|
 priv struct OpenAIChatAnthropicToolBlock {
-  anthropic_index : Int
+  anthropic_index : Int32
   mut id : String
   mut name : String
   mut started : Bool
@@ -564,12 +564,12 @@ priv struct OpenAIChatAnthropicToolBlock {
 priv struct OpenAIChatAnthropicStreamState {
   mut message_id : String?
   mut model : String?
-  mut next_content_index : Int
+  mut next_content_index : Int32
   mut has_sent_message_start : Bool
   mut current_non_tool_block_type : String?
-  mut current_non_tool_block_index : Int?
-  tool_blocks_by_index : Map[Int, OpenAIChatAnthropicToolBlock]
-  open_tool_block_indices : Array[Int]
+  mut current_non_tool_block_index : Int32?
+  tool_blocks_by_index : Map[Int32, OpenAIChatAnthropicToolBlock]
+  open_tool_block_indices : Array[Int32]
   mut has_emitted_message_delta : Bool
   mut pending_stop_reason : String?
   mut pending_usage : Json?
@@ -881,7 +881,7 @@ fn OpenAIChatAnthropicStreamState::message_delta_event(
 
 ///|
 fn anthropic_content_block_start_event(
-  index : Int,
+  index : Int32,
   block_type : String,
 ) -> StreamEvent {
   let content_block = if block_type == "thinking" {
@@ -904,7 +904,7 @@ fn anthropic_content_block_start_event(
 
 ///|
 fn anthropic_content_block_delta_event(
-  index : Int,
+  index : Int32,
   delta_type : String,
   block_type : String,
   text : String,
@@ -924,7 +924,7 @@ fn anthropic_content_block_delta_event(
 
 ///|
 fn anthropic_tool_block_start_event(
-  index : Int,
+  index : Int32,
   id : String,
   name : String,
 ) -> StreamEvent {
@@ -943,7 +943,10 @@ fn anthropic_tool_block_start_event(
 }
 
 ///|
-fn anthropic_tool_input_delta_event(index : Int, args : String) -> StreamEvent {
+fn anthropic_tool_input_delta_event(
+  index : Int32,
+  args : String,
+) -> StreamEvent {
   {
     event_type: "content_block_delta",
     data: Json::object({
@@ -958,7 +961,7 @@ fn anthropic_tool_input_delta_event(index : Int, args : String) -> StreamEvent {
 }
 
 ///|
-fn anthropic_content_block_stop_event(index : Int) -> StreamEvent {
+fn anthropic_content_block_stop_event(index : Int32) -> StreamEvent {
   {
     event_type: "content_block_stop",
     data: Json::object({

@@ -33,7 +33,7 @@ pub struct CodexConfigStatus {
 ///|
 pub async fn install_proxy_config(
   host : String,
-  port : Int,
+  port : Int32,
   model : String,
 ) -> Result[CodexConfigInstall, String] {
   install_proxy_config_at(home_dir(), host, port, model)
@@ -43,7 +43,7 @@ pub async fn install_proxy_config(
 async fn install_proxy_config_at(
   home : String,
   host : String,
-  port : Int,
+  port : Int32,
   model : String,
 ) -> Result[CodexConfigInstall, String] {
   let path = codex_config_path_at(home)
@@ -171,7 +171,7 @@ fn home_dir() -> String {
 }
 
 ///|
-fn local_codex_base_url(host : String, port : Int) -> String {
+fn local_codex_base_url(host : String, port : Int32) -> String {
   let host = if host == "0.0.0.0" || host == "::" { "127.0.0.1" } else { host }
   "http://\{host}:\{port}/v1"
 }
@@ -203,12 +203,12 @@ fn managed_block(base_url : String, model : String) -> String {
 
 ///|
 fn empty_model_catalog_json() -> Json {
-  { "models": Json::array([]) }.to_json()
+  Json({ "models": Json::array([]) })
 }
 
 ///|
 fn codex_model_catalog_json(model : String) -> Json {
-  { "models": Json::array([codex_model_catalog_entry_json(model)]) }.to_json()
+  Json({ "models": Json::array([codex_model_catalog_entry_json(model)]) })
 }
 
 ///|
@@ -220,7 +220,7 @@ pub fn model_catalog_json(model : String) -> Json {
 priv struct CodexCatalogModelSpec {
   model : String
   display_name : String
-  context_window : Int
+  context_window : Int32
 }
 
 ///|
@@ -247,7 +247,7 @@ fn codex_model_catalog_json_from_settings(
     )
     priority += 1
   }
-  { "models": Json::array(entries) }.to_json()
+  Json({ "models": Json::array(entries) })
 }
 
 ///|
@@ -295,7 +295,7 @@ fn codex_catalog_model_specs(
 }
 
 ///|
-fn codex_top_level_model_context_window(config_text : String) -> Int? {
+fn codex_top_level_model_context_window(config_text : String) -> Int32? {
   for raw_line in config_text.split("\n") {
     let line = raw_line.trim()
     if !line.has_prefix("model_context_window") {
@@ -314,7 +314,7 @@ fn codex_top_level_model_context_window(config_text : String) -> Int? {
 }
 
 ///|
-fn codex_positive_int_from_json(value : Json?) -> Int? {
+fn codex_positive_int_from_json(value : Json?) -> Int32? {
   match value {
     Some(Number(n, ..)) =>
       if n > 0.0 && n.trunc() == n {
@@ -328,7 +328,7 @@ fn codex_positive_int_from_json(value : Json?) -> Int? {
 }
 
 ///|
-fn codex_positive_int_from_string(value : StringView) -> Int? {
+fn codex_positive_int_from_string(value : StringView) -> Int32? {
   try @string.parse_int(value.to_owned(), base=10) catch {
     _ => None
   } noraise {
@@ -354,12 +354,12 @@ fn json_trimmed_string(obj : Map[String, Json], key : String) -> String? {
 ///|
 fn codex_model_catalog_entry_json(
   model : String,
-  display_name? : String = model,
-  description? : String = "MoonGate local proxy model",
-  context_window? : Int = 128000,
-  priority? : Int = 0,
+  display_name~ : String = model,
+  description~ : String = "MoonGate local proxy model",
+  context_window~ : Int32 = 128000,
+  priority~ : Int32 = 0,
 ) -> Json {
-  {
+  Json({
     "slug": Json::string(model),
     "display_name": Json::string(display_name),
     "description": Json::string(description),
@@ -373,10 +373,10 @@ fn codex_model_catalog_entry_json(
     "default_verbosity": Json::string("low"),
     "apply_patch_tool_type": Json::string("freeform"),
     "web_search_tool_type": Json::string("text"),
-    "truncation_policy": {
+    "truncation_policy": Json({
       "mode": Json::string("tokens"),
       "limit": Json::number(10000.0),
-    }.to_json(),
+    }),
     "supports_parallel_tool_calls": Json::boolean(true),
     "supports_image_detail_original": Json::boolean(false),
     "context_window": Json::number(context_window.to_double()),
@@ -401,15 +401,15 @@ fn codex_model_catalog_entry_json(
     "supports_reasoning_summary_parameter": Json::boolean(false),
     "default_reasoning_summary": Json::string("none"),
     "base_instructions": Json::string(""),
-    "model_messages": {
+    "model_messages": Json({
       "instructions_template": Json::string(""),
-      "instructions_variables": {
+      "instructions_variables": Json({
         "personality_default": Json::string(""),
         "personality_friendly": Json::string(""),
         "personality_pragmatic": Json::string(""),
-      }.to_json(),
-    }.to_json(),
-  }.to_json()
+      }),
+    }),
+  })
 }
 
 ///|

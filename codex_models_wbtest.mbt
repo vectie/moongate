@@ -34,9 +34,9 @@ test "moongate models endpoint replaces an empty active catalog" {
 
 ///|
 test "moongate models endpoint serves active catalog directly" {
-  let catalog = {
-    "models": Json::array([{ "slug": Json::string("gpt-5.7") }.to_json()]),
+  let catalog = Json({
+    "models": Json::array([Json({ "slug": Json::string("gpt-5.7") })]),
     "provider": Json::string("moongate"),
-  }.to_json()
+  })
   assert_eq(moon_models_endpoint_response_json(Some(catalog)), catalog)
 }

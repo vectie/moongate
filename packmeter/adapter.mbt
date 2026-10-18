@@ -18,9 +18,9 @@ pub(all) struct UsageAttribution {
   product_id : String
   capability_kind : String
   capability_id : String
-  quantity : Int
+  quantity : Int32
   unit : String
-  amount_micros : Int
+  amount_micros : Int32
   currency : String
   evidence_ref : String
 } derive(Debug, Eq, ToJson, FromJson)
@@ -28,12 +28,12 @@ pub(all) struct UsageAttribution {
 ///|
 pub(all) struct PackBudget {
   pack_id : String
-  limit_micros : Int
-  spent_micros : Int
+  limit_micros : Int32
+  spent_micros : Int32
 } derive(Debug, Eq, ToJson, FromJson)
 
 ///|
-pub fn budget(pack_id : String, limit_micros : Int) -> PackBudget raise {
+pub fn budget(pack_id : String, limit_micros : Int32) -> PackBudget raise {
   if limit_micros < 0 {
     fail("pack budget must be non-negative")
   }
@@ -41,7 +41,7 @@ pub fn budget(pack_id : String, limit_micros : Int) -> PackBudget raise {
 }
 
 ///|
-pub fn remaining(value : PackBudget) -> Int {
+pub fn remaining(value : PackBudget) -> Int32 {
   value.limit_micros - value.spent_micros
 }
 
@@ -86,9 +86,9 @@ pub fn attribute(
   scope : PackMeteringScope,
   capability_kind : String,
   capability_id : String,
-  quantity : Int,
+  quantity : Int32,
   unit : String,
-  amount_micros : Int,
+  amount_micros : Int32,
   currency : String,
   evidence_ref : String,
 ) -> UsageAttribution raise {

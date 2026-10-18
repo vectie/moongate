@@ -3,8 +3,8 @@
 /// provider. JSON may be a message array, a {messages: [...]} object, or JSONL.
 pub fn moongate_preview_transcript_json(
   content : String,
-  format? : String = "auto",
-  source_name? : String = "Pasted transcript",
+  format~ : String = "auto",
+  source_name~ : String = "Pasted transcript",
 ) -> Result[Json, String] {
   if @encoding/utf8.encode(content).length() > 4 * 1024 * 1024 {
     return Err("Transcript exceeds the 4 MiB limit")
@@ -34,11 +34,11 @@ pub fn moongate_preview_transcript_json(
   }
   Ok({
     "schema": "moongate.transcript.v1",
-    "format": detected.to_json(),
-    "sourceName": source_name.to_json(),
-    "recordCount": records.length().to_json(),
-    "messageCount": messages.length().to_json(),
-    "skippedRecords": (records.length() - messages.length()).to_json(),
+    "format": Json(detected),
+    "sourceName": Json(source_name),
+    "recordCount": Json(records.length()),
+    "messageCount": Json(messages.length()),
+    "skippedRecords": Json(records.length() - messages.length()),
     "messages": Json::array(messages.map(message => message.to_json())),
   })
 }

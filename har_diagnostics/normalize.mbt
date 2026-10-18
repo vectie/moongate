@@ -27,7 +27,7 @@ fn duration(value : Json, label : String) -> Json raise {
   match value {
     Null => Json::null()
     Number(n, ..) if n == -1.0 => Json::null()
-    Number(n, ..) if n >= 0.0 && n <= 9007199254740991.0 => n.to_json()
+    Number(n, ..) if n >= 0.0 && n <= 9007199254740991.0 => Json(n)
     _ =>
       fail(
         label +
@@ -59,8 +59,8 @@ fn origin_of(url : String) -> String raise {
   }
   // ASCII DNS/IPv4 and bracketed IPv6 authority labels; no userinfo or encoded host.
   for c in authority {
-    if !(c is ('a'..='z') ||
-      c is ('0'..='9') ||
+    if !(c is ('a'..<='z') ||
+      c is ('0'..<='9') ||
       c is ('.' | '-' | ':' | '[' | ']')) {
       fail("captured host contains credentials or unsupported characters")
     }
@@ -71,7 +71,7 @@ fn origin_of(url : String) -> String raise {
       fail("invalid bracketed captured host")
     }
     for c in parts[0][1:] {
-      if !(c is ('a'..='f') || c is ('0'..='9') || c is (':' | '.')) {
+      if !(c is ('a'..<='f') || c is ('0'..<='9') || c is (':' | '.')) {
         fail("invalid bracketed captured host")
       }
     }
@@ -111,7 +111,7 @@ fn origin_of(url : String) -> String raise {
     ""
   } else {
     for c in port {
-      if !(c is ('0'..='9')) {
+      if !(c is ('0'..<='9')) {
         fail("invalid captured port")
       }
     }
@@ -144,7 +144,7 @@ fn captured_start(value : Json) -> Double? {
       return None
     }
     for i in [end + 1, end + 2, end + 4, end + 5] {
-      if !(s[i] is ('0'..='9')) {
+      if !(s[i] is ('0'..<='9')) {
         return None
       }
     }
@@ -159,7 +159,7 @@ fn captured_start(value : Json) -> Double? {
     if [4, 7, 10, 13, 16].contains(i) {
       continue
     }
-    if !(s[i] is ('0'..='9')) {
+    if !(s[i] is ('0'..<='9')) {
       return None
     }
   }
@@ -174,7 +174,7 @@ fn captured_start(value : Json) -> Double? {
       return None
     }
     for i = 20; i < end; i = i + 1 {
-      if !(s[i] is ('0'..='9')) {
+      if !(s[i] is ('0'..<='9')) {
         return None
       }
       fraction += (s[i].to_int() - 48).to_double() * scale
@@ -187,7 +187,7 @@ fn captured_start(value : Json) -> Double? {
 }
 
 ///|
-fn normalize_entry(entry : Json, index : Int) -> Json raise {
+fn normalize_entry(entry : Json, index : Int32) -> Json raise {
   let label = "HAR entry \{index}"
   if !(entry is Object(_)) {
     fail(label + ": expected an object")
@@ -209,7 +209,7 @@ fn normalize_entry(entry : Json, index : Int) -> Json raise {
   let status = match field(response, "status") {
     Null => Json::null()
     Number(n, ..) if (n == 0.0 || (n >= 100.0 && n <= 599.0)) &&
-      n == n.to_int().to_double() => n.to_json()
+      n == n.to_int().to_double() => Json(n)
     _ =>
       fail(
         label +
@@ -241,20 +241,20 @@ fn normalize_entry(entry : Json, index : Int) -> Json raise {
     // SSL is included in connect in HAR; never double-count it as another phase.
     if phase != "ssl" && number(value) is Some(ms) && ms > maximum {
       maximum = ms
-      longest = phase.to_json()
+      longest = Json(phase)
     }
   }
   {
-    "entry": index.to_json(),
-    "method": request_method.to_json(),
-    "origin": origin.to_json(),
+    "entry": Json(index),
+    "method": Json(request_method),
+    "origin": Json(origin),
     "status": status,
-    "outcome": outcome.to_json(),
+    "outcome": Json(outcome),
     "startedAtUnixMs": optional_number(
       captured_start(field(entry, "startedDateTime")),
     ),
     "elapsedMs": duration(field(entry, "time"), label + ": time"),
-    "timingsMs": timings.to_json(),
+    "timingsMs": Json(timings),
     "longestRecordedPhase": longest,
   }
 }
@@ -262,7 +262,7 @@ fn normalize_entry(entry : Json, index : Int) -> Json raise {
 ///|
 fn optional_number(value : Double?) -> Json {
   match value {
-    Some(n) => n.to_json()
+    Some(n) => Json(n)
     None => Json::null()
   }
 }

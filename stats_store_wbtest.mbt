@@ -94,13 +94,11 @@ async test "persistent store migrates legacy jsonl into versioned snapshot" {
   )
   @fsx.write_to_file(
     @pathx.join(dir, MOONGATE_SESSION_SYNC_FILE),
-    {
+    Json({
       "filePath": Json::string("/tmp/legacy.jsonl"),
       "lastModified": Json::number(9),
       "lastLineOffset": Json::number(4),
-    }
-    .to_json()
-    .stringify(),
+    }).stringify(),
   )
 
   let loaded = TrafficStats::new()

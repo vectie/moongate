@@ -19,7 +19,7 @@ fn gen_byte(randomer : @random.Rand) -> Byte {
 }
 
 ///|
-fn generate_random_bytes(length : Int) -> Bytes raise Error {
+fn generate_random_bytes(length : Int32) -> Bytes raise Error {
   let randomer = @rand.chacha8() catch {
     err => raise ParseError("Failed to create random generator: \{err}")
   }

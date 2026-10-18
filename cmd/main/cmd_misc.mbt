@@ -1174,13 +1174,11 @@ fn mcp_server_json_from_args(args : Array[String], id : String) -> String {
     Some(value) => spec["env"] = Json::string(value)
     None => ()
   }
-  {
+  Json({
     "id": Json::string(id),
     "name": Json::string(name),
     "server": Json::object(spec),
-  }
-  .to_json()
-  .stringify()
+  }).stringify()
 }
 
 ///|
@@ -1598,7 +1596,7 @@ fn cli_url_encode(value : String) -> String {
   let builder = StringBuilder::new()
   for ch in value {
     match ch {
-      'A'..='Z' | 'a'..='z' | '0'..='9' | '-' | '_' | '.' | '~' =>
+      'A'..<='Z' | 'a'..<='z' | '0'..<='9' | '-' | '_' | '.' | '~' =>
         builder.write_char(ch)
       _ => {
         let bytes = @encoding/utf8.encode(ch.to_string())
@@ -1615,7 +1613,7 @@ fn cli_url_encode(value : String) -> String {
 }
 
 ///|
-fn cli_hex_digit(n : Int) -> Char {
+fn cli_hex_digit(n : Int32) -> Char {
   if n < 10 {
     ('0'.to_int() + n).unsafe_to_char()
   } else {
@@ -1634,7 +1632,11 @@ fn has_flag(args : Array[String], name : String) -> Bool {
 }
 
 ///|
-fn parse_int_arg(args : Array[String], name : String, default~ : Int) -> Int {
+fn parse_int_arg(
+  args : Array[String],
+  name : String,
+  default~ : Int32,
+) -> Int32 {
   match parse_string_arg(args, name) {
     Some(s) => @string.parse_int(s[:]) catch { _ => default }
     None => default

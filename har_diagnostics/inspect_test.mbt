@@ -22,29 +22,29 @@ fn fixture() -> String {
 ///|
 test "mixed capture opens without models or tokens and retains entry association" {
   let result = open_capture(fixture())
-  assert_eq(get(result, "schema"), "moongate.har-diagnostics.v1".to_json())
-  assert_eq(get(result, "captureEntries"), (7).to_json())
-  assert_eq(get(result, "selectedEntries"), (7).to_json())
+  assert_eq(get(result, "schema"), Json("moongate.har-diagnostics.v1"))
+  assert_eq(get(result, "captureEntries"), Json(7))
+  assert_eq(get(result, "selectedEntries"), Json(7))
   let summary = get(result, "summary")
-  assert_eq(get(summary, "httpErrorCount"), (2).to_json())
-  assert_eq(get(summary, "noHttpResponseCount"), (1).to_json())
-  assert_eq(get(summary, "unknownStatusCount"), (1).to_json())
-  assert_eq(get(summary, "elapsedSampleCount"), (5).to_json())
-  assert_eq(get(summary, "missingElapsedCount"), (2).to_json())
-  assert_eq(get(summary, "missingStartCount"), (1).to_json())
-  assert_eq(get(summary, "p50ElapsedMs"), (85).to_json())
-  assert_eq(get(summary, "p95ElapsedMs"), (250).to_json())
+  assert_eq(get(summary, "httpErrorCount"), Json(2))
+  assert_eq(get(summary, "noHttpResponseCount"), Json(1))
+  assert_eq(get(summary, "unknownStatusCount"), Json(1))
+  assert_eq(get(summary, "elapsedSampleCount"), Json(5))
+  assert_eq(get(summary, "missingElapsedCount"), Json(2))
+  assert_eq(get(summary, "missingStartCount"), Json(1))
+  assert_eq(get(summary, "p50ElapsedMs"), Json(85))
+  assert_eq(get(summary, "p95ElapsedMs"), Json(250))
   guard get(result, "entries") is Array(rows) else { fail("entries") }
-  assert_eq(get(rows[0], "origin"), "https://api.fixture.invalid".to_json())
-  assert_eq(get(rows[0], "longestRecordedPhase"), "wait".to_json())
-  assert_eq(get(get(rows[0], "timingsMs"), "ssl"), (15).to_json())
+  assert_eq(get(rows[0], "origin"), Json("https://api.fixture.invalid"))
+  assert_eq(get(rows[0], "longestRecordedPhase"), Json("wait"))
+  assert_eq(get(get(rows[0], "timingsMs"), "ssl"), Json(15))
   assert_eq(get(get(rows[0], "timingsMs"), "blocked"), Json::null())
   assert_eq(get(rows[3], "elapsedMs"), Json::null())
   assert_eq(get(rows[3], "longestRecordedPhase"), Json::null())
-  assert_eq(get(rows[4], "elapsedMs"), (0).to_json())
-  assert_eq(get(rows[4], "entry"), (5).to_json())
-  assert_eq(get(rows[4], "startOffsetMs"), (125).to_json())
-  assert_eq(get(rows[5], "startOffsetMs"), (1500).to_json())
+  assert_eq(get(rows[4], "elapsedMs"), Json(0))
+  assert_eq(get(rows[4], "entry"), Json(5))
+  assert_eq(get(rows[4], "startOffsetMs"), Json(125))
+  assert_eq(get(rows[5], "startOffsetMs"), Json(1500))
   assert_eq(get(rows[6], "startedAtUnixMs"), Json::null())
   assert_true(!result.stringify().contains("PRIVATE_"))
   assert_true(!result.stringify().contains("/PRIVATE_PATH"))
@@ -63,9 +63,9 @@ test "filters combine exact origins methods status and original entry numbers" {
   }
   guard get(result, "entries") is Array(rows) else { fail("entries") }
   assert_eq(rows.length(), 1)
-  assert_eq(get(rows[0], "entry"), (3).to_json())
-  assert_eq(get(rows[0], "status"), (429).to_json())
-  assert_eq(get(rows[0], "startOffsetMs"), (500).to_json())
+  assert_eq(get(rows[0], "entry"), Json(3))
+  assert_eq(get(rows[0], "status"), Json(429))
+  assert_eq(get(rows[0], "startOffsetMs"), Json(500))
   for
     (status, expected) in [
       ("0", 1),
@@ -79,19 +79,19 @@ test "filters combine exact origins methods status and original entry numbers" {
       is Ok(filtered) else {
       fail("status filter")
     }
-    assert_eq(get(filtered, "selectedEntries"), expected.to_json())
+    assert_eq(get(filtered, "selectedEntries"), Json(expected))
   }
   guard @har_diagnostics.inspect_capture_json(fixture(), entry=6) is Ok(detail) else {
     fail("detail")
   }
   guard get(detail, "entries") is Array([row]) else { fail("detail row") }
-  assert_eq(get(row, "entry"), (6).to_json())
-  assert_eq(get(row, "outcome"), "server_error".to_json())
+  assert_eq(get(row, "entry"), Json(6))
+  assert_eq(get(row, "outcome"), Json("server_error"))
   guard @har_diagnostics.inspect_capture_json(fixture(), entry=6, status="2xx")
     is Ok(empty) else {
     fail("intersection")
   }
-  assert_eq(get(empty, "selectedEntries"), (0).to_json())
+  assert_eq(get(empty, "selectedEntries"), Json(0))
   assert_eq(get(get(empty, "summary"), "p50ElapsedMs"), Json::null())
 }
 
@@ -104,11 +104,11 @@ test "empty and missing fields stay distinct from known zero" {
     "{\"log\":{\"version\":\"1.2\",\"entries\":[{\"request\":{\"method\":\"GET\",\"url\":\"http://localhost:80\"},\"response\":{},\"timings\":{\"ssl\":500,\"connect\":0,\"wait\":0},\"time\":0,\"startedDateTime\":\"PRIVATE_NOT_A_DATE\"}]}}",
   )
   guard get(result, "entries") is Array([row]) else { fail("entry") }
-  assert_eq(get(row, "origin"), "http://localhost".to_json())
-  assert_eq(get(row, "longestRecordedPhase"), "connect".to_json())
+  assert_eq(get(row, "origin"), Json("http://localhost"))
+  assert_eq(get(row, "longestRecordedPhase"), Json("connect"))
   assert_eq(get(row, "status"), Json::null())
   assert_eq(get(row, "startedAtUnixMs"), Json::null())
-  assert_eq(get(get(result, "summary"), "p50ElapsedMs"), (0).to_json())
+  assert_eq(get(get(result, "summary"), "p50ElapsedMs"), Json(0))
   assert_true(!result.stringify().contains("PRIVATE_"))
 }
 
@@ -143,7 +143,7 @@ test "origin extraction excludes credential paths query fragments and diagnostic
         "version": "1.2",
         "entries": [
           {
-            "request": { "method": "GET", "url": url.to_json() },
+            "request": { "method": "GET", "url": Json(url) },
             "response": { "status": 200 },
           },
         ],
@@ -158,7 +158,7 @@ test "origin extraction excludes credential paths query fragments and diagnostic
     "{\"log\":{\"version\":\"1.2\",\"entries\":[{\"request\":{\"method\":\"GET\",\"url\":\"http://[::1]:15721/PRIVATE_PATH?secret=PRIVATE_QUERY\"},\"response\":{\"status\":200}}]}}",
   )
   guard get(result, "entries") is Array([row]) else { fail("ipv6") }
-  assert_eq(get(row, "origin"), "http://[::1]:15721".to_json())
+  assert_eq(get(row, "origin"), Json("http://[::1]:15721"))
 }
 
 ///|
@@ -200,17 +200,15 @@ test "timestamp fractions and zones are normalized without leaking malformed tim
       {
         "request": { "method": "GET", "url": "https://x.invalid" },
         "response": { "status": 200 },
-        "startedDateTime": start.to_json(),
+        "startedDateTime": Json(start),
       } : Json)
   })
-  let input : Json = {
-    "log": { "version": "1.2", "entries": entries.to_json() },
-  }
+  let input : Json = { "log": { "version": "1.2", "entries": Json(entries) } }
   let result = open_capture(input.stringify())
   guard get(result, "entries") is Array(rows) else { fail("rows") }
   assert_true(get(rows[0], "startedAtUnixMs") is Number(_, ..))
   assert_eq(get(rows[0], "startedAtUnixMs"), get(rows[1], "startedAtUnixMs"))
-  assert_eq(get(rows[0], "startOffsetMs"), (0).to_json())
+  assert_eq(get(rows[0], "startOffsetMs"), Json(0))
   for i = 2; i < rows.length(); i = i + 1 {
     assert_eq(get(rows[i], "startedAtUnixMs"), Json::null())
   }

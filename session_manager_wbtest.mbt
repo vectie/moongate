@@ -44,16 +44,16 @@ test "moongate claude session parser reclassifies tool result messages" {
 
 ///|
 test "moongate delete sessions parser accepts direct arrays only" {
-  let item = {
+  let item = Json({
     "providerId": Json::string("codex"),
     "sessionId": Json::string("s1"),
     "sourcePath": Json::string("/tmp/s1.jsonl"),
-  }.to_json()
+  })
   let raw = moon_delete_session_requests_from_json(Some(Json::array([item])))
   assert_eq(raw.unwrap().length(), 1)
   assert_true(
     moon_delete_session_requests_from_json(
-      Some({ "items": Json::array([item]) }.to_json()),
+      Some(Json({ "items": Json::array([item]) })),
     )
     is None,
   )
@@ -162,7 +162,7 @@ test "moongate session terminal target follows MoonGate preferred terminal alias
   assert_eq(moon_session_terminal_target(None), "terminal")
   assert_eq(moon_session_terminal_target(Some("iterm2")), "iterm")
   assert_eq(moon_session_terminal_target(Some(" Ghostty ")), "ghostty")
-  let settings = { "preferredTerminal": Json::string("wezterm") }.to_json()
+  let settings = Json({ "preferredTerminal": Json::string("wezterm") })
   assert_eq(moon_session_terminal_from_settings(settings), Some("wezterm"))
 }
 

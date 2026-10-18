@@ -168,9 +168,9 @@ test "invalid provider import does not clear live provider state" {
   assert_true(
     proxy.provider_router.provider_by_id("codex", "codex-oauth") is Some(_),
   )
-  let invalid = {
-    "codex": { "broken": Json::string("not-an-object") }.to_json(),
-  }.to_json()
+  let invalid = Json({
+    "codex": Json({ "broken": Json::string("not-an-object") }),
+  })
   assert_true(proxy.moon_apply_import_providers(invalid) is Err(_))
   assert_true(
     proxy.provider_router.provider_by_id("codex", "codex-oauth") is Some(_),

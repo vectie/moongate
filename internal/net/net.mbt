@@ -1,8 +1,11 @@
 ///|
-extern "c" fn tcp_localhost_port_open(port : Int, timeout_ms : Int) -> Int = "moonbit_moongate_net_tcp_localhost_port_open"
+extern "c" fn tcp_localhost_port_open(
+  port : Int32,
+  timeout_ms : Int32,
+) -> Int32 = "moonbit_moongate_net_tcp_localhost_port_open"
 
 ///|
-pub fn localhost_port_open(port : Int, timeout_ms? : Int = 100) -> Bool {
+pub fn localhost_port_open(port : Int32, timeout_ms~ : Int32 = 100) -> Bool {
   if port <= 0 || port > 65535 {
     return false
   }

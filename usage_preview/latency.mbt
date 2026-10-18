@@ -2,15 +2,15 @@
 /// Profile file-supplied request latency in milliseconds, without contacting a provider.
 pub fn profile_usage_latency_json(
   content : String,
-  source_name? : String = "Usage export",
-  app? : String = "",
-  provider? : String = "",
-  model? : String = "",
-  start_day? : String = "",
-  end_day? : String = "",
+  source_name~ : String = "Usage export",
+  app~ : String = "",
+  provider~ : String = "",
+  model~ : String = "",
+  start_day~ : String = "",
+  end_day~ : String = "",
 ) -> Result[Json, String] {
   for day in [start_day, end_day] {
-    if !day.is_empty() && usage_file_day(day.to_json()) != day {
+    if !day.is_empty() && usage_file_day(Json(day)) != day {
       return Err("Date filters must be valid YYYY-MM-DD dates")
     }
   }
@@ -52,10 +52,10 @@ pub fn profile_usage_latency_json(
       (start_day.is_empty() || (!day.is_empty() && day >= start_day)) &&
       (end_day.is_empty() || (!day.is_empty() && day <= end_day)) {
       fields["latencyMs"] = match latency {
-        Some(n) => n.to_json()
+        Some(n) => Json(n)
         None => Json::null()
       }
-      fields["sourceRow"] = (index + 1).to_json()
+      fields["sourceRow"] = Json(index + 1)
       rows.push(Json::object(fields))
     }
   }
@@ -78,12 +78,12 @@ pub fn profile_usage_latency_json(
   let by_model = latency_groups(rows, "model")
   let by_provider = latency_groups(rows, "providerId")
   let source : Json = {
-    "sourceName": source_name.to_json(),
-    "importedRows": normalized.length().to_json(),
+    "sourceName": Json(source_name),
+    "importedRows": Json(normalized.length()),
     "sourceTotal": compare_field(preview, "sourceTotal"),
     "partial": compare_field(preview, "partial"),
     "sourceCoverageUnknown": compare_field(preview, "sourceCoverageUnknown") ==
-    true.to_json(),
+    Json(true),
     "usageMergeScope": compare_field(preview, "usageMergeScope"),
   }
   let caveats = [
@@ -99,11 +99,11 @@ pub fn profile_usage_latency_json(
     "Filters: " +
     (
       {
-        "app": app.to_json(),
-        "provider": provider.to_json(),
-        "model": model.to_json(),
-        "startDay": start_day.to_json(),
-        "endDay": end_day.to_json(),
+        "app": Json(app),
+        "provider": Json(provider),
+        "model": Json(model),
+        "startDay": Json(start_day),
+        "endDay": Json(end_day),
       } : Json).stringify(),
     "TOTAL: " + summary.stringify(),
   ]
@@ -126,19 +126,19 @@ pub fn profile_usage_latency_json(
     "percentileMethod": "nearest-rank",
     "source": source,
     "filters": {
-      "app": app.to_json(),
-      "provider": provider.to_json(),
-      "model": model.to_json(),
-      "startDay": start_day.to_json(),
-      "endDay": end_day.to_json(),
+      "app": Json(app),
+      "provider": Json(provider),
+      "model": Json(model),
+      "startDay": Json(start_day),
+      "endDay": Json(end_day),
     },
-    "selectedRows": rows.length().to_json(),
+    "selectedRows": Json(rows.length()),
     "summary": summary,
-    "byModel": by_model.to_json(),
-    "byProvider": by_provider.to_json(),
-    "slowest": slowest.to_json(),
-    "caveats": caveats.to_json(),
-    "report": (lines.join("\n") + "\n").to_json(),
+    "byModel": Json(by_model),
+    "byProvider": Json(by_provider),
+    "slowest": Json(slowest),
+    "caveats": Json(caveats),
+    "report": Json(lines.join("\n") + "\n"),
   }
   if @encoding/utf8.encode(result.stringify(indent=2)).length() >
     4 * 1024 * 1024 - 1 {
@@ -158,17 +158,17 @@ fn latency_summary(rows : Array[Json]) -> Json {
     }
   }
   samples.sort()
-  let percentile = (percent : Int) => {
+  let percentile = (percent : Int32) => {
     if samples.is_empty() {
       Json::null()
     } else {
-      samples[(samples.length() * percent + 99) / 100 - 1].to_json()
+      Json(samples[(samples.length() * percent + 99) / 100 - 1])
     }
   }
   {
-    "rows": rows.length().to_json(),
-    "sampleCount": samples.length().to_json(),
-    "missingLatencyCount": (rows.length() - samples.length()).to_json(),
+    "rows": Json(rows.length()),
+    "sampleCount": Json(samples.length()),
+    "missingLatencyCount": Json(rows.length() - samples.length()),
     "p50Ms": percentile(50),
     "p95Ms": percentile(95),
     "p99Ms": percentile(99),
@@ -192,7 +192,7 @@ fn latency_groups(rows : Array[Json], field : String) -> Array[Json] {
     guard latency_summary(buckets[key]) is Object(summary) else {
       abort("summary")
     }
-    summary["key"] = key.to_json()
+    summary["key"] = Json(key)
     Json::object(summary)
   })
 }

@@ -51,14 +51,14 @@ test "JSON and SSE import as requests with unknown costs and reopen filters" {
     ),
     ("two.sse", chat_sse("chat-2", usage_event("chat-2") + "data: [DONE]\n\n")),
   ])
-  assert_eq(field(field(result, "summary"), "tokens"), (17).to_json())
-  assert_eq(field(field(result, "summary"), "missingCostCount"), (2).to_json())
-  assert_eq(field(result, "sourceCoverageUnknown"), true.to_json())
+  assert_eq(field(field(result, "summary"), "tokens"), Json(17))
+  assert_eq(field(field(result, "summary"), "missingCostCount"), Json(2))
+  assert_eq(field(result, "sourceCoverageUnknown"), Json(true))
   guard field(result, "data") is Array(rows) else { fail("rows") }
   assert_eq(rows.length(), 2)
-  assert_eq(field(rows[0], "requestId"), "chat-1".to_json())
-  assert_eq(field(rows[0], "captureIndex"), (1).to_json())
-  assert_eq(field(rows[0], "date"), "2026-10-09".to_json())
+  assert_eq(field(rows[0], "requestId"), Json("chat-1"))
+  assert_eq(field(rows[0], "captureIndex"), Json(1))
+  assert_eq(field(rows[0], "date"), Json("2026-10-09"))
   assert_eq(field(rows[0], "totalCostUsd"), Json::null())
   assert_true(!result.stringify().contains("PRIVATE_"))
   assert_true(!result.stringify().contains("cached_tokens"))
@@ -70,10 +70,10 @@ test "JSON and SSE import as requests with unknown costs and reopen filters" {
     is Ok(reopened) else {
     fail("reopen")
   }
-  assert_eq(field(reopened, "total"), (1).to_json())
-  assert_eq(field(field(reopened, "summary"), "tokens"), (5).to_json())
-  assert_eq(field(reopened, "sourceTotal"), (2).to_json())
-  assert_eq(field(reopened, "sourceCoverageUnknown"), true.to_json())
+  assert_eq(field(reopened, "total"), Json(1))
+  assert_eq(field(field(reopened, "summary"), "tokens"), Json(5))
+  assert_eq(field(reopened, "sourceTotal"), Json(2))
+  assert_eq(field(reopened, "sourceCoverageUnknown"), Json(true))
 }
 
 ///|
@@ -96,21 +96,21 @@ test "missing partial interrupted error and empty captures remain explicit" {
       ),
     ),
   ])
-  assert_eq(field(result, "total"), (1).to_json())
-  assert_eq(field(result, "sourceTotal"), (6).to_json())
+  assert_eq(field(result, "total"), Json(1))
+  assert_eq(field(result, "sourceTotal"), Json(6))
   let details = field(result, "chatCaptureImport")
-  assert_eq(field(field(details, "stateCounts"), "completed"), (3).to_json())
+  assert_eq(field(field(details, "stateCounts"), "completed"), Json(3))
   guard field(details, "outcomes") is Array(outcomes) else { fail("outcomes") }
-  assert_eq(field(outcomes[0], "usageState"), "missing".to_json())
-  assert_eq(field(outcomes[1], "usageState"), "incomplete".to_json())
-  assert_eq(field(outcomes[2], "state"), "incomplete".to_json())
-  assert_eq(field(outcomes[2], "usageState"), "unavailable".to_json())
+  assert_eq(field(outcomes[0], "usageState"), Json("missing"))
+  assert_eq(field(outcomes[1], "usageState"), Json("incomplete"))
+  assert_eq(field(outcomes[2], "state"), Json("incomplete"))
+  assert_eq(field(outcomes[2], "usageState"), Json("unavailable"))
   assert_eq(
     field(field(outcomes[2], "observedUsage"), "total_tokens"),
-    (12).to_json(),
+    Json(12),
   )
-  assert_eq(field(outcomes[3], "state"), "errored".to_json())
-  assert_eq(field(outcomes[4], "state"), "empty".to_json())
+  assert_eq(field(outcomes[3], "state"), Json("errored"))
+  assert_eq(field(outcomes[4], "state"), Json("empty"))
   assert_true(!result.stringify().contains("PRIVATE_"))
 }
 
@@ -140,7 +140,7 @@ test "all observed choices must finish and reasons do not leak arbitrary text" {
   let content = "{\"object\":\"chat.completion\",\"id\":\"n\",\"model\":\"m\",\"choices\":[{\"index\":1,\"message\":{},\"finish_reason\":null},{\"index\":0,\"message\":{},\"finish_reason\":\"PRIVATE_REASON\"}]}"
   let parsed = parse_chat_capture(content)
   assert_eq(parsed.state, "incomplete")
-  assert_eq(field(parsed.finishes[0], "finishReason"), "unrecognized".to_json())
+  assert_eq(field(parsed.finishes[0], "finishReason"), Json("unrecognized"))
   assert_eq(field(parsed.finishes[1], "finishReason"), Json::null())
 }
 
@@ -190,7 +190,7 @@ test "usage count validation does not round fabricate or double count subsets" {
       ),
     ),
   ])
-  assert_eq(field(field(exact, "summary"), "tokens"), (12).to_json())
+  assert_eq(field(field(exact, "summary"), "tokens"), Json(12))
 }
 
 ///|

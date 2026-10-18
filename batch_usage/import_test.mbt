@@ -9,7 +9,7 @@ fn get(value : Json, key : String) -> Json raise {
 ///|
 fn chat_result(id : String, usage : Json) -> Json {
   {
-    "custom_id": id.to_json(),
+    "custom_id": Json(id),
     "totalCostUsd": 42,
     "response": {
       "status_code": 200,
@@ -238,7 +238,7 @@ test "Bad HTTP status missing model and unknown Responses states reject the resu
   for status in [0.0, 99.0, 200.5, 600.0] {
     let record : Json = {
       "custom_id": "x",
-      "response": { "status_code": status.to_json() },
+      "response": { "status_code": Json(status) },
     }
     assert_rejected(record.stringify(), "HTTP status")
   }
