@@ -559,7 +559,31 @@ test "registered cli commands match suite command aliases and status commands" {
 
 ///|
 test "cli command route owns command family dispatch" {
-  assert_eq(registered_cli_command_groups().length(), 15)
+  let families = registered_cli_command_groups().map(group => group.family)
+  assert_eq(families.length(), 16)
+  assert_eq(families, [
+    "core", "provider", "auth", "copilot", "skill", "proxy", "config", "usage", "requests",
+    "suite", "install", "stream-check", "sync", "session", "runtime", "workspace",
+  ])
+  assert_eq(
+    registered_cli_command_route([
+      "moongate", "workspace", "read", "--filename", "AGENTS.md",
+    ]),
+    Some(("workspace", "read_workspace_file")),
+  )
+  assert_eq(
+    registered_cli_command_route([
+      "moongate", "workspace", "memory", "search", "--query", "fixture",
+    ]),
+    Some(("workspace", "search_daily_memory_files")),
+  )
+  assert_eq(
+    registered_cli_command_route(["moongate", "openclaw", "config-health"]),
+    Some(("workspace", "scan_openclaw_config_health")),
+  )
+  assert_true(
+    registered_cli_command_route(["moongate", "workspace", "not-real"]) is None,
+  )
   assert_eq(
     registered_cli_command_route(["moongate", "provider", "list"]),
     Some(("provider", "get_providers")),
