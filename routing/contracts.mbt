@@ -54,14 +54,14 @@ pub impl @json.FromJson for RoutingMode with fn from_json(
   path : @json.JsonPath,
 ) -> RoutingMode raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError((path, "RoutingMode: expected string"))
+    raise JsonDecodeError((path, "RoutingMode: expected string"))
   }
   match id {
     "priority" => Priority
     "smooth-weighted-round-robin" => SmoothWeightedRoundRobin
     "least-inflight" => LeastInflight
     "session-sticky" => SessionSticky
-    _ => raise @json.JsonDecodeError((path, "RoutingMode: unsupported value"))
+    _ => raise JsonDecodeError((path, "RoutingMode: unsupported value"))
   }
 }
 
@@ -100,9 +100,7 @@ pub impl @json.FromJson for RoutingDecisionReasonV1 with fn from_json(
   path : @json.JsonPath,
 ) -> RoutingDecisionReasonV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError(
-      (path, "RoutingDecisionReasonV1: expected string"),
-    )
+    raise JsonDecodeError((path, "RoutingDecisionReasonV1: expected string"))
   }
   match id {
     "highest-priority-eligible" => HighestPriorityEligible
@@ -112,7 +110,7 @@ pub impl @json.FromJson for RoutingDecisionReasonV1 with fn from_json(
     "new-session-weighted-selection" => NewSessionWeightedSelection
     "no-eligible-provider" => NoEligibleProvider
     _ =>
-      raise @json.JsonDecodeError(
+      raise JsonDecodeError(
         (path, "RoutingDecisionReasonV1: unsupported value"),
       )
   }
@@ -147,15 +145,13 @@ pub impl @json.FromJson for RoutingActivationActionV1 with fn from_json(
   path : @json.JsonPath,
 ) -> RoutingActivationActionV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError(
-      (path, "RoutingActivationActionV1: expected string"),
-    )
+    raise JsonDecodeError((path, "RoutingActivationActionV1: expected string"))
   }
   match id {
     "activate" => Activate
     "rollback" => Rollback
     _ =>
-      raise @json.JsonDecodeError(
+      raise JsonDecodeError(
         (path, "RoutingActivationActionV1: unsupported value"),
       )
   }
@@ -188,15 +184,13 @@ pub impl @json.FromJson for RoutingActivationScopeV1 with fn from_json(
   path : @json.JsonPath,
 ) -> RoutingActivationScopeV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError(
-      (path, "RoutingActivationScopeV1: expected string"),
-    )
+    raise JsonDecodeError((path, "RoutingActivationScopeV1: expected string"))
   }
   match id {
     "bounded-canary" => BoundedCanary
     "rollback" => RollbackScope
     _ =>
-      raise @json.JsonDecodeError(
+      raise JsonDecodeError(
         (path, "RoutingActivationScopeV1: unsupported value"),
       )
   }

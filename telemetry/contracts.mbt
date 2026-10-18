@@ -57,7 +57,7 @@ pub impl @json.FromJson for TerminalOutcomeV1 with fn from_json(
   path : @json.JsonPath,
 ) -> TerminalOutcomeV1 raise @json.JsonDecodeError {
   guard value is String(id) && parse_terminal_outcome_v1(id) is Some(outcome) else {
-    raise @json.JsonDecodeError((path, "TerminalOutcomeV1: unsupported value"))
+    raise JsonDecodeError((path, "TerminalOutcomeV1: unsupported value"))
   }
   outcome
 }
@@ -102,7 +102,7 @@ pub impl @json.FromJson for CircuitStateV1 with fn from_json(
   path : @json.JsonPath,
 ) -> CircuitStateV1 raise @json.JsonDecodeError {
   guard value is String(id) && parse_circuit_state_v1(id) is Some(state) else {
-    raise @json.JsonDecodeError((path, "CircuitStateV1: unsupported value"))
+    raise JsonDecodeError((path, "CircuitStateV1: unsupported value"))
   }
   state
 }
