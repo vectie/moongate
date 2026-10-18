@@ -10,7 +10,13 @@ pub fn moongate_preview_usage_file_json(
   end_day~ : String = "",
 ) -> Result[Json, String] {
   @usage_preview.moongate_preview_usage_file_json(
-    content, source_name~, app~, provider~, model~, start_day~, end_day~,
+    content,
+    source_name~,
+    app~,
+    provider~,
+    model~,
+    start_day~,
+    end_day~,
   )
 }
 

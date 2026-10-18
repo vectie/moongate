@@ -86,6 +86,7 @@ test "OpenAPI auth parameter examples are not exported and missing bodies are ex
   assert_true(http.contains("No JSON body example"))
   assert_true(http.contains("Authorization: {{header_Authorization}}"))
 }
+
 ///|
 test "OpenAPI explicit null body is a supplied example" {
   let source =
@@ -95,4 +96,3 @@ test "OpenAPI explicit null body is a supplied example" {
   assert_true(http.contains("\n\nnull\n"))
   assert_true(!http.contains("No JSON body example"))
 }
-

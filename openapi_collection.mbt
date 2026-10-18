@@ -301,11 +301,7 @@ pub fn moongate_openapi_collection_json(
       }
       let suffix = if query.is_empty() { "" } else { "?" + query.join("&") }
       let url = "{{baseUrl}}" + gate_oas_line(request_path) + suffix
-      let title = if id.is_empty() {
-        verb.to_upper() + " " + path
-      } else {
-        id
-      }
+      let title = if id.is_empty() { verb.to_upper() + " " + path } else { id }
       let section = "### " +
         gate_oas_line(title) +
         "\n# " +
