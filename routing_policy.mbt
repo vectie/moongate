@@ -320,7 +320,7 @@ fn ProviderRouter::active_routing_requires_session(
   app_type : String,
 ) -> Bool {
   match self.active_routing_policies.get(app_type) {
-    Some(policy) => policy.mode == @routing.SessionSticky
+    Some(policy) => policy.mode == SessionSticky
     None => false
   }
 }
@@ -507,7 +507,7 @@ fn ProviderRouter::activate_routing_policy(
   let receipt : @routing.RoutingPolicyActivationReceiptV1 = {
     contract_id: @routing.routing_activation_receipt_contract_v1(),
     receipt_id,
-    action: @routing.Activate,
+    action: Activate,
     app_type,
     actor_principal: actor_principal.canonical_text(),
     authority_decision_id: authority_decision.decision_id(),
@@ -516,7 +516,7 @@ fn ProviderRouter::activate_routing_policy(
     policy_revision: policy.revision,
     previous_policy_id: previous.map(fn(value) { value.policy_id }),
     previous_policy_revision: previous.map(fn(value) { value.revision }),
-    activation_scope: @routing.BoundedCanary,
+    activation_scope: BoundedCanary,
     canary_traffic_basis_points: policy.canary_traffic_basis_points,
     minimum_shadow_decisions: policy.minimum_shadow_decisions,
     minimum_shadow_window_ms: policy.minimum_shadow_window_ms,
@@ -554,7 +554,7 @@ fn ProviderRouter::rollback_routing_policy(
   let receipt : @routing.RoutingPolicyActivationReceiptV1 = {
     contract_id: @routing.routing_activation_receipt_contract_v1(),
     receipt_id,
-    action: @routing.Rollback,
+    action: Rollback,
     app_type,
     actor_principal: actor_principal.canonical_text(),
     authority_decision_id: authority_decision.decision_id(),
@@ -563,7 +563,7 @@ fn ProviderRouter::rollback_routing_policy(
     policy_revision: previous.revision,
     previous_policy_id: Some(current.policy_id),
     previous_policy_revision: Some(current.revision),
-    activation_scope: @routing.RollbackScope,
+    activation_scope: RollbackScope,
     canary_traffic_basis_points: previous.canary_traffic_basis_points,
     minimum_shadow_decisions: previous.minimum_shadow_decisions,
     minimum_shadow_window_ms: previous.minimum_shadow_window_ms,

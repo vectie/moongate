@@ -45,17 +45,13 @@ pub impl @json.FromJson for LiveBenchmarkStatusV1 with fn from_json(
   path : @json.JsonPath,
 ) -> LiveBenchmarkStatusV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError(
-      (path, "LiveBenchmarkStatusV1: expected string"),
-    )
+    raise JsonDecodeError((path, "LiveBenchmarkStatusV1: expected string"))
   }
   match id {
     "denied" => Denied
     "unavailable" => Unavailable
     _ =>
-      raise @json.JsonDecodeError(
-        (path, "LiveBenchmarkStatusV1: unsupported value"),
-      )
+      raise JsonDecodeError((path, "LiveBenchmarkStatusV1: unsupported value"))
   }
 }
 
@@ -86,17 +82,13 @@ pub impl @json.FromJson for LiveBenchmarkReasonV1 with fn from_json(
   path : @json.JsonPath,
 ) -> LiveBenchmarkReasonV1 raise @json.JsonDecodeError {
   guard value is String(id) else {
-    raise @json.JsonDecodeError(
-      (path, "LiveBenchmarkReasonV1: expected string"),
-    )
+    raise JsonDecodeError((path, "LiveBenchmarkReasonV1: expected string"))
   }
   match id {
     "authority-decision-required" => AuthorityDecisionRequired
     "authority-verification-unavailable" => AuthorityVerificationUnavailable
     _ =>
-      raise @json.JsonDecodeError(
-        (path, "LiveBenchmarkReasonV1: unsupported value"),
-      )
+      raise JsonDecodeError((path, "LiveBenchmarkReasonV1: unsupported value"))
   }
 }
 

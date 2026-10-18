@@ -64,12 +64,12 @@ fn TrafficStats::operations_monitor_snapshot(
   for
     outcome in [
       @telemetry.Success,
-      @telemetry.Timeout,
-      @telemetry.RateLimited,
-      @telemetry.Cancelled,
-      @telemetry.ProtocolClientError,
-      @telemetry.UpstreamError,
-      @telemetry.Unknown,
+      Timeout,
+      RateLimited,
+      Cancelled,
+      ProtocolClientError,
+      UpstreamError,
+      Unknown,
     ] {
     let count = terminal_outcome_count_map.get(outcome.id()).unwrap_or(0)
     if count > 0 {
@@ -112,22 +112,22 @@ fn request_log_terminal_outcome(
     log.error_message
     .map(fn(value) { value.to_lower().contains("timeout") })
     .unwrap_or(false) {
-    @telemetry.Timeout
+    Timeout
   } else if log.status_code == 429 {
-    @telemetry.RateLimited
+    RateLimited
   } else if log.status_code == 499 ||
     log.error_message
     .map(fn(value) { value.to_lower().contains("cancel") })
     .unwrap_or(false) {
-    @telemetry.Cancelled
+    Cancelled
   } else if log.status_code >= 200 && log.status_code < 300 {
-    @telemetry.Success
+    Success
   } else if log.status_code >= 400 && log.status_code < 500 {
-    @telemetry.ProtocolClientError
+    ProtocolClientError
   } else if log.status_code >= 500 {
-    @telemetry.UpstreamError
+    UpstreamError
   } else {
-    @telemetry.Unknown
+    Unknown
   }
 }
 

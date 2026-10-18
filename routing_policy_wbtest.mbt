@@ -5,7 +5,7 @@ fn routing_test_actor_and_authority() -> (
 ) raise {
   let actor = @capability.principal_ref_v1(
     "operator-1",
-    @capability.Human,
+    Human,
     "moondesk",
     "operator-1",
   )
@@ -47,7 +47,7 @@ test "routing policy requires shadow evidence and binds typed authority" {
     .configure_routing_policy(
       app_type="codex",
       policy_id="codex.balance",
-      mode=@routing.LeastInflight,
+      mode=LeastInflight,
       weights=Map([], capacity=0),
       concurrency_limits={ "provider-a": 1, "provider-b": 2 },
       minimum_shadow_decisions=2,
@@ -80,8 +80,8 @@ test "routing policy requires shadow evidence and binds typed authority" {
       recorded_at_ms=moongate_epoch_ms(),
     )
     .unwrap()
-  assert_eq(receipt.action, @routing.Activate)
-  assert_eq(receipt.activation_scope, @routing.BoundedCanary)
+  assert_eq(receipt.action, Activate)
+  assert_eq(receipt.activation_scope, BoundedCanary)
   assert_eq(receipt.actor_principal, "human|operator-1|moondesk|operator-1")
   assert_eq(receipt.authority_decision_id, "route-change-1")
   assert_eq(
@@ -97,7 +97,7 @@ test "routing canary fraction and session digests are deterministic" {
     policy_id="codex.canary",
     app_type="codex",
     revision=1,
-    mode=@routing.Priority,
+    mode=Priority,
     canary_traffic_basis_points=2500,
     configured_at_ms=1L,
   )
