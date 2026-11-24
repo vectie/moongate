@@ -487,6 +487,7 @@ async test "moongate lepusa manifest uses published package boundary shape" {
   assert_true(moon_mod.contains("\"vectie/lepusa@0.1.4\""))
   assert_true(moon_mod.contains("\"moonbit-community/rabbita@0.12.4\""))
   let generated = moongate_lepusa_manifest_json()
+  assert_true(moon_mod.contains("version = \"\{@suite.version()}\""))
   let parsed = @json.parse(manifest) catch {
     _ => fail("expected lepusa.json to parse")
   }
@@ -494,6 +495,7 @@ async test "moongate lepusa manifest uses published package boundary shape" {
   guard generated is Object(generated_obj) else {
     fail("expected generated lepusa object")
   }
+  assert_eq(generated_obj["version"], Json(@suite.version()))
   for
     key in [
       "identifier", "productName", "version", "icon", "runtime", "bundleResources",

@@ -41,7 +41,7 @@ async fn Gateway::handle_suite_manifest(
     moongate_suite_manifest_json(
       host=self.host,
       port=bound_port,
-      model=self.model,
+      model=self.proxy.moon_suite_default_model(self.model),
     ),
   )
 }
@@ -57,7 +57,7 @@ async fn Gateway::handle_suite_status(
     moongate_suite_status_json(
       host=self.host,
       port=bound_port,
-      model=self.model,
+      model=self.proxy.moon_suite_default_model(self.model),
       status="running",
       ready=true,
     ),
@@ -153,7 +153,7 @@ async fn Gateway::handle_suite_write_status(
     path~,
     host=self.host,
     port=bound_port,
-    model=self.model,
+    model=self.proxy.moon_suite_default_model(self.model),
     status~,
     ready~,
   ) catch {
@@ -176,7 +176,7 @@ async fn Gateway::handle_suite_moonclaw_providers(
     moongate_moonclaw_providers_file_json(
       host=self.host,
       port=bound_port,
-      model=self.model,
+      model=self.proxy.moon_suite_default_model(self.model),
     ),
   )
 }
@@ -196,7 +196,7 @@ async fn Gateway::handle_suite_write_moonclaw_providers(
     path~,
     host=self.host,
     port=bound_port,
-    model=self.model,
+    model=self.proxy.moon_suite_default_model(self.model),
   ) catch {
     err => {
       write_usage_bad_request(w, "\{err}")

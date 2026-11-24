@@ -20,6 +20,21 @@ fn moon_binding_provider_app_type(app_type : String) -> String {
 }
 
 ///|
+fn ProxyService::moon_suite_default_model(
+  self : ProxyService,
+  fallback : String,
+) -> String {
+  if !self.proxy_takeover_enabled.get("openclaw").unwrap_or(false) {
+    return fallback
+  }
+  let id = self.provider_router.current_provider_id("openclaw").unwrap_or("")
+  match self.provider_router.provider_by_id("openclaw", id) {
+    Some(provider) if provider.enabled => provider.binding_model(fallback)
+    _ => fallback
+  }
+}
+
+///|
 fn moon_binding_moondesk_workspace_root() -> String {
   let suite_root = (@os.getenv("MOONSUITE_WORKSPACE_ROOT") catch { _ => None })
     .unwrap_or("")
@@ -61,6 +76,9 @@ fn moon_binding_moonclaw_config_path(root : String) -> String {
 
 ///|
 async fn moon_binding_moonclaw_initialized(root : String) -> Bool {
+  if moon_binding_managed_moondesk_service(root) {
+    return true
+  }
   let text = @fsx.read_file(moon_binding_moonclaw_config_path(root)) catch {
     _ => return false
   }
@@ -71,6 +89,9 @@ async fn moon_binding_moonclaw_initialized(root : String) -> Bool {
 
 ///|
 async fn moon_binding_moondesk_service_configured(root : String) -> Bool {
+  if moon_binding_managed_moondesk_service(root) {
+    return true
+  }
   let text = @fsx.read_file(moon_binding_moondesk_service_path(root)) catch {
     _ => return false
   }
@@ -78,6 +99,32 @@ async fn moon_binding_moondesk_service_configured(root : String) -> Bool {
   guard json is Object(obj) else { return false }
   guard obj.get("daemon") is Some(Object(daemon)) else { return false }
   json_string_from_map(daemon, "command").unwrap_or("").trim() != ""
+}
+
+///|
+async fn moon_binding_managed_moondesk_service(root : String) -> Bool {
+  let text = @fsx.read_file(moon_binding_moondesk_service_path(root)) catch {
+    _ => return false
+  }
+  let json = @json.parse(text) catch { _ => return false }
+  guard json is Object(obj) &&
+    obj.get("kind") == Some(Json("moondesk-moonclaw-service.v1")) &&
+    obj.get("version") is Some(String(version)) &&
+    version != "" else {
+    return false
+  }
+  // MoonDesk owns executable selection. Never convert its opaque binding back
+  // into the old workspace-supplied command/args/cwd form.
+  !obj.contains("daemon") &&
+  !obj.contains("cwd") &&
+  !obj.contains("init") &&
+  version.all(c => {
+    c.is_ascii_alphabetic() ||
+    c.is_ascii_digit() ||
+    c == '.' ||
+    c == '-' ||
+    c == '_'
+  })
 }
 
 ///|
@@ -185,6 +232,9 @@ async fn moon_binding_write_moondesk_provider(
 async fn moon_binding_write_moondesk_service(
   root : String,
 ) -> Result[String, String] {
+  if moon_binding_managed_moondesk_service(root) {
+    return Ok(moon_binding_moondesk_service_path(root))
+  }
   let existing_runtime = moon_binding_existing_moondesk_runtime(root)
   let moonclaw_root = (@os.getenv("MOONCLAW_ROOT") catch { _ => None })
     .unwrap_or("")
@@ -678,6 +728,24 @@ async fn ProxyService::handle_bind_app(
   }
   if !self.persist_proxy_store_or_error(w) {
     return
+  }
+  if app_type == "moondesk" || app_type == "moonclaw" {
+    let _ = write_moongate_suite_status(
+      path=default_moongate_suite_status_path_for_workspace_root(
+        moon_binding_moondesk_workspace_root(),
+      ),
+      host~,
+      port~,
+      model=provider_model,
+      status="running",
+    ) catch {
+      _ => {
+        write_usage_bad_request(
+          w, "Could not publish the connected Moon app's default model; retry the connection",
+        )
+        return
+      }
+    }
   }
   write_usage_json(w, self.app_binding_status_json(app_type, host, port))
 }

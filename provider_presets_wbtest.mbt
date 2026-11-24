@@ -275,7 +275,7 @@ test "moongate provider forms preserve endpoint and protocol distinctions" {
     by_id["qwen-token-plan"].base_url,
     "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
   )
-  assert_eq(by_id["google-gemini"].api_format, "gemini_native")
+  assert_eq(by_id["google-gemini"].api_format, "openai_chat")
   assert_eq(by_id["anthropic-official"].api_format, "anthropic")
   assert_eq(by_id["openai-official"].api_format, "openai")
   assert_eq(by_id["zhipu-glm"].base_url, "https://open.bigmodel.cn/api/paas/v4")
@@ -290,6 +290,56 @@ test "moongate provider presets name sort keeps full visible set" {
   assert_eq(
     moon_provider_preset_name(entries[entries.length() - 1]),
     "OpenRouter Nemotron 3 Ultra (Free)",
+  )
+}
+
+///|
+test "Google Gemini presets choose client protocol and current model suggestions" {
+  let mut count = 0
+  for preset in moon_ready_provider_template_catalog() {
+    guard preset is Object(fields) else { continue }
+    guard fields["name"] == Json("Google Gemini") else { continue }
+    count += 1
+    guard fields["form"] is Object(form) else { fail("expected Gemini form") }
+    assert_false(form.contains("apiKey"))
+    assert_true(
+      form["modelMapping"] is { "defaultModel": "gemini-4-hydrogen", .. },
+    )
+    assert_true(
+      fields["models"] is Array(models) &&
+      models.contains(Json("gemini-4-neon")),
+    )
+    if form["appType"] == Json("gemini") {
+      assert_eq(form["apiFormat"], Json("gemini_native"))
+      assert_eq(
+        form["baseUrl"],
+        Json("https://generativelanguage.googleapis.com"),
+      )
+    } else {
+      assert_eq(form["apiFormat"], Json("openai_chat"))
+      assert_eq(
+        form["baseUrl"],
+        Json("https://generativelanguage.googleapis.com/v1beta/openai"),
+      )
+    }
+  }
+  assert_eq(count, gateway_apps().length())
+  let chat = stream_check_request_body(
+    "openai_chat", "gemini-4-hydrogen", "Reply OK",
+  )
+  assert_true(chat is { "max_tokens": 2048, "reasoning_effort": "low", .. })
+  let native = stream_check_request_body(
+    "gemini_native", "gemini-4-neon", "Reply OK",
+  )
+  assert_true(
+    native
+    is {
+      "generationConfig": {
+        "thinkingConfig": { "thinkingLevel": "low", .. },
+        ..
+      },
+      ..
+    },
   )
 }
 

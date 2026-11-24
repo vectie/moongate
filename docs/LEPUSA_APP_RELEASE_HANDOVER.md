@@ -125,6 +125,13 @@ proven otherwise. Stage only files that belong to the launch.
 
 ## 3. Create and validate `lepusa.json`
 
+MoonGate's release version comes from `moon.mod`, embedded by the suite package
+at build time. Regenerate checked-in manifests after changing the version or UI:
+`moon run cmd/main --target native -- suite lepusa --write` and
+`moon run cmd/main --target native -- suite lepusa-rabbita --write`.
+Commit the generated `suite/release_metadata.mbt` for downstream package builds.
+Do not maintain independent version literals in the app manifest generators.
+
 The manifest is the standalone desktop boundary. A localhost-backed app has a
 shape like this:
 

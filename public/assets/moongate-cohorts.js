@@ -15,8 +15,9 @@ function invalidateCohortComparison(message = "Filters changed; capture a new sn
     if (node) { node.innerHTML = ""; node.disabled = true; }
   }
   text("cohort-report", "No current comparison available");
+  text("cohort-summary", uiLabel("No current comparison available"));
   if ($("cohort-export")) $("cohort-export").disabled = true;
-  if ($("cohort-retry")) $("cohort-retry").disabled = !cohortQuery;
+  if ($("cohort-retry")) { $("cohort-retry").hidden = true; $("cohort-retry").disabled = true; }
   cohortStatus(message);
 }
 
@@ -75,7 +76,7 @@ function cohortAllowlistedSnapshot(raw, query) {
 }
 
 async function captureCohortSnapshot(retry = false) {
-  if (!retry) cohortQuery = Object.freeze({ appType: $("cohort-app")?.value || "codex", streaming: $("cohort-streaming")?.value || "all", period: $("cohort-period")?.value || "24h", end: Math.floor(Date.now() / 1000) });
+  if (!retry) cohortQuery = Object.freeze({ appType: $("cohort-app")?.value || "openclaw", streaming: $("cohort-streaming")?.value || "all", period: $("cohort-period")?.value || "24h", end: Math.floor(Date.now() / 1000) });
   if (!cohortQuery) return;
   const query = cohortQuery;
   invalidateCohortComparison("Capturing retained proxy requests…", true);
@@ -95,11 +96,13 @@ async function captureCohortSnapshot(retry = false) {
     cohortContext = { generation, origin, token };
     cohortPopulateSides();
     renderCohortComparison();
-    cohortStatus(`Captured ${cohortSnapshot.proxy_interval_rows} retained proxy requests. A and B share this snapshot. Retry retains UTC bounds; Refresh captures a new upper bound.`);
+    text("cohort-capture", uiLabel("Refresh snapshot"));
+    cohortStatus(`${cohortSnapshot.proxy_interval_rows} retained proxy requests · ${cohortSnapshot.captured_at_utc}`);
   } catch (_error) {
     if (generation !== cohortGeneration) return;
     if (origin !== window.location.origin || (token && token !== controlTokenPromise)) { invalidateCohortComparison("Gateway or authentication changed; capture again"); return; }
     invalidateCohortComparison("Snapshot unavailable or over its safety limit. No partial report. Retry the same UTC bounds or capture again with narrower filters.", true);
+    if ($("cohort-retry")) { $("cohort-retry").hidden = false; $("cohort-retry").disabled = false; }
   }
 }
 
@@ -177,6 +180,12 @@ function cohortComparisonReport() {
 function renderCohortComparison() {
   const report = cohortComparisonReport();
   text("cohort-report", report || "No current comparison available");
+  const summary = report ? ["a", "b"].map(side => {
+    const row = cohortSelected(side);
+    if (!row) return `${side.toUpperCase()}: ${uiLabel("No data")}`;
+    return `${side.toUpperCase()}: ${row.provider_id} / ${row.request_model}\n${uiLabel("Requests")}: ${row.total} · ${uiLabel("Successful")}: ${row.successful}\np50 ${row.latency.p50_ms ?? "—"} ms · p95 ${row.latency.p95_ms ?? "—"} ms · n=${row.latency.sample_count}`;
+  }).join("\n\n") : uiLabel("No current comparison available");
+  text("cohort-summary", summary);
   if ($("cohort-export")) $("cohort-export").disabled = !report;
 }
 function exportCohortComparison() {
@@ -188,11 +197,13 @@ function exportCohortComparison() {
 }
 
 function initCohortComparison() {
-  const apps = [...new Set(["codex", ...frameworkApps.map(app => app.providerAppType || app.id), "unknown"])];
-  cohortOptions("cohort-app", apps, "codex");
+  const select = $("cohort-app");
+  if (select) {
+    select.innerHTML = scopeOptions({unknown: true});
+    select.value = providerScopes()[0]?.id || "openclaw";
+  }
   for (const id of ["cohort-app", "cohort-streaming", "cohort-period"]) $(id)?.addEventListener("change", () => invalidateCohortComparison());
   $("cohort-query")?.addEventListener("submit", event => { event.preventDefault(); captureCohortSnapshot(); });
-  $("cohort-refresh")?.addEventListener("click", () => captureCohortSnapshot());
   $("cohort-retry")?.addEventListener("click", () => captureCohortSnapshot(true));
   $("cohort-export")?.addEventListener("click", exportCohortComparison);
   for (const side of ["a", "b"]) {

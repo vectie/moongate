@@ -517,6 +517,7 @@ async fn ProxyService::post_codex_compatible_provider_json(
   request : Json,
 ) -> Result[(@http.Response, String), String] {
   let _ = self
+  let request = google_compatible_provider_request(provider, request)
   let base_url = provider.base_url.unwrap()
   let api_key = provider.api_key.unwrap()
   let url = codex_compatible_provider_url(base_url, endpoint)
@@ -564,6 +565,7 @@ async fn ProxyService::post_codex_compatible_provider_stream(
   request : Json,
 ) -> Result[(@http.Client, @http.Response), String] {
   let _ = self
+  let request = google_compatible_provider_request(provider, request)
   let base_url = provider.base_url.unwrap()
   let api_key = provider.api_key.unwrap()
   let url = codex_compatible_provider_url(base_url, endpoint)
@@ -1753,12 +1755,12 @@ async fn ProxyService::stream_check_provider_target_result_json(
     provider.base_url is Some(_) && provider.api_key is Some(_)
   }
   let started_at = @async.now()
-  let live_result = self.stream_check_live_request(
-    auth,
-    provider,
-    model,
-    config.test_prompt,
-  )
+  let timeout_secs = max_int(config.timeout_secs, 1)
+  let live_result = @async.with_timeout(timeout_secs * 1000, () => {
+    self.stream_check_live_request(auth, provider, model, config.test_prompt)
+  }) catch {
+    _ => Err("Provider check timed out after \{timeout_secs} seconds")
+  }
   let response_time_ms = max_int((@async.now() - started_at).to_int(), 0)
   let (success, http_status, message) = match live_result {
     Ok((status_code, response_body)) => {
@@ -1864,14 +1866,30 @@ fn stream_check_request_body(
   model : String,
   prompt : String,
 ) -> Json {
+  let gemini_thinking = model.has_prefix("gemini-3") ||
+    model.has_prefix("gemini-4")
+  let output_budget = if gemini_thinking { 2048 } else { 8 }
+  let gemini_generation : Map[String, Json] = {
+    "maxOutputTokens": Json(output_budget),
+  }
+  if gemini_thinking {
+    gemini_generation["thinkingConfig"] = Json({ "thinkingLevel": "low" })
+  }
   match api_format {
-    "openai_chat" =>
-      Json({
+    "openai_chat" => {
+      let body : Map[String, Json] = {
         "model": Json::string(model),
         "messages": [{ "role": "user", "content": prompt }],
-        "max_tokens": Json::number(8.0),
+        "max_tokens": Json(output_budget),
         "stream": Json::boolean(false),
-      })
+      }
+      // Thinking consumes the completion budget too; eight tokens can end a
+      // valid Gemini check before any user-visible output is produced.
+      if gemini_thinking {
+        body["reasoning_effort"] = Json("low")
+      }
+      Json::object(body)
+    }
     "anthropic" =>
       Json({
         "model": Json::string(model),
@@ -1889,9 +1907,7 @@ fn stream_check_request_body(
             ]),
           }),
         ]),
-        "generationConfig": Json::object({
-          "maxOutputTokens": Json::number(8.0),
-        }),
+        "generationConfig": Json::object(gemini_generation),
       }
       |> Json::object
     _ =>

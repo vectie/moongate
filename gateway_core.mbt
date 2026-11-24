@@ -26,7 +26,7 @@ pub async fn Gateway::start(self : Gateway) -> Unit {
     let status_path = write_moongate_suite_status(
       host=self.host,
       port=bound_port,
-      model=self.model,
+      model=self.proxy.moon_suite_default_model(self.model),
       status="running",
       ready=true,
     )

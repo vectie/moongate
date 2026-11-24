@@ -164,85 +164,6 @@ function renderProviderRows(data, error = "") {
   }
 }
 
-function renderFrameworkRows(rows) {
-  frameworkRows = rows;
-  const target = $("framework-rows");
-  if (!target) return;
-  target.innerHTML = "";
-  for (const row of rows) {
-    const providers = row.providers || [];
-    const providerCount = providers.length;
-    const current = row.current || "";
-    const mode = row.mode === "additive" ? "Multiple active" : "One active";
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.id)}</small></td>
-      <td><span class="state ${row.error ? "bad" : "good"}">${escapeHtml(row.error ? "Error" : mode)}</span></td>
-      <td>${renderCurrentProvider(row, providers, current)}</td>
-      <td>${renderProviderPicker(row, providers)}</td>
-      <td>${renderFrameworkActions(row, providerCount)}</td>
-    `;
-    target.appendChild(tr);
-  }
-}
-
-function renderCurrentProvider(row, providers, current) {
-  if (row.error) return `<small>${escapeHtml(row.error)}</small>`;
-  if (row.mode === "additive") {
-    if (providers.length === 0) return `<small>No live providers</small>`;
-    return `<small>${providers.length} live provider${providers.length === 1 ? "" : "s"}</small>`;
-  }
-  if (providers.length === 0) return `<small>No providers</small>`;
-  const options = providers
-    .map((provider) => {
-      const id = firstString(provider, ["id", "providerId"]);
-      const name = firstString(provider, ["name", "providerName"], id);
-      const selected = id === current ? " selected" : "";
-      return `<option value="${escapeHtml(id)}"${selected}>${escapeHtml(name)}</option>`;
-    })
-    .join("");
-  return `<select data-app="${escapeHtml(row.id)}" aria-label="${escapeHtml(row.label)} provider">${options}</select>`;
-}
-
-function renderProviderPicker(row, providers) {
-  if (row.error) return `<small>Unavailable</small>`;
-  if (providers.length === 0) return `<small>No providers configured</small>`;
-  const options = providers
-    .map((provider) => {
-      const id = firstString(provider, ["id", "providerId"]);
-      const name = firstString(provider, ["name", "providerName"], id);
-      return `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`;
-    })
-    .join("");
-  const builtInCount = providers.filter((provider) => provider.builtIn === true).length;
-  const configuredCount = providers.length - builtInCount;
-  const countParts = [];
-  if (configuredCount > 0) countParts.push(`${configuredCount} configured`);
-  if (builtInCount > 0) countParts.push(`${builtInCount} built-in`);
-  return `
-    <div class="provider-picker">
-      <select data-provider-picker="${escapeHtml(row.id)}" aria-label="${escapeHtml(row.label)} configured providers">${options}</select>
-      <small>${escapeHtml(countParts.join(" · ") || "No providers")}</small>
-    </div>
-  `;
-}
-
-function renderFrameworkActions(row, providerCount) {
-  if (row.error) return `<button type="button" data-action="reload-app" data-app="${escapeHtml(row.id)}">Retry</button>`;
-  const actions = [
-    `<button type="button" data-action="edit-provider" data-app="${escapeHtml(row.id)}">Edit</button>`,
-    `<button type="button" data-action="test-provider" data-app="${escapeHtml(row.id)}">Test</button>`,
-    `<button type="button" data-action="import-live" data-app="${escapeHtml(row.id)}">Import Existing Setup</button>`,
-  ];
-  if (row.mode !== "additive" && providerCount > 0) {
-    actions.unshift(`<button type="button" data-action="switch-provider" data-app="${escapeHtml(row.id)}">Use Selected</button>`);
-  }
-  if (row.desktop) {
-    actions.push(`<button type="button" data-action="claude-desktop-import">Import Claude</button>`);
-  }
-  return `<div class="inline-actions">${actions.join("")}</div>`;
-}
-
 function initProviderAppSelect() {
   const select = $("provider-app");
   if (!select) return;
@@ -254,31 +175,18 @@ function initProviderAppSelect() {
 function initUsageAppSelect() {
   const select = $("usage-app");
   if (!select) return;
-  select.innerHTML = [
-    `<option value="">All frameworks</option>`,
-    ...providerRequestApps().map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`),
-  ].join("");
+  select.innerHTML = scopeOptions({all: true});
 }
 
 function initResilienceAppSelect() {
   const select = $("resilience-app");
   if (!select) return;
-  select.innerHTML = providerRequestApps()
-    .map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`)
-    .join("");
-  select.value = "codex";
+  select.innerHTML = scopeOptions();
+  select.value = providerScopes()[0]?.id || "";
 }
 
 function providerRow(appType) {
   return frameworkRows.find((row) => row.id === appType);
-}
-
-function selectedProviderId(appType) {
-  const picker = document.querySelector(`[data-provider-picker="${appType}"]`);
-  if (picker && picker.value) return picker.value;
-  const current = document.querySelector(`select[data-app="${appType}"]`);
-  if (current && current.value) return current.value;
-  return "";
 }
 
 function providerById(appType, providerId) {
@@ -406,6 +314,7 @@ function providerTemplateRows(data, source) {
       targetAppLabel,
       targetPriority,
       source,
+      models: Array.isArray(row.models) ? row.models.filter(id => typeof id === "string") : [],
     }];
   });
 }
@@ -447,7 +356,9 @@ function renderProviderTemplates() {
     const model = row.provider.modelMapping?.defaultModel;
     if (!groups.has(group)) groups.set(group, {...row, models: [], provider: {...row.provider}});
     const entry = groups.get(group);
-    if (model && !entry.models.includes(model)) entry.models.push(model);
+    for (const id of [model, ...(row.models || [])]) {
+      if (id && !entry.models.includes(id)) entry.models.push(id);
+    }
     if (openrouter) {
       entry.provider.id = "openrouter";
       entry.provider.name = "OpenRouter";
@@ -876,17 +787,14 @@ async function refreshProviderModels() {
 
 async function loadFrameworkRow(app) {
   try {
-    const [providersJson, currentJson] = await Promise.all([
-      sharedGetJson(endpoint(endpoints.providerCreate, { appType: app.id })).then(probe => { if (!probe.ok) throw new Error(probe.error); return probe.data; }),
-      getJson(endpoint(endpoints.providerCurrent, { appType: app.id })),
-    ]);
+    const probe = await sharedGetJson(endpoint(endpoints.providerCreate, { appType: app.id }));
+    if (!probe.ok) throw new Error(probe.error);
     return {
       ...app,
-      providers: objectRows(providersJson),
-      current: typeof currentJson === "string" ? currentJson : "",
+      providers: objectRows(probe.data),
     };
   } catch (error) {
-    return { ...app, providers: [], current: "", error: error.message || String(error) };
+    return { ...app, providers: [], error: error.message || String(error) };
   }
 }
 

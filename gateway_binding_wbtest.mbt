@@ -19,6 +19,27 @@ test "MoonDesk and MoonClaw bindings use the OpenClaw provider scope" {
 }
 
 ///|
+async test "MoonGate preserves MoonDesk's managed version binding without legacy onboarding" {
+  @fsx.with_temporary_directory("moongate-managed-desk-XXXXXX", root => {
+    let service = moon_binding_moondesk_service_path(root)
+    @fsx.make_directory(@pathx.dirname(service), recursive=true, exists_ok=true)
+    let content = (
+      { "kind": "moondesk-moonclaw-service.v1", "version": "0.1.7" } : Json).stringify()
+    @fsx.write_to_file(service, content, create=0o600)
+    assert_true(moon_binding_moonclaw_initialized(root))
+    assert_true(moon_binding_moondesk_service_configured(root))
+    assert_eq(moon_binding_write_moondesk_service(root), Ok(service))
+    assert_eq(@fsx.read_file(service), content)
+    assert_false(@fsx.exists(moon_binding_moonclaw_config_path(root)))
+    @fsx.write_to_file(
+      service,
+      ({ "kind": "moondesk-moonclaw-service.v1", "version": "../escape" } : Json).stringify(),
+    )
+    assert_false(moon_binding_managed_moondesk_service(root))
+  })
+}
+
+///|
 async test "MoonClaw binding requires canonical onboarding config" {
   @fsx.with_temporary_directory("moongate-moonclaw-init-XXXXXX", tmpdir => {
     assert_false(moon_binding_moonclaw_initialized(tmpdir))
@@ -170,6 +191,26 @@ test "app binding uses provider default model when configured" {
     model_mapping=Some(ModelMapping::new(default_model=Some("kimi-k3"))),
   )
   assert_eq(provider.binding_model("fallback"), "kimi-k3")
+}
+
+///|
+test "suite discovery uses the connected Moon provider model without a CLI default" {
+  let gate = Gateway::new(port=0, model="")
+  let provider = ProviderRouteTarget::new(
+    app_type="openclaw",
+    provider_id="gemini",
+    provider_name="Gemini",
+    model_mapping=Some(
+      ModelMapping::new(default_model=Some("gemini-3.5-flash-lite")),
+    ),
+  )
+  gate.proxy.provider_router.upsert_provider(provider)
+  gate.proxy.provider_router.set_current_provider("openclaw", "gemini")
+  assert_eq(gate.proxy.moon_suite_default_model(""), "")
+  gate.proxy.proxy_takeover_enabled.set("openclaw", true)
+  assert_eq(gate.proxy.moon_suite_default_model(""), "gemini-3.5-flash-lite")
+  gate.proxy.provider_router.clear_current_provider("openclaw") |> ignore
+  assert_eq(gate.proxy.moon_suite_default_model(""), "")
 }
 
 ///|

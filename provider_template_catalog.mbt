@@ -156,10 +156,10 @@ fn moon_provider_template_seeds() -> Array[ProviderTemplateSeed] {
     {
       id: "google-gemini",
       name: "Google Gemini",
-      base_url: "https://generativelanguage.googleapis.com",
-      api_format: "gemini_native",
-      provider_type: "gemini",
-      default_model: "gemini-3.6-flash",
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai",
+      api_format: "openai_chat",
+      provider_type: "openai-compatible",
+      default_model: "gemini-4-hydrogen",
       website_url: "https://ai.google.dev/gemini-api",
       api_key_url: "https://aistudio.google.com/api-keys",
       category: "official",
@@ -237,14 +237,35 @@ fn ProviderTemplateSeed::preset_json(
   self : ProviderTemplateSeed,
   target : ProviderTemplateTarget,
 ) -> Json {
+  // Use Google's Chat endpoint for OpenAI-style clients, not generateContent.
+  let native_gemini = self.id == "google-gemini" &&
+    target.provider_app_type == "gemini"
   let form = Json({
     "templateLabel": Json::string("\{self.name} / \{self.default_model}"),
     "appType": Json::string(target.provider_app_type),
     "id": Json::string(self.id),
     "name": Json::string(self.name),
-    "providerType": Json::string(self.provider_type),
-    "baseUrl": Json::string(self.base_url),
-    "apiFormat": Json::string(self.api_format),
+    "providerType": Json::string(
+      if native_gemini {
+        "gemini"
+      } else {
+        self.provider_type
+      },
+    ),
+    "baseUrl": Json::string(
+      if native_gemini {
+        "https://generativelanguage.googleapis.com"
+      } else {
+        self.base_url
+      },
+    ),
+    "apiFormat": Json::string(
+      if native_gemini {
+        "gemini_native"
+      } else {
+        self.api_format
+      },
+    ),
     "enabled": Json::boolean(true),
     "modelMapping": self.model_mapping_json(target.provider_app_type),
   })
@@ -260,6 +281,14 @@ fn ProviderTemplateSeed::preset_json(
     "category": Json::string(self.category),
     "isOfficial": Json::boolean(self.category == "official"),
     "icon": Json::string(self.icon),
+    "models": if self.id == "google-gemini" {
+      Json([
+        "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon", "gemini-3.8-flash",
+        "gemini-3.5-flash-lite",
+      ])
+    } else {
+      Json([self.default_model])
+    },
     "form": form,
   })
 }

@@ -4,7 +4,7 @@ test "suite contract owns moongate identity and urls" {
   assert_eq(status_contract(), "moon.suite.status.v2")
   assert_eq(service_name(), "moongate")
   assert_eq(project_name(), "moongate")
-  assert_eq(version(), "0.1.0")
+  assert_eq(version(), "0.1.4")
   assert_eq(default_host(), "127.0.0.1")
   assert_eq(default_port(), 15721)
   assert_eq(default_model(), "")

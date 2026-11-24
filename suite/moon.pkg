@@ -1,2 +1,13 @@
 import {
 }
+
+rule(
+  name: "release-metadata",
+  command: ":embed -i $input -o $output --name release_metadata --text",
+)
+
+dev_build(
+  rule: "release-metadata",
+  input: "../moon.mod",
+  output: "release_metadata.mbt",
+)

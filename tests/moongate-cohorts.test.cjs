@@ -117,6 +117,17 @@ test("empty data is unavailable and mismatched or inconsistent snapshots fail cl
   }
 });
 
+test("cleared comparisons can render without resurrecting a report", async () => {
+  const h = harness();
+  await h.run("captureCohortSnapshot()");
+  h.get("cohort-app").value = "codex";
+  h.run("renderCohortComparison()");
+  assert.equal(h.report(), null);
+  assert.equal(h.get("cohort-retry").hidden, true);
+  assert.equal(h.get("cohort-export").disabled, true);
+  assert.equal(h.get("cohort-summary").textContent, "No current comparison available");
+});
+
 test("metadata is literal, exports omit credentials prompts raw errors and extra fields", async () => {
   const unusual = '月 & "quoted"\n<script>alert(1)</script>=SUM(A1)';
   const h = harness(async url => ({ ok: true, data: snapshot(queryFrom(url), [row(unusual, unusual, { prompt: "secret-prompt", error_message: "secret-error", api_key: "secret-key" })], { token: "secret-token", request_id: "secret-request", raw: "secret-raw" }) }));
@@ -142,7 +153,9 @@ test("authenticated native HTTP → served JavaScript → exact displayed report
   assert.match(html, /id="cohort-report"/);
   const unauthorized = await fetch(base + `/operations/cohort-snapshot?appType=codex&streaming=all&period=24h&end=${fixture.end}`);
   assert.equal(unauthorized.status, 401);
-  const h = harness(null, base, served, fixture.end); await h.run("captureCohortSnapshot()");
+  const h = harness(null, base, served, fixture.end);
+  h.get("cohort-app").value = "codex"; // The native fixture contains Codex rows.
+  await h.run("captureCohortSnapshot()");
   assert.equal(h.snapshot().proxy_interval_rows, 30);
   assert.equal(h.snapshot().missing_request_model_unclassified, 1);
   assert.equal(h.snapshot().imported_excluded, 1);

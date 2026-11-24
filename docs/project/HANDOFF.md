@@ -1,5 +1,170 @@
 # MoonGate project handoff
 
+## Bundled MoonDesk runtime follow-up — 2026-11-24
+
+The installer blocker recorded below was repaired in MoonDesk: its app now
+ships reviewed MoonClaw resources and provisions them on explicit Install.
+Network updating remains disabled. Desktop startup creates/reuses private
+workspace-bound local service authentication, without provider keys or Book
+trust grants. MoonGate now recognizes and preserves the version-only managed
+service descriptor; the old binding writer otherwise tried to replace it with
+command/args/cwd fields that MoonDesk rejects. Legacy onboarding remains
+supported for independently installed MoonClaw.
+
+Cluster macOS 15.7.3 qualification used the updated installed app's actual
+sidecar/resources through an isolated browser UI. A clean Install reached
+account/model setup without the former updater refusal. A successful empty
+model-route probe now carries explicit `model_ready=false`, so the models DTO
+does not erase known configuration status and force an extra Retry. Google
+Flash-Lite passed a fresh real UI check (HTTP 200, 1,836 ms), and the MoonDesk
+binding was applied through the UI without changing its managed descriptor.
+
+That test also exposed missing suite-default publication: a saved provider and
+binding produced a catalog but no executable default for MoonClaw. Connect now
+writes the selected model to suite status, and startup plus suite
+status/manifest/export endpoints derive their default from the connected Moon
+provider (without changing the Codex fallback). The helper uses the real
+current-provider ID, not the intentionally empty additive-provider UI field.
+Regression coverage checks unbound/connected/cleared defaults.
+
+A real MoonDesk conversation then exposed Google's rejection of OpenAI-only
+`prompt_cache_key` and `reasoning_effort=none`. The Google-host-specific request
+adapter removes cache routing hints and maps `none` to `low` for Gemini 3/4,
+without mutating the original request or other providers. Gemini 2.5 behavior
+is unchanged. Google's [OpenAI compatibility documentation](https://aistudio.google.com/docs/openai)
+states that thinking cannot be disabled for Gemini 3/4; direct provider checks
+had already used valid low effort and could not expose the client mismatch.
+
+Final UI-to-UI result: the installed MoonDesk resources on cluster macOS 15.7.3
+submitted a general, tool-free conversation through MoonClaw → MoonGate →
+`gemini-3.5-flash-lite` and displayed exactly `MOONGATE_GEMINI_OK`, with the turn
+marked done. The preceding two failed attempts and the successful retry are
+retained in the isolated test session, rather than rewritten as a clean pass.
+Native remote-window behavior, Gemini 4 capacity, OAuth and Ark conversations
+were not requalified in this follow-up. MoonDesk fix commit: `a1cb6422`.
+Bundled MoonClaw came from clean archived commit `073325d2`, not dirty sibling
+files. Temporary services are stopped and the private Gemini test-provider
+copy removed after qualification; installed app resources and rollback remain.
+
+Final checks passed: isolated staged-tree native check/test with deny-warn
+(1,215 tests), full working-tree native tests (1,217, including two unrelated
+in-progress tests), and frontend tests (148 passed, three skipped). MoonDesk
+native tests passed 1,731 and Rabbita JS tests 2,291; six pre-existing native
+warnings and one UI warning remain there. Only this task's changes were staged.
+
+MoonDesk's previous app bundle is recoverable at
+`/Users/jiaanguo/moonsuite-install-20261124/MoonDesk-before-runtime-fix-20261124.bundle`.
+Do not call browser-to-cluster-sidecar tests a remote native-window test: this
+connection provides no remote GUI control. Minimum OS remains 15.0; both the
+sidecar and bundled runtime were built with that deployment target. No Lepusa
+domain code or dependency changes were needed.
+
+## Third-round implementation and Gemini qualification — 2026-11-24
+
+Removed the unused framework-table renderer/helpers/selector and its
+`/providers/current` fetch dependency. Providers now fetch one inventory per
+scope rather than inventory plus selection. Existing backend framework APIs
+and app binding behavior remain supported. Scope selectors share the existing
+registry, put the shared Moon-app scope first, and do not claim per-app origin.
+
+Resilience provider changes fetch only circuit observations and limits (two
+requests, formerly eight). Global forms retain dirty values during refresh;
+saving one form preserves the other and edits made while its save is pending.
+No draft persistence, credential revisions, receipts or automatic retests were
+added. Operations has one capture/refresh action, retry only after failure,
+concise comparison output with the exact full report/export behind disclosure,
+and collapsed developer diagnostics. The unsupported queue metric is omitted.
+
+Google Gemini presets default to `gemini-4-hydrogen`, with Neon/Carbon and
+Flash suggestions, verified against Google's current API/model documentation.
+Moon apps and other OpenAI-style clients use Google's `/v1beta/openai` Chat
+endpoint; the Gemini client retains its native protocol. Existing saved
+providers are not silently rewritten. Catalog suggestions survive template
+grouping; saved Chat providers support account model discovery. Gemini 3/4
+checks use low thinking and a 2,048-token completion/thinking budget, since the
+old eight-token cap can finish before visible output.
+
+Live testing exposed a genuine hang: the provider-check implementation ignored
+its configured timeout. It now honors that existing setting, with a slow native
+HTTP regression proving a failed, recoverable result after one second. No retry
+loop or new timeout configuration was introduced.
+
+`moon.mod` supplies the embedded suite/app release version. The suite's
+`dev_build` rule generates `suite/release_metadata.mbt`; commit that generated
+file for downstream users. In this toolchain rule input/output paths are
+package-relative, despite older guidance describing them as module-relative.
+Both `suite lepusa --write` and `suite lepusa-rabbita --write` regenerate the
+checked-in manifests. Their version is now 0.1.4. Asset revision is v18.
+
+Validation: 1,213 native tests pass with warnings denied. Frontend tests:
+148 passed, three opt-in standalone checks skipped; the core native suite runs
+the real HTTP/served-asset bridges. MoonDesk/MoonBook/MoonTown adapter tests
+pass strictly. MoonClaw's 13 tests pass normally; strict mode still rejects
+its two pre-existing unused imports. Browser and resource-updated Lepusa
+preview checks cover presets, masked saved credentials, a completed loopback
+check, independent draft saves, scope defaults and snapshot capture. The
+375px Operations page has no horizontal page overflow. Public .mbti interfaces
+are unchanged. Unrelated chat/provider-header/event-gateway work is preserved.
+
+Cluster qualification used macOS 15.7.3 at 192.168.2.195. Build with
+`MACOSX_DEPLOYMENT_TARGET=15.0`; `vtool` verified minimum macOS 15.0. Do not
+diagnose this host as unreachable after trying only direct local SSH: connect
+to the cluster management host first (the existing port-32123 management
+connection), then SSH to `jiaanguo@192.168.2.195`. The Mac's host key was
+matched to the already trusted local record. Credentials were entered only
+through the password prompt/provider editor, never stored in source or logs.
+
+The isolated gateway at `/tmp/moongate-round3.tCsT7s`, port 15735, returned
+65 Google model IDs and completed a real `gemini-3.5-flash-lite` check with
+HTTP 200 in 2,017 ms. `gemini-4-hydrogen` returned high-demand HTTP 503;
+its later stalled attempt exposed the timeout bug and was interrupted for the
+fixed build. `gemini-4-neon` returned quota-exceeded HTTP 429. Do not claim
+successful latest-model inference from a catalog listing or the Flash-Lite pass.
+
+The installed MoonDesk sidecar/UI ran against an isolated test book on port
+4204. Its code-assistance runtime is unavailable; its Install action returns
+`updater_sandbox_unavailable` because an isolated updater backend is not
+configured. Full MoonDesk → MoonGate → Gemini, OAuth and Ark conversations
+were therefore not qualified. Do not bypass that refusal or call it success;
+repairing the MoonDesk installation is a separate follow-up. Installed bundles
+and existing user configurations were not replaced. Test services/tunnels were
+stopped, the mode-0600 temporary Gemini provider file was removed, and the local
+preview's imported OAuth credential copy was removed. No production release,
+commit or push was performed.
+
+## Third-round simplification review — 2026-11-24
+
+Source review only; no fresh UI or live-provider qualification. The first two
+rounds are implemented. Prefer a bounded removal/consistency pass followed by
+feature qualification, not another navigation or framework rewrite.
+
+- `renderFrameworkRows`, its three rendering helpers and `selectedProviderId`
+  have no callers. Their old `framework-rows` target is absent. Keep the active
+  provider inventory/editor and backend framework integrations.
+- `loadFrameworkRow` still fetches `/providers/current` for that obsolete
+  renderer. A failure in that request also discards a successfully fetched
+  provider inventory. Decouple saved providers from app selection/binding;
+  remove the unused current-provider dependency, not the supported backend API.
+- Resilience selection/refresh reloads global circuit and connection-test
+  configuration, calling `fillCircuitForm` and `fillStreamForm` unconditionally.
+  Preserve dirty global forms and refresh only provider-specific observations
+  when changing a provider. Do not add a general draft-persistence subsystem.
+- Scope choices still diverge: Resilience and cohort comparison explicitly
+  default to Codex, Usage labels its choice "All frameworks", and cohorts expose
+  raw scope IDs. Reuse the app registry's ordering and distinguish the shared
+  Moon-app scope from individually attributable app traffic.
+- Operations includes a queue-support metric although the monitor explicitly
+  sets `queue_supported=false`, plus a visible deterministic-fixture card.
+  Keep real observations prominent; place developer diagnostics and statistical
+  methodology behind local disclosure. Cohort capture/refresh are the same
+  action; retry with preserved bounds belongs to the failed-capture state.
+- Module version is 0.1.4 while checked-in and generated Lepusa app manifests
+  still declare 0.1.0. Align the intended release identity through one explicit
+  version input rather than maintaining another manually synchronized value.
+
+Unrelated chat/provider and event-gateway/text-gateway edits remain in progress;
+this review did not modify them. No new tests or release were performed.
+
 ## Second-round implementation — 2026-11-24
 
 Keep this a simplification, not a new hardening subsystem. Test results remain

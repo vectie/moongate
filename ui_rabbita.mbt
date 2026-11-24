@@ -3,7 +3,7 @@ fn moongate_rabbita_shell_view(
   api_base~ : String = "http://127.0.0.1:15721",
 ) -> @html.Html {
   @html.fragment([
-    @html.link(rel="stylesheet", href="/assets/moongate.css?v=17"),
+    @html.link(rel="stylesheet", href="/assets/moongate.css?v=18"),
     @html.div(
       class="shell",
       attrs=@html.Attrs::build()
@@ -50,36 +50,36 @@ fn moongate_rabbita_shell_view(
       attrs=@html.Attrs::build().aria_live("polite"),
       [@html.span(class="dot good", ""), @html.span(id="toast-text", "Copied")],
     ),
-    @html.script(src="/assets/moonsuite-i18n.js?v=17", moongate_rabbita_empty()),
-    @html.script(src="/assets/moongate-core.js?v=17", moongate_rabbita_empty()),
+    @html.script(src="/assets/moonsuite-i18n.js?v=18", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-core.js?v=18", moongate_rabbita_empty()),
     @html.script(
-      src="/assets/moongate-frameworks.js?v=17",
+      src="/assets/moongate-frameworks.js?v=18",
       moongate_rabbita_empty(),
     ),
-    @html.script(src="/assets/moongate-usage.js?v=17", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-usage.js?v=18", moongate_rabbita_empty()),
     @html.script(
-      src="/assets/moongate-connections.js?v=17",
+      src="/assets/moongate-connections.js?v=18",
       moongate_rabbita_empty(),
     ),
-    @html.script(src="/assets/moongate-setup.js?v=17", moongate_rabbita_empty()),
-    @html.script(src="/assets/moongate-suite.js?v=17", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-setup.js?v=18", moongate_rabbita_empty()),
+    @html.script(src="/assets/moongate-suite.js?v=18", moongate_rabbita_empty()),
     @html.script(
-      src="/assets/moongate-resilience.js?v=17",
-      moongate_rabbita_empty(),
-    ),
-    @html.script(
-      src="/assets/moongate-operations.js?v=17",
+      src="/assets/moongate-resilience.js?v=18",
       moongate_rabbita_empty(),
     ),
     @html.script(
-      src="/assets/moongate-cohorts.js?v=17",
+      src="/assets/moongate-operations.js?v=18",
       moongate_rabbita_empty(),
     ),
     @html.script(
-      src="/assets/moongate-transcript.js?v=17",
+      src="/assets/moongate-cohorts.js?v=18",
       moongate_rabbita_empty(),
     ),
-    @html.script(src="/assets/moongate.js?v=17", moongate_rabbita_empty()),
+    @html.script(
+      src="/assets/moongate-transcript.js?v=18",
+      moongate_rabbita_empty(),
+    ),
+    @html.script(src="/assets/moongate.js?v=18", moongate_rabbita_empty()),
   ])
 }
 

@@ -16,7 +16,7 @@ fn moongate_rabbita_operations_page() -> @html.Html {
           ),
           @html.p(
             class="panel-description",
-            "Compare exact provider IDs and explicitly recorded request models from one frozen UTC snapshot. Retained proxy requests only; imported sessions and historical rollups are excluded. This is observational evidence, not a provider ranking, SLA, cost estimate, or routing recommendation.",
+            "Compare two provider/model groups from the same retained-request snapshot.",
           ),
           @html.form(id="cohort-query", class="form-grid", [
             @html.label([
@@ -45,16 +45,11 @@ fn moongate_rabbita_operations_page() -> @html.Html {
                 "Capture snapshot",
               ),
               @html.button(
-                id="cohort-refresh",
-                type_="button",
-                class="button-secondary",
-                "Refresh with new upper bound",
-              ),
-              @html.button(
                 id="cohort-retry",
                 type_="button",
                 class="button-secondary",
-                "Retry same UTC bounds",
+                hidden=true,
+                "Retry snapshot",
               ),
             ]),
           ]),
@@ -82,19 +77,23 @@ fn moongate_rabbita_operations_page() -> @html.Html {
             ]),
           ]),
           @html.pre(
-            id="cohort-report",
+            id="cohort-summary",
             class="card-help",
             "No snapshot captured",
           ),
+          @html.details(class="advanced-disclosure", [
+            @html.summary("Full report and methodology"),
+            @html.pre(
+              id="cohort-report",
+              class="card-help",
+              "No snapshot captured",
+            ),
+          ]),
           @html.button(
             id="cohort-export",
             type_="button",
             class="button-secondary",
             "Export displayed comparison report",
-          ),
-          @html.p(
-            class="card-help",
-            "Elapsed latency is MoonGate request elapsed time for successful 2xx rows without a recorded error. First accepted stream event timing is not guaranteed to be the first token. Missing or zero elapsed timing is excluded; first-event coverage has its own streaming-success denominator. Stored duration duplicates elapsed latency: neither proxy overhead nor provider causality can be inferred. Retention may evict older requests; small samples and unequal workloads limit comparison.",
           ),
         ]),
       ]),
@@ -108,9 +107,10 @@ fn moongate_rabbita_operations_page() -> @html.Html {
           moongate_rabbita_metric_card(
             "Latency p99", "operations-latency-p99", "operations-ttft-p95", "p95 first token",
           ),
-          moongate_rabbita_metric_card(
-            "In flight", "operations-inflight", "operations-queue", "Queue support",
-          ),
+          @html.article(class="metric-card", [
+            @html.span("In flight"),
+            @html.strong(id="operations-inflight", "—"),
+          ]),
           moongate_rabbita_metric_card(
             "Open circuits", "operations-circuits", "operations-failovers", "Recorded failovers",
           ),
@@ -237,7 +237,8 @@ fn moongate_rabbita_operations_page() -> @html.Html {
             @html.code(id="routing-receipt", "No activation receipt"),
           ]),
         ]),
-        @html.article(class="panel", [
+        @html.details(class="panel advanced-disclosure", [
+          @html.summary("Developer diagnostics"),
           moongate_rabbita_panel_head(
             "Repeatable fixture",
             "Deterministic benchmark",

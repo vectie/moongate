@@ -28,20 +28,8 @@ function operationsSetStatus(id, message, error = false) {
 function operationsInitApps() {
   const select = $("operations-app");
   if (!select || select.options.length > 0) return;
-  const values = [];
-  for (const app of frameworkApps) {
-    const value = app.providerAppType || app.id;
-    if (value && !values.some((row) => row.value === value)) {
-      values.push({ value, label: app.label });
-    }
-  }
-  if (!values.some((row) => row.value === "codex")) {
-    values.unshift({ value: "codex", label: "Codex" });
-  }
-  select.innerHTML = values
-    .map((row) => `<option value="${escapeHtml(row.value)}">${escapeHtml(row.label)}</option>`)
-    .join("");
-  select.value = values[0]?.value || "";
+  select.innerHTML = scopeOptions();
+  select.value = providerScopes()[0]?.id || "";
 }
 
 function renderOperationsMonitor(snapshot) {
@@ -52,8 +40,6 @@ function renderOperationsMonitor(snapshot) {
   text("operations-latency-p99", operationsMilliseconds(operationsField(latency, "p99_ms", "p99Ms")));
   text("operations-ttft-p95", operationsMilliseconds(operationsField(firstToken, "p95_ms", "p95Ms")));
   text("operations-inflight", operationsField(snapshot, "inflight_requests", "inflightRequests") ?? 0);
-  const queueSupported = operationsField(snapshot, "queue_supported", "queueSupported") === true;
-  text("operations-queue", queueSupported ? `${operationsField(snapshot, "queue_depth", "queueDepth") ?? 0} queued` : "Not implemented");
   text("operations-circuits", operationsField(snapshot, "circuit_open_count", "circuitOpenCount") ?? 0);
   text("operations-failovers", operationsField(snapshot, "failover_count", "failoverCount") ?? 0);
   const configured = operationsField(snapshot, "quota_configured_count", "quotaConfiguredCount") ?? 0;
@@ -61,7 +47,7 @@ function renderOperationsMonitor(snapshot) {
   const costNano = operationsField(snapshot, "recent_cost_nano_usd", "recentCostNanoUsd") ?? 0;
   operationsSetStatus(
     "operations-monitor-status",
-    `Recent request window: ${configured} configured quota${configured === 1 ? "" : "s"}, ${exceeded} exceeded; estimated cost ${money(number(costNano) / 1_000_000_000)}. Queue depth is shown only when a real queue exists.`,
+    `Recent request window: ${configured} configured quota${configured === 1 ? "" : "s"}, ${exceeded} exceeded; estimated cost ${money(number(costNano) / 1_000_000_000)}.`,
     false,
   );
 }

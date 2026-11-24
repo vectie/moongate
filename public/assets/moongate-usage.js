@@ -161,8 +161,7 @@ let requestDetailObservedAt = null;
 function initRequestAppSelect() {
   const select = $("request-app");
   if (!select) return;
-  select.innerHTML = `<option value="">All apps</option>` + frameworkApps.map((app) =>
-    `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`).join("");
+  select.innerHTML = scopeOptions({all: true});
 }
 
 function readRequestQuery() {

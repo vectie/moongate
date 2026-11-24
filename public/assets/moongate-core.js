@@ -47,6 +47,25 @@ function readFrameworkApps() {
 const readinessCards = readReadinessCards();
 const frameworkApps = readFrameworkApps();
 
+// Provider/request scopes can be shared by multiple apps. Do not imply that
+// selecting the shared scope identifies which Moon app produced a request.
+function providerScopes() {
+  const scopes = new Map();
+  for (const app of frameworkApps.slice().sort((a, b) => a.priority - b.priority)) {
+    const id = app.providerAppType || app.id;
+    if (!scopes.has(id)) scopes.set(id, {id, label: id === "openclaw" ? "Moon apps (shared)" : app.label});
+  }
+  return Array.from(scopes.values());
+}
+
+function scopeOptions({all = false, unknown = false} = {}) {
+  return [
+    ...(all ? [{id: "", label: "All apps"}] : []),
+    ...providerScopes(),
+    ...(unknown ? [{id: "unknown", label: "Unknown app"}] : []),
+  ].map(row => `<option value="${escapeHtml(row.id)}">${escapeHtml(uiLabel(row.label))}</option>`).join("");
+}
+
 const $ = (id) => document.getElementById(id);
 
 let controlTokenPromise = null;

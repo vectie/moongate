@@ -535,7 +535,7 @@ $("suite-write-moonclaw")?.addEventListener("click", () => {
 });
 
 $("resilience-provider")?.addEventListener("change", () => {
-  loadResilience().catch(showError);
+  loadResilienceProvider().catch(showError);
 });
 
 $("resilience-refresh")?.addEventListener("click", () => {
@@ -544,12 +544,21 @@ $("resilience-refresh")?.addEventListener("click", () => {
 
 $("circuit-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
-  postJson(endpoints.circuitConfig, circuitConfigPayload()).then(loadResilience).catch(showError);
+  saveResilienceConfig("circuit").catch(showError);
 });
 
 $("stream-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
-  postJson(endpoints.streamCheckConfig, streamConfigPayload()).then(loadResilience).catch(showError);
+  saveResilienceConfig("stream").catch(showError);
+});
+
+$("circuit-form")?.addEventListener("input", () => {
+  circuitFormDirty = true;
+  setSetupState("resilience-circuit-status", "Unsaved changes", false);
+});
+$("stream-form")?.addEventListener("input", () => {
+  streamFormDirty = true;
+  setSetupState("resilience-stream-status", "Unsaved changes", false);
 });
 
 $("resilience-toggle-auto")?.addEventListener("click", () => {

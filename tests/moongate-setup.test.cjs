@@ -92,6 +92,83 @@ function providerHarness() {
   return h;
 }
 
+test("provider inventory does not depend on current app selection", async () => {
+  const h = harness();
+  vm.runInContext(asset("moongate-frameworks.js"), h.context);
+  h.context.calls = [];
+  h.context.mergeReadinessState = () => {};
+  h.run(`sharedGetJson = async path => { calls.push(path); return {ok: true, data: {saved: {id: "saved", name: "Saved", appType: "claude"}}}; };`);
+  await h.run("loadFrameworks()");
+  assert.equal(h.context.calls.length, 1);
+  assert.match(h.context.calls[0], /providers/);
+  assert.doesNotMatch(h.context.calls[0], /current/);
+  assert.equal(h.run('providerById("claude", "saved").name'), "Saved");
+});
+
+test("scope selectors deduplicate Moon apps and retain their priority", () => {
+  const h = harness();
+  h.run(`frameworkApps.splice(0, frameworkApps.length,
+    {id:"codex",label:"Codex",priority:100},
+    {id:"moondesk",label:"MoonDesk",providerAppType:"openclaw",priority:0},
+    {id:"moonclaw",label:"MoonClaw",providerAppType:"openclaw",priority:10},
+    {id:"openclaw",label:"OpenClaw",priority:100});`);
+  assert.deepEqual(JSON.parse(h.run("JSON.stringify(providerScopes())")), [
+    {id: "openclaw", label: "Moon apps (shared)"}, {id: "codex", label: "Codex"},
+  ]);
+  assert.match(h.run("scopeOptions({all:true})"), /All apps/);
+  assert.doesNotMatch(h.run("scopeOptions()"), /value="moondesk"/);
+});
+
+function resilienceHarness() {
+  const h = harness();
+  vm.runInContext(asset("moongate-resilience.js"), h.context);
+  h.context.calls = [];
+  h.context.setSetupState = (id, label) => { h.get(id).textContent = label; };
+  h.run(`Object.assign(endpoints, {providerCreate:"/providers",circuitConfig:"/circuit-config",streamCheckConfig:"/stream-config",autoFailover:"/auto",failoverQueue:"/queue",availableFailover:"/available",circuitStats:"/stats",providerLimits:"/limits"});
+    safeGetJson = async path => { calls.push(path); return {ok:true,data:
+      path.startsWith("/providers") ? {alpha:{id:"alpha",name:"Alpha"},beta:{id:"beta",name:"Beta"}} :
+      path === "/circuit-config" ? {failureThreshold:3} :
+      path === "/stream-config" ? {timeoutSecs:10} : {state:"closed"}}; };`);
+  h.get("resilience-app").value = "openclaw";
+  h.get("resilience-provider").value = "alpha";
+  return h;
+}
+
+test("provider observations fetch two endpoints without overwriting global drafts", async () => {
+  const h = resilienceHarness();
+  await h.run("loadResilience()");
+  assert.equal(h.get("circuit-failure-threshold").value, "3");
+  h.get("circuit-failure-threshold").value = "7";
+  h.get("stream-timeout-secs").value = "42";
+  h.run("circuitFormDirty = true; streamFormDirty = true; calls.length = 0;");
+  h.get("resilience-provider").value = "beta";
+  await h.run("loadResilienceProvider()");
+  assert.equal(h.context.calls.length, 2);
+  assert.ok(h.context.calls.every(path => /\/(stats|limits)\?/.test(path)));
+  await h.run("loadResilience()");
+  assert.equal(h.get("circuit-failure-threshold").value, "7");
+  assert.equal(h.get("stream-timeout-secs").value, "42");
+  assert.equal(h.get("resilience-circuit-status").textContent, "Unsaved changes");
+  assert.match(asset("moongate.js"), /resilience-provider[\s\S]*?loadResilienceProvider\(\)/);
+});
+
+test("saving one global form preserves the other and edits made during save", async () => {
+  const h = resilienceHarness();
+  const wait = deferred();
+  h.context.postJson = () => wait.promise;
+  h.get("circuit-failure-threshold").value = "7";
+  h.get("stream-timeout-secs").value = "42";
+  h.run("circuitFormDirty = true; streamFormDirty = true;");
+  const save = h.run('saveResilienceConfig("circuit")');
+  h.get("circuit-failure-threshold").value = "9";
+  wait.resolve({});
+  await save;
+  assert.equal(h.run("circuitFormDirty"), true);
+  assert.equal(h.get("circuit-failure-threshold").value, "9");
+  assert.equal(h.run("streamFormDirty"), true);
+  assert.equal(h.get("stream-timeout-secs").value, "42");
+});
+
 test("bootstrap outage recovers on retry, shares inflight work, and caches success", async () => {
   const first = deferred();
   const second = deferred();

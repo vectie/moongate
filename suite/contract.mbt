@@ -25,7 +25,13 @@ pub fn project_name() -> String {
 
 ///|
 pub fn version() -> String {
-  "0.1.0"
+  // Embedded at build time, including when installed outside the source tree.
+  for line in release_metadata.split("\n") {
+    if line.has_prefix("version = \"") {
+      return line.split("\"").to_array()[1].to_owned()
+    }
+  }
+  abort("moon.mod has no release version")
 }
 
 ///|

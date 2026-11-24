@@ -326,7 +326,7 @@ test "cohort shell exposes controls and authenticated route" {
   for
     id in [
       "cohort-query", "cohort-app", "cohort-streaming", "cohort-period", "cohort-capture",
-      "cohort-refresh", "cohort-retry", "cohort-a-provider", "cohort-a-model", "cohort-b-provider",
+      "cohort-summary", "cohort-retry", "cohort-a-provider", "cohort-a-model", "cohort-b-provider",
       "cohort-b-model", "cohort-report", "cohort-export",
     ] {
     assert_true(html.contains("id=\"\{id}\""), msg=id)

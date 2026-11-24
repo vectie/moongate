@@ -1,7 +1,7 @@
 {
   "identifier": "dev.vectie.moongate",
   "productName": "MoonGate",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "icon": "assets/moongate.icns",
   "signing": {
     "identity": "-"
