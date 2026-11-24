@@ -238,28 +238,31 @@ fn moongate_rabbita_overview_page() -> @html.Html {
           ),
         ]),
       ]),
-      @html.section(class="status-grid", [
-        moongate_rabbita_metric_card(
-          "Requests", "request-total", "request-total-detail", "Across all apps",
-        ),
-        moongate_rabbita_metric_card(
-          "Spend", "cost-total", "cost-detail", "Estimated total",
-        ),
-        moongate_rabbita_metric_card(
-          "Connected apps", "framework-total", "framework-detail", "Verified app bindings",
-        ),
-        moongate_rabbita_metric_card(
-          "Local port", "gateway-port", "gateway-port-detail", "Used by apps on this Mac",
-        ),
-      ]),
-      @html.div(class="overview-grid", [
-        moongate_rabbita_readiness_strip(),
-        @html.article(class="panel overview-models", [
-          moongate_rabbita_panel_head("Traffic", "Top Models", []),
-          @html.div(id="model-usage", class="stack", moongate_rabbita_empty()),
+      @html.details(class="overview-details", [
+        @html.summary("Technical details"),
+        @html.section(class="status-grid", [
+          moongate_rabbita_metric_card(
+            "Requests", "request-total", "request-total-detail", "Across all apps",
+          ),
+          moongate_rabbita_metric_card(
+            "Spend", "cost-total", "cost-detail", "Estimated total",
+          ),
+          moongate_rabbita_metric_card(
+            "Connected apps", "framework-total", "framework-detail", "Verified app bindings",
+          ),
+          moongate_rabbita_metric_card(
+            "Local port", "gateway-port", "gateway-port-detail", "Used by apps on this Mac",
+          ),
         ]),
+        @html.div(class="overview-grid", [
+          moongate_rabbita_readiness_strip(),
+          @html.article(class="panel overview-models", [
+            moongate_rabbita_panel_head("Traffic", "Top Models", []),
+            @html.div(id="model-usage", class="stack", moongate_rabbita_empty()),
+          ]),
+        ]),
+        moongate_rabbita_quick_connect(),
       ]),
-      moongate_rabbita_quick_connect(),
     ],
   )
 }

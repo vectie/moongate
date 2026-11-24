@@ -26,7 +26,6 @@ fn moongate_rabbita_goal_compass() -> @html.Html {
     attrs=@html.Attrs::build().aria_label("Connect an app journey"),
     [
       @html.div(class="goal-copy", [
-        @html.p(class="eyebrow", "Current goal"),
         @html.h2("Connect one app to a healthy provider"),
         @html.p(
           id="goal-next-detail",
@@ -34,11 +33,14 @@ fn moongate_rabbita_goal_compass() -> @html.Html {
           "MoonGate is checking the local gateway before choosing the next safe action.",
         ),
       ]),
-      @html.ol(class="goal-steps", [
-        moongate_rabbita_goal_step("provider", "providers", "Provider"),
-        moongate_rabbita_goal_step("routing", "connections", "Routing"),
-        moongate_rabbita_goal_step("app", "bindings", "App"),
-        moongate_rabbita_goal_step("observe", "usage", "Observe"),
+      @html.details(class="goal-progress", [
+        @html.summary("Readiness"),
+        @html.ol(class="goal-steps", [
+          moongate_rabbita_goal_step("provider", "providers", "Provider"),
+          moongate_rabbita_goal_step("routing", "connections", "Routing"),
+          moongate_rabbita_goal_step("app", "bindings", "App"),
+          moongate_rabbita_goal_step("observe", "usage", "Observe"),
+        ]),
       ]),
       @html.div(class="goal-action", [
         @html.button(

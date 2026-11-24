@@ -577,6 +577,7 @@ const zhHans = {
   "Explorer": "分析",
   "Metrics": "指标",
   "Readiness": "就绪状态",
+  "Technical details": "技术详情",
   "Standalone gateway checklist": "独立网关检查清单",
   "Workflow": "工作流",
   "Operator Actions": "操作员操作",

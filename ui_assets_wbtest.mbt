@@ -86,6 +86,9 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_false(html.contains("href=\"/usage/logs\""))
   assert_true(html.contains("data-copy-path=\"/metrics\""))
   assert_true(html.contains("id=\"request-export-page\""))
+  assert_true(html.contains("<details class=\"overview-details\""))
+  assert_true(html.contains("<details class=\"goal-progress\""))
+  assert_true(html.contains("id=\"primary-next-action\""))
 }
 
 ///|
