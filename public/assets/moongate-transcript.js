@@ -91,6 +91,7 @@ function appendTranscriptContent(element, content, query) {
 }
 
 function transcriptInvalidate(message = "Source changed; open the transcript again.") {
+  $("transcript-reader-controls").hidden = true;
   transcriptGeneration++;
   transcriptSnapshot = null;
   transcriptMatchCursor = 0;
@@ -111,6 +112,7 @@ function transcriptVisibleMessages() {
 function renderTranscript() {
   const container = $("transcript-messages");
   if (!container || !transcriptSnapshot) return;
+  $("transcript-reader-controls").hidden = false;
   container.replaceChildren();
   const matches = transcriptMatchingIndices();
   transcriptMatchCursor = Math.max(0, Math.min(transcriptMatchCursor, matches.length - 1));

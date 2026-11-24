@@ -1,59 +1,26 @@
 ///|
 pub fn moongate_framework_apps_json() -> Json {
-  Json::array([
-    moongate_framework_app_json(
-      "moondesk",
-      "MoonDesk",
-      "single",
-      desktop=true,
-      provider_app_type=Some("openclaw"),
-      priority=0,
-    ),
-    moongate_framework_app_json(
-      "moonclaw",
-      "MoonClaw",
-      "single",
-      provider_app_type=Some("openclaw"),
-      priority=1,
-    ),
-    moongate_framework_app_json("claude", "Claude Code", "single"),
-    moongate_framework_app_json(
-      "claude-desktop",
-      "Claude Desktop",
-      "single",
-      desktop=true,
-    ),
-    moongate_framework_app_json("codex", "Codex", "single"),
-    moongate_framework_app_json("gemini", "Gemini", "single"),
-    moongate_framework_app_json("opencode", "OpenCode", "additive"),
-    moongate_framework_app_json("openclaw", "OpenClaw", "additive"),
-    moongate_framework_app_json("hermes", "Hermes", "additive"),
-  ])
-}
-
-///|
-fn moongate_framework_app_json(
-  id : String,
-  label : String,
-  mode : String,
-  desktop~ : Bool = false,
-  provider_app_type~ : String? = None,
-  priority~ : Int32 = 100,
-) -> Json {
-  let app = {
-    "id": Json::string(id),
-    "label": Json::string(label),
-    "mode": Json::string(mode),
-    "priority": Json::number(priority.to_double()),
-  }
-  if desktop {
-    app["desktop"] = Json::boolean(true)
-  }
-  match provider_app_type {
-    Some(value) => app["providerAppType"] = Json::string(value)
-    None => ()
-  }
-  Json::object(app)
+  Json::array(
+    gateway_apps().map(app => {
+      let fields = {
+        "id": Json::string(app.id),
+        "label": Json::string(app.label),
+        "mode": Json::string(app.mode),
+        "desktop": Json::boolean(app.desktop),
+        "priority": Json::number(app.priority.to_double()),
+        "bindingMode": Json::string(app.binding),
+        "detectionSupported": Json::boolean(
+          app.id != "moonbook" && app.id != "moontown",
+        ),
+        "routePath": Json::string(app.route),
+        "routeLabel": Json::string(app.protocol),
+      }
+      if app.scope != app.id {
+        fields["providerAppType"] = Json::string(app.scope)
+      }
+      Json::object(fields)
+    }),
+  )
 }
 
 ///|
@@ -61,15 +28,10 @@ fn moongate_ui_sections() -> Array[(String, String)] {
   [
     ("overview", "Overview"),
     ("providers", "Providers"),
-    ("bindings", "App Bindings"),
-    ("connections", "Connection Graph"),
-    ("connect", "Manual Connect"),
+    ("bindings", "Apps"),
     ("requests", "Requests"),
     ("usage", "Usage"),
-    ("transcripts", "Transcript Reader"),
-    ("operations", "Operations"),
-    ("suite", "Suite"),
-    ("guide", "Guide"),
+    ("advanced", "Advanced"),
   ]
 }
 

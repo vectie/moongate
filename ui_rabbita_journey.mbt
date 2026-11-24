@@ -26,7 +26,7 @@ fn moongate_rabbita_goal_compass() -> @html.Html {
     attrs=@html.Attrs::build().aria_label("Connect an app journey"),
     [
       @html.div(class="goal-copy", [
-        @html.h2("Connect one app to a healthy provider"),
+        @html.h2("MoonDesk"),
         @html.p(
           id="goal-next-detail",
           attrs=@html.Attrs::build().aria_live("polite"),

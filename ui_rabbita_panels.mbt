@@ -1,7 +1,7 @@
 ///|
 fn moongate_rabbita_provider_editor_panel() -> @html.Html {
   @html.article(id="provider-editor", class="panel wide", [
-    moongate_rabbita_panel_head("Providers", "Provider Editor", [
+    moongate_rabbita_panel_head("", "Provider", [
       @html.button(
         id="provider-clear",
         class="button-secondary",
@@ -9,39 +9,32 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
         "New Provider",
       ),
     ]),
-    @html.p(
-      class="panel-description",
-      "This page only stores and tests upstream providers. Open App Bindings after saving to connect a provider to an installed app.",
-    ),
     @html.form(id="provider-form", class="form-grid", [
       @html.input(input_type=Hidden, id="provider-original-id"),
       @html.input(input_type=Hidden, id="provider-original-app"),
       @html.div(class="provider-template-picker span-2", [
         @html.label([
-          @html.span("Start from a template"),
+          @html.span("Provider preset"),
           @html.select(id="provider-template", [
             @html.option(value="", "Choose a template"),
           ]),
         ]),
         @html.div(class="inline-actions", [
-          @html.button(
-            id="provider-template-apply",
-            class="button-secondary",
-            type_="button",
-            "Use Template",
-          ),
-          @html.button(
-            id="provider-template-load",
-            class="button-secondary",
-            type_="button",
-            "Load JSON",
-          ),
-          @html.button(
-            id="provider-template-reload",
-            class="button-secondary",
-            type_="button",
-            "Refresh Built-ins",
-          ),
+          @html.details(class="local-menu", [
+            @html.summary("Templates"),
+            @html.button(
+              id="provider-template-load",
+              class="button-secondary",
+              type_="button",
+              "Load JSON",
+            ),
+            @html.button(
+              id="provider-template-reload",
+              class="button-secondary",
+              type_="button",
+              "Refresh Built-ins",
+            ),
+          ]),
         ]),
         @html.input(
           input_type=File,
@@ -54,34 +47,22 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
           "Templates fill the form; API keys are always entered separately.",
         ),
       ]),
-      moongate_rabbita_select_label("Request type", "provider-app", []),
-      moongate_rabbita_input_label(
-        "Provider ID (internal name)", "provider-id", "", true,
-      ),
       moongate_rabbita_input_label("Name", "provider-name", "", true),
-      moongate_rabbita_input_label(
-        "Base URL",
-        "provider-base-url",
-        "https://api.example.com",
-        false,
-        class="span-2",
-      ),
-      moongate_rabbita_select_label("API protocol", "provider-api-format", [
-        ("", "Default"),
-        ("openai", "OpenAI Responses"),
-        ("openai_chat", "OpenAI Chat Completions"),
-        ("anthropic", "Anthropic"),
-        ("gemini_native", "Gemini Native"),
-      ]),
       moongate_rabbita_password_label("API Key", "provider-api-key"),
       @html.small(
         id="provider-credential-status",
         class="field-hint",
         "Enter the API key required by this provider.",
       ),
-      moongate_rabbita_input_label(
-        "Default Model", "provider-default-model", "", false,
-      ),
+      @html.label(class="span-2", [
+        @html.span("Model"),
+        @html.input(
+          id="provider-default-model",
+          list="provider-models-select",
+          placeholder="Choose or enter a model ID",
+        ),
+        @html.datalist(id="provider-models-select", moongate_rabbita_empty()),
+      ]),
       @html.div(class="span-2", [
         @html.div(class="inline-actions", [
           @html.button(
@@ -90,25 +71,34 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
             type_="button",
             "Refresh models",
           ),
-          @html.label([
-            @html.span("Choose a discovered model"),
-            @html.select(id="provider-models-select", disabled=true, [
-              @html.option(value="", "Refresh models to choose"),
-            ]),
-          ]),
         ]),
         @html.small(
           id="provider-models-status",
-          "Save the provider, then fetch its model IDs using the host-held key. Choosing a model only edits the form; Save, Test and Bind stay separate.",
+          "Save to discover more models.",
         ),
-      ]),
-      @html.label(class="span-2", [
-        @html.span("Notes"),
-        @html.textarea(id="provider-notes", rows=3, moongate_rabbita_empty()),
       ]),
       @html.details(class="advanced-disclosure provider-advanced span-2", [
         @html.summary("Advanced provider options"),
         @html.div(class="provider-advanced-fields", [
+          moongate_rabbita_select_label("Request type", "provider-app", []),
+          moongate_rabbita_input_label(
+            "Provider ID (internal name)", "provider-id", "Generated automatically",
+            false,
+          ),
+          moongate_rabbita_input_label(
+            "Base URL",
+            "provider-base-url",
+            "https://api.example.com",
+            false,
+            class="span-2",
+          ),
+          moongate_rabbita_select_label("API protocol", "provider-api-format", [
+            ("", "Default"),
+            ("openai", "OpenAI Responses"),
+            ("openai_chat", "OpenAI Chat Completions"),
+            ("anthropic", "Anthropic"),
+            ("gemini_native", "Gemini Native"),
+          ]),
           moongate_rabbita_input_label(
             "Provider type", "provider-type", "openrouter, codex_oauth, gemini",
             false,
@@ -124,6 +114,9 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
           ),
           @html.div(class="check-row span-2", [
             moongate_rabbita_check_label(
+              "provider-clear-api-key", "Remove stored API key", false,
+            ),
+            moongate_rabbita_check_label(
               "provider-full-url", "Base URL is the complete request URL", false,
             ),
             moongate_rabbita_check_label(
@@ -133,14 +126,19 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
               "provider-clear-models", "Clear all model mappings", false,
             ),
           ]),
+          @html.label(class="span-2", [
+            @html.span("Notes"),
+            @html.textarea(
+              id="provider-notes",
+              rows=3,
+              moongate_rabbita_empty(),
+            ),
+          ]),
         ]),
       ]),
       @html.div(class="check-row span-2", [
         moongate_rabbita_check_label(
           "provider-enabled", "Available to MoonGate routing", true,
-        ),
-        moongate_rabbita_check_label(
-          "provider-clear-api-key", "Remove stored API key", false,
         ),
       ]),
       @html.div(class="form-actions span-2", [
@@ -156,6 +154,13 @@ fn moongate_rabbita_provider_editor_panel() -> @html.Html {
           class="button-secondary",
           type_="button",
           "Test Provider",
+        ),
+        @html.button(
+          id="provider-connect-app",
+          class="button-secondary",
+          type_="button",
+          disabled=true,
+          "Connect app",
         ),
         @html.span(id="provider-test-result", class="state", "Not tested"),
         @html.span(id="provider-form-status", ""),
@@ -177,19 +182,11 @@ fn moongate_rabbita_bindings_panel() -> @html.Html {
         ),
       ]),
     ]),
-    @html.div(class="panel-description", [
-      @html.strong("Configure → bind → verify"),
-      @html.p(
-        "First save and test a provider. Then connect an installed app here. MoonGate says Connected only after it writes that app's configuration and reads the expected MoonGate address back.",
-      ),
-    ]),
     @html.div(class="table-wrap setup-table-wrap", [
       @html.table([
         @html.thead([
           @html.tr(
-            ["AI app", "Installation", "Connection", "Provider", "Action"].map(fn(
-              header,
-            ) {
+            ["AI app", "Connection", "Provider", "Action"].map(fn(header) {
               @html.th(header)
             }),
           ),
@@ -242,29 +239,32 @@ fn moongate_rabbita_connection_graph_panel() -> @html.Html {
           ),
         ],
       ),
-      @html.div(class="panel-description connection-graph-intro", [
-        @html.strong(
-          "The graph only turns green after every required step is proven.",
-        ),
-        @html.p(
-          "Saved and enabled describe the provider. Tested means MoonGate completed a real upstream request. Bound and verified mean MoonGate read the expected address back from the installed app.",
-        ),
-      ]),
-      @html.div(class="connection-graph-summary", [
-        moongate_rabbita_status_value(
-          "Verified routes", "connection-graph-verified",
-        ),
-        moongate_rabbita_status_value(
-          "Configured routes", "connection-graph-configured",
-        ),
-        moongate_rabbita_status_value(
-          "Apps not wired", "connection-graph-unwired",
-        ),
-      ]),
-      @html.div(class="connection-graph-legend", [
-        @html.span(class="graph-check good", "Confirmed"),
-        @html.span(class="graph-check warn", "Needs a step"),
-        @html.span(class="graph-check bad", "Failed or disabled"),
+      @html.details(class="advanced-disclosure", [
+        @html.summary("Connection states"),
+        @html.div(class="panel-description connection-graph-intro", [
+          @html.strong(
+            "The graph only turns green after every required step is proven.",
+          ),
+          @html.p(
+            "Saved and enabled describe the provider. Tested means MoonGate completed a real upstream request. Bound and verified mean MoonGate read the expected address back from the installed app.",
+          ),
+        ]),
+        @html.div(class="connection-graph-summary", [
+          moongate_rabbita_status_value(
+            "Verified routes", "connection-graph-verified",
+          ),
+          moongate_rabbita_status_value(
+            "Configured routes", "connection-graph-configured",
+          ),
+          moongate_rabbita_status_value(
+            "Apps not wired", "connection-graph-unwired",
+          ),
+        ]),
+        @html.div(class="connection-graph-legend", [
+          @html.span(class="graph-check good", "Confirmed"),
+          @html.span(class="graph-check warn", "Needs a step"),
+          @html.span(class="graph-check bad", "Failed or disabled"),
+        ]),
       ]),
       @html.div(
         id="connection-graph-routes",
@@ -313,7 +313,7 @@ fn moongate_rabbita_setup_card(
 ///|
 fn moongate_rabbita_suite_panel() -> @html.Html {
   @html.article(id="suite", class="panel wide", [
-    moongate_rabbita_panel_head("MoonDesk first", "Connected Moon apps", [
+    moongate_rabbita_panel_head("", "Supported Moon apps", [
       @html.div(class="inline-actions", [
         @html.button(
           id="suite-refresh",
@@ -323,22 +323,7 @@ fn moongate_rabbita_suite_panel() -> @html.Html {
         ),
       ]),
     ]),
-    @html.p(
-      class="panel-description",
-      "MoonDesk is the primary desktop control surface. The other Moon apps use MoonGate for AI routing, usage data, or health checks.",
-    ),
-    @html.div(class="usage-metrics", [
-      moongate_rabbita_status_value("Connection", "suite-status-state"),
-      moongate_rabbita_status_value("Connected apps", "suite-app-count"),
-      moongate_rabbita_status_value("Shared features", "suite-capability-count"),
-      moongate_rabbita_status_value(
-        "MoonClaw Providers", "suite-provider-count",
-      ),
-    ]),
-    moongate_rabbita_table(
-      ["App", "Purpose", "What it uses MoonGate for", "Connection check"],
-      "suite-app-rows",
-    ),
+    moongate_rabbita_table(["App", "Integration", "Support"], "suite-app-rows"),
     @html.details(class="advanced-disclosure suite-advanced", [
       @html.summary("Advanced suite files"),
       @html.p(
@@ -359,7 +344,6 @@ fn moongate_rabbita_suite_panel() -> @html.Html {
         @html.code(id="suite-status-path", "Loading status file…"),
       ]),
     ]),
-    @html.div(id="suite-integrations", class="stack", moongate_rabbita_empty()),
   ])
 }
 
@@ -579,10 +563,6 @@ fn moongate_rabbita_provider_health_panel() -> @html.Html {
     moongate_rabbita_panel_head("Upstream services", "Saved Providers", [
       @html.span(id="provider-count", class="pill", "0 providers"),
     ]),
-    @html.p(
-      class="panel-description",
-      "Select a row to edit it. Available means MoonGate may route matching requests to it; it does not mean an app is connected.",
-    ),
     moongate_rabbita_table(
       ["Provider", "Request type", "State", "Action"],
       "provider-rows",
@@ -704,15 +684,18 @@ fn moongate_rabbita_request_log_panel() -> @html.Html {
         ),
       ]),
     ]),
-    @html.p(
-      id="request-query-summary",
-      class="panel-description",
-      "No applied query",
-    ),
-    @html.p(
-      class="panel-description",
-      "Provider and model match partial names, ignoring case. The UTC interval stays fixed until Apply or Reset. Pages use offsets, so retention or late imports may shift rows. Exports contain only the displayed page or selected request, with estimated costs; zero cost or latency can also mean unavailable. Prompts, credentials and raw errors are excluded.",
-    ),
+    @html.details(class="advanced-disclosure", [
+      @html.summary("Filter and export details"),
+      @html.p(
+        id="request-query-summary",
+        class="panel-description",
+        "No applied query",
+      ),
+      @html.p(
+        class="panel-description",
+        "Provider and model match partial names, ignoring case. The UTC interval stays fixed until Apply or Reset. Pages use offsets, so retention or late imports may shift rows. Exports contain only the displayed page or selected request, with estimated costs; zero cost or latency can also mean unavailable. Prompts, credentials and raw errors are excluded.",
+      ),
+    ]),
     @html.p(
       id="request-feedback",
       attrs=@html.Attrs::build().aria_live("polite"),
@@ -751,6 +734,9 @@ fn moongate_rabbita_request_log_panel() -> @html.Html {
       attrs=@html.Attrs::build().data_set("i18n-scope", "technical"),
       moongate_rabbita_empty(),
     ),
+    @html.details(id="request-investigation", class="advanced-disclosure", [
+      @html.summary("Investigation"),
+    ]),
   ])
 }
 

@@ -22,69 +22,12 @@ priv struct ProviderTemplateTarget {
 
 ///|
 fn moon_provider_template_targets() -> Array[ProviderTemplateTarget] {
-  [
-    {
-      id: "moondesk",
-      label: "MoonDesk",
-      provider_app_type: "codex",
-      priority: 0,
-    },
-    {
-      id: "moonclaw",
-      label: "MoonClaw",
-      provider_app_type: "openclaw",
-      priority: 10,
-    },
-    {
-      id: "moonbook",
-      label: "MoonBook",
-      provider_app_type: "openclaw",
-      priority: 20,
-    },
-    {
-      id: "moontown",
-      label: "MoonTown",
-      provider_app_type: "openclaw",
-      priority: 30,
-    },
-    {
-      id: "claude",
-      label: "Claude Code",
-      provider_app_type: "claude",
-      priority: 100,
-    },
-    {
-      id: "claude-desktop",
-      label: "Claude Desktop",
-      provider_app_type: "claude-desktop",
-      priority: 100,
-    },
-    { id: "codex", label: "Codex", provider_app_type: "codex", priority: 100, },
-    {
-      id: "gemini",
-      label: "Gemini",
-      provider_app_type: "gemini",
-      priority: 100,
-    },
-    {
-      id: "opencode",
-      label: "OpenCode",
-      provider_app_type: "opencode",
-      priority: 100,
-    },
-    {
-      id: "openclaw",
-      label: "OpenClaw",
-      provider_app_type: "openclaw",
-      priority: 100,
-    },
-    {
-      id: "hermes",
-      label: "Hermes",
-      provider_app_type: "hermes",
-      priority: 100,
-    },
-  ]
+  gateway_apps().map(app => {
+    id: app.id,
+    label: app.label,
+    provider_app_type: app.scope,
+    priority: app.priority,
+  })
 }
 
 ///|

@@ -45,7 +45,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("OpenClaw env"))
   assert_true(html.contains("data-snippet="))
   assert_true(html.contains("data-copy-snippet="))
-  assert_true(html.contains("Provider Editor"))
+  assert_true(html.contains("Provider preset"))
   assert_true(html.contains("OpenAI Chat Completions"))
   assert_true(html.contains("value=\"openai_chat\""))
   assert_true(html.contains("App Bindings"))
@@ -54,7 +54,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   assert_true(html.contains("Saved and enabled describe the provider"))
   assert_true(html.contains("Detect Again"))
   assert_true(html.contains("Detect App Extensions"))
-  assert_true(html.contains("Connected Moon apps"))
+  assert_true(html.contains("Supported Moon apps"))
   assert_true(html.contains("MoonDesk first"))
   assert_true(html.contains("Refresh Suite"))
   assert_true(html.contains("Rewrite Status File"))
@@ -70,7 +70,7 @@ async test "moongate generated dashboard exposes operator ui surface" {
   )
   assert_true(html.contains("Save Provider"))
   assert_true(html.contains("Available to MoonGate routing"))
-  assert_true(html.contains("Saving a provider does not connect any app"))
+  assert_true(html.contains("id=\"provider-connect-app\""))
   assert_true(html.contains("Delete Provider"))
   assert_true(html.contains("Test Provider"))
   assert_true(html.contains("Usage Explorer"))
@@ -96,13 +96,10 @@ test "moongate ui section metadata drives primary navigation" {
   guard moongate_ui_sections_json() is Array(sections) else {
     fail("expected section array")
   }
-  assert_eq(sections.length(), 11)
+  assert_eq(sections.length(), 6)
   let html = moongate_rabbita_shell_html()
   for
-    id in [
-      "overview", "providers", "bindings", "connections", "connect", "requests",
-      "usage", "transcripts", "operations", "suite", "guide",
-    ] {
+    id in ["overview", "providers", "bindings", "requests", "usage", "advanced"] {
     assert_true(html.contains("href=\"#\{id}\""))
     assert_true(
       sections.any(section => {
@@ -180,16 +177,12 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(frameworks.contains("clearApiKey"))
   assert_true(frameworks.contains("clearModelMapping"))
   assert_true(frameworks.contains("draft: true"))
-  assert_true(frameworks.contains("API keys stay separate"))
-  assert_true(frameworks.contains("providerTemplateApiFormatLabel"))
+  assert_true(frameworks.contains("providerCredentialIdentity"))
+  assert_true(frameworks.contains("renderModelSuggestions"))
   assert_true(frameworks.contains("sortedProviderTemplates"))
   assert_true(frameworks.contains("targetAppLabel"))
-  assert_true(frameworks.contains("MoonDesk comes first"))
-  assert_true(
-    frameworks.contains(
-      "shared Moon Suite routes reuse one provider configuration",
-    ),
-  )
+  assert_true(frameworks.contains("visibleProviderTemplates"))
+  assert_true(frameworks.contains("row.provider.appType === scope"))
   assert_false(
     frameworks.contains(".filter((row) => row.provider.appType === appType)"),
   )
@@ -213,11 +206,12 @@ async test "moongate ui fetches current backend route surface" {
   assert_true(setup.contains("Tested: passed"))
   assert_true(setup.contains("Not tested"))
   assert_true(setup.contains("Connected and verified"))
-  assert_true(setup.contains("Not selected or wired"))
+  assert_true(setup.contains("connectionState(row, provider)"))
   assert_true(suite.contains("loadSuite"))
   assert_true(suite.contains("suiteLoadGeneration"))
   assert_true(suite.contains("moondesk"))
-  assert_true(suite.contains("Primary"))
+  assert_true(suite.contains("Supported"))
+  assert_false(suite.contains("suite-app-count"))
   assert_true(resilience.contains("loadResilience"))
   assert_true(resilience.contains("resilienceLoadGeneration"))
   assert_true(operations.contains("loadOperations"))
@@ -280,7 +274,7 @@ async test "provider editor separates upstream availability from app binding" {
   let css = @fsx.read_file("public/assets/moongate.css")
   assert_true(html.contains("Saved Providers"))
   assert_true(html.contains("Request type"))
-  assert_true(html.contains("does not mean an app is connected"))
+  assert_true(html.contains("id=\"provider-connect-app\""))
   assert_true(frameworks.contains("selectedProviderKey"))
   assert_true(frameworks.contains("Test passed"))
   assert_false(frameworks.contains("Stop Using Provider"))
@@ -312,7 +306,7 @@ test "moongate framework app metadata preserves active framework support" {
   guard moongate_framework_apps_json() is Array(apps) else {
     fail("expected framework app array")
   }
-  assert_eq(apps.length(), 9)
+  assert_eq(apps.length(), 11)
   for
     id in [
       "moondesk", "moonclaw", "claude", "claude-desktop", "codex", "gemini", "opencode",
@@ -329,7 +323,7 @@ test "moongate framework app metadata preserves active framework support" {
     fail("expected MoonClaw framework")
   }
   assert_eq(moonclaw["providerAppType"], Json::string("openclaw"))
-  assert_eq(moonclaw["priority"], Json::number(1.0))
+  assert_eq(moonclaw["priority"], Json::number(10.0))
   guard ui_framework_app_by_id(apps, "claude-desktop") is Some(desktop) else {
     fail("expected claude desktop framework")
   }
@@ -466,6 +460,9 @@ async test "moongate ui endpoint literals are advertised by suite manifest" {
     ui_route_literals_from_asset(js)
   assert_true(endpoint_routes.length() > 45)
   for route in endpoint_routes {
+    if route.has_prefix("/assets/") {
+      continue
+    }
     if !ui_manifest_advertises_route(routes, route) {
       fail("suite manifest does not advertise UI endpoint route: \{route}")
     }
@@ -631,7 +628,7 @@ async test "moongate rabbita lepusa preview manifest parses" {
   assert_eq(parsed["rootHtml"], expected["rootHtml"])
   assert_eq(parsed["startup"], expected["startup"])
   assert_true(manifest.contains("\"rootHtml\""))
-  assert_true(manifest.contains("Local AI router"))
+  assert_false(manifest.contains("Local AI router"))
   assert_true(manifest.contains("\"assetProtocol\": \"lepusa\""))
   assert_true(manifest.contains("\"localhost\""))
   assert_false(manifest.contains("../lepusa"))

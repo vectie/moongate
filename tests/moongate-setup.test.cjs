@@ -203,6 +203,19 @@ test("saved configuration proof matches exactly and ignores irrelevant server me
   assert.equal(h.get("provider-test-result").textContent, "Not tested");
 });
 
+test("cosmetic edits and pausing retain the last connection test", async () => {
+  const h = providerHarness();
+  await h.testProvider();
+  h.context.saved[0].name = "A new name";
+  h.context.saved[0].notes = "A new note";
+  h.context.saved[0].enabled = false;
+  assert.equal(h.run('savedProviderTestResult(saved[0], "claude", "alpha").success'), true);
+  h.context.saved[0].enabled = true;
+  assert.equal(h.run('savedProviderTestResult(saved[0], "claude", "alpha").success'), true);
+  h.context.saved[0].baseUrl = "https://changed.invalid";
+  assert.equal(h.run('savedProviderTestResult(saved[0], "claude", "alpha")'), null);
+});
+
 test("testing changed draft B preserves any existing proof for saved A", async () => {
   const h = providerHarness();
   await h.testProvider();

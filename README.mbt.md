@@ -508,11 +508,6 @@ MoonGate currently exposes the standalone local routes below:
 - `GET /config/claude-code/path`
 - `GET /config/dir?appType=codex`
 - `POST /config/folder/open?appType=codex`
-- `POST /files/directories/pick?defaultPath=/tmp`
-- `POST /runtime/open-external?url=https://github.com/vectie/moongate`
-- `POST /runtime/clipboard/text?text=hello`
-- `POST /runtime/updates/check`
-- `POST /runtime/tray-menu/update`
 - `GET /runtime/portable-mode`
 - `GET /tools/versions?tools=codex,claude`
 - `POST /runtime/window-theme?theme=dark`
@@ -550,8 +545,6 @@ MoonGate currently exposes the standalone local routes below:
 - `GET /config/app-folder/open`
 - `GET /settings`
 - `POST /settings`
-- `POST /runtime/restart`
-- `POST /runtime/updates/install-restart`
 - `GET /settings/app-config-dir`
 - `POST /settings/app-config-dir?path=/tmp/moongate`
 - `POST /settings/auto-launch?enabled=true`
@@ -746,8 +739,10 @@ model/memory/dashboard routes keep their JSON state in MoonGate, returning
 `null` or defaults before a standalone caller sets them. Config-folder,
 common-snippet, and environment routes use `/config/status`, `/config/dir`,
 `/config/snippets`, `/config/snippets/extract`, `/config/env/conflicts`,
-`/config/env/delete`, and `/config/env/restore`; folder open and directory pick
-use `/config/folder/open` and `/files/directories/pick`. File-sourced env
+`/config/env/delete`, and `/config/env/restore`; folder open uses
+`/config/folder/open`. Legacy directory-pick, external-opener, clipboard,
+update/tray and app-restart gateway calls return HTTP 501; use desktop or
+system controls instead. File-sourced env
 conflicts are backed up under
 `.moonsuite/products/moongate/backups`, removed from shell config files, and
 restored from that backup JSON; process environment conflicts remain

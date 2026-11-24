@@ -25,7 +25,7 @@ function harness(probe) {
     reset() { for (const node of nodes.values()) node.value = ''; }
   }
   const root = new Element();
-  for (const id of ['form', 'file', 'content', 'format', 'open', 'sample', 'clear', 'status', 'query', 'role', 'json', 'markdown', 'count', 'messages']) {
+  for (const id of ['form', 'file', 'content', 'format', 'open', 'sample', 'clear', 'status', 'query', 'role', 'json', 'markdown', 'count', 'messages', 'reader-controls']) {
     const node = new Element(); node.id = 'transcript-' + id; root.appendChild(node);
   }
   const get = id => nodes.get(id) || null;

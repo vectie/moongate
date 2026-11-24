@@ -590,10 +590,7 @@ test "suite manifest publishes moongate service contract" {
   assert_eq(commands["start"], Json::string("moongate start --port 15721"))
   assert_eq(commands["skillsList"], Json::string("moongate skills installed"))
   assert_eq(commands["skillsRepos"], Json::string("moongate skills repos"))
-  assert_eq(
-    commands["updateTrayMenu"],
-    Json::string("moongate runtime tray-menu update"),
-  )
+  assert_eq(commands.get("updateTrayMenu"), None)
   assert_eq(
     commands["suiteWriteStatus"],
     Json::string("moongate suite write-status"),

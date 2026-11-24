@@ -37,6 +37,10 @@ function readFrameworkApps() {
       desktop: app.desktop === true,
       providerAppType: typeof app.providerAppType === "string" ? app.providerAppType : "",
       priority: Number.isFinite(app.priority) ? app.priority : 100,
+      routePath: app.routePath,
+      routeLabel: app.routeLabel,
+      bindingMode: app.bindingMode,
+      detectionSupported: app.detectionSupported !== false,
     }));
 }
 
@@ -134,6 +138,26 @@ async function safeGetJson(path) {
   } catch (error) {
     return { ok: false, error: error && error.message ? error.message : String(error) };
   }
+}
+
+// Share reads within one refresh; mutations invalidate the affected snapshot.
+const sharedReads = new Map();
+function sharedGetJson(path) {
+  if (!sharedReads.has(path)) sharedReads.set(path, safeGetJson(path));
+  return sharedReads.get(path);
+}
+function invalidateSharedReads() { sharedReads.clear(); }
+
+function uiLabel(value) {
+  return window.MoonSuiteI18n?.label?.(value) || value;
+}
+
+function content(value) {
+  return `<span data-i18n-scope="content">${escapeHtml(value)}</span>`;
+}
+
+function actionIcon(action, label, attrs = "") {
+  return `<button type="button" class="icon-button button-secondary" title="${escapeHtml(uiLabel(label))}" aria-label="${escapeHtml(uiLabel(label))}" ${attrs}><img src="/assets/nav/${action}.svg" alt="" aria-hidden="true"></button>`;
 }
 
 function endpoint(path, params) {

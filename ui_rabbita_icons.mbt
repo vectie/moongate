@@ -2,7 +2,7 @@
 fn moongate_rabbita_nav_icon(page : String) -> @html.Html {
   @html.img(
     class="nav-icon",
-    src="/assets/nav/\{page}.svg",
+    src="/assets/nav/\{if page == "advanced" { "operations" } else { page }}.svg",
     alt="",
     width=20,
     height=20,

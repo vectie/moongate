@@ -70,6 +70,39 @@ fn moon_provider_preset_catalog() -> Array[Json] {
   for preset in moon_ready_provider_template_catalog() {
     presets.push(preset)
   }
+  for app in gateway_apps() {
+    if app.scope != "openclaw" || app.id == "openclaw" {
+      continue
+    }
+    for
+      form in [
+        moon_provider_preset_form_json("codex", "OpenAI Official").unwrap(),
+        moon_ark_agent_plan_provider_form_json("openclaw", "openai"),
+      ] {
+      guard form is Object(fields) else { continue }
+      fields["appType"] = Json::string(app.scope)
+      presets.push(
+        Json({
+          "id": Json::string(
+            "\{app.id}:\{json_string_from_map(fields, "id").unwrap()}",
+          ),
+          "appType": Json::string(app.id),
+          "targetAppLabel": Json::string(app.label),
+          "targetPriority": Json::number(app.priority.to_double()),
+          "providerAppType": Json::string(app.scope),
+          "category": Json::string("official"),
+          "name": Json::string(
+            if fields["providerType"] == Json::string("codex_oauth") {
+              "OpenAI Official"
+            } else {
+              "火山Agentplan"
+            },
+          ),
+          "form": Json::object(fields),
+        }),
+      )
+    }
+  }
   for preset in moon_provider_preset_summary_catalog() {
     presets.push(preset)
   }
@@ -123,11 +156,7 @@ fn moon_provider_preset_summary_json(
     Some(form) => {
       obj["form"] = form
       obj["providerAppType"] = Json::string(app_type)
-      if app_type == "codex" {
-        obj["targetAppType"] = Json::string("moondesk")
-        obj["targetAppLabel"] = Json::string("MoonDesk")
-        obj["targetPriority"] = Json::number(0.0)
-      }
+      obj["targetAppType"] = Json::string(app_type)
     }
     None => ()
   }

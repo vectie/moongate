@@ -2762,8 +2762,9 @@ async test "external utility endpoints are owned by runtime service" {
     assert_false(source.contains("async fn Gateway::\{handler}("))
     assert_false(misc_source.contains("async fn RuntimeService::\{handler}("))
   }
-  assert_true(source.contains("fn RuntimeService::record_external_open("))
-  assert_false(source.contains("fn Gateway::record_external_open("))
+  assert_true(source.contains("write_runtime_unsupported"))
+  assert_true(source.contains("@status.NotImplemented"))
+  assert_false(source.contains("record_external_open"))
   assert_false(misc_source.contains("fn RuntimeService::record_external_open("))
   assert_true(route_source.contains("self.handle_open_external(r, w)"))
   assert_true(route_source.contains("self.handle_check_for_updates(w)"))
@@ -3137,44 +3138,10 @@ async test "openclaw endpoints are owned by openclaw service" {
 }
 
 ///|
-test "standalone tray update mirrors moongate no tray result" {
-  assert_eq(moon_update_tray_menu_result(), Json::boolean(false))
-}
-
-///|
 test "gateway defaults are owned by suite contract" {
   let gateway = Gateway::new(port=@suite.default_port())
   assert_eq(gateway.host, @suite.default_host())
   assert_eq(gateway.model, @suite.default_model())
-}
-
-///|
-test "standalone external open records moongate normalized target" {
-  let runtime = RuntimeService::new()
-  assert_eq(runtime.last_external_url, None)
-  assert_eq(
-    runtime.record_external_open("github.com/vectie/moongate"),
-    "https://github.com/vectie/moongate",
-  )
-  assert_eq(
-    runtime.last_external_url,
-    Some("https://github.com/vectie/moongate"),
-  )
-  assert_eq(
-    runtime.record_external_open("HTTP://github.com/vectie/moongate"),
-    "https://HTTP://github.com/vectie/moongate",
-  )
-  assert_eq(
-    runtime.last_external_url,
-    Some("https://HTTP://github.com/vectie/moongate"),
-  )
-}
-
-///|
-test "standalone update check records moongate release target" {
-  let runtime = RuntimeService::new()
-  assert_eq(runtime.record_external_open(moon_update_url()), moon_update_url())
-  assert_eq(runtime.last_external_url, Some(moon_update_url()))
 }
 
 ///|

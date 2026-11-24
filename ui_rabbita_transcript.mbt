@@ -61,31 +61,33 @@ fn moongate_rabbita_transcript_page() -> @html.Html {
           attrs=@html.Attrs::build().aria_live("polite"),
           "No transcript open.",
         ),
-        @html.div(class="form-grid", [
-          moongate_rabbita_input_label(
-            "Find text", "transcript-query", "Search messages", false,
-          ),
-          moongate_rabbita_select_label("Speaker", "transcript-role", [
-            ("", "All speakers"),
+        @html.section(id="transcript-reader-controls", hidden=true, [
+          @html.div(class="form-grid", [
+            moongate_rabbita_input_label(
+              "Find text", "transcript-query", "Search messages", false,
+            ),
+            moongate_rabbita_select_label("Speaker", "transcript-role", [
+              ("", "All speakers"),
+            ]),
           ]),
+          @html.div(class="inline-actions", [
+            @html.button(
+              id="transcript-json",
+              type_="button",
+              class="button-secondary",
+              disabled=true,
+              "Download visible JSON",
+            ),
+            @html.button(
+              id="transcript-markdown",
+              type_="button",
+              class="button-secondary",
+              disabled=true,
+              "Download visible Markdown",
+            ),
+          ]),
+          @html.p(id="transcript-count", ""),
         ]),
-        @html.div(class="inline-actions", [
-          @html.button(
-            id="transcript-json",
-            type_="button",
-            class="button-secondary",
-            disabled=true,
-            "Download visible JSON",
-          ),
-          @html.button(
-            id="transcript-markdown",
-            type_="button",
-            class="button-secondary",
-            disabled=true,
-            "Download visible Markdown",
-          ),
-        ]),
-        @html.p(id="transcript-count", ""),
         @html.div(
           id="transcript-messages",
           class="transcript-messages",

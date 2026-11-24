@@ -96,11 +96,12 @@ function updateUsageMetrics(summary) {
 async function loadUsageExplorer() {
   const generation = ++usageLoadGeneration;
   const params = usageQueryParams();
-  const [summaryProbe, trendsProbe, providerStatsProbe, modelStatsProbe] = await Promise.all([
+  const [summaryProbe, trendsProbe, providerStatsProbe, modelStatsProbe, byAppProbe] = await Promise.all([
     safeGetJson(endpoint(endpoints.usageSummary, params)),
     safeGetJson(endpoint(endpoints.usageTrends, params)),
     safeGetJson(endpoint(endpoints.providerStats, params)),
     safeGetJson(endpoint(endpoints.modelStats, params)),
+    safeGetJson(endpoint(endpoints.usageByApp, params)),
   ]);
   if (generation !== usageLoadGeneration) {
     return { warningCount: 0, recentRequestCount: 0, stale: true };
@@ -109,6 +110,12 @@ async function loadUsageExplorer() {
   const trends = probeData(trendsProbe, {});
   const providerStats = probeData(providerStatsProbe, {});
   const modelStats = probeData(modelStatsProbe, {});
+  if (byAppProbe.ok) {
+    const rows = arrayFrom(byAppProbe.data, ["apps", "items", "data"]).map(row => ({...row, ...row.summary}));
+    renderStack("app-usage", params.appType ? rows.filter(row => firstString(row, ["appType", "app", "name"]) === params.appType) : rows, ["appType", "app", "name"]);
+  } else {
+    renderStackError("app-usage", byAppProbe.error);
+  }
   if (summaryProbe.ok) {
     updateUsageMetrics(summary);
   } else {
@@ -132,7 +139,7 @@ async function loadUsageExplorer() {
     renderStackError("filtered-model-usage", modelStatsProbe.error);
   }
   return {
-    warningCount: [summaryProbe, trendsProbe, providerStatsProbe, modelStatsProbe]
+    warningCount: [summaryProbe, trendsProbe, providerStatsProbe, modelStatsProbe, byAppProbe]
       .some((probe) => !probe.ok) ? 1 : 0,
   };
 }
@@ -224,10 +231,11 @@ function requestSafeFields(row) {
 }
 
 function renderRequestDetail(detail, message = "No request selected") {
+  if ($("request-detail-panel")) $("request-detail-panel").hidden = !detail && message === "No request selected";
   text("request-detail-id", requestSelectedId || "No selection");
   const target = $("request-detail");
   if (target) target.innerHTML = (detail ? requestSafeFields(detail) : [["Status", message]])
-    .map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+    .map(([label, value]) => `<div><span>${escapeHtml(uiLabel(label))}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
 
 function updateRequestControls() {
@@ -256,20 +264,20 @@ function renderLogs(data) {
   if (!target) return;
   target.innerHTML = "";
   if (data.data.length === 0) {
-    target.innerHTML = `<div class="log-item"><strong>No retained requests on this page</strong><small>Change filters, go back a page, or apply again to refresh the time interval.</small></div>`;
+    target.innerHTML = `<div class="log-item"><strong>${escapeHtml(uiLabel("No retained requests on this page"))}</strong><small>${escapeHtml(uiLabel("Change filters, go back a page, or apply again to refresh the time interval."))}</small></div>`;
   }
   for (const row of data.data) {
     const div = document.createElement("div");
     div.className = "log-item";
-    div.innerHTML = `<strong>${escapeHtml(requestValue(row.requestId))}</strong>
+    div.innerHTML = `<strong>${escapeHtml(requestValue(row.providerName))} · ${escapeHtml(requestValue(row.model))}</strong>
       <small>${escapeHtml([requestTime(row.createdAt), requestValue(row.appType), requestValue(row.providerName), requestValue(row.model), `HTTP ${requestValue(row.statusCode)}`].join(" | "))}</small>
       <small>${escapeHtml(`Estimated USD ${requestMeasure(row.totalCostUsd)} | Latency ${requestMeasure(row.latencyMs, " ms")}`)}</small>
-      <button type="button" data-request-id="${escapeHtml(row.requestId)}">Details</button>`;
+      <button type="button" data-request-id="${escapeHtml(row.requestId)}">${escapeHtml(uiLabel("Details"))}</button>`;
     target.appendChild(div);
   }
   const start = data.data.length ? data.page * requestPageSize + 1 : 0;
   const end = data.data.length ? data.page * requestPageSize + data.data.length : 0;
-  text("request-page-summary", `Showing ${start}–${end} of ${data.total} retained requests · Page ${data.page + 1}`);
+  text("request-page-summary", window.MoonSuiteI18n?.message("requests.page", {start, end, total:data.total, page:data.page + 1}) || `Showing ${start}–${end} of ${data.total} retained requests · Page ${data.page + 1}`);
 }
 
 async function loadRequestExplorer() {
@@ -284,6 +292,7 @@ async function loadRequestExplorer() {
   text("request-page-summary", "Loading retained requests…");
   if ($("request-log")) $("request-log").innerHTML = "";
   text("request-feedback", "Loading…");
+  if ($("request-feedback")) $("request-feedback").hidden = false;
   updateRequestControls();
   const probe = await safeGetJson(endpoint(endpoints.usageLogs, { ...query, page, pageSize: requestPageSize }));
   if (generation !== requestLoadGeneration) return { warningCount: 0, stale: true };
@@ -296,7 +305,8 @@ async function loadRequestExplorer() {
   if (valid) {
     requestPageSnapshot = { query, page, total: data.total, rows: data.data.map((row) => ({ ...row })) };
     renderLogs(data);
-    text("request-feedback", data.data.length ? "Page loaded. Export includes only these displayed rows." : "No matching retained requests on this page.");
+    text("request-feedback", "");
+    if ($("request-feedback")) $("request-feedback").hidden = true;
   } else {
     text("request-page-summary", "Retained requests unavailable");
     text("request-feedback", "Could not load this page. Retry the page or change filters.");
@@ -322,7 +332,7 @@ async function applyRequestFilters(reset = false) {
   }
   let query;
   try { query = readRequestQuery(); }
-  catch (error) { text("request-feedback", error.message); return; }
+  catch (error) { text("request-feedback", error.message); if ($("request-feedback")) $("request-feedback").hidden = false; return; }
   requestQuery = query;
   requestPage = 0;
   return loadRequestExplorer();
@@ -794,13 +804,15 @@ function renderRequestSubset() {
 }
 
 function renderRequestCollection() {
+  const host = $("request-investigation");
+  if (!host?.open) return;
   if (!requestCollectionUI) {
-    const parent = $("requests");
+    const parent = host;
     if (!parent) return;
     const make = (tag, value) => { const node = document.createElement(tag); if (value) node.textContent = value; return node; };
     const section = make("section"); section.id = "request-collection";
     const heading = make("h3", "Selected request observations");
-    const notice = make("p", "Inspect and collect chosen metadata across pages. Estimates and zero/unavailable values remain unchanged. This is a manual selection, not complete history or a billing statement. No prompts, response bodies or raw errors are collected from gateway details. Reload clears this collection; Save review JSON lets you reopen it explicitly. Local review file contents are unverified.");
+    const notice = make("p", "Keep selected request metadata and notes. Save a review to resume after reload. Imported files and notes are unverified; inspect them before sharing.");
     const button = (id, label, action, parent = section) => {
       const node = make("button", label); node.id = id; node.type = "button";
       node.className = "button-secondary"; node.addEventListener("click", action); parent.appendChild(node); return node;
@@ -831,13 +843,16 @@ function renderRequestCollection() {
     const subsetHost = make("div");
     const list = make("div"); list.id = "request-collection-list";
     section.appendChild(status); section.appendChild(subsetHost); section.appendChild(list); parent.appendChild(section);
-    requestCollectionUI = { section, subsetHost, keep, download, clear, status, list, saveReview, picker, openReview, cancelReview, reviewStatus, mergeConfirm, mergePreview, mergeReview };
+    requestCollectionUI = { section, subsetHost, keep, download, clear, status, list, saveReview, picker, openReview, cancelReview, reviewStatus, mergeConfirm, mergeScope, mergePreview, mergeReview };
   }
   const ui = requestCollectionUI;
   ui.keep.disabled = requestListLoading || requestDetailLoading || !requestSelectedDetail || !requestDetailObservedAt;
   ui.download.disabled = ui.saveReview.disabled = requestCollection.length === 0;
   ui.clear.disabled = requestCollection.length === 0 && requestAnnotationSummary === "" && requestAnnotationNotes.size === 0;
   ui.openReview.disabled = !requestReviewPending;
+  ui.keep.hidden = !requestSelectedDetail;
+  for (const control of [ui.download, ui.saveReview, ui.clear, ui.status]) control.hidden = requestCollection.length === 0 && !requestAnnotationSummary;
+  for (const control of [ui.openReview, ui.mergeScope, ui.mergePreview, ui.mergeReview, ui.cancelReview]) control.hidden = !requestReviewPending;
   ui.reviewStatus.textContent = requestReviewMessage;
   renderRequestReviewMerge();
   ui.status.textContent = `${requestCollection.length} of ${requestCollectionLimit} selected observations. ${requestCollectionMessage}`;
@@ -845,6 +860,9 @@ function renderRequestCollection() {
   renderRequestCollectionList();
   renderRequestComparison();
   renderRequestAnnotations();
+  if (requestComparisonUI) requestComparisonUI.section.hidden = requestCollection.length < 2;
+  if (requestSubsetUI) requestSubsetUI.section.hidden = requestCollection.length === 0;
+  if (requestAnnotationUI) requestAnnotationUI.section.hidden = requestCollection.length === 0 && !requestAnnotationSummary;
 }
 
 function renderRequestCollectionList() {

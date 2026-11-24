@@ -1,5 +1,18 @@
 let setupLoadGeneration = 0;
 let bindingRows = [];
+let preferredBindingProvider = null;
+const bindingErrors = new Map();
+const bindingBusy = new Set();
+
+async function runBindingAction(appType, action) {
+  if (bindingBusy.has(appType)) return;
+  bindingBusy.add(appType);
+  bindingErrors.delete(appType);
+  renderBindingRows(bindingRows);
+  try { await action(appType); }
+  catch (error) { bindingErrors.set(appType, error.message || String(error)); }
+  finally { bindingBusy.delete(appType); renderBindingRows(bindingRows); }
+}
 
 function firstValue(object, keys) {
   if (!object || typeof object !== "object") return null;
@@ -46,20 +59,6 @@ function renderSetupList(id, rows) {
     .join("");
 }
 
-function bindingStateLabel(binding) {
-  if (!binding.installed) return "Not installed";
-  if (binding.bound === true) return "Connected";
-  if (binding.bindingState === "stale") return "Needs repair";
-  if (binding.bindingMode === "manual") return "Manual setup";
-  return "Not connected";
-}
-
-function bindingStateClass(binding) {
-  if (binding.bound === true) return "state good";
-  if (binding.bindingState === "stale") return "state bad";
-  return "state warn";
-}
-
 function bindingProviderOptions(row) {
   const available = row.providers.filter((provider) => provider.builtIn !== true && provider.enabled !== false);
   if (available.length === 0) return "";
@@ -69,63 +68,65 @@ function bindingProviderOptions(row) {
       const id = firstString(provider, ["id", "providerId"], "");
       const name = firstString(provider, ["name", "providerName"], id);
       const selected = id === selectedId ? " selected" : "";
-      return `<option value="${escapeHtml(id)}"${selected}>${escapeHtml(name)}</option>`;
+      return `<option value="${escapeHtml(id)}" data-i18n-scope="content"${selected}>${escapeHtml(name)}</option>`;
     })
     .join("");
 }
 
 function bindingProviderCell(row) {
   const binding = row.binding;
-  if (!binding.installed) return "<small>Install the app first</small>";
+  if (!binding.installed && row.app.detectionSupported !== false) return "";
   if (binding.bindingMode === "manual") return "<small>Selected inside the app</small>";
+  if (!binding.installed) return "";
   const options = bindingProviderOptions(row);
-  if (!options) return `<button type="button" class="button-secondary" data-binding-action="add-provider" data-app="${escapeHtml(row.app.id)}">Add Provider</button>`;
+  if (!options) {
+    const provider = configuredConnectionProvider(row);
+    return provider ? content(firstString(provider, ["name", "providerName", "id"], "")) : "";
+  }
   return `<select data-binding-provider="${escapeHtml(row.app.id)}" aria-label="Provider for ${escapeHtml(row.app.label)}">${options}</select>`;
 }
 
 function bindingActions(row) {
   const binding = row.binding;
   const app = escapeHtml(row.app.id);
-  if (!binding.installed) return "<small>No action available</small>";
+  if (!binding.installed && row.app.detectionSupported !== false) return "";
   if (binding.bindingMode === "manual") {
     return `<button type="button" class="button-secondary" data-binding-action="manual" data-app="${app}">Manual Steps</button>`;
   }
-  if (row.providers.filter((provider) => provider.builtIn !== true && provider.enabled !== false).length === 0) {
+  if (!binding.installed) return "";
+  if (row.providers.filter((provider) => provider.builtIn !== true).length === 0) {
     return `<button type="button" data-binding-action="add-provider" data-app="${app}">Add Provider First</button>`;
   }
   if (binding.bound === true) {
     return `<div class="inline-actions">
-      <button type="button" class="button-secondary" data-binding-action="stage" data-app="${app}">Stage change</button>
-      <button type="button" data-binding-action="bind" data-app="${app}">Apply Provider</button>
-      <button type="button" class="button-secondary" data-binding-action="verify" data-app="${app}">Verify</button>
-      <button type="button" class="danger-ghost" data-binding-action="unbind" data-app="${app}">Disconnect</button>
+      <button type="button" data-binding-action="bind" data-app="${app}" disabled>Apply Provider</button>
+      <button type="button" class="button-secondary" data-binding-action="test-provider" data-app="${app}">Review Provider</button>
+      <details class="local-menu"><summary>${escapeHtml(uiLabel("More"))}</summary>
+        <button type="button" class="button-secondary" data-binding-action="stage" data-app="${app}">Stage change</button>
+        <button type="button" class="button-secondary" data-binding-action="verify" data-app="${app}">Verify</button>
+        <button type="button" class="danger-ghost" data-binding-action="unbind" data-app="${app}">Disconnect</button>
+      </details>
     </div>`;
+  }
+  if (!row.providers.some(provider => provider.builtIn !== true && provider.enabled !== false)) {
+    return `<button type="button" class="button-secondary" data-binding-action="test-provider" data-app="${app}">Review Provider</button>`;
   }
   const label = binding.bindingState === "stale" ? "Repair Connection" : "Connect App";
   return `<div class="inline-actions">
-    <button type="button" class="button-secondary" data-binding-action="stage" data-app="${app}">Stage change</button>
       <button type="button" data-binding-action="bind" data-app="${app}">${label}</button>
-    <button type="button" class="button-secondary" data-binding-action="verify" data-app="${app}">Verify</button>
+    <details class="local-menu"><summary>${escapeHtml(uiLabel("More"))}</summary>
+      <button type="button" class="button-secondary" data-binding-action="stage" data-app="${app}">Stage change</button>
+      <button type="button" class="button-secondary" data-binding-action="verify" data-app="${app}">Verify</button>
+    </details>
   </div>`;
 }
 
 function connectionGraphRoute(app) {
-  const routes = {
-    moondesk: ["OpenAI Responses", "/v1/responses"],
-    codex: ["OpenAI Responses", "/v1/responses"],
-    claude: ["Anthropic Messages", "/v1/messages"],
-    "claude-desktop": ["Claude Desktop Messages", "/claude-desktop/v1/messages"],
-    gemini: ["Gemini Native", "/gemini/v1beta/…"],
-    opencode: ["OpenAI Chat", "/v1/chat/completions"],
-    openclaw: ["OpenClaw Chat", "/openclaw/v1/chat/completions"],
-    hermes: ["OpenAI Chat", "/v1/chat/completions"],
-  };
-  const [label, path] = routes[app.id] || ["Local AI route", "MoonGate local API"];
-  return { label, path };
+  return { label: app.routeLabel || "Local AI route", path: app.routePath || "MoonGate local API" };
 }
 
 function connectionGraphCheck(label, tone) {
-  return `<span class="graph-check ${tone}">${escapeHtml(label)}</span>`;
+  return `<span class="graph-check ${tone}">${escapeHtml(uiLabel(label))}</span>`;
 }
 
 function connectionGraphTestState(provider, providerAppType) {
@@ -139,9 +140,6 @@ function connectionGraphTestState(provider, providerAppType) {
       label: passed ? "Tested: passed" : "Tested: failed",
     };
   }
-  const health = firstString(provider, ["healthStatus"], "unknown").toLowerCase();
-  if (health === "healthy") return { passed: true, tone: "good", label: "Tested: passed" };
-  if (health === "unhealthy") return { passed: false, tone: "bad", label: "Tested: failed" };
   return { passed: false, tone: "warn", label: "Not tested" };
 }
 
@@ -151,11 +149,7 @@ function connectionGraphLane(row, provider) {
   const providerAppType = app.providerAppType || app.id;
   if (!provider) {
     const reason = row.warning ? "Provider data unavailable" : "No provider saved";
-    const appState = !binding.installed
-      ? "App not installed"
-      : binding.bindingMode === "manual"
-        ? "Manual wiring required"
-        : "Waiting for a provider";
+    const appState = connectionState(row, null).label;
     return `<div class="connection-lane unwired" data-graph-app="${escapeHtml(app.id)}" data-graph-provider="">
       <div class="connection-node provider-node missing">
         <span class="connection-node-label">Provider</span>
@@ -174,7 +168,7 @@ function connectionGraphLane(row, provider) {
         <span class="connection-node-label">AI app</span>
         <strong>${escapeHtml(app.label)}</strong>
         <div class="connection-node-checks">
-          ${connectionGraphCheck(binding.installed ? "Installed" : "Not installed", binding.installed ? "good" : "warn")}
+          ${connectionGraphCheck(app.detectionSupported === false ? "Manual setup" : binding.installed ? "Installed" : "Not installed", binding.installed ? "good" : "warn")}
           ${connectionGraphCheck("Not bound", "warn")}
           ${connectionGraphCheck("Not verified", "warn")}
         </div>
@@ -191,36 +185,20 @@ function connectionGraphLane(row, provider) {
   const selected = firstString(binding, ["currentProviderId"], "") === providerId;
   const bound = selected && binding.bound === true;
   const bindingVerified = bound && binding.bindingState === "bound";
-  const routeReady = enabled && test.passed;
-  const verified = bindingVerified && routeReady;
-  let result = "Not selected or wired";
-  let resultTone = "warn";
+  const state = connectionState(row, provider);
+  const routeReady = selected && enabled && test.passed && state.running && !row.warning;
+  const verified = state.ready;
+  let result = state.label;
+  let resultTone = state.tone;
   if (verified) {
     result = "Connected and verified";
     resultTone = "good";
-  } else if (!binding.installed) {
-    result = "App not installed";
-  } else if (!enabled) {
-    result = "Provider disabled";
-    resultTone = "bad";
-  } else if (test.tone === "bad") {
-    result = bindingVerified ? "App verified; provider test failed" : "Provider test failed";
-    resultTone = "bad";
-  } else if (test.tone === "warn") {
-    result = bindingVerified ? "App verified; provider not tested" : "Provider not tested";
-  } else if (binding.bindingMode === "manual") {
-    result = "Manual wiring required";
-  } else if (selected && binding.bindingState === "stale") {
-    result = "Binding needs repair";
-    resultTone = "bad";
-  } else if (selected) {
-    result = "Selected, app not wired";
   }
   return `<div class="connection-lane ${verified ? "verified" : resultTone === "bad" ? "blocked" : "unwired"}" data-graph-app="${escapeHtml(app.id)}" data-graph-provider="${escapeHtml(providerId)}">
     <div class="connection-node provider-node">
       <span class="connection-node-label">Provider</span>
-      <strong>${escapeHtml(providerName)}</strong>
-      <small>${escapeHtml(model)}</small>
+      <strong>${content(providerName)}</strong>
+      <small>${content(model)}</small>
       <div class="connection-node-checks">
         ${connectionGraphCheck(provider.builtIn === true ? "Built-in route" : "Saved", "good")}
         ${connectionGraphCheck(enabled ? "Enabled" : "Disabled", enabled ? "good" : "bad")}
@@ -242,18 +220,19 @@ function connectionGraphLane(row, provider) {
       <span class="connection-node-label">AI app</span>
       <strong>${escapeHtml(app.label)}</strong>
       <div class="connection-node-checks">
-        ${connectionGraphCheck(binding.installed ? "Installed" : "Not installed", binding.installed ? "good" : "warn")}
+        ${connectionGraphCheck(app.detectionSupported === false ? "Manual setup" : binding.installed ? "Installed" : "Not installed", binding.installed ? "good" : "warn")}
         ${connectionGraphCheck(bound ? "Bound" : "Not bound", bound ? "good" : "warn")}
         ${connectionGraphCheck(bindingVerified ? "Verified" : "Not verified", bindingVerified ? "good" : "warn")}
       </div>
     </div>
-    <span class="connection-lane-result ${resultTone}">${escapeHtml(result)}</span>
+    <span class="connection-lane-result ${resultTone}">${escapeHtml(uiLabel(result))}</span>
   </div>`;
 }
 
 function renderConnectionGraph(rows) {
   const target = $("connection-graph-routes");
   if (!target) return;
+  const expanded = new Set(Array.from(target.querySelectorAll('details[open]')).map(node => node.dataset.graphSection));
   let configuredRoutes = 0;
   let verifiedRoutes = 0;
   let unwiredApps = 0;
@@ -270,47 +249,45 @@ function renderConnectionGraph(rows) {
         return firstString(left, ["name", "providerName"], leftId).localeCompare(firstString(right, ["name", "providerName"], rightId));
       });
     configuredRoutes += providers.length;
-    const verifiedForApp = providers.filter((provider) => {
-      const id = firstString(provider, ["id", "providerId"], "");
-      const test = connectionGraphTestState(provider, providerAppType);
-      return row.binding.bound === true &&
-        row.binding.bindingState === "bound" &&
-        id === currentProviderId &&
-        provider.enabled !== false &&
-        test.passed;
-    }).length;
+    const verifiedForApp = providers.filter(provider => connectionState(row, provider).ready).length;
     verifiedRoutes += verifiedForApp;
     const bindingVerified = row.binding.bound === true && row.binding.bindingState === "bound";
     if (!bindingVerified) unwiredApps += 1;
-    const lanes = providers.length > 0
-      ? providers.map((provider) => connectionGraphLane(row, provider)).join("")
-      : connectionGraphLane(row, null);
-    const appState = verifiedForApp > 0
+    const primary = providers.find(provider => firstString(provider, ["id", "providerId"], "") === currentProviderId) || providers[0];
+    const alternatives = providers.filter(provider => provider !== primary);
+    const alternativeKey = `alternatives-${row.app.id}`;
+    const lanes = connectionGraphLane(row, primary || null) + (alternatives.length
+      ? `<details class="advanced-disclosure" data-graph-section="${escapeHtml(alternativeKey)}" ${expanded.has(alternativeKey) ? "open" : ""}>
+          <summary>${escapeHtml(uiLabel("Other saved providers"))}</summary>
+          ${alternatives.map(provider => connectionGraphLane(row, provider)).join("")}
+        </details>` : "");
+    const appState = row.app.detectionSupported === false ? connectionGraphCheck("Manual setup", "warn") : verifiedForApp > 0
       ? connectionGraphCheck("Route verified", "good")
       : bindingVerified
         ? connectionGraphCheck("Binding verified", "warn")
       : row.binding.installed
         ? connectionGraphCheck("Not wired", "warn")
         : connectionGraphCheck("Not installed", "warn");
-    return `<section class="connection-app" data-graph-section="${escapeHtml(row.app.id)}">
-      <header class="connection-app-head">
-        <div><span class="connection-app-order">${row.app.priority === 0 ? "Priority app" : "Supported app"}</span><h3>${escapeHtml(row.app.label)}</h3></div>
-        ${appState}
-      </header>
+    const collapsed = !row.binding.installed && row.app.detectionSupported !== false;
+    const tag = collapsed ? "details" : "section";
+    const head = collapsed ? "summary" : "header";
+    return `<${tag} class="connection-app" data-graph-section="${escapeHtml(row.app.id)}" ${collapsed && expanded.has(row.app.id) ? "open" : ""}>
+      <${head} class="connection-app-head">
+        <div><h3>${content(row.app.label)}</h3></div>${collapsed || row.app.detectionSupported === false ? appState : ""}
+      </${head}>
       <div class="connection-app-lanes">${lanes}</div>
-    </section>`;
+    </${tag}>`;
   });
   target.innerHTML = sections.join("");
   text("connection-graph-verified", verifiedRoutes);
   text("connection-graph-configured", configuredRoutes);
   text("connection-graph-unwired", unwiredApps);
-  text(
-    "connection-graph-status",
-    `${verifiedRoutes} verified route${verifiedRoutes === 1 ? "" : "s"} · ${configuredRoutes} configured route${configuredRoutes === 1 ? "" : "s"} · ${unwiredApps} app${unwiredApps === 1 ? "" : "s"} not wired`,
-  );
+  text("connection-graph-status", "");
+  $("connection-graph-status").hidden = true;
 }
 
 function renderBindingRows(rows) {
+  const selections = new Map(Array.from(document.querySelectorAll('[data-binding-provider]')).map(el => [el.dataset.bindingProvider, el.value]));
   bindingRows = rows.slice().sort((left, right) => {
     const byPriority = Number(left.app.priority ?? 100) - Number(right.app.priority ?? 100);
     if (byPriority !== 0) return byPriority;
@@ -323,25 +300,34 @@ function renderBindingRows(rows) {
   target.innerHTML = bindingRows
     .map((row) => {
       const binding = row.binding;
-      const version = firstString(binding, ["version"], "");
-      const installation = binding.installed ? `Installed${version ? ` · ${version}` : ""}` : "Not installed";
+      const selectedProvider = configuredConnectionProvider(row);
+      const state = connectionState(row, selectedProvider);
       const providerName = firstString(binding, ["currentProviderName"], "");
-      const detail = binding.bound && providerName ? `<small>Using ${escapeHtml(providerName)}</small>` : "";
+      const detail = binding.bound && providerName ? `<small>${content(providerName)}</small>` : "";
       return `<tr data-binding-row="${escapeHtml(row.app.id)}">
-        <td><strong>${escapeHtml(row.app.label)}</strong><small>${escapeHtml(row.app.id)}</small></td>
-        <td><span class="${binding.installed ? "state good" : "state warn"}">${escapeHtml(installation)}</span></td>
-        <td><span class="${bindingStateClass(binding)}">${escapeHtml(bindingStateLabel(binding))}</span>${detail}</td>
+        <td><strong>${content(row.app.label)}</strong></td>
+        <td><span class="state ${state.tone}">${escapeHtml(uiLabel(state.label))}</span>${detail}</td>
         <td>${bindingProviderCell(row)}</td>
-        <td>${bindingActions(row)}</td>
+        <td>${bindingActions(row)}${bindingErrors.has(row.app.id) ? `<small class="state bad">${escapeHtml(bindingErrors.get(row.app.id))}</small>` : ""}</td>
       </tr>`;
     })
     .join("");
+  for (const select of document.querySelectorAll('[data-binding-provider]')) {
+    const row = bindingRows.find(row => row.app.id === select.dataset.bindingProvider);
+    const previous = preferredBindingProvider?.scope === (row?.app.providerAppType || row?.app.id)
+      ? preferredBindingProvider.id : selections.get(select.dataset.bindingProvider);
+    if (previous && Array.from(select.options).some(option => option.value === previous)) select.value = previous;
+    const apply = document.querySelector(`[data-binding-action="bind"][data-app="${select.dataset.bindingProvider}"]`);
+    if (apply) apply.disabled = row.binding.bound === true && select.value === row.binding.currentProviderId;
+  }
+  preferredBindingProvider = null;
+  for (const app of bindingBusy) document.querySelectorAll(`[data-binding-row="${app}"] button`).forEach(button => { button.disabled = true; });
   const installed = bindingRows.filter((row) => row.binding.installed).length;
   const connected = bindingRows.filter((row) => row.binding.bound === true).length;
-  text("binding-status", `${connected} connected · ${installed} installed · ${bindingRows.length} supported app types`);
+  text("binding-status", "");
+  $("binding-status").hidden = true;
   text("framework-total", compact(connected));
   text("framework-detail", `${installed} installed app${installed === 1 ? "" : "s"}`);
-  renderConnectionGraph(bindingRows);
   renderBindingPlan();
   mergeReadinessState({ bindingCount: connected, installedAppCount: installed });
 }
@@ -350,7 +336,7 @@ async function loadBindingRow(app) {
   const providerAppType = app.providerAppType || app.id;
   const [bindingProbe, providerProbe] = await Promise.all([
     safeGetJson(endpoint(endpoints.appBinding, { appType: app.id })),
-    safeGetJson(endpoint(endpoints.providerCreate, { appType: providerAppType })),
+    sharedGetJson(endpoint(endpoints.providerCreate, { appType: providerAppType })),
   ]);
   const binding = bindingProbe.ok
     ? bindingProbe.data
@@ -370,7 +356,14 @@ async function loadBindingRow(app) {
   };
 }
 
-async function loadSetupStatus() {
+async function loadSetupStatus({primaryOnly = false} = {}) {
+  const apps = primaryOnly ? frameworkApps.filter(app => app.id === "moondesk") : frameworkApps;
+  const rows = await Promise.all(apps.map(loadBindingRow));
+  renderBindingRows(rows);
+  return { warningCount: rows.some(row => row.warning) ? 1 : 0 };
+}
+
+async function loadSetupDetails() {
   const generation = ++setupLoadGeneration;
   const authProviders = [
     ["Codex OAuth", "codex_oauth"],
@@ -387,11 +380,10 @@ async function loadSetupStatus() {
       label,
       probe: await safeGetJson(endpoint(endpoints.authStatus, { authProvider: provider })),
     }))),
-    Promise.all(frameworkApps.map(loadBindingRow)),
+    Promise.resolve(bindingRows),
   ]);
   if (generation !== setupLoadGeneration) return { warningCount: 0, stale: true };
 
-  renderBindingRows(rows);
   const authenticated = authRows.filter((row) => setupProbeGood(row.probe, ["authenticated", "hasAccount", "loggedIn"])).length;
   setSetupState("setup-auth-state", authenticated > 0 ? `${authenticated} active` : "No accounts", authenticated > 0);
   renderSetupList("setup-auth-rows", authRows.map((row) => [
@@ -439,7 +431,8 @@ async function bindApp(appType) {
   text("binding-status", `Connecting ${providerTemplateFrameworkLabel(appType)}…`);
   const result = await postJson(endpoints.appBinding, { appType, providerId });
   if (result?.bound !== true) throw new Error("The app configuration did not verify after it was written");
-  await loadSetupStatus();
+  invalidateSharedReads();
+  await refresh();
   text("binding-status", `${providerTemplateFrameworkLabel(appType)} is connected and verified`);
 }
 
@@ -449,7 +442,8 @@ async function unbindApp(appType) {
   text("binding-status", `Disconnecting ${providerTemplateFrameworkLabel(appType)}…`);
   const result = await deleteJson(endpoints.appBinding, { appType });
   if (result?.bound === true) throw new Error("The app still reports a MoonGate binding");
-  await loadSetupStatus();
+  invalidateSharedReads();
+  await refresh();
   text("binding-status", `${providerTemplateFrameworkLabel(appType)} is disconnected`);
 }
 
@@ -560,7 +554,8 @@ function renderBindingPlan() {
     panel.className = "panel";
     table.insertAdjacentElement("afterend", panel);
   }
-  panel.innerHTML = `<h3>Staged app connections</h3><p>Choose providers above and Stage change. Apply writes each app configuration in order, stopping at the first problem. No automatic rollback or provider request.</p>`;
+  panel.hidden = bindingPlan.length === 0;
+  panel.innerHTML = `<h3>Staged app connections</h3><p>Apply writes each app configuration in order, stopping at the first problem. No automatic rollback.</p>`;
   for (const c of bindingPlan) {
     const row = document.createElement("p");
     row.textContent = `${c.app.label}: ${c.before} → ${c.providerId} · ${c.status} · ${c.note}`;

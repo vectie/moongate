@@ -1007,11 +1007,6 @@ fn moon_unit_success_json() -> Json {
 }
 
 ///|
-fn moon_update_tray_menu_result() -> Json {
-  Json::boolean(false)
-}
-
-///|
 priv struct ProxyProviderQuery {
   provider_id : String
   app_type : String

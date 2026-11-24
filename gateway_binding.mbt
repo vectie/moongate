@@ -13,10 +13,9 @@ fn moon_binding_app_command(app_type : String) -> String? {
 
 ///|
 fn moon_binding_provider_app_type(app_type : String) -> String {
-  if app_type == "moondesk" || app_type == "moonclaw" {
-    "openclaw"
-  } else {
-    app_type
+  match gateway_app(app_type) {
+    Some(app) => app.scope
+    None => app_type
   }
 }
 
@@ -369,7 +368,7 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
     let workspace = moon_binding_moondesk_workspace_root()
     let installed = @fsx.exists("/Applications/MoonDesk.app") ||
       @fsx.exists(home_app) ||
-      @fsx.exists(workspace)
+      @fsx.exists_as_file(moon_binding_moondesk_service_path(workspace))
     return Json({
       "installed": Json::boolean(installed),
       "version": Json::null(),
@@ -419,8 +418,8 @@ async fn moon_binding_app_installation_json(app_type : String) -> Json {
 
 ///|
 fn moon_binding_mode(app_type : String) -> String {
-  match app_type {
-    "moondesk" | "moonclaw" | "codex" | "claude-desktop" => "automatic"
+  match gateway_app(app_type) {
+    Some(app) => app.binding
     _ => "manual"
   }
 }
@@ -585,6 +584,13 @@ async fn ProxyService::handle_bind_app(
   }
   if moon_binding_mode(app_type) != "automatic" {
     write_usage_bad_request(w, "manual_binding_required")
+    return
+  }
+  if (app_type == "moondesk" || app_type == "moonclaw") &&
+    !moon_binding_moonclaw_initialized(moon_binding_moondesk_workspace_root()) {
+    write_usage_bad_request(
+      w, "Initialize MoonDesk's MoonClaw workspace before connecting it",
+    )
     return
   }
   let installation = moon_binding_app_installation_json(app_type)

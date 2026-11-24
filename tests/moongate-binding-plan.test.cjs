@@ -9,7 +9,7 @@ function harness() {
  const nodes = new Map(); const element = () => ({children:[],appendChild(n){this.children.push(n)},set innerHTML(v){this.markup=v;this.children=[]}});
  const panel=element(); nodes.set('binding-change-plan',panel);
  const calls=[]; const rows=[fixture('a'),fixture('b')];
- const context=vm.createContext({escapeHtml: x=>String(x), document:{createElement:element}, $:id=>nodes.get(id), firstString:(x,keys,f='')=>keys.map(k=>x?.[k]).find(v=>typeof v==='string')||f,
+ const context=vm.createContext({escapeHtml: x=>String(x), uiLabel:x=>x, document:{createElement:element,querySelector:()=>null}, $:id=>nodes.get(id), firstString:(x,keys,f='')=>keys.map(k=>x?.[k]).find(v=>typeof v==='string')||f,
  rows,calls, selected:'new', showError:e=>{throw e}, endpoints:{appBinding:'/bindings'},
  read:async app=>structuredClone(rows.find(r=>r.app.id===app.id)),
  write:async (_,p)=>{calls.push(p); rows.find(r=>r.app.id===p.appType).binding.currentProviderId=p.providerId;},
@@ -37,7 +37,7 @@ test('legacy direct actions cannot bypass uncertain state for the same app',asyn
 
 test('shipped dashboard click handler stages from actual app row and mounts controls',()=>{
  const h=harness();h.nodes.delete('binding-change-plan');let listener;
- h.nodes.set('binding-rows',{addEventListener:(type,fn)=>listener=fn,closest:()=>({insertAdjacentElement:(_,panel)=>h.nodes.set(panel.id,panel)})});
+ h.nodes.set('binding-rows',{addEventListener:(type,fn)=>{if(type==='click')listener=fn},closest:()=>({insertAdjacentElement:(_,panel)=>h.nodes.set(panel.id,panel)})});
  const dashboard=fs.readFileSync(path.join(process.env.MOONGATE_TEST_ROOT || path.resolve(__dirname,'..'),'public/assets/moongate.js'),'utf8');
  const start=dashboard.indexOf('$("binding-rows")?.addEventListener');
  const end=dashboard.indexOf('$("usage-apply")',start);

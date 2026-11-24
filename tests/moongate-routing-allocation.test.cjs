@@ -36,12 +36,13 @@ async function harness() {
     text:(id,v)=>{if(get(id))get(id).textContent=v;}, number:v=>Number(v)||0, money:String,
     escapeHtml:v=>String(v), firstString:(o,ks,f='-')=>{for(const k of ks)if(typeof o?.[k]==='string')return o[k];return f;},
     safeGetJson:async p=>{reads.push(p);if(reader)return reader(p);return {ok:true,data:p.startsWith('/policy')?plain(state):{}};},
+    sharedGetJson:async ()=>({ok:true,data:[{id:'a',name:'Alpha'},{id:'b',name:'Beta',enabled:false}]}), objectRows:v=>v,
     postJson:async (p,body)=>{requests.push({path:p,body:plain(body)});if(responder)return responder(p,body);
       if(p==='/configure'){state.draft={policy_id:body.policyId,revision:state.draft.revision+1,mode:body.mode,weights:plain(body.weights),concurrency_limits:plain(body.concurrencyLimits)};state.shadowDecisionCount=0;return {policy:plain(state.draft)};}
       if(p==='/observe'){state.shadowDecisionCount++;return plain(state);}throw Error('unexpected action '+p);},
     window:{confirm:()=>{throw Error('activation was not requested');}}
   });
-  vm.runInContext(source,context); await new Promise(setImmediate);
+  vm.runInContext(source,context); await vm.runInContext('loadOperations()',context);
   const h={context,get,requests,reads,state,run:s=>vm.runInContext(s,context),responder:f=>responder=f,reader:f=>reader=f};
   h.load=()=>get('routing-allocation-load').fire('click');
   h.preview=()=>get('routing-allocation-preview').fire('click');

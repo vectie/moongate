@@ -3,7 +3,7 @@ test "moongate provider presets include Unity2 across suite apps" {
   guard moon_provider_presets_json("/providers/presets") is Array(presets) else {
     fail("expected presets")
   }
-  assert_eq(presets.length(), 519)
+  assert_eq(presets.length(), 527)
 
   let app_types : Array[String] = []
   for preset in presets {
@@ -36,15 +36,15 @@ test "moongate provider presets mirror visible moongate app counts" {
   )
   assert_eq(
     moon_visible_provider_presets(Some("moonclaw"), "", "original").length(),
-    15,
+    17,
   )
   assert_eq(
     moon_visible_provider_presets(Some("moonbook"), "", "original").length(),
-    15,
+    17,
   )
   assert_eq(
     moon_visible_provider_presets(Some("moontown"), "", "original").length(),
-    15,
+    17,
   )
   assert_eq(
     moon_visible_provider_presets(Some("claude"), "", "original").length(),
@@ -112,7 +112,11 @@ test "moongate provider presets include ready forms without secrets" {
     match json_string_from_map(ark_form, "apiFormat") {
       Some("openai") => {
         saw_openai = true
-        assert_eq(ark_form["appType"], Json::string("codex"))
+        assert_true(
+          [Json::string("codex"), Json::string("openclaw")].contains(
+            ark_form["appType"],
+          ),
+        )
         assert_eq(
           ark_form["templateLabel"],
           Json::string("Ark Agent Plan / Kimi K3 / OpenAI Responses"),
@@ -129,7 +133,7 @@ test "moongate provider presets include ready forms without secrets" {
       _ => fail("expected explicit Ark protocol")
     }
   }
-  assert_eq(ready_ark, 2)
+  assert_eq(ready_ark, 6)
   assert_true(saw_openai)
   assert_true(saw_anthropic)
 
@@ -163,8 +167,7 @@ test "moongate provider presets include ready forms without secrets" {
   guard oauth_preset["form"] is Object(oauth_form) else {
     fail("expected OAuth form")
   }
-  assert_eq(oauth_preset["targetAppType"], Json::string("moondesk"))
-  assert_eq(oauth_preset["targetAppLabel"], Json::string("MoonDesk"))
+  assert_eq(oauth_preset["targetAppType"], Json::string("codex"))
   assert_eq(oauth_preset["providerAppType"], Json::string("codex"))
   assert_eq(oauth_form["id"], Json::string("codex-oauth"))
   assert_eq(oauth_form["templateLabel"], Json::string("Codex OAuth"))
@@ -225,7 +228,7 @@ test "moongate provider presets expose provider groups for every consumer target
 ///|
 test "moongate Moon Suite templates share the correct provider scopes" {
   let expected : Map[String, String] = {
-    "moondesk": "codex",
+    "moondesk": "openclaw",
     "moonclaw": "openclaw",
     "moonbook": "openclaw",
     "moontown": "openclaw",
@@ -282,7 +285,7 @@ test "moongate provider forms preserve endpoint and protocol distinctions" {
 ///|
 test "moongate provider presets name sort keeps full visible set" {
   let entries = moon_visible_provider_presets(None, "", "nameAsc")
-  assert_eq(entries.length(), 519)
+  assert_eq(entries.length(), 527)
   assert_eq(moon_provider_preset_name(entries[0]), "自定义")
   assert_eq(
     moon_provider_preset_name(entries[entries.length() - 1]),

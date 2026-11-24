@@ -2,14 +2,14 @@
 async test "moongate ordinary journey exposes one dynamic next action and semantic icons" {
   let html = moongate_rabbita_shell_html()
   assert_true(html.contains("id=\"goal-compass\""))
-  assert_true(html.contains("Connect one app to a healthy provider"))
+  assert_true(html.contains("id=\"goal-next-detail\""))
   assert_true(html.contains("id=\"primary-next-action\""))
   assert_true(html.contains("aria-describedby=\"goal-next-detail\""))
   assert_true(html.contains("aria-live=\"assertive\""))
   for
     icon in [
       "overview", "providers", "bindings", "connections", "connect", "requests",
-      "usage", "suite", "guide",
+      "usage", "operations",
     ] {
     assert_true(html.contains("/assets/nav/\{icon}.svg"))
     assert_true(@fsx.exists_as_file("public/assets/nav/\{icon}.svg"))

@@ -4,14 +4,21 @@ MoonGate sits between AI apps on your Mac and AI providers. An app sends its req
 
 If you are new to MoonGate, use this order:
 
-1. Open **Providers**, choose a template, enter the provider's API key or sign in with OAuth, run **Test Provider**, and save it.
-2. Open **App Bindings**. MoonGate detects which supported apps are installed.
-3. Choose the provider for an installed app and click **Connect App**. MoonGate only shows **Connected** after writing and reading back that app's real configuration.
-4. Open **Connection Graph** for the final check. Its route only turns green when the provider is saved, enabled, and tested and the app binding is verified.
-5. If an app says **Manual setup**, open **Manual Connect** and enter the shown API address in that app yourself.
+1. Open **Providers**, choose a preset, enter the provider's API key or use OAuth, choose a model, and **Save Provider**.
+2. Run **Test Provider**, then choose **Connect app**. The default scope serves MoonDesk and other Moon apps.
+3. In **Apps → List**, choose the provider and **Connect App**. MoonGate writes and reads back that app's real configuration.
+4. Open **Apps → Graph** for the final check. Green requires a saved, available provider with a recent matching successful test, verified app wiring, and running routing.
+5. If an app says **Manual setup**, use **Apps → Manual setup** and enter the shown address in that app yourself.
 6. Return to **Overview**, then use **Requests** or **Usage** to verify real traffic.
 
 ## What each page is for
+
+The sidebar has six destinations: **Overview**, **Providers**, **Apps**,
+**Requests**, **Usage**, and **Advanced**. Operations, resilience, suite
+diagnostics and help live under Advanced. Transcript reading opens from
+Requests and provides a return button. Existing direct page links still work.
+Only the active page's data is refreshed; request investigations and policy
+drafts use explicit reloads. Provider changes preserve unsaved form edits.
 
 ### Overview
 
@@ -21,13 +28,13 @@ Use Overview to answer: “Is MoonGate ready?” It shows whether the local Moon
 - **Stop Routing** stops that request path without closing the UI.
 - **View Usage** opens MoonGate's human-readable Usage page. It never opens raw monitoring text.
 
-### Manual Connect
+### Apps → Manual setup
 
 Use Manual Connect only when App Bindings says **Manual setup**, or when another AI app asks for a **Base URL**, **API address**, or **environment variables**. Pick the API format named by the app and copy its value.
 
 The **Monitoring data (advanced)** address is for Prometheus or another external monitoring dashboard. It is machine-readable text, not a MoonGate screen, so the UI only copies its URL.
 
-### App Bindings
+### Apps → List
 
 Use App Bindings after configuring a provider. It separates four facts that were previously mixed together:
 
@@ -36,7 +43,7 @@ Use App Bindings after configuring a provider. It separates four facts that were
 - **Connected** means MoonGate wrote the app configuration and read back the expected local address.
 - **Manual setup** means MoonGate does not yet have a safe automatic configuration writer for that app.
 
-MoonDesk, Codex, and Claude Desktop support automatic binding. MoonDesk appears first and consumes the chosen Codex-compatible provider through its MoonClaw runtime. Other detected apps remain manual until MoonGate can safely write and restore their configuration.
+MoonDesk, MoonClaw, Codex, and Claude Desktop support automatic binding. MoonDesk appears first and consumes providers from the shared OpenClaw scope through its initialized MoonClaw runtime. MoonBook and MoonTown have explicit manual setup entries; their template availability does not claim automatic installation detection or binding.
 
 “Detected command-line apps” means programs such as Codex, Claude, Gemini, and OpenCode installed on the Mac. MoonGate checks them so it knows which configurations it can support. They are not extra MoonGate features and you do not need to install every one.
 
@@ -44,30 +51,34 @@ The collapsed diagnostics area covers sign-ins, MCP connections, and app plugins
 
 **Backup & failure handling** is advanced and collapsed by default. It can try backup providers automatically and temporarily pause a provider that fails repeatedly. The default settings are appropriate unless automatic recovery is required.
 
-### Connection Graph
+### Apps → Graph
 
 Use Connection Graph after Providers and App Bindings. It shows one lane for every saved provider that can serve each supported app, with MoonDesk first. Each lane separates the evidence MoonGate has:
 
-- **Saved**, **Enabled**, and **Tested** describe the provider. Tested means a real upstream request produced a known health result; an unknown result stays **Not tested**.
+- **Saved**, **Enabled**, and **Tested** describe the provider. Tested means completed model output for the matching configuration in this window. It is a last-check result, not a continuous availability guarantee.
 - **Selected** means that provider is the current MoonGate route for the request type. It does not mean an app is connected.
 - **Installed**, **Bound**, and **Verified** describe the app. Verified is shown only when MoonGate reads the expected local address back from the app configuration.
 - **Not wired** means at least one required step is missing. Manual apps remain unwired until they are configured outside MoonGate.
 
 Use **Fix Providers** or **Fix App Bindings** from the graph to return to the missing step, then refresh the graph.
 
+Each app shows its selected path first. Expand **Other saved providers** to
+inspect alternatives; those routes do not become selected merely by opening
+them. Expansion is retained during refresh.
+
 ### Providers
 
 Use Providers to add, edit, test, delete, or pause an upstream provider account. It never claims to connect an app.
 
-The table shows credential state, availability, and last known health. **Test Provider** performs a live network request and reports the HTTP status, model, and latency; a locally valid form is not reported as a successful provider test.
+The table shows credentials, availability, and the saved configuration's last test. **Test Provider** requires completed model output, not just HTTP 200. It reports HTTP status, model, latency and time. Changing the endpoint, protocol, model or credentials requires another test. Renaming, notes, and pausing do not. Results stay in this window until reload, without a forced expiry or background paid retest. After external credential changes, test again. General historical health cannot turn the graph green.
 
 After saving an OpenAI-compatible or Anthropic API-key provider, use **Refresh models** to fetch its model IDs with the key already held by MoonGate. Choose an ID to fill **Default Model**, then use **Save Provider** to retain it. Save changed connection settings before discovery. OAuth-managed and Gemini Native providers retain manual model entry. Empty, unsupported, and unavailable catalogs leave the model unchanged and can be retried. Catalog discovery does not test inference, certify availability, change the active provider, or bind an app; **Test Provider** and **App Bindings** remain separate actions.
 
-The built-in template picker includes ready forms for DeepSeek, OpenRouter, Fireworks AI, SiliconFlow, Qwen Token Plan, Qwen Pay-As-You-Go, Google Gemini, Anthropic, OpenAI, Z.AI/GLM, and Moonshot/Kimi. OpenRouter includes the general `openrouter/free` router plus explicit free templates for Ling 3.0 Flash, Nemotron 3 Ultra, and Laguna M.1. MoonDesk is listed first, followed by MoonClaw, MoonBook, and MoonTown, then external clients. Each template selects the correct upstream protocol, endpoint, and default model for its route.
+The preset picker includes DeepSeek, OpenRouter, Fireworks AI, SiliconFlow, Qwen Token Plan, Qwen Pay-As-You-Go, Google Gemini, Anthropic, OpenAI, Z.AI/GLM, and Moonshot/Kimi. Choose a preset to fill the endpoint and protocol automatically. Internal ID, request scope, protocol overrides and JSON template loading are secondary options. OpenRouter has one preset; its Model field suggests `openrouter/free` and named free variants, and also accepts manual IDs. Save before discovering more upstream model IDs.
 
-OpenRouter still requires an OpenRouter API key for free models. “Free” means the selected model reports zero token prices; it does not mean anonymous requests are accepted. Free model availability can change, so use **Refresh Built-ins** after upgrading MoonGate and run **Test Provider** before saving.
+OpenRouter still requires an OpenRouter API key for free models. “Free” means the selected model reports zero token prices; it does not mean anonymous requests are accepted. Free model availability can change, so use **Refresh Built-ins** after upgrading MoonGate, save the provider, and run **Test Provider**.
 
-Moon Suite products deliberately share provider scopes instead of copying credentials: MoonDesk uses the Codex/OpenAI Responses scope, while MoonClaw, MoonBook, and MoonTown use the OpenClaw/OpenAI Chat scope. Saving one of these templates therefore creates or updates the shared provider configuration used by that product route. Templates never contain API keys: apply one, enter your own key, run the live test, then save it.
+MoonDesk, MoonClaw, MoonBook and MoonTown share the OpenClaw provider scope. Codex remains a separate app scope. The upstream protocol is independent: a Moon app can use a Codex OAuth or Ark provider through MoonGate's conversion layer. Templates never contain API keys.
 
 Templates fill non-secret configuration fields. API keys stay separate and are stored locally. When editing a provider, MoonGate shows that a credential is stored but never returns the secret value to the UI.
 
@@ -75,7 +86,7 @@ Templates fill non-secret configuration fields. API keys stay separate and are s
 
 Use Requests to inspect individual AI calls. A request may show the provider, model, HTTP result, input and output token counts, reused-input counts, latency, and estimated cost.
 
-In **Selected request observations**, keep details and notes, save/reopen an
+Open **Investigation** to keep selected details and notes, save/reopen an
 investigation, or choose another review and **Merge saved review into collection**.
 Inspect the merge preview and confirm a common request-ID namespace first;
 conflicts block replacement. See the [request investigation guide](RETAINED_REQUEST_EXPLORER.md#combine-saved-investigations-without-replacing-current-work).
@@ -110,13 +121,20 @@ currently returns a fail-closed denied/unavailable result without network I/O.
 
 ### Suite
 
-Use Suite to see how the Moon apps connect to MoonGate. MoonDesk is the primary desktop control app and appears first. MoonClaw sends AI requests, MoonBook uses usage summaries for reports, and MoonTown checks health for scheduled work.
+Use **Advanced → Moon Suite** to see published integration support, with MoonDesk first. **Supported** does not mean installed, connected, or recently used. Actual configuration is shown in **Apps**. Overview's observed traffic belongs to the shared Moon apps route, not necessarily MoonDesk alone.
 
 The collapsed advanced section rewrites machine-readable suite files. Most users do not need those actions.
 
 ### Guide
 
-The in-app Guide contains a shorter copy of this page and is always reachable from the sidebar.
+The in-app Guide is available from **Advanced → Help**.
+
+**Interface language** is in Advanced, rather than floating over the work area.
+
+Legacy gateway calls for directory picking, opening external URLs, clipboard,
+update checking, tray updates and app restart now return HTTP 501. They never
+performed those desktop effects. Use the desktop app or system controls; active
+AI framework routes are unchanged.
 
 ## Phrase guide
 
@@ -154,19 +172,19 @@ The in-app Guide contains a shorter copy of this page and is always reachable fr
 1. Open **Providers**.
 2. Choose the **Codex OAuth** template.
 3. Use the OAuth sign-in already available to Codex.
-4. Run **Test Provider** and confirm a live HTTP result.
-5. Save the provider.
-6. Open **App Bindings**, choose Codex OAuth for MoonDesk, and click **Connect App**.
+4. Save the provider.
+5. Run **Test Provider** and confirm completed model output, not just an HTTP status.
+6. Open **Apps → List**, choose Codex OAuth for MoonDesk, and click **Connect App**.
 7. Click **Verify** and confirm the row says **Connected**.
 
 ### Volcengine Ark Agent Plan with Kimi K3
 
 1. Open **Providers**.
-2. Choose the Ark Agent Plan template matching the AI app's API protocol.
-3. Confirm the framework and protocol selected by the template.
+2. Choose the Ark Agent Plan preset for Moon apps.
+3. Keep the default Moon apps scope; the preset fills the upstream protocol.
 4. Enter the Ark API key. Do not put it in a template JSON file.
 5. Confirm the default model is `kimi-k3`.
-6. Run **Test Provider**, review its HTTP result, model, and latency, then save it.
-7. Open **App Bindings**, choose the Ark provider for MoonDesk, and connect it. MoonDesk is the first supported target for this Codex-compatible route. Use **Manual Connect** if another app requires manual setup.
+6. Save the provider, then run **Test Provider** and review completed output, model, and latency.
+7. Open **Apps → List**, choose the Ark provider for MoonDesk, and connect it. Use **Apps → Manual setup** for MoonBook, MoonTown, or another app without automatic configuration support.
 
 MoonGate supports both the OpenAI-style and Anthropic-style Ark Agent Plan addresses. Choose the template whose API protocol matches the AI app; do not force an Anthropic template through a Codex/OpenAI form or the reverse.

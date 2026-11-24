@@ -10,7 +10,7 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
     h.context.catalogReads = [];
     h.run('getJson = async (path) => { catalogReads.push(path); return catalogResult; }');
     h.refreshModels = () => h.run("refreshProviderModels()");
-    h.choose = (id) => { h.get("provider-models-select").value = id; h.run("chooseProviderCatalogModel()"); };
+    h.choose = (id) => h.change("provider-default-model", id);
     return h;
   }
 
@@ -29,7 +29,7 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
     assert.equal(h.context.saved[0].modelMapping.defaultModel, "model-a");
     assert.equal(h.context.requests.length, 0, "no save, bind or inference request");
     assert.equal(h.get("provider-test-result").textContent, "Not tested");
-    assert.match(h.get("provider-form-status").textContent, /Save Provider/);
+    assert.match(h.get("provider-form-status").textContent, /Unsaved changes/);
   });
 
   test("catalog picker saves and reloads the selected model with no credential in the payload", async () => {
@@ -53,7 +53,7 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
     h.run('editProvider("claude", "alpha")');
     assert.equal(h.get("provider-default-model").value, "model-c");
     assert.equal(h.get("provider-api-key").value, "");
-    assert.equal(h.get("provider-models-select").disabled, true);
+    assert.equal(h.get("provider-models-select").innerHTML, "");
   });
 
   test("catalog picker refuses unsaved connections and never sends a draft credential", async () => {
@@ -77,12 +77,12 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
       const h = setup();
       h.context.catalogResult = result;
       await h.refreshModels();
-      assert.equal(h.get("provider-models-select").disabled, true);
+      assert.equal(h.get("provider-models-select").innerHTML, "");
       assert.equal(h.get("provider-default-model").value, "model-a");
       assert.equal(h.get("provider-models-refresh").disabled, false);
       h.context.catalogResult = catalog();
       await h.refreshModels();
-      assert.equal(h.get("provider-models-select").disabled, false);
+      assert.match(h.get("provider-models-select").innerHTML, /model-a/);
       assert.equal(h.context.requests.length, 0);
     }
     const h = setup();
@@ -106,7 +106,7 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
       await old;
       assert.equal(h.get("provider-original-id").value, "beta");
       assert.equal(h.get("provider-default-model").value, "");
-      assert.equal(h.get("provider-models-select").disabled, true);
+      assert.equal(h.get("provider-models-select").innerHTML, "");
       assert.doesNotMatch(h.get("provider-models-status").textContent, /old provider|model IDs found/);
       assert.equal(h.get("provider-models-refresh").disabled, false);
     }
@@ -134,16 +134,15 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
     pending.resolve(catalog());
     await late;
     assert.equal(h.get("provider-default-model").value, "my-manual-model");
-    assert.equal(h.get("provider-models-select").disabled, true);
+    assert.equal(h.get("provider-models-select").innerHTML, "");
   });
 
-  test("catalog picker rejects selection outside the fetched saved-provider list", async () => {
+  test("model suggestions permit manual IDs without claiming availability", async () => {
     const h = setup();
     await h.refreshModels();
     h.choose("not-in-this-catalog");
-    assert.equal(h.get("provider-default-model").value, "model-a");
-    assert.equal(h.get("provider-models-select").disabled, true);
-    assert.match(h.get("provider-models-status").textContent, /stale/);
+    assert.equal(h.get("provider-default-model").value, "not-in-this-catalog");
+    assert.equal(h.get("provider-test-result").textContent, "Not tested");
     assert.equal(h.context.requests.length, 0);
   });
 
@@ -156,7 +155,7 @@ function registerCatalogCases({ test, assert, providerHarness, deferred }) {
     h.context.saved[0].baseUrl = "https://new-saved.invalid";
     pending.resolve(catalog());
     await result;
-    assert.equal(h.get("provider-models-select").disabled, true);
+    assert.equal(h.get("provider-models-select").innerHTML, "");
     assert.equal(h.get("provider-models-refresh").disabled, false);
     assert.match(h.get("provider-models-status").textContent, /changed during discovery/);
     assert.equal(h.get("provider-default-model").value, "model-a");

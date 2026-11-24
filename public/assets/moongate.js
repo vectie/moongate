@@ -1,4 +1,7 @@
 let readinessState = {};
+let activePage = "overview";
+let dashboardStarted = false;
+let routeObservation = null;
 
 function mergeReadinessState(next) {
   if (next?.healthOk === false && typeof invalidateCohortComparison === "function") invalidateCohortComparison("Gateway unavailable; capture again after recovery");
@@ -66,8 +69,8 @@ function setGoalStep(id, status) {
 
 function setPrimaryGoalAction(label, detail, action, target, recovery = "") {
   const button = $("primary-next-action");
-  text("primary-next-action-label", label);
-  text("goal-next-detail", detail);
+  text("primary-next-action-label", uiLabel(label));
+  text("goal-next-detail", uiLabel(detail));
   if (button) {
     button.dataset.goalAction = action;
     button.dataset.goalTarget = target || "";
@@ -81,10 +84,11 @@ function setPrimaryGoalAction(label, detail, action, target, recovery = "") {
 
 function renderGoalCompass(state) {
   const healthKnown = typeof state.healthOk === "boolean";
-  const providerDone = number(state.providerCount) > 0;
+  const connection = primaryConnection();
+  const providerDone = connection?.state.saved === true;
   const routingDone = state.proxyRunning === true;
-  const appDone = number(state.bindingCount) > 0;
-  const observed = number(state.recentRequestCount) > 0;
+  const appDone = connection?.state.wired === true;
+  const observed = connection?.state.ready === true && routeObservation?.observed === true;
   let current = "";
 
   if (healthKnown && state.healthOk) {
@@ -118,6 +122,8 @@ function renderGoalCompass(state) {
       "",
       `Blocked: ${detail}`,
     );
+  } else if (connection?.row.warning) {
+    setPrimaryGoalAction("Retry connection check", "Could not read MoonDesk's connection. Retry before changing configuration.", "refresh", "");
   } else if (!providerDone) {
     setPrimaryGoalAction(
       "Add a provider",
@@ -125,6 +131,8 @@ function renderGoalCompass(state) {
       "navigate",
       "providers",
     );
+  } else if (!connection.state.enabled) {
+    setPrimaryGoalAction("Review Provider", "The selected provider is paused.", "provider", connection.provider.id);
   } else if (!routingDone) {
     setPrimaryGoalAction(
       "Start routing",
@@ -139,17 +147,19 @@ function renderGoalCompass(state) {
       "navigate",
       "bindings",
     );
+  } else if (!connection.state.tested) {
+    setPrimaryGoalAction("Test provider", "Test the saved provider used by MoonDesk.", "provider", connection.provider.id);
   } else if (!observed) {
     setPrimaryGoalAction(
-      "Open connection details",
-      "Send one bounded request from the connected app so routing and accounting can be observed.",
+      "Verify connection",
+      "Send a request from MoonDesk, then check the graph and route traffic.",
       "navigate",
-      "connect",
+      "connections",
     );
   } else {
     setPrimaryGoalAction(
       "Review live usage",
-      "The connection loop is complete. Inspect its provider, model, request, and cost evidence.",
+      "Traffic was observed on the shared Moon apps route.",
       "navigate",
       "usage",
     );
@@ -197,21 +207,22 @@ function refresh() {
 }
 
 async function refreshDashboard() {
+  invalidateSharedReads();
+  const page = activePage;
+  const overviewDetails = page === "overview" && document.querySelector('.overview-details')?.open;
   $("error-box").hidden = true;
-  const [healthProbe, statusProbe, proxyProbe, summaryProbe, byAppProbe, modelStatsProbe] =
+  const [healthProbe, statusProbe, proxyProbe, summaryProbe, modelStatsProbe] =
     await Promise.all([
       safeGetJson(endpoints.health),
       safeGetJson(endpoints.status),
       safeGetJson(endpoints.proxy),
-      safeGetJson(endpoints.usageSummary),
-      safeGetJson(endpoints.usageByApp),
-      safeGetJson(endpoints.modelStats),
+      overviewDetails ? safeGetJson(endpoints.usageSummary) : {ok: true, data: {}},
+      overviewDetails ? safeGetJson(endpoints.modelStats) : {ok: true, data: {}},
     ]);
   const health = probeData(healthProbe, {});
   const status = probeData(statusProbe, {});
   const proxy = probeData(proxyProbe, {});
   const summary = probeData(summaryProbe, {});
-  const byApp = probeData(byAppProbe, {});
   const modelStats = probeData(modelStatsProbe, {});
 
   const gatewayState = healthProbe.ok ? firstString(health, ["status", "state", "ok"]) : "Unavailable";
@@ -240,11 +251,6 @@ async function refreshDashboard() {
     text("request-total", "Unavailable");
     text("cost-total", "Unavailable");
   }
-  if (byAppProbe.ok) {
-    renderStack("app-usage", arrayFrom(byApp, ["apps", "items", "data"]), ["appType", "app", "name"]);
-  } else {
-    renderStackError("app-usage", byAppProbe.error);
-  }
   if (modelStatsProbe.ok) {
     renderStack("model-usage", arrayFrom(modelStats, ["models", "items", "data"]), ["model", "modelId", "name"]);
   } else {
@@ -258,24 +264,16 @@ async function refreshDashboard() {
     totalRequests: summary.totalRequests ?? summary.requests ?? summary.requestCount ?? status.total_requests ?? status.totalRequests ?? 0,
     totalCost: summary.totalCostUsd ?? summary.costUsd ?? summary.totalCost ?? status.totalCostUsd ?? status.costUsd ?? 0,
   });
-  const panelResults = await Promise.allSettled([
-    loadFrameworks(),
-    loadUsageExplorer(),
-    loadSetupStatus(),
-    loadSuite(),
-    loadResilience(),
-    ensureRequestExplorer(),
-  ]);
-  const coreWarningCount = [healthProbe, statusProbe, proxyProbe, summaryProbe, byAppProbe, modelStatsProbe]
+  const panelResults = await Promise.allSettled(pageLoaders(page).map(load => load()));
+  if (page === "overview") await loadPrimaryRouteObservation();
+  if (page === "connections") renderConnectionGraph(bindingRows);
+  renderGoalCompass(readinessState);
+  const coreWarningCount = [healthProbe, statusProbe, proxyProbe, summaryProbe, modelStatsProbe]
     .some((probe) => !probe.ok) ? 1 : 0;
   const warningCount = panelResults.reduce((total, result) => {
     if (result.status === "rejected") return total + 1;
     return total + number(result.value?.warningCount);
   }, coreWarningCount);
-  const usageResult = panelResults[5];
-  if (usageResult.status === "fulfilled" && usageResult.value?.stale !== true) {
-    mergeReadinessState({ recentRequestCount: usageResult.value?.recentRequestCount || 0 });
-  }
   const suffix = warningCount > 0 ? ` with ${warningCount} section warning${warningCount === 1 ? "" : "s"}` : "";
   const time = new Date().toLocaleTimeString();
   text(
@@ -285,13 +283,46 @@ async function refreshDashboard() {
   text("topbar-updated", `Updated${suffix} ${time}`);
 }
 
-function showError(error) {
+function pageLoaders(page) {
+  if (page === "overview") return [() => loadSetupStatus({primaryOnly: true})];
+  if (page === "providers") return [loadFrameworks, () => builtinProviderTemplates.length ? Promise.resolve() : loadProviderTemplates()];
+  if (page === "bindings" || page === "connections") return [loadSetupStatus];
+  if (page === "usage") return [loadUsageExplorer];
+  if (page === "requests") return [ensureRequestExplorer];
+  if (page === "suite") return [loadSuite];
+  if (page === "operations") return [loadOperations];
+  if (page === "advanced") return [loadSetupDetails, ...($("resilience")?.closest("details")?.open ? [loadResilience] : [])];
+  return [];
+}
+
+async function loadPrimaryRouteObservation() {
+  const connection = primaryConnection();
+  if (!connection?.state.wired || !connection.provider) { routeObservation = null; return; }
+  const {row, provider} = connection;
+  const model = provider.modelMapping?.defaultModel;
+  const scope = row.app.providerAppType || row.app.id;
+  const identity = providerConfigIdentity(provider, scope, provider.id);
+  if (routeObservation?.identity !== identity) routeObservation = {identity, since: Math.floor(Date.now()/1000), observed: false};
+  const observation = routeObservation;
+  const probe = await safeGetJson(endpoint(endpoints.usageLogs, {appType: scope, startDate: observation.since, page: 0, pageSize: 12}));
+  if (observation !== routeObservation) return;
+  observation.observed ||= probe.ok && Array.isArray(probe.data?.data) && probe.data.data.some(request =>
+    request.providerId === provider.id && request.model === model && request.appType === scope &&
+    request.statusCode >= 200 && request.statusCode < 300 && !request.error);
+}
+
+function showError(error, heading = "Data refresh failed") {
   const box = $("error-box");
   const message = $("error-message");
+  const title = box?.querySelector("strong");
+  if (title) title.textContent = uiLabel(heading);
+  box?.querySelector("[data-error-recovery]")?.remove();
   if (message) message.textContent = error && error.message ? error.message : String(error);
   if (box) box.hidden = false;
-  text("ui-updated", "Refresh failed");
-  text("topbar-updated", "Refresh failed");
+  if (heading === "Data refresh failed") {
+    text("ui-updated", "Refresh failed");
+    text("topbar-updated", "Refresh failed");
+  }
 }
 
 function shellApiBase() {
@@ -389,12 +420,22 @@ $("refresh")?.addEventListener("click", () => {
   refresh().catch(showError);
 });
 
+$("request-investigation")?.addEventListener("toggle", () => renderRequestCollection());
+
 $("proxy-start")?.addEventListener("click", () => {
   postJson(endpoints.proxyStart).then(refresh).catch(showError);
 });
 
 $("proxy-stop")?.addEventListener("click", () => {
-  postJson(endpoints.proxyStop).then(refresh).catch(showError);
+  postJson(endpoints.proxyStop).then(refresh).catch(error => {
+    showError(error, "Could not stop routing");
+    const recovery = document.createElement("button");
+    recovery.type = "button";
+    recovery.dataset.errorRecovery = "apps";
+    recovery.dataset.goto = "bindings";
+    recovery.textContent = uiLabel("Review app connections");
+    $("error-box")?.appendChild(recovery);
+  });
 });
 
 $("primary-next-action")?.addEventListener("click", () => {
@@ -404,19 +445,26 @@ $("primary-next-action")?.addEventListener("click", () => {
     postJson(endpoints.proxyStart).then(refresh).catch(showError);
   } else if (action === "navigate") {
     navigateToPage(button?.dataset.goalTarget || "overview");
+  } else if (action === "provider") {
+    const connection = primaryConnection();
+    navigateToPage("providers");
+    refresh().then(() => editProvider(connection.row.app.providerAppType || connection.row.app.id, connection.provider.id)).catch(showError);
   } else {
     refresh().catch(showError);
   }
 });
 
 $("bindings-refresh")?.addEventListener("click", () => {
-  loadSetupStatus().catch(showError);
+  refresh().catch(showError);
 });
 
 $("connection-graph-refresh")?.addEventListener("click", () => {
-  loadSetupStatus().catch(showError);
+  refresh().catch(showError);
 });
 
+document.querySelector(".setup-advanced")?.addEventListener("toggle", (event) => {
+  if (event.currentTarget.open) loadSetupDetails().catch(showError);
+});
 $("setup-import-mcp")?.addEventListener("click", () => {
   postJson(endpoints.mcpImportApps).then(loadSetupStatus).catch(showError);
 });
@@ -427,14 +475,31 @@ $("binding-rows")?.addEventListener("click", (event) => {
   const appType = button.dataset.app;
   const action = button.dataset.bindingAction;
   if (action === "stage") { try { stageBindingChange(appType); } catch (error) { showError(error); } }
-  else if (action === "bind") bindApp(appType).catch(showError);
-  else if (action === "unbind") unbindApp(appType).catch(showError);
-  else if (action === "verify") verifyBinding(appType).catch(showError);
+  else if (action === "bind") runBindingAction(appType, bindApp);
+  else if (action === "unbind") runBindingAction(appType, unbindApp);
+  else if (action === "verify") runBindingAction(appType, verifyBinding);
   else if (action === "manual") navigateToPage("connect");
+  else if (action === "test-provider") {
+    const row = bindingRows.find(row => row.app.id === appType);
+    const provider = row && configuredConnectionProvider(row);
+    const providerId = provider?.id || provider?.providerId;
+    const scope = row?.app.providerAppType || appType;
+    navigateToPage("providers");
+    refresh().then(() => editProvider(scope, providerId)).catch(showError);
+  }
   else if (action === "add-provider") {
-    clearProviderForm(appType);
+    const app = frameworkApps.find(app => app.id === appType);
+    clearProviderForm(app?.providerAppType || appType);
     navigateToPage("providers");
   }
+});
+
+$("binding-rows")?.addEventListener("change", event => {
+  const select = event.target.closest('[data-binding-provider]');
+  if (!select) return;
+  const row = bindingRows.find(row => row.app.id === select.dataset.bindingProvider);
+  const apply = document.querySelector(`[data-binding-action="bind"][data-app="${select.dataset.bindingProvider}"]`);
+  if (apply) apply.disabled = row.binding.bound === true && select.value === row.binding.currentProviderId;
 });
 
 $("usage-apply")?.addEventListener("click", () => {
@@ -550,20 +615,31 @@ $("provider-rows")?.addEventListener("keydown", (event) => {
 function goToPage(page) {
   const target = document.querySelector(`[data-page-view="${page}"]`);
   if (!target) return;
+  activePage = page;
   if (page !== "operations" && typeof invalidateCohortComparison === "function") invalidateCohortComparison("Comparison cleared after navigation; capture a new snapshot");
   document.querySelectorAll("[data-page-view]").forEach((node) => {
     node.classList.toggle("active", node === target);
   });
   document.querySelectorAll("[data-page]").forEach((node) => {
-    const active = node.dataset.page === page;
+    const parent = ["connections", "connect"].includes(page) ? "bindings" : ["operations", "suite", "guide"].includes(page) ? "advanced" : page === "transcripts" ? "requests" : page;
+    const active = node.dataset.page === parent;
     node.classList.toggle("active", active);
     if (active) node.setAttribute("aria-current", "page");
     else node.removeAttribute("aria-current");
   });
   text("page-title", target.dataset.pageTitle || page);
   text("page-subtitle", target.dataset.pageSubtitle || "");
+  if ($("page-subtitle")) $("page-subtitle").hidden = !target.dataset.pageSubtitle;
+  const returnNav = $("context-return");
+  if (returnNav) {
+    const parent = ["operations", "suite", "guide"].includes(page) ? "advanced" : page === "transcripts" ? "requests" : "";
+    returnNav.hidden = !parent;
+    returnNav.dataset.goto = parent;
+    returnNav.textContent = uiLabel(parent === "advanced" ? "Back to Advanced" : "Back to Requests");
+  }
   if (window.location.hash !== `#${page}`) history.replaceState(null, "", `#${page}`);
   window.scrollTo({ top: 0, behavior: "auto" });
+  if (dashboardStarted) refresh().catch(showError);
 }
 
 function navigateToPage(page) {
@@ -580,10 +656,21 @@ document.querySelector(".nav")?.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const localMenu = event.target.closest(".local-menu");
+  document.querySelectorAll(".local-menu[open]").forEach(menu => { if (menu !== localMenu) menu.open = false; });
   const link = event.target.closest("[data-goto]");
   if (!link) return;
   event.preventDefault();
   navigateToPage(link.dataset.goto);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  const menu = event.target.closest(".local-menu[open]");
+  if (!menu) return;
+  event.preventDefault();
+  menu.open = false;
+  menu.querySelector("summary")?.focus();
 });
 
 window.addEventListener("hashchange", () => {
@@ -595,7 +682,7 @@ initUsageAppSelect();
 initRequestAppSelect();
 initResilienceAppSelect();
 loadCachedProviderTemplates();
-clearProviderForm("claude");
+clearProviderForm("openclaw");
 renderReadiness({});
 renderRequestDetail(null);
 renderStreamCheckResults([]);
@@ -611,7 +698,12 @@ $("provider-app")?.addEventListener("change", () => {
   renderProviderTemplates();
 });
 
-$("provider-template-apply")?.addEventListener("click", () => {
+$("provider-template")?.addEventListener("change", () => {
+  if ($("provider-template").value === "custom") {
+    clearProviderForm($("provider-app").value);
+    document.querySelector('.provider-advanced').open = true;
+    return;
+  }
   applyProviderTemplate();
 });
 
@@ -636,24 +728,28 @@ $("provider-form")?.addEventListener("change", providerFormChanged);
 
 $("provider-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
-  saveProvider().catch(showError);
+  runProviderAction(saveProvider);
 });
 
 $("provider-delete")?.addEventListener("click", () => {
-  deleteProviderFromForm().catch(showError);
+  runProviderAction(deleteProviderFromForm);
 });
 
 $("provider-test")?.addEventListener("click", () => {
-  testProviderFromForm().catch(showError);
+  runProviderAction(testProviderFromForm);
 });
 
 $("provider-models-refresh")?.addEventListener("click", () => {
   refreshProviderModels().catch(showError);
 });
 
-$("provider-models-select")?.addEventListener("change", chooseProviderCatalogModel);
+$("provider-connect-app")?.addEventListener("click", () => {
+  preferredBindingProvider = {scope: $("provider-original-app").value, id: $("provider-original-id").value};
+  navigateToPage("bindings");
+});
 
-Promise.all([refresh(), loadProviderTemplates()]).catch(showError);
+dashboardStarted = true;
+refresh().catch(showError);
 
 const supportedRefreshIntervals = new Set([0, 5000, 10000, 30000, 60000]);
 
@@ -668,9 +764,12 @@ async function scheduleDashboardRefresh() {
   );
   if (interval === 0) return;
   setTimeout(async () => {
-    await refresh().catch(showError);
+    if (!document.hidden && !["operations", "advanced", "transcripts", "requests"].includes(activePage)) await refresh().catch(showError);
     scheduleDashboardRefresh().catch(showError);
   }, interval);
 }
 
 scheduleDashboardRefresh().catch(showError);
+
+document.querySelector('.overview-details')?.addEventListener('toggle', event => { if (event.target.open) refresh().catch(showError); });
+$("resilience")?.closest('details')?.addEventListener('toggle', event => { if (event.target.open) loadResilience().catch(showError); });

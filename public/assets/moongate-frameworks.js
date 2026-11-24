@@ -9,7 +9,6 @@ let providerFormRevision = 0;
 let providerTestGeneration = 0;
 const providerTestResults = new Map();
 let providerCatalogGeneration = 0;
-let providerCatalog = null;
 
 function providerRouteKey(appType, providerId) {
   return `${appType}:${providerId}`;
@@ -20,14 +19,11 @@ function providerConfigIdentity(provider, appType, providerId) {
   return JSON.stringify([
     appType || firstString(provider, ["appType", "app", "type"], ""),
     providerId || firstString(provider, ["id", "providerId"], ""),
-    firstString(provider, ["name", "providerName"], providerId || provider.id || ""),
     firstString(provider, ["providerType", "category"], ""),
     firstString(provider, ["baseUrl", "websiteUrl"], ""),
     firstString(provider, ["apiFormat"], firstString(provider.settingsConfig, ["apiFormat"], "")),
-    provider.enabled !== false,
     provider.isFullUrl === true,
     provider.codexFastMode === true || provider.settingsConfig?.codexFastMode === true,
-    firstString(provider, ["notes"], ""),
     ...["defaultModel", "sonnetModel", "haikuModel", "opusModel"].map(
       (key) => firstString(provider.modelMapping, [key], ""),
     ),
@@ -49,9 +45,19 @@ function savedProviderTestResult(provider, appType, providerId) {
 function providerFormChanged(event) {
   if (["provider-template", "provider-template-file", "provider-app", "provider-models-select"].includes(event?.target?.id)) return;
   providerFormRevision += 1;
-  resetProviderModelCatalog("Settings changed. Refresh models after saving any connection changes.");
-  setProviderTestResult();
-  setProviderStatus("Unsaved changes · test again after editing");
+  if (["provider-base-url", "provider-api-format", "provider-type", "provider-api-key", "provider-clear-api-key"].includes(event?.target?.id)) {
+    resetProviderModelCatalog();
+    renderModelSuggestions(visibleProviderTemplates.filter(row => row.provider.baseUrl === $("provider-base-url").value).flatMap(row => row.models));
+  }
+  const originalApp = $("provider-original-app").value;
+  const originalId = $("provider-original-id").value;
+  const saved = providerById(originalApp, originalId);
+  const draft = saved ? providerPayloadFromForm() : null;
+  const connectionUnchanged = draft && !draft.apiKey && !draft.clearApiKey &&
+    providerConfigIdentity(saved, originalApp, originalId) === providerConfigIdentity(draft, draft.appType, draft.id);
+  setProviderTestResult(connectionUnchanged ? savedProviderTestResult(saved, originalApp, originalId) : null);
+  $("provider-connect-app").disabled = true;
+  setProviderStatus(connectionUnchanged ? "Unsaved changes" : "Unsaved changes · test again after editing");
 }
 
 function selectProviderRow(appType, providerId) {
@@ -64,12 +70,12 @@ function selectProviderRow(appType, providerId) {
 }
 
 function providerFrameworkOrder(appType) {
-  const index = providerRequestApps().findIndex((app) => app.id === appType);
-  return index < 0 ? providerRequestApps().length : index;
+  const apps = frameworkApps.filter(app => (app.providerAppType || app.id) === appType);
+  return apps.length ? Math.min(...apps.map(app => app.priority)) : 1000;
 }
 
 function providerRequestApps() {
-  return frameworkApps.filter((app) => !app.providerAppType);
+  return frameworkApps.filter((app) => !app.providerAppType).sort((a,b) => providerFrameworkOrder(a.id) - providerFrameworkOrder(b.id) || a.label.localeCompare(b.label));
 }
 
 function sortedProviderRows(rows) {
@@ -121,9 +127,7 @@ function renderProviderRows(data, error = "") {
       ? latestTest.success === true && latestTest.networkRequestPerformed === true
         ? "Test passed"
         : "Test failed"
-      : String(status).toLowerCase() === "unknown"
-        ? "Not tested"
-        : status;
+      : "Not tested";
     const testPassed = latestTest?.success === true && latestTest?.networkRequestPerformed === true;
     const statusClassName = latestTest ? `state ${testPassed ? "good" : "bad"}` : stateClass(statusLabel);
     const model = firstString(
@@ -132,11 +136,6 @@ function renderProviderRows(data, error = "") {
       firstString(row.modelMapping, ["defaultModel"], "-"),
     );
     const error = firstString(row, ["lastError", "error", "message"], "");
-    const metadata = row.builtIn === true
-      ? "Built-in template"
-      : row.origin === "user"
-        ? "Configured"
-        : firstString(row, ["origin"], "");
     const credentialState = firstString(row, ["credentialState"], row.hasApiKey === true ? "stored" : "missing");
     const credentialLabel = credentialState === "oauth"
         ? "OAuth"
@@ -156,10 +155,10 @@ function renderProviderRows(data, error = "") {
     tr.classList.toggle("selected", routeKey === selectedProviderKey);
     if (row.isCurrent === true) tr.dataset.currentProvider = "true";
     tr.innerHTML = `
-      <td><strong>${escapeHtml(provider)}</strong>${metadata ? `<small>${escapeHtml(metadata)}</small>` : ""}<small>Model: ${escapeHtml(model)}</small>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
+      <td><strong>${content(provider)}</strong><small>${content(model)}</small>${error ? `<small>${escapeHtml(error)}</small>` : ""}</td>
       <td>${escapeHtml(providerTemplateFrameworkLabel(app))}</td>
       <td><div class="provider-state-stack">${credentialStateHtml}<span class="${statusClassName}">${escapeHtml(statusLabel)}</span></div></td>
-      <td><button type="button" class="button-secondary" data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}">Edit</button></td>
+      <td>${actionIcon("edit", "Edit", `data-provider-edit="${escapeHtml(providerId)}" data-provider-app="${escapeHtml(app)}"`)}</td>
     `;
     target.appendChild(tr);
   }
@@ -248,7 +247,7 @@ function initProviderAppSelect() {
   const select = $("provider-app");
   if (!select) return;
   select.innerHTML = providerRequestApps()
-    .map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(app.label)}</option>`)
+    .map((app) => `<option value="${escapeHtml(app.id)}">${escapeHtml(providerTemplateFrameworkLabel(app.id))}</option>`)
     .join("");
 }
 
@@ -291,7 +290,8 @@ function providerById(appType, providerId) {
 }
 
 function setProviderStatus(value) {
-  text("provider-form-status", value);
+  text("provider-form-status", uiLabel(value));
+  $("provider-form-status").hidden = !value;
 }
 
 function resetProviderDeleteConfirmation() {
@@ -317,30 +317,25 @@ function setProviderTestResult(result = null) {
   const model = firstString(result, ["modelUsed"], "unknown model");
   const latency = Number.isFinite(result.responseTimeMs) ? `${Math.round(result.responseTimeMs)} ms` : "latency unavailable";
   target.classList.add(success ? "good" : "bad");
-  target.textContent = `${success ? "Live test passed" : "Live test failed"} · ${status} · ${model} · ${latency}`;
+  target.textContent = `${uiLabel(success ? "Live test passed" : "Live test failed")} · ${status} · ${model} · ${latency}${result.uiTestedAt ? ` · ${new Date(result.uiTestedAt).toLocaleTimeString(window.MoonSuiteI18n?.locale?.())}` : ""}`;
 }
 
 function setProviderCredentialState(provider = null) {
   const input = $("provider-api-key");
   const status = $("provider-credential-status");
   if (!input || !status) return;
-  status.hidden = false;
+  status.hidden = true;
   if (provider?.credentialState === "stored") {
     input.placeholder = "********";
     status.textContent = "";
     status.hidden = true;
   } else if (provider?.credentialState === "oauth") {
     input.placeholder = "OAuth provider — no API key needed";
-    status.textContent = "Uses account sign-in; no API key is needed.";
+    status.textContent = "";
   } else {
     input.placeholder = "Paste API key";
-    status.textContent = "Enter the API key required by this provider.";
+    status.textContent = "";
   }
-}
-
-function renderProviderRouteState(appType, providerId = "") {
-  void appType;
-  void providerId;
 }
 
 function clearProviderForm(appType) {
@@ -355,6 +350,7 @@ function clearProviderForm(appType) {
   $("provider-id").value = "";
   $("provider-id").readOnly = false;
   $("provider-name").value = "";
+  $("provider-template").value = "";
   $("provider-type").value = "";
   $("provider-base-url").value = "";
   $("provider-api-format").value = "";
@@ -374,8 +370,8 @@ function clearProviderForm(appType) {
   selectedProviderKey = "";
   selectProviderRow("", "");
   $("provider-delete").disabled = true;
-  renderProviderRouteState($("provider-app").value);
-  setProviderStatus("New provider");
+  $("provider-connect-app").disabled = true;
+  setProviderStatus("");
 }
 
 function providerTemplateRows(data, source) {
@@ -415,21 +411,12 @@ function providerTemplateRows(data, source) {
 }
 
 function providerTemplateFrameworkLabel(appType) {
+  if (appType === "openclaw") return uiLabel("Moon apps");
   return frameworkApps.find((app) => app.id === appType)?.label || appType;
 }
 
-function providerTemplateApiFormatLabel(provider) {
-  const format = firstString(provider, ["apiFormat"], "");
-  if (format === "openai") return "OpenAI Responses";
-  if (format === "openai_chat") return "OpenAI Chat Completions";
-  if (format === "anthropic") return "Anthropic Messages";
-  if (format === "gemini_native") return "Gemini Native";
-  return "Default protocol";
-}
-
 function providerTemplateOptionLabel(row) {
-  const provider = row.provider;
-  return `${row.source} — ${row.label} · ${row.targetAppLabel} · ${providerTemplateApiFormatLabel(provider)}`;
+  return row.provider.name;
 }
 
 function sortedProviderTemplates(rows) {
@@ -448,22 +435,35 @@ function renderProviderTemplates() {
   const select = $("provider-template");
   if (!select) return;
   const previous = select.value;
-  const rows = sortedProviderTemplates([
+  const available = sortedProviderTemplates([
     ...builtinProviderTemplates,
     ...importedProviderTemplates,
   ]);
+  const groups = new Map();
+  const scope = $("provider-app").value;
+  for (const row of available.filter(row => row.provider.appType === scope)) {
+    const openrouter = row.source === "Built-in" && row.provider.providerType === "openrouter";
+    const group = openrouter ? "openrouter" : `${row.source}:${row.provider.id}`;
+    const model = row.provider.modelMapping?.defaultModel;
+    if (!groups.has(group)) groups.set(group, {...row, models: [], provider: {...row.provider}});
+    const entry = groups.get(group);
+    if (model && !entry.models.includes(model)) entry.models.push(model);
+    if (openrouter) {
+      entry.provider.id = "openrouter";
+      entry.provider.name = "OpenRouter";
+      entry.provider.modelMapping = {defaultModel: "openrouter/free"};
+    }
+  }
+  const rows = Array.from(groups.values());
+  visibleProviderTemplates = rows;
   select.innerHTML = [
-    `<option value="">Choose a template</option>`,
-    ...rows.map((row) => `<option value="${escapeHtml(row.key)}">${escapeHtml(providerTemplateOptionLabel(row))}</option>`),
+    `<option value="">${escapeHtml(uiLabel("Choose a provider"))}</option>`,
+    `<option value="custom">${escapeHtml(uiLabel("Custom provider"))}</option>`,
+    ...rows.map((row) => `<option value="${escapeHtml(row.key)}" data-i18n-scope="content">${escapeHtml(providerTemplateOptionLabel(row))}</option>`),
   ].join("");
   if (rows.some((row) => row.key === previous)) select.value = previous;
-  const frameworkCount = new Set(rows.map((row) => row.targetAppType)).size;
-  text(
-    "provider-template-status",
-    rows.length > 0
-      ? `${rows.length} ready template${rows.length === 1 ? "" : "s"} across ${frameworkCount} app routes. MoonDesk comes first; shared Moon Suite routes reuse one provider configuration. API keys stay separate.`
-      : "No ready templates. Load a JSON file to add one.",
-  );
+  text("provider-template-status", "");
+  $("provider-template-status").hidden = true;
 }
 
 async function loadProviderTemplates() {
@@ -476,7 +476,7 @@ async function loadProviderTemplates() {
 
 function selectedProviderTemplate() {
   const key = $("provider-template")?.value || "";
-  return [...builtinProviderTemplates, ...importedProviderTemplates]
+  return visibleProviderTemplates
     .find((row) => row.key === key) || null;
 }
 
@@ -509,9 +509,9 @@ function applyProviderTemplate() {
   if (existing) {
     setProviderCredentialState(existing);
     $("provider-delete").disabled = existing.builtIn === true;
-    renderProviderRouteState(provider.appType, provider.id);
   }
   const mapping = provider.modelMapping || {};
+  renderModelSuggestions(template.models || [mapping.defaultModel]);
   for (const [key, id] of [
     ["defaultModel", "provider-default-model"],
     ["sonnetModel", "provider-sonnet-model"],
@@ -520,10 +520,10 @@ function applyProviderTemplate() {
   ]) {
     $(id).value = typeof mapping[key] === "string" ? mapping[key] : "";
   }
-  setProviderStatus(existing ? `Template applied to existing ${provider.id}` : `Template ready for ${provider.id}`);
+  setProviderStatus("");
   text(
     "provider-template-status",
-    `Template applied for ${template.targetAppLabel}. Enter the API key, review, then save.`,
+    "",
   );
 }
 
@@ -606,8 +606,10 @@ function editProvider(appType, providerId) {
     ? "Built-in providers cannot be deleted"
     : "Delete this configured provider";
   setProviderTestResult(savedProviderTestResult(provider, appType, providerId));
-  renderProviderRouteState(appType, providerId);
+  $("provider-connect-app").disabled = !savedProviderTestResult(provider, appType, providerId)?.success;
+  renderModelSuggestions(builtinProviderTemplates.filter(row => row.provider.providerType === provider.providerType && row.provider.baseUrl === provider.baseUrl).map(row => row.provider.modelMapping?.defaultModel));
   setProviderStatus(`Editing ${providerId}${provider.builtIn === true ? " (built-in provider)" : ""}`);
+  renderProviderTemplates();
 }
 
 function modelMappingFromForm() {
@@ -626,6 +628,10 @@ function modelMappingFromForm() {
 }
 
 function providerPayloadFromForm() {
+  if (!$("provider-id").value.trim() && $("provider-name").value.trim()) {
+    const base = $("provider-name").value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "provider";
+    $("provider-id").value = providerById($("provider-app").value, base) ? `${base}-${Date.now().toString(36)}` : base;
+  }
   const payload = {
     appType: $("provider-app").value,
     id: $("provider-id").value.trim(),
@@ -653,6 +659,7 @@ function providerPayloadFromForm() {
 
 async function saveProvider() {
   const payload = providerPayloadFromForm();
+  const revision = providerFormRevision;
   if (!payload.id || !payload.name) {
     setProviderStatus("Provider ID and name are required");
     return;
@@ -669,12 +676,40 @@ async function saveProvider() {
   } else {
     await postJson(endpoints.providerCreate, payload);
   }
-  // Saving can replace a credential without exposing its value to the UI cache.
-  providerTestResults.delete(providerRouteKey(originalAppType || payload.appType, originalId || payload.id));
-  providerTestResults.delete(providerRouteKey(payload.appType, payload.id));
-  await refresh();
+  // Cosmetic edits and pausing do not change the tested connection.
+  // Secrets never enter the proof; replacing one explicitly invalidates it.
+  if (payload.apiKey || payload.clearApiKey) {
+    providerTestResults.delete(providerRouteKey(originalAppType || payload.appType, originalId || payload.id));
+    providerTestResults.delete(providerRouteKey(payload.appType, payload.id));
+  }
+  invalidateSharedReads();
+  await loadFrameworks();
+  if (revision !== providerFormRevision) {
+    if ($("provider-id").value === payload.id && $("provider-app").value === payload.appType) {
+      $("provider-original-id").value = payload.id;
+      $("provider-original-app").value = payload.appType;
+    }
+    setProviderStatus("Saved the earlier draft. Current edits are unsaved.");
+    return;
+  }
   editProvider(payload.appType, payload.id);
   setProviderStatus(`${originalId ? "Updated" : "Created"} ${payload.id}`);
+}
+
+let providerActionBusy = false;
+async function runProviderAction(action) {
+  if (providerActionBusy) return;
+  providerActionBusy = true;
+  for (const id of ["provider-save", "provider-test", "provider-delete"]) $(id).disabled = true;
+  try { await action(); }
+  catch (error) { setProviderStatus(error.message || String(error)); }
+  finally {
+    providerActionBusy = false;
+    $("provider-save").disabled = false;
+    $("provider-test").disabled = false;
+    const provider = providerById($("provider-original-app").value, $("provider-original-id").value);
+    $("provider-delete").disabled = !provider || provider.builtIn === true;
+  }
 }
 
 async function deleteProviderFromForm() {
@@ -700,7 +735,8 @@ async function deleteProviderFromForm() {
   await deleteJson(endpoints.providerDelete, { appType, id: providerId });
   providerTestResults.delete(providerRouteKey(appType, providerId));
   clearProviderForm(appType);
-  await refresh();
+  invalidateSharedReads();
+  await loadFrameworks();
   setProviderStatus(`Deleted ${providerId}`);
 }
 
@@ -728,16 +764,16 @@ async function testProviderFromForm() {
       providerId,
       draft: true,
     });
+    result.uiTestedAt = Date.now();
     if (!isCurrent()) return;
     // A draft result belongs to this editor, not to the saved provider's proof.
     if (!unsaved) {
       providerTestResults.set(providerRouteKey(appType, providerId), { config, credential, result });
     }
     setProviderTestResult(result);
+    $("provider-connect-app").disabled = unsaved || result.success !== true || result.networkRequestPerformed !== true;
     if (provider) {
       await loadFrameworks();
-      if (!isCurrent()) return;
-      await loadSetupStatus();
       if (!isCurrent()) return;
     }
     if (result.networkRequestPerformed !== true) {
@@ -751,18 +787,21 @@ async function testProviderFromForm() {
   }
 }
 
-function resetProviderModelCatalog(message = "Refresh the saved provider's model list. Its key stays on the host.") {
+let visibleProviderTemplates = [];
+function renderModelSuggestions(ids) {
+  $("provider-models-select").innerHTML = Array.from(new Set(ids.filter(Boolean))).sort((a,b) => Number(b.endsWith(":free") || b === "openrouter/free") - Number(a.endsWith(":free") || a === "openrouter/free") || a.localeCompare(b)).map(id => `<option value="${escapeHtml(id)}" data-i18n-scope="content"></option>`).join("");
+}
+
+function resetProviderModelCatalog(message = "") {
   providerCatalogGeneration += 1;
-  providerCatalog = null;
   const select = $("provider-models-select");
   if (select) {
-    select.innerHTML = '<option value="">Refresh models to choose</option>';
-    select.value = "";
-    select.disabled = true;
+    select.innerHTML = "";
   }
   const refreshButton = $("provider-models-refresh");
   if (refreshButton) refreshButton.disabled = false;
   text("provider-models-status", message);
+  $("provider-models-status").hidden = !message;
 }
 
 function providerCatalogTarget() {
@@ -792,6 +831,7 @@ async function refreshProviderModels() {
     target = providerCatalogTarget();
   } catch (error) {
     text("provider-models-status", error.message);
+    $("provider-models-status").hidden = false;
     return;
   }
   const generation = providerCatalogGeneration;
@@ -803,6 +843,7 @@ async function refreshProviderModels() {
   };
   $("provider-models-refresh").disabled = true;
   text("provider-models-status", `Fetching model IDs for ${target.providerId}… No model completion is requested.`);
+  $("provider-models-status").hidden = false;
   try {
     const result = await getJson(endpoint(endpoints.providerModels, { appType: target.appType, providerId: target.providerId }));
     if (!isCurrent()) return;
@@ -817,19 +858,12 @@ async function refreshProviderModels() {
       }
       if (!ids.includes(id)) ids.push(id);
     }
-    providerCatalog = { target, ids };
-    const select = $("provider-models-select");
-    select.innerHTML = '<option value="">Choose a model to use in the form</option>'
-      + ids.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(id)}</option>`).join("");
-    const current = $("provider-default-model").value;
-    select.value = ids.includes(current) ? current : "";
-    select.disabled = ids.length === 0;
+    renderModelSuggestions(ids);
     text("provider-models-status", ids.length
       ? `${ids.length} model IDs found. Choose one, then Save Provider. Discovery does not prove model availability or change the active route.`
       : "The provider returned an empty model list. Your default model is unchanged; enter an ID manually or refresh again.");
   } catch (error) {
     if (isCurrent()) {
-      providerCatalog = null;
       text("provider-models-status", error.message || "Could not refresh models. Try again.");
     }
   } finally {
@@ -840,28 +874,10 @@ async function refreshProviderModels() {
   }
 }
 
-function chooseProviderCatalogModel() {
-  const id = $("provider-models-select").value;
-  if (!id || !providerCatalog) return;
-  let target;
-  try { target = providerCatalogTarget(); }
-  catch (error) { resetProviderModelCatalog(error.message); return; }
-  if (JSON.stringify(target) !== JSON.stringify(providerCatalog.target) || !providerCatalog.ids.includes(id)) {
-    resetProviderModelCatalog("This model list is stale. Refresh the saved provider's models again.");
-    return;
-  }
-  $("provider-default-model").value = id;
-  $("provider-clear-models").checked = false;
-  providerFormRevision += 1;
-  setProviderTestResult();
-  setProviderStatus(`Selected ${id} in the form. Save Provider to keep it; Test Provider and Bind remain separate.`);
-  text("provider-models-status", "Model selected in the form. No provider, binding, or model request was changed.");
-}
-
 async function loadFrameworkRow(app) {
   try {
     const [providersJson, currentJson] = await Promise.all([
-      getJson(endpoint(endpoints.providerCreate, { appType: app.id })),
+      sharedGetJson(endpoint(endpoints.providerCreate, { appType: app.id })).then(probe => { if (!probe.ok) throw new Error(probe.error); return probe.data; }),
       getJson(endpoint(endpoints.providerCurrent, { appType: app.id })),
     ]);
     return {
@@ -882,9 +898,6 @@ async function loadFrameworks() {
   const allProviders = rows.flatMap((row) => row.providers || []);
   const errors = rows.filter((row) => row.error);
   renderProviderRows(allProviders, allProviders.length === 0 && errors.length > 0 ? errors[0].error : "");
-  const editingApp = $("provider-original-app")?.value || $("provider-app")?.value;
-  const editingId = $("provider-original-id")?.value || "";
-  if (editingApp) renderProviderRouteState(editingApp, editingId);
   const builtInProviderCount = allProviders.filter((provider) => provider.builtIn === true).length;
   mergeReadinessState({
     providerCount: allProviders.length - builtInProviderCount,

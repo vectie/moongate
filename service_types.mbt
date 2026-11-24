@@ -151,12 +151,12 @@ fn WorkspaceService::new() -> WorkspaceService {
 ///|
 /// RuntimeService handles app runtime status and local tool lifecycle endpoints.
 priv struct RuntimeService {
-  mut last_external_url : String?
+  _unit : Unit
 }
 
 ///|
 fn RuntimeService::new() -> RuntimeService {
-  { last_external_url: None, }
+  { _unit: (), }
 }
 
 ///|

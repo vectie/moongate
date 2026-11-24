@@ -18,14 +18,8 @@ async fn RuntimeService::handle_pick_directory(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let body = proxy_json_body(r)
-  write_usage_json(
-    w,
-    match proxy_string_request(r.path, body, "defaultPath") {
-      Some(path) => Json::string(path)
-      None => Json::null()
-    },
-  )
+  ignore(r)
+  write_runtime_unsupported(w, "pick_directory")
 }
 
 ///|
@@ -34,22 +28,9 @@ async fn RuntimeService::handle_open_external(
   r : @httpx.RequestReader,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  let body = proxy_json_body(r)
-  let raw_url = proxy_string_request(r.path, body, "url").unwrap_or(
-    moon_update_url(),
-  )
-  ignore(self.record_external_open(raw_url))
-  write_usage_json(w, Json::boolean(true))
-}
-
-///|
-fn RuntimeService::record_external_open(
-  self : RuntimeService,
-  raw_url : String,
-) -> String {
-  let normalized = moon_normalize_external_url(raw_url)
-  self.last_external_url = Some(normalized)
-  self.last_external_url.unwrap()
+  ignore(self)
+  ignore(r)
+  write_runtime_unsupported(w, "open_external")
 }
 
 ///|
@@ -59,9 +40,8 @@ async fn RuntimeService::handle_copy_text_to_clipboard(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  let body = proxy_json_body(r)
-  ignore(proxy_string_request(r.path, body, "text").unwrap_or(""))
-  write_usage_json(w, Json::boolean(true))
+  ignore(r)
+  write_runtime_unsupported(w, "clipboard")
 }
 
 ///|
@@ -69,8 +49,8 @@ async fn RuntimeService::handle_check_for_updates(
   self : RuntimeService,
   w : @httpx.ResponseWriter,
 ) -> Unit {
-  ignore(self.record_external_open(moon_update_url()))
-  write_usage_json(w, Json::boolean(true))
+  ignore(self)
+  write_runtime_unsupported(w, "check_for_updates")
 }
 
 ///|
@@ -79,7 +59,7 @@ async fn RuntimeService::handle_update_tray_menu(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  write_usage_json(w, moon_update_tray_menu_result())
+  write_runtime_unsupported(w, "update_tray_menu")
 }
 
 ///|
@@ -149,7 +129,7 @@ async fn RuntimeService::handle_restart_app(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  write_usage_json(w, Json::boolean(true))
+  write_runtime_unsupported(w, "restart_app")
 }
 
 ///|
@@ -158,5 +138,24 @@ async fn RuntimeService::handle_install_update_and_restart(
   w : @httpx.ResponseWriter,
 ) -> Unit {
   ignore(self)
-  write_usage_json(w, Json::boolean(false))
+  write_runtime_unsupported(w, "install_update_and_restart")
+}
+
+///|
+async fn write_runtime_unsupported(
+  w : @httpx.ResponseWriter,
+  operation : String,
+) -> Unit {
+  w.header().set("Content-Type", "application/json")
+  w.write_header(@status.NotImplemented)
+  w.write(
+    Json({
+      "error": Json::string("unsupported_desktop_operation"),
+      "operation": Json::string(operation),
+      "message": Json::string(
+        "This operation is not available through the gateway. Use the desktop app or your system controls.",
+      ),
+    }).stringify(),
+  )
+  w.flush()
 }

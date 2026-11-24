@@ -11,7 +11,7 @@ const deferred = () => { let resolve; const promise = new Promise((yes) => { res
 const row = (id, more = {}) => ({ requestId: id, createdAt: 1750000000, appType: "claude", providerId: "fixture", providerName: "Fixture", model: "fixture-moon", statusCode: 200, totalCostUsd: "0.000123", latencyMs: 42, inputTokens: 100, outputTokens: 12, cacheReadTokens: 2, cacheCreationTokens: 0, dataSource: "proxy", ...more });
 const page = (rows, current = 0, total = rows.length) => ({ ok: true, data: { data: rows, total, page: current, pageSize: 12 } });
 
-function harness(probe = async () => page([]), base = "http://fixture.invalid", served = {}) {
+function harness(probe = async () => page([]), base = "http://fixture.invalid", served = {}, investigation = true) {
   const nodes = new Map();
   const downloads = [];
   const blobs = [];
@@ -31,7 +31,7 @@ function harness(probe = async () => page([]), base = "http://fixture.invalid", 
     URL: urls, Blob, setTimeout: (fn) => fn(), Date, console,
     window: { location: { origin: base } },
     document: { getElementById: get, createElement: element, body: element(),
-      querySelector: (selector) => selector === "[data-moongate-endpoints]" ? { getAttribute: () => JSON.stringify({ usageLogs: "/usage/logs", requestDetail: "/usage/request-detail", usageSummary: "/usage/summary", usageTrends: "/usage/trends", providerStats: "/usage/provider-stats", modelStats: "/usage/model-stats" }) } : null },
+      querySelector: (selector) => selector === "[data-moongate-endpoints]" ? { getAttribute: () => JSON.stringify({ usageLogs: "/usage/logs", requestDetail: "/usage/request-detail", usageSummary: "/usage/summary", usageByApp: "/usage/summary/by-app", usageTrends: "/usage/trends", providerStats: "/usage/provider-stats", modelStats: "/usage/model-stats" }) } : null },
     fetch: async (url, options) => fetch(new URL(url, base), { ...options, headers: { ...options?.headers, Origin: base } }),
     probe, readiness: [],
   });
@@ -41,6 +41,8 @@ function harness(probe = async () => page([]), base = "http://fixture.invalid", 
   run("mergeReadinessState = (value) => readiness.push(value)");
   if (probe) run("safeGetJson = probe");
   get("request-range").value = "604800";
+  // Investigation tests explicitly open the optional work surface.
+  get("request-investigation").open = investigation;
   return { run, context, get, downloads, blobs, revocations,
     ids: () => JSON.parse(run("JSON.stringify(requestPageSnapshot?.rows.map(row => row.requestId) || [])")),
     snapshot: () => JSON.parse(run("JSON.stringify(requestPageSnapshot)")),
@@ -59,6 +61,18 @@ function parseCsv(csv) {
   assert.equal(quoted, false);
   return rows;
 }
+
+test("ordinary requests do not initialize investigation tools until opened", async () => {
+  const h = harness(async () => page([]), "http://fixture.invalid", {}, false);
+  await h.run("loadRequestExplorer()");
+  assert.equal(h.run("requestCollectionUI"), null);
+  assert.equal(h.get("request-detail-panel").hidden, true);
+  h.get("request-investigation").open = true;
+  h.run("renderRequestCollection()");
+  assert.ok(h.run("requestCollectionUI"));
+  assert.equal(h.run("requestComparisonUI.section.hidden"), true);
+  assert.equal(h.run("requestSubsetUI.section.hidden"), true);
+});
 
 test("paging uses the applied query and fixed interval; apply and reset return to page one", async () => {
   const calls = [];
@@ -216,6 +230,24 @@ test("request filtering does not change aggregate app/time queries", async () =>
   assert.equal("statusCode" in query, false);
 });
 
+test("Usage owns and filters its app breakdown instead of leaving it empty", async () => {
+  const calls = [];
+  const h = harness(async url => {
+    calls.push(url);
+    return {ok:true,data:url.includes('/summary/by-app') ? [{appType:'codex',summary:{totalRequests:1,totalCostUsd:'0.1'}},{appType:'openclaw',summary:{totalRequests:2}}] : {}};
+  });
+  h.get('usage-app').value = 'codex';
+  h.run('probeData = (probe, fallback) => probe.ok ? probe.data : fallback');
+  await h.run('loadUsageExplorer()');
+  assert.equal(calls.length, 5);
+  const byApp = calls.find(url => url.includes('/summary/by-app'));
+  assert.equal(new URL(byApp, 'http://fixture.invalid').searchParams.get('appType'), 'codex');
+  assert.equal(h.get('app-usage').children.length, 1);
+  assert.match(h.get('app-usage').children[0].innerHTML, /codex/);
+  assert.match(h.get('app-usage').children[0].innerHTML, /1 requests/);
+  assert.doesNotMatch(h.get('app-usage').children[0].innerHTML, /openclaw/);
+});
+
 test("actual dashboard events submit filters, navigate, select and download", async () => {
   const h = harness(async (url) => url.includes("request-detail") ? { ok: true, data: row("A") } : page([row("A")]));
   const dashboard = asset("moongate.js");
@@ -340,7 +372,7 @@ test("collection controls keep chosen details across pages and filters with exac
   await h.run("loadRequestExplorer()");
   assert.equal(h.run("requestCollectionUI.keep.disabled"), true);
   assert.equal(h.run("requestCollectionUI.download.disabled"), true);
-  assert.equal(h.get("requests").children.length, 1);
+  assert.equal(h.get("request-investigation").children.length, 1);
   await h.run('selectRequestDetail("A")');
   h.run("requestCollectionUI.keep.events.click()");
   const captured = h.run("JSON.stringify(requestCollection[0])");
@@ -352,7 +384,7 @@ test("collection controls keep chosen details across pages and filters with exac
   await h.run("applyRequestFilters()");
   assert.equal(h.run("requestCollection.length"), 2);
   assert.equal(h.run("JSON.stringify(requestCollection[0])"), captured);
-  assert.equal(h.get("requests").children.length, 1, "controls are not duplicated by updates");
+  assert.equal(h.get("request-investigation").children.length, 1, "controls are not duplicated by updates");
   const csv = parseCsv(h.run("requestCollectionCsv()"));
   assert.equal(csv.length, 3);
   assert.equal(csv[1][2], "1"); assert.equal(csv[2][2], "2");

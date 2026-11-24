@@ -1,7 +1,4 @@
 ///|
-const MOONGATE_UPDATE_URL = "https://github.com/vectie/moongate/releases/latest"
-
-///|
 const MOONGATE_TOOL_VERSION_TIMEOUT_MS = 3000
 
 ///|
@@ -34,15 +31,6 @@ priv struct MoonToolInstallationReport {
   needs_confirmation : Bool
   command : String
   anchored : Bool
-}
-
-///|
-fn moon_normalize_external_url(url : String) -> String {
-  if url.find("http://") == Some(0) || url.find("https://") == Some(0) {
-    url
-  } else {
-    "https://\{url}"
-  }
 }
 
 ///|
@@ -96,11 +84,6 @@ fn moon_tool_lifecycle_action(value : String) -> MoonToolLifecycleAction? {
     "update" => Some(Update)
     _ => None
   }
-}
-
-///|
-fn moon_update_url() -> String {
-  MOONGATE_UPDATE_URL
 }
 
 ///|

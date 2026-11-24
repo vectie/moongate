@@ -1,24 +1,4 @@
 ///|
-test "moongate external url normalization mirrors shell command behavior" {
-  assert_eq(
-    moon_normalize_external_url("github.com/vectie/moongate"),
-    "https://github.com/vectie/moongate",
-  )
-  assert_eq(
-    moon_normalize_external_url("https://github.com/vectie/moongate"),
-    "https://github.com/vectie/moongate",
-  )
-  assert_eq(
-    moon_normalize_external_url("HTTP://github.com/vectie/moongate"),
-    "https://HTTP://github.com/vectie/moongate",
-  )
-  assert_eq(
-    moon_normalize_external_url(" http://github.com/vectie/moongate "),
-    "https:// http://github.com/vectie/moongate ",
-  )
-}
-
-///|
 test "moongate requested tool names keeps valid unique tools" {
   assert_eq(moon_requested_tool_names(Some("codex,unknown,codex,claude")), [
     "codex", "claude",

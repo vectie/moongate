@@ -17,7 +17,14 @@
   --warn: #f5b544;
   --bad: #f26d5b;
   --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --text-meta: 12px;
+  --text-control: 13px;
+  --text-body: 14px;
+  --text-title: 17px;
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --control-height: 32px;
 }
 
 * {
@@ -80,8 +87,8 @@ button,
   padding: 7px 12px;
   background: var(--accent);
   color: #0a0c12;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: var(--text-control);
+  font-weight: 500;
   line-height: 1.15;
   text-decoration: none;
   cursor: pointer;
@@ -1911,13 +1918,15 @@ td select,
 }
 
 #moonsuite-language {
-  right: 14px !important;
-  bottom: 14px !important;
+  position: static !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   border-color: var(--line-strong) !important;
   border-radius: 8px !important;
   padding: 4px 6px !important;
-  background: rgba(23, 28, 39, 0.96) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28) !important;
+  background: var(--panel) !important;
+  box-shadow: none !important;
 }
 
 #moonsuite-language select {
@@ -1926,8 +1935,10 @@ td select,
   padding: 4px 6px !important;
   background: transparent !important;
   color: var(--text-2) !important;
-  font: 600 11px var(--sans) !important;
+  font: 400 var(--text-control) var(--sans) !important;
 }
+
+.interface-settings { margin-bottom: 20px; }
 
 @media (max-width: 1100px) {
   .shell {
@@ -2248,6 +2259,10 @@ td select,
 }
 
 .request-filters label { display: grid; gap: 6px; }
+.request-master-detail:has(> #request-detail-panel[hidden]) { grid-template-columns: minmax(0, 1fr); }
+#request-filters, #requests > .request-pagination { padding-inline: 16px; }
+.request-master-detail .panel-head { flex-wrap: wrap; }
+#request-detail-id { display: none; }
 .request-filters input, .request-filters select { width: 100%; min-width: 0; }
 .request-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
 #request-query-summary, #request-detail strong, #request-log strong, #request-log small { overflow-wrap: anywhere; white-space: pre-wrap; }
@@ -2272,3 +2287,28 @@ td select,
 .transcript-active-match { outline: 2px solid currentColor; outline-offset: 2px; }
 .transcript-context-message { border-style: dashed; }
 .transcript-message mark { background: #ffeb99; color: #171717; }
+
+/* Shared Moon Suite control hierarchy. Content, models and errors keep their meaning. */
+.local-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.provider-template-picker { padding: 0; border: 0; background: transparent; }
+.form-grid label > span, .form-grid > label { font-size: var(--text-control); font-weight: 400; }
+.local-nav a { padding: 6px 12px; color: var(--text-2); border-radius: var(--radius-control); font-size: var(--text-control); text-decoration: none; }
+.local-nav a:hover, .local-nav a.selected { color: var(--text); background: var(--accent-soft); }
+.local-menu { position: relative; }
+.local-menu > summary { cursor: pointer; padding: 6px 8px; font-size: var(--text-control); }
+.local-menu[open] { padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-card); }
+.local-menu[open] > button { margin: 4px; }
+.panel-head h2, .connection-app-head h3 { font-size: var(--text-body); font-weight: 500; }
+.topbar h1 { font-size: var(--text-title); font-weight: 500; }
+.form-grid input, .form-grid select, .form-grid textarea { font-size: var(--text-control); border-radius: var(--radius-control); }
+.card-help, .panel-description, .field-hint, .state, .graph-check, .row-card small, .table-wrap small { font-size: var(--text-meta); font-weight: 400; }
+.form-actions { justify-content: flex-end; }
+.icon-button { width: var(--control-height); height: var(--control-height); padding: 6px; flex: 0 0 auto; }
+.icon-button img { width: 16px; height: 16px; filter: invert(85%); }
+[hidden] { display: none !important; }
+@media (min-width: 761px) and (pointer: fine) {
+  button, .button-secondary, input:not([type=checkbox]):not([type=radio]), select { min-height: var(--control-height); }
+}
+@media (max-width: 760px), (pointer: coarse) {
+  .local-nav a, .local-menu > summary, .icon-button { min-height: 44px; min-width: 44px; }
+}

@@ -33,7 +33,6 @@ fn print_help() -> Unit {
   println("  stream-check all          Check all provider stream paths")
   println("  stream-check config       Show stream check configuration")
   println("  stream-check config set   Update stream check configuration")
-  println("  runtime tray-menu update  Refresh desktop tray menu state")
   println("  suite manifest            Print Moon suite service manifest")
   println("  suite lepusa              Print Lepusa desktop manifest")
   println("  suite lepusa-rabbita      Print Lepusa Rabbita preview manifest")

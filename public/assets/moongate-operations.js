@@ -4,7 +4,7 @@ let operationsPolicyApp = null;
 let routingShadowSaveInFlight = false;
 
 function operationsAppType() {
-  return $("operations-app")?.value || "codex";
+  return $("operations-app")?.value || "openclaw";
 }
 
 function operationsField(object, snake, camel) {
@@ -41,7 +41,7 @@ function operationsInitApps() {
   select.innerHTML = values
     .map((row) => `<option value="${escapeHtml(row.value)}">${escapeHtml(row.label)}</option>`)
     .join("");
-  select.value = values.some((row) => row.value === "codex") ? "codex" : values[0]?.value || "";
+  select.value = values[0]?.value || "";
 }
 
 function renderOperationsMonitor(snapshot) {
@@ -102,11 +102,14 @@ function renderRoutingPolicy(state, appType = operationsAppType()) {
   );
 }
 
-async function loadOperations() {
+async function loadOperations({forcePolicy = false} = {}) {
+  installRoutingAllocationEditor();
   operationsInitApps();
   const appType = operationsAppType();
+  const inventory = await sharedGetJson(endpoint(endpoints.providerCreate, {appType}));
+  frameworkRows = frameworkRows.filter(row => row.id !== appType).concat({id: appType, providers: inventory.ok ? objectRows(inventory.data) : [], error: inventory.ok ? null : inventory.error});
   const generation = ++operationsLoadGeneration;
-  operationsPolicyApp = null;
+  const preserveDraft = !forcePolicy && operationsPolicyApp === appType && operationsPolicyState;
   const [monitor, policy] = await Promise.all([
     safeGetJson(endpoints.operationsMonitor),
     safeGetJson(endpoint(endpoints.routingPolicy, { appType })),
@@ -114,7 +117,7 @@ async function loadOperations() {
   if (generation !== operationsLoadGeneration || appType !== operationsAppType()) return;
   if (monitor.ok) renderOperationsMonitor(monitor.data);
   else operationsSetStatus("operations-monitor-status", monitor.error, true);
-  if (policy.ok) renderRoutingPolicy(policy.data, appType);
+  if (policy.ok) { if (!preserveDraft) renderRoutingPolicy(policy.data, appType); }
   else operationsSetStatus("routing-policy-status", policy.error, true);
 }
 
@@ -159,7 +162,7 @@ async function saveRoutingShadow(event) {
     };
     const result = await postJson(endpoints.routingPolicyConfigure, payload);
     operationsSetStatus("routing-policy-status", "Saved in shadow mode; live routing is unchanged.", false);
-    if (result?.policy) await loadOperations();
+    if (result?.policy) await loadOperations({forcePolicy:true});
     return result;
   } catch (error) {
     operationsSetStatus("routing-policy-status", error?.message || String(error), true);
@@ -204,7 +207,7 @@ async function activateRoutingPolicy() {
     });
     text("routing-receipt", JSON.stringify(receipt));
     operationsSetStatus("routing-policy-status", "Policy activated with a durable receipt.", false);
-    await loadOperations();
+    await loadOperations({forcePolicy:true});
   } catch (error) {
     operationsSetStatus("routing-policy-status", error?.message || String(error), true);
   }
@@ -228,7 +231,7 @@ async function rollbackRoutingPolicy() {
     });
     text("routing-receipt", JSON.stringify(receipt));
     operationsSetStatus("routing-policy-status", "Rollback completed with a durable receipt.", false);
-    await loadOperations();
+    await loadOperations({forcePolicy:true});
   } catch (error) {
     operationsSetStatus("routing-policy-status", error?.message || String(error), true);
   }
@@ -443,8 +446,8 @@ function installRoutingAllocationEditor() {
     if (content) element.textContent = content;
     parent.appendChild(element); return element;
   };
-  const section = make(form, "section", "routing-allocation"); section.className = "span-2";
-  make(section, "h3", null, "Allocate across configured providers");
+  const section = make(form, "details", "routing-allocation"); section.className = "span-2 advanced-disclosure";
+  make(section, "summary", null, "Allocate across configured providers");
   make(section, "p", null, "Load the current app inventory already read by the dashboard. Set relative weights and concurrency caps together, inspect the exact input, then save the shadow policy. A listed provider may be disabled, outside the routing pool or otherwise ineligible. Weights are used only by modes that support them; a cap of 0 is unlimited by this policy. No traffic share or availability is promised.");
   const start = make(section, "button", "routing-allocation-load", "Load allocation rows (replace row edits)"); start.type = "button";
   const clear = make(section, "button", "routing-allocation-clear", "Discard allocation row edits"); clear.type = "button";
@@ -464,16 +467,9 @@ function installRoutingAllocationEditor() {
   routingAllocationRender();
 }
 
-installRoutingAllocationEditor();
-
 $("routing-policy-form")?.addEventListener("submit", saveRoutingShadow);
 $("routing-policy-observe")?.addEventListener("click", observeRoutingShadow);
 $("routing-policy-activate")?.addEventListener("click", activateRoutingPolicy);
 $("routing-policy-rollback")?.addEventListener("click", rollbackRoutingPolicy);
 $("benchmark-run")?.addEventListener("click", runDeterministicBenchmark);
 $("operations-app")?.addEventListener("change", loadOperations);
-$("refresh")?.addEventListener("click", loadOperations);
-
-loadOperations().catch((error) => {
-  operationsSetStatus("operations-monitor-status", error?.message || String(error), true);
-});

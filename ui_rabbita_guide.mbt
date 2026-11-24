@@ -29,15 +29,15 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "providers",
           ),
           moongate_rabbita_guide_page_card(
-            "App Bindings", "Connect MoonDesk first, or detect another installed app, choose a saved provider, and update its real configuration.",
+            "Apps", "Connect MoonDesk first. In List, choose a saved provider and update the app's real configuration. Use Graph to check the complete path.",
             "bindings",
           ),
           moongate_rabbita_guide_page_card(
-            "Connection Graph", "Run the final check: see every saved provider route and whether its provider, MoonGate route, and app binding are ready or still unwired.",
+            "Apps → Graph", "Check saved providers, matching test evidence, running routing, and verified app wiring separately.",
             "connections",
           ),
           moongate_rabbita_guide_page_card(
-            "Manual Connect", "Copy the local API address for apps MoonGate cannot configure automatically.",
+            "Apps → Manual setup", "Copy the local API address for apps MoonGate cannot configure automatically.",
             "connect",
           ),
           moongate_rabbita_guide_page_card(
@@ -49,8 +49,8 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "usage",
           ),
           moongate_rabbita_guide_page_card(
-            "Suite", "See how MoonDesk, MoonClaw, MoonBook, and MoonTown connect to MoonGate. MoonDesk is the primary app.",
-            "suite",
+            "Advanced", "Open suite diagnostics, routing policies, recovery rules, or this guide when needed.",
+            "advanced",
           ),
         ]),
       ]),
@@ -70,7 +70,7 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "App binding", "A verified change to an installed app's configuration that points it at MoonGate. Only a verified binding is shown as Connected.",
           ),
           moongate_rabbita_glossary_item(
-            "Verified route", "A complete provider → MoonGate → app path where the provider is saved, enabled, and tested, and the app binding was read back successfully.",
+            "Verified route", "A complete provider → MoonGate → app path: the provider is saved, selected, available, recently tested for this configuration, routing is running, and app wiring was read back successfully.",
           ),
           moongate_rabbita_glossary_item(
             "Available to MoonGate routing", "The provider may receive matching requests after an app is connected. It does not connect or enable an app by itself.",
@@ -100,7 +100,7 @@ fn moongate_rabbita_guide_page() -> @html.Html {
             "Command-line apps (previously called tools)", "Installed programs such as Codex, Claude, Gemini, and OpenCode. MoonGate detects them only so it knows which apps it can configure.",
           ),
           moongate_rabbita_glossary_item(
-            "AI tools", "Actions an AI model can call, such as reading a file or using a service. This is different from the installed apps shown on App Bindings.",
+            "AI tools", "Actions an AI model can call, such as reading a file or using a service. This is different from the installed apps shown in Apps → List.",
           ),
           moongate_rabbita_glossary_item(
             "MCP", "Model Context Protocol. It lets an AI app connect to external capabilities such as files or services. You only need it when an app or plugin asks for MCP.",

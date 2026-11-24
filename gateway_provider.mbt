@@ -1752,19 +1752,28 @@ async fn ProxyService::stream_check_provider_target_result_json(
   } else {
     provider.base_url is Some(_) && provider.api_key is Some(_)
   }
-  let started_at = @async.now().to_int()
+  let started_at = @async.now()
   let live_result = self.stream_check_live_request(
     auth,
     provider,
     model,
     config.test_prompt,
   )
-  let response_time_ms = max_int(@async.now().to_int() - started_at, 0)
+  let response_time_ms = max_int((@async.now() - started_at).to_int(), 0)
   let (success, http_status, message) = match live_result {
     Ok((status_code, response_body)) => {
-      let success = status_code >= 200 && status_code < 300
+      let http_ok = status_code >= 200 && status_code < 300
+      let format = if provider.provider_type == Some("codex_oauth") {
+        "openai_responses"
+      } else {
+        stream_check_api_format(provider)
+      }
+      let success = http_ok &&
+        provider_test_completed_response(response_body, format)
       let message = if success {
         "Live request succeeded"
+      } else if http_ok {
+        "Upstream returned HTTP \{status_code} without a completed model response"
       } else {
         "Live request returned HTTP \{status_code}: \{body_snippet(response_body, 360)}"
       }
@@ -1778,7 +1787,7 @@ async fn ProxyService::stream_check_provider_target_result_json(
     "success": Json::boolean(success),
     "message": Json::string(message),
     "modelUsed": Json::string(model),
-    "testedAt": Json::number((@async.now().to_int() / 1000).to_double()),
+    "testedAt": Json::number((@async.now() / 1000L).to_double()),
     "retryCount": Json::number(0.0),
     "responseTimeMs": Json::number(response_time_ms.to_double()),
     "networkRequestPerformed": Json::boolean(network_request_performed),
