@@ -78,13 +78,25 @@ Send only `model`, `messages`, and optionally `stream`:
 }
 ```
 
-You may save this localhost URL as a custom OpenAI Chat provider in MoonGate.
-However, clients and MoonGate's existing provider-check flow may add generation
-options that this experimental subset rejects. Saving a provider is not proof
-that its test or MoonDesk's current MoonClaw-based conversation flow works.
-There is no new provider template, dashboard setup flow or automatic app
-binding in this first version. No live MoonDesk/Google subscription result has
-been qualified for this bridge.
+Choose the **ACP (text chat only)** template for a Moon Suite connection. Set
+the bridge URL, its local bearer token and an exact model ID from your agent;
+save, refresh models, test, then connect MoonDesk on Apps. The advanced provider
+type is `acp_text`; its wire format remains OpenAI Chat Completions. An ordinary
+OpenAI Chat provider does not automatically opt into these reduced semantics.
+
+The catalog passes an explicit `moongate.text_only` capability to MoonClaw.
+MoonClaw uses text chat without tools, sampling/reasoning controls, token limits
+or cache hints, and delivers the actual assistant text through its existing
+completion path. Its prompt explicitly says it cannot execute tools or change
+files. Normal tool-capable connections are unchanged; tool histories are
+rejected, not discarded. This is chat compatibility, not ACP coding-tool
+integration. A matching updated MoonClaw runtime is required.
+
+Model discovery reads the bridge's cheap configured allowlist (no agent spawn),
+with a two-second gateway deadline and a text-only default-model fallback if
+discovery fails. Neither listing nor saving is generation/account-access proof.
+Provider Test sends a real minimal text inference without a fabricated hard
+output limit. Every generation still has the bridge's wall-clock deadline.
 
 ## Deliberate limits
 
@@ -129,8 +141,18 @@ credential reuse and headless wrappers under consumer plans.
 This generic bridge does not establish that Google permits that use, guarantee
 plan quota or model access, or make consumer OAuth equivalent to an API key.
 Keep any Google consumer-plan experiment separate until its exact runtime and
-use are confirmed as supported. Do not advertise this as tested Google Pro
-subscription support.
+use are confirmed as supported.
+
+On 2026-11-24, a narrow cluster Mac test through MoonDesk's actual installed UI
+resources succeeded with this text-only mode and official Antigravity 1.5.16.
+Neon returned the requested marker and answered a follow-up in the same chat;
+MoonGate's live provider check also passed. With Google AI Pro shown, credits
+OFF and no API-key/ADC environment fallback, a fresh official CLI showed plan
+quota decrease during the first chat turn and provider check: weekly remaining
+99.76% -> 99.71%, five-hour 99.05% -> 98.83%. The older open CLI's counters were
+stale. See `docs/project/HANDOFF.md` for receipts and limitations. This is not
+qualification of every model, coding tools, other accounts, or a general
+subscription-to-API entitlement.
 
 ## Test coverage
 

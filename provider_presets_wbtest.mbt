@@ -3,7 +3,7 @@ test "moongate provider presets include Unity2 across suite apps" {
   guard moon_provider_presets_json("/providers/presets") is Array(presets) else {
     fail("expected presets")
   }
-  assert_eq(presets.length(), 527)
+  assert_eq(presets.length(), 532)
 
   let app_types : Array[String] = []
   for preset in presets {
@@ -32,19 +32,19 @@ test "moongate provider presets include Unity2 across suite apps" {
 test "moongate provider presets mirror visible moongate app counts" {
   assert_eq(
     moon_visible_provider_presets(Some("moondesk"), "", "original").length(),
-    17,
+    18,
   )
   assert_eq(
     moon_visible_provider_presets(Some("moonclaw"), "", "original").length(),
-    17,
+    18,
   )
   assert_eq(
     moon_visible_provider_presets(Some("moonbook"), "", "original").length(),
-    17,
+    18,
   )
   assert_eq(
     moon_visible_provider_presets(Some("moontown"), "", "original").length(),
-    17,
+    18,
   )
   assert_eq(
     moon_visible_provider_presets(Some("claude"), "", "original").length(),
@@ -68,7 +68,7 @@ test "moongate provider presets mirror visible moongate app counts" {
   )
   assert_eq(
     moon_visible_provider_presets(Some("openclaw"), "", "original").length(),
-    68,
+    69,
   )
   assert_eq(
     moon_visible_provider_presets(Some("hermes"), "", "original").length(),
@@ -201,7 +201,14 @@ test "moongate provider presets expose provider groups for every consumer target
         presets.push(preset)
       }
     }
-    assert_eq(presets.length(), 15)
+    assert_eq(
+      presets.length(),
+      if target.provider_app_type == "openclaw" {
+        16
+      } else {
+        15
+      },
+    )
     let seen : Array[String] = []
     for preset in presets {
       guard preset is Object(obj) else { fail("expected preset") }
@@ -248,7 +255,7 @@ test "moongate Moon Suite templates share the correct provider scopes" {
 ///|
 test "moongate provider forms preserve endpoint and protocol distinctions" {
   let forms = moon_provider_template_seeds()
-  assert_eq(forms.length(), 15)
+  assert_eq(forms.length(), 16)
   let by_id : Map[String, ProviderTemplateSeed] = Map([])
   for seed in forms {
     by_id[seed.id] = seed
@@ -285,7 +292,7 @@ test "moongate provider forms preserve endpoint and protocol distinctions" {
 ///|
 test "moongate provider presets name sort keeps full visible set" {
   let entries = moon_visible_provider_presets(None, "", "nameAsc")
-  assert_eq(entries.length(), 527)
+  assert_eq(entries.length(), 532)
   assert_eq(moon_provider_preset_name(entries[0]), "自定义")
   assert_eq(
     moon_provider_preset_name(entries[entries.length() - 1]),

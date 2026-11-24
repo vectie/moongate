@@ -321,7 +321,11 @@ async fn ProxyService::handle_models_for_app(
     Some(id) =>
       match self.provider_router.provider_by_id(app_type, id) {
         Some(provider) =>
-          google_provider_model_catalog(provider, fallback_model)
+          if provider.provider_type == Some("acp_text") {
+            acp_text_provider_model_catalog(provider)
+          } else {
+            google_provider_model_catalog(provider, fallback_model)
+          }
         None => None
       }
     None => None
@@ -1950,7 +1954,11 @@ async fn ProxyService::stream_check_live_request(
   prompt : String,
 ) -> Result[(Int32, String), String] {
   let api_format = stream_check_api_format(provider)
-  let request = stream_check_request_body(api_format, model, prompt)
+  let request = if provider.provider_type == Some("acp_text") {
+    acp_text_check_request(model, prompt)
+  } else {
+    stream_check_request_body(api_format, model, prompt)
+  }
   if provider.provider_type == Some("codex_oauth") {
     guard auth.credentials is Some(creds) else {
       return Err("Codex OAuth is not authenticated")

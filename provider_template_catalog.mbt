@@ -34,6 +34,18 @@ fn moon_provider_template_targets() -> Array[ProviderTemplateTarget] {
 fn moon_provider_template_seeds() -> Array[ProviderTemplateSeed] {
   [
     {
+      id: "acp-text",
+      name: "ACP (text chat only)",
+      base_url: "http://127.0.0.1:15724/v1",
+      api_format: "openai_chat",
+      provider_type: "acp_text",
+      default_model: "",
+      website_url: "https://agentclientprotocol.com",
+      api_key_url: "",
+      category: "local",
+      icon: "server",
+    },
+    {
       id: "deepseek-official",
       name: "DeepSeek",
       base_url: "https://api.deepseek.com/v1",
@@ -295,6 +307,9 @@ fn moon_ready_provider_template_catalog() -> Array[Json] {
   let presets : Array[Json] = []
   for target in moon_provider_template_targets() {
     for seed in moon_provider_template_seeds() {
+      if seed.id == "acp-text" && target.provider_app_type != "openclaw" {
+        continue
+      }
       presets.push(seed.preset_json(target))
     }
   }

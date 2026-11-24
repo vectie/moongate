@@ -1,5 +1,117 @@
 # MoonGate project handoff
 
+## ACP text-chat compatibility and cluster qualification — 2026-11-24
+
+The user authorized fixing the failed qualification below and continuing.
+The explicit `acp_text` provider type (OpenAI Chat wire format) now has an
+`ACP (text chat only)` template for Moon Suite targets. Its provider check sends
+a real minimal text generation, without unsupported token/reasoning controls.
+Its model catalog reads the bridge allowlist under a two-second deadline and
+marks `moongate.text_only`; an unavailable bridge retains that flag on the
+default-model fallback. Catalog polling never starts an ACP child. Explicit
+requested model IDs are preserved, not remapped to the provider default.
+
+MoonClaw carries this capability through catalog -> Model -> request builder.
+Only this mode uses text-chat instructions instead of the coding planner's
+system prompt and omits tool schemas, generation controls and prompt-cache
+hints. It uses Chat Completions even when Responses was preferred. Tool history
+is rejected, not silently removed. The existing assistant-content completion
+path delivers actual model text. Other provider behavior is unchanged. This
+does NOT implement ACP coding tools or hard token limits.
+
+Clean exports of MoonGate c39f751 and MoonClaw 073325d2 plus only these changes
+were built for macOS 15.0 and deployed to the disposable cluster workspace,
+not over `/Applications`. MoonDesk's installed sidecar/resources and its UI
+Start action launched the updated isolated MoonClaw. The UI listed all four
+configured Gemini 4 models. On Neon, two turns in the same conversation
+`mooncode-be6d03367e875a28` completed and displayed `ACP_PRO_CLUSTER_OK`;
+the second asked to recall the previous reply without supplying the marker.
+The first proxy receipt is `req_8115615d-563b-4678-8074-3c9cbba41ff1`,
+2026-11-24T12:30:48Z, HTTP 200, streaming, 7,567 ms total / 7,400 ms first text.
+MoonGate UI Provider Test also passed a live inference: HTTP 200, 8,343 ms.
+The follow-up proxy receipt is `req_cbd55ba8-2cbb-4fa1-878a-2d39e5dad525`,
+2026-11-24T12:34:06Z, HTTP 200, 6,722 ms total / 6,513 ms first text.
+Images: `/tmp/moondesk-acp-cluster-success.jpg` and
+`/tmp/moongate-acp-cluster-passed.jpg`. This is browser interaction with the
+actual cluster-served app resources over SSH, not remote native-window control.
+
+Plan evidence: official unmodified Google Antigravity 1.5.16 on the cluster
+reports Google AI Pro; optional interaction collection and Use AI Credits are
+OFF. API-key/ADC environment variables remain unset. Before the first successful
+MoonDesk turn and provider test, weekly/five-hour remaining quota was
+99.76% / 99.05%; a fresh CLI after those two calls reported 99.71% / 98.83%.
+That is observed plan-quota consumption during this narrow test, not a per-call
+token/cost receipt or qualification of every listed model. A later follow-up
+also succeeded. IMPORTANT: `/usage` in an already-open CLI kept showing stale
+quota; start a fresh official runtime before comparing account counters.
+Do not treat MoonGate's unavailable token/cost values as measured zero usage.
+
+Validation: MoonGate working tree 1,230 strict native tests; clean export 1,228;
+frontend 148 pass / 3 opt-in skips. Clean MoonClaw daemon/model/adapter checks
+pass 541 tests after expected Model JSON snapshots were updated. One existing
+approval/cancellation timing test failed under competing test/build loads,
+passed alone, then all 541 passed serially. MoonDesk, MoonBook and MoonTown
+adapters pass six strict tests each; MoonClaw adapter passes 13 normally.
+Its two unused test imports were removed; the adapter now also passes strict
+checks. Broad MoonClaw deny-warn still exposes pre-existing warnings outside
+this change. Requests-page reload retained its original relative time-window
+end; Reset Filters revealed the newer receipt. This unrelated UI refresh
+pitfall is recorded, not fixed in this ACP compatibility change.
+No automatic commit, push, release or production app installation is included.
+Qualification cleanup stopped the isolated sidecar, MoonClaw, MoonGate and ACP
+bridge, closed both official CLI instances and the SSH tunnels. Private test
+files remain for reproduction; the official cluster Google sign-in is retained.
+
+## Google Pro cluster ACP UI qualification — 2026-11-24
+
+Result: failed integration, not a successful plan-quota inference. All services
+and Google authentication ran on cluster Mac 192.168.2.195/macOS 15.7.3 via the
+management host. The accidentally opened local Google sign-in page was closed
+and its login attempt cancelled at the user's direction. A fresh official CLI
+login on the cluster succeeded. The user explicitly approved the first-run
+terms with optional interaction-data collection OFF. The CLI reports Google
+AI Pro; `/config` shows Use AI Credits OFF. API-key/ADC environment variables
+were removed from the tested runtime invocations. No API key was substituted.
+
+Official Antigravity CLI 1.5.16 was downloaded from the manifest referenced by
+Google's installer, extracted into a private test directory without changing
+shell profiles, checksum-verified, and code-signature-verified as Google LLC
+(EQHXZ8M8AV). Its ACP initialization reports protocol 1 and `Antigravity ACP
+Server` 1.5.16. `session/new` exposes preferred base model IDs such as
+`gemini-4-neon` with a separate `thought_level` selector; the legacy model list
+also includes effort-suffixed IDs. Prefer the actual session's selectors, not
+guessed IDs from the CLI list.
+
+The actual installed MoonDesk sidecar/resources ran against an isolated book
+at port 4205, connected through the MoonGate UI at 15736 to the ACP bridge at
+15737. UI model refresh found all four configured base models. Provider Test
+returned HTTP 400 because it sends `max_tokens`. A real general MoonDesk turn
+(`mooncode-39596702a15ee480`, marker `ACP_PRO_CLUSTER_OK`) then failed through
+MoonClaw -> MoonGate -> ACP bridge: request
+`req_f13c12be-db41-4197-8589-6e23d6b5c86e`, HTTP 400 in 1 ms. The synthetic
+session journal confirms `ACP text bridge does not support option: tools`.
+MoonDesk displays a failed turn, with an unhelpful bounded-local-plan detail;
+do not mistake its fallback text for a model response. The Google runtime's
+weekly/five-hour quota stayed at 99.76% / 99.05% before and after. No successful
+Google generation or quota debit was established.
+
+This verifies the documented subset is not yet compatible with MoonDesk's
+normal agent requests. Do not silently discard `tools`, token budgets or
+reasoning controls to manufacture a pass. Compatibility changes need explicit
+semantics and fresh UI-to-UI qualification. The user was asked whether to fix
+that compatibility and continue. No production app/configuration or source
+implementation was changed in this test. Browser interaction used the actual
+cluster-served installed app resources over SSH, not remote native-window
+control; do not claim the latter. Screenshots were saved locally as
+`/tmp/moondesk-acp-cluster-failed.jpg` and
+`/tmp/moongate-acp-cluster-rejected.jpg`.
+
+Private test data is under `/private/tmp/moongate-acp-plan.HSoU2G` on the Mac.
+Google authentication remains owned by the official runtime's private local
+profile/keychain; it was not read back or exported. Temporary services were
+retained while the user authorized a fix and continued qualification. Reuse the authenticated runtime when continuing,
+but record a new quota baseline and verify credits remain OFF before testing.
+
 ## Commit qualification — 2026-11-24
 
 The ACP bridge and pending Gemini multi-model changes pass a clean staged-tree
