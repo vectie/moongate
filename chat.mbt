@@ -205,6 +205,9 @@ fn openai_chat_to_codex_response_request(
       request[key] = value
     }
   }
+  if obj.get("reasoning") is None && obj.get("reasoning_effort") is Some(value) {
+    request["reasoning"] = Json::object({ "effort": value })
+  }
   if obj.get("tools") is Some(Array(tools)) {
     let codex_tools : Array[Json] = []
     for tool in tools {
@@ -262,6 +265,13 @@ fn codex_responses_request_to_openai_chat_completion(
     if obj.get(key) is Some(value) {
       result[key] = value
     }
+  }
+  if obj.get("reasoning") is Some(Object(reasoning)) &&
+    reasoning.get("effort") is Some(value) {
+    result["reasoning_effort"] = value
+    // Chat uses reasoning_effort; an API-native Responses reasoning object
+    // must not be passed as an unrelated vendor control to Chat providers.
+    result.remove("reasoning")
   }
   append_codex_responses_tools_as_openai_chat_tools(obj, result, tool_context)
   if obj.get("tool_choice") is Some(value) {
@@ -827,12 +837,32 @@ fn openai_chat_completion_to_codex_response_with_context(
     choice.get("message") is Some(Object(message)) {
     append_openai_chat_message_as_codex_output(message, output, tool_context)
   }
-  codex_response_from_output(
+  let result = codex_response_from_output(
     response_id,
     model,
     output,
     openai_chat_usage_to_codex_usage(obj.get("usage")),
   )
+  guard result is Object(result_fields) else { return result }
+  if obj.get("choices") is Some(Array(choices)) &&
+    choices.get(0) is Some(Object(choice)) {
+    match json_string_from_map(choice, "finish_reason") {
+      Some("length") => {
+        result_fields["status"] = Json::string("incomplete")
+        result_fields["incomplete_details"] = Json::object({
+          "reason": Json::string("max_output_tokens"),
+        })
+      }
+      Some("content_filter") => {
+        result_fields["status"] = Json::string("incomplete")
+        result_fields["incomplete_details"] = Json::object({
+          "reason": Json::string("content_filter"),
+        })
+      }
+      _ => ()
+    }
+  }
+  Json::object(result_fields)
 }
 
 ///|
@@ -1208,7 +1238,19 @@ fn codex_response_to_openai_chat_completion(
     message["content"] = Json::null()
     message["tool_calls"] = Json::array(output.tool_calls)
   }
-  let finish_reason = if output.tool_calls.is_empty() {
+  let incomplete_reason = match body {
+    Object(fields) =>
+      match fields.get("incomplete_details") {
+        Some(Object(details)) => json_string_from_map(details, "reason")
+        _ => None
+      }
+    _ => None
+  }
+  let finish_reason = if incomplete_reason == Some("max_output_tokens") {
+    "length"
+  } else if incomplete_reason == Some("content_filter") {
+    "content_filter"
+  } else if output.tool_calls.is_empty() {
     "stop"
   } else {
     "tool_calls"

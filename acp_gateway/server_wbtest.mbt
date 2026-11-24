@@ -25,7 +25,7 @@ async fn with_bridge(bridge : Bridge, run : async (String) -> Unit) -> Unit {
   @async.with_timeout(25000, () => {
     @async.with_task_group(group => {
       group.spawn_bg(
-        () => server.serve((r, w) => bridge.handle(r, w)),
+        () => server.serve((r, w) => bridge.handle(r, w, group)),
         no_wait=true,
       )
       run("http://127.0.0.1:\{server.port()}")

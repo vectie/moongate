@@ -17,8 +17,12 @@ pub struct Bridge {
   priv models : Array[String]
   priv timeout_ms : Int32
   priv max_concurrent : Int32
+  priv tools : Bool
+  priv relay_command : String
   priv mut active : Int32
   priv mut sequence : Int32
+  priv pending_sessions : Map[String, ToolSession]
+  priv mut live_sessions : Int32
 }
 
 ///|
@@ -87,6 +91,21 @@ pub fn Bridge::from_json(config : Json) -> Bridge raise BridgeError {
     { "max_concurrent"? : None, .. } => 4
     _ => raise invalid_config("max_concurrent must be an integer from 1 to 16")
   }
+  let tools = match config {
+    { "tools": True, .. } => true
+    { "tools": False, .. } | { "tools"? : None, .. } => false
+    _ => raise invalid_config("tools must be a boolean")
+  }
+  let relay_command = match config {
+    { "relay_command": String(path), .. } if path.has_prefix("/") &&
+      !path.contains("\u0000") => path
+    { "relay_command"? : None, .. } =>
+      @os.executable() catch {
+        _ => raise invalid_config("Cannot locate tool relay executable")
+      }
+    _ =>
+      raise invalid_config("relay_command must be an absolute executable path")
+  }
   {
     command,
     args,
@@ -95,7 +114,11 @@ pub fn Bridge::from_json(config : Json) -> Bridge raise BridgeError {
     models,
     timeout_ms,
     max_concurrent,
+    tools,
+    relay_command,
     active: 0,
     sequence: 0,
+    pending_sessions: Map([]),
+    live_sessions: 0,
   }
 }

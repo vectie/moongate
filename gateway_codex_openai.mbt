@@ -53,10 +53,16 @@ fn codex_chat_bridge_request(
   provider : ProviderRouteTarget,
   request : Json,
   client_model : String,
+  original_chat_request~ : Json? = None,
 ) -> Json {
-  let chat_request = codex_responses_request_to_openai_chat_completion(
-    request, client_model,
-  ).unwrap_or(request)
+  // A Chat client talking to a Chat provider needs no lossy protocol roundtrip.
+  // Preserve explicit vendor controls (e.g. Ark thinking disabled), JSON output
+  // format and token options here; do not put them on the Codex OAuth request.
+  let chat_request = original_chat_request.unwrap_or_else(() => {
+    codex_responses_request_to_openai_chat_completion(request, client_model).unwrap_or(
+      request,
+    )
+  })
   guard chat_request is Object(obj) else { return chat_request }
   obj["model"] = Json::string(provider.map_model_for_upstream(client_model))
   Json::object(obj)
@@ -205,13 +211,27 @@ async fn ProxyService::handle_chat_completions(
       }
       if stream {
         self.forward_streaming_chat_completion(
-          auth, usage, session_store, codex_request, response_model, upstream_session_id,
-          app_type, w,
+          auth,
+          usage,
+          session_store,
+          codex_request,
+          response_model,
+          upstream_session_id,
+          app_type,
+          w,
+          original_chat_request=Some(json),
         )
       } else {
         self.forward_non_streaming_chat_completion(
-          auth, usage, session_store, codex_request, response_model, upstream_session_id,
-          app_type, w,
+          auth,
+          usage,
+          session_store,
+          codex_request,
+          response_model,
+          upstream_session_id,
+          app_type,
+          w,
+          original_chat_request=Some(json),
         )
       }
     }
@@ -229,6 +249,7 @@ async fn ProxyService::forward_non_streaming_chat_completion(
   session_id : String?,
   app_type : String,
   w : @httpx.ResponseWriter,
+  original_chat_request~ : Json? = None,
 ) -> Unit {
   let selection = self.provider_router.provider_chain_after_activation(
     app_type,
@@ -258,7 +279,12 @@ async fn ProxyService::forward_non_streaming_chat_completion(
           codex_compatible_responses_endpoint("/backend-api/codex/responses")
         }
         let provider_request = if use_chat_bridge {
-          codex_chat_bridge_request(provider, request, response_model)
+          codex_chat_bridge_request(
+            provider,
+            request,
+            response_model,
+            original_chat_request~,
+          )
         } else {
           request
         }
@@ -420,6 +446,7 @@ async fn ProxyService::forward_streaming_chat_completion(
   session_id : String?,
   app_type : String,
   w : @httpx.ResponseWriter,
+  original_chat_request~ : Json? = None,
 ) -> Unit {
   let selection = self.provider_router.provider_chain_after_activation(
     app_type,
@@ -449,7 +476,12 @@ async fn ProxyService::forward_streaming_chat_completion(
           codex_compatible_responses_endpoint("/backend-api/codex/responses")
         }
         let provider_request = if use_chat_bridge {
-          codex_chat_bridge_request(provider, request, response_model)
+          codex_chat_bridge_request(
+            provider,
+            request,
+            response_model,
+            original_chat_request~,
+          )
         } else {
           request
         }

@@ -321,7 +321,8 @@ async fn ProxyService::handle_models_for_app(
     Some(id) =>
       match self.provider_router.provider_by_id(app_type, id) {
         Some(provider) =>
-          if provider.provider_type == Some("acp_text") {
+          if provider.provider_type == Some("acp_text") ||
+            provider.provider_type == Some("acp") {
             acp_text_provider_model_catalog(provider)
           } else {
             google_provider_model_catalog(provider, fallback_model)
@@ -596,7 +597,11 @@ async fn ProxyService::post_codex_compatible_provider_stream(
     Ok(_) => ()
   }
   let client = @http.Client::Client(origin, headers~)
-  let response = client.post(path, request) catch {
+  let response = client.post(
+    path,
+    request,
+    extra_headers=codex_compatible_provider_request_headers(request),
+  ) catch {
     error => {
       client.close()
       return Err("\{error}")
@@ -1954,7 +1959,8 @@ async fn ProxyService::stream_check_live_request(
   prompt : String,
 ) -> Result[(Int32, String), String] {
   let api_format = stream_check_api_format(provider)
-  let request = if provider.provider_type == Some("acp_text") {
+  let request = if provider.provider_type == Some("acp_text") ||
+    provider.provider_type == Some("acp") {
     acp_text_check_request(model, prompt)
   } else {
     stream_check_request_body(api_format, model, prompt)

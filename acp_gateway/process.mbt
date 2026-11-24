@@ -37,11 +37,40 @@ async fn Frames::next(self : Frames) -> Json {
 }
 
 ///|
-async fn Bridge::complete(
+type ToolHandoff = async (Json) -> Json
+
+///|
+async fn Bridge::complete_once(
   self : Bridge,
   chat : ChatRequest,
   on_text : async (String) -> Unit,
-) -> (String, String) {
+  call_id : String,
+  handoff? : ToolHandoff,
+) -> (String, String, Array[Json]) {
+  let tools_server = if chat.tools.is_empty() {
+    None
+  } else {
+    Some(@httpx.Server::new("127.0.0.1", 0))
+  }
+  defer (if tools_server is Some(server) { server.close() })
+  let relay_token = self.token + ":" + call_id
+  let mcp_servers : Array[Json] = match tools_server {
+    None => []
+    Some(server) =>
+      [
+        {
+          "name": "moongate_client",
+          "command": self.relay_command,
+          "args": [
+            "acp",
+            "tool-relay",
+            "--url",
+            "http://127.0.0.1:\{server.port()}/mcp",
+          ],
+          "env": [{ "name": "MOONGATE_MCP_TOKEN", "value": relay_token }],
+        },
+      ]
+  }
   let (child_stdin, input) = @process.write_to_process()
   defer input.close()
   let (output, child_stdout) = @process.read_from_process()
@@ -49,6 +78,21 @@ async fn Bridge::complete(
   let (errors, child_stderr) = @process.read_from_process()
   defer errors.close()
   @async.with_task_group(group => {
+    if tools_server is Some(server) {
+      group.spawn_bg(() => {
+        server.serve((r, w) => {
+          serve_caller_tools(r, w, relay_token, chat.tools, "call_" + call_id, call => {
+            match handoff {
+              Some(callback) => callback(call)
+              None => {
+                group.return_immediately(("", "tool_calls", [call]))
+                Json::null()
+              }
+            }
+          })
+        })
+      })
+    }
     group.spawn_bg(() => {
       let code = @process.run(
         self.command,
@@ -75,8 +119,10 @@ async fn Bridge::complete(
       write: json => input.write("\{json.stringify()}\n"),
       next_id: 1,
       selected_model: None,
+      caller_tools: chat.tools,
     }
-    let result = rpc.complete(self.cwd, chat, on_text)
+    let (text, finish) = rpc.complete(self.cwd, chat, on_text, mcp_servers~)
+    let result = (text, finish, [])
     // A request owns its child process. Success, timeout, client-write failure
     // and protocol failure all cancel and reap it; no pooled conversation state.
     group.return_immediately(result)

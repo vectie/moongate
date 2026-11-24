@@ -22,7 +22,11 @@ async fn acp_text_provider_model_catalog(
         "object": "model",
         "owned_by": "acp",
         "input_modalities": ["text"],
-        "moongate": { "text_only": true, "verified": false },
+        "moongate": {
+          "text_only": provider.provider_type != Some("acp"),
+          "acp_tools": provider.provider_type == Some("acp"),
+          "verified": false,
+        },
       }),
     ),
   })

@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "vectie/moongate/text_gateway"
+
+import {
+  "vectie/moongate/internal/httpx",
+}
+
+// Values
+pub fn allowed_route(@httpx.Method, String) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct TextGateway {
+  origin : String
+  browser_origin : String?
+}
+pub async fn TextGateway::handle(Self, @httpx.RequestReader, @httpx.ResponseWriter) -> Unit
+pub fn TextGateway::new(String, browser_origin? : String) -> Self raise
+
+// Type aliases
+
+// Traits

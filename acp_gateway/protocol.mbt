@@ -4,6 +4,7 @@ priv struct Rpc {
   write : async (Json) -> Unit
   mut next_id : Int32
   mut selected_model : String?
+  caller_tools : Array[Json]
 }
 
 ///|
@@ -34,8 +35,22 @@ async fn Rpc::call(
     }
     match message {
       { "id": response_id, "method": String(client_method), .. } => {
-        // This API has no interactive approvals. Never fabricate permission.
+        // Native actions still require an interactive ACP client. Only our
+        // no-execution caller relay may be invoked without a separate UI.
         if client_method == "session/request_permission" {
+          if message is { "params": params, .. } &&
+            session is Some(session_id) &&
+            caller_relay_approval(params, session_id, self.caller_tools)
+            is Some(outcome) {
+            // The only approved action is invoking our request-owned relay.
+            // It cannot execute tools. The caller still authorizes execution.
+            (self.write)({
+              "jsonrpc": "2.0",
+              "id": response_id,
+              "result": { "outcome": outcome },
+            })
+            continue
+          }
           (self.write)({
             "jsonrpc": "2.0",
             "id": response_id,
@@ -98,7 +113,7 @@ async fn Rpc::call(
           } => on_text(text)
           { "sessionUpdate": "agent_message_chunk", .. } =>
             raise protocol_error("Agent returned non-text output")
-          { "sessionUpdate": "tool_call" | "tool_call_update", .. } =>
+          { "sessionUpdate": "tool_call" | "tool_call_update", .. } if self.caller_tools.is_empty() =>
             raise BridgeError(
               code=422,
               kind="acp_tools_unsupported",
@@ -235,6 +250,7 @@ async fn Rpc::complete(
   cwd : String,
   chat : ChatRequest,
   on_text : async (String) -> Unit,
+  mcp_servers~ : Array[Json] = [],
 ) -> (String, String) {
   let initialized = self.call("initialize", {
     "protocolVersion": 1,
@@ -244,7 +260,10 @@ async fn Rpc::complete(
   guard initialized is { "protocolVersion": 1, .. } else {
     raise protocol_error("Agent does not support ACP protocol version 1")
   }
-  let session = self.call("session/new", { "cwd": cwd, "mcpServers": [] })
+  let session = self.call("session/new", {
+    "cwd": cwd,
+    "mcpServers": Json::array(mcp_servers),
+  })
   guard session is { "sessionId": String(session_id), .. } &&
     !session_id.is_empty() else {
     raise protocol_error("Agent did not create an ACP session")

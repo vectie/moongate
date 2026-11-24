@@ -4,13 +4,12 @@ import {
   "vectie/moongate/internal/httpx",
   "vectie/moonlib/os",
   "moonbitlang/async",
+  "moonbitlang/async/aqueue",
   "moonbitlang/async/io",
   "moonbitlang/async/process",
+  "moonbitlang/async/http",
+  "moonbitlang/async/stdio",
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf8",
 }
-
-import {
-  "moonbitlang/async/http",
-} for "wbtest"

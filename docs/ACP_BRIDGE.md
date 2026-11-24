@@ -1,4 +1,4 @@
-# Experimental ACP text API bridge
+# Experimental ACP API bridge
 
 MoonGate can launch a local ACP agent and expose a small OpenAI Chat-compatible
 API. This is an agent adapter, not a raw-model API and not an implementation of
@@ -16,6 +16,9 @@ Google subscription authentication.
 - Independent concurrent requests (four by default). Each request owns a fresh
   agent process/session, preventing one conversation from changing another's
   model or carrying over its hidden context.
+- Optional caller-owned function tools, passed to the agent through a
+  request-scoped MCP stdio relay. Real tool calls become OpenAI `tool_calls`;
+  MoonGate does not execute them or invent their results.
 
 Prior messages are encoded as a quoted transcript in one ACP user prompt.
 OpenAI system/developer-role priority is **not** preserved as an agent-level
@@ -39,7 +42,8 @@ Create a private JSON configuration outside the repository, for example
   "token": "replace-with-a-long-random-local-token",
   "models": ["exact-model-id-from-your-agent"],
   "timeout_ms": 120000,
-  "max_concurrent": 4
+  "max_concurrent": 4,
+  "tools": false
 }
 ```
 
@@ -92,6 +96,51 @@ files. Normal tool-capable connections are unchanged; tool histories are
 rejected, not discarded. This is chat compatibility, not ACP coding-tool
 integration. A matching updated MoonClaw runtime is required.
 
+## Coding through MoonDesk
+
+For caller-tool support, set `"tools": true` in the private bridge config and
+use advanced provider type `acp` with **OpenAI Chat Completions**. Keep
+`acp_text` for chat-only connections. Moon Suite providers use the shared
+OpenClaw request route; connect **MoonDesk** on Apps, not the Codex app.
+
+The coding catalog advertises `moongate.acp_tools`. A matching MoonClaw runtime
+sends text history, function schemas and streaming, without unsupported
+generation controls. Assistant tool calls and their actual caller results are
+retained across rounds. A tool-call continuation now resumes the same live ACP
+prompt/process instead of repeating agent startup, initialization and session
+creation for every tool. Separate coding turns remain separate sessions; this
+is not a shared cross-conversation agent pool. Changing model or tool schemas
+starts a new session from the supplied transcript.
+
+The bridge advertises a temporary `moongate_client` MCP stdio server using its
+own `acp tool-relay` subcommand. An optional absolute `relay_command` config
+value selects the installed MoonGate executable. Its private loopback transport
+credential is passed through the subprocess environment, not command arguments.
+Only a correct-session permission request for an exact declared relay tool may
+receive **allow once**. The relay captures the call and waits while the client
+validates, approves and executes the real operation. The next request's matching
+tool-call ID supplies that actual result back to the waiting MCP call. Updated
+caller instructions are retained. The relay itself never executes the operation.
+
+MoonClaw forwards incremental answer text to its existing conversation journal,
+coalescing token bursts over 75 ms. MoonDesk's existing watch displays it while
+the request is running; final completion does not duplicate the streamed text.
+
+File editing and command execution are separate: MoonClaw's file tools operate
+on the selected Book, while command/build/test tools require its MoonFort
+execution configuration. For trusted local coding, an operator may explicitly
+choose **LocalOs / AllowDegraded**, register the Book and toolchain once, and
+retain existing command approvals. VM-grade isolation is not required for that
+opt-in mode. Other Books must not be implicitly trusted. There is no fallback
+to an unrestricted host shell when configuration or execution fails.
+
+The cluster deployment qualified real MoonDesk caller-tool file editing plus
+ordinary and native MoonBit execution (stdout `42`, exit `0`) using Argon.
+Registering Apple Command Line Tools selects it automatically in the updated
+MoonFort executor; no per-command environment prefix is required. Its receipt
+correctly reports **Degraded**, and build-file promotion still requires enforced
+isolation. This narrow check does not qualify every model or coding workflow.
+
 Model discovery reads the bridge's cheap configured allowlist (no agent spawn),
 with a two-second gateway deadline and a text-only default-model fallback if
 discovery fails. Neither listing nor saving is generation/account-access proof.
@@ -100,18 +149,19 @@ output limit. Every generation still has the bridge's wall-clock deadline.
 
 ## Deliberate limits
 
-Tools, permission prompts, filesystem/terminal callbacks, images/audio,
+With `tools` disabled, tool requests/activity and permissions are rejected.
+With it enabled, only declared function tools use the relay described above;
+native ACP filesystem/terminal callbacks remain unsupported. Images/audio,
 structured output, Responses/Anthropic endpoints, sampling controls, token
 budgets and other unsupported request fields return errors, not approximated
-success. Requested ACP permissions are cancelled; tool activity is rejected.
-Use an interactive ACP client when those features are needed.
+success. Native or unrelated permission requests are cancelled.
 
 The subprocess is **not sandboxed** by this adapter. Only configure a trusted
 executable and use its own supported sandbox/restrictions. An agent can have
 its own native tools or plugins independently of ACP client capabilities;
 MoonGate cannot revoke their OS privileges. Use a disposable working directory
-for qualification. No filesystem or terminal capabilities or MCP servers are
-advertised to the agent.
+for qualification. No native filesystem or terminal capabilities are advertised
+to the agent; only the optional caller-tool MCP relay is advertised.
 
 Requests and ACP frames are bounded to 1 MiB; accumulated answer text is bounded
 to 2 Mi UTF-16 code units. A timeout stops and reaps the directly launched child.
@@ -122,11 +172,12 @@ not retained or returned to API clients. Unexpected session IDs, changed models,
 empty output and cancelled turns are failures. Partial SSE failures emit an
 error object without a successful `[DONE]`.
 
-There are no idle agent processes or catalog polling subprocesses. The tradeoff
-is agent startup, login checks and session setup on every generation request;
-this is slower than a persistent ACP UI connection. There is no automatic retry
-or quota/account rotation. Busy admission returns HTTP 429 without launching
-another agent.
+There are no catalog polling subprocesses. A live caller-tool session may wait
+for its next tool result, bounded by the existing request timeout. Completion,
+failure, timeout and bridge shutdown reap its directly launched child. First
+startup, provider waiting and generation still take time; reuse is not an
+instant-response guarantee. There is no automatic bridge retry or quota/account
+rotation. Busy admission returns HTTP 429 without launching another agent.
 
 ## Google AI Pro is a separate qualification
 
@@ -163,3 +214,6 @@ dependencies and the native target. It does not contact Google or spend quota.
 It covers concurrent model selection, JSON/SSE, permission denial, auth errors,
 malformed output, session mismatch, model drift, cancelled/empty output,
 partial-stream errors, request timeout, concurrency admission and text framing.
+Caller-tool tests additionally cover history validation, JSON/SSE function-call
+handoff and the narrow relay permission rule. Fixture tests never execute the
+model's proposed command.

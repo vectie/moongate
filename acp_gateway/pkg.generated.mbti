@@ -6,6 +6,7 @@ import {
 }
 
 // Values
+pub async fn run_tool_relay(String) -> Unit
 
 // Errors
 pub(all) suberror BridgeError {

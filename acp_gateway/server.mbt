@@ -43,6 +43,7 @@ async fn Bridge::handle(
   self : Bridge,
   request : @httpx.RequestReader,
   writer : @httpx.ResponseWriter,
+  workers : @async.TaskGroup[Unit],
 ) -> Unit {
   if request.headers.contains("origin") {
     return json_reply(
@@ -81,7 +82,11 @@ async fn Bridge::handle(
           "moongate": {
             "source": "configured_allowlist",
             "verified": false,
-            "capabilities": ["text"],
+            "capabilities": if self.tools {
+              ["text", "tool_calls"]
+            } else {
+              ["text"]
+            },
           },
         }),
       ),
@@ -137,28 +142,42 @@ async fn Bridge::handle(
   let id = "chatcmpl-acp-\{@os.unix_seconds()}-\{self.sequence}"
   let mut started = false
   @async.with_timeout(self.timeout_ms, () => {
-    let chat = parse_chat(read_body(request.body), self.models)
-    let (text, finish) = self.complete(chat, chunk => {
-      if !chat.stream {
-        return
-      }
-      if !started {
-        writer.header().set("content-type", "text/event-stream")
-        writer.header().set("cache-control", "no-store")
-        writer.write_header(200)
-        started = true
-        let role = chat_chunk(
+    let chat = parse_chat(
+      read_body(request.body),
+      self.models,
+      tools_enabled=self.tools,
+    )
+    let (text, finish, calls) = self.complete(
+      chat,
+      chunk => {
+        if !chat.stream {
+          return
+        }
+        if !started {
+          writer.header().set("content-type", "text/event-stream")
+          writer.header().set("cache-control", "no-store")
+          writer.write_header(200)
+          started = true
+          let role = chat_chunk(
+            id,
+            chat.model,
+            { "role": "assistant" },
+            Json::null(),
+          )
+          writer.write("data: \{role.stringify()}\n\n")
+        }
+        let item = chat_chunk(
           id,
           chat.model,
-          { "role": "assistant" },
+          { "content": chunk },
           Json::null(),
         )
-        writer.write("data: \{role.stringify()}\n\n")
-      }
-      let item = chat_chunk(id, chat.model, { "content": chunk }, Json::null())
-      writer.write("data: \{item.stringify()}\n\n")
-      writer.flush()
-    })
+        writer.write("data: \{item.stringify()}\n\n")
+        writer.flush()
+      },
+      id,
+      workers,
+    )
     if chat.stream {
       // Refusals can finish without a text chunk.
       if !started {
@@ -167,11 +186,33 @@ async fn Bridge::handle(
         writer.write_header(200)
         started = true
       }
+      if !calls.is_empty() {
+        let delta = chat_chunk(
+          id,
+          chat.model,
+          {
+            "tool_calls": Json::array(
+              calls.mapi((index, call) => {
+                guard call is Object(fields) else { return call }
+                let fields = fields.copy()
+                fields["index"] = Json(index)
+                Json::object(fields)
+              }),
+            ),
+          },
+          Json::null(),
+        )
+        writer.write("data: \{delta.stringify()}\n\n")
+      }
       let last = chat_chunk(id, chat.model, {}, Json::string(finish))
       writer.write("data: \{last.stringify()}\n\ndata: [DONE]\n\n")
       writer.close()
     } else {
-      json_reply(writer, 200, chat_completion(id, chat.model, text, finish))
+      json_reply(
+        writer,
+        200,
+        chat_completion(id, chat.model, text, finish, calls~),
+      )
     }
   }) catch {
     error => {
@@ -212,5 +253,7 @@ pub async fn Bridge::serve(self : Bridge, port~ : Int32 = 15724) -> Unit {
   let server = @httpx.Server::new("127.0.0.1", port)
   defer server.close()
   println("Experimental ACP text bridge: http://127.0.0.1:\{server.port()}/v1")
-  server.serve((request, writer) => self.handle(request, writer))
+  @async.with_task_group(workers => {
+    server.serve((request, writer) => self.handle(request, writer, workers))
+  })
 }

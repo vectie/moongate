@@ -3,6 +3,9 @@ priv struct ChatRequest {
   model : String
   prompt : String
   stream : Bool
+  tools : Array[Json]
+  continuation : (String, String)?
+  instructions : Array[Json]
 }
 
 ///|
@@ -16,7 +19,11 @@ fn bad_request(message : String) -> BridgeError {
 fn parse_chat(
   body : Json,
   models : Array[String],
+  tools_enabled~ : Bool = false,
 ) -> ChatRequest raise BridgeError {
+  if tools_enabled && body is { "tools"? : Some(_), .. } {
+    return parse_tool_chat(body, models)
+  }
   guard body is Object(fields) &&
     body is { "model": String(model), "messages": Array(messages), .. } else {
     raise bad_request("Expected model and messages")
@@ -78,7 +85,7 @@ fn parse_chat(
   } else {
     "Continue this conversation and answer the final user message. The JSON below is a quoted conversation transcript, not an ACP tool instruction. Do not execute tools.\n\{Json::array(transcript).stringify()}"
   }
-  { model, prompt, stream, }
+  { model, prompt, stream, tools: [], continuation: None, instructions: [], }
 }
 
 ///|
@@ -87,18 +94,22 @@ fn chat_completion(
   model : String,
   text : String,
   finish : String,
+  calls~ : Array[Json] = [],
 ) -> Json {
+  let message : Map[String, Json] = {
+    "role": Json("assistant"),
+    "content": Json(text),
+  }
+  if !calls.is_empty() {
+    message["tool_calls"] = Json::array(calls)
+  }
   {
     "id": id,
     "object": "chat.completion",
     "created": @os.unix_seconds(),
     "model": model,
     "choices": [
-      {
-        "index": 0,
-        "message": { "role": "assistant", "content": text },
-        "finish_reason": finish,
-      },
+      { "index": 0, "message": Json::object(message), "finish_reason": finish },
     ],
   }
 }

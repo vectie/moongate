@@ -1,10 +1,14 @@
 ///|
 fn acp_cli_commands() -> Array[CliCommandSpec] {
-  [{ id: "serve_acp", patterns: ["acp serve"], }]
+  [{ id: "serve_acp", patterns: ["acp serve", "acp tool-relay"], }]
 }
 
 ///|
 async fn run_acp_cli_command(args : Array[String]) -> Unit {
+  if args.length() == 5 && args[2] == "tool-relay" && args[3] == "--url" {
+    @acp_gateway.run_tool_relay(args[4])
+    return
+  }
   let mut config_path = ""
   let mut port = 15724
   for index = 3; index < args.length(); {

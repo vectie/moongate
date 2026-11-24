@@ -1,0 +1,15 @@
+supported_targets = "native"
+
+import {
+  "moonbitlang/async",
+  "vectie/moongate/text_gateway",
+  "vectie/moongate/internal/httpx",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+}
+
+pkgtype(kind: "executable")
+
+options(
+  link: { "native": { "cc-link-flags": "-pthread -ldl" } },
+)

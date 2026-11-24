@@ -76,6 +76,7 @@ fn ProviderRouteTarget::map_model_for_upstream(
 ) -> String {
   // Keep explicit choices independent across simultaneous MoonDesk chats.
   if self.provider_type == Some("acp_text") ||
+    self.provider_type == Some("acp") ||
     (self.is_google_gemini() && original_model.has_prefix("gemini-")) {
     return strip_one_m_suffix_for_upstream(original_model)
   }

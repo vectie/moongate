@@ -1,5 +1,107 @@
 # MoonGate project handoff
 
+## ACP coding deployed on the cluster Mac — 2026-11-24
+
+The user approved installing MoonFort and **LocalOs / AllowDegraded for ACP
+Coding Demo only**, then requested practical execution defaults. Deployment is
+complete; this is not just the earlier temporary text-only test.
+
+- Installed apps: /Applications/MoonGate.app and /Applications/MoonDesk.app,
+  both ad-hoc signed and verified. Updated executables target macOS 15.0 and
+  actually run on the cluster's Sequoia 15.7.3.
+- MoonDesk's bundled and managed MoonClaw version is **0.1.7-acp.4**. Provision
+  a distinct version whenever bytes change: the installer rejects different
+  bytes under an existing runtime version. Installing a new version does not
+  replace a running different service; stop only the known old app-owned PID,
+  then let the app start its newly configured runtime.
+- MoonGate app/proxy: 15721. MoonDesk app sidecar: 4201. ACP bridge: 15724,
+  persisted by the user's LaunchAgent dev.vectie.moongate.acp. Keep MoonGate
+  open while using MoonDesk through its proxy. Nothing depends on an SSH shell.
+- Private durable runtime/config: ~/Library/Application Support/MoonSuite/ACP.
+  It contains the official signed Antigravity 1.5.16, acp.json, executor.json,
+  moonclaw.json, release MoonFort executables, receipts and logs. Never commit
+  those files. The bridge clears API-key/ADC fallbacks and keeps official login,
+  sandbox and telemetry-disabled options. No Google login was done locally.
+- Provider **Google AI Pro ACP** uses advanced type acp / OpenAI Chat on the
+  shared OpenClaw route, and is bound to MoonDesk. Its live check returned
+  HTTP 200 for Neon. Codex app binding was NOT changed. One redundant test-owned
+  Codex-scope ACP provider is disabled; deletion awaits the user's answer.
+- Command policy registers only production workspace/books/acp-coding-demo,
+  inside the installed MoonDesk app-data workspace. SDK read roots, preinstalled
+  Apple Command Line Tools, and common local command capabilities are configured
+  once. No VM requirement or per-command deployment settings. Other Books are
+  not implicitly trusted; network stays denied.
+
+Actual UI acceptance used the installed cluster backend and app UI resources
+through an SSH-forwarded browser, not remote native-window automation. Session
+mooncode-533681c58dd271fe used **Argon** for coding; do not label it a Neon test.
+The write tool saved acp_smoke.mbtx as fn main { println(6 * 7) }.
+Ordinary moon run returned 42 / exit 0 (command bbe05c29d2d25b78).
+Native Shell execution also passed (ed81503e7cd9ca37). The final plain
+moon_cmd run --target native passed **without environment overrides**
+(9d8e519d9a835ce6). Its expanded UI evidence shows output 42 / exit 0 and
+**Degraded · cleanup verified**, rather than an invalid-receipt warning.
+Build-file promotion remains unavailable for degraded receipts; no Enforced
+or VM-grade isolation claim is made. UI proof:
+ /tmp/moongate-cluster-coding-native-passed.jpg.
+
+Root causes and fixes:
+- Missing MoonFort route initially refused all commands. The chosen local mode
+  is explicit operator consent, not an unsandboxed fallback.
+- Selected Xcode was below admin-writable /Applications and failed trusted-root
+  validation. Register preinstalled /Library/Developer/CommandLineTools instead.
+  MoonFort now selects that exact registered root via DEVELOPER_DIR automatically;
+  without its registration, existing selection is unchanged. System xcode-select
+  and generic executable ownership checks were not changed.
+- A global workspace_id must not redirect another Book's command into the demo.
+  MoonCode supplies its canonical Book root to the config loader, which matches
+  the executor-owned registry before grant publication.
+- MoonClaw's public receipt projection lacked flat network/limits fields,
+  encoded optional retention_id as an array, and exposed the directory sentinel
+  as though it were a content hash. It now projects the expected JSON view:
+  string/null retention, no file hash for directory sentinels, approved policy
+  fields. Full execution evidence remains private; validation was not bypassed.
+
+Caller tools are opt-in (tools:true in private bridge config, provider type acp).
+Declared functions become a request-owned MCP stdio relay. It only captures real
+calls as OpenAI tool_calls; MoonClaw validates/approves/executes them. Allow-once
+permission is limited to exact declared relay names in the correct session.
+Native ACP filesystem/terminal callbacks remain unsupported. There is a fresh
+agent/session per tool round, with noticeable startup cost; catalog polling is
+cheap and does not spawn agents. See docs/ACP_BRIDGE.md.
+
+Validation: MoonGate native strict checks / 1,233 tests; MoonClaw 499 daemon
+tests, 44 strict model/adapter tests, 3 strict operator-config tests; MoonFort
+52 strict native sandbox tests. Info/fmt and whitespace checks completed.
+Existing daemon warning debt prevents --deny-warn for that broad package.
+Clean exports excluded unrelated dirty work in all repositories.
+MoonClaw @mock.run requires the test executable physically beneath the source
+root with one build-directory component; external --target-dir and symlinks fail
+its path guard. Current clean build:
+ /tmp/moonclaw-acp-compat.p0QWSY/_build.
+MoonGate build: /tmp/moongate-acp-tools-macos15.
+MoonFort build: /tmp/moonfort-acp-tools-macos15.
+
+Rollback copies (original .bundle apps and three data trees) remain private at
+/Users/jiaanguo/moonsuite-install-20261124/acp-deploy.W2roSY. Use .bundle for
+backups to avoid duplicate Launchpad entries. Temporary isolated test services
+were stopped; no user workspace was removed. Local disk was nearly full:
+only task-owned build caches were cleared. Source changes for this deployment
+are uncommitted; earlier text-only commits 14649a7 / 9d779b63 were already pushed
+to GitHub and GitLab. Do not publish to Gitee.
+
+UI setup pitfall: changing Request type resets earlier form fields, so select it
+first. The installed UI's MoonDesk Add Provider action left a request-type select
+without a matching option; select OpenClaw for its shared provider route. Merely
+selecting a preset is not the same as applying it. These unrelated UI issues were
+recorded, not hidden behind this execution-backend fix.
+
+Remaining non-blocking display issue: the installed receipt view lists changed
+build-file sizes as 0 B, although output and content fingerprints are present.
+Do not use that display as a disk-size measurement; reconcile the Int64 size
+projection/decoder in a focused follow-up rather than broadening this execution
+deployment further.
+
 ## ACP text-chat compatibility and cluster qualification — 2026-11-24
 
 The user authorized fixing the failed qualification below and continuing.
@@ -572,3 +674,164 @@ the canonical copies, but Launchpad retained its duplicate database row at the
 follow-up check. Do not claim visible cache/duplicate cleanup without a remote
 screenshot. Backups and Launchpad layout were preserved; the installed ICNS
 hash still matches the verified transparent output.
+
+## 2026-11-25: ordinary Python request appeared stuck in MoonDesk
+
+Do not infer readiness from the earlier tool-guided MoonBit smoke test. The
+user's short `write` request invoked MoonClaw `ask_user`; its question was hidden
+inside MoonDesk's collapsed task inspector. The following Python hello-world
+request was queued, so it could not answer the waiting question. No model or
+Python process was active during that wait.
+
+The MoonDesk task-controls runtime now opens and scrolls to each new question
+once, preserving drafts/focus and intentional subsequent collapse. It uses the
+existing answer API, adds no polling or permissions, and does not change queue
+semantics. Cluster installed UI resources were backed up under
+`/Users/jiaanguo/moonsuite-install-20261124/question-ui-20261125`, replaced, and
+strict deep signature verification passed. Installed resources were UI-tested
+over SSH; direct remote native-window interaction is still unavailable.
+
+The original queued text was converted to active guidance using the existing
+UI, then sent unchanged as the pending question's answer. The task created
+`hello.py` containing `print("Hello, World!")`; `python3 hello.py` exited 0 and
+printed `Hello, World!`. macOS's Python shim also emitted denied xcrun cache
+warnings; do not report warning-free execution. The command receipt remains
+LocalOs/Degraded with cleanup verified, not VM isolation. No Codex binding,
+provider secret, quota setting, or sandbox permission was changed for this fix.
+
+MoonDesk checks: production frontend build; Node frontend tests (517 passed,
+one skipped); MoonBit JS tests (2,293 passed); `moon info`/`moon fmt` (existing
+seven warnings, no new interface change). A different local Vite origin is
+correctly refused by the installed sidecar; don't disable origin checks to
+make previews pass.
+
+Fresh-conversation follow-up (`mooncode-d866e98d37142858`) used only `write me a
+python version hello world`, without tool hints. It inspected the existing file,
+ran Python, and visibly completed with exit 0/stdout `Hello, World!`. ACP tool
+rounds remain noticeably slow; don't equate successful completion with good
+latency. The native window must quit/reopen to load the replaced resources.
+
+## 2026-11-25: measured ACP latency, not just UI refresh
+
+Read-only audit of the existing cluster journals, without another model call:
+fresh Python command `791ee989e99cc99a` took 89,470 ms from its command record
+to completion receipt. Its three recorded model/ACP round latencies were
+60,951 / 14,171 / 13,986 ms (89,108 ms total), with zero model retries.
+The user's MoonBit command `5c78d12338adde24` took 114,491 ms; four model
+rounds totaled 112,671 ms, also with zero model retries. One shell action
+failed before a corrected call; this is not a clean first-attempt execution.
+These are backend timings, not measured native-window paint times. Process
+startup, ACP setup, provider waiting and generation are combined in each
+model latency; do not attribute the entire number to cold startup or Google.
+
+The bridge creates/reaps a fresh child and ACP session for every model round.
+MoonClaw requests streaming but its planner calls `@openai.chat`, whose text
+callback defaults to a no-op; the final completion is decoded after the full
+response. Consequently the transport can stream while the conversation still
+has no incremental reply. The deployed clean MoonClaw export's transport file
+matches the inspected source. MoonDesk's watch uses a 15-second idle long poll,
+with 100-ms journal checks and early wake on changes, not a mandatory 15-second
+delay per update. Additional native-window lag remains unmeasured. Timing
+audit script and redacted metric projection: `/tmp/moongate-acp-timing-audit.mbtx`
+and `/tmp/moongate-acp-timing-audit.jsonl`. No runtime/provider/security setting,
+source implementation or deployment was changed in this diagnosis.
+
+## 2026-11-25: ACP reuse and live replies deployed
+
+The bridge now holds one ACP prompt/process across caller-tool round-trips.
+The returned tool-call ID locates its waiting MCP invocation; the caller's
+actual result resumes that same invocation. No execution moved into the bridge.
+Independent turns remain independent. Changed models/tool catalogs and expired
+sessions resume from the supplied transcript in a fresh process; updated caller
+instructions are preserved rather than ignored during reuse. Pending waits use
+the existing timeout, and children are reaped on completion/failure/shutdown.
+
+MoonClaw forwards text deltas from ACP/text-chat transport into the canonical
+assistant_delta journal lane. A 75-ms token-burst coalescer avoids a disk append
+per token. The existing MoonDesk watch displays partial text, and the completed
+planner suppresses its duplicate full-text delta. Other provider modes retain
+their prior behavior. No Lepusa or MoonDesk UI implementation change was needed.
+
+Qualification: MoonGate 1,234 strict native tests; ACP package 13/13 includes
+real MCP result return to the original session and incremental SSE before DONE.
+Clean MoonClaw daemon 500/500; focused live-text-before-provider-completion and
+existing planner duplicate-text checks pass. Info/fmt, strict MoonGate check and
+focused MoonClaw check pass; existing MoonClaw warnings remain. One clean-export
+info attempt ran out of local disk after successful tests/builds; only owned
+generated debug/check caches were removed. Working-tree info had passed, final
+checks were repeated, and release binaries/receipts/source were preserved.
+
+Installed minOS-15.0 release binaries on cluster macOS 15.7.3. MoonDesk bundles
+and runs MoonClaw **0.1.7-acp.5**. Both apps were actually stopped/relaunched;
+the old native window was not left caching pre-update UI. Strict deep signatures
+pass. Rollback: `/Users/jiaanguo/moonsuite-install-20261124/acp-reuse-stream-20261125`.
+Provider secrets, official Google login, credits setting and Book trust remain
+unchanged. User declined remote-desktop setup; acceptance uses browser-to-UI
+against the installed cluster resources/backend, not native-window automation.
+
+UI session `mooncode-1ac4196059a8aff7`, Argon:
+- Plain `write me a python version hello world`: command 9ff0dbc1e7b4e47b,
+  completion receipt at 21,763 ms; text arrived incrementally in the journal.
+  The model returned a snippet rather than writing a file; don't count it as
+  write/run acceptance or compare it as identical work to the former 89.5s run.
+- Follow-up explicitly saved and ran `latency_hello.py`, exit 0/Hello, World!,
+  then gave a requested ~400-word explanation. Command b0a2ec5f6e958d09 used
+  tool IDs `call_chatcmpl-acp-1795539929-2_1` and `_2`; one Antigravity PID 99625
+  remained through both calls and the final reply. Model round times were
+  20,530 / 7,791 / 40,342 ms. Reuse is proven, not an instant-generation claim.
+- Streaming test 2f5b8a06f3e3267c: first journal text at 9,393 ms, first visible
+  UI text at 9,866 ms while Running with tip 2 incomplete; backend completion
+  at 19,889 ms. All 30 tips then appeared without reload or duplicate answer.
+  Evidence: `/tmp/moondesk-acp-live-stream-partial.jpg` and `-finished.jpg`.
+
+Redacted timing projection: `/tmp/moongate-acp-reuse-live.jsonl`; audit helper
+`/tmp/moongate-acp-reuse-audit.mbtx`. No commit/push/release was requested here.
+
+## 2026-11-25: MoonDesk chat layout follow-up
+
+The user's narrow/boxed reply complaint was a MoonDesk layout defect, not ACP
+latency: the transcript centered twice, leaving 400px replies in a 1040px pane.
+Sibling workbench CSS now gives replies/composer one 760px column, removes the
+assistant outer card and redundant 132px bottom spacer, and stops auto-loading
+prompt chips. Existing workbench runtime grows/shrinks the draft textarea within
+its CSS bounds, skipping unchanged-draft measurements during polling. Keep this
+presentation work out of MoonGate's proxy/domain code and Lepusa's general API.
+
+UI-only resources deployed to cluster MoonDesk and app actually relaunched;
+strict signatures pass. Browser-to-installed-UI acceptance covers normal,
+short/narrow windows, multiline/cleared drafts, settings and panel return.
+Native-window automation is still unavailable. Codex capture was tool-blocked,
+not obtained through another mechanism. No provider request or config/security
+change. Details/rollback and screenshots are in sibling MoonDesk HANDOFF.
+
+Qualified from committed MoonDesk 592abc64 plus the focused chat/previous question
+delta, isolated from concurrently unfinished Office source. Node: 522 passed,
+one skipped; MoonBit JS: 2,294 passed; production build/info/fmt pass with existing
+warnings and unchanged interfaces. Don't describe unrelated worktree Office
+failures as chat regressions or overwrite that work. No commit/push requested.
+
+## 2026-11-25: MoonDesk shared pane/control follow-up
+
+Sibling frontend now has one shared accessible resize control for columns and
+stacked rows, including Desk/Book, Code's input height and detail drawers.
+Preferences are local presentation state, not gateway/provider configuration.
+Responsive geometry has one owner; select/menu controls use shared hierarchy
+tokens while native option lists retain platform semantics. Flow fills its
+available page height. No MoonGate or Lepusa domain/runtime code changed.
+
+A Code-only prototype exposed an important Rabbita lifecycle bug: a runtime
+divider appended to a reused main node became an enormous Packs overlay.
+The final version uses body portals and synchronous departed-page teardown.
+Popup ownership also recognizes controls targeting popup children, preventing
+drawers from closing while resized; tooltips cannot cover opened menus.
+Cross-page navigation and real drags were browser-tested against the installed
+cluster app, including both axes, persistence/reset and narrow/short states.
+Native remote-window automation remains unavailable; existing Flow data only
+qualifies its empty/loading UI, not a new execution test.
+
+Final integrated build preserves concurrent Word editing/typing work. Node 533
+passed/one skipped; MoonBit JS 2,296 passed; production build/info/fmt pass with
+existing warnings, interfaces unchanged. Installed UI-only resources, relaunched
+MoonDesk and verified strict signatures on macOS 15.7.3. No inference, auth,
+quota, trust or provider change. See sibling HANDOFF for exact ownership,
+rollback paths and screenshots. No commit/push/release requested here.

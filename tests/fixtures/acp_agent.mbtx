@@ -1,6 +1,7 @@
 import {
   "moonbitlang/async@0.19.4",
   "moonbitlang/async@0.19.4/stdio",
+  "moonbitlang/async@0.19.4/http",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
 }
@@ -20,6 +21,8 @@ async fn main {
   let args = @env.args()
   let mode = args.last().unwrap_or("normal")
   let mut model = "alpha"
+  let mut relay_url = ""
+  let mut relay_token = ""
   while @stdio.stdin.read_until("\n") is Some(line) {
     let input = @json.parse(line)
     guard input is { "id": id, "method": String(method_), .. } else { continue }
@@ -29,6 +32,11 @@ async fn main {
         emit({ "jsonrpc": "2.0", "id": id, "result": { "protocolVersion": 1 } })
       }
       "session/new" => {
+        if mode == "caller-tools" || mode == "caller-tools-reuse" {
+          guard input is { "params": { "mcpServers": [{ "name": "moongate_client", "args": ["acp", "tool-relay", "--url", String(url)], "env": [{ "name": "MOONGATE_MCP_TOKEN", "value": String(token) }], .. }], .. }, .. } else { fail("Missing caller tool relay") }
+          relay_url = url
+          relay_token = token
+        }
         if mode == "auth" {
           emit({ "jsonrpc": "2.0", "id": id, "error": { "code": -32000, "message": "not for forwarding: fixture-secret" } })
         } else {
@@ -41,6 +49,18 @@ async fn main {
         emit({ "jsonrpc": "2.0", "id": id, "result": { "configOptions": options(model) } })
       }
       "session/prompt" => {
+        if mode == "caller-tools" || mode == "caller-tools-reuse" {
+          let (response, data) = @http.post(relay_url, ({ "jsonrpc": "2.0", "id": 1, "method": "tools/list" } : Json).stringify(), headers={ "authorization": "Bearer \{relay_token}" })
+          guard response.code == 200 && @json.parse(data.text()) is { "result": { "tools": [{ "name": String(name), .. }, ..], .. }, .. } else { fail("Missing declared caller tool") }
+          let (called, saved) = @http.post(relay_url, ({ "jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": { "name": name, "arguments": { "path": "proof.txt", "content": "fixture" } } } : Json).stringify(), headers={ "authorization": "Bearer \{relay_token}" })
+          guard called.code == 200 && @json.parse(saved.text()) is { "result": { "content": [{ "text": "saved by caller", .. }], .. }, .. } else { fail("Missing actual caller result in original ACP session") }
+          for text in ["resumed ", "same session"] {
+            emit({ "jsonrpc": "2.0", "method": "session/update", "params": { "sessionId": "fixture-session", "update": { "sessionUpdate": "agent_message_chunk", "content": { "type": "text", "text": text } } } })
+            @async.sleep(250)
+          }
+          emit({ "jsonrpc": "2.0", "id": id, "result": { "stopReason": "end_turn" } })
+          continue
+        }
         if mode == "hang" { @async.sleep(60000) }
         if mode == "malformed" { @stdio.stdout.write("not JSON\n"); continue }
         if mode == "permission" {
