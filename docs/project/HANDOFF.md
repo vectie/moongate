@@ -1,5 +1,111 @@
 # MoonGate project handoff
 
+## Commit qualification — 2026-11-24
+
+The ACP bridge and pending Gemini multi-model changes pass a clean staged-tree
+export: strict native check and 1,226 native tests, plus 148 frontend passes
+and three opt-in skips. The working tree passes 1,228 native tests including
+two unrelated in-progress tests, which are excluded from this commit.
+MoonDesk/MoonBook/MoonTown adapters pass six strict tests each; MoonClaw passes
+13 normally, with its same two unused imports still failing deny-warn. Final
+info/format checks pass. Only GitHub and GitLab are push targets; no Gitee
+publication or app release is part of this checkpoint. Live Google Pro quota
+and a full MoonDesk ACP conversation remain unqualified.
+
+## Experimental generic ACP text bridge — 2026-11-24
+
+`moongate acp serve --config FILE [--port 15724]` is a separate opt-in loopback
+API; normal gateway startup, provider state and app bindings are unchanged.
+It launches a trusted local ACP v1 executable directly (no shell), verifies the
+requested model against each fresh session, and translates text output to
+OpenAI Chat JSON/SSE. A required local bearer token is not an upstream API key.
+No account credentials are copied; official agent login must happen separately.
+
+This is a text subset, not transparent raw-model parity. Unsupported fields,
+tools and interactive callbacks are rejected; requested permissions are
+cancelled. It does not sandbox the executable or manage detached descendants.
+History is a quoted transcript, not equivalent system-role authority. Model
+allowlists are not account access proof; usage/cost are unknown, not zero.
+Current provider checks/MoonClaw clients send extra options and therefore are
+not automatically qualified. See `docs/ACP_BRIDGE.md` for limitations and setup.
+
+Do not promise Google Pro quota through a normal API. Google's November 2 ACP
+clarification permits a narrow official-runtime interactive path, not a general
+subscription-to-API entitlement. The generic adapter does not establish that
+Google permits consumer-plan use. No Google OAuth extraction or headless quota
+wrapper was added, and no live consumer-plan request was attempted here.
+
+Each request has its own process/session (startup overhead, no idle pool or
+model-poll spawn); default concurrency is four with a request deadline. Child
+processes are stopped and reaped on completion/failure/timeout. A silent
+disconnect without another write is detected by the deadline, not immediately.
+The native `.mbtx` fixture pins async 0.19.4: latest 0.22.10 conditional imports
+are not supported by the current build tool, while fetching old 0.16.6 source
+fails on its legacy manifest. Do not depend on implicit latest script packages.
+
+Validation: nine focused ACP tests and the CLI registration test passed; final
+`moon info`, `moon fmt`, strict native check and all 1,228 native tests passed.
+The existing CLI-family inventory test was updated for the new explicit family.
+An actual built `main.exe acp serve` at isolated port 15764 returned HTTP 200
+JSON and incremental SSE with successful `[DONE]` against the fixture. A warm
+fixture request took 43 ms locally; that is not a live-agent latency promise.
+Only the new package's public interface was added (opaque Bridge, JSON config,
+serve and classified errors). The smoke server was stopped and its temporary
+fixture configuration removed. No UI/package installation, live Google plan
+request, commit, push or release was performed. Existing unrelated edits remain.
+
+## Gemini 4 concurrent model selection — 2026-11-24
+
+The current Google family is Hydrogen, Neon, Carbon and Argon; Argon was
+missing from preset suggestions. One private model list now feeds both preset
+suggestions and the selected Google connection's OpenClaw/Paiwork model
+catalog. No remote catalog fetch was added to MoonDesk's polling path. Explicit
+`gemini-*` request IDs are preserved rather than overwritten by the provider's
+default mapping, so independent conversations can choose different models.
+The default remains Hydrogen. Public interfaces and non-Google mappings stay
+unchanged. Tests cover all four IDs together and mapping each ID independently.
+
+Cluster UI qualification used the actual installed MoonDesk sidecar/UI and an
+isolated updated MoonGate at 15735. All four models appeared together in the
+MoonDesk picker from one Google provider. Four general conversations were
+submitted within one second, selecting one different model each. MoonGate's
+records show Neon, Carbon and Argon with their distinct requested/upstream
+model IDs, all started at 2026-11-24T10:13:38Z, returning HTTP 429. Retrying
+conversations were cancelled through MoonDesk. Hydrogen did not finish before
+cancellation; its bounded direct UI check returned HTTP 503/high demand in
+10,248 ms. Neon, Carbon and Argon bounded direct checks returned HTTP 429 in
+1,121, 1,153 and 1,133 ms respectively, with Google's explicit quota-exceeded/
+plan-and-billing message. All four conversations were confirmed cancelled in
+MoonDesk before teardown. These are not successful Gemini 4
+generations, nor proof that all four can complete concurrently with this key.
+An account with appropriate quota and an available Hydrogen backend is needed
+to finish that acceptance. Do not substitute the previous 3.5 pass.
+
+After qualification, the three isolated test services and SSH tunnels were
+stopped, and the isolated provider credential file was removed. Production
+configuration and the installed app bundle were not changed in this pass.
+
+MoonDesk has a `Connect a model` connection-import dialog, opened by the
+currently named `Scan connection QR` action in Code assistance/Book tools.
+It accepts pasted settings and routes import through MoonClaw to MoonGate;
+it is not a full provider management page. Provider storage/routing remains
+owned by MoonGate. No separate provider page was added to MoonDesk here.
+
+Checks: 1,218 strict native tests, 148 frontend passes/three skips; MoonDesk,
+MoonBook and MoonTown adapters six passes each. MoonClaw adapter passes 13
+normally; its same two pre-existing unused imports still fail deny-warn.
+
+Do not tell users Google AI Pro has no API benefit: the current official
+[Developer Program benefits FAQ](https://developers.google.com/profile/help/benefits?hl=en)
+includes $10/month in Cloud developer credits for eligible Pro subscribers,
+usable for Gemini API after claiming/applying them. The API project's billing
+and quotas are still separate from app subscription usage. The current
+[API billing guide](https://aistudio.google.com/docs/billing) says Prepay users
+must have an active purchased prepaid balance before eligible Cloud credits
+can be consumed. These benefits are not an unlimited API entitlement, and a
+429 response alone does not establish whether billing is disabled, credits
+are unclaimed/depleted, or another model/project limit was hit.
+
 ## Bundled MoonDesk runtime follow-up — 2026-11-24
 
 The installer blocker recorded below was repaired in MoonDesk: its app now

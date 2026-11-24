@@ -76,7 +76,20 @@ After saving an OpenAI-compatible or Anthropic API-key provider, use **Refresh m
 
 The preset picker includes DeepSeek, OpenRouter, Fireworks AI, SiliconFlow, Qwen Token Plan, Qwen Pay-As-You-Go, Google Gemini, Anthropic, OpenAI, Z.AI/GLM, and Moonshot/Kimi. Choose a preset to fill the endpoint and protocol automatically. Internal ID, request scope, protocol overrides and JSON template loading are secondary options. OpenRouter has one preset; its Model field suggests `openrouter/free` and named free variants, and also accepts manual IDs. Save before discovering more upstream model IDs.
 
-For **Google Gemini**, create a key at [Google AI Studio](https://aistudio.google.com/apikey), choose the Google Gemini preset, paste the key and save. The default model is `gemini-4-hydrogen`; suggestions also include `gemini-4-neon` and `gemini-4-carbon`. Moon apps and other OpenAI-style clients use Google's `/v1beta/openai` Chat endpoint. The Gemini client uses the native endpoint. Saved providers are not silently migrated: select the updated preset when creating a new setup, or review the protocol and model explicitly when editing. **Refresh models** on the Chat provider discovers account-visible model IDs; suggestions alone do not prove access. Connection tests for Gemini 3/4 allow up to 2,048 output/thinking tokens with low thinking effort so reasoning does not exhaust the old eight-token budget before returning text. A test is an explicit inference request and may consume quota.
+For **Google Gemini**, create a key at [Google AI Studio](https://aistudio.google.com/apikey), choose the Google Gemini preset, paste the key and save. The default model is `gemini-4-hydrogen`; suggestions also include `gemini-4-neon`, `gemini-4-carbon`, and `gemini-4-argon`. Moon apps and other OpenAI-style clients use Google's `/v1beta/openai` Chat endpoint. The Gemini client uses the native endpoint. Saved providers are not silently migrated: select the updated preset when creating a new setup, or review the protocol and model explicitly when editing. **Refresh models** on the Chat provider discovers account-visible model IDs; suggestions alone do not prove access. Connection tests for Gemini 3/4 allow up to 2,048 output/thinking tokens with low thinking effort so reasoning does not exhaust the old eight-token budget before returning text. A test is an explicit inference request and may consume quota.
+
+Connect that one Google provider to MoonDesk. All four Gemini 4 models then
+appear together in MoonDesk's model picker. Choose a model per conversation;
+you do not need to replace the provider default or create four providers.
+Concurrent chats keep their explicit model IDs. The picker advertises routing
+support, not account quota: HTTP 429 requires checking Google's quota/billing,
+and HTTP 503/high demand requires trying again when Google has capacity.
+
+MoonDesk also has a **Connect a model** import dialog, currently opened by
+**Scan connection QR** in Code assistance/Book tools. It accepts pasted
+connection settings as well as QR input. Imported connections pass through
+MoonClaw to MoonGate for storage and routing; this is not a full provider
+management page. Use MoonGate's Providers page for its full editing controls.
 
 OpenRouter still requires an OpenRouter API key for free models. “Free” means the selected model reports zero token prices; it does not mean anonymous requests are accepted. Free model availability can change, so use **Refresh Built-ins** after upgrading MoonGate, save the provider, and run **Test Provider**.
 

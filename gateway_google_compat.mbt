@@ -1,11 +1,52 @@
 ///|
+fn google_gemini_models() -> Array[String] {
+  [
+    "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon", "gemini-4-argon", "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+  ]
+}
+
+///|
+fn ProviderRouteTarget::is_google_gemini(self : ProviderRouteTarget) -> Bool {
+  self.base_url
+  .unwrap_or("")
+  .has_prefix("https://generativelanguage.googleapis.com/")
+}
+
+///|
+fn google_provider_model_catalog(
+  provider : ProviderRouteTarget,
+  fallback : String,
+) -> Json? {
+  if !provider.enabled || !provider.is_google_gemini() {
+    return None
+  }
+  let models = google_gemini_models()
+  let default_model = provider.binding_model(fallback)
+  if default_model != "" && !models.contains(default_model) {
+    models.insert(0, default_model)
+  }
+  // Supported routing choices, not account quota or a generation receipt.
+  // No upstream call is needed on UI polling.
+  Some({
+    "object": "list",
+    "data": Json::array(
+      models.map(model => {
+        "id": model,
+        "object": "model",
+        "owned_by": "google",
+        "input_modalities": ["text", "image"],
+      }),
+    ),
+  })
+}
+
+///|
 fn google_compatible_provider_request(
   provider : ProviderRouteTarget,
   request : Json,
 ) -> Json {
-  if !provider.base_url
-    .unwrap_or("")
-    .has_prefix("https://generativelanguage.googleapis.com/") {
+  if !provider.is_google_gemini() {
     return request
   }
   guard request is Object(fields) else { return request }

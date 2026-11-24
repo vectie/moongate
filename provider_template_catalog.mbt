@@ -282,10 +282,7 @@ fn ProviderTemplateSeed::preset_json(
     "isOfficial": Json::boolean(self.category == "official"),
     "icon": Json::string(self.icon),
     "models": if self.id == "google-gemini" {
-      Json([
-        "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon", "gemini-3.8-flash",
-        "gemini-3.5-flash-lite",
-      ])
+      Json::array(google_gemini_models().map(model => Json(model)))
     } else {
       Json([self.default_model])
     },

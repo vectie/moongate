@@ -208,6 +208,11 @@ MoonBook, and MoonTown. MoonDesk, MoonClaw, MoonBook, and MoonTown templates
 reuse the OpenClaw provider scope, so Moon Suite support does not duplicate
 credentials or provider state.
 
+An opt-in experimental `moongate acp serve --config FILE` bridge exposes local
+ACP agents through a text-only OpenAI Chat API. It is not a transparent model
+API or verified Google Pro subscription integration. See
+[ACP bridge setup and limitations](docs/ACP_BRIDGE.md).
+
 Initialize MoonClaw with `moonclaw onboard init` before using its automatic App
 Binding. MoonGate then atomically merges only `providers.moongate` into the
 canonical MoonClaw `providers.json`, points it at `/openclaw/v1`, and preserves

@@ -307,7 +307,10 @@ test "Google Gemini presets choose client protocol and current model suggestions
     )
     assert_true(
       fields["models"] is Array(models) &&
-      models.contains(Json("gemini-4-neon")),
+      models.contains(Json("gemini-4-neon")) &&
+      models.contains(Json("gemini-4-carbon")) &&
+      models.contains(Json("gemini-4-argon")) &&
+      models.contains(Json("gemini-3.8-flash")),
     )
     if form["appType"] == Json("gemini") {
       assert_eq(form["apiFormat"], Json("gemini_native"))

@@ -1,6 +1,7 @@
 supported_targets = "native"
 
 import {
+  "vectie/moongate/acp_gateway",
   "vectie/moongate/usage_attribute_cli",
   "vectie/moongate/insomnia_import_cli",
   "vectie/moongate/costs_review_cli",

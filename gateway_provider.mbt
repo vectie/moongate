@@ -317,6 +317,15 @@ async fn ProxyService::handle_models_for_app(
   app_type : String,
   fallback_model : String,
 ) -> Unit {
+  let catalog = match self.provider_router.current_provider_id(app_type) {
+    Some(id) =>
+      match self.provider_router.provider_by_id(app_type, id) {
+        Some(provider) =>
+          google_provider_model_catalog(provider, fallback_model)
+        None => None
+      }
+    None => None
+  }
   let model = match self.provider_router.current_provider_id(app_type) {
     Some(provider_id) =>
       match self.provider_router.provider_by_id(app_type, provider_id) {
@@ -328,7 +337,10 @@ async fn ProxyService::handle_models_for_app(
   w.header().set("Content-Type", "application/json")
   w.write_header(@status.Ok)
   w.write(
-    moon_models_endpoint_response_json(None, fallback_model=model).stringify(),
+    (match catalog {
+      Some(catalog) => catalog
+      None => moon_models_endpoint_response_json(None, fallback_model=model)
+    }).stringify(),
   )
   w.flush()
 }

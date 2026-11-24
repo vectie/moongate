@@ -29,6 +29,9 @@ fn print_help() -> Unit {
   println("  auth status               Show OAuth account status")
   println("  auth login                Start OAuth device login")
   println("  auth poll                 Poll OAuth device login")
+  println(
+    "  acp serve                 Run an experimental local ACP text-to-API bridge",
+  )
   println("  stream-check provider     Check one provider stream path")
   println("  stream-check all          Check all provider stream paths")
   println("  stream-check config       Show stream check configuration")

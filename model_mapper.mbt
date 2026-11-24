@@ -74,6 +74,10 @@ fn ProviderRouteTarget::map_model_for_upstream(
   self : ProviderRouteTarget,
   original_model : String,
 ) -> String {
+  // Keep explicit choices independent across simultaneous MoonDesk chats.
+  if self.is_google_gemini() && original_model.has_prefix("gemini-") {
+    return strip_one_m_suffix_for_upstream(original_model)
+  }
   let mapped = match self.model_mapping {
     Some(mapping) if mapping.has_mapping() => mapping.map_model(original_model)
     _ => original_model

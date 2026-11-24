@@ -560,10 +560,11 @@ test "registered cli commands match suite command aliases and status commands" {
 ///|
 test "cli command route owns command family dispatch" {
   let families = registered_cli_command_groups().map(group => group.family)
-  assert_eq(families.length(), 16)
+  assert_eq(families.length(), 17)
   assert_eq(families, [
-    "core", "provider", "auth", "copilot", "skill", "proxy", "config", "usage", "requests",
-    "suite", "install", "stream-check", "sync", "session", "runtime", "workspace",
+    "core", "provider", "auth", "acp", "copilot", "skill", "proxy", "config", "usage",
+    "requests", "suite", "install", "stream-check", "sync", "session", "runtime",
+    "workspace",
   ])
   assert_eq(
     registered_cli_command_route([

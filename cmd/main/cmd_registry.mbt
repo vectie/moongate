@@ -22,6 +22,7 @@ fn registered_cli_command_groups() -> Array[CliCommandGroup] {
     },
     { family: "provider", commands: provider_cli_commands(), },
     { family: "auth", commands: auth_cli_commands(), },
+    { family: "acp", commands: acp_cli_commands(), },
     { family: "copilot", commands: copilot_cli_commands(), },
     { family: "skill", commands: skill_cli_commands(), },
     { family: "proxy", commands: proxy_cli_commands(), },
@@ -101,6 +102,10 @@ fn registered_cli_command_route(args : Array[String]) -> (String, String)? {
 async fn run_registered_cli_command(args : Array[String]) -> Bool {
   guard registered_cli_command_id(args) is Some(_) else { return false }
   match registered_cli_command_route(args) {
+    Some(("acp", "serve_acp")) => {
+      run_acp_cli_command(args)
+      true
+    }
     Some(("install", command_id)) => {
       run_install_cli_command(command_id, args)
       true

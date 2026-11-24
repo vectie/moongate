@@ -1,0 +1,73 @@
+import {
+  "moonbitlang/async@0.19.4",
+  "moonbitlang/async@0.19.4/stdio",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+}
+
+// A deterministic protocol fixture, not a real provider or credential flow.
+async fn emit(value : Json) -> Unit {
+  @stdio.stdout.write("\{value.stringify()}\n")
+}
+
+fn options(model : String) -> Json {
+  [{ "id": "model", "category": "model", "type": "select",
+    "currentValue": model, "options": [{ "group": "test", "name": "Test",
+      "options": [{ "value": "alpha", "name": "Alpha" }, { "value": "beta", "name": "Beta" }] }] }]
+}
+
+async fn main {
+  let args = @env.args()
+  let mode = args.last().unwrap_or("normal")
+  let mut model = "alpha"
+  while @stdio.stdin.read_until("\n") is Some(line) {
+    let input = @json.parse(line)
+    guard input is { "id": id, "method": String(method_), .. } else { continue }
+    match method_ {
+      "initialize" => {
+        guard input is { "params": { "protocolVersion": 1, "clientCapabilities": Object(caps), .. }, .. } && caps.is_empty() else { fail("unexpected capabilities") }
+        emit({ "jsonrpc": "2.0", "id": id, "result": { "protocolVersion": 1 } })
+      }
+      "session/new" => {
+        if mode == "auth" {
+          emit({ "jsonrpc": "2.0", "id": id, "error": { "code": -32000, "message": "not for forwarding: fixture-secret" } })
+        } else {
+          emit({ "jsonrpc": "2.0", "id": id, "result": { "sessionId": "fixture-session", "configOptions": options(model) } })
+        }
+      }
+      "session/set_config_option" => {
+        guard input is { "params": { "configId": "model", "value": String(selected), .. }, .. } else { fail("bad model selector") }
+        model = selected
+        emit({ "jsonrpc": "2.0", "id": id, "result": { "configOptions": options(model) } })
+      }
+      "session/prompt" => {
+        if mode == "hang" { @async.sleep(60000) }
+        if mode == "malformed" { @stdio.stdout.write("not JSON\n"); continue }
+        if mode == "permission" {
+          emit({ "jsonrpc": "2.0", "id": "permission-1", "method": "session/request_permission", "params": { "sessionId": "fixture-session", "options": [] } })
+          guard @stdio.stdin.read_until("\n") is Some(reply) && @json.parse(reply) is { "id": "permission-1", "result": { "outcome": { "outcome": "cancelled", .. }, .. }, .. } else { fail("permission was not cancelled") }
+          continue
+        }
+        let session = if mode == "wrong-session" { "other-session" } else { "fixture-session" }
+        if mode == "tool" {
+          emit({ "jsonrpc": "2.0", "method": "session/update", "params": { "sessionId": session, "update": { "sessionUpdate": "tool_call", "toolCallId": "test", "title": "Unsupported" } } })
+          continue
+        }
+        if mode != "empty" {
+          guard input is { "params": { "prompt": [{ "type": "text", "text": String(prompt), .. }], .. }, .. } else { fail("bad prompt") }
+          for text in ["\{model}:", "你好 ", prompt] {
+            emit({ "jsonrpc": "2.0", "method": "session/update", "params": { "sessionId": session, "update": { "sessionUpdate": "agent_message_chunk", "content": { "type": "text", "text": text } } } })
+          }
+        }
+        if mode == "late-error" {
+          emit({ "jsonrpc": "2.0", "id": id, "error": { "code": -32603, "message": "fixture failure" } })
+        } else if mode == "drift" {
+          emit({ "jsonrpc": "2.0", "method": "session/update", "params": { "sessionId": session, "update": { "sessionUpdate": "config_option_update", "configOptions": options("different") } } })
+        } else {
+          emit({ "jsonrpc": "2.0", "id": id, "result": { "stopReason": if mode == "cancelled" { "cancelled" } else if mode == "length" { "max_tokens" } else { "end_turn" } } })
+        }
+      }
+      _ => fail("Unexpected fixture method: \{method_}")
+    }
+  }
+}
