@@ -338,6 +338,10 @@ test "Google Gemini presets choose client protocol and current model suggestions
     "openai_chat", "gemini-4-hydrogen", "Reply OK",
   )
   assert_true(chat is { "max_tokens": 2048, "reasoning_effort": "low", .. })
+  let reasoning_chat = stream_check_request_body(
+    "openai_chat", "glm-5.3.flash", "Reply OK",
+  )
+  assert_true(reasoning_chat is { "max_tokens": 256, .. })
   let native = stream_check_request_body(
     "gemini_native", "gemini-4-neon", "Reply OK",
   )

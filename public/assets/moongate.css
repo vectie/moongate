@@ -52,7 +52,6 @@
 html {
   min-width: 320px;
   background: var(--bg);
-  scroll-behavior: smooth;
 }
 
 body {
@@ -2311,4 +2310,184 @@ td select,
 }
 @media (max-width: 760px), (pointer: coarse) {
   .local-nav a, .local-menu > summary, .icon-button { min-height: 44px; min-width: 44px; }
+}
+
+/* --- Moon Suite 2026 UI/UX refinement: solid surfaces, clear layering, focus motion --- */
+.sidebar {
+  background: var(--sidebar);
+  backdrop-filter: none;
+}
+
+.topbar {
+  min-height: 68px;
+  background: var(--bg);
+  backdrop-filter: none;
+}
+
+.nav {
+  position: relative;
+}
+
+.mg-nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, height, opacity;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 150ms ease;
+}
+
+.nav-item {
+  position: relative;
+  min-height: 36px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nav-item.active {
+  background: rgba(139, 157, 255, 0.14);
+  color: var(--text);
+}
+
+.page.active {
+  animation: mg-page-enter 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes mg-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel,
+.hero,
+.goal-compass,
+.metric-card,
+.connection-node {
+  transition: border-color 160ms ease, box-shadow 180ms ease, background-color 160ms ease;
+}
+
+.panel:hover,
+.metric-card:hover,
+.connection-node:hover {
+  border-color: var(--line-strong);
+}
+
+.goal-compass {
+  background: var(--panel);
+  border-color: rgba(139, 157, 255, 0.3);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.goal-copy #goal-next-detail,
+.hero-text small,
+.hero-stat small,
+.topbar-title p {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.goal-step span {
+  font-size: 12px;
+}
+
+.goal-step small {
+  font-size: 11px;
+}
+
+.goal-step.current {
+  box-shadow: 0 0 0 1px rgba(139, 157, 255, 0.4);
+  animation: mg-step-focus 2.8s ease-in-out infinite;
+}
+
+@keyframes mg-step-focus {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(139, 157, 255, 0.36);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(139, 157, 255, 0.14);
+  }
+}
+
+/* Solid non-overlapping error banner stacked cleanly above toast */
+.error-box {
+  bottom: 74px;
+  z-index: 45;
+  padding: 13px 38px 13px 16px;
+  background: #231318;
+  border: 1px solid rgba(242, 109, 91, 0.55);
+  border-left: 4px solid var(--bad);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.48);
+}
+
+.error-box p {
+  font-size: 12px;
+  line-height: 1.45;
+  color: #f4c2bb;
+}
+
+.error-box-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 1px solid rgba(242, 109, 91, 0.35);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffd3cc;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.error-box-dismiss:hover {
+  background: rgba(242, 109, 91, 0.22);
+  color: #ffffff;
+}
+
+.toast {
+  z-index: 40;
+  background: #1a2030;
+  border-color: rgba(139, 157, 255, 0.32);
+  color: var(--text);
+  font-size: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+}
+
+/* Subtle row focus clarity in tables */
+tbody tr {
+  transition: background-color 120ms ease;
+}
+
+tbody tr:hover {
+  background: rgba(139, 157, 255, 0.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-nav-indicator,
+  .page.active,
+  .goal-step.current,
+  .panel,
+  .hero,
+  .goal-compass,
+  .metric-card,
+  .connection-node,
+  tbody tr {
+    animation: none !important;
+    transition: none !important;
+  }
 }

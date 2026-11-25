@@ -1889,7 +1889,13 @@ fn stream_check_request_body(
 ) -> Json {
   let gemini_thinking = model.has_prefix("gemini-3") ||
     model.has_prefix("gemini-4")
-  let output_budget = if gemini_thinking { 2048 } else { 8 }
+  let output_budget = if gemini_thinking {
+    2048
+  } else if api_format == "openai_chat" {
+    256
+  } else {
+    8
+  }
   let gemini_generation : Map[String, Json] = {
     "maxOutputTokens": Json(output_budget),
   }

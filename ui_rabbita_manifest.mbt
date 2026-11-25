@@ -3,6 +3,7 @@
 pub fn moongate_rabbita_document_html(
   api_base~ : String = "http://127.0.0.1:15721",
 ) -> String {
+  "<!DOCTYPE html>" +
   @rabbita.render_to_string(
     @rabbita.static_cell(
       @html.html(lang="en", [

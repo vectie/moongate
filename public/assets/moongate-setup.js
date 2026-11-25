@@ -60,15 +60,19 @@ function renderSetupList(id, rows) {
 }
 
 function bindingProviderOptions(row) {
-  const available = row.providers.filter((provider) => provider.builtIn !== true && provider.enabled !== false);
-  if (available.length === 0) return "";
-  const selectedId = row.binding.currentProviderId || firstString(available[0], ["id", "providerId"], "");
-  return available
+  const custom = row.providers.filter((provider) => provider.builtIn !== true);
+  if (custom.length === 0) return "";
+  const enabled = custom.filter((provider) => provider.enabled !== false);
+  const selectedId = row.binding.currentProviderId || firstString(enabled[0] || custom[0], ["id", "providerId"], "");
+  return custom
     .map((provider) => {
       const id = firstString(provider, ["id", "providerId"], "");
       const name = firstString(provider, ["name", "providerName"], id);
+      const isPaused = provider.enabled === false;
       const selected = id === selectedId ? " selected" : "";
-      return `<option value="${escapeHtml(id)}" data-i18n-scope="content"${selected}>${escapeHtml(name)}</option>`;
+      const disabled = isPaused ? " disabled" : "";
+      const suffix = isPaused ? ` (${uiLabel("Paused")})` : "";
+      return `<option value="${escapeHtml(id)}" data-i18n-scope="content"${selected}${disabled}>${escapeHtml(name + suffix)}</option>`;
     })
     .join("");
 }

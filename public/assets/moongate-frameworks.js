@@ -232,33 +232,79 @@ function setProviderCredentialState(provider = null) {
   const input = $("provider-api-key");
   const status = $("provider-credential-status");
   if (!input || !status) return;
-  status.hidden = true;
   if (provider?.credentialState === "stored") {
     input.placeholder = "********";
-    status.textContent = "";
-    status.hidden = true;
+    status.textContent = uiLabel("Stored (leave blank to keep)");
+    status.hidden = false;
   } else if (provider?.credentialState === "oauth") {
     input.placeholder = "OAuth provider — no API key needed";
-    status.textContent = "";
+    status.textContent = uiLabel("OAuth managed");
+    status.hidden = false;
   } else {
     input.placeholder = "Paste API key";
     status.textContent = "";
+    status.hidden = true;
   }
 }
 
-function clearProviderForm(appType) {
+function syncProviderProtocolFields() {
+  const appType = $("provider-app")?.value || "";
+  const apiFormat = $("provider-api-format")?.value || "";
+  const showClaudeOverrides = appType === "claude" || appType === "claude-desktop" || apiFormat === "anthropic";
+  for (const id of ["provider-sonnet-model", "provider-haiku-model", "provider-opus-model"]) {
+    const label = $(id)?.closest("label");
+    if (label) label.hidden = !showClaudeOverrides;
+  }
+  const fastMode = $("provider-fast-mode")?.closest("label");
+  if (fastMode) fastMode.hidden = appType !== "codex";
+}
+
+function resolveProviderAppScope(appType) {
+  const select = $("provider-app");
+  const matched = frameworkApps.find((app) => app.id === appType);
+  const candidate = matched?.providerAppType || appType || "openclaw";
+  if (select && Array.from(select.options).some((opt) => opt.value === candidate)) {
+    return candidate;
+  }
+  if (select && select.options.length > 0) {
+    if (Array.from(select.options).some((opt) => opt.value === "openclaw")) return "openclaw";
+    return select.options[0].value;
+  }
+  return candidate;
+}
+
+function switchProviderAppScope(appType) {
+  const resolved = resolveProviderAppScope(appType);
+  if ($("provider-app")) {
+    $("provider-app").value = resolved;
+    $("provider-app").disabled = false;
+  }
+  $("provider-original-id").value = "";
+  $("provider-original-app").value = "";
+  $("provider-id").readOnly = false;
+  resetProviderDeleteConfirmation();
+  setProviderTestResult();
+  selectedProviderKey = "";
+  selectProviderRow("", "");
+  $("provider-delete").disabled = true;
+  $("provider-connect-app").disabled = true;
+  setProviderStatus("");
+  syncProviderProtocolFields();
+}
+
+function clearProviderForm(appType, options = {}) {
   providerFormRevision += 1;
   resetProviderModelCatalog();
   resetProviderDeleteConfirmation();
   text("provider-original-id", "");
   $("provider-original-id").value = "";
   $("provider-original-app").value = "";
-  $("provider-app").value = appType || $("provider-app").value || "claude";
+  $("provider-app").value = resolveProviderAppScope(appType || $("provider-app").value || "openclaw");
   $("provider-app").disabled = false;
   $("provider-id").value = "";
   $("provider-id").readOnly = false;
   $("provider-name").value = "";
-  $("provider-template").value = "";
+  $("provider-template").value = options.preserveTemplate || "";
   $("provider-type").value = "";
   $("provider-base-url").value = "";
   $("provider-api-format").value = "";
@@ -280,6 +326,9 @@ function clearProviderForm(appType) {
   $("provider-delete").disabled = true;
   $("provider-connect-app").disabled = true;
   setProviderStatus("");
+  syncProviderProtocolFields();
+  const advanced = document.querySelector(".provider-advanced");
+  if (advanced && options.expandAdvanced !== false) advanced.open = true;
 }
 
 function providerTemplateRows(data, source) {
@@ -499,6 +548,7 @@ function editProvider(appType, providerId) {
   $("provider-api-format").value = firstString(provider, ["apiFormat"], firstString(provider.settingsConfig, ["apiFormat"], ""));
   $("provider-api-key").value = "";
   setProviderCredentialState(provider);
+  syncProviderProtocolFields();
   const mapping = provider.modelMapping || {};
   $("provider-default-model").value = firstString(mapping, ["defaultModel"], "");
   $("provider-sonnet-model").value = firstString(mapping, ["sonnetModel"], "");
@@ -670,11 +720,20 @@ async function testProviderFromForm() {
   setProviderTestResult();
   setProviderStatus("Testing this configuration…");
   try {
-    const result = await postJson(endpoints.providerStreamCheck, {
-      ...payload,
-      providerId,
-      draft: true,
-    });
+    const result = await postJson(
+      endpoints.providerStreamCheck,
+      unsaved
+        ? {
+            ...payload,
+            providerId,
+            draft: true,
+          }
+        : {
+            appType,
+            providerId,
+            draft: false,
+          },
+    );
     result.uiTestedAt = Date.now();
     if (!isCurrent()) return;
     // A draft result belongs to this editor, not to the saved provider's proof.

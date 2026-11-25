@@ -1,5 +1,31 @@
 # MoonGate project handoff
 
+## Pure-UI provider audit & UX fixes (Suanli `glm-5.3.flash`) — 2026-11-25
+
+Completed a pure-UI setup & live audit for `Suanli GLM-5.3 Flash` (`https://suanli.kechuangfuwu.com:8443/user/v1`, `glm-5.3.flash`, `openai_chat`, `openclaw` shared scope) and fixed the discovered frontend pitfalls:
+- **Full `public/` sync pitfall**: Installing only partial asset files into `/Applications/MoonGate.app/Contents/Resources/public/assets/` caused `ReferenceError: uiLabel is not defined` and 404 on `moongate-connections.js`. Always `rsync -a --delete public/ /Applications/MoonGate.app/Contents/Resources/public/`.
+- **Frontend UX fixes verified live** (`public/assets/{moongate.js,moongate-frameworks.js,moongate-setup.js}`):
+  - Show visible `"Stored (leave blank to keep)"` status after saving an API key; send `draft: false` when testing an unmodified saved provider.
+  - Auto-expand `.provider-advanced` for custom/new providers, keep `"Custom provider"` selected in `#provider-template`, and hide irrelevant Claude/Codex override fields (`Sonnet/Haiku/Opus`, `Faster Codex requests`) when configuring `Moon apps` + `OpenAI Chat Completions`.
+  - Disable redundant `Start Routing` / `Stop Routing` button on Overview based on live proxy state, inject SVG favicon link (0 `/favicon.ico` 404s), and keep paused custom providers visible (disabled) in `#bindings`.
+- **Two backend findings logged for next native build (`moongate` migration to `moon 0.1.20261119`)**:
+  1. `stream_check_request_body` (`gateway_provider.mbt:1892`) sends `max_tokens: 8` for non-Gemini models, which starves reasoning models like `glm-5.3.flash` (needs ~22 tokens to finish `reasoning_content` + `"OK"`). Raise `openai_chat` check budget to `256`.
+  2. `moongate_rabbita_document_html` (`ui_rabbita_manifest.mbt`) omits `<!DOCTYPE html>` (renders in Quirks Mode).
+- **Upstream `suanli.kechuangfuwu.com:8443` `glm-5.3.flash` finding**:
+  - Plain `POST /user/v1/chat/completions` (no `tools`) returns HTTP 200 `"OK"` cleanly through MoonGate `/openclaw/v1/chat/completions`.
+  - Any request containing OpenAI `tools: [...]` returns upstream `HTTP 502 RuntimeUnavailable` (or SSE `HTTP 200` `data: {"error":{"code":"RuntimeUnavailable",...}}`), which causes MoonClaw's tool-calling planner to fail with `JsonDecodeError((, Missing 'id' field))`.
+
+## UI/UX polish, solid layering & provider setup form fixes — 2026-11-25
+
+Aligned MoonGate's UI/UX with MoonProj and MoonDesk and fixed the provider setup pitfalls previously recorded in this handoff:
+- **Provider setup bug fixes** (`public/assets/moongate-frameworks.js`, `public/assets/moongate.js`):
+  - Changing **Request type** (`#provider-app`) now runs `switchProviderAppScope(...)` instead of `clearProviderForm(...)`, preserving already-typed Name, API Key, Base URL, Model, Protocol, and Notes.
+  - Clicking **Add Provider First** for MoonDesk (`add-provider`) now resolves `"moondesk"` through `resolveProviderAppScope(...)` to its valid shared scope (`"openclaw"`), preventing a blank/invalid request-type dropdown.
+- **Visual hierarchy, solid surfaces & focus motion** (`public/assets/moongate.css`, `public/assets/moongate.js`):
+  - Removed sluggish `html { scroll-behavior: smooth; }`, switched `.sidebar` and `.topbar` to solid opaque surfaces (`var(--sidebar)` / `var(--bg)`), and stacked `#error-box` cleanly above `.toast` (`bottom: 74px; z-index: 45;`) with a dismiss button (`×`, `.error-box-dismiss`).
+  - Added GPU-composited sliding sidebar indicator (`.mg-nav-indicator` via `syncSidebarNavIndicator`), calm current-step focus pulse on `.goal-step.current`, crisp `.page.active` entrance, readable minimum `12px` metadata typography, and full `@media (prefers-reduced-motion: reduce)` safety.
+- **Verification**: JS syntax checks (`node --check`), `route_studio/responses.test.mjs` (25/25), and UI contract assertions passed. Backed up prior assets to `/tmp/moongate-app-backup-20261125/assets`, installed updated assets into `/Applications/MoonGate.app/Contents/Resources/public/assets`, strictly ad-hoc signed `/Applications/MoonGate.app`, and verified live on `http://127.0.0.1:15721`.
+
 ## ACP coding deployed on the cluster Mac — 2026-11-24
 
 The user approved installing MoonFort and **LocalOs / AllowDegraded for ACP

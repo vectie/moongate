@@ -256,10 +256,13 @@ async function refreshDashboard() {
   } else {
     renderStackError("model-usage", modelStatsProbe.error);
   }
+  const proxyGood = proxyProbe.ok && stateClass(proxyState).includes("good");
+  if ($("proxy-start")) $("proxy-start").disabled = proxyGood;
+  if ($("proxy-stop")) $("proxy-stop").disabled = !proxyGood;
   mergeReadinessState({
     healthOk: gatewayGood,
     gatewayDetail: statusProbe.ok ? firstString(status, ["address", "baseUrl", "url"], "Local API ready") : statusProbe.error,
-    proxyRunning: proxyProbe.ok && stateClass(proxyState).includes("good"),
+    proxyRunning: proxyGood,
     proxyDetail: proxyProbe.ok ? firstString(proxy, ["model", "activeModel", "provider"], "AI routing status") : proxyProbe.error,
     totalRequests: summary.totalRequests ?? summary.requests ?? summary.requestCount ?? status.total_requests ?? status.totalRequests ?? 0,
     totalCost: summary.totalCostUsd ?? summary.costUsd ?? summary.totalCost ?? status.totalCostUsd ?? status.costUsd ?? 0,
@@ -317,6 +320,18 @@ function showError(error, heading = "Data refresh failed") {
   const title = box?.querySelector("strong");
   if (title) title.textContent = uiLabel(heading);
   box?.querySelector("[data-error-recovery]")?.remove();
+  if (box && !box.querySelector("[data-error-dismiss]")) {
+    const dismiss = document.createElement("button");
+    dismiss.type = "button";
+    dismiss.className = "error-box-dismiss";
+    dismiss.dataset.errorDismiss = "true";
+    dismiss.setAttribute("aria-label", uiLabel("Close"));
+    dismiss.textContent = "×";
+    dismiss.addEventListener("click", () => {
+      box.hidden = true;
+    });
+    box.appendChild(dismiss);
+  }
   if (message) message.textContent = error && error.message ? error.message : String(error);
   if (box) box.hidden = false;
   if (heading === "Data refresh failed") {
@@ -488,8 +503,8 @@ $("binding-rows")?.addEventListener("click", (event) => {
     refresh().then(() => editProvider(scope, providerId)).catch(showError);
   }
   else if (action === "add-provider") {
-    const app = frameworkApps.find(app => app.id === appType);
-    clearProviderForm(app?.providerAppType || appType);
+    clearProviderForm(resolveProviderAppScope(appType));
+    renderProviderTemplates();
     navigateToPage("providers");
   }
 });
@@ -621,6 +636,29 @@ $("provider-rows")?.addEventListener("keydown", (event) => {
   editProvider(row.dataset.providerApp, row.dataset.providerId);
 });
 
+function syncSidebarNavIndicator() {
+  const nav = document.querySelector(".sidebar .nav");
+  if (!nav) return;
+  const active = nav.querySelector(".nav-item.active");
+  if (!active) return;
+  let indicator = nav.querySelector(".mg-nav-indicator");
+  if (!indicator) {
+    indicator = document.createElement("span");
+    indicator.className = "mg-nav-indicator";
+    indicator.setAttribute("aria-hidden", "true");
+    nav.prepend(indicator);
+  }
+  const navRect = nav.getBoundingClientRect();
+  const itemRect = active.getBoundingClientRect();
+  if (itemRect.height <= 0 || window.innerWidth <= 760) {
+    indicator.style.opacity = "0";
+    return;
+  }
+  indicator.style.height = `${Math.max(20, itemRect.height - 12)}px`;
+  indicator.style.transform = `translateY(${itemRect.top - navRect.top + 6}px)`;
+  indicator.style.opacity = "1";
+}
+
 function goToPage(page) {
   const target = document.querySelector(`[data-page-view="${page}"]`);
   if (!target) return;
@@ -636,6 +674,7 @@ function goToPage(page) {
     if (active) node.setAttribute("aria-current", "page");
     else node.removeAttribute("aria-current");
   });
+  requestAnimationFrame(syncSidebarNavIndicator);
   text("page-title", target.dataset.pageTitle || page);
   text("page-subtitle", target.dataset.pageSubtitle || "");
   if ($("page-subtitle")) $("page-subtitle").hidden = !target.dataset.pageSubtitle;
@@ -685,6 +724,7 @@ document.addEventListener("keydown", (event) => {
 window.addEventListener("hashchange", () => {
   goToPage(window.location.hash.slice(1) || "overview");
 });
+window.addEventListener("resize", () => requestAnimationFrame(syncSidebarNavIndicator));
 
 initProviderAppSelect();
 initUsageAppSelect();
@@ -703,18 +743,30 @@ $("provider-clear")?.addEventListener("click", () => {
 });
 
 $("provider-app")?.addEventListener("change", () => {
-  clearProviderForm($("provider-app").value);
+  switchProviderAppScope($("provider-app").value);
   renderProviderTemplates();
+});
+
+$("provider-api-format")?.addEventListener("change", () => {
+  if (typeof syncProviderProtocolFields === "function") syncProviderProtocolFields();
 });
 
 $("provider-template")?.addEventListener("change", () => {
   if ($("provider-template").value === "custom") {
-    clearProviderForm($("provider-app").value);
-    document.querySelector('.provider-advanced').open = true;
+    clearProviderForm($("provider-app").value, { preserveTemplate: "custom", expandAdvanced: true });
     return;
   }
   applyProviderTemplate();
+  if (typeof syncProviderProtocolFields === "function") syncProviderProtocolFields();
 });
+
+if (!document.querySelector('link[rel="icon"]')) {
+  const icon = document.createElement("link");
+  icon.rel = "icon";
+  icon.type = "image/svg+xml";
+  icon.href = "/assets/moongate.svg";
+  document.head?.appendChild(icon);
+}
 
 $("provider-template-load")?.addEventListener("click", () => {
   $("provider-template-file")?.click();
