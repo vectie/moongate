@@ -25,6 +25,9 @@
   --radius-control: 6px;
   --radius-card: 8px;
   --control-height: 32px;
+  /* Shared MoonSuite authorship marks (tiny corner ticks, zero large color blocks) */
+  --ms-human-mark: #e09a2b;
+  --ms-ai-mark: #2dd4bf;
 }
 
 * {
