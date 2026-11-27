@@ -182,7 +182,9 @@ async test "saved catalog real loopback route uses stored keys and keeps selecti
       let (unauthorized, _) = @http.get(base_url + path)
       assert_eq(unauthorized.code, 401)
       assert_eq(requests.length(), 0)
-      let headers = { "x-moongate-control-token": "fixture-control" }
+      let headers = Map([
+        (@http.CaseInsensitiveString("x-moongate-control-token"), "fixture-control"),
+      ])
       let (response, data) = @http.get(
         base_url +
         path +

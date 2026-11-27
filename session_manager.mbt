@@ -1816,7 +1816,7 @@ fn moon_json_int64(value : Json?) -> Int64? {
   match value {
     Some(Number(n, ..)) => Some(n.to_int64())
     Some(String(raw)) =>
-      Some(@string.parse_int64(raw.trim().to_owned(), base=10)) catch {
+      Some(@string.parse_int64(raw.trim().to_owned(), radix=10)) catch {
         _ => None
       }
     _ => None
@@ -2068,7 +2068,7 @@ fn moon_json_timestamp_ms(value : Json?) -> Int64? {
         None
       } else {
         let parsed_int = try
-          @string.parse_int64(trimmed.to_owned(), base=10)
+          @string.parse_int64(trimmed.to_owned(), radix=10)
         catch {
           _ => None
         } noraise {

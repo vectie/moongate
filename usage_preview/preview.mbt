@@ -210,7 +210,7 @@ fn usage_file_day(value : Json) -> String {
       }
     String(day) =>
       if day.length() == 10 {
-        @time.PlainDate::from_str(day).to_string() catch {
+        (@string.FromStr::from_str(day) : @time.PlainDate).to_string() catch {
           _ => ""
         }
       } else {
@@ -224,7 +224,7 @@ fn usage_file_day(value : Json) -> String {
 fn usage_file_timestamp_day(value : String) -> String {
   // ISO 8601 timestamps require an explicit zone, unlike ambiguous local dates.
   guard value.length() >= 20 else { return "" }
-  let date_time = @time.PlainDateTime::from_str(value[:19]) catch {
+  let date_time : @time.PlainDateTime = @string.FromStr::from_str(value[:19]) catch {
     _ => return ""
   }
   let mut offset = 0

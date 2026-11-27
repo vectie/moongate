@@ -14,12 +14,13 @@ pub fn routing_activation_receipt_contract_v1() -> String {
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum RoutingMode {
   Priority
   SmoothWeightedRoundRobin
   LeastInflight
   SessionSticky
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn RoutingMode::to_string(self : RoutingMode) -> String {
@@ -66,6 +67,7 @@ pub impl @json.FromJson for RoutingMode with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum RoutingDecisionReasonV1 {
   HighestPriorityEligible
   LeastInflightEligible
@@ -73,7 +75,7 @@ pub(all) enum RoutingDecisionReasonV1 {
   ExistingSessionBinding
   NewSessionWeightedSelection
   NoEligibleProvider
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn RoutingDecisionReasonV1::id(self : RoutingDecisionReasonV1) -> String {
@@ -117,10 +119,11 @@ pub impl @json.FromJson for RoutingDecisionReasonV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum RoutingActivationActionV1 {
   Activate
   Rollback
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn RoutingActivationActionV1::id(
@@ -158,10 +161,11 @@ pub impl @json.FromJson for RoutingActivationActionV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum RoutingActivationScopeV1 {
   BoundedCanary
   RollbackScope
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn RoutingActivationScopeV1::id(self : RoutingActivationScopeV1) -> String {
@@ -197,6 +201,7 @@ pub impl @json.FromJson for RoutingActivationScopeV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct RoutingPolicyV1 {
   contract_id : String
   policy_id : String
@@ -212,9 +217,10 @@ pub(all) struct RoutingPolicyV1 {
   rollback_p95_latency_ms : Int32
   rollback_minimum_requests : Int32
   configured_at_ms : Int64
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct ProviderCandidateV1 {
   provider_id : String
   priority : Int32
@@ -239,28 +245,32 @@ pub(all) struct ProviderCandidateV1 {
   budget_available : Bool
   capacity_evidence_supported : Bool
   capacity_available : Bool
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct CandidateReviewV1 {
   provider_id : String
   eligible : Bool
   reasons : Array[String]
   warnings : Array[String]
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct SmoothWeightV1 {
   provider_id : String
   current_weight : Int32
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct SmoothStateV1 {
   entries : Array[SmoothWeightV1]
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct RoutingDecisionV1 {
   contract_id : String
   policy_id : String
@@ -273,9 +283,10 @@ pub(all) struct RoutingDecisionV1 {
   selected_provider_id : String?
   reason : RoutingDecisionReasonV1
   reviews : Array[CandidateReviewV1]
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct RoutingPolicyActivationReceiptV1 {
   contract_id : String
   receipt_id : String
@@ -296,7 +307,7 @@ pub(all) struct RoutingPolicyActivationReceiptV1 {
   rollback_p95_latency_ms : Int32
   rollback_minimum_requests : Int32
   recorded_at_ms : Int64
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
 pub fn policy(

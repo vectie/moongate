@@ -1,8 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate/insomnia_import"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
-pub fn import_collection(String, workspace_id? : String, folder_id? : String, request_id? : String) -> Json raise
+pub fn import_collection(String, workspace_id? : String, folder_id? : String, request_id? : String) -> @json.Json raise
 
 // Errors
 

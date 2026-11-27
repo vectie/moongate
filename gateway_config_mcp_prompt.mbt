@@ -671,7 +671,7 @@ fn moon_toml_value(raw : String) -> Json? {
     "true" => Some(Json::boolean(true))
     "false" => Some(Json::boolean(false))
     _ =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => Some(Json::string(value))
       } noraise {
         parsed => Some(Json::number(parsed.to_double()))

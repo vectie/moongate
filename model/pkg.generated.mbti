@@ -11,11 +11,13 @@ pub fn open_router_model(api_key~ : String, name? : CommonModels) -> Model
 // Errors
 
 // Types and methods
+#derive(@debug.Debug)
 pub(all) enum CommonModels {
   Qwen3CoderPlus
-} derive(@debug.Debug)
+}
 pub fn CommonModels::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub struct Model {
   name : String
   description : String?
@@ -23,16 +25,17 @@ pub struct Model {
   model_type : Type
   api_key : String
   base_url : String
-  safe_zone_tokens : Int
+  safe_zone_tokens : Int32
   supports_anthropic_prompt_caching : Bool
   supports_apply_patch : Bool
   access_token : String?
   account_id : String?
   refresh_token : String?
   id_token : String?
-} derive(@debug.Debug)
+}
 pub fn Model::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Provider {
   OpenAI
   Anthropic
@@ -41,14 +44,15 @@ pub(all) enum Provider {
   Qwen
   Kimi
   KimiCoding
-} derive(Eq, @debug.Debug)
+}
 pub fn Provider::equal(Self, Self) -> Bool
 pub fn Provider::not_equal(Self, Self) -> Bool
 pub fn Provider::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Type {
   SaaS(Provider)
-} derive(Eq, @debug.Debug)
+}
 pub fn Type::equal(Self, Self) -> Bool
 pub fn Type::not_equal(Self, Self) -> Bool
 pub fn Type::to_repr(Self) -> @debug.Repr

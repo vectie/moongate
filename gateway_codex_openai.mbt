@@ -423,7 +423,7 @@ async fn ProxyService::forward_non_streaming_chat_completion(
     }
     w.header().set("Content-Type", "application/json")
     moon_forward_upstream_failure_headers(
-      response.headers,
+      from_ci_headers(response.headers),
       response.code,
       response_body,
       w,
@@ -571,7 +571,7 @@ async fn ProxyService::forward_streaming_chat_completion(
       }
       w.header().set("Content-Type", "application/json")
       moon_forward_upstream_failure_headers(
-        response.headers,
+        from_ci_headers(response.headers),
         response.code,
         error_body,
         w,
@@ -887,7 +887,7 @@ async fn ProxyService::forward_non_streaming_codex_response(
     }
     w.header().set("Content-Type", "application/json")
     moon_forward_upstream_failure_headers(
-      response.headers,
+      from_ci_headers(response.headers),
       response.code,
       response_body,
       w,
@@ -1042,7 +1042,7 @@ async fn ProxyService::forward_streaming_codex_response(
       }
       w.header().set("Content-Type", "application/json")
       moon_forward_upstream_failure_headers(
-        response.headers,
+        from_ci_headers(response.headers),
         response.code,
         error_body,
         w,

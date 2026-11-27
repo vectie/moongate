@@ -53,7 +53,8 @@ fn valid_usage_date(value : Json) -> Bool {
     String("") => true
     String(stamp) => {
       if stamp.length() == 10 {
-        return (@time.PlainDate::from_str(stamp).to_string() == stamp) catch {
+        return ((@string.FromStr::from_str(stamp) : @time.PlainDate).to_string() ==
+        stamp) catch {
           _ => false
         }
       }
@@ -65,7 +66,9 @@ fn valid_usage_date(value : Json) -> Bool {
         stamp[16] != ':' {
         return false
       }
-      let _date_time = @time.PlainDateTime::from_str(stamp[:19]) catch {
+      let _date_time : @time.PlainDateTime = @string.FromStr::from_str(
+        stamp[:19],
+      ) catch {
         _ => return false
       }
       let zone_start = if stamp.has_suffix("Z") {

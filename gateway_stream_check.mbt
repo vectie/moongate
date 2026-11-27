@@ -47,7 +47,7 @@ fn stream_check_int_request(
       match field {
         Some(Number(n, ..)) => return Some(n.trunc().to_int())
         Some(String(value)) =>
-          return try @string.parse_int(value, base=10) catch {
+          return try @string.parse_int(value, radix=10) catch {
             _ => None
           } noraise {
             parsed => Some(parsed)

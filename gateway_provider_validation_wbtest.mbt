@@ -169,7 +169,9 @@ async test "transient provider validation authenticates and checks one catalog w
       )
       let url = "http://127.0.0.1:\{server.port()}/providers/validate-connection"
       let upstream_base = "http://127.0.0.1:\{upstream.port()}"
-      let headers = { "x-moongate-control-token": "fixture-control" }
+      let headers = Map([
+        (@http.CaseInsensitiveString("x-moongate-control-token"), "fixture-control"),
+      ])
       let (unauthorized, _) = @http.post(
         url,
         provider_validation_fixture(upstream_base + "/valid/v1"),

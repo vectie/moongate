@@ -1,9 +1,10 @@
 ///|
+#derive(Eq)
 priv enum CircuitState {
   Closed
   Open
   HalfOpen
-} derive(Eq)
+}
 
 ///|
 fn CircuitState::to_string(self : CircuitState) -> String {
@@ -658,12 +659,13 @@ fn provider_route_model_mapping_json(value : ModelMapping?) -> Json {
 }
 
 ///|
+#derive(Eq)
 priv enum ProviderSelectionError {
   NoProvidersConfigured
   AllProvidersCircuitOpen
   NoProviderCapacity
   ProviderQuotaExhausted
-} derive(Eq)
+}
 
 ///|
 fn ProviderSelectionError::to_string(self : ProviderSelectionError) -> String {

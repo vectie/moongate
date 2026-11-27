@@ -52,7 +52,7 @@ async fn AuthService::codex_client(
   let _ = self
   Client(
     "https://chatgpt.com",
-    headers=codex_oauth_headers(creds, accept, session_id),
+    headers=to_ci_headers(codex_oauth_headers(creds, accept, session_id)),
   )
 }
 

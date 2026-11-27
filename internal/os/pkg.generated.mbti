@@ -12,7 +12,7 @@ pub fn cwd() -> String raise
 
 pub fn executable() -> String raise
 
-pub fn[X] exit(Int) -> X
+pub fn[X] exit(Int32) -> X
 
 pub fn getenv(StringView) -> String? raise
 
@@ -22,11 +22,11 @@ pub fn home() -> String raise
 
 pub fn local_date_key(Int64) -> String
 
-pub fn local_day_start_seconds(Int) -> Int
+pub fn local_day_start_seconds(Int32) -> Int32
 
 pub fn local_month_key(Int64) -> String
 
-pub fn local_next_day_start_seconds(Int) -> Int
+pub fn local_next_day_start_seconds(Int32) -> Int32
 
 pub fn local_rfc3339(Int64) -> String
 
@@ -34,7 +34,7 @@ pub fn setenv(StringView, StringView, overwrite? : Bool) -> Unit raise
 
 pub fn tmpdir() -> String raise
 
-pub fn unix_seconds() -> Int
+pub fn unix_seconds() -> Int32
 
 pub fn unsetenv(StringView) -> Unit raise
 

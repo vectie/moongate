@@ -1287,7 +1287,7 @@ fn proxy_string_request(
 fn proxy_int_request(path : StringView, config : Json?, key : String) -> Int32? {
   match usage_query_value(path, key) {
     Some(value) =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => ()
       } noraise {
         parsed => return Some(parsed)
@@ -1340,7 +1340,7 @@ fn proxy_json_int(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.trunc().to_int())
     Some(String(value)) =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => None
       } noraise {
         parsed => Some(parsed)

@@ -30,7 +30,8 @@ fn Manager::new_pid(self : Manager) -> Pid {
 }
 
 ///|
-struct Pid(Int32) derive(Hash, Eq)
+#derive(Hash, Eq)
+struct Pid(Int32)
 
 ///|
 pub impl ToJson for Pid with fn to_json(self : Pid) -> Json {

@@ -1,8 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate/response_capture"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
-pub fn import_response_captures_json(Array[(String, String)], app? : String, provider? : String) -> Result[Json, String]
+pub fn import_response_captures_json(Array[(String, String)], app? : String, provider? : String) -> Result[@json.Json, String]
 
 // Errors
 

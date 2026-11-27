@@ -13,7 +13,7 @@ pub async fn run(args : Array[String]) -> Unit {
     if chunk.length() > 4 * 1024 * 1024 - bytes.length() {
       fail("OTLP file exceeds 4 MiB")
     }
-    bytes.write_bytes(chunk)
+    bytes.write_bytesview(chunk)
   }
   match
     @otel_usage.import_otel_usage_json(

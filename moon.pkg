@@ -24,7 +24,6 @@ import {
   "moonbitlang/async/fs",
   "moonbitlang/async/http",
   "moonbitlang/async/io",
-  "moonbit-community/rabbita",
   "moonbit-community/rabbita/html",
   "vectie/moongate/internal/httpx",
   "vectie/moongate/internal/httpx/status",

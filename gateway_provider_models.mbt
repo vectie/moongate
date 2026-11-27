@@ -82,7 +82,10 @@ async fn saved_provider_models(
         custom_user_agent=provider_custom_user_agent(provider),
         provider_type=provider.provider_type,
       )
-      let client = @http.Client::Client(target.origin, headers~)
+      let client = @http.Client::Client(
+    target.origin,
+    headers=to_ci_headers(headers),
+  )
       defer client.close()
       let response = client.get(target.path)
       if response.code == 404 || response.code == 405 {

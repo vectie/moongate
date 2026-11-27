@@ -1,4 +1,5 @@
 ///|
+#derive(ToJson)
 pub struct CompletedProcess {
   exec : String
   args : Array[String]
@@ -7,7 +8,7 @@ pub struct CompletedProcess {
   stderr : String
   elapsed : Int32
   timeout : Int32?
-} derive(ToJson)
+}
 
 ///|
 pub fn CompletedProcess::check(self : CompletedProcess) -> Unit raise Failed {
@@ -17,9 +18,10 @@ pub fn CompletedProcess::check(self : CompletedProcess) -> Unit raise Failed {
 }
 
 ///|
+#derive(ToJson)
 pub suberror Failed {
   Failed(CompletedProcess)
-} derive(ToJson)
+}
 
 ///|
 pub impl Show for Failed with fn output(self : Failed, logger : &Logger) -> Unit {

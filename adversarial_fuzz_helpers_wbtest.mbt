@@ -29,7 +29,7 @@ fn AdversarialFuzzer::ascii(
   alphabet~ : String = "abcdefghijklmnopqrstuvwxyz0123456789-._~",
 ) -> String {
   let length = min_length + self.next(max_length - min_length + 1)
-  let builder = StringBuilder(size_hint=length)
+  let builder = StringBuilder(capacity=length)
   for _ in 0..<length {
     builder.write_char(alphabet.get_char(self.next(alphabet.length())).unwrap())
   }

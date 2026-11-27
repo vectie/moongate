@@ -1,18 +1,20 @@
 ///|
+#derive(Debug)
 pub struct TokenResponse {
   id_token : String
   access_token : String
   refresh_token : String
-} derive(Debug)
+}
 
 ///|
+#derive(ToJson)
 pub(all) struct DeviceCodeFlow {
   device_code : String
   user_code : String
   verification_uri : String
   expires_in : Int32
   interval : Int32
-} derive(ToJson)
+}
 
 ///|
 impl @json.FromJson for TokenResponse with fn from_json(
@@ -50,7 +52,7 @@ fn json_int_field(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.to_int())
     Some(String(value)) =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => None
       } noraise {
         parsed => Some(parsed)

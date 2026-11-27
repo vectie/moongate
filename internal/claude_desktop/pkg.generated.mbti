@@ -6,9 +6,9 @@ pub async fn gateway_token() -> String?
 
 pub async fn get_or_create_gateway_token(String?) -> String
 
-pub async fn install_proxy_profile(String, Int, token? : String?) -> Result[ClaudeDesktopInstall, String]
+pub async fn install_proxy_profile(String, Int32, token? : String?) -> Result[ClaudeDesktopInstall, String]
 
-pub fn local_gateway_base_url(String, Int) -> String
+pub fn local_gateway_base_url(String, Int32) -> String
 
 pub async fn status() -> ClaudeDesktopStatus
 

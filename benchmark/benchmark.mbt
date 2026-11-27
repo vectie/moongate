@@ -19,10 +19,11 @@ pub fn live_benchmark_result_contract_v1() -> String {
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum LiveBenchmarkStatusV1 {
   Denied
   Unavailable
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn LiveBenchmarkStatusV1::id(self : LiveBenchmarkStatusV1) -> String {
@@ -56,10 +57,11 @@ pub impl @json.FromJson for LiveBenchmarkStatusV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum LiveBenchmarkReasonV1 {
   AuthorityDecisionRequired
   AuthorityVerificationUnavailable
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn LiveBenchmarkReasonV1::id(self : LiveBenchmarkReasonV1) -> String {
@@ -93,6 +95,7 @@ pub impl @json.FromJson for LiveBenchmarkReasonV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct DeterministicWorkloadV1 {
   contract_id : String
   workload_id : String
@@ -102,9 +105,10 @@ pub(all) struct DeterministicWorkloadV1 {
   first_token_samples_ms : Array[Int32]
   output_tokens : Int32
   simulated_cost_nano_usd : Int64
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct BenchmarkReportV1 {
   contract_id : String
   workload_id : String
@@ -119,9 +123,10 @@ pub(all) struct BenchmarkReportV1 {
   output_tokens : Int32
   output_tokens_per_second_milli : Int32
   cost_nano_usd : Int64
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct LiveBenchmarkRequestV1 {
   contract_id : String
   request_id : String
@@ -136,9 +141,10 @@ pub(all) struct LiveBenchmarkRequestV1 {
   deadline_ms : Int64
   cancellation_id : String
   authority_decision_id : String?
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct LiveBenchmarkResultV1 {
   contract_id : String
   request_id : String
@@ -151,7 +157,7 @@ pub(all) struct LiveBenchmarkResultV1 {
   authority_decision_id : String?
   adapter_id : String?
   recorded_at_ms : Int64
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
 pub fn default_deterministic_workload() -> DeterministicWorkloadV1 {

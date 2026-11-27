@@ -90,7 +90,10 @@ async fn MoonGateClient::request_text_path(
     http_method,
     resolved_control_token=self.resolved_control_token(),
   )
-  let client = @http.Client::Client(target.origin, headers~)
+  let client = @http.Client::Client(
+    target.origin,
+    headers=to_ci_headers(headers),
+  )
   defer client.close()
   let response = match http_method {
     "GET" =>

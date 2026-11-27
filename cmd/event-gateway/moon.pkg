@@ -1,7 +1,6 @@
 supported_targets = "native"
 
 import {
-  "moonbitlang/async",
   "vectie/moongate/text_gateway",
   "vectie/moongate/internal/httpx",
   "moonbitlang/core/env",

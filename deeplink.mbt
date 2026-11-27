@@ -150,7 +150,7 @@ fn moon_deeplink_put_query_int(
 ) -> Unit {
   match usage_query_value(query_path, key) {
     Some(value) =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => ()
       } noraise {
         parsed => request[key] = Json::number(parsed.to_double())

@@ -1,5 +1,6 @@
 ///|
 /// HTTP request methods supported by the `httpx` router.
+#derive(Eq, Compare, Hash, ToJson)
 pub(all) enum Method {
   Get
   Head
@@ -10,7 +11,7 @@ pub(all) enum Method {
   Options
   Trace
   Patch
-} derive(Eq, Compare, Hash, ToJson)
+}
 
 ///|
 pub impl Show for Method with fn to_string(self : Method) -> String {

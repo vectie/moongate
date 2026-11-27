@@ -3,23 +3,25 @@ package "vectie/moongate/acp_gateway"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
 pub async fn run_tool_relay(String) -> Unit
 
 // Errors
+#derive(@debug.Debug)
 pub(all) suberror BridgeError {
-  BridgeError(code~ : Int, kind~ : String, message~ : String)
-} derive(@debug.Debug)
+  BridgeError(code~ : Int32, kind~ : String, message~ : String)
+}
 pub fn BridgeError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct Bridge {
   // private fields
 }
-pub fn Bridge::from_json(Json) -> Self raise BridgeError
-pub async fn Bridge::serve(Self, port? : Int) -> Unit
+pub fn Bridge::from_json(@json.Json) -> Self raise BridgeError
+pub async fn Bridge::serve(Self, port? : Int32) -> Unit
 
 // Type aliases
 

@@ -8,9 +8,10 @@ enum Transport {
 }
 
 ///|
+#derive(Debug)
 priv suberror InvalidTransport {
   InvalidTransport(StringView)
-} derive(Debug)
+}
 
 ///|
 /// Parses a transport string and creates the corresponding Transport instance.
@@ -69,7 +70,7 @@ pub fn Transport::parse(transport : StringView) -> Transport raise {
 ///|
 async fn mkdir(path : String) -> Unit {
   let dirs = []
-  for dir = path.view() {
+  for dir = path[:] {
     let dir = dir.to_owned()
     if dir == "." || dir == "" || @fs.exists(dir) {
       break
@@ -115,7 +116,7 @@ async fn Transport::write(self : Transport, content : Json) -> Unit {
       }
       let content = content.stringify()
       let buffer = Buffer()
-      buffer.write_bytes(@encoding/utf8.encode(content))
+      buffer.write_bytesview(@encoding/utf8.encode(content))
       buffer.write_byte(b'\n')
       file.write(buffer.to_bytes())
     }

@@ -160,10 +160,10 @@ async test "ACP caller tool result resumes the original live process and session
   let bridge = { ..fixture_bridge("caller-tools-reuse"), tools: true, }
   with_bridge(bridge, base => {
     let body = tool_request()
-    let headers = {
-      "authorization": "Bearer local-fixture-token",
-      "content-type": "application/json",
-    }
+    let headers : Map[@http.CaseInsensitiveString, String] = Map::from_array([
+      (@http.CaseInsensitiveString("authorization"), "Bearer local-fixture-token"),
+      (@http.CaseInsensitiveString("content-type"), "application/json"),
+    ])
     let (first, data) = @http.post(
       "\{base}/v1/chat/completions",
       body.stringify(),

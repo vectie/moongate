@@ -4,9 +4,9 @@ package "vectie/moongate/internal/hosts"
 // Values
 pub async fn check_permission() -> Bool
 
-pub async fn install_and_flush(Int) -> Result[Unit, String]
+pub async fn install_and_flush(Int32) -> Result[Unit, String]
 
-pub async fn install_reroute(Int) -> Result[Unit, String]
+pub async fn install_reroute(Int32) -> Result[Unit, String]
 
 pub async fn is_reroute_installed() -> Bool
 

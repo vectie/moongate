@@ -113,7 +113,7 @@ async fn validate_provider_connection_candidate(
 ) -> Bool {
   let client = @http.Client::Client(
     candidate.target.origin,
-    headers=model_fetch_headers(candidate.api_key, None),
+    headers=to_ci_headers(model_fetch_headers(candidate.api_key, None)),
   )
   defer client.close()
   // One request, with no redirect/retry, provider registration or inference.

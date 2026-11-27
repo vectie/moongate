@@ -1,10 +1,11 @@
 ///|
+#derive(Eq)
 priv enum CredentialStatus {
   Valid
   Expired
   NotFound
   ParseError
-} derive(Eq)
+}
 
 ///|
 fn CredentialStatus::to_string(self : CredentialStatus) -> String {

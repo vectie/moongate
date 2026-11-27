@@ -1,7 +1,6 @@
 supported_targets = "native"
 
 import {
-  "moonbitlang/async",
   "moonbitlang/async/stdio",
   "moonbitlang/async/io",
   "vectie/moongate/otel_usage_cli",

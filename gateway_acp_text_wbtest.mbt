@@ -44,7 +44,7 @@ async test "unavailable ACP catalog retains text-only semantics without claiming
           },
         ],
         ..
-      }
+      },
     ),
   )
 }

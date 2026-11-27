@@ -7,49 +7,52 @@ import {
 }
 
 // Values
-pub fn monitor_snapshot(observed_at_ms~ : Int64, latency_samples_ms~ : Array[Int], first_token_samples_ms~ : Array[Int], permit_wait_samples_ms? : Array[Int], throughput_samples_milli? : Array[Int], terminal_outcome_counts? : Array[TerminalOutcomeCountV1], recent_input_tokens? : Int, recent_output_tokens? : Int, inflight_requests~ : Int, queue_depth? : Int, queue_supported? : Bool, permit_supported? : Bool, quota_configured_count? : Int, quota_exceeded_count? : Int, quota_headroom_nano_usd? : Int64?, quota_headroom_supported? : Bool, budget_headroom_nano_usd? : Int64?, budget_headroom_supported? : Bool, recent_cost_nano_usd? : Int64, circuit_open_count? : Int, circuit_half_open_count? : Int, failover_count? : Int, active_policies? : Array[ActivePolicyObservationV1], storage_healthy? : Bool, storage_failure_count? : Int, evidence_fresh? : Bool, newest_evidence_age_ms? : Int64?, oldest_evidence_age_ms? : Int64?) -> MonitorSnapshotV1
+pub fn monitor_snapshot(observed_at_ms~ : Int64, latency_samples_ms~ : Array[Int32], first_token_samples_ms~ : Array[Int32], permit_wait_samples_ms? : Array[Int32], throughput_samples_milli? : Array[Int32], terminal_outcome_counts? : Array[TerminalOutcomeCountV1], recent_input_tokens? : Int32, recent_output_tokens? : Int32, inflight_requests~ : Int32, queue_depth? : Int32, queue_supported? : Bool, permit_supported? : Bool, quota_configured_count? : Int32, quota_exceeded_count? : Int32, quota_headroom_nano_usd? : Int64?, quota_headroom_supported? : Bool, budget_headroom_nano_usd? : Int64?, budget_headroom_supported? : Bool, recent_cost_nano_usd? : Int64, circuit_open_count? : Int32, circuit_half_open_count? : Int32, failover_count? : Int32, active_policies? : Array[ActivePolicyObservationV1], storage_healthy? : Bool, storage_failure_count? : Int32, evidence_fresh? : Bool, newest_evidence_age_ms? : Int64?, oldest_evidence_age_ms? : Int64?) -> MonitorSnapshotV1
 
 pub fn monitor_snapshot_contract_v1() -> String
 
-pub fn numeric_percentile_snapshot(Array[Int]) -> NumericPercentileSnapshotV1
+pub fn numeric_percentile_snapshot(Array[Int32]) -> NumericPercentileSnapshotV1
 
 pub fn parse_circuit_state_v1(String) -> CircuitStateV1?
 
 pub fn parse_terminal_outcome_v1(String) -> TerminalOutcomeV1?
 
-pub fn percentile_snapshot(Array[Int]) -> PercentileSnapshotV1
+pub fn percentile_snapshot(Array[Int32]) -> PercentileSnapshotV1
 
 pub fn telemetry_contract_v1() -> String
 
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct ActivePolicyObservationV1 {
   app_type : String
   policy_id : String
-  policy_revision : Int
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+  policy_revision : Int32
+}
 pub fn ActivePolicyObservationV1::equal(Self, Self) -> Bool
-pub fn ActivePolicyObservationV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn ActivePolicyObservationV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn ActivePolicyObservationV1::not_equal(Self, Self) -> Bool
-pub fn ActivePolicyObservationV1::to_json(Self) -> Json
+pub fn ActivePolicyObservationV1::to_json(Self) -> @json.Json
 pub fn ActivePolicyObservationV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum CircuitStateV1 {
   Closed
   Open
   HalfOpen
   Unsupported
-} derive(Eq, @debug.Debug)
+}
 pub fn CircuitStateV1::equal(Self, Self) -> Bool
-pub fn CircuitStateV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn CircuitStateV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn CircuitStateV1::id(Self) -> String
 pub fn CircuitStateV1::not_equal(Self, Self) -> Bool
-pub fn CircuitStateV1::to_json(Self) -> Json
+pub fn CircuitStateV1::to_json(Self) -> @json.Json
 pub fn CircuitStateV1::to_repr(Self) -> @debug.Repr
-pub impl ToJson for CircuitStateV1
 pub impl @json.FromJson for CircuitStateV1
+pub impl @json.ToJson for CircuitStateV1
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct MonitorSnapshotV1 {
   contract_id : String
   observed_at_ms : Int64
@@ -58,59 +61,62 @@ pub(all) struct MonitorSnapshotV1 {
   permit_wait : PercentileSnapshotV1
   throughput_tokens_per_second_milli : NumericPercentileSnapshotV1
   terminal_outcome_counts : Array[TerminalOutcomeCountV1]
-  recent_input_tokens : Int
-  recent_output_tokens : Int
-  inflight_requests : Int
-  queue_depth : Int
+  recent_input_tokens : Int32
+  recent_output_tokens : Int32
+  inflight_requests : Int32
+  queue_depth : Int32
   queue_supported : Bool
   permit_supported : Bool
-  quota_configured_count : Int
-  quota_exceeded_count : Int
+  quota_configured_count : Int32
+  quota_exceeded_count : Int32
   quota_headroom_nano_usd : Int64?
   quota_headroom_supported : Bool
   budget_headroom_nano_usd : Int64?
   budget_headroom_supported : Bool
   recent_cost_nano_usd : Int64
-  circuit_open_count : Int
-  circuit_half_open_count : Int
-  failover_count : Int
+  circuit_open_count : Int32
+  circuit_half_open_count : Int32
+  failover_count : Int32
   active_policies : Array[ActivePolicyObservationV1]
   storage_healthy : Bool
-  storage_failure_count : Int
+  storage_failure_count : Int32
   evidence_fresh : Bool
   newest_evidence_age_ms : Int64?
   oldest_evidence_age_ms : Int64?
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn MonitorSnapshotV1::equal(Self, Self) -> Bool
-pub fn MonitorSnapshotV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn MonitorSnapshotV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn MonitorSnapshotV1::not_equal(Self, Self) -> Bool
-pub fn MonitorSnapshotV1::to_json(Self) -> Json
+pub fn MonitorSnapshotV1::to_json(Self) -> @json.Json
 pub fn MonitorSnapshotV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct NumericPercentileSnapshotV1 {
-  sample_count : Int
-  p50 : Int?
-  p95 : Int?
-  p99 : Int?
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+  sample_count : Int32
+  p50 : Int32?
+  p95 : Int32?
+  p99 : Int32?
+}
 pub fn NumericPercentileSnapshotV1::equal(Self, Self) -> Bool
-pub fn NumericPercentileSnapshotV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn NumericPercentileSnapshotV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn NumericPercentileSnapshotV1::not_equal(Self, Self) -> Bool
-pub fn NumericPercentileSnapshotV1::to_json(Self) -> Json
+pub fn NumericPercentileSnapshotV1::to_json(Self) -> @json.Json
 pub fn NumericPercentileSnapshotV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct PercentileSnapshotV1 {
-  sample_count : Int
-  p50_ms : Int?
-  p95_ms : Int?
-  p99_ms : Int?
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+  sample_count : Int32
+  p50_ms : Int32?
+  p95_ms : Int32?
+  p99_ms : Int32?
+}
 pub fn PercentileSnapshotV1::equal(Self, Self) -> Bool
-pub fn PercentileSnapshotV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn PercentileSnapshotV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn PercentileSnapshotV1::not_equal(Self, Self) -> Bool
-pub fn PercentileSnapshotV1::to_json(Self) -> Json
+pub fn PercentileSnapshotV1::to_json(Self) -> @json.Json
 pub fn PercentileSnapshotV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct RequestTelemetryV1 {
   contract_id : String
   request_id : String
@@ -125,22 +131,22 @@ pub(all) struct RequestTelemetryV1 {
   connected_at_ms : Int64?
   first_token_at_ms : Int64?
   completed_at_ms : Int64?
-  connect_ms : Int?
-  latency_ms : Int
-  first_token_ms : Int?
-  completion_ms : Int?
+  connect_ms : Int32?
+  latency_ms : Int32
+  first_token_ms : Int32?
+  completion_ms : Int32?
   success : Bool
   terminal_outcome : TerminalOutcomeV1
   terminal_detail : String?
-  retry_count : Int
-  failover_count : Int
+  retry_count : Int32
+  failover_count : Int32
   failover_chain : Array[String]
-  input_tokens : Int
-  output_tokens : Int
-  output_tokens_per_second_milli : Int?
-  queue_depth_at_accept : Int?
+  input_tokens : Int32
+  output_tokens : Int32
+  output_tokens_per_second_milli : Int32?
+  queue_depth_at_accept : Int32?
   queue_supported : Bool
-  permit_wait_ms : Int?
+  permit_wait_ms : Int32?
   permit_supported : Bool
   quota_headroom_nano_usd : Int64?
   quota_supported : Bool
@@ -148,28 +154,30 @@ pub(all) struct RequestTelemetryV1 {
   budget_supported : Bool
   circuit_state : CircuitStateV1
   policy_id : String?
-  policy_revision : Int?
+  policy_revision : Int32?
   storage_healthy : Bool
   evidence_fresh : Bool
   evidence_age_ms : Int64?
   cost_nano_usd : Int64
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn RequestTelemetryV1::equal(Self, Self) -> Bool
-pub fn RequestTelemetryV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RequestTelemetryV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RequestTelemetryV1::not_equal(Self, Self) -> Bool
-pub fn RequestTelemetryV1::to_json(Self) -> Json
+pub fn RequestTelemetryV1::to_json(Self) -> @json.Json
 pub fn RequestTelemetryV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct TerminalOutcomeCountV1 {
   outcome : TerminalOutcomeV1
-  count : Int
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+  count : Int32
+}
 pub fn TerminalOutcomeCountV1::equal(Self, Self) -> Bool
-pub fn TerminalOutcomeCountV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn TerminalOutcomeCountV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn TerminalOutcomeCountV1::not_equal(Self, Self) -> Bool
-pub fn TerminalOutcomeCountV1::to_json(Self) -> Json
+pub fn TerminalOutcomeCountV1::to_json(Self) -> @json.Json
 pub fn TerminalOutcomeCountV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum TerminalOutcomeV1 {
   Success
   Timeout
@@ -178,15 +186,15 @@ pub(all) enum TerminalOutcomeV1 {
   ProtocolClientError
   UpstreamError
   Unknown
-} derive(Eq, @debug.Debug)
+}
 pub fn TerminalOutcomeV1::equal(Self, Self) -> Bool
-pub fn TerminalOutcomeV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn TerminalOutcomeV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn TerminalOutcomeV1::id(Self) -> String
 pub fn TerminalOutcomeV1::not_equal(Self, Self) -> Bool
-pub fn TerminalOutcomeV1::to_json(Self) -> Json
+pub fn TerminalOutcomeV1::to_json(Self) -> @json.Json
 pub fn TerminalOutcomeV1::to_repr(Self) -> @debug.Repr
-pub impl ToJson for TerminalOutcomeV1
 pub impl @json.FromJson for TerminalOutcomeV1
+pub impl @json.ToJson for TerminalOutcomeV1
 
 // Type aliases
 

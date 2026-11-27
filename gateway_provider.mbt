@@ -551,10 +551,14 @@ async fn ProxyService::post_codex_compatible_provider_json(
   // from persistent headers and otherwise sends a chunked body. A fixed byte
   // length keeps JSON request framing predictable across upstream providers.
   let (origin, path) = split_origin_and_path(url)
-  let client = @http.Client::Client(origin, headers~)
+  let client = @http.Client::Client(origin, headers=to_ci_headers(headers))
   defer client.close()
   let request_headers = codex_compatible_provider_request_headers(request)
-  let response = client.post(path, request, extra_headers=request_headers) catch {
+  let response = client.post(
+    path,
+    request,
+    extra_headers=to_ci_headers(request_headers),
+  ) catch {
     error => return Err("upstream response header: \{error}")
   }
   let data = client.read_all() catch {
@@ -596,11 +600,13 @@ async fn ProxyService::post_codex_compatible_provider_stream(
     Err(message) => return Err(message)
     Ok(_) => ()
   }
-  let client = @http.Client::Client(origin, headers~)
+  let client = @http.Client::Client(origin, headers=to_ci_headers(headers))
   let response = client.post(
     path,
     request,
-    extra_headers=codex_compatible_provider_request_headers(request),
+    extra_headers=to_ci_headers(
+      codex_compatible_provider_request_headers(request),
+    ),
   ) catch {
     error => {
       client.close()
@@ -641,7 +647,11 @@ async fn ProxyService::post_claude_compatible_provider_json(
     Err(message) => return Err(message)
     Ok(_) => ()
   }
-  let (response, data) = @http.post(url, request, headers~) catch {
+  let (response, data) = @http.post(
+    url,
+    request,
+    headers=to_ci_headers(headers),
+  ) catch {
     error => return Err("\{error}")
   }
   Ok((response, data.text()))
@@ -2652,7 +2662,7 @@ fn provider_sort_updates_from_array(
     let sort_index = match obj.get("sortIndex") {
       Some(Number(value, ..)) => value.trunc().to_int()
       Some(String(value)) =>
-        try @string.parse_int(value, base=10) catch {
+        try @string.parse_int(value, radix=10) catch {
           _ => 0
         } noraise {
           parsed => parsed

@@ -1571,7 +1571,7 @@ fn parse_fixed_int(text : String, start : Int32, end : Int32) -> Int32? {
   if text.length() < end {
     return None
   }
-  try @string.parse_int(text[start:end], base=10) catch {
+  try @string.parse_int(text[start:end], radix=10) catch {
     _ => None
   } noraise {
     value => Some(value)

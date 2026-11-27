@@ -1,24 +1,28 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate/suite"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
-pub fn ai_session_receipt(String, String, String, Int) -> Json
+pub fn ai_session_receipt(String, String, String, Int32) -> @json.Json
 
-pub fn base_url(String, Int) -> String
+pub fn base_url(String, Int32) -> String
 
-pub fn claude_desktop_base_url(String, Int) -> String
+pub fn claude_desktop_base_url(String, Int32) -> String
 
 pub fn default_host() -> String
 
 pub fn default_model() -> String
 
-pub fn default_port() -> Int
+pub fn default_port() -> Int32
 
 pub fn manifest_contract() -> String
 
 pub fn normalize_host(String) -> String
 
-pub fn openai_base_url(String, Int) -> String
+pub fn openai_base_url(String, Int32) -> String
 
 pub fn product_name() -> String
 

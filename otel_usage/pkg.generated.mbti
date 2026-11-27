@@ -1,8 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate/otel_usage"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
-pub fn import_otel_usage_json(String, source_name? : String) -> Result[Json, String]
+pub fn import_otel_usage_json(String, source_name? : String) -> Result[@json.Json, String]
 
 // Errors
 

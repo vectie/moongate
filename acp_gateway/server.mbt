@@ -21,7 +21,7 @@ async fn json_reply(
 async fn read_body(reader : &@io.Reader) -> Json {
   let body = Buffer()
   while reader.read_some(max_len=8192) is Some(bytes) {
-    body.write_bytes(bytes)
+    body.write_bytesview(bytes)
     if body.length() > 1048576 {
       raise BridgeError(
         code=413,

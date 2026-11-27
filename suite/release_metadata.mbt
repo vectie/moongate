@@ -17,17 +17,13 @@ let release_metadata : String =
   #|description = "MoonBit-native local proxy and usage statistics gateway for the Moon suite"
   #|
   #|import {
-  #|  "moonbitlang/async@0.16.6",
-  #|  "moonbitlang/x@0.4.50",
-  #|  "moonbitlang/regexp@0.3.5",
+  #|  "moonbitlang/async@0.22.11",
+  #|  "moonbitlang/x@0.5.5",
+  #|  "moonbitlang/regexp@0.3.7",
   #|  "vectie/moonlib@0.1.23",
   #|  "vectie/lepusa@0.1.4",
-  #|  "moonbit-community/rabbita@0.12.4",
+  #|  "moonbit-community/rabbita@0.17.2",
   #|}
   #|
   #|preferred_target = "native"
-  #|
-  #|options(
-  #|  bin: "moongate",
-  #|)
   #|

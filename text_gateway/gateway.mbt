@@ -54,6 +54,14 @@ fn single(headers : Map[String, String], name : String) -> String? {
 }
 
 ///|
+fn single_ci(
+  headers : Map[@http.CaseInsensitiveString, String],
+  name : String,
+) -> String? {
+  headers.get(@http.CaseInsensitiveString(name))
+}
+
+///|
 async fn log_protocol(value : Json) -> Unit {
   // Bypass C stdout buffering so container logs show the current request.
   @io.Writer::write(@stdio.stderr, value.stringify() + "\n") catch {
@@ -143,7 +151,9 @@ pub async fn TextGateway::handle(
     authorization[7:].all(c => c >= '!' && c <= '~') else {
     return deny(writer, 401, reason="bearer_header_invalid")
   }
-  let headers = { "authorization": authorization }
+  let headers : Map[@http.CaseInsensitiveString, String] = Map::from_array([
+    (@http.CaseInsensitiveString("authorization"), authorization),
+  ])
   if request.method_ == Post {
     guard single(request.headers, "content-type") is Some(content_type) &&
       content_type.split(";").next().unwrap().trim() == "application/json" else {
@@ -182,7 +192,7 @@ pub async fn TextGateway::handle(
           message="The JSON request body exceeds 1048576 bytes. Reduce the request body; this is not an API key error.",
         )
       }
-      payload.write_bytes(bytes)
+      payload.write_bytesview(bytes)
     }
     let upstream = @http.Client(self.origin)
     defer upstream.close()
@@ -199,7 +209,7 @@ pub async fn TextGateway::handle(
         if error_body.length() + bytes.length() > 8192 {
           break
         }
-        error_body.write_bytes(bytes)
+        error_body.write_bytesview(bytes)
       }
       let error_code = try {
         match @json.parse(@utf8.decode(error_body.to_bytes())) {
@@ -238,7 +248,7 @@ pub async fn TextGateway::handle(
         },
       )
     }
-    let content = single(response.headers, "content-type").unwrap_or("")
+    let content = single_ci(response.headers, "content-type").unwrap_or("")
     guard content.has_prefix("application/json") ||
       content.has_prefix("text/event-stream") else {
       fail("invalid model content type")

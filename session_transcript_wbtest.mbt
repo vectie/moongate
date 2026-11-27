@@ -36,10 +36,13 @@ async test "transcript exported file crosses native route and compiled reader pa
         allow_failure=true,
       )
       let base = "http://127.0.0.1:\{server.port()}"
-      let headers = {
-        "x-moongate-control-token": "transcript-fixture-control",
-        "content-type": "application/json",
-      }
+      let headers = Map([
+        (
+          @http.CaseInsensitiveString("x-moongate-control-token"),
+          "transcript-fixture-control",
+        ),
+        (@http.CaseInsensitiveString("content-type"), "application/json"),
+      ])
       let payload : Json = {
         "content": source,
         "format": "auto",

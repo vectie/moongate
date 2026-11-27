@@ -4,21 +4,17 @@ pub fn moongate_rabbita_document_html(
   api_base~ : String = "http://127.0.0.1:15721",
 ) -> String {
   "<!DOCTYPE html>" +
-  @rabbita.render_to_string(
-    @rabbita.static_cell(
-      @html.html(lang="en", [
-        @html.head([
-          @html.meta(charset="utf-8"),
-          @html.meta(
-            name="viewport",
-            content="width=device-width, initial-scale=1",
-          ),
-          @html.title("MoonGate"),
-        ]),
-        @html.body([moongate_rabbita_shell_view(api_base~)]),
-      ]),
-    ),
-  )
+  @html.html(lang="en", [
+    @html.head([
+      @html.meta(charset="utf-8"),
+      @html.meta(
+        name="viewport",
+        content="width=device-width, initial-scale=1",
+      ),
+      @html.title("MoonGate"),
+    ]),
+    @html.body([moongate_rabbita_shell_view(api_base~)]),
+  ]).render_to_string()
 }
 
 ///|
@@ -92,9 +88,7 @@ pub fn moongate_rabbita_shell_dom_ids() -> Array[String] {
 pub fn moongate_rabbita_shell_html(
   api_base~ : String = "http://127.0.0.1:15721",
 ) -> String {
-  @rabbita.render_to_string(
-    @rabbita.static_cell(moongate_rabbita_shell_view(api_base~)),
-  )
+  moongate_rabbita_shell_view(api_base~).render_to_string()
 }
 
 ///|

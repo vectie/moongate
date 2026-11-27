@@ -141,7 +141,7 @@ fn parse_tool_chat(
           "tool_call_id": String(id),
           "content": String(content),
           ..
-        }
+        },
       ) => Some((id, content))
       _ => None
     },

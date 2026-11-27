@@ -43,7 +43,7 @@ pub async fn run(args : Array[String]) -> Unit {
     guard chunk.length() <= 4 * 1024 * 1024 - bytes.length() else {
       fail("Insomnia input exceeds 4 MiB")
     }
-    bytes.write_bytes(chunk)
+    bytes.write_bytesview(chunk)
   }
   let result = @insomnia_import.import_collection(
     @utf8.decode(bytes.to_bytes()),

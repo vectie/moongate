@@ -59,12 +59,16 @@ pub async fn Server::serve(self : Server, handler : Handler) -> Unit {
   self.server.run_forever(
     (rh, rb, w) => {
       let method_ = Method::from_async_http(rh.meth)
+      let headers : Map[String, String] = Map([])
+      for k, v in rh.headers {
+        headers[k.0] = v
+      }
       let r : RequestReader = {
         body: rb,
         method_,
         path: rh.path,
-        headers: rh.headers,
-        vars: {},
+        headers,
+        vars: Map([]),
       }
       let w : ResponseWriter = ResponseWriter::new(w)
       (handler.0)(r, w) catch {

@@ -150,6 +150,7 @@ impl FromJson for AnthropicTool with fn from_json(
 }
 
 ///|
+#derive(ToJson)
 priv struct AnthropicResponse {
   id : String
   type_ : String
@@ -159,16 +160,17 @@ priv struct AnthropicResponse {
   stop_reason : String?
   stop_sequence : String?
   usage : AnthropicUsage
-} derive(ToJson)
+}
 
 ///|
+#derive(ToJson)
 priv struct AnthropicResponseBlock {
   type_ : String
   text : String?
   name : String?
   input : Json?
   id : String?
-} derive(ToJson)
+}
 
 ///|
 priv struct AnthropicUsage {

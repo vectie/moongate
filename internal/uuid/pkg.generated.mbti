@@ -17,19 +17,21 @@ pub let nil : Uuid
 pub fn parse(StringView) -> Uuid raise ParseError
 
 // Errors
-type ParseError derive(ToJson, @debug.Debug)
-pub fn ParseError::to_json(Self) -> Json
+#derive(@debug.Debug, @json.ToJson)
+type ParseError
+pub fn ParseError::to_json(Self) -> @json.Json
 pub fn ParseError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 type Generator
 pub fn Generator::v4(Self) -> Uuid
 
-type Uuid derive(Compare, Eq, Hash)
-pub fn Uuid::compare(Self, Self) -> Int
+#derive(Compare, Eq, Hash)
+type Uuid
+pub fn Uuid::compare(Self, Self) -> Int32
 pub fn Uuid::equal(Self, Self) -> Bool
-pub fn Uuid::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
-pub fn Uuid::hash(Self) -> Int
+pub fn Uuid::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
+pub fn Uuid::hash(Self) -> Int32
 pub fn Uuid::hash_combine(Self, Hasher) -> Unit
 pub fn Uuid::not_equal(Self, Self) -> Bool
 #as_free_fn
@@ -40,23 +42,25 @@ pub fn Uuid::op_le(Self, Self) -> Bool
 pub fn Uuid::op_lt(Self, Self) -> Bool
 pub fn Uuid::output(Self, &Logger) -> Unit
 pub fn Uuid::to_bytes(Self) -> Bytes
-pub fn Uuid::to_json(Self) -> Json
+pub fn Uuid::to_json(Self) -> @json.Json
 pub fn Uuid::to_string(Self) -> String
 pub fn Uuid::variant(Self) -> Variant
 pub fn Uuid::version(Self) -> Version?
 pub impl Show for Uuid
-pub impl ToJson for Uuid
 pub impl @json.FromJson for Uuid
+pub impl @json.ToJson for Uuid
 
+#derive(@debug.Debug, @json.ToJson)
 pub enum Variant {
   ReservedNCS
   RFC9562(Version)
   ReservedMicrosoft
   ReservedFuture
-} derive(ToJson, @debug.Debug)
-pub fn Variant::to_json(Self) -> Json
+}
+pub fn Variant::to_json(Self) -> @json.Json
 pub fn Variant::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug, @json.ToJson)
 pub(all) enum Version {
   V0
   V1
@@ -74,8 +78,8 @@ pub(all) enum Version {
   V13
   V14
   V15
-} derive(ToJson, @debug.Debug)
-pub fn Version::to_json(Self) -> Json
+}
+pub fn Version::to_json(Self) -> @json.Json
 pub fn Version::to_repr(Self) -> @debug.Repr
 
 // Type aliases

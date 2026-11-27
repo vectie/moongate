@@ -59,17 +59,20 @@ async test "managed media forwards scoped auth once without cookies control toke
       server.serve((r, w) => gateway.handle(r, w))
     })
     let origin = "http://127.0.0.1:\{server.port()}"
-    let headers = {
-      "authorization": "Bearer scoped-fixture",
-      "idempotency-key": "request-fixture",
-      "content-type": "application/json",
-      "cookie": "private-cookie",
-      "x-moongate-control-token": "private-control",
-      "x-forwarded-host": "evil",
-    }
+    let headers : Map[@http.CaseInsensitiveString, String] = Map::from_array([
+      (@http.CaseInsensitiveString("authorization"), "Bearer scoped-fixture"),
+      (@http.CaseInsensitiveString("idempotency-key"), "request-fixture"),
+      (@http.CaseInsensitiveString("content-type"), "application/json"),
+      (@http.CaseInsensitiveString("cookie"), "private-cookie"),
+      (@http.CaseInsensitiveString("x-moongate-control-token"), "private-control"),
+      (@http.CaseInsensitiveString("x-forwarded-host"), "evil"),
+    ])
     let (reply, _) = @http.post(origin + "/v1/videos", "{}", headers~)
     assert_eq(reply.code, 200)
-    assert_eq(reply.headers.get("set-cookie"), None)
+    assert_eq(
+      reply.headers.get(@http.CaseInsensitiveString("set-cookie")),
+      None,
+    )
     let (content, bytes) = @http.get(
       origin + "/v1/videos/" + id + "/content",
       headers~,
@@ -79,7 +82,7 @@ async test "managed media forwards scoped auth once without cookies control toke
     let (missing, _) = @http.post(origin + "/v1/videos", "{}")
     assert_eq(missing.code, 401)
     let browser_headers = headers.copy()
-    browser_headers["origin"] = "http://evil"
+    browser_headers[@http.CaseInsensitiveString("origin")] = "http://evil"
     let (browser, _) = @http.post(
       origin + "/v1/videos",
       "{}",

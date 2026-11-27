@@ -9,6 +9,7 @@ pub fn monitor_snapshot_contract_v1() -> String {
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum TerminalOutcomeV1 {
   Success
   Timeout
@@ -17,7 +18,7 @@ pub(all) enum TerminalOutcomeV1 {
   ProtocolClientError
   UpstreamError
   Unknown
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn TerminalOutcomeV1::id(self : TerminalOutcomeV1) -> String {
@@ -63,12 +64,13 @@ pub impl @json.FromJson for TerminalOutcomeV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq)
 pub(all) enum CircuitStateV1 {
   Closed
   Open
   HalfOpen
   Unsupported
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn CircuitStateV1::id(self : CircuitStateV1) -> String {
@@ -108,6 +110,7 @@ pub impl @json.FromJson for CircuitStateV1 with fn from_json(
 }
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct RequestTelemetryV1 {
   contract_id : String
   request_id : String
@@ -150,38 +153,43 @@ pub(all) struct RequestTelemetryV1 {
   evidence_fresh : Bool
   evidence_age_ms : Int64?
   cost_nano_usd : Int64
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct TerminalOutcomeCountV1 {
   outcome : TerminalOutcomeV1
   count : Int32
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct PercentileSnapshotV1 {
   sample_count : Int32
   p50_ms : Int32?
   p95_ms : Int32?
   p99_ms : Int32?
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct NumericPercentileSnapshotV1 {
   sample_count : Int32
   p50 : Int32?
   p95 : Int32?
   p99 : Int32?
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct ActivePolicyObservationV1 {
   app_type : String
   policy_id : String
   policy_revision : Int32
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct MonitorSnapshotV1 {
   contract_id : String
   observed_at_ms : Int64
@@ -212,7 +220,7 @@ pub(all) struct MonitorSnapshotV1 {
   evidence_fresh : Bool
   newest_evidence_age_ms : Int64?
   oldest_evidence_age_ms : Int64?
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
 pub extend TerminalOutcomeV1 with @moonbitlang/core/debug.Debug::{to_repr}

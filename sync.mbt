@@ -1002,7 +1002,7 @@ async fn moon_webdav_run_status_request(
       },
     )
   }
-  let status = @string.parse_int(result.stdout.trim(), base=10) catch {
+  let status = @string.parse_int(result.stdout.trim(), radix=10) catch {
     _ => return Err("WebDAV \{operation} returned an invalid HTTP status.")
   }
   Ok(status)
@@ -1034,7 +1034,7 @@ async fn moon_s3_run_status_request(
       },
     )
   }
-  let status = @string.parse_int(result.stdout.trim(), base=10) catch {
+  let status = @string.parse_int(result.stdout.trim(), radix=10) catch {
     _ => return Err("S3 \{operation} returned an invalid HTTP status.")
   }
   Ok(status)

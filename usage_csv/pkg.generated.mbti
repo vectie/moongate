@@ -1,8 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate/usage_csv"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
-pub fn to_json(String) -> Json raise
+pub fn to_json(String) -> @json.Json raise
 
 // Errors
 

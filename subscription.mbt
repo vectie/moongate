@@ -772,7 +772,10 @@ async fn moon_fetch_json_get(
     Ok(target) => target
     Err(err) => return Err({ status: Valid, message: err, })
   }
-  let client = @http.Client::Client(target.origin, headers~)
+  let client = @http.Client::Client(
+    target.origin,
+    headers=to_ci_headers(headers),
+  )
   defer client.close()
   let response = client.get(target.path) catch {
     err => return Err({ status: Valid, message: "Network error: \{err}", })
@@ -792,7 +795,10 @@ async fn moon_fetch_json_post(
     Ok(target) => target
     Err(err) => return Err({ status: Valid, message: err, })
   }
-  let client = @http.Client::Client(target.origin, headers~)
+  let client = @http.Client::Client(
+    target.origin,
+    headers=to_ci_headers(headers),
+  )
   defer client.close()
   let response = client.post(target.path, body) catch {
     err => {
@@ -1208,7 +1214,7 @@ fn json_int64_from_map(obj : Map[String, Json], key : String) -> Int64? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.to_int64())
     Some(String(value)) =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => None
       } noraise {
         parsed => Some(parsed.to_int64())

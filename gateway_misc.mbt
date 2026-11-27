@@ -357,6 +357,7 @@ fn append_query_to_full_url(
 }
 
 ///|
+#derive(Eq)
 priv enum MoonClientFormat {
   Claude
   Codex
@@ -364,7 +365,7 @@ priv enum MoonClientFormat {
   Gemini
   GeminiCli
   Unknown
-} derive(Eq)
+}
 
 ///|
 fn MoonClientFormat::to_string(self : MoonClientFormat) -> String {

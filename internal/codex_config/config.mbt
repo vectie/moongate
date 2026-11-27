@@ -329,7 +329,7 @@ fn codex_positive_int_from_json(value : Json?) -> Int32? {
 
 ///|
 fn codex_positive_int_from_string(value : StringView) -> Int32? {
-  try @string.parse_int(value.to_owned(), base=10) catch {
+  try @string.parse_int(value.to_owned(), radix=10) catch {
     _ => None
   } noraise {
     parsed => if parsed > 0 { Some(parsed) } else { None }

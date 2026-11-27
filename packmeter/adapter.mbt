@@ -1,18 +1,21 @@
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct MeteredCapability {
   kind : String
   id : String
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
 /// The attribution scope is derived solely from the generic host projection.
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct PackMeteringScope {
   pack_id : String
   product_id : String
   capabilities : Array[MeteredCapability]
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct UsageAttribution {
   pack_id : String
   product_id : String
@@ -23,14 +26,15 @@ pub(all) struct UsageAttribution {
   amount_micros : Int32
   currency : String
   evidence_ref : String
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
+#derive(Debug, Eq, ToJson, FromJson)
 pub(all) struct PackBudget {
   pack_id : String
   limit_micros : Int32
   spent_micros : Int32
-} derive(Debug, Eq, ToJson, FromJson)
+}
 
 ///|
 pub fn budget(pack_id : String, limit_micros : Int32) -> PackBudget raise {

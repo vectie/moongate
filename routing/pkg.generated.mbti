@@ -15,7 +15,7 @@ pub fn empty_smooth_state() -> SmoothStateV1
 
 pub fn parse_routing_mode(String) -> RoutingMode?
 
-pub fn policy(policy_id~ : String, app_type~ : String, revision~ : Int, mode~ : RoutingMode, weights? : Map[String, Int], concurrency_limits? : Map[String, Int], minimum_shadow_decisions? : Int, minimum_shadow_window_ms? : Int64, canary_traffic_basis_points? : Int, rollback_error_rate_milli? : Int, rollback_p95_latency_ms? : Int, rollback_minimum_requests? : Int, configured_at_ms~ : Int64) -> RoutingPolicyV1 raise
+pub fn policy(policy_id~ : String, app_type~ : String, revision~ : Int32, mode~ : RoutingMode, weights? : Map[String, Int32], concurrency_limits? : Map[String, Int32], minimum_shadow_decisions? : Int32, minimum_shadow_window_ms? : Int64, canary_traffic_basis_points? : Int32, rollback_error_rate_milli? : Int32, rollback_p95_latency_ms? : Int32, rollback_minimum_requests? : Int32, configured_at_ms~ : Int64) -> RoutingPolicyV1 raise
 
 pub fn routing_activation_receipt_contract_v1() -> String
 
@@ -28,24 +28,26 @@ pub fn select(RoutingPolicyV1, Array[ProviderCandidateV1], SmoothStateV1, shadow
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct CandidateReviewV1 {
   provider_id : String
   eligible : Bool
   reasons : Array[String]
   warnings : Array[String]
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn CandidateReviewV1::equal(Self, Self) -> Bool
-pub fn CandidateReviewV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn CandidateReviewV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn CandidateReviewV1::not_equal(Self, Self) -> Bool
-pub fn CandidateReviewV1::to_json(Self) -> Json
+pub fn CandidateReviewV1::to_json(Self) -> @json.Json
 pub fn CandidateReviewV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct ProviderCandidateV1 {
   provider_id : String
-  priority : Int
-  weight : Int
-  inflight : Int
-  concurrency_limit : Int
+  priority : Int32
+  weight : Int32
+  inflight : Int32
+  concurrency_limit : Int32
   enabled : Bool
   compatible : Bool
   healthy : Bool
@@ -64,39 +66,42 @@ pub(all) struct ProviderCandidateV1 {
   budget_available : Bool
   capacity_evidence_supported : Bool
   capacity_available : Bool
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn ProviderCandidateV1::equal(Self, Self) -> Bool
-pub fn ProviderCandidateV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn ProviderCandidateV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn ProviderCandidateV1::not_equal(Self, Self) -> Bool
-pub fn ProviderCandidateV1::to_json(Self) -> Json
+pub fn ProviderCandidateV1::to_json(Self) -> @json.Json
 pub fn ProviderCandidateV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum RoutingActivationActionV1 {
   Activate
   Rollback
-} derive(Eq, @debug.Debug)
+}
 pub fn RoutingActivationActionV1::equal(Self, Self) -> Bool
-pub fn RoutingActivationActionV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingActivationActionV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingActivationActionV1::id(Self) -> String
 pub fn RoutingActivationActionV1::not_equal(Self, Self) -> Bool
-pub fn RoutingActivationActionV1::to_json(Self) -> Json
+pub fn RoutingActivationActionV1::to_json(Self) -> @json.Json
 pub fn RoutingActivationActionV1::to_repr(Self) -> @debug.Repr
-pub impl ToJson for RoutingActivationActionV1
 pub impl @json.FromJson for RoutingActivationActionV1
+pub impl @json.ToJson for RoutingActivationActionV1
 
+#derive(Eq, @debug.Debug)
 pub(all) enum RoutingActivationScopeV1 {
   BoundedCanary
   RollbackScope
-} derive(Eq, @debug.Debug)
+}
 pub fn RoutingActivationScopeV1::equal(Self, Self) -> Bool
-pub fn RoutingActivationScopeV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingActivationScopeV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingActivationScopeV1::id(Self) -> String
 pub fn RoutingActivationScopeV1::not_equal(Self, Self) -> Bool
-pub fn RoutingActivationScopeV1::to_json(Self) -> Json
+pub fn RoutingActivationScopeV1::to_json(Self) -> @json.Json
 pub fn RoutingActivationScopeV1::to_repr(Self) -> @debug.Repr
-pub impl ToJson for RoutingActivationScopeV1
 pub impl @json.FromJson for RoutingActivationScopeV1
+pub impl @json.ToJson for RoutingActivationScopeV1
 
+#derive(Eq, @debug.Debug)
 pub(all) enum RoutingDecisionReasonV1 {
   HighestPriorityEligible
   LeastInflightEligible
@@ -104,20 +109,21 @@ pub(all) enum RoutingDecisionReasonV1 {
   ExistingSessionBinding
   NewSessionWeightedSelection
   NoEligibleProvider
-} derive(Eq, @debug.Debug)
+}
 pub fn RoutingDecisionReasonV1::equal(Self, Self) -> Bool
-pub fn RoutingDecisionReasonV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingDecisionReasonV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingDecisionReasonV1::id(Self) -> String
 pub fn RoutingDecisionReasonV1::not_equal(Self, Self) -> Bool
-pub fn RoutingDecisionReasonV1::to_json(Self) -> Json
+pub fn RoutingDecisionReasonV1::to_json(Self) -> @json.Json
 pub fn RoutingDecisionReasonV1::to_repr(Self) -> @debug.Repr
-pub impl ToJson for RoutingDecisionReasonV1
 pub impl @json.FromJson for RoutingDecisionReasonV1
+pub impl @json.ToJson for RoutingDecisionReasonV1
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct RoutingDecisionV1 {
   contract_id : String
   policy_id : String
-  policy_revision : Int
+  policy_revision : Int32
   app_type : String
   mode : RoutingMode
   shadow : Bool
@@ -126,28 +132,30 @@ pub(all) struct RoutingDecisionV1 {
   selected_provider_id : String?
   reason : RoutingDecisionReasonV1
   reviews : Array[CandidateReviewV1]
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn RoutingDecisionV1::equal(Self, Self) -> Bool
-pub fn RoutingDecisionV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingDecisionV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingDecisionV1::not_equal(Self, Self) -> Bool
-pub fn RoutingDecisionV1::to_json(Self) -> Json
+pub fn RoutingDecisionV1::to_json(Self) -> @json.Json
 pub fn RoutingDecisionV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum RoutingMode {
   Priority
   SmoothWeightedRoundRobin
   LeastInflight
   SessionSticky
-} derive(Eq, @debug.Debug)
+}
 pub fn RoutingMode::equal(Self, Self) -> Bool
-pub fn RoutingMode::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingMode::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingMode::not_equal(Self, Self) -> Bool
-pub fn RoutingMode::to_json(Self) -> Json
+pub fn RoutingMode::to_json(Self) -> @json.Json
 pub fn RoutingMode::to_repr(Self) -> @debug.Repr
 pub fn RoutingMode::to_string(Self) -> String
-pub impl ToJson for RoutingMode
 pub impl @json.FromJson for RoutingMode
+pub impl @json.ToJson for RoutingMode
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct RoutingPolicyActivationReceiptV1 {
   contract_id : String
   receipt_id : String
@@ -157,63 +165,66 @@ pub(all) struct RoutingPolicyActivationReceiptV1 {
   authority_decision_id : String
   authority_decision_digest : String
   policy_id : String
-  policy_revision : Int
+  policy_revision : Int32
   previous_policy_id : String?
-  previous_policy_revision : Int?
+  previous_policy_revision : Int32?
   activation_scope : RoutingActivationScopeV1
-  canary_traffic_basis_points : Int
-  minimum_shadow_decisions : Int
+  canary_traffic_basis_points : Int32
+  minimum_shadow_decisions : Int32
   minimum_shadow_window_ms : Int64
-  rollback_error_rate_milli : Int
-  rollback_p95_latency_ms : Int
-  rollback_minimum_requests : Int
+  rollback_error_rate_milli : Int32
+  rollback_p95_latency_ms : Int32
+  rollback_minimum_requests : Int32
   recorded_at_ms : Int64
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn RoutingPolicyActivationReceiptV1::equal(Self, Self) -> Bool
-pub fn RoutingPolicyActivationReceiptV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingPolicyActivationReceiptV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingPolicyActivationReceiptV1::not_equal(Self, Self) -> Bool
-pub fn RoutingPolicyActivationReceiptV1::to_json(Self) -> Json
+pub fn RoutingPolicyActivationReceiptV1::to_json(Self) -> @json.Json
 pub fn RoutingPolicyActivationReceiptV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct RoutingPolicyV1 {
   contract_id : String
   policy_id : String
   app_type : String
-  revision : Int
+  revision : Int32
   mode : RoutingMode
-  weights : Map[String, Int]
-  concurrency_limits : Map[String, Int]
-  minimum_shadow_decisions : Int
+  weights : Map[String, Int32]
+  concurrency_limits : Map[String, Int32]
+  minimum_shadow_decisions : Int32
   minimum_shadow_window_ms : Int64
-  canary_traffic_basis_points : Int
-  rollback_error_rate_milli : Int
-  rollback_p95_latency_ms : Int
-  rollback_minimum_requests : Int
+  canary_traffic_basis_points : Int32
+  rollback_error_rate_milli : Int32
+  rollback_p95_latency_ms : Int32
+  rollback_minimum_requests : Int32
   configured_at_ms : Int64
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn RoutingPolicyV1::equal(Self, Self) -> Bool
-pub fn RoutingPolicyV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn RoutingPolicyV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn RoutingPolicyV1::not_equal(Self, Self) -> Bool
-pub fn RoutingPolicyV1::to_json(Self) -> Json
+pub fn RoutingPolicyV1::to_json(Self) -> @json.Json
 pub fn RoutingPolicyV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct SmoothStateV1 {
   entries : Array[SmoothWeightV1]
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+}
 pub fn SmoothStateV1::equal(Self, Self) -> Bool
-pub fn SmoothStateV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn SmoothStateV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn SmoothStateV1::not_equal(Self, Self) -> Bool
-pub fn SmoothStateV1::to_json(Self) -> Json
+pub fn SmoothStateV1::to_json(Self) -> @json.Json
 pub fn SmoothStateV1::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug, @json.FromJson, @json.ToJson)
 pub(all) struct SmoothWeightV1 {
   provider_id : String
-  current_weight : Int
-} derive(Eq, ToJson, @debug.Debug, @json.FromJson)
+  current_weight : Int32
+}
 pub fn SmoothWeightV1::equal(Self, Self) -> Bool
-pub fn SmoothWeightV1::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn SmoothWeightV1::from_json(@json.Json, @json.DecodeContext) -> Self raise @json.JsonDecodeError
 pub fn SmoothWeightV1::not_equal(Self, Self) -> Bool
-pub fn SmoothWeightV1::to_json(Self) -> Json
+pub fn SmoothWeightV1::to_json(Self) -> @json.Json
 pub fn SmoothWeightV1::to_repr(Self) -> @debug.Repr
 
 // Type aliases

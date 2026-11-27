@@ -2,7 +2,7 @@
 package "vectie/moongate/internal/net"
 
 // Values
-pub fn localhost_port_open(Int, timeout_ms? : Int) -> Bool
+pub fn localhost_port_open(Int32, timeout_ms? : Int32) -> Bool
 
 // Errors
 

@@ -23,7 +23,7 @@ async fn Frames::next(self : Frames) -> Json {
           self.pending[self.offset] != b'\n' {
       self.offset += 1
     }
-    frame.write_bytes(self.pending[start:self.offset])
+    frame.write_bytesview(self.pending[start:self.offset])
     if frame.length() > 1048576 {
       raise protocol_error("ACP frame exceeds 1 MiB")
     }

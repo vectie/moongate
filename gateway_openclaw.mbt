@@ -361,7 +361,7 @@ fn hermes_web_port_from_request(path : StringView) -> Int32 {
   let env_port = @os.getenv("HERMES_WEB_PORT") catch { _ => None }
   match env_port {
     Some(raw) => {
-      let port = @string.parse_int(raw.trim().to_owned(), base=10) catch {
+      let port = @string.parse_int(raw.trim().to_owned(), radix=10) catch {
         _ => -1
       }
       if port > 0 && port <= 65535 {

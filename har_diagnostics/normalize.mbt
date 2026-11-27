@@ -166,7 +166,9 @@ fn captured_start(value : Json) -> Double? {
   if s[4] != '-' || s[7] != '-' || s[10] != 'T' || s[13] != ':' || s[16] != ':' {
     return None
   }
-  let base = @time.PlainDateTime::from_str(s[:19]) catch { _ => return None }
+  let base : @time.PlainDateTime = @string.FromStr::from_str(s[:19]) catch {
+    _ => return None
+  }
   let mut fraction = 0.0
   let mut scale = 100.0
   if end > 19 {

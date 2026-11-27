@@ -8,7 +8,7 @@ import {
 // Values
 pub fn exact_count(String) -> Double?
 
-pub fn parse_with_number_text(StringView) -> Json raise @json.ParseError
+pub fn parse_with_number_text(StringView) -> @json.Json raise @json.ParseError
 
 // Errors
 

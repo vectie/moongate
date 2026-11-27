@@ -4,6 +4,7 @@ test "usage attribution stays product neutral" {
     contract: "moonsuite.pack-host-activation.v1",
     pack_id: "fixture",
     product_id: "fixture",
+    app_runtime_identity: None,
     version: "1.0.0",
     required_runtime_extensions: [],
     book_templates: [],

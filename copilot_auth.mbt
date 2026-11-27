@@ -26,11 +26,13 @@ const COPILOT_API_VERSION = "2025-10-01"
 const COPILOT_INTEGRATION_ID = "vscode-chat"
 
 ///|
+#derive(Debug)
 priv suberror CopilotAuthError {
   CopilotAuthError(String)
-} derive(Debug)
+}
 
 ///|
+#derive(ToJson, FromJson)
 priv struct CopilotCredentials {
   github_token : String
   copilot_token : String
@@ -40,16 +42,17 @@ priv struct CopilotCredentials {
   avatar_url : String?
   authenticated_at : Int64
   github_domain : String
-} derive(ToJson, FromJson)
+}
 
 ///|
+#derive(ToJson)
 priv struct CopilotDeviceCodeResponse {
   device_code : String
   user_code : String
   verification_uri : String
   expires_in : Int32
   interval : Int32
-} derive(ToJson)
+}
 
 ///|
 fn copilot_credentials_path() -> String {
@@ -78,7 +81,7 @@ fn copilot_json_int(obj : Map[String, Json], key : String) -> Int32? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.to_int())
     Some(String(value)) =>
-      try @string.parse_int(value, base=10) catch {
+      try @string.parse_int(value, radix=10) catch {
         _ => None
       } noraise {
         parsed => Some(parsed)
@@ -92,7 +95,7 @@ fn copilot_json_int64(obj : Map[String, Json], key : String) -> Int64? {
   match obj.get(key) {
     Some(Number(value, ..)) => Some(value.to_int64())
     Some(String(value)) =>
-      try @string.parse_int64(value, base=10) catch {
+      try @string.parse_int64(value, radix=10) catch {
         _ => None
       } noraise {
         parsed => Some(parsed)
@@ -636,7 +639,7 @@ pub async fn copilot_get_models(account_id : String?) -> Result[Json, String] {
   try {
     let (response, data) = @http.get(
       "\{copilot_api_base(credentials.github_domain)}/models",
-      headers=copilot_headers(credentials),
+      headers=to_ci_headers(copilot_headers(credentials)),
     )
     guard response.code is (200..<=299) else {
       return Err(

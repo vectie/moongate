@@ -1,8 +1,9 @@
 ///|
+#derive(Debug, Eq)
 pub(all) suberror MediaGatewayError {
   InvalidConfiguration
   InvalidResponse
-} derive(Debug, Eq)
+}
 
 ///|
 pub struct MediaGateway {
@@ -71,6 +72,14 @@ fn single(headers : Map[String, String], key : String) -> String? {
 }
 
 ///|
+fn single_ci(
+  headers : Map[@http.CaseInsensitiveString, String],
+  key : String,
+) -> String? {
+  headers.get(@http.CaseInsensitiveString(key))
+}
+
+///|
 async fn limited(reader : &@io.Reader, limit : Int32) -> Bytes {
   let result = Buffer()
   let mut count = 0
@@ -79,7 +88,7 @@ async fn limited(reader : &@io.Reader, limit : Int32) -> Bytes {
     if count > limit {
       raise InvalidResponse
     }
-    result.write_bytes(bytes)
+    result.write_bytesview(bytes)
   }
   result.to_bytes()
 }
@@ -145,7 +154,9 @@ pub async fn MediaGateway::handle(
     authorization[7:].all(c => c >= '!' && c <= '~') else {
     return error_reply(writer, 401)
   }
-  let headers = { "authorization": authorization }
+  let headers : Map[@http.CaseInsensitiveString, String] = Map::from_array([
+    (@http.CaseInsensitiveString("authorization"), authorization),
+  ])
   if request.method_ == Post {
     guard single(request.headers, "content-type") is Some(content_type) &&
       ["application/json", "application/x-www-form-urlencoded"].contains(
@@ -191,7 +202,7 @@ pub async fn MediaGateway::handle(
       )
     }
     let is_content = request.path.has_suffix("/content")
-    let content_type = single(response.headers, "content-type").unwrap_or("")
+    let content_type = single_ci(response.headers, "content-type").unwrap_or("")
     if is_content {
       if content_type != "video/mp4" || response.code != 200 {
         raise InvalidResponse

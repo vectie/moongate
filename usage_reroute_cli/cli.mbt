@@ -36,7 +36,7 @@ async fn read_file(path : String) -> String {
     if chunk.length() > 4 * 1024 * 1024 - bytes.length() {
       fail("Input exceeds 4 MiB")
     }
-    bytes.write_bytes(chunk)
+    bytes.write_bytesview(chunk)
   }
   @utf8.decode(bytes.to_bytes())
 }

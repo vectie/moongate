@@ -462,11 +462,11 @@ fn copilot_extract_major_minor(id : String) -> (Int32, Int32)? {
   if parts.length() == 0 {
     return None
   }
-  let major = @string.parse_int(parts[0].to_owned(), base=10) catch {
+  let major = @string.parse_int(parts[0].to_owned(), radix=10) catch {
     _ => return None
   }
   let minor = if parts.length() > 1 {
-    @string.parse_int(parts[1].to_owned(), base=10) catch {
+    @string.parse_int(parts[1].to_owned(), radix=10) catch {
       _ => return None
     }
   } else {

@@ -1,12 +1,16 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "vectie/moongate/internal/codex_config"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
-pub async fn active_model_catalog_json() -> Json?
+pub async fn active_model_catalog_json() -> @json.Json?
 
-pub async fn install_proxy_config(String, Int, String) -> Result[CodexConfigInstall, String]
+pub async fn install_proxy_config(String, Int32, String) -> Result[CodexConfigInstall, String]
 
-pub fn model_catalog_json(String) -> Json
+pub fn model_catalog_json(String) -> @json.Json
 
 pub async fn status() -> CodexConfigStatus
 

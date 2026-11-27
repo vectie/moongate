@@ -49,7 +49,10 @@ pub async fn fetch_codex_oauth_models_with_token(
     "originator": "moongate",
     "chatgpt-account-id": account_id,
   }
-  let client = @http.Client::Client(target.origin, headers~)
+  let client = @http.Client::Client(
+    target.origin,
+    headers=to_ci_headers(headers),
+  )
   defer client.close()
   let response = client.get(target.path) catch {
     err => return Err("Request failed: \{err}")
@@ -85,7 +88,10 @@ pub async fn fetch_models(
       Err(err) => return Err(err)
     }
     let headers = model_fetch_headers(api_key, user_agent)
-    let client = @http.Client::Client(target.origin, headers~)
+    let client = @http.Client::Client(
+    target.origin,
+    headers=to_ci_headers(headers),
+  )
     defer client.close()
     let response = client.get(target.path) catch {
       err => return Err("Request failed: \{err}")

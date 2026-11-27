@@ -1,7 +1,8 @@
 ///|
+#derive(Debug)
 pub(all) suberror BridgeError {
   BridgeError(code~ : Int32, kind~ : String, message~ : String)
-} derive(Debug)
+}
 
 ///|
 pub extend BridgeError with @moonbitlang/core/debug.Debug::{to_repr}

@@ -365,7 +365,7 @@ async fn ProxyService::forward_non_streaming_claude_compatible_request(
       if response_code is (200..<=299) {
         let parsed = match
           parse_claude_compatible_non_stream_body_with_diagnostics(
-            api_format, final_response_body, final_response_headers,
+            api_format, final_response_body, from_ci_headers(final_response_headers),
           ) {
           Ok(parsed) => parsed
           Err(message) => {
@@ -1453,7 +1453,9 @@ async fn ProxyService::handle_non_streaming_request(
   logger.debug("Sending request to Codex API")
   let client = @http.Client::Client(
     "https://chatgpt.com",
-    headers=codex_oauth_headers(creds, "application/json", session_id),
+    headers=to_ci_headers(
+      codex_oauth_headers(creds, "application/json", session_id),
+    ),
   )
   defer client.close()
   let response = client.post("/backend-api/codex/responses", codex_request)
@@ -1597,14 +1599,16 @@ async fn ProxyService::forward_streaming_claude_compatible_request(
   let custom_user_agent = provider_custom_user_agent(provider)
   let client = @http.Client::Client(
     origin,
-    headers=claude_compatible_provider_headers(
-      api_key,
-      api_format,
-      anthropic_beta~,
-      accept="text/event-stream",
-      custom_user_agent~,
-      provider_type=provider.provider_type,
-      extra_headers=copilot_headers,
+    headers=to_ci_headers(
+      claude_compatible_provider_headers(
+        api_key,
+        api_format,
+        anthropic_beta~,
+        accept="text/event-stream",
+        custom_user_agent~,
+        provider_type=provider.provider_type,
+        extra_headers=copilot_headers,
+      ),
     ),
   )
   defer client.close()
@@ -1623,14 +1627,16 @@ async fn ProxyService::forward_streaming_claude_compatible_request(
         )
         let retry_client = @http.Client::Client(
           origin,
-          headers=claude_compatible_provider_headers(
-            api_key,
-            api_format,
-            anthropic_beta~,
-            accept="text/event-stream",
-            custom_user_agent~,
-            provider_type=provider.provider_type,
-            extra_headers=copilot_headers,
+          headers=to_ci_headers(
+            claude_compatible_provider_headers(
+              api_key,
+              api_format,
+              anthropic_beta~,
+              accept="text/event-stream",
+              custom_user_agent~,
+              provider_type=provider.provider_type,
+              extra_headers=copilot_headers,
+            ),
           ),
         )
         defer retry_client.close()
@@ -1711,14 +1717,16 @@ async fn ProxyService::forward_streaming_claude_compatible_request(
         )
         let retry_client = @http.Client::Client(
           origin,
-          headers=claude_compatible_provider_headers(
-            api_key,
-            api_format,
-            anthropic_beta~,
-            accept="text/event-stream",
-            custom_user_agent~,
-            provider_type=provider.provider_type,
-            extra_headers=copilot_headers,
+          headers=to_ci_headers(
+            claude_compatible_provider_headers(
+              api_key,
+              api_format,
+              anthropic_beta~,
+              accept="text/event-stream",
+              custom_user_agent~,
+              provider_type=provider.provider_type,
+              extra_headers=copilot_headers,
+            ),
           ),
         )
         defer retry_client.close()
@@ -1975,7 +1983,9 @@ async fn ProxyService::handle_streaming_request(
   logger.debug("Sending streaming request to Codex API")
   let client = @http.Client::Client(
     "https://chatgpt.com",
-    headers=codex_oauth_headers(creds, "text/event-stream", session_id),
+    headers=to_ci_headers(
+      codex_oauth_headers(creds, "text/event-stream", session_id),
+    ),
   )
   defer client.close()
   let response = client.post("/backend-api/codex/responses", codex_request)

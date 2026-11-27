@@ -1,4 +1,5 @@
 ///|
+#derive(Debug)
 pub struct Model {
   name : String
   description : String?
@@ -13,9 +14,10 @@ pub struct Model {
   account_id : String?
   refresh_token : String?
   id_token : String?
-} derive(Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 pub(all) enum Provider {
   OpenAI
   Anthropic
@@ -24,12 +26,13 @@ pub(all) enum Provider {
   Qwen
   Kimi
   KimiCoding
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 pub(all) enum Type {
   SaaS(Provider)
-} derive(Eq, Debug)
+}
 
 ///|
 pub fn open_router_model(
@@ -57,9 +60,10 @@ pub fn open_router_model(
 }
 
 ///|
+#derive(Debug)
 pub(all) enum CommonModels {
   Qwen3CoderPlus
-} derive(Debug)
+}
 
 ///|
 fn CommonModels::common_model_name(self : CommonModels) -> String {
